@@ -1,0 +1,23 @@
+Copyright (c) 2026 Roger Metcalf
+
+FREE FOR EDUCATIONAL AND PERSONAL USE
+
+You may use, copy, modify and share this software and its documentation
+for teaching, study and personal use, provided that:
+
+  1. The author attribution and this notice are kept with the files.
+  2. Roger Metcalf is credited if you pass the work on or build on it.
+  3. It is not sold, nor redistributed as part of a commercial product
+     or service.
+
+Written with amazing AI assistance (Anthropic Claude). Concept, direction and all hardware testing by the author.
+
+Portions of the studentized range implementation follow the algorithm
+published in Dunlap, W. P., Powell, R. S., & Konnerth, T. K. (1977), "A
+FORTRAN IV function for calculating probabilities associated with the
+studentized range statistic", Behavior Research Methods & Instrumentation,
+9(4), 373-375.
+
+PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND. These are teaching programs.
+Do not rely on these results for anything serious-use at your own risk. The author accepts no liability for any use of this software. Your mileage may vary.
+
