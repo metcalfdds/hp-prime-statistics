@@ -1,0 +1,51 @@
+// ============================================================
+// GENTEST
+// Does str.join accept a generator here?
+// ============================================================
+// Roger Metcalf, 2026, with AI assistance (Anthropic Claude).
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
+//   the file.  Not for sale.  Provided as is, no warranty.
+// A throwaway diagnostic: run it, read the Terminal, delete it.
+// Run GenTest() from the Program Catalog.
+// ============================================================
+
+#PYTHON gentest
+# GenTest - does str.join accept a GENERATOR on this firmware?
+#
+# Every case in JoinTest passed a real list and every one worked.
+# The sampler code that failed used a generator expression instead:
+#     ",".join(str(c) for c in cnt)        <- no brackets
+# MicroPython 1.9.4 may require a list or tuple here.  Two lines,
+# identical except for the brackets.
+
+print("")
+print("== GenTest ==")
+print("")
+
+try:
+    a = ",".join(str(c) for c in [1, 2, 3])
+    print("generator (no brackets): ok -> " + a)
+except:
+    print("generator (no brackets): FAILS   <-- the sampler bug")
+
+try:
+    b = ",".join([str(c) for c in [1, 2, 3]])
+    print("list      (brackets)   : ok -> " + b)
+except:
+    print("list      (brackets)   : FAILS")
+
+try:
+    c = ",".join(("1", "2", "3"))
+    print("tuple                  : ok -> " + c)
+except:
+    print("tuple                  : FAILS")
+
+print("")
+print("done - Esc to exit")
+#END
+
+EXPORT GenTest()
+BEGIN
+PRINT();
+PYTHON(gentest);
+END;

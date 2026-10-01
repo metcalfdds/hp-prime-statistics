@@ -1,0 +1,540 @@
+#pragma mode( separator(.,;) integer(h32) )
+
+// ============================================================
+// BAYESTREE - beta 3
+// ============================================================
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
+//   the file and credit the author if you pass it on.  Not for
+//   sale or commercial redistribution.  Provided as is.
+// Tested on an HP Prime G2 and G1, both on the 2026-09-09
+//   firmware, plus the desktop Virtual Calculator.
+//
+// beta 3: TAP ANY NODE for an explanation of that count -- what
+//   it is, the formula behind it, and which pair it belongs to.
+//   WAIT(-1) returns {type, x, y} for a screen event, so the
+//   main loop now takes touch as well as keys.  Nothing else
+//   changed from beta 2.
+// ============================================================
+
+// (C) 2026 Roger D Metcalf
+// Program concept and rudimentary code by Roger D. Metcalf
+// Code corrected, expanded, and vastly improved by Claude Code Fable 5
+
+// Bayesian tree explorer — natural frequencies — Roger D Metcalf
+// Launch:  BayesTree()   — no arguments; the options menu pops up
+// first (defaults prior=0.1, sens=0.90, spec=0.95); Close it to
+// explore with the keys.
+// Controls:  Left/Right = specificity (±0.01)
+//            Up/Down    = sensitivity (±0.01)
+//            (-)/(+)    = prior (teaching ladder)
+//            Enter      = menu (exact values incl N / counts / ROC)
+//            Esc        = quit
+//            TAP a node = explain that count
+// Tree: N people → D+/D− by prior → T+/T− by sens/spec, all six
+// nodes boxed, counts at every leaf. T+ leaves highlighted:
+// PPV = TP/(TP+FP) read off the tree. Readouts: PPV, NPV, LR+, LR−.
+
+NodeInfo();
+
+// count formatter: whole people (rounded)
+fmtc(v)
+BEGIN
+  RETURN STRING(ROUND(v,0),1,0);
+END;
+
+// probability formatter with a floor.  BayesTree already used mode 2
+// (STRING(x,2,3) keeps trailing zeros), so widths were correct -- but at 3
+// decimals anything below 0.001 prints "0.000", and that is precisely the
+// lesson this program exists to teach: at 1-in-10,000 prevalence the PPV of a
+// good test really is a fraction of a percent.  Printing it as 0.000 says the
+// disease is impossible.  Now reports "< 0.001".
+// Sign-aware because kappa and MCC are genuinely negative on a bad test.
+// Params pv/dg -- short parameter names are where builtin collisions bite.
+fmtp(pv, dg)
+BEGIN
+  LOCAL thr;
+  thr := 10^(-dg);
+  IF pv != 0 AND ABS(pv) < thr THEN
+    IF pv > 0 THEN RETURN "< " + STRING(thr,2,dg); END;
+    RETURN "> -" + STRING(thr,2,dg);
+  END;
+  RETURN STRING(pv,2,dg);
+END;
+
+// Explain one node of the tree.  niId: 1 root, 2 D+, 3 D-,
+// 4 TP, 5 FN, 6 FP, 7 TN.  niL carries everything the text
+// needs, so this takes only two arguments:
+//   {NP, nD, nH, tp, fn, fp, tn, ppv, npv, prior, sens, spec}
+//
+// Every number in the tree is a formula a student should be
+// able to name.  Tapping asks the question; this answers it.
+// Uses fmtp for the probabilities so a tiny PPV reads
+// "< 0.001" rather than "0.000" -- same reasoning as the
+// main display.
+NodeInfo(niId, niL)
+BEGIN
+  LOCAL niK, niT, niF, niN, niX;
+
+  IF niId == 1 THEN
+    niT := "N — the whole population";
+    niF := "A hypothetical " + fmtc(niL(1)) + " people.";
+    niX := "Everything below splits this group: first by the prior, then by the test.";
+    niN := niL(1);
+  END;
+  IF niId == 2 THEN
+    niT := "D+ — really have it";
+    niF := "D+ = N × prior = " + fmtc(niL(1)) + " × " + fmtp(niL(10),3);
+    niX := "Before any test is run. The prior is the prevalence.";
+    niN := niL(2);
+  END;
+  IF niId == 3 THEN
+    niT := "D− — really do not";
+    niF := "D− = N × (1 − prior) = " + fmtc(niL(1)) + " × " + fmtp(1-niL(10),3);
+    niX := "Usually the large group, which is what drives false positives.";
+    niN := niL(3);
+  END;
+  IF niId == 4 THEN
+    niT := "True positives";
+    niF := "TP = D+ × sens = " + fmtc(niL(2)) + " × " + fmtp(niL(11),3);
+    niX := "Has it, test found it. With FP below, gives PPV = " + fmtp(niL(8),3);
+    niN := niL(4);
+  END;
+  IF niId == 5 THEN
+    niT := "False negatives";
+    niF := "FN = D+ × (1 − sens) = " + fmtc(niL(2)) + " × " + fmtp(1-niL(11),3);
+    niX := "Has it, test missed it. The cost of imperfect sensitivity.";
+    niN := niL(5);
+  END;
+  IF niId == 6 THEN
+    niT := "False positives";
+    niF := "FP = D− × (1 − spec) = " + fmtc(niL(3)) + " × " + fmtp(1-niL(12),3);
+    niX := "Does not have it, test says yes. Few per person, but many people.";
+    niN := niL(6);
+  END;
+  IF niId == 7 THEN
+    niT := "True negatives";
+    niF := "TN = D− × spec = " + fmtc(niL(3)) + " × " + fmtp(niL(12),3);
+    niX := "With FN above, gives NPV = " + fmtp(niL(9),3);
+    niN := niL(7);
+  END;
+
+  RECT_P(0,0,319,239,RGB(255,255,255));
+  RECT_P(12,40,308,196,RGB(255,69,0),RGB(255,240,220));
+  TEXTOUT_P(niT, 24, 52, 2, RGB(0,0,0));
+  LINE_P(24, 76, 296, 76, RGB(90,90,90));
+  TEXTOUT_P("count = " + fmtc(niN), 24, 88, 2, RGB(255,0,255));
+  TEXTOUT_P(niF, 24, 116, 1, RGB(0,0,0));
+  TEXTOUT_P(niX, 24, 140, 1, RGB(0,0,0));
+  TEXTOUT_P("any key = back", 24, 176, 1, RGB(30,144,255));
+
+  REPEAT niK := GETKEY; UNTIL niK == -1;
+  niK := WAIT(-1);
+  REPEAT niK := GETKEY; UNTIL niK == -1;
+  RETURN 0;
+END;
+
+// 2x2 contingency table populated with the current counts
+Tbl2View(ctp, cfn, cfp, ctn, se, sp, pv, nv)
+BEGIN
+  LOCAL key2;
+
+  RECT_P();
+  TEXTOUT_P("2 × 2 Table", 110, 3, 2, RGB(0,0,0));
+
+  // frame + internal grid  (cols: label|T+|T−|Total, rows: hdr|D+|D−|Total)
+  RECT_P(8, 28, 312, 148, RGB(0,0,0), RGB(255,255,255));
+  LINE_P(68, 28, 68, 148, RGB(0,0,0));
+  LINE_P(150, 28, 150, 148, RGB(0,0,0));
+  LINE_P(232, 28, 232, 148, RGB(0,0,0));
+  LINE_P(8, 52, 312, 52, RGB(0,0,0));
+  LINE_P(8, 84, 312, 84, RGB(0,0,0));
+  LINE_P(8, 116, 312, 116, RGB(0,0,0));
+
+  // headers (tree colors: T+ green, T− red, D blue, totals orange)
+  TEXTOUT_P("T+", 100, 33, 2, RGB(0,140,60));
+  TEXTOUT_P("T−", 182, 33, 2, RGB(255,0,0));
+  TEXTOUT_P("Total", 244, 33, 2, RGB(255,69,0));
+  TEXTOUT_P("D+", 24, 60, 2, RGB(0,60,200));
+  TEXTOUT_P("D−", 24, 92, 2, RGB(0,60,200));
+  TEXTOUT_P("Total", 12, 124, 2, RGB(255,69,0));
+
+  // cells (counts; colors match the tree leaves)
+  TEXTOUT_P(fmtc(ctp), 78, 60, 2, RGB(0,140,60));
+  TEXTOUT_P(fmtc(cfn), 160, 60, 2, RGB(255,0,0));
+  TEXTOUT_P(fmtc(ctp+cfn), 242, 60, 2, RGB(0,60,200));
+  TEXTOUT_P(fmtc(cfp), 78, 92, 2, RGB(0,140,60));
+  TEXTOUT_P(fmtc(ctn), 160, 92, 2, RGB(255,0,0));
+  TEXTOUT_P(fmtc(cfp+ctn), 242, 92, 2, RGB(0,60,200));
+  TEXTOUT_P(fmtc(ctp+cfp), 78, 124, 2, RGB(0,140,60));
+  TEXTOUT_P(fmtc(cfn+ctn), 160, 124, 2, RGB(255,0,0));
+  TEXTOUT_P(fmtc(ctp+cfn+cfp+ctn), 242, 124, 2, RGB(255,69,0));
+
+  // the row/column lesson: sens & spec live in ROWS, PPV & NPV in COLUMNS
+  TEXTOUT_P("rows:  sens = " + fmtp(se,3) + ",  spec = " + fmtp(sp,3), 14, 162, 1, RGB(0,60,200));
+  TEXTOUT_P("cols:  PPV = " + fmtp(pv,3) + ",  NPV = " + fmtp(nv,3), 14, 178, 1, RGB(255,0,255));
+  TEXTOUT_P("any key = back", 110, 226, 1, RGB(30,144,255));
+
+  REPEAT key2 := GETKEY; UNTIL key2 > -1;
+END;
+
+// Diagnostics: measures valid for BOTH forward (expected) and
+// backwards (observed) tables — pure functions of the four cells.
+DiagView(ctp, cfn, cfp, ctn)
+BEGIN
+  LOCAL nn,se,sp,acc,bacc,jj;
+  LOCAL dor,f1,mcc,po,pe,kap;
+  LOCAL key2,yy,sNND,sKap;
+
+  nn := ctp+cfn+cfp+ctn;
+  se := ctp/(ctp+cfn);  sp := ctn/(cfp+ctn);
+  acc := (ctp+ctn)/nn;  bacc := (se+sp)/2;
+  jj := se+sp-1;
+  dor := (ctp*ctn)/(cfn*cfp);
+  f1  := 2*ctp/(2*ctp+cfp+cfn);
+  mcc := (ctp*ctn-cfp*cfn)/√((ctp+cfp)*(ctp+cfn)*(ctn+cfp)*(ctn+cfn));
+  po := acc;
+  pe := ((ctp+cfp)*(ctp+cfn)+(cfn+ctn)*(cfp+ctn))/(nn*nn);
+  IF ABS(1-pe) < 0.000001 THEN sKap := "undef"; ELSE kap := (po-pe)/(1-pe); sKap := fmtp(kap,3); END;
+  IF jj > 0.0005 THEN sNND := fmtp(1/jj,3); ELSE sNND := "undef (J ≤ 0)"; END;
+
+  RECT_P();
+  TEXTOUT_P("2×2 Diagnostics", 92, 3, 2, RGB(0,0,0));
+  yy := 26;
+  TEXTOUT_P("prevalence = " + fmtp((ctp+cfn)/nn,3), 14, yy, 1, RGB(90,90,90)); yy := yy+16;
+  TEXTOUT_P("accuracy = " + fmtp(acc,3) + "   (can mislead at low prev!)", 14, yy, 1, RGB(0,0,0)); yy := yy+16;
+  TEXTOUT_P("balanced accuracy = " + fmtp(bacc,3), 14, yy, 1, RGB(0,0,0)); yy := yy+16;
+  TEXTOUT_P("Youden J = " + fmtp(jj,3) + "   (se+sp−1; ROC height above chance)", 14, yy, 1, RGB(0,140,60)); yy := yy+16;
+  TEXTOUT_P("NND = " + sNND + "   (1/J)", 14, yy, 1, RGB(0,140,60)); yy := yy+16;
+  TEXTOUT_P("diagnostic OR = " + fmtp(dor,3) + "   (LR+/LR−)", 14, yy, 1, RGB(30,144,255)); yy := yy+16;
+  TEXTOUT_P("F1 = " + fmtp(f1,3), 14, yy, 1, RGB(255,0,255)); yy := yy+16;
+  TEXTOUT_P("MCC = " + fmtp(mcc,3), 14, yy, 1, RGB(255,0,255)); yy := yy+16;
+  TEXTOUT_P("Cohen κ = " + sKap, 14, yy, 1, RGB(255,0,255)); yy := yy+16;
+  TEXTOUT_P("All are cell-proportion functions: valid for", 14, yy+6, 1, RGB(90,90,90));
+  TEXTOUT_P("expected (forward) AND observed (counts) tables.", 14, yy+20, 1, RGB(90,90,90));
+  TEXTOUT_P("For p-values / CIs on real data: use ConTable2.", 14, yy+34, 1, RGB(90,90,90));
+  TEXTOUT_P("any key = back", 110, 226, 1, RGB(30,144,255));
+
+  REPEAT key2 := GETKEY; UNTIL key2 > -1;
+END;
+
+// PPV & NPV as functions of prevalence, for the current sens/spec
+PrevView(pr, se, sp)
+BEGIN
+  LOCAL LFT,RGT,TOPy,BOT,W,H;
+  LOCAL px,py,lastpy,p,v,ny,lastny;
+  LOCAL i,tickx,ticky,key2,x0p;
+
+  LFT:=40; RGT:=290; TOPy:=30; BOT:=195;
+  W:=RGT-LFT; H:=BOT-TOPy;
+
+  RECT_P();
+  TEXTOUT_P("PPV & NPV vs prevalence", 62, 3, 2, RGB(0,0,0));
+  TEXTOUT_P("sens = " + fmtp(se,3) + ",  spec = " + fmtp(sp,3), 84, 19, 1, RGB(90,90,90));
+
+  // grid + ticks at 0, 0.2, ..., 1 on both axes
+  FOR i FROM 0 TO 5 DO
+    tickx := LFT + IP(i/5*W);
+    ticky := BOT - IP(i/5*H);
+    IF i > 0 AND i < 5 THEN
+      LINE_P(tickx, TOPy, tickx, BOT-1, RGB(225,228,235));
+      LINE_P(LFT+1, ticky, RGT, ticky, RGB(225,228,235));
+    END;
+    TEXTOUT_P(STRING(i/5,1,1), tickx-8, BOT+6, 1, RGB(90,90,90));
+    TEXTOUT_P(STRING(i/5,1,1), LFT-24, ticky-4, 1, RGB(90,90,90));
+  END;
+  LINE_P(LFT, BOT, RGT, BOT, RGB(0,0,0));
+  LINE_P(LFT, TOPy, LFT, BOT, RGB(0,0,0));
+
+  // PPV curve (magenta) and NPV curve (dodger blue), pixel columns
+  lastpy := -1; lastny := -1;
+  FOR px FROM LFT+1 TO RGT-1 DO
+    p := (px-LFT)/W;
+    IF p < 0.0005 THEN p := 0.0005; END;
+    IF p > 0.9995 THEN p := 0.9995; END;
+    v  := p*se/(p*se+(1-p)*(1-sp));
+    ny := (1-p)*sp/((1-p)*sp+p*(1-se));
+    py := BOT - IP(v*H);
+    IF lastpy >= 0 THEN LINE_P(px-1, lastpy, px, py, RGB(255,0,255)); END;
+    lastpy := py;
+    py := BOT - IP(ny*H);
+    IF lastny >= 0 THEN LINE_P(px-1, lastny, px, py, RGB(30,144,255)); END;
+    lastny := py;
+  END;
+  TEXTOUT_P("PPV", RGT-26, TOPy+6, 1, RGB(255,0,255));
+  TEXTOUT_P("NPV", RGT-26, BOT-14, 1, RGB(30,144,255));
+
+  // dotted vertical at the current prior + dots on both curves
+  x0p := LFT + IP(pr*W);
+  FOR i FROM TOPy TO BOT STEP 4 DO
+    PIXON_P(x0p, i, RGB(255,0,0));
+  END;
+  v  := pr*se/(pr*se+(1-pr)*(1-sp));
+  ny := (1-pr)*sp/((1-pr)*sp+pr*(1-se));
+  ticky := BOT - IP(v*H);
+  RECT_P(x0p-3, ticky-3, x0p+3, ticky+3, RGB(255,0,0), RGB(255,0,0));
+  ticky := BOT - IP(ny*H);
+  RECT_P(x0p-3, ticky-3, x0p+3, ticky+3, RGB(255,0,0), RGB(255,0,0));
+
+  // labels + point readout
+  TEXTOUT_P("prevalence (prior)", 120, 214, 1, RGB(0,0,0));
+  TEXTOUT_P("at prior = " + fmtp(pr,3) + ":  PPV = " + fmtp(v,3) + ",  NPV = " + fmtp(ny,3) + ",  any key = back", 8, 226, 1, RGB(30,144,255));
+
+  REPEAT key2 := GETKEY; UNTIL key2 > -1;
+END;
+
+// ROC view (equal-variance binormal model through the current point)
+RocView(se, sp)
+BEGIN
+  LOCAL LFT,RGT,TOPy,BOT,W,H;
+  LOCAL px,py,lastpy,fpr,tpr,dp;
+  LOCAL i,tickx,ticky,auc,fpr0,key2;
+
+  LFT:=40; RGT:=290; TOPy:=30; BOT:=195;
+  W:=RGT-LFT; H:=BOT-TOPy;
+
+  dp  := NORMALD_ICDF(0,1,se) + NORMALD_ICDF(0,1,sp);
+  auc := NORMALD_CDF(0,1, dp/√2);
+
+  RECT_P();
+  TEXTOUT_P("ROC curve (binormal)", 84, 3, 2, RGB(0,0,0));
+  TEXTOUT_P("d' = " + fmtp(dp,3) + ",  AUC = " + fmtp(auc,3), 84, 19, 1, RGB(200,0,200));
+
+  // grid + ticks at 0, 0.2, ..., 1 on both axes
+  FOR i FROM 0 TO 5 DO
+    tickx := LFT + IP(i/5*W);
+    ticky := BOT - IP(i/5*H);
+    IF i > 0 AND i < 5 THEN
+      LINE_P(tickx, TOPy, tickx, BOT-1, RGB(225,228,235));
+      LINE_P(LFT+1, ticky, RGT, ticky, RGB(225,228,235));
+    END;
+    TEXTOUT_P(STRING(i/5,1,1), tickx-8, BOT+6, 1, RGB(90,90,90));
+    TEXTOUT_P(STRING(i/5,1,1), LFT-24, ticky-4, 1, RGB(90,90,90));
+  END;
+  LINE_P(LFT, BOT, RGT, BOT, RGB(0,0,0));
+  LINE_P(LFT, TOPy, LFT, BOT, RGB(0,0,0));
+
+  // chance diagonal (dotted)
+  FOR i FROM 0 TO W STEP 4 DO
+    PIXON_P(LFT+i, BOT - IP(i/W*H), RGB(150,150,150));
+  END;
+
+  // ROC curve (pixel columns)
+  lastpy := -1;
+  FOR px FROM LFT+1 TO RGT-1 DO
+    fpr := (px-LFT)/W;
+    IF fpr < 0.0005 THEN fpr := 0.0005; END;
+    IF fpr > 0.9995 THEN fpr := 0.9995; END;
+    tpr := NORMALD_CDF(0,1, dp - NORMALD_ICDF(0,1,1-fpr));
+    py := BOT - IP(tpr*H);
+    IF lastpy >= 0 THEN LINE_P(px-1, lastpy, px, py, RGB(0,60,200)); END;
+    lastpy := py;
+  END;
+
+  // operating point (red)
+  fpr0 := 1-sp;
+  tickx := LFT + IP(fpr0*W);
+  ticky := BOT - IP(se*H);
+  RECT_P(tickx-3, ticky-3, tickx+3, ticky+3, RGB(255,0,0), RGB(255,0,0));
+
+  // axis labels + point readout
+  TEXTOUT_P("FPR (1-spec)", 140, 214, 1, RGB(178,34,34));
+  TEXTOUT_P("TPR", 8, 108, 1, RGB(34,175,34));
+  TEXTOUT_P("point: sens = " + fmtp(se,3) + ",  (1-spec) = " + fmtp(1-sp,3) + ",  any key = back", 60, 226, 1, RGB(30,144,255));
+
+  REPEAT key2 := GETKEY; UNTIL key2 > -1;
+END;
+
+EXPORT BayesTree()
+BEGIN
+  LOCAL prior, sens, spec;
+  LOCAL cAx,cTx,cX0,cPos,cNeg,cPnl,cDb;
+  LOCAL key,menuIdx,NP,j,pr2,se2,sp2;
+  LOCAL pl,pidx,bestd,dtmp,np2;
+  LOCAL nD,nH,tp,fn,fp,tn;
+  LOCAL ppv,npv,lrp,lrm,podd,posto;
+  LOCAL x1,x2,x3,y0,yD,yH;
+  LOCAL yTP,yFN,yFP,yTN;
+  LOCAL btMX,btMY,btNode;
+
+  // defaults (change via the menu: Set exact values)
+  prior := 0.1; sens := 0.90; spec := 0.95;
+
+  // colors (Roger palette)
+  cAx:=RGB(0,0,0); cTx:=RGB(200,0,200); cX0:=RGB(255,0,0);
+  cPos:=RGB(0,140,60); cNeg:=RGB(90,90,90); cPnl:=RGB(255,69,0);
+  cDb:=RGB(0,60,200);
+
+  // prior teaching ladder
+  pl := {0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.95,0.99};
+  // snap pidx to nearest ladder value
+  pidx := 1; bestd := 2;
+  FOR j FROM 1 TO SIZE(pl) DO
+    dtmp := ABS(pl(j) - prior);
+    IF dtmp < bestd THEN bestd := dtmp; pidx := j; END;
+  END;
+
+  NP := 1000;
+
+  // tree layout (left → right)
+  x1 := 8;  x2 := 118; x3 := 216;
+  y0 := 112; yD := 52; yH := 170;
+  yTP := 32; yFN := 84; yFP := 148; yTN := 200;
+
+  key := 30;   // seed Enter so the options menu pops up first
+
+  REPEAT
+    // ---- act on the key (menu handled here, BEFORE drawing) ----
+    IF key == 7  THEN spec := MAX(0.01, spec-0.01); END;                     // Left  : spec down
+    IF key == 8  THEN spec := MIN(0.999, spec+0.01); END;                     // Right : spec up
+    IF key == 2  THEN sens := MIN(0.999, sens+0.01); END;                     // Up    : sens up
+    IF key == 12 THEN sens := MAX(0.01, sens-0.01); END;                      // Down  : sens down
+    IF key == 50 THEN pidx := MIN(SIZE(pl), pidx+1); prior := pl(pidx); END;  // (+)   : prior up
+    IF key == 45 THEN pidx := MAX(1, pidx-1); prior := pl(pidx); END;         // (-)   : prior down
+    IF key == 30 THEN                                                          // Enter
+      menuIdx := 0;
+      CHOOSE(menuIdx, "BayesTree Options", {
+        "Enter values",
+        "Enter counts",
+        "ROC curve view",
+        "PPV vs prevalence",
+        "2×2 table view",
+        "Diagnostics",
+        "Close"});
+      IF menuIdx > 0 THEN
+        IF menuIdx == 1 THEN
+          pr2 := prior; se2 := sens; sp2 := spec; np2 := NP;
+          IF INPUT({pr2, se2, sp2, np2}, "Exact Values",
+            {"prior:", "sens:", "spec:", "N:"},
+            {"P(D+), in (0,1)", "P(T+|D+)", "P(T−|D−)", "People at the tree root"}) == 1 THEN
+            prior := MIN(0.999, MAX(0.0001, pr2));
+            sens  := MIN(0.999, MAX(0.01, se2));
+            spec  := MIN(0.999, MAX(0.01, sp2));
+            NP    := MAX(10, IP(np2));
+            // snap ladder index to nearest for subsequent arrows
+            pidx := 1; bestd := 2;
+            FOR j FROM 1 TO SIZE(pl) DO
+              dtmp := ABS(pl(j) - prior);
+              IF dtmp < bestd THEN bestd := dtmp; pidx := j; END;
+            END;
+          END;
+        END;
+        IF menuIdx == 3 THEN RocView(sens, spec); END;
+        IF menuIdx == 4 THEN PrevView(prior, sens, spec); END;
+        IF menuIdx == 5 THEN
+          Tbl2View(NP*prior*sens, NP*prior*(1-sens), NP*(1-prior)*(1-spec), NP*(1-prior)*spec,
+                   sens, spec, prior*sens/(prior*sens+(1-prior)*(1-spec)),
+                   (1-prior)*spec/((1-prior)*spec+prior*(1-sens)));
+        END;
+        IF menuIdx == 6 THEN
+          DiagView(NP*prior*sens, NP*prior*(1-sens), NP*(1-prior)*(1-spec), NP*(1-prior)*spec);
+        END;
+        IF menuIdx == 2 THEN
+          // backwards: enter the four leaf counts, recover the parameters
+          IF INPUT({tp, fn, fp, tn}, "Leaf Counts (2x2)",
+            {"T+ D+:", "T− D+:", "T+ D−:", "T− D−:"},
+            {"true positives", "false negatives", "false positives", "true negatives"}) == 1 THEN
+            tp := MAX(0,tp); fn := MAX(0,fn); fp := MAX(0,fp); tn := MAX(0,tn);
+            IF tp+fn <= 0 OR fp+tn <= 0 THEN
+              MSGBOX("Need D+ row and D− row each > 0");
+            ELSE
+              NP := tp+fn+fp+tn;
+              prior := (tp+fn)/NP;
+              sens  := MIN(0.999, MAX(0.001, tp/(tp+fn)));
+              spec  := MIN(0.999, MAX(0.001, tn/(fp+tn)));
+              prior := MIN(0.999, MAX(0.0001, prior));
+              // snap ladder index to nearest for subsequent arrows
+              pidx := 1; bestd := 2;
+              FOR j FROM 1 TO SIZE(pl) DO
+                dtmp := ABS(pl(j) - prior);
+                IF dtmp < bestd THEN bestd := dtmp; pidx := j; END;
+              END;
+            END;
+          END;
+        END;
+      END;
+    END;
+
+    // ---- Bayes bookkeeping ----
+    nD := NP*prior;          nH := NP - nD;
+    tp := nD*sens;           fn := nD - tp;
+    fp := nH*(1-spec);       tn := nH - fp;
+    ppv := tp/(tp+fp);       npv := tn/(tn+fn);
+    lrp := sens/(1-spec);    lrm := (1-sens)/spec;
+    podd := prior/(1-prior); posto := podd*lrp;
+
+    RECT_P();   // clear to white
+
+    // ---- title + parameter strip (top row, clear of the tree) ----
+    TEXTOUT_P("Bayes Tree", 6, 2, 2, cAx);
+    RECT_P(100, 1, 313, 17, cPnl, RGB(255,255,255));
+    TEXTOUT_P("prior = " + fmtp(prior,3) + ", sens = " + fmtp(sens,3) + ", spec = " + fmtp(spec,3), 106, 4, 1, RGB(0,0,0));
+
+    // ---- root (boxed) ----
+    RECT_P(x1-4, y0-12, x1+74, y0+10, cPnl, RGB(255,240,220));
+    TEXTOUT_P("N = " + STRING(NP,1,0), x1, y0-8, 2, cPnl);
+
+    // ---- level-1 branches: prior split ----
+    LINE_P(x1+76, y0, x2-18, yD+6, cAx);
+    LINE_P(x1+76, y0, x2-18, yH+6, cAx);
+    TEXTOUT_P(fmtp(prior,3), 84, 70, 1, cNeg);
+    TEXTOUT_P(fmtp(1-prior,3), 84, 146, 1, cNeg);
+
+    // ---- D nodes (boxed) ----
+    RECT_P(x2-16, yD-4, x2+40, yD+16, cDb, RGB(235,242,255));
+    TEXTOUT_P("D+ " + fmtc(nD), x2-12, yD, 2, cDb);
+    RECT_P(x2-16, yH-4, x2+40, yH+16, cDb, RGB(235,242,255));
+    TEXTOUT_P("D− " + fmtc(nH), x2-12, yH, 2, cDb);
+
+    // ---- level-2 branches: test split ----
+    LINE_P(x2+44, yD+6, x3-8, yTP+6, cAx);
+    LINE_P(x2+44, yD+6, x3-8, yFN+6, cAx);
+    LINE_P(x2+44, yH+6, x3-8, yFP+6, cAx);
+    LINE_P(x2+44, yH+6, x3-8, yTN+6, cAx);
+    TEXTOUT_P(fmtp(sens,3), 168, 34, 1, cNeg);
+    TEXTOUT_P(fmtp(1-sens,3), 168, 74, 1, cNeg);
+    TEXTOUT_P(fmtp(1-spec,3), 168, 152, 1, cNeg);
+    TEXTOUT_P(fmtp(spec,3), 168, 192, 1, cNeg);
+
+    // ---- leaves (all boxed): T+ highlighted (they feed PPV) ----
+    RECT_P(x3-4, yTP-4, 312, yTP+16, cPos, RGB(232,246,235));
+    TEXTOUT_P("T+ " + fmtc(tp), x3, yTP, 2, cPos);
+    RECT_P(x3-4, yFN-4, 312, yFN+16, cX0, RGB(255,235,235));
+    TEXTOUT_P("T− " + fmtc(fn), x3, yFN, 2, cX0);
+    RECT_P(x3-4, yFP-4, 312, yFP+16, cPos, RGB(232,246,235));
+    TEXTOUT_P("T+ " + fmtc(fp), x3, yFP, 2, cPos);
+    RECT_P(x3-4, yTN-4, 312, yTN+16, cX0, RGB(255,235,235));
+    TEXTOUT_P("T− " + fmtc(tn), x3, yTN, 2, cX0);
+
+    // ---- posterior readouts (LRs on their own line, lower left) ----
+    TEXTOUT_P("odds " + fmtp(podd,3) + " × LR+ = " + fmtp(posto,3), 6, 187, 1, cTx);
+    TEXTOUT_P("LR+ = " + fmtp(lrp,3) + ", LR− = " + fmtp(lrm,3), 6, 199, 1, RGB(30,144,255));
+    TEXTOUT_P("PPV = " + fmtp(ppv,3) + ", NPV = " + fmtp(npv,3), 6, 211, 1, RGB(255,0,255));
+    TEXTOUT_P("⇆ spec, ⇅ sens, +/- prior, tap a node, Ent menu, Esc", 6, 225, 1, RGB(0,128,0));
+
+    // ---- wait for a key OR a screen tap ----
+    // WAIT(-1) returns a key code, or {type, x, y} for a touch.
+    // It also returns -1 by itself after about a minute; that just
+    // falls through and redraws, which is harmless here.
+    key := WAIT(-1);
+    IF TYPE(key) == 6 THEN
+      btMX := key(2); btMY := key(3);
+      btNode := 0;
+      // hit-test against the boxes the tree just drew
+      IF btMX >= x1-4 AND btMX <= x1+74 AND btMY >= y0-12 AND btMY <= y0+10 THEN btNode := 1; END;
+      IF btMX >= x2-16 AND btMX <= x2+40 THEN
+        IF btMY >= yD-4 AND btMY <= yD+16 THEN btNode := 2; END;
+        IF btMY >= yH-4 AND btMY <= yH+16 THEN btNode := 3; END;
+      END;
+      IF btMX >= x3-4 AND btMX <= 312 THEN
+        IF btMY >= yTP-4 AND btMY <= yTP+16 THEN btNode := 4; END;
+        IF btMY >= yFN-4 AND btMY <= yFN+16 THEN btNode := 5; END;
+        IF btMY >= yFP-4 AND btMY <= yFP+16 THEN btNode := 6; END;
+        IF btMY >= yTN-4 AND btMY <= yTN+16 THEN btNode := 7; END;
+      END;
+      IF btNode > 0 THEN
+        NodeInfo(btNode, {NP,nD,nH,tp,fn,fp,tn,ppv,npv,prior,sens,spec});
+      END;
+      key := 0;
+    END;
+  UNTIL key == 4;                                     // Esc
+END;

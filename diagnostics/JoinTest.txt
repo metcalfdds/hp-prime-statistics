@@ -1,0 +1,96 @@
+// ============================================================
+// JOINTEST
+// Which ingredient breaks str.join here?
+// ============================================================
+// Roger Metcalf, 2026, with AI assistance (Anthropic Claude).
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
+//   the file.  Not for sale.  Provided as is, no warranty.
+// A throwaway diagnostic: run it, read the Terminal, delete it.
+// Run JoinTest() from the Program Catalog.
+// ============================================================
+
+#PYTHON jointest
+# JoinTest - which ingredient actually breaks str.join on this firmware?
+#
+# PyVer showed ",".join(["1","2","3"]) works fine, so the beta-32
+# sampler failure was NOT a general join bug.  The failing list was
+#     [str(c) for c in cnt] + [repr(tot), repr(tot2)]
+# so the suspects are repr() on a float, or the list-plus-list.
+# Each case below is isolated; the last two print the TYPE, which is
+# what the error message was complaining about.
+
+print("")
+print("== JoinTest ==")
+print("")
+
+try:
+    print("A str literals : " + ",".join(["1", "2", "3"]))
+except:
+    print("A str literals : FAILS")
+
+try:
+    print("B str(int)     : " + ",".join([str(1), str(2)]))
+except:
+    print("B str(int)     : FAILS")
+
+try:
+    print("C comprehension: " + ",".join([str(c) for c in [1, 2, 3]]))
+except:
+    print("C comprehension: FAILS")
+
+try:
+    print("D pct format   : " + ",".join(["%.6f" % 1.5, "%.6f" % 2.5]))
+except:
+    print("D pct format   : FAILS")
+
+try:
+    print("E repr(float)  : " + ",".join([repr(1.5), repr(2.5)]))
+except:
+    print("E repr(float)  : FAILS")
+
+try:
+    print("F str(float)   : " + ",".join([str(1.5), str(2.5)]))
+except:
+    print("F str(float)   : FAILS")
+
+try:
+    lst = [str(c) for c in [1, 2]] + [repr(1.5), repr(2.5)]
+    print("G the real one : " + ",".join(lst))
+except:
+    print("G the real one : FAILS  <-- this was the sampler")
+
+# What repr actually hands back
+print("")
+try:
+    print("type(repr(1.5)) = " + str(type(repr(1.5))))
+except:
+    print("cannot take type(repr(1.5))")
+
+try:
+    print("type(str(1))    = " + str(type(str(1))))
+except:
+    print("cannot take type(str(1))")
+
+# urandom is present on this firmware - is it usable as a seed?
+print("")
+try:
+    import urandom
+    print("urandom.getrandbits(16) = " + str(urandom.getrandbits(16)))
+except:
+    print("urandom.getrandbits: NO")
+
+try:
+    import urandom
+    print("urandom.random() = " + str(urandom.random()))
+except:
+    print("urandom.random: NO")
+
+print("")
+print("done - Esc to exit")
+#END
+
+EXPORT JoinTest()
+BEGIN
+PRINT();
+PYTHON(jointest);
+END;

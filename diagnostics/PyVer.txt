@@ -1,0 +1,142 @@
+// ============================================================
+// PYVER
+// What MicroPython is this Prime running?
+// ============================================================
+// Roger Metcalf, 2026, with AI assistance (Anthropic Claude).
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
+//   the file.  Not for sale.  Provided as is, no warranty.
+// A throwaway diagnostic: run it, read the Terminal, delete it.
+// Run PyVer() from the Program Catalog.
+// ============================================================
+
+#PYTHON pyver
+# PyVer - what MicroPython is this, and what does it have?
+# Paste into the Connectivity Kit, run PyVer() from the catalog.
+# Output appears in the Terminal.  Press Esc when done.
+#
+# No f-strings, no .format on the version tuples, nothing that a
+# 2018-era MicroPython would reject -- the point is to find out
+# what we are running on, so it must not fail on the way there.
+
+print("")
+print("== PyVer ==")
+print("")
+
+# ---- which interpreter ----
+try:
+    import sys
+    try:
+        print("implementation:")
+        print(sys.implementation)
+    except:
+        print("  (no sys.implementation)")
+    try:
+        print("version:")
+        print(sys.version)
+    except:
+        print("  (no sys.version)")
+except:
+    print("no sys module")
+
+try:
+    import os
+    print("uname:")
+    print(os.uname())
+except:
+    try:
+        import uos
+        print("uname (uos):")
+        print(uos.uname())
+    except:
+        print("no os / uos")
+
+# ---- what is available ----
+# Each import stands alone: __import__ may not exist, and a loop
+# that used it would report every module missing if it did not.
+print("")
+print("-- modules --")
+
+try:
+    import math
+    print("math: yes")
+except:
+    print("math: NO")
+
+try:
+    import cmath
+    print("cmath: yes")
+except:
+    print("cmath: NO")
+
+try:
+    import random
+    print("random: yes")
+except:
+    print("random: NO")
+
+try:
+    import urandom
+    print("urandom: yes")
+except:
+    print("urandom: NO")
+
+try:
+    import hpprime
+    print("hpprime: yes")
+except:
+    print("hpprime: NO")
+
+try:
+    import arit
+    print("arit: yes")
+except:
+    print("arit: NO")
+
+try:
+    import linalg
+    print("linalg: yes")
+except:
+    print("linalg: NO")
+
+try:
+    import matplotl
+    print("matplotl: yes")
+except:
+    print("matplotl: NO")
+
+try:
+    import time
+    print("time: yes")
+except:
+    print("time: NO")
+
+try:
+    import gc
+    print("gc: yes")
+except:
+    print("gc: NO")
+
+# ---- two behaviours we have been bitten by ----
+print("")
+print("-- behaviour --")
+
+try:
+    s = ",".join(["1", "2", "3"])
+    print("join: ok -> " + s)
+except:
+    print("join: FAILS on a list of str")
+
+try:
+    print("format: " + "{0:.4f}".format(3.14159))
+except:
+    print("format: NO")
+
+print("")
+print("done - Esc to exit")
+#END
+
+EXPORT PyVer()
+BEGIN
+PRINT();
+PYTHON(pyver);
+END;

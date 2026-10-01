@@ -1,0 +1,689 @@
+// ============================================================
+// STUDRANGE - beta 12
+// Studentized range (Tukey q) - PPL engine
+// ============================================================
+// Author: Roger Metcalf, 2026.  Written with AI assistance
+//   (Anthropic Claude); concept, direction and all hardware
+//   testing by the author.
+//
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Share it, teach with
+//   it, adapt it for your own classroom.  Please keep this
+//   header with the file and credit the author if you pass it
+//   on or build on it.  Not for sale or commercial
+//   redistribution.  Provided as is, with no warranty: check
+//   any result you intend to rely on.
+//
+// Tested on an HP Prime G2 and G1, both running the 2026-09-09
+//   firmware, plus the desktop Virtual Calculator.
+//
+// Delivered as .txt on purpose: paste into the Connectivity Kit
+//   editor.  .hpprgm is binary and imports badly.
+//
+// Algorithm after Dunlap, Powell & Konnerth (1977),
+//   Behavior Research Methods & Instrumentation 9(4):373-375,
+//   with native distribution functions replacing their
+//   polynomial approximations and a u^2 substitution added.
+// Companion: StudRangePy_beta14 (MicroPython, much faster,
+//   and it handles df below 3, which this version cannot).
+// Run StudRange() from the Program Catalog.
+// beta 12: the plot takes touch -- tap or drag anywhere in the
+//   plot box to move the observed q, and the tail probability
+//   sweeps with your finger.  WAIT(-1) was already returning the
+//   touch list; the old code threw it away.
+// ============================================================
+// MAP OF THE FILE
+//
+//   BuildZ ........... cached standard-normal grid
+//   RngCDF ........... P(range of k standard normals <= x)
+//   LGAM ............. log-gamma, Lanczos (PPL has no LNGAMMA
+//                      outside the CAS; the Python twin just
+//                      calls lgamma and deletes this)
+//   SRCDF ............ studentized range CDF, double Simpson,
+//                      u^2 substitution in the outer integral
+//   SRCrit ........... critical value by bisection
+//   NiceNum, DotV, FmtF, FmtP, Drain, ShowRes .... helpers
+//   PvMode ........... menu 1: p-value from q
+//   CritMode ......... menu 2: critical value
+//   HSDMode .......... menu 3: Tukey HSD
+//   HelpMode ......... menu 5
+//   PlotMode ......... menu 4: the interactive distribution
+//                      plot, alpha ladder on up/down
+//
+// IF YOU ARE READING FOR THE TECHNIQUES: the u^2 substitution
+// in SRCDF is what makes low degrees of freedom work at all --
+// the 1977 original excluded them -- and PlotMode's cached
+// grid is what makes the arrow keys instant afterwards.
+// ============================================================
+
+// ============================================================
+// StudRange beta 12 — Studentized Range Distribution (Tukey q)
+// ============================================================
+// Modernized from: Dunlap, Powell & Konnerth (1977),
+//   "A FORTRAN IV function for calculating probabilities
+//    associated with the studentized range statistic,"
+//   Behavior Research Methods & Instrumentation 9(4), 373-375.
+//
+// What changed since 1977:
+//   * Hastings polynomial normal CDF  ->  native NORMALD_CDF
+//   * Hand-coded log-gamma ladder     ->  Lanczos LGAM (PPL has no LNGAMMA)
+//   * 32x32 Simpson grid              ->  64x32 (menu modes)
+//   * Table lookup                    ->  live plot, arrow keys
+//
+// Modes:  1 P-value from q      2 Critical value q(alpha)
+//         3 Tukey HSD           4 Distribution plot
+//
+// Exports: EP_QPVAL, EP_QCRIT, EP_HSD
+// Formulas verified against scipy.stats.studentized_range
+// (max |err| ~ 1.3E-5; classic Harter table values matched
+//  to all tabled decimals). See verify_tukeyq.py.
+// Valid for v >= 3 df (as in the 1977 program).
+//
+// R. Metcalf / Claude — EpiStats fleet satellite
+//
+// v1.1 (Sep 2026) — lessons carried over from NormExp beta 29.
+// The numerical engine (BuildZ, RngCDF, LGAM, SRCDF, SRCrit) is
+// unchanged apart from variable names.
+//   * Result screens are held with GETKEY, drained before and
+//     after.  v1.0 used WAIT(-1), which gives up after 60 s, so a
+//     result left up during a lecture went back to the menu.
+//   * Results print in Fixed mode (STRING mode 2): "3.5000", not
+//     "3.5".  Tiny p-values print as "< 0.00001", not zeros.
+//   * Plot mode: q moves in round steps on a NiceNum grid; the
+//     window widens to include an observed q beyond the tail;
+//     tick labels use decimals matched to the tick step.
+//   * df of 1 or 2 is still raised to 3, but now says so.
+//   * House rules: no single-letter or keyword names (e, key),
+//     CHOOSE index reset to 0 and tested, every drawing call names
+//     its GROB.
+// ============================================================
+
+// ---- prototypes ----
+BuildZ();
+RngCDF();
+SRCDF();
+SRCrit();
+NiceNum();
+DotV();
+FmtF();
+FmtP();
+Drain();
+ShowRes();
+PvMode();
+CritMode();
+HSDMode();
+PlotMode();
+HelpMode();
+
+// ---- file-scope state ----
+LOCAL gZN:={};   // z nodes for inner (range) integral
+LOCAL gZW:={};   // Simpson weight * h/3 * phi(z), precomputed
+LOCAL gZC:={};   // Phi(z) at nodes, precomputed
+LOCAL gNZ:=0;    // current inner resolution (# intervals)
+
+EXPORT EP_QPVAL:=0;
+EXPORT EP_QCRIT:=0;
+EXPORT EP_HSD:=0;
+
+// ============================================================
+// Core numerics
+// ============================================================
+
+// Precompute inner-integral node tables for nz intervals.
+// z range [-7,4] per Dunlap et al.; Phi(z) and phi(z)*w*h/3
+// are q-independent, so caching them cuts CDF cost ~in half.
+BuildZ(nz)
+BEGIN
+  LOCAL bzJ,bzH,zv,bzW;
+  IF nz==gNZ THEN RETURN 0; END;
+  gZN:=MAKELIST(0,X,1,nz+1);
+  gZW:=MAKELIST(0,X,1,nz+1);
+  gZC:=MAKELIST(0,X,1,nz+1);
+  bzH:=11/nz;
+  FOR bzJ FROM 0 TO nz DO
+    zv:=-7+bzJ*bzH;
+    IF bzJ==0 OR bzJ==nz THEN
+      bzW:=1;
+    ELSE
+      IF bzJ MOD 2==1 THEN bzW:=4; ELSE bzW:=2; END;
+    END;
+    gZN(bzJ+1):=zv;
+    gZW(bzJ+1):=bzW*bzH/3*NORMALD(0,1,zv);
+    gZC(bzJ+1):=NORMALD_CDF(0,1,zv);
+  END;
+  gNZ:=nz;
+  RETURN 0;
+END;
+
+// P_k(x): CDF of the range of k independent std normals
+// = k * INT phi(z)*[Phi(z+x)-Phi(z)]^(k-1) dz   (Simpson)
+RngCDF(rcX,rcK)
+BEGIN
+  LOCAL rcJ,acc,rcD;
+  IF rcX<=0 THEN RETURN 0; END;
+  acc:=0;
+  FOR rcJ FROM 1 TO gNZ+1 DO
+    rcD:=NORMALD_CDF(0,1,gZN(rcJ)+rcX)-gZC(rcJ);
+    IF rcD>0 THEN acc:=acc+gZW(rcJ)*rcD^(rcK-1); END;
+  END;
+  RETURN rcK*acc;
+END;
+
+// Log-gamma, Lanczos g=7 (LNGAMMA is CAS-only; not PPL).
+// Accurate to ~1E-13 for x >= 0.5 (we only need x >= 1.5).
+// 0.918938533204673 = 0.5*LN(2*pi).
+LGAM(lgX)
+BEGIN
+  LOCAL lgC,acc,lgT,lgJ;
+  lgC:={676.5203681218851,-1259.1392167224028,
+      771.32342877765313,-176.61502916214059,
+      12.507343278686905,-0.13857109526572012,
+      9.9843695780195716E-6,1.5056327351493116E-7};
+  lgX:=lgX-1; acc:=0.99999999999980993;
+  FOR lgJ FROM 1 TO 8 DO
+    acc:=acc+lgC(lgJ)/(lgX+lgJ);
+  END;
+  lgT:=lgX+7.5;
+  RETURN 0.918938533204673+(lgX+0.5)*LN(lgT)-lgT+LN(acc);
+END;
+
+// F(q): studentized range CDF, k means, v df.
+// F(q) = INT_0^inf f_s(s)*P_k(q*s) ds, s = sqrt(chi2_v / v);
+// density constant kept in log form (the 1977 underflow trick)
+// via LGAM (Lanczos). ns = outer Simpson intervals (even).
+// Substitution s = u^2 clusters nodes near s=0, which fixes
+// the deep-tail inaccuracy at low df that limited the 1977
+// program (they simply excluded df 1-2; we are exact from
+// df 3 up: qcrit err < 4E-4 even at alpha=.005, df=3).
+SRCDF(scQ,scK,scV,ns)
+BEGIN
+  LOCAL ulo,uhi,scH,lc,scJ,uv;
+  LOCAL sv,scW,acc;
+  IF scQ<=0 THEN RETURN 0; END;
+  // scV=0 means nu = infinity: s -> 1, so F(scQ) is the plain
+  // range CDF (Harter 1960 Table 1 case). Exact and instant.
+  IF scV==0 THEN RETURN RngCDF(scQ,scK); END;
+  uhi:=SQRT(1+9/SQRT(scV)); ulo:=1E-3; scH:=(uhi-ulo)/ns;
+  lc:=(1-scV/2)*LN(2)+(scV/2)*LN(scV)-LGAM(scV/2);
+  acc:=0;
+  FOR scJ FROM 0 TO ns DO
+    uv:=ulo+scJ*scH; sv:=uv*uv;
+    IF scJ==0 OR scJ==ns THEN
+      scW:=1;
+    ELSE
+      IF scJ MOD 2==1 THEN scW:=4; ELSE scW:=2; END;
+    END;
+    acc:=acc+scW*EXP(lc+(scV-1)*LN(sv)-scV*sv*sv/2)*2*uv*RngCDF(scQ*sv,scK);
+  END;
+  RETURN MIN(1,scH/3*acc);
+END;
+
+// Inverse: q with F(q)=1-a. Illinois-modified regula falsi
+// (~6-9 CDF evaluations vs ~16 for plain bisection).
+SRCrit(crA,crK,crV,ns)
+BEGIN
+  LOCAL crT,qlo,qhi,flo,fhi,qm;
+  LOCAL fm,it,side;
+  crT:=1-crA;
+  qlo:=0.6; flo:=SRCDF(qlo,crK,crV,ns)-crT;
+  qhi:=4;   fhi:=SRCDF(qhi,crK,crV,ns)-crT;
+  WHILE fhi<0 AND qhi<60 DO
+    qhi:=qhi*1.5; fhi:=SRCDF(qhi,crK,crV,ns)-crT;
+  END;
+  qm:=(qlo+qhi)/2; side:=0;
+  FOR it FROM 1 TO 40 DO
+    qm:=(qlo*fhi-qhi*flo)/(fhi-flo);
+    fm:=SRCDF(qm,crK,crV,ns)-crT;
+    IF ABS(fm)<1E-7 OR ABS(qhi-qlo)<5E-5 THEN BREAK; END;
+    IF fm*flo>0 THEN
+      qlo:=qm; flo:=fm;
+      IF side==-1 THEN fhi:=fhi/2; END;
+      side:=-1;
+    ELSE
+      qhi:=qm; fhi:=fm;
+      IF side==1 THEN flo:=flo/2; END;
+      side:=1;
+    END;
+  END;
+  RETURN qm;
+END;
+
+// ============================================================
+// Utilities (house standards)
+// ============================================================
+
+NiceNum(nnX,rnd)
+BEGIN
+  LOCAL nnE,nnF,nf;
+  IF nnX<=0 THEN RETURN 1; END;
+  nnE:=FLOOR(LOG(nnX));
+  nnF:=nnX/ALOG(nnE);
+  IF rnd THEN
+    IF nnF<1.5 THEN
+      nf:=1;
+    ELSE
+      IF nnF<3 THEN
+        nf:=2;
+      ELSE
+        IF nnF<7 THEN nf:=5; ELSE nf:=10; END;
+      END;
+    END;
+  ELSE
+    IF nnF<=1 THEN
+      nf:=1;
+    ELSE
+      IF nnF<=2 THEN
+        nf:=2;
+      ELSE
+        IF nnF<=5 THEN nf:=5; ELSE nf:=10; END;
+      END;
+    END;
+  END;
+  RETURN nf*ALOG(nnE);
+END;
+
+// Dotted vertical line, 3 px on / 3 px off (fleet style)
+DotV(dvG,px,y1,y2,dvC)
+BEGIN
+  LOCAL yy;
+  FOR yy FROM y1 TO y2 STEP 6 DO
+    LINE_P(dvG,px,yy,px,MIN(yy+3,y2),dvC);
+  END;
+END;
+
+// Fixed-decimal string (mode 2 keeps trailing zeros: 0.0500)
+FmtF(ffX,ffD)
+BEGIN
+  RETURN STRING(ffX,2,ffD);
+END;
+
+// Probability string with a floor: below 10^-d, Fixed mode would
+// print a row of zeros ("p = 0.00000" reads as impossible), so
+// report "< 0.00001" instead.  Same rule as PowerViz FMTP.
+FmtP(fpX,fpD)
+BEGIN
+  LOCAL fpT;
+  fpT:=10^(-fpD);
+  IF fpX>0 AND fpX<fpT THEN RETURN "< "+STRING(fpT,2,fpD); END;
+  RETURN STRING(fpX,2,fpD);
+END;
+
+// Empty the key buffer (the OK / Enter that closed a form or menu)
+Drain()
+BEGIN
+  LOCAL drK;
+  REPEAT drK:=GETKEY; UNTIL drK==-1;
+END;
+
+// Simple styled result screen (firebrick header, fleet style)
+ShowRes(ttl,lns)
+BEGIN
+  LOCAL srJ,kw;
+  RECT_P(G0,RGB(255,255,255));
+  RECT_P(G0,0,0,319,24,RGB(178,34,34),RGB(178,34,34));
+  TEXTOUT_P(ttl,G0,8,4,3,RGB(255,255,255));
+  FOR srJ FROM 1 TO SIZE(lns) DO
+    TEXTOUT_P(lns(srJ),G0,12,30+22*(srJ-1),3,RGB(0,0,0));
+  END;
+  TEXTOUT_P("Any key to return",G0,12,218,2,RGB(120,120,120));
+  // Hold until a real keypress.  WAIT(-1) times out after 60 s,
+  // which sent a result back to the menu mid-lecture.
+  Drain();
+  REPEAT kw:=GETKEY; UNTIL kw>-1;
+  Drain();
+END;
+
+// ============================================================
+// Modes
+// ============================================================
+
+PvMode()
+BEGIN
+  LOCAL tq,tk,tv,pv,fv;
+  tq:=3.5; tk:=3; tv:=12;
+  IF INPUT({tq,tk,tv},"P-value from q",
+     {"q:","k:","df:"},
+     {"Observed studentized range statistic",
+      "Number of means spanned (Tukey: all k)",
+      "df for MS error (≥3; 0 = ∞)"})==0 THEN RETURN 0; END;
+  tk:=MAX(2,IP(tk));
+  tv:=IP(MAX(0,tv));
+  IF tv>0 AND tv<3 THEN
+    MSGBOX("df below 3 is not supported: using df = 3.");
+    tv:=3;
+  END;
+  RECT_P(G0,RGB(255,255,255));
+  TEXTOUT_P("Computing (full precision)...",G0,50,110,3,RGB(0,0,160));
+  IF tk>10 THEN BuildZ(48); ELSE BuildZ(32); END;
+  fv:=SRCDF(tq,tk,tv,64);
+  pv:=MAX(0,1-fv);
+  EP_QPVAL:=pv;
+  ShowRes("P-value: Studentized Range",
+    {"q = "+FmtF(tq,4)+"   k = "+STRING(tk,2,0)+"   ν = "+IFTE(tv==0,CHAR(8734),STRING(tv,2,0)),
+     "",
+     "P(Q ≥ q) = "+FmtP(pv,5),
+     "F(q) = "+FmtF(fv,5),
+     "",
+     "Tukey HSD: reject pair if p ≤ α",
+     "Duncan: compare p to 1-(1-α)^(n-1)",
+     "Stored in EP_QPVAL"});
+  RETURN 0;
+END;
+
+CritMode()
+BEGIN
+  LOCAL ta,tk,tv,qc;
+  ta:=0.05; tk:=3; tv:=12;
+  IF INPUT({ta,tk,tv},"Critical value q(α)",
+     {"α:","k:","df:"},
+     {"Significance level (upper tail)",
+      "Number of means",
+      "df for MS error (≥3; 0 = ∞)"})==0 THEN RETURN 0; END;
+  ta:=MIN(0.5,MAX(1E-4,ta)); tk:=MAX(2,IP(tk));
+  tv:=IP(MAX(0,tv));
+  IF tv>0 AND tv<3 THEN
+    MSGBOX("df below 3 is not supported: using df = 3.");
+    tv:=3;
+  END;
+  RECT_P(G0,RGB(255,255,255));
+  TEXTOUT_P("Solving (full precision)...",G0,50,110,3,RGB(0,0,160));
+  IF tk>10 THEN BuildZ(48); ELSE BuildZ(32); END;
+  qc:=SRCrit(ta,tk,tv,64);
+  EP_QCRIT:=qc;
+  ShowRes("Critical value q(α)",
+    {"α = "+FmtF(ta,4)+"   k = "+STRING(tk,2,0)+"   ν = "+IFTE(tv==0,CHAR(8734),STRING(tv,2,0)),
+     "",
+     "q crit = "+FmtF(qc,4),
+     "",
+     "Reject H0 for a pair if q ≥ q crit",
+     "(matches Harter 1959 tables)",
+     "",
+     "Stored in EP_QCRIT"});
+  RETURN 0;
+END;
+
+HSDMode()
+BEGIN
+  LOCAL ta,tk,tm,tmse,tvo,vv;
+  LOCAL qc,hsd,xb;
+  ta:=0.05; tk:=4; tm:=8; tmse:=1; tvo:=0;
+  IF INPUT({ta,tk,tm,tmse,tvo},"Tukey HSD",
+     {"α:","k:","m:","MSE:","df:"},
+     {"Significance level",
+      "Number of group means",
+      "Sample size per group (equal n)",
+      "Mean square error from ANOVA",
+      "df error (0 = auto: k(m-1))"})==0 THEN RETURN 0; END;
+  ta:=MIN(0.5,MAX(1E-4,ta)); tk:=MAX(2,IP(tk)); tm:=MAX(2,IP(tm));
+  tmse:=MAX(1E-12,tmse);
+  IF tvo<3 THEN vv:=tk*(tm-1); ELSE vv:=IP(tvo); END;
+  IF vv<3 THEN
+    MSGBOX("df below 3 is not supported: using df = 3.");
+    vv:=3;
+  END;
+  RECT_P(G0,RGB(255,255,255));
+  TEXTOUT_P("Solving (full precision)...",G0,50,110,3,RGB(0,0,160));
+  IF tk>10 THEN BuildZ(48); ELSE BuildZ(32); END;
+  qc:=SRCrit(ta,tk,vv,64);
+  hsd:=qc*SQRT(tmse/tm);
+  EP_QCRIT:=qc; EP_HSD:=hsd;
+  xb:=CHAR(57344);
+  ShowRes("Tukey HSD",
+    {"α="+FmtF(ta,4)+"  k="+STRING(tk,2,0)+"  m="+STRING(tm,2,0)+"  ν="+STRING(vv,2,0),
+     "MSE = "+FmtF(tmse,4),
+     "",
+     "q crit = "+FmtF(qc,4),
+     "HSD = q·√(MSE/m) = "+FmtF(hsd,4),
+     "",
+     "|"+xb+"i - "+xb+"j| > HSD → significant",
+     "Stored in EP_QCRIT, EP_HSD"});
+  RETURN 0;
+END;
+
+HelpMode()
+BEGIN
+  LOCAL xb;
+  xb:=CHAR(57344);
+  ShowRes("About StudRange",
+    {"q = ("+xb+"max - "+xb+"min)/√(MSE/m)",
+     "Tukey HSD: n = total k means",
+     "Newman-Keuls: n = span of pair",
+     "Duncan: N-K q, α* = 1-(1-α)^(n-1)",
+     "Unequal n: use Tukey-Kramer",
+     "df = 0 → ν=∞ (plain range dist)",
+     "Verified vs Harter 1960 tables",
+     "Menu modes: 64x32 Simpson grid",
+     "Plot mode: fast grid (curve-level)",
+     "After Dunlap et al. 1977, BRMI 9(4)"});
+  RETURN 0;
+END;
+
+// ------------------------------------------------------------
+// Plot mode: density + CDF overlay, live q and alpha ladder
+// ------------------------------------------------------------
+PlotMode()
+BEGIN
+  LOCAL tk,tv,qo,nn,qmax,hq;
+  LOCAL pmJ,ymax;
+  LOCAL cdf,pdf,alad,ai,qc,pv;
+  LOCAL dq,pmKey;
+  LOCAL px1,px2,py1,py2,tgt,jj;
+  LOCAL fj,fr;
+  LOCAL px,qq,dd,yy,ij,ir;
+  LOCAL tx,tk2,gx,gy;
+  LOCAL pmMT,pmMX;
+  LOCAL nzp,nsp,s0,s1,ysp;
+
+  tk:=3; tv:=12; qo:=3.5;
+  IF INPUT({tk,tv,qo},"Distribution plot",
+     {"k:","df:","q obs:"},
+     {"Number of means (2-20)",
+      "df for MS error (≥3; 0 = ∞)",
+      "Observed q (0 = none)"})==0 THEN RETURN 0; END;
+  tk:=MAX(2,MIN(20,IP(tk)));
+  tv:=IP(MAX(0,tv));
+  IF tv>0 AND tv<3 THEN
+    MSGBOX("df below 3 is not supported: using df = 3.");
+    tv:=3;
+  END;
+  qo:=MAX(0,qo);
+
+  nn:=64; qmax:=6; ymax:=0;
+  alad:={0.10,0.05,0.025,0.01,0.005}; ai:=2;
+  px1:=34; px2:=306; py1:=34; py2:=200;
+
+  // ---- build CDF cache (adaptive fast grid) ----
+  // inner: k-dependent (sharper integrand for large k)
+  // outer: extra nodes for small df (heavy tail near s=0)
+  IF tk<=5 THEN nzp:=24; ELSE nzp:=32; END;
+  IF tk>10 THEN nzp:=48; END;
+  IF tv<8  THEN nsp:=64; ELSE nsp:=32; END;
+  BuildZ(nzp);
+  RECT_P(G0,RGB(255,255,255));
+  TEXTOUT_P("Building distribution cache...",G0,50,90,3,RGB(0,0,160));
+  RECT_P(G0,50,120,270,134,RGB(0,0,0),RGB(255,255,255));
+  WHILE SRCDF(qmax,tk,tv,nsp)<0.998 AND qmax<40 DO
+    qmax:=qmax*1.4;
+  END;
+  // widen to show an observed q out beyond the tail (AutoWin lesson)
+  IF qo*1.15>qmax THEN qmax:=MIN(60,qo*1.15); END;
+  hq:=qmax/nn;
+  cdf:=MAKELIST(0,X,1,nn+1);
+  pdf:=MAKELIST(0,X,1,nn+1);
+  FOR pmJ FROM 1 TO nn DO
+    cdf(pmJ+1):=SRCDF(pmJ*hq,tk,tv,nsp);
+    IF cdf(pmJ+1)<cdf(pmJ) THEN cdf(pmJ+1):=cdf(pmJ); END;
+    RECT_P(G0,51,121,51+IP(218*pmJ/nn),133,RGB(178,34,34),RGB(178,34,34));
+  END;
+  // pdf via central differences on the cache
+  FOR pmJ FROM 2 TO nn DO
+    pdf(pmJ):=(cdf(pmJ+1)-cdf(pmJ-1))/(2*hq);
+    IF pdf(pmJ)>ymax THEN ymax:=pdf(pmJ); END;
+  END;
+  pdf(1):=0; pdf(nn+1):=MAX(0,(cdf(nn+1)-cdf(nn))/hq);
+  // nice y-axis: NiceNum tick spacing, top = next nice multiple
+  // (typical curves peak near 0.42 -> ticks every 0.10, top 0.50)
+  ysp:=NiceNum(ymax/4,1);
+  ymax:=ysp*CEILING(ymax/ysp);
+  // round step for the arrow keys: qmax/100 pushed to 1, 2 or 5
+  // (v1.0 stepped by qmax/100 itself, giving q = 3.584 and so on)
+  dq:=NiceNum(qmax/100,1);
+  DIMGROB_P(G1,320,240);
+  pmKey:=0;
+
+  REPEAT
+    // q crit from cache: inverse interpolation on LN(1-F)
+    // (tail-accurate: survival is near-log-linear out there)
+    tgt:=1-alad(ai); jj:=1;
+    WHILE jj<nn AND cdf(jj+1)<tgt DO jj:=jj+1; END;
+    s0:=MAX(1E-12,1-cdf(jj)); s1:=MAX(1E-12,1-cdf(jj+1));
+    IF s1<s0 THEN
+      qc:=hq*((jj-1)+(LN(alad(ai))-LN(s0))/(LN(s1)-LN(s0)));
+    ELSE
+      qc:=hq*jj;
+    END;
+    // p at q obs: same log-survival interpolation (instant)
+    IF qo>0 THEN
+      fj:=MIN(nn,MAX(1,FLOOR(qo/hq)+1));
+      fr:=qo/hq-(fj-1);
+      s0:=MAX(1E-12,1-cdf(fj));
+      s1:=MAX(1E-12,1-cdf(MIN(nn+1,fj+1)));
+      pv:=EXP(LN(s0)+fr*(LN(s1)-LN(s0)));
+      pv:=MAX(0,MIN(1,pv));
+    ELSE
+      pv:=-1;
+    END;
+
+    // ---- draw (double-buffered on G1) ----
+    RECT_P(G1,0,0,319,239,RGB(255,255,255),RGB(255,255,255));
+
+    // alpha tail shade, pixel columns (before grid and curve)
+    FOR px FROM MAX(px1,IP(px1+(qc/qmax)*(px2-px1))) TO px2 DO
+      qq:=(px-px1)/(px2-px1)*qmax;
+      ij:=MIN(nn,MAX(1,FLOOR(qq/hq)+1));
+      ir:=qq/hq-(ij-1);
+      dd:=pdf(ij)+ir*(pdf(MIN(nn+1,ij+1))-pdf(ij));
+      yy:=py2-(dd/ymax)*(py2-py1);
+      IF yy<py2 THEN LINE_P(G1,px,IP(yy),px,py2,RGB(255,255,200)); END;
+    END;
+
+    // grid + x ticks (NiceNum)
+    tx:=NiceNum(qmax/6,1); tk2:=0;
+    WHILE tk2<=qmax DO
+      gx:=IP(px1+(tk2/qmax)*(px2-px1));
+      LINE_P(G1,gx,py1,gx,py2,RGB(225,225,225));
+      TEXTOUT_P(STRING(tk2,2,MAX(0,-FLOOR(LOG(tx)+0.000001))),G1,gx-6,py2+4,1,RGB(60,60,60));
+      tk2:=tk2+tx;
+    END;
+    // y grid at nice density ticks (left, navy side)
+    FOR pmJ FROM 0 TO IP(ymax/ysp+0.5) DO
+      gy:=IP(py2-(pmJ*ysp/ymax)*(py2-py1));
+      LINE_P(G1,px1,gy,px2,gy,RGB(225,225,225));
+      TEXTOUT_P(STRING(pmJ*ysp,2,MAX(0,-FLOOR(LOG(ysp)+0.000001))),G1,2,gy-4,1,RGB(60,60,60));
+    END;
+    // CDF 0-1 quarter labels (right, green) with small tick dashes
+    FOR pmJ FROM 0 TO 4 DO
+      gy:=IP(py2-pmJ*(py2-py1)/4);
+      LINE_P(G1,px2-4,gy,px2,gy,RGB(0,140,0));
+      TEXTOUT_P(STRING(pmJ/4,2,2),G1,px2+2,gy-4,1,RGB(0,120,0));
+    END;
+    // frame
+    LINE_P(G1,px1,py1,px2,py1,RGB(0,0,0));
+    LINE_P(G1,px1,py2,px2,py2,RGB(0,0,0));
+    LINE_P(G1,px1,py1,px1,py2,RGB(0,0,0));
+    LINE_P(G1,px2,py1,px2,py2,RGB(0,0,0));
+
+    // CDF overlay (green), 0-1 scaled to plot height
+    FOR pmJ FROM 1 TO nn DO
+      LINE_P(G1,
+        IP(px1+((pmJ-1)*hq/qmax)*(px2-px1)), IP(py2-cdf(pmJ)*(py2-py1)),
+        IP(px1+(pmJ*hq/qmax)*(px2-px1)),     IP(py2-cdf(pmJ+1)*(py2-py1)),
+        RGB(0,140,0));
+    END;
+
+    // density curve (navy)
+    FOR pmJ FROM 1 TO nn DO
+      LINE_P(G1,
+        IP(px1+((pmJ-1)*hq/qmax)*(px2-px1)), IP(py2-(pdf(pmJ)/ymax)*(py2-py1)),
+        IP(px1+(pmJ*hq/qmax)*(px2-px1)),     IP(py2-(pdf(pmJ+1)/ymax)*(py2-py1)),
+        RGB(0,0,160));
+    END;
+
+    // dotted verticals: q crit (orangered), q obs (firebrick)
+    DotV(G1,IP(px1+(qc/qmax)*(px2-px1)),py1,py2,RGB(255,69,0));
+    IF qo>0 AND qo<=qmax THEN
+      DotV(G1,IP(px1+(qo/qmax)*(px2-px1)),py1,py2,RGB(178,34,34));
+    END;
+
+    // header / footer
+    TEXTOUT_P("Studentized Range  k="+STRING(tk,2,0)+"  ν="+IFTE(tv==0,CHAR(8734),STRING(tv,2,0)),G1,4,1,2,RGB(0,0,0));
+    TEXTOUT_P("α="+FmtF(alad(ai),3)+"  q crit="+FmtF(qc,3),G1,4,13,2,RGB(255,69,0));
+    IF qo>0 THEN
+      TEXTOUT_P("q="+FmtF(qo,3)+"  p="+FmtP(pv,4),G1,180,13,2,RGB(178,34,34));
+    END;
+    TEXTOUT_P("←→ q   ↑↓ α   tap/drag: q   Esc exit",G1,4,222,2,RGB(100,100,100));
+    TEXTOUT_P("pdf",G1,px1+4,py1+3,1,RGB(0,0,160));
+    TEXTOUT_P("cdf",G1,px2-26,py1+14,1,RGB(0,140,0));
+
+    BLIT_P(G0,G1);
+
+    // ---- keys ----
+    pmKey:=WAIT(-1);
+    IF TYPE(pmKey)<>6 THEN
+      // next multiple of the step, so an odd q snaps onto the grid
+      IF pmKey==7  THEN qo:=MAX(0,ROUND((CEILING(qo/dq-0.000001)-1)*dq,6)); END;
+      IF pmKey==8  THEN qo:=MIN(qmax,ROUND((FLOOR(qo/dq+0.000001)+1)*dq,6)); END;
+      IF pmKey==2  THEN ai:=MIN(SIZE(alad),ai+1); END;
+      IF pmKey==12 THEN ai:=MAX(1,ai-1); END;
+    ELSE
+      // TOUCH.  WAIT(-1) hands back {type, x, y} for a screen event:
+      // type 0 is a new press, 1 is a drag.  Taking both means the
+      // observed q follows a finger dragged across the plot, which
+      // is the point -- p recomputes every frame, so the tail area
+      // sweeps live.  Earlier versions discarded this list.
+      pmMT:=pmKey(1);
+      pmMX:=pmKey(2);
+      IF pmMT==0 OR pmMT==1 THEN
+        IF pmMX>=px1 AND pmMX<=px2 AND pmKey(3)>=py1 AND pmKey(3)<=py2 THEN
+          qo:=ROUND((pmMX-px1)/(px2-px1)*qmax,6);
+          IF qo<0 THEN qo:=0; END;
+          IF qo>qmax THEN qo:=qmax; END;
+        END;
+      END;
+      pmKey:=0;
+    END;
+  UNTIL pmKey==4;
+
+  EP_QCRIT:=qc;
+  IF pv>=0 THEN EP_QPVAL:=pv; END;
+  RETURN 0;
+END;
+
+// ============================================================
+// Launcher (zero-argument)
+// ============================================================
+EXPORT StudRange()
+BEGIN
+  LOCAL ch,done;
+  done:=0;
+  WHILE done==0 DO
+    // index reset to 0 and tested itself; the return value is not
+    ch:=0;
+    CHOOSE(ch,"StudRange — Tukey q",
+      "P-value from q",
+      "Critical value q(α)",
+      "Tukey HSD calculator",
+      "Distribution plot",
+      "Help / About",
+      "Quit");
+    IF ch==0 THEN
+      done:=1;
+    ELSE
+      IF ch==1 THEN PvMode(); END;
+      IF ch==2 THEN CritMode(); END;
+      IF ch==3 THEN HSDMode(); END;
+      IF ch==4 THEN PlotMode(); END;
+      IF ch==5 THEN HelpMode(); END;
+      IF ch==6 THEN done:=1; END;
+    END;
+  END;
+END;

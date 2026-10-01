@@ -1,0 +1,2071 @@
+// ============================================================
+// NORM EXPLORER - beta 37
+// Normal distribution workbench for the HP Prime
+// ============================================================
+// Author: Roger Metcalf, 2026.  Written with AI assistance
+//   (Anthropic Claude); concept, direction and all hardware
+//   testing by the author.
+//
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Share it, teach with
+//   it, adapt it for your own classroom.  Please keep this
+//   header with the file and credit the author if you pass it
+//   on or build on it.  Not for sale or commercial
+//   redistribution.  Provided as is, with no warranty: check
+//   any result you intend to rely on.
+//
+// Tested on an HP Prime G2 and G1, both running the 2026-09-09
+//   firmware, plus the desktop Virtual Calculator.
+//
+// Delivered as .txt on purpose: paste into the Connectivity Kit
+//   editor.  .hpprgm is binary and imports badly.
+//
+// A companion user's guide is available separately.
+// Run NormExp() from the Program Catalog.
+// ============================================================
+// MAP OF THE FILE  (1970 lines; this is where things live)
+//
+//   Constants, session globals ............ top, after this block
+//   NiceNum .......... nice 1/2/5 tick steps, Heckbert
+//   AutoWin .......... plot window: mu +/- 4 sigma, widened to
+//                      include shading and the second curve
+//   SampBins ......... normal sampler, PPL, Marsaglia polar
+//   #PYTHON SAMPBINSPY  the same sampler in MicroPython
+//   ZPanel ........... full-screen result panel
+//   DrawFrame / ShowCurve .. draw from session state; hold
+//   Explorer ......... live keys and touch input
+//   SetDist .......... menu 1
+//   SetWin ........... menu 9: window, display toggles, reset
+//   ProbCalc ......... menu 3: four area types
+//   InvCalc .......... menu 4: percentile, critical, central
+//   ZSStore / ZSolve . menu 5: solve z=(x-mu)/sigma, any 3 of 4
+//   Compare2 ......... menu 7: second curve, Cohen's d
+//   Histo ............ menu 6 dispatcher
+//   BinData .......... shared: fit and bin any list
+//   DataLoad ......... read D1 (Statistics 1Var)
+//   TwoGroups ........ read C1/C2, pooled s, Cohen's d
+//   ResidLoad ........ least-squares residuals from C1/C2
+//   ZtoD2 ............ write z-scores back into D2
+//   NormPlot ......... hand off to Statistics 1Var
+//   AnimStd .......... menu 8: standardize animation
+//   DiagPage ......... which sampler actually ran
+//   HelpPages / ResetAll
+//   NormExp .......... the menu loop
+//   NormDraw ......... all the drawing, at the end of the file
+//
+// IF YOU ARE READING FOR THE TECHNIQUES, the parts worth your
+// time are: the PPL/Python bridge and its guard in Histo (why
+// IFERR alone is not enough); the off-screen compose-and-blit
+// in NormDraw; AutoWin's two-axis fit test for the reference
+// curve; and the drain-wait-drain key idiom in ZPanel.
+// ============================================================
+
+// =====================================================
+// NORM EXPLORER — beta 39
+// NORMAL DISTRIBUTION WORKBENCH
+// HP Prime (PPL + optional MicroPython sampler)
+// =====================================================
+// v2.1: plot window auto-scales; any μ and any σ > 0 work.
+// beta 30: the 68-95-99.7 readout is suppressed while the second
+//       curve is on — its text block and the mu2 label occupied
+//       the same corner, and those ranges describe ONE curve
+//       anyway.  The bands themselves still shade.
+// beta 37: the Normal-probability hand-off no longer sets H1Type
+//       or calls SetSample.  Those are Statistics 1Var app
+//       variables: HP's example sets them from inside a
+//       Statistics-derived app, where they are in scope, but a
+//       standalone program cannot see them and the paste fails
+//       with a syntax error.  D1 is global, so simply launching
+//       the app shows the data; the student picks the plot type,
+//       which is the step Technology Corner 6 asks for anyway.
+// beta 36: menu 6 becomes a DATA module that links to the built-in
+//       statistics apps: load D1, compare two groups from C1/C2
+//       with a pooled-s Cohen's d, run regression residuals through
+//       the normality view, write z-scores back to D2, and hand off
+//       to the Statistics 1Var app for the Normal probability
+//       plot (see beta 37 for what that hand-off can and cannot
+//       do from a standalone program).
+// beta 39: performance and clarity, from an external code review.
+//       (a) The SECOND curve's pdf is cached per pixel column, as
+//       the main one already was.  It was being recomputed with
+//       NORMALD once per pixel in BOTH the overlap shading and the
+//       trace — 544 calls a frame, the only per-frame cost likely
+//       to be felt on a G1 during an Explorer drag.
+//       (b) Histogram bar heights are computed once, not twice.
+//       (c) The Explorer refits NE_YMX when sigma changes, so a big
+//       sigma change no longer clips the peak or leaves it floating
+//       low.  The x-window stays frozen, which is the whole point.
+//       (d) NiceNum's CASE semantics are spelled out.
+//       (e) ResidLoad separates "every x identical" from "nearly
+//       collinear".
+//       (f) Clearing a custom window now says so.
+// beta 37a: the "reference does not fit" notice moves out of the
+//       plot box to just under the title.  At y=195 it sat on top
+//       of the distribution it was describing.
+// beta 35: (a) YOUR OWN DATA — menu 6 can read list D1 from the
+//       Statistics 1Var app, fit N(x-bar, s) to it and draw it
+//       against the curve.  Same workflow as Technology Corner 6,
+//       so it pairs with the Normal probability plot students
+//       already make.  (b) TOUCH — tapping the plot in the
+//       Explorer sets the cut point directly; drag and the
+//       probability sweeps live.  Plot geometry is now in named
+//       constants so touch and drawing agree on where the box is.
+// beta 34: review fixes.  (a) The bin count is one named constant,
+//       NBINS, instead of 32 scattered through five routines and
+//       the Python.  (b) The bridge result is validated by TRYING
+//       to read it rather than by testing TYPE, one less firmware
+//       assumption.  (c) A suppressed N(0,1) reference now says so
+//       on screen instead of looking like a dead key.  (d) A new
+//       diagnostic page reports sampler status.
+// beta 32c: d moves onto its own line under mu2, and the whole
+//       left-hand readout column is now laid out by a running y
+//       cursor (ndRY) instead of fixed pixel rows — so lines that
+//       appear and disappear no longer collide with what follows.
+// beta 32b: x-bar and s are stacked on separate lines, mirroring
+//       the mu / sigma pair above them — so the sample statistic
+//       sits directly under the population parameter it estimates.
+// beta 32: the Python sampler's hand-off no longer uses str.join
+//       or repr().  On the G2, join raised "expects a list of
+//       str/bytes objects consistent with self object" every run,
+//       so the Python path had NEVER executed — the guard caught
+//       it and the slow PPL sampler drew every histogram.  The
+//       string is now built by concatenation, and the two floats
+//       are formatted fixed-point so no scientific notation can
+//       reach PPL's parser.
+// beta 31: sigma-squared dropped from the plot.  Variance is worth
+//       discussing but it is derivable from the sigma right above
+//       it, and the corner is better spent on the numbers that
+//       cannot be worked out by eye.
+// beta 29: changing mu or sigma now also clears the comparison
+//       curve, for the same reason it clears the shading — a mu2
+//       set against the old distribution is meaningless against
+//       the new one.  The second curve still persists into the
+//       Explorer, where moving mu against a fixed mu2 is the
+//       point.
+// beta 28: the comparison curve gets its own green line at mu2,
+//       marked with a subscript 2.  The GAP between the two lines
+//       is what Cohen's d measures, so the picture now shows the
+//       quantity the readout reports.
+// beta 27: x-bar is CHAR(57344) — HP put x-bar (U+E000) and p-hat
+//       (U+E001) in the font's private-use area as single glyphs.
+//       That replaces the hand-drawn bar of beta 23-26, which is
+//       still in the history if this ever fails to render.
+// beta 26: the Explorer steps mu and sigma in ROUND numbers.  The
+//       old rule (mu by sigma/4, sigma by x1.1) gave 3.75 and
+//       16.5 on N(100,15); values now snap to a NiceNum grid, so
+//       the readouts stay legible from the back of a room.
+// beta 22/23: the histogram readout shows a proper x-bar.  The
+//       combining macron U+0304 does NOT compose in the plot font —
+//       it lands to the RIGHT of the x instead of above it — so the
+//       label prints a plain x and the bar is drawn as a short line.
+//       Two constants position it; see the comment at the readout.
+// beta 21: menu 9 becomes "Plot window & display" — the band and
+//       reference-curve toggles are reachable there instead of only
+//       from inside the Explorer, and a reset returns everything to
+//       N(0,1) without quitting.
+// beta 20: the sample histogram now reports the sample's own
+//       x-bar and s beside the population μ and σ that generated
+//       it — the statistics differ on every draw, which is the
+//       whole point of showing them.
+// v2.2: NO single-letter lowercase variable names anywhere.
+//       They collide with the CAS globals — x is the CAS's
+//       default symbolic variable and i is the imaginary
+//       unit — which let a stale CAS value leak into INPUT
+//       prefills.  Every local now carries a routine prefix.
+//
+// MAIN MENU
+//   1  Set μ and σ           the session distribution
+//   2  Explore the curve     live keys: ←→ μ, ↑↓ σ,
+//                            + bands, − ref, 0 recentre
+//   3  Probability from x    P(X<x), P(X>x), between, outside
+//   4  x from probability    percentile, critical value,
+//                            central C% interval
+//   5  Z-formula solver      enter any 3 of z,x,μ,σ → 4th
+//   6  Sample histogram      n = 200 / 1000 / 5000 overlay,
+//                            with the sample's own x-bar and s
+//   7  Compare curves        second curve + Cohen's d
+//   8  Standardize animation morph N(μ,σ) → N(0,1)
+//   9  Plot window & display  auto ±4σ, wide ±6σ or custom;
+//                            band and reference toggles; reset
+//  10  Help
+//
+// Every calculation panel ends with one keypress that shows
+// the result SHADED ON THE CURVE, then returns to the menu.
+//
+// HOME EXPORTS (usable after any calculation):
+//   NE_Z  last z-score      NE_X  last raw score
+//   NE_P  last probability
+// =====================================================
+
+// ---- forward declarations (private subs called before definition) ----
+NormDraw();
+AutoWin();
+DrawFrame();
+ShowCurve();
+Explorer();
+SetDist();
+SetWin();
+ProbCalc();
+InvCalc();
+ZSolve();
+Compare2();
+Histo();
+DataLoad();
+BinData();
+TwoGroups();
+ResidLoad();
+ZtoD2();
+NormPlot();
+AnimStd();
+HelpPages();
+ZPanel();
+SampBins();
+DiagPage();
+ResetAll();
+ZSStore();
+
+// ---- session state: the distribution ----
+EXPORT NE_MU, NE_SG;             // the distribution N(μ,σ)
+EXPORT NE_XM, NE_XO, NE_XB;      // shading: mode, bound a, bound b
+EXPORT NE_CFG;                   // {bands, refcurve, μ₂, curve2 on}
+
+// ---- session state: the plot window ----
+// NE_WA = 4  auto, μ ± 4σ        NE_WA = 6  wide, μ ± 6σ
+// NE_WA = 0  custom, NE_WLO/NE_WHI are left exactly as set
+EXPORT NE_WA, NE_WLO, NE_WHI, NE_YMX;
+
+// ---- histogram geometry ----
+// One place to change the bin count.  The bridge list is NBINS
+// counts followed by the sum and the sum of squares, so it always
+// has NBINS + 2 elements.
+EXPORT NBINS := 32;
+
+// ---- plot box, in screen pixels ----
+// Shared so that touch handling and drawing cannot disagree about
+// where the plot actually is.
+EXPORT NPLFT := 38;
+EXPORT NPRGT := 310;
+EXPORT NPTOP := 40;
+EXPORT NPBOT := 210;
+
+// ---- Statistics 1Var plot type, for reference ----
+// The User Guide lists plot types in order as Histogram, Box and
+// whisker, Normal probability, ... so Normal probability is 3.
+// NOT currently used: H1Type is not reachable from a standalone
+// program.  Kept here for the day a way is found to set it.
+EXPORT NPPTYPE := 3;
+
+// ---- session state: the histogram ----
+// Bins are NBINS intervals of width NE_HW starting at NE_HLO,
+// chosen to match the distribution, NOT the plot window — so
+// the bars stay put if the window is later widened or zoomed.
+EXPORT NE_BINS, NE_HN, NE_HLO, NE_HW;
+
+// ---- the drawn sample's own statistics ----
+// x-bar and s computed from EVERY value drawn, including any that
+// fell outside the binned range, so they are the sample's exact
+// statistics and not an approximation recovered from the bars.
+EXPORT NE_HXB, NE_HS;
+
+// ---- which sampler actually ran last ----
+// 0 = none yet, 1 = MicroPython, 2 = PPL fallback.  Recorded so the
+// diagnostics page can report it: for eleven builds the Python path
+// failed silently and the PPL fallback drew every histogram, with
+// nothing on screen to say so.
+EXPORT NE_SRC;
+
+// ---- is the histogram the user's own data? ----
+// 0 = a simulated sample, 1 = values read from list D1.  Only the
+// labelling differs; the bars and statistics are computed the same
+// way either way.
+EXPORT NE_HREAL;
+
+// ---- session state: the z-formula solver ----
+// {x, mu, sigma, z} — the solver's own four values, kept
+// across visits so a student can solve for one unknown and
+// then switch the unknown without retyping the other three.
+// Deliberately separate from NE_MU / NE_SG: the solver is an
+// algebra tool and does not disturb the plotted distribution.
+EXPORT NE_ZS;
+
+// ---- Home-visible results of the last calculation ----
+EXPORT NE_Z, NE_X, NE_P;
+
+// ---- bridge variables for the MicroPython sampler ----
+EXPORT NEpmu, NEpsg, NEpn, NEplo, NEpw, NEpout;
+
+EXPORT NBLACK := #000000h;
+EXPORT NWHITE := #FFFFFFh;
+EXPORT NBLUE  := #0060C0h;
+EXPORT NGRAY  := #909090h;
+EXPORT NGRID  := #E0E0E0h;   // light grid lines
+EXPORT NB1    := #9EC9F0h;   // ±1σ band (darkest)
+EXPORT NB2    := #C4DFF6h;   // ±2σ band
+EXPORT NB3    := #E2EFFAh;   // ±3σ band (lightest)
+EXPORT NTAIL  := #F4B183h;   // tail shading (orange)
+EXPORT NRED   := #C00000h;   // marker lines / solved values
+EXPORT NGRN   := #208020h;   // second curve / histogram
+EXPORT NOVL   := #C8E6C8h;   // overlap shading (light green)
+// ---- which key-help footer the next frame should carry ----
+// 0 = a result view: the only thing any key does is return
+// 1 = the Explorer: the live arrow/toggle keys are live
+// 2 = the animation: no keys at all, so no footer
+EXPORT NE_KH;
+
+EXPORT NMEAN  := #003D7Ah;   // solid vertical line at the mean
+EXPORT NPANL  := #F4F8FCh;   // result-panel fill
+
+
+// =====================================================
+//  "Nice" number for axis ticks (internal helper).
+//
+//  On the CASE below: the FIRST matching IF wins and nothing
+//  after it runs.  PPL's CASE does not fall through the way a
+//  C switch does, so the tests can be written as plain upper
+//  bounds in increasing order.  DEFAULT is the else branch.
+// =====================================================
+NiceNum(nnval, nnround)
+BEGIN
+  LOCAL nnexp, nnf, nnnf;
+  IF nnval <= 0 THEN RETURN 1; END;
+  nnexp := FLOOR(LOG(nnval));
+  nnf := nnval / 10^nnexp;
+  IF nnround THEN
+    CASE
+      IF nnf < 1.5 THEN nnnf := 1; END;
+      IF nnf < 3 THEN nnnf := 2; END;
+      IF nnf < 7 THEN nnnf := 5; END;
+      DEFAULT nnnf := 10;
+    END;
+  ELSE
+    CASE
+      IF nnf <= 1 THEN nnnf := 1; END;
+      IF nnf <= 2 THEN nnnf := 2; END;
+      IF nnf <= 5 THEN nnnf := 5; END;
+      DEFAULT nnnf := 10;
+    END;
+  END;
+  RETURN nnnf * 10^nnexp;
+END;
+
+
+// =====================================================
+//  AUTOWIN — recompute the plot window from session state.
+//
+//  Called before every draw.  In auto mode the window is
+//  μ ± 4σ (or ± 6σ in wide mode), then widened as needed to
+//  include the second curve and any shading bounds, so a
+//  critical value out at z = 3.5 is never off the edge.
+//  In custom mode (NE_WA = 0) the x-range is left alone and
+//  only the height is refreshed.
+// =====================================================
+AutoWin()
+BEGIN
+  LOCAL awlo, awhi, awsp, awpad;
+
+  NE_YMX := NORMALD(NE_MU, NE_SG, NE_MU) * 1.15;
+
+  IF NE_WA == 0 THEN RETURN; END;          // custom: keep x-range
+
+  awsp := NE_WA;
+  awlo := NE_MU - awsp * NE_SG;
+  awhi := NE_MU + awsp * NE_SG;
+  awpad := 0.6 * NE_SG;
+
+  // include the comparison curve
+  IF NE_CFG(4) == 1 THEN
+    awlo := MIN(awlo, NE_CFG(3) - awsp * NE_SG);
+    awhi := MAX(awhi, NE_CFG(3) + awsp * NE_SG);
+  END;
+
+  // include whatever is being shaded
+  IF NE_XM > 0 THEN
+    awlo := MIN(awlo, NE_XO - awpad);
+    awhi := MAX(awhi, NE_XO + awpad);
+    IF NE_XM >= 3 THEN
+      awlo := MIN(awlo, NE_XB - awpad);
+      awhi := MAX(awhi, NE_XB + awpad);
+    END;
+  END;
+
+  NE_WLO := awlo;
+  NE_WHI := awhi;
+END;
+
+
+// =====================================================
+//  SAMPLER (PPL) — Marsaglia polar method, no trig, so it
+//  works in any angle mode.  Returns NBINS BIN COUNTS over the
+//  interval starting at sbLO with bin width sbW.
+// =====================================================
+SampBins(sbMU, sbSG, sbN, sbLO, sbW)
+BEGIN
+  LOCAL sbMade, sbV1, sbV2, sbS, sbF;
+  LOCAL sbB, sbCnt, sbVal;
+  LOCAL sbSum, sbSq;
+  sbCnt := MAKELIST(0, K, 1, NBINS+2, 1);   // counts, then sum and sum sq
+  sbSum := 0; sbSq := 0;
+  sbMade := 0;
+  WHILE sbMade < sbN DO
+    REPEAT
+      sbV1 := 2*RANDOM - 1;
+      sbV2 := 2*RANDOM - 1;
+      sbS := sbV1*sbV1 + sbV2*sbV2;
+    UNTIL sbS > 0 AND sbS < 1;
+    sbF := √(-2*LN(sbS)/sbS);
+    // first of the pair
+    sbVal := sbMU + sbSG*sbV1*sbF;
+    sbSum := sbSum + sbVal; sbSq := sbSq + sbVal*sbVal;
+    sbB := FLOOR((sbVal - sbLO) / sbW) + 1;
+    IF sbB >= 1 AND sbB <= NBINS THEN sbCnt(sbB) := sbCnt(sbB) + 1; END;
+    sbMade := sbMade + 1;
+    // second of the pair, only if we still need it (handles odd n)
+    IF sbMade < sbN THEN
+      sbVal := sbMU + sbSG*sbV2*sbF;
+      sbSum := sbSum + sbVal; sbSq := sbSq + sbVal*sbVal;
+      sbB := FLOOR((sbVal - sbLO) / sbW) + 1;
+      IF sbB >= 1 AND sbB <= NBINS THEN sbCnt(sbB) := sbCnt(sbB) + 1; END;
+      sbMade := sbMade + 1;
+    END;
+  END;
+  sbCnt(NBINS+1) := sbSum; sbCnt(NBINS+2) := sbSq;
+  RETURN sbCnt;
+END;
+
+
+// =====================================================
+//  SAMPLER (MicroPython) — same algorithm, same bins.
+//  Substantially faster than the PPL loop, which is what
+//  makes n = 5000 usable.  Only NBINS integers cross back into
+//  PPL, so the bridge cost does not grow with n.
+//
+//  Bridge: PPL writes NEpmu / NEpsg / NEpn / NEplo / NEpw,
+//  Python reads them with hpprime.eval and writes NEpout
+//  back the same way.  The caller wraps this in IFERR and
+//  falls back to SampBins, so the app still runs on firmware
+//  without Python.
+// =====================================================
+#PYTHON SAMPBINSPY
+import math
+from hpprime import eval as ppl
+
+# Not every Prime firmware ships the 'random' module — some builds
+# raise ImportError on it, which used to kill this script silently.
+# Fall back to a self-contained xorshift32 generator, seeded from
+# PPL's own RANDOM so successive samples differ.  Plenty of quality
+# for a classroom histogram, and it depends on nothing.
+try:
+    from random import random as _rand
+except ImportError:
+    _state = [0]
+
+    def _seed():
+        sd = 0
+        for _ in range(3):
+            sd = (sd * 65536 + int(float(ppl("RANDOM")) * 65536)) & 0xFFFFFFFF
+        if sd == 0:
+            sd = 2463534242
+        _state[0] = sd
+
+    def _rand():
+        st = _state[0]
+        st ^= (st << 13) & 0xFFFFFFFF
+        st ^= st >> 17
+        st ^= (st << 5) & 0xFFFFFFFF
+        _state[0] = st
+        return st / 4294967296.0
+
+    _seed()
+
+def main():
+    mu  = float(ppl("NEpmu"))
+    sg  = float(ppl("NEpsg"))
+    n   = int(ppl("NEpn"))
+    nb  = int(ppl("NBINS"))
+    blo = float(ppl("NEplo"))
+    bw  = float(ppl("NEpw"))
+
+    cnt = [0] * nb
+    tot = 0.0      # running sum, for x-bar
+    tot2 = 0.0     # running sum of squares, for s
+    made = 0
+    while made < n:
+        # Marsaglia polar: reject until the point lands in the unit disc
+        while True:
+            v1 = 2.0 * _rand() - 1.0
+            v2 = 2.0 * _rand() - 1.0
+            s = v1 * v1 + v2 * v2
+            if 0.0 < s < 1.0:
+                break
+        f = math.sqrt(-2.0 * math.log(s) / s)
+        for v in (v1, v2):
+            if made >= n:
+                break
+            val = mu + sg * v * f
+            tot += val
+            tot2 += val * val
+            b = int(math.floor((val - blo) / bw))
+            if 0 <= b < nb:
+                cnt[b] += 1
+            made += 1
+
+    # Hand back nb + 2 values: the bin counts, then the sum and the
+    # sum of squares, so PPL can form x-bar and s exactly.
+    #
+    # Built by concatenation rather than ",".join(): on the G2 that
+    # join raises "expects a list of str/bytes objects consistent
+    # with self object", which killed this script silently on every
+    # run.  Concatenation is universally supported.
+    #
+    # The floats are written fixed-point, not with repr(), because
+    # repr can produce exponent notation that PPL's parser may not
+    # accept on the way back in.
+    out = ""
+    for c in cnt:
+        out += str(c) + ","
+    out += "%.6f" % tot
+    out += ","
+    out += "%.6f" % tot2
+    ppl("NEpout:={" + out + "}")
+
+main()
+#END
+
+
+// =====================================================
+//  RESULT PANEL
+//  zpSh = 1: footer promises the shaded-curve view next
+//  zpSh = 0: footer returns straight to the menu
+// =====================================================
+ZPanel(zpTtl, zpA, zpB, zpC, zpD, zpSh)
+BEGIN
+  LOCAL zpK;
+  RECT_P(0, 0, 319, 239, NWHITE);
+  RECT_P(14, 28, 306, 202, NBLACK, NPANL);
+  TEXTOUT_P(zpTtl, 26, 38, 2, NBLUE);
+  LINE_P(26, 60, 294, 60, NGRAY);
+  TEXTOUT_P(zpA, 30, 72,  2, NBLACK);
+  TEXTOUT_P(zpB, 30, 96,  2, NBLACK);
+  TEXTOUT_P(zpC, 30, 120, 2, NRED);
+  TEXTOUT_P(zpD, 30, 150, 1, NGRAY);
+  IF zpSh == 1 THEN
+    TEXTOUT_P("Any key: see it on the curve", 30, 180, 1, NGRAY);
+  ELSE
+    TEXTOUT_P("Any key: back to the menu", 30, 180, 1, NGRAY);
+  END;
+  // Hold the panel until the user actually presses something.
+  // FREEZE alone does NOT do this: it only suppresses the screen
+  // refresh when the PROGRAM ends, so mid-program the panel was
+  // being repainted by the next CHOOSE before it could be read.
+  REPEAT zpK := GETKEY; UNTIL zpK == -1;   // drain the OK press from INPUT
+  REPEAT zpK := GETKEY; UNTIL zpK > -1;    // now wait for a real keypress
+  REPEAT zpK := GETKEY; UNTIL zpK == -1;   // drain that one too
+END;
+
+
+// =====================================================
+//  DRAW ONE FRAME from the session state (window refreshed
+//  first), then optionally wait for a keypress.
+// =====================================================
+DrawFrame()
+BEGIN
+  AutoWin();
+  NormDraw(NE_MU, NE_SG, NE_CFG(1), NE_CFG(2), NE_XM, NE_XO, NE_XB,
+           NE_CFG(3), NE_CFG(4), NE_BINS, NE_HN);
+END;
+
+ShowCurve()
+BEGIN
+  LOCAL scK;
+  REPEAT scK := GETKEY; UNTIL scK == -1;   // drain any leftover press first
+  NE_KH := 0;                              // any key just returns here
+  DrawFrame();
+  REPEAT scK := GETKEY; UNTIL scK > -1;    // hold until any key
+  REPEAT scK := GETKEY; UNTIL scK == -1;   // flush it
+END;
+
+
+// =====================================================
+//  MODULE 2 — EXPLORER
+//
+//  The window is FROZEN on entry at μ ± 6σ of the starting
+//  distribution.  That is deliberate: if the window tracked μ
+//  the bell would sit dead centre forever and sliding the mean
+//  would look like nothing was happening.  With the window
+//  held, μ visibly slides and σ visibly reshapes.
+//
+//  Step sizes scale with σ, so the arrows feel the same on
+//  N(0,1) and on N(500,100).  Press 0 to re-centre.
+// =====================================================
+Explorer()
+BEGIN
+  LOCAL exK, exDone, exS0, exStep, exSav, exSStep;
+  LOCAL exM, exM1;
+  exDone := 0;
+  exS0 := NE_SG;
+  exSav := NE_WA;
+  // Round step sizes, scaled to the distribution: sigma/4 and
+  // sigma/10 pushed to the nearest 1, 2 or 5.  On N(100,15) that
+  // is 5 and 2, so mu runs 100, 105, 110 and sigma 15, 16, 18 —
+  // instead of the old 3.75 and 16.5.
+  exStep := NiceNum(exS0/4, 1);
+  exSStep := NiceNum(exS0/10, 1);
+
+  // freeze a wide window around the starting distribution
+  NE_WA := 6; AutoWin();
+  NE_WA := 0;                            // custom: AutoWin now leaves x alone
+  NE_YMX := NORMALD(NE_MU, NE_SG, NE_MU) / 0.62;   // headroom for a taller peak
+
+  NE_KH := 1;                              // live arrow/toggle keys
+  REPEAT exK := GETKEY; UNTIL exK == -1;   // drain the menu's Enter press
+  REPEAT UNTIL MOUSE(1) == -1;             // and any pending screen touch
+  REPEAT
+    NormDraw(NE_MU, NE_SG, NE_CFG(1), NE_CFG(2), NE_XM, NE_XO, NE_XB,
+             NE_CFG(3), NE_CFG(4), NE_BINS, NE_HN);
+    // Wait for EITHER a key or a screen touch.  Polling both keeps
+    // the arrow keys working exactly as before while making the
+    // plot itself directly touchable.
+    exK := -1;
+    REPEAT
+      exK := GETKEY;
+      exM := MOUSE;
+      exM1 := exM(1);
+    UNTIL exK > -1 OR SIZE(exM1) > 0;
+
+    // A tap inside the plot box sets the cut point.  Holding and
+    // dragging repeats this every frame, so the probability sweeps
+    // as the finger moves — the clearest demonstration in the app.
+    IF SIZE(exM1) > 0 THEN
+      IF exM1(1) >= NPLFT AND exM1(1) <= NPRGT
+         AND exM1(2) >= NPTOP AND exM1(2) <= NPBOT THEN
+        NE_XO := NE_WLO
+          + (exM1(1) - NPLFT) / (NPRGT - NPLFT) * (NE_WHI - NE_WLO);
+        IF NE_XM == 0 OR NE_XM >= 3 THEN NE_XM := 1; END;
+      END;
+      exK := -1;                           // a touch is not a keypress
+    END;
+
+    IF exK == 4 OR exK == 30 THEN exDone := 1; END;          // Esc / Enter
+    // Each press moves to the next multiple of the step rather than
+    // adding to whatever is there, so an odd starting value (847)
+    // snaps onto the grid (850) and stays round from then on.
+    IF exK == 7 THEN                                         // Left
+      NE_MU := ROUND((CEILING(NE_MU/exStep - 0.000001) - 1) * exStep, 6);
+    END;
+    IF exK == 8 THEN                                         // Right
+      NE_MU := ROUND((FLOOR(NE_MU/exStep + 0.000001) + 1) * exStep, 6);
+    END;
+    // Sigma changes the PEAK HEIGHT, so the y-scale has to follow
+    // or a grown curve clips and a shrunk one floats low in the
+    // box.  The x-window stays frozen either way -- that is what
+    // makes moving mu look like motion.  Mu needs no refit: a
+    // normal's peak height does not depend on it.
+    IF exK == 2 THEN                                         // Up
+      NE_SG := ROUND((FLOOR(NE_SG/exSStep + 0.000001) + 1) * exSStep, 6);
+      NE_YMX := NORMALD(NE_MU, NE_SG, NE_MU) / 0.62;
+    END;
+    IF exK == 12 THEN                                        // Down
+      NE_SG := MAX(exSStep,
+        ROUND((CEILING(NE_SG/exSStep - 0.000001) - 1) * exSStep, 6));
+      NE_YMX := NORMALD(NE_MU, NE_SG, NE_MU) / 0.62;
+    END;
+    IF exK == 50 THEN NE_CFG(1) := 1 - NE_CFG(1); END;       // + bands
+    IF exK == 45 THEN NE_CFG(2) := 1 - NE_CFG(2); END;       // − ref curve
+    IF exK == 42 THEN                                        // 0: re-centre
+      NE_WA := 6; AutoWin(); NE_WA := 0;
+      NE_YMX := NORMALD(NE_MU, NE_SG, NE_MU) / 0.62;
+      exS0 := NE_SG;                    // re-fit the steps to the
+      exStep := NiceNum(exS0/4, 1);     // distribution as it stands
+      exSStep := NiceNum(exS0/10, 1);   // now, not as it started
+    END;
+  UNTIL exDone == 1;
+
+  NE_KH := 0;                              // back to result-view help
+  NE_WA := exSav;                          // restore the menu's window mode
+  AutoWin();
+END;
+
+
+// =====================================================
+//  MODULE 1 — SET THE SESSION DISTRIBUTION
+//  Any μ, any σ > 0.  The window follows automatically.
+// =====================================================
+SetDist()
+BEGIN
+  LOCAL sdMU, sdSG;
+  sdMU := NE_MU; sdSG := NE_SG;
+  IF INPUT({sdMU, sdSG}, "Session Distribution", {"μ:", "σ:"},
+    {"Mean — any value, e.g. 100 for IQ",
+     "Std dev, must be > 0, e.g. 15"}) == 1 THEN
+    IF sdSG <= 0 THEN
+      MSGBOX("σ must be positive.");
+      RETURN;
+    END;
+    NE_MU := sdMU; NE_SG := sdSG;
+    // Shading, sample and comparison curve all belonged to the old
+    // distribution: mu2 = 1 is a sensible partner for N(0,1) and
+    // nonsense beside N(100,15).  Clear all three together.
+    NE_XM := 0;
+    NE_HN := 0; NE_BINS := MAKELIST(0, K, 1, NBINS+2, 1);
+    NE_HXB := 0; NE_HS := 0;
+    NE_CFG(4) := 0; NE_CFG(3) := sdMU + sdSG;
+    // A custom window was fitted to the OLD distribution, so it is
+    // wrong for the new one and we fall back to auto.  Say so:
+    // silently discarding a window the user set is surprising.
+    IF NE_WA == 0 THEN
+      NE_WA := 4;
+      MSGBOX("Custom window cleared — it was fitted to the previous distribution. Now using auto, μ ± 4σ.");
+    END;
+    AutoWin();
+  END;
+END;
+
+
+// =====================================================
+//  MODULE 9 — PLOT WINDOW
+// =====================================================
+SetWin()
+BEGIN
+  LOCAL swT, swSel, swLO, swHI;
+  LOCAL swB, swR;
+
+  // The toggles report their own state in the menu text, so the
+  // current setting is visible before choosing rather than after.
+  swB := "Bands 68-95-99.7:  off";
+  IF NE_CFG(1) == 1 THEN swB := "Bands 68-95-99.7:  ON"; END;
+  swR := "N(0,1) reference curve:  off";
+  IF NE_CFG(2) == 1 THEN swR := "N(0,1) reference curve:  ON"; END;
+
+  swT := 0;
+  swSel := CHOOSE(swT, "Plot Window & Display", {
+    "Auto:  μ ± 4σ  (default)",
+    "Wide:  μ ± 6σ",
+    "Custom: enter xmin, xmax",
+    swB,
+    swR,
+    "Show current window",
+    "Diagnostics",
+    "Reset everything to N(0,1)"});
+  IF swSel == 0 THEN RETURN; END;
+
+  IF swT == 1 THEN NE_WA := 4; AutoWin(); ShowCurve(); END;
+  IF swT == 2 THEN NE_WA := 6; AutoWin(); ShowCurve(); END;
+
+  IF swT == 3 THEN
+    swLO := NE_WLO; swHI := NE_WHI;
+    IF INPUT({swLO, swHI}, "Custom Window", {"xmin:", "xmax:"},
+      {"Left edge of the plot", "Right edge, must exceed xmin"}) == 1 THEN
+      IF swHI <= swLO THEN
+        MSGBOX("xmax must be greater than xmin.");
+        RETURN;
+      END;
+      NE_WLO := swLO; NE_WHI := swHI; NE_WA := 0;
+      AutoWin();                          // refreshes the height only
+      ShowCurve();
+    END;
+  END;
+
+  // the same two switches the Explorer's + and - keys drive
+  IF swT == 4 THEN
+    NE_CFG(1) := 1 - NE_CFG(1);
+    ShowCurve();
+  END;
+
+  IF swT == 5 THEN
+    NE_CFG(2) := 1 - NE_CFG(2);
+    ShowCurve();
+  END;
+
+  IF swT == 6 THEN
+    AutoWin();
+    ZPanel("Current plot window",
+      "x from " + STRING(NE_WLO,2,3),
+      "x to   " + STRING(NE_WHI,2,3),
+      "width = " + STRING(NE_WHI-NE_WLO,2,3)
+        + "  = " + STRING((NE_WHI-NE_WLO)/NE_SG,2,2) + " σ",
+      "y top = " + STRING(NE_YMX,2,4) + "   peak = "
+        + STRING(NORMALD(NE_MU,NE_SG,NE_MU),2,4), 0);
+  END;
+
+  IF swT == 7 THEN
+    DiagPage();
+  END;
+
+  // Start the next example clean without leaving the program: the
+  // same reset that runs at launch and on the way out.
+  IF swT == 8 THEN
+    ResetAll();
+    ShowCurve();
+  END;
+END;
+
+
+// =====================================================
+//  MODULE 3 — PROBABILITY FROM x
+// =====================================================
+ProbCalc()
+BEGIN
+  LOCAL pcT, pcSel, pcA, pcB, pcP, pcTmp;
+  pcT := 0;
+  pcSel := CHOOSE(pcT, "Probability from x", {
+    "P(X < x)    left tail",
+    "P(X > x)    right tail",
+    "P(a < X < b)    between",
+    "P(outside a,b)  two tails"});
+  IF pcSel == 0 THEN RETURN; END;
+
+  // ---- one boundary: left or right tail ----
+  IF pcT == 1 OR pcT == 2 THEN
+    // A numeric field always shows a value — PPL reals cannot be
+    // blank, and a string field displays its quotation marks as
+    // editable text, so 0 is the cleanest neutral starting point.
+    pcA := 0;
+    IF INPUT({pcA}, "Boundary", {"x:"},
+      {"The cut point on the x-axis"}) == 0 THEN RETURN; END;
+    NE_X := pcA;
+    NE_Z := (pcA - NE_MU) / NE_SG;
+    IF pcT == 1 THEN
+      NE_P := NORMALD_CDF(NE_MU, NE_SG, pcA);
+      ZPanel("Left-tail probability",
+        "x = " + STRING(pcA,2,4),
+        "z = " + STRING(NE_Z,2,4),
+        "P(X < x) = " + STRING(NE_P,2,4),
+        "Complement: P(X > x) = " + STRING(1-NE_P,2,4), 1);
+    ELSE
+      NE_P := 1 - NORMALD_CDF(NE_MU, NE_SG, pcA);
+      ZPanel("Right-tail probability",
+        "x = " + STRING(pcA,2,4),
+        "z = " + STRING(NE_Z,2,4),
+        "P(X > x) = " + STRING(NE_P,2,4),
+        "Complement: P(X < x) = " + STRING(1-NE_P,2,4), 1);
+    END;
+    NE_XM := pcT; NE_XO := pcA;
+    ShowCurve();
+    RETURN;
+  END;
+
+  // ---- two boundaries: between or outside ----
+  IF pcT == 3 OR pcT == 4 THEN
+    pcA := 0; pcB := 0;                  // plain 0, not mu -/+ sigma
+    IF INPUT({pcA, pcB}, "Two Boundaries", {"a:", "b:"},
+      {"Lower bound", "Upper bound"}) == 0 THEN RETURN; END;
+    IF pcB < pcA THEN pcTmp := pcA; pcA := pcB; pcB := pcTmp; END;
+    pcP := NORMALD_CDF(NE_MU, NE_SG, pcB) - NORMALD_CDF(NE_MU, NE_SG, pcA);
+    NE_X := pcA;
+    NE_Z := (pcA - NE_MU) / NE_SG;
+    IF pcT == 3 THEN
+      NE_P := pcP;
+      ZPanel("Probability between",
+        "a = " + STRING(pcA,2,4) + "   b = " + STRING(pcB,2,4),
+        "z_a = " + STRING((pcA-NE_MU)/NE_SG,2,3)
+          + "   z_b = " + STRING((pcB-NE_MU)/NE_SG,2,3),
+        "P(a < X < b) = " + STRING(pcP,2,4),
+        "Outside area = " + STRING(1-pcP,2,4), 1);
+    ELSE
+      NE_P := 1 - pcP;
+      ZPanel("Probability outside",
+        "a = " + STRING(pcA,2,4) + "   b = " + STRING(pcB,2,4),
+        "z_a = " + STRING((pcA-NE_MU)/NE_SG,2,3)
+          + "   z_b = " + STRING((pcB-NE_MU)/NE_SG,2,3),
+        "P(outside) = " + STRING(1-pcP,2,4),
+        "Between area = " + STRING(pcP,2,4), 1);
+    END;
+    NE_XM := pcT; NE_XO := pcA; NE_XB := pcB;
+    ShowCurve();
+    RETURN;
+  END;
+END;
+
+
+// =====================================================
+//  MODULE 4 — x FROM PROBABILITY (inverse direction)
+// =====================================================
+InvCalc()
+BEGIN
+  LOCAL icT, icSel, icP, icC, icZ, icX;
+  LOCAL icLO, icHI;
+  icT := 0;
+  icSel := CHOOSE(icT, "x from probability", {
+    "x at a percentile (area left)",
+    "Critical value (right-tail α)",
+    "Central C% interval"});
+  IF icSel == 0 THEN RETURN; END;
+
+  // ---- percentile ----
+  IF icT == 1 THEN
+    icP := 0.90;
+    IF INPUT({icP}, "Percentile → x", {"area:"},
+      {"Area to the LEFT, strictly between 0 and 1"}) == 0 THEN RETURN; END;
+    IF icP <= 0 OR icP >= 1 THEN
+      MSGBOX("Area must be strictly between 0 and 1.");
+      RETURN;
+    END;
+    icX := NORMALD_ICDF(NE_MU, NE_SG, icP);
+    icZ := (icX - NE_MU) / NE_SG;
+    NE_X := icX; NE_Z := icZ; NE_P := icP;
+    ZPanel("Score at a percentile",
+      "area left = " + STRING(icP,2,4),
+      "z* = " + STRING(icZ,2,4),
+      "x = " + STRING(icX,2,4),
+      STRING(100*icP,2,1) + "% of the distribution falls below x", 1);
+    NE_XM := 1; NE_XO := icX;
+    ShowCurve();
+    RETURN;
+  END;
+
+  // ---- right-tail critical value ----
+  IF icT == 2 THEN
+    icP := 0.05;
+    IF INPUT({icP}, "Critical Value", {"α:"},
+      {"Area in the RIGHT tail, e.g. .05 or .01"}) == 0 THEN RETURN; END;
+    IF icP <= 0 OR icP >= 1 THEN
+      MSGBOX("Alpha must be strictly between 0 and 1.");
+      RETURN;
+    END;
+    icZ := NORMALD_ICDF(0, 1, 1 - icP);
+    icX := NE_MU + icZ * NE_SG;
+    NE_X := icX; NE_Z := icZ; NE_P := icP;
+    ZPanel("Right-tail critical value",
+      "α = " + STRING(icP,2,4),
+      "z* = " + STRING(icZ,2,4),
+      "x* = " + STRING(icX,2,4),
+      "One-tailed reject region is x > x*", 1);
+    NE_XM := 2; NE_XO := icX;
+    ShowCurve();
+    RETURN;
+  END;
+
+  // ---- central interval ----
+  IF icT == 3 THEN
+    icC := 0.95;
+    IF INPUT({icC}, "Central Interval", {"C:"},
+      {"Central proportion: .95 or 95 both work"}) == 0 THEN RETURN; END;
+    IF icC > 1 THEN icC := icC / 100; END;
+    IF icC <= 0 OR icC >= 1 THEN
+      MSGBOX("Central proportion must be between 0 and 1.");
+      RETURN;
+    END;
+    icZ  := NORMALD_ICDF(0, 1, (1 + icC) / 2);
+    icLO := NE_MU - icZ * NE_SG;
+    icHI := NE_MU + icZ * NE_SG;
+    NE_X := icHI; NE_Z := icZ; NE_P := icC;
+    ZPanel("Central " + STRING(100*icC,2,1) + "% interval",
+      "z* = ± " + STRING(icZ,2,4),
+      "lower = " + STRING(icLO,2,4) + "   upper = " + STRING(icHI,2,4),
+      "interval: (" + STRING(icLO,2,3) + ", " + STRING(icHI,2,3) + ")",
+      "Middle " + STRING(100*icC,2,1) + "% of the distribution; each tail "
+        + STRING(100*(1-icC)/2,2,2) + "%", 1);
+    NE_XM := 3; NE_XO := icLO; NE_XB := icHI;
+    ShowCurve();
+    RETURN;
+  END;
+END;
+
+
+// =====================================================
+//  ZSSTORE — remember the solver's four values, and push its
+//  mu and sigma out to the session distribution so the plot and
+//  every other menu item follow along.
+//
+//  A changed distribution invalidates any shading or sample
+//  drawn against the old one, so those are cleared, exactly as
+//  when mu and sigma are changed from menu 2.
+// =====================================================
+ZSStore(stX, stM, stS, stZ)
+BEGIN
+  LOCAL stChg;
+  NE_ZS := {stX, stM, stS, stZ};
+  NE_Z := stZ; NE_X := stX;
+
+  stChg := 0;
+  IF ABS(stM - NE_MU) > 0 THEN stChg := 1; END;
+  IF ABS(stS - NE_SG) > 0 THEN stChg := 1; END;
+
+  IF stChg == 1 AND stS > 0 THEN
+    NE_MU := stM; NE_SG := stS;
+    // Same clean-up as menu 1: this is the other route to a changed
+    // distribution, and the two must leave the session in the same
+    // state or the app behaves differently depending on how you got
+    // there.
+    NE_XM := 0;
+    NE_HN := 0; NE_BINS := MAKELIST(0, K, 1, NBINS+2, 1);
+    NE_HXB := 0; NE_HS := 0;
+    NE_CFG(4) := 0; NE_CFG(3) := stM + stS;
+    IF NE_WA == 0 THEN NE_WA := 4; END;    // a custom window would be wrong
+    AutoWin();
+  END;
+END;
+
+
+// =====================================================
+//  MODULE 5 — Z-FORMULA SOLVER:  z = (x − μ)/σ
+//  Pick the unknown, enter the other three, solve.
+//
+//  The locals are zsX / zsM / zsS / zsZ, NOT x / m / s / z.
+//  A bare lowercase x is the CAS's own symbolic variable, so
+//  a value left in the CAS could surface in this INPUT's
+//  prefill instead of the default set below.
+//
+//  At launch the four boxes hold x = 0, μ = 0, σ = 1, z = 0,
+//  which satisfy z = (x − μ)/σ exactly.  After that the solver
+//  is TIED TO THE SESSION: μ and σ arrive from menu 2 (or from
+//  the last solve), and anything entered or solved for here is
+//  pushed back out, so the plotted curve and every other menu
+//  item stay in step with it.
+// =====================================================
+ZSolve()
+BEGIN
+  LOCAL zsT, zsSel, zsZ, zsX, zsM, zsS;
+  // mu and sigma come from the SESSION distribution, so whatever
+  // was set in menu 2 (or solved for here last time) is already in
+  // the boxes.  x and z are the solver's own, carried across visits.
+  zsM := NE_MU; zsS := NE_SG;
+  zsX := NE_ZS(1); zsZ := NE_ZS(4);
+
+  zsT := 0;
+  zsSel := CHOOSE(zsT, "Solve  z = (x − μ)/σ   for:", {
+    "z   (standard score)",
+    "x   (raw score)",
+    "μ   (mean)",
+    "σ   (std dev)"});
+  IF zsSel == 0 THEN RETURN; END;
+
+  // ---- solve for z ----
+  IF zsT == 1 THEN
+    IF INPUT({zsX, zsM, zsS}, "Enter the three knowns",
+      {"x:", "μ:", "σ:"},
+      {"Raw score", "Mean", "Std dev (must be > 0)"}) == 0 THEN RETURN; END;
+    IF zsS <= 0 THEN
+      MSGBOX("σ must be positive.");
+      RETURN;
+    END;
+    zsZ := (zsX - zsM) / zsS;
+    ZSStore(zsX, zsM, zsS, zsZ);
+    ZPanel("Solve for z",
+      "x = " + STRING(zsX,2,4) + "   μ = " + STRING(zsM,2,4),
+      "σ = " + STRING(zsS,2,4),
+      "z = " + STRING(zsZ,2,4),
+      "z = (x − μ)/σ = (" + STRING(zsX,2,2) + " − " + STRING(zsM,2,2)
+        + ")/" + STRING(zsS,2,2), 0);
+    RETURN;
+  END;
+
+  // ---- solve for x ----
+  IF zsT == 2 THEN
+    IF INPUT({zsZ, zsM, zsS}, "Enter the three knowns",
+      {"z:", "μ:", "σ:"},
+      {"Standard score", "Mean", "Std dev (must be > 0)"}) == 0 THEN RETURN; END;
+    IF zsS <= 0 THEN
+      MSGBOX("σ must be positive.");
+      RETURN;
+    END;
+    zsX := zsM + zsZ * zsS;
+    ZSStore(zsX, zsM, zsS, zsZ);
+    ZPanel("Solve for x",
+      "z = " + STRING(zsZ,2,4) + "   μ = " + STRING(zsM,2,4),
+      "σ = " + STRING(zsS,2,4),
+      "x = " + STRING(zsX,2,4),
+      "x = μ + zσ = " + STRING(zsM,2,2) + " + (" + STRING(zsZ,2,2)
+        + ")(" + STRING(zsS,2,2) + ")", 0);
+    RETURN;
+  END;
+
+  // ---- solve for μ ----
+  IF zsT == 3 THEN
+    IF INPUT({zsX, zsZ, zsS}, "Enter the three knowns",
+      {"x:", "z:", "σ:"},
+      {"Raw score", "Standard score", "Std dev (must be > 0)"}) == 0 THEN RETURN; END;
+    IF zsS <= 0 THEN
+      MSGBOX("σ must be positive.");
+      RETURN;
+    END;
+    zsM := zsX - zsZ * zsS;
+    ZSStore(zsX, zsM, zsS, zsZ);
+    ZPanel("Solve for μ",
+      "x = " + STRING(zsX,2,4) + "   z = " + STRING(zsZ,2,4),
+      "σ = " + STRING(zsS,2,4),
+      "μ = " + STRING(zsM,2,4),
+      "μ = x − zσ = " + STRING(zsX,2,2) + " − (" + STRING(zsZ,2,2)
+        + ")(" + STRING(zsS,2,2) + ")", 0);
+    RETURN;
+  END;
+
+  // ---- solve for σ ----
+  IF zsT == 4 THEN
+    IF INPUT({zsX, zsM, zsZ}, "Enter the three knowns",
+      {"x:", "μ:", "z:"},
+      {"Raw score", "Mean", "Standard score (must be nonzero)"}) == 0 THEN RETURN; END;
+    IF zsZ == 0 THEN
+      MSGBOX("z cannot be 0 when solving for σ.");
+      RETURN;
+    END;
+    zsS := (zsX - zsM) / zsZ;
+    IF zsS <= 0 THEN
+      MSGBOX("These values give σ = " + STRING(zsS,2,4) +
+        ", which is not positive. Check the sign of z: it must match the sign of x − μ.");
+      RETURN;
+    END;
+    ZSStore(zsX, zsM, zsS, zsZ);
+    ZPanel("Solve for σ",
+      "x = " + STRING(zsX,2,4) + "   μ = " + STRING(zsM,2,4),
+      "z = " + STRING(zsZ,2,4),
+      "σ = " + STRING(zsS,2,4),
+      "σ = (x − μ)/z = (" + STRING(zsX,2,2) + " − " + STRING(zsM,2,2)
+        + ")/" + STRING(zsZ,2,2), 0);
+    RETURN;
+  END;
+END;
+
+
+// =====================================================
+//  MODULE 7 — COMPARE CURVES (Cohen's d)
+// =====================================================
+Compare2()
+BEGIN
+  LOCAL c2T, c2Sel, c2M2;
+  c2T := 0;
+  c2Sel := CHOOSE(c2T, "Compare curves", {
+    "Set μ₂ and show (same σ)",
+    "Turn second curve off"});
+  IF c2Sel == 0 THEN RETURN; END;
+  IF c2T == 1 THEN
+    c2M2 := NE_CFG(3);
+    IF INPUT({c2M2}, "Second Curve", {"μ₂:"},
+      {"Mean of comparison curve; d = (μ₂−μ)/σ"}) == 1 THEN
+      NE_CFG(3) := c2M2; NE_CFG(4) := 1;
+      AutoWin();
+      ShowCurve();
+    END;
+  END;
+  IF c2T == 2 THEN NE_CFG(4) := 0; AutoWin(); END;
+END;
+
+
+// =====================================================
+//  MODULE 6 — SAMPLE HISTOGRAM
+//  Bins: NBINS intervals spanning μ ± 4σ, so the bar widths
+//  scale with the distribution instead of being fixed at 0.5.
+// =====================================================
+Histo()
+BEGIN
+  LOCAL hsT, hsSel, hsN, hsOK, hsChk;
+  hsT := 0;
+  hsSel := CHOOSE(hsT, "Data & Histogram", {
+    "My data from D1  (Statistics 1Var)",
+    "Two groups from C1, C2  (2Var)",
+    "Regression residuals from C1, C2",
+    "Write z-scores of D1 into D2",
+    "Normal probability plot of D1",
+    "Simulate a sample",
+    "Clear histogram"});
+  IF hsSel == 0 THEN RETURN; END;
+  IF hsT == 1 THEN DataLoad();  RETURN; END;
+  IF hsT == 2 THEN TwoGroups(); RETURN; END;
+  IF hsT == 3 THEN ResidLoad(); RETURN; END;
+  IF hsT == 4 THEN ZtoD2();     RETURN; END;
+  IF hsT == 5 THEN NormPlot();  RETURN; END;
+
+  hsN := 0;
+  IF hsT == 6 THEN
+    hsSel := CHOOSE(hsN, "Simulate a sample", {
+      "n = 200", "n = 1000", "n = 5000"});
+    IF hsSel == 0 THEN RETURN; END;
+    IF hsN == 1 THEN hsN := 200;  END;
+    IF hsN == 2 THEN hsN := 1000; END;
+    IF hsN == 3 THEN hsN := 5000; END;
+    NE_HREAL := 0;                         // this one is simulated
+  END;
+  IF hsN > 0 THEN
+    NE_HLO := NE_MU - 4 * NE_SG;
+    NE_HW  := 8 * NE_SG / NBINS;
+    // A Python script that dies inside Python does NOT raise a PPL
+    // error — the traceback goes to the Terminal and execution
+    // carries on — so IFERR alone is not enough.  Clear the result
+    // first, then CHECK it before using it.
+    NEpout := 0;
+    IFERR
+      NEpmu := NE_MU; NEpsg := NE_SG; NEpn := hsN;
+      NEplo := NE_HLO; NEpw := NE_HW;
+      PYTHON(SAMPBINSPY);
+    THEN
+      NEpout := 0;
+    END;
+    // Validate by USING it, not by asking what type it is.  If the
+    // last element reads back as a number, NEpout is a list of the
+    // right length and the bridge worked; anything else raises and
+    // we fall back.  One less firmware assumption than TYPE codes,
+    // and it cannot silently mis-detect a good result.
+    hsOK := 0;
+    IFERR
+      hsChk := NEpout(NBINS+2) + 0;
+      hsOK := 1;
+    THEN
+      hsOK := 0;
+    END;
+    IF hsOK == 1 THEN
+      NE_BINS := NEpout;
+      NE_SRC := 1;                         // MicroPython did the work
+    ELSE
+      NE_BINS := SampBins(NE_MU, NE_SG, hsN, NE_HLO, NE_HW);
+      NE_SRC := 2;                         // PPL fallback did the work
+    END;
+    NE_HN := hsN;
+    // The two elements after the bins are the sum and the sum of
+    // squares of every value drawn.  s uses the n-1 divisor: these
+    // are a SAMPLE's statistics, estimating the mu and sigma that
+    // produced them.
+    NE_HXB := NE_BINS(NBINS+1) / hsN;
+    IF hsN > 1 THEN
+      NE_HS := √(MAX(0, (NE_BINS(NBINS+2) - hsN*NE_HXB*NE_HXB) / (hsN - 1)));
+    ELSE
+      NE_HS := 0;
+    END;
+    ShowCurve();
+  END;
+  IF hsT == 7 THEN
+    NE_HN := 0; NE_BINS := MAKELIST(0, K, 1, NBINS+2, 1);
+    NE_HXB := 0; NE_HS := 0; NE_HREAL := 0;
+  END;
+END;
+
+
+// =====================================================
+//  BINDATA — take any list and make it the displayed sample
+//
+//  Shared by every data route: D1, regression residuals, a group
+//  from C1.  Fits N(x-bar, s) to the list, bins it and stores the
+//  statistics.  Returns 1 on success, 0 if the list is unusable.
+//
+//  s is computed here with an explicit n-1 divisor rather than by
+//  calling stddev(), because which divisor that command uses is
+//  exactly the distinction this readout exists to teach.
+// =====================================================
+BinData(bdL)
+BEGIN
+  LOCAL bdN, bdI, bdV, bdSum, bdSq, bdB;
+  LOCAL bdXB, bdS, bdCnt;
+
+  bdN := SIZE(bdL);
+  IF bdN < 2 THEN RETURN 0; END;
+
+  bdSum := 0; bdSq := 0;
+  FOR bdI FROM 1 TO bdN DO
+    bdV := bdL(bdI);
+    bdSum := bdSum + bdV;
+    bdSq := bdSq + bdV*bdV;
+  END;
+  bdXB := bdSum / bdN;
+  bdS := √(MAX(0, (bdSq - bdN*bdXB*bdXB) / (bdN - 1)));
+  IF bdS <= 0 THEN RETURN 0; END;
+
+  NE_MU := bdXB; NE_SG := bdS;
+  NE_XM := 0;
+  NE_HLO := NE_MU - 4 * NE_SG;
+  NE_HW  := 8 * NE_SG / NBINS;
+
+  bdCnt := MAKELIST(0, K, 1, NBINS+2, 1);
+  FOR bdI FROM 1 TO bdN DO
+    bdB := FLOOR((bdL(bdI) - NE_HLO) / NE_HW) + 1;
+    IF bdB >= 1 AND bdB <= NBINS THEN bdCnt(bdB) := bdCnt(bdB) + 1; END;
+  END;
+  bdCnt(NBINS+1) := bdSum; bdCnt(NBINS+2) := bdSq;
+
+  NE_BINS := bdCnt; NE_HN := bdN;
+  NE_HXB := bdXB; NE_HS := bdS;
+  NE_HREAL := 1; NE_SRC := 3;
+  IF NE_WA == 0 THEN NE_WA := 4; END;
+  AutoWin();
+  RETURN 1;
+END;
+
+
+// =====================================================
+//  YOUR OWN DATA — list D1 of the Statistics 1Var app
+//
+//  The same list the Technology Corner activities use, so data
+//  already entered to make a Normal probability plot can be seen
+//  against a fitted curve without retyping anything.
+// =====================================================
+DataLoad()
+BEGIN
+  LOCAL dlN;
+  dlN := 0;
+  IFERR dlN := SIZE(D1); THEN dlN := 0; END;
+  IF dlN < 2 THEN
+    MSGBOX("Put your data in list D1 of the Statistics 1Var app first — at least two values.");
+    RETURN;
+  END;
+  NE_CFG(4) := 0;                          // a single group: no 2nd curve
+  IF BinData(D1) == 0 THEN
+    MSGBOX("Every value in D1 is the same, so s = 0 and no curve can be fitted.");
+    RETURN;
+  END;
+  ShowCurve();
+END;
+
+
+// =====================================================
+//  TWO GROUPS — C1 and C2 of the Statistics 2Var app
+//
+//  Fits a curve to each group and reports Cohen's d.  Both curves
+//  are drawn with the POOLED standard deviation, which is both
+//  what the program can draw (one sigma for both) and the standard
+//  denominator for d when two groups are compared:
+//      sp = sqrt( ((n1-1)s1^2 + (n2-1)s2^2) / (n1+n2-2) )
+//  The histogram is cleared, because a single set of bars beneath
+//  two curves would be read as belonging to both.
+// =====================================================
+TwoGroups()
+BEGIN
+  LOCAL tgN1, tgN2, tgI, tgV, tgS1, tgS2;
+  LOCAL tgM1, tgM2, tgQ1, tgQ2, tgSP;
+
+  tgN1 := 0; tgN2 := 0;
+  IFERR tgN1 := SIZE(C1); THEN tgN1 := 0; END;
+  IFERR tgN2 := SIZE(C2); THEN tgN2 := 0; END;
+  IF tgN1 < 2 OR tgN2 < 2 THEN
+    MSGBOX("Put group 1 in C1 and group 2 in C2 of the Statistics 2Var app — at least two values each.");
+    RETURN;
+  END;
+
+  tgM1 := 0; tgQ1 := 0;
+  FOR tgI FROM 1 TO tgN1 DO
+    tgV := C1(tgI); tgM1 := tgM1 + tgV; tgQ1 := tgQ1 + tgV*tgV;
+  END;
+  tgM1 := tgM1 / tgN1;
+  tgS1 := MAX(0, (tgQ1 - tgN1*tgM1*tgM1) / (tgN1 - 1));
+
+  tgM2 := 0; tgQ2 := 0;
+  FOR tgI FROM 1 TO tgN2 DO
+    tgV := C2(tgI); tgM2 := tgM2 + tgV; tgQ2 := tgQ2 + tgV*tgV;
+  END;
+  tgM2 := tgM2 / tgN2;
+  tgS2 := MAX(0, (tgQ2 - tgN2*tgM2*tgM2) / (tgN2 - 1));
+
+  tgSP := √(((tgN1-1)*tgS1 + (tgN2-1)*tgS2) / (tgN1 + tgN2 - 2));
+  IF tgSP <= 0 THEN
+    MSGBOX("Both groups have zero spread, so no curves can be fitted.");
+    RETURN;
+  END;
+
+  NE_MU := tgM1; NE_SG := tgSP;
+  NE_CFG(3) := tgM2; NE_CFG(4) := 1;
+  NE_XM := 0;
+  NE_HN := 0; NE_BINS := MAKELIST(0, K, 1, NBINS+2, 1);
+  NE_HXB := 0; NE_HS := 0; NE_HREAL := 0;
+  IF NE_WA == 0 THEN NE_WA := 4; END;
+  AutoWin();
+  ShowCurve();
+END;
+
+
+// =====================================================
+//  REGRESSION RESIDUALS — C1 (x) and C2 (y)
+//
+//  Least-squares line by hand, then the residuals through the
+//  normality view.  Inference about a slope assumes the residuals
+//  are roughly normal, and this is the assumption students are
+//  usually told about rather than shown.
+// =====================================================
+ResidLoad()
+BEGIN
+  LOCAL rlN, rlI, rlXB, rlYB, rlSXY, rlSXX;
+  LOCAL rlB, rlA, rlR, rlXMx, rlScl;
+
+  rlN := 0;
+  IFERR rlN := MIN(SIZE(C1), SIZE(C2)); THEN rlN := 0; END;
+  IF rlN < 3 THEN
+    MSGBOX("Put x in C1 and y in C2 of the Statistics 2Var app — at least three pairs.");
+    RETURN;
+  END;
+
+  rlXB := 0; rlYB := 0;
+  FOR rlI FROM 1 TO rlN DO
+    rlXB := rlXB + C1(rlI); rlYB := rlYB + C2(rlI);
+  END;
+  rlXB := rlXB / rlN; rlYB := rlYB / rlN;
+
+  rlSXY := 0; rlSXX := 0; rlXMx := 0;
+  FOR rlI FROM 1 TO rlN DO
+    rlSXY := rlSXY + (C1(rlI) - rlXB) * (C2(rlI) - rlYB);
+    rlSXX := rlSXX + (C1(rlI) - rlXB) * (C1(rlI) - rlXB);
+    IF ABS(C1(rlI)) > rlXMx THEN rlXMx := ABS(C1(rlI)); END;
+  END;
+
+  // Two different problems, two different messages.  No spread at
+  // all means no line exists.  Almost no spread means a line can
+  // be computed but the slope is at the mercy of rounding -- the
+  // student should know that before reading the residuals.
+  // Scaled by the size of the x values, since "tiny" depends on
+  // whether x is in millimetres or millions.
+  IF rlSXX <= 0 THEN
+    MSGBOX("Every x value in C1 is the same, so no line can be fitted.");
+    RETURN;
+  END;
+  rlScl := MAX(1, rlXMx);
+  IF rlSXX < 0.000000001 * rlScl * rlScl THEN
+    MSGBOX("The x values in C1 barely vary, so the fitted slope is unstable. Showing the residuals anyway — treat them with caution.");
+  END;
+  rlB := rlSXY / rlSXX;
+  rlA := rlYB - rlB * rlXB;
+
+  rlR := MAKELIST(C2(K) - (rlA + rlB * C1(K)), K, 1, rlN, 1);
+  NE_CFG(4) := 0;
+  IF BinData(rlR) == 0 THEN
+    MSGBOX("The residuals have no spread — the points lie exactly on a line.");
+    RETURN;
+  END;
+  ShowCurve();
+END;
+
+
+// =====================================================
+//  STANDARDIZE — write z-scores of D1 into D2
+//
+//  Puts the transformed values where every other app can reach
+//  them, so the next step (a plot, a summary) is done with the
+//  calculator's own tools rather than here.
+// =====================================================
+ZtoD2()
+BEGIN
+  LOCAL zdN, zdI, zdV, zdSum, zdSq, zdXB;
+  LOCAL zdS;
+
+  zdN := 0;
+  IFERR zdN := SIZE(D1); THEN zdN := 0; END;
+  IF zdN < 2 THEN
+    MSGBOX("Put your data in list D1 of the Statistics 1Var app first.");
+    RETURN;
+  END;
+
+  zdSum := 0; zdSq := 0;
+  FOR zdI FROM 1 TO zdN DO
+    zdV := D1(zdI); zdSum := zdSum + zdV; zdSq := zdSq + zdV*zdV;
+  END;
+  zdXB := zdSum / zdN;
+  zdS := √(MAX(0, (zdSq - zdN*zdXB*zdXB) / (zdN - 1)));
+  IF zdS <= 0 THEN
+    MSGBOX("Every value in D1 is the same, so s = 0 and z is undefined.");
+    RETURN;
+  END;
+
+  D2 := MAKELIST((D1(K) - zdXB) / zdS, K, 1, zdN, 1);
+  MSGBOX("Wrote " + STRING(zdN,2,0) + " z-scores into D2.  x-bar = "
+    + STRING(zdXB,2,4) + ", s = " + STRING(zdS,2,4));
+END;
+
+
+// =====================================================
+//  NORMAL PROBABILITY PLOT — hand off to Statistics 1Var
+//
+//  This LEAVES the program: control passes to the Statistics app.
+//  The User Guide's DiceSimulation example binds the plot with
+//  SetSample and sets H1Type, but it is itself a Statistics-
+//  derived app; from outside, those names do not resolve.
+// =====================================================
+NormPlot()
+BEGIN
+  LOCAL npN;
+  npN := 0;
+  IFERR npN := SIZE(D1); THEN npN := 0; END;
+  IF npN < 2 THEN
+    MSGBOX("Put your data in list D1 of the Statistics 1Var app first.");
+    RETURN;
+  END;
+  // Only STARTAPP here.  SetSample(H1,...) and H1Type are app
+  // variables of Statistics 1Var and are NOT visible to a
+  // standalone program — referencing them is a syntax error at
+  // paste time, not something IFERR can catch at run time.
+  // D1 is global, so the app opens with the data already in it.
+  MSGBOX("Opening Statistics 1Var. In Symbolic view set Plot1 to Normal Probability, then press Plot and choose Autoscale.");
+  STARTAPP("Statistics 1Var");
+END;
+
+
+//  MODULE 8 — STANDARDIZE ANIMATION: morph N(μ,σ) → N(0,1)
+//  Works on local copies; the session μ and σ are untouched.
+//  The window is set once to cover BOTH the starting curve
+//  and N(0,1), then held, so the motion is visible.
+// =====================================================
+AnimStd(asMU, asSG, asBand, asRef)
+BEGIN
+  LOCAL asF, asM, asS, asZero, asSav, asWt;
+  // One knob for the whole animation.  0.06 ran the twenty frames
+  // in about a second — too fast to read the mu and sigma readouts
+  // that change on every frame, which is the point of watching it.
+  asWt := 0.3;
+  asZero := MAKELIST(0, K, 1, NBINS+2, 1);
+  asSav := NE_WA;
+  NE_KH := 2;                              // no footer: nothing is interactive
+
+  // a window wide enough for the whole journey
+  NE_WLO := MIN(asMU - 4*asSG, -4);
+  NE_WHI := MAX(asMU + 4*asSG,  4);
+  NE_YMX := NORMALD(0, MIN(asSG, 1), 0) * 1.15;
+  NE_WA := 0;
+
+  // phase 1: slide the mean to 0
+  FOR asF FROM 1 TO 10 DO
+    asM := asMU * (1 - asF/10);
+    NormDraw(asM, asSG, asBand, asRef, 0, 0, 0, 0, 0, asZero, 0);
+    TEXTOUT_P("Standardizing: shift  x − μ", 80, 24, 2, NRED);
+    WAIT(asWt);
+  END;
+  // let the eye settle on mu = 0 before the shape starts changing
+  TEXTOUT_P("μ is now 0 — the spread has not changed", 44, 200, 1, NRED);
+  WAIT(1.8);
+  // phase 2: rescale sd to 1
+  FOR asF FROM 1 TO 10 DO
+    asS := asSG + (1 - asSG) * asF/10;
+    NormDraw(0, asS, asBand, asRef, 0, 0, 0, 0, 0, asZero, 0);
+    TEXTOUT_P("Standardizing: rescale  (x − μ)/σ", 60, 24, 2, NRED);
+    WAIT(asWt);
+  END;
+  TEXTOUT_P("z = (x − μ)/σ  →  N(0,1)", 84, 110, 2, NRED);
+  WAIT(3);
+
+  NE_KH := 0;
+  NE_WA := asSav;
+  AutoWin();
+END;
+
+
+// =====================================================
+//  DIAGNOSTICS — what actually happened, not what should have
+//
+//  Exists because a MicroPython failure is invisible: the guard
+//  falls back to PPL, the histogram draws correctly, and the only
+//  symptom is that it took longer.  This page names the sampler
+//  that really ran.
+// =====================================================
+DiagPage()
+BEGIN
+  LOCAL dgK, dgSrc, dgPy;
+
+  dgSrc := "no sample drawn yet";
+  IF NE_SRC == 1 THEN dgSrc := "MicroPython  (fast path)"; END;
+  IF NE_SRC == 2 THEN dgSrc := "PPL fallback  (slow path)"; END;
+  IF NE_SRC == 3 THEN dgSrc := "your own data, read from D1"; END;
+
+  // Probe the bridge without drawing anything: ask Python for a
+  // trivial result and see whether it comes back.
+  dgPy := "not available on this firmware";
+  NEpout := 0;
+  IFERR
+    NEpmu := 0; NEpsg := 1; NEpn := 2;
+    NEplo := -4; NEpw := 8/NBINS;
+    PYTHON(SAMPBINSPY);
+  THEN
+    NEpout := 0;
+  END;
+  IFERR
+    dgK := NEpout(NBINS+2) + 0;
+    dgPy := "available and answering";
+  THEN
+    dgPy := "not available on this firmware";
+  END;
+
+  REPEAT dgK := GETKEY; UNTIL dgK == -1;
+  RECT_P(0, 0, 319, 239, NWHITE);
+  RECT_P(10, 6, 310, 234, NBLACK, NPANL);
+  TEXTOUT_P("Diagnostics", 20, 12, 2, NBLUE);
+  LINE_P(20, 34, 300, 34, NGRAY);
+
+  TEXTOUT_P("Python bridge:", 20, 44, 1, NBLUE);
+  TEXTOUT_P("  " + dgPy, 20, 58, 1, NBLACK);
+  TEXTOUT_P("Last histogram drawn by:", 20, 78, 1, NBLUE);
+  TEXTOUT_P("  " + dgSrc, 20, 92, 1, NBLACK);
+
+  TEXTOUT_P("Session:", 20, 112, 1, NBLUE);
+  TEXTOUT_P("  N(" + STRING(NE_MU,2,2) + ", " + STRING(NE_SG,2,2) + ")"
+    + "   window " + STRING(NE_WLO,2,1) + " to " + STRING(NE_WHI,2,1),
+    20, 126, 1, NBLACK);
+  TEXTOUT_P("  bins " + STRING(NBINS,2,0)
+    + "   sample n " + STRING(NE_HN,2,0), 20, 140, 1, NBLACK);
+
+  TEXTOUT_P("If the fast path is not being used, check", 20, 162, 1, NGRAY);
+  TEXTOUT_P("the Terminal (Shift-View) for a Python", 20, 175, 1, NGRAY);
+  TEXTOUT_P("traceback after drawing a histogram.", 20, 188, 1, NGRAY);
+
+  TEXTOUT_P("Any key: back to the menu", 20, 214, 1, NGRAY);
+  REPEAT dgK := GETKEY; UNTIL dgK > -1;
+  REPEAT dgK := GETKEY; UNTIL dgK == -1;
+END;
+
+
+// =====================================================
+//  MODULE 10 — HELP (two pages, any key advances)
+// =====================================================
+HelpPages()
+BEGIN
+  LOCAL hpK;
+
+  REPEAT hpK := GETKEY; UNTIL hpK == -1;   // drain the menu's Enter press
+  RECT_P(0, 0, 319, 239, NWHITE);
+  RECT_P(10, 6, 310, 234, NBLACK, NPANL);
+  TEXTOUT_P("NormExp Help  (1 of 2)", 20, 12, 2, NBLUE);
+  LINE_P(20, 34, 300, 34, NGRAY);
+  TEXTOUT_P("Set μ,σ once — every module uses them.", 20, 42, 1, NBLACK);
+  TEXTOUT_P("Any μ and any σ > 0 work: N(100,15),", 20, 56, 1, NBLACK);
+  TEXTOUT_P("  N(2.4,0.6), N(847,220) all plot.", 20, 70, 1, NBLACK);
+  TEXTOUT_P("Probability from x: shades the area", 20, 86, 1, NBLACK);
+  TEXTOUT_P("  left, right, between, or outside.", 20, 100, 1, NBLACK);
+  TEXTOUT_P("x from probability: percentile,", 20, 114, 1, NBLACK);
+  TEXTOUT_P("  critical value, central interval.", 20, 128, 1, NBLACK);
+  TEXTOUT_P("Z-solver: any 3 of z,x,μ,σ → the 4th.", 20, 142, 1, NBLACK);
+  TEXTOUT_P("Plot window & display: auto, wide or", 20, 156, 1, NBLACK);
+  TEXTOUT_P("  custom range; band and ref toggles;", 20, 170, 1, NBLACK);
+  TEXTOUT_P("  reset to N(0,1) without quitting.", 20, 184, 1, NBLACK);
+  TEXTOUT_P("Every result panel: one keypress", 20, 198, 1, NGRAY);
+  TEXTOUT_P("shows it shaded on the curve.", 20, 209, 1, NGRAY);
+  TEXTOUT_P("Any key: next page", 20, 220, 1, NGRAY);
+  REPEAT hpK := GETKEY; UNTIL hpK > -1;
+  REPEAT hpK := GETKEY; UNTIL hpK == -1;
+
+  RECT_P(0, 0, 319, 239, NWHITE);
+  RECT_P(10, 6, 310, 234, NBLACK, NPANL);
+  TEXTOUT_P("NormExp Help  (2 of 2)", 20, 12, 2, NBLUE);
+  LINE_P(20, 34, 300, 34, NGRAY);
+  TEXTOUT_P("EXPLORER KEYS", 20, 42, 1, NBLUE);
+  TEXTOUT_P("← →   move μ in round steps", 20, 58, 1, NBLACK);
+  TEXTOUT_P("↑ ↓   change σ in round steps", 20, 72, 1, NBLACK);
+  TEXTOUT_P("+     toggle 68-95-99.7 bands", 20, 86, 1, NBLACK);
+  TEXTOUT_P("−     toggle N(0,1) reference", 20, 100, 1, NBLACK);
+  TEXTOUT_P("0     re-centre the window", 20, 114, 1, NBLACK);
+  TEXTOUT_P("Esc / Enter   back to the menu", 20, 128, 1, NBLACK);
+  TEXTOUT_P("The window is held while you explore,", 20, 146, 1, NGRAY);
+  TEXTOUT_P("so moving μ actually looks like motion.", 20, 160, 1, NGRAY);
+  TEXTOUT_P("HOME EXPORTS: NE_Z, NE_X, NE_P", 20, 180, 1, NBLUE);
+  TEXTOUT_P("Type them in Home to reuse results.", 20, 194, 1, NGRAY);
+  TEXTOUT_P("Any key: back to the menu", 20, 220, 1, NGRAY);
+  REPEAT hpK := GETKEY; UNTIL hpK > -1;
+  REPEAT hpK := GETKEY; UNTIL hpK == -1;
+END;
+
+
+// =====================================================
+//  RESET — the standard-normal starting state.
+//
+//  Run at launch AND on the way out, so the next person to
+//  open the program never inherits the last session's
+//  distribution, shading, sample or solver entries.
+//
+//  Note this clears NE_Z / NE_X / NE_P as well, so the last
+//  result is no longer readable from Home once you quit.
+//
+//  These globals are declared by the program itself, so they
+//  cannot be removed from the catalogue while it exists;
+//  assigning the defaults back is the reset.
+// =====================================================
+ResetAll()
+BEGIN
+  NE_MU := 0; NE_SG := 1;                 // standard normal
+  NE_XM := 0; NE_XO := 1; NE_XB := 2;     // no shading
+  NE_CFG := {1, 1, 1, 0};                 // bands on, ref on, no 2nd curve
+  NE_BINS := MAKELIST(0, K, 1, NBINS+2, 1);
+  NE_HN := 0; NE_HLO := -4; NE_HW := 0.25;
+  NE_HXB := 0; NE_HS := 0;
+  NE_SRC := 0;                            // no sample drawn yet
+  NE_HREAL := 0;                          // ...and none is real data
+  NE_WA := 4;                             // auto window
+  NE_ZS := {0, 0, 1, 0};                  // solver: x, mu, sigma, z
+  NE_KH := 0;                             // result-view key help
+  NE_Z := 0; NE_X := 0; NE_P := 0;        // clear the Home exports
+  AutoWin();
+END;
+
+
+// =====================================================
+//  MAIN — the menu loop.  Esc or Quit leaves the program.
+// =====================================================
+EXPORT NormExp()
+BEGIN
+  LOCAL mnPick, mnRun;
+
+  ResetAll();                             // start from N(0,1)
+
+  mnRun := 1;
+  WHILE mnRun == 1 DO
+    mnPick := 0;
+    CHOOSE(mnPick,
+      "NormExp — N(" + STRING(NE_MU,2,2) + ", " + STRING(NE_SG,2,2) + ")", {
+      "1  Set μ and σ",
+      "2  Explore the curve",
+      "3  Probability from x",
+      "4  x from probability",
+      "5  Z-formula solver",
+      "6  Data & histogram",
+      "7  Compare curves (Cohen d)",
+      "8  Standardize animation",
+      "9  Plot window & display",
+      "10  Help",
+      "Quit"});
+    CASE
+      IF mnPick == 0 OR mnPick == 11 THEN mnRun := 0; END;
+      IF mnPick == 1 THEN SetDist(); END;
+      IF mnPick == 2 THEN Explorer(); END;
+      IF mnPick == 3 THEN ProbCalc(); END;
+      IF mnPick == 4 THEN InvCalc(); END;
+      IF mnPick == 5 THEN ZSolve(); END;
+      IF mnPick == 6 THEN Histo(); END;
+      IF mnPick == 7 THEN Compare2(); END;
+      IF mnPick == 8 THEN AnimStd(NE_MU, NE_SG, NE_CFG(1), NE_CFG(2)); END;
+      IF mnPick == 9 THEN SetWin(); END;
+      IF mnPick == 10 THEN HelpPages(); END;
+    END;
+  END;
+  ResetAll();                             // leave a clean N(0,1) behind
+END;
+
+
+// =====================================================
+//  DRAW ONE FRAME
+//
+//  The window comes from the globals NE_WLO / NE_WHI / NE_YMX,
+//  set by AutoWin (or held fixed by the Explorer and the
+//  animation).  Nothing about the geometry is hardcoded, so
+//  any μ and σ render correctly.
+//
+//  Locals are ndXW / ndYW / ndIdx rather than x / y / i:
+//  a bare i is the CAS imaginary unit and a bare x is the CAS
+//  symbolic variable.
+//
+//  ndMode: 0 none, 1 left of ndLoB, 2 right of ndLoB,
+//          3 between ndLoB and ndHiB, 4 outside them
+//  ndBins is NBINS bin counts of width NE_HW starting at NE_HLO;
+//  ndN is the sample size, 0 for none.
+// =====================================================
+NormDraw(ndMU, ndSG, ndBand, ndRef, ndMode, ndLoB, ndHiB,
+         ndMU2, ndC2, ndBins, ndN)
+BEGIN
+  LOCAL LFT, RGT, TOP, BOT, PW, PH;
+  LOCAL ndMin, ndMax, ndYmx, ndSpan, ndRY;
+  LOCAL ndPX, ndPY, ndXW, ndYW, ndLast, ndFlag;
+  LOCAL ndIdx, ndCol, ndTX, ndTY, ndXV, ndYV;
+  LOCAL ndStp, ndYStp, ndDec, ndYDec, ndPV, ndLbl;
+  LOCAL ndB, ndBL, ndBR, ndBH, ndPdf, ndPdf2;
+  LOCAL ndBarH;
+
+  LFT := NPLFT; RGT := NPRGT; TOP := NPTOP; BOT := NPBOT;
+  PW := RGT - LFT; PH := BOT - TOP;
+  ndMin := NE_WLO; ndMax := NE_WHI; ndSpan := ndMax - ndMin;
+  ndYmx := NE_YMX;
+
+  // ---- histogram bar heights, computed ONCE ----
+  // ndBarH holds each bar's density (count / (n * bin width)), or
+  // -1 for an empty bin.  The same numbers are needed twice -- to
+  // widen ndYmx so a tall bar is not clipped, and again to draw --
+  // and they used to be computed in both places.
+  ndBarH := MAKELIST(-1, K, 1, NBINS, 1);
+  IF ndN > 0 THEN
+    FOR ndB FROM 1 TO NBINS DO
+      IF ndBins(ndB) > 0 THEN
+        ndYW := ndBins(ndB) / (ndN * NE_HW);
+        ndBarH(ndB) := ndYW;
+        IF ndYW > ndYmx THEN ndYmx := ndYW * 1.05; END;
+      END;
+    END;
+  END;
+
+  // off-screen buffer, cleared to white
+  DIMGROB_P(G1, 320, 240, NWHITE);
+
+  // ---- cache the main pdf, one value per pixel column ----
+  ndPdf := MAKELIST(0, K, 0, PW, 1);
+  FOR ndIdx FROM 0 TO PW DO
+    ndPdf(ndIdx+1) := NORMALD(ndMU, ndSG, ndMin + ndIdx/PW*ndSpan);
+  END;
+
+  // ---- cache the SECOND curve's pdf the same way ----
+  // Built only when that curve is on.  It is read twice per frame
+  // -- once by the overlap shading, once by the trace -- and both
+  // used to call NORMALD per pixel, which is 544 evaluations a
+  // frame on top of the main curve's 273.  On a G1 that is the one
+  // cost an Explorer drag can actually feel.
+  IF ndC2 == 1 THEN
+    ndPdf2 := MAKELIST(0, K, 0, PW, 1);
+    FOR ndIdx FROM 0 TO PW DO
+      ndPdf2(ndIdx+1) := NORMALD(ndMU2, ndSG, ndMin + ndIdx/PW*ndSpan);
+    END;
+  END;
+
+  // ---- grid at "nice" positions ----
+  ndStp := NiceNum(ndSpan / 8, 1);
+  ndDec := MAX(0, -FLOOR(LOG(ndStp)));
+  ndXV := CEILING(ndMin / ndStp) * ndStp;
+  WHILE ndXV <= ndMax + ndStp/1000 DO
+    ndTX := LFT + IP((ndXV - ndMin) / ndSpan * PW);
+    IF ndTX > LFT AND ndTX <= RGT THEN
+      LINE_P(G1, ndTX, TOP, ndTX, BOT-1, NGRID);
+    END;
+    ndXV := ndXV + ndStp;
+  END;
+  ndYStp := NiceNum(ndYmx / 4, 1);
+  ndYDec := MAX(0, -FLOOR(LOG(ndYStp)));
+  ndYV := ndYStp;
+  WHILE ndYV < ndYmx DO
+    ndTY := BOT - IP(ndYV / ndYmx * PH);
+    LINE_P(G1, LFT+1, ndTY, RGT, ndTY, NGRID);
+    TEXTOUT_P(STRING(ndYV, 2, ndYDec), G1, 2, ndTY-4, 1, NGRAY);
+    ndYV := ndYV + ndYStp;
+  END;
+
+  // ---- empirical-rule bands ----
+  IF ndBand == 1 THEN
+    FOR ndPX FROM LFT+1 TO RGT DO
+      ndXW := ndMin + (ndPX - LFT) / PW * ndSpan;
+      ndFlag := ABS(ndXW - ndMU);
+      IF ndFlag <= 3*ndSG THEN
+        ndPY := BOT - IP(MIN(ndPdf(ndPX-LFT+1)/ndYmx, 1) * PH);
+        IF ndPY < TOP THEN ndPY := TOP; END;
+        ndCol := NB3;
+        IF ndFlag <= 2*ndSG THEN ndCol := NB2; END;
+        IF ndFlag <= ndSG THEN ndCol := NB1; END;
+        LINE_P(G1, ndPX, BOT-1, ndPX, ndPY, ndCol);
+      END;
+    END;
+  END;
+
+  // ---- tail / between / outside shading (over the bands) ----
+  IF ndMode > 0 THEN
+    FOR ndPX FROM LFT+1 TO RGT DO
+      ndXW := ndMin + (ndPX - LFT) / PW * ndSpan;
+      ndFlag := 0;
+      IF ndMode == 1 AND ndXW <= ndLoB THEN ndFlag := 1; END;
+      IF ndMode == 2 AND ndXW >= ndLoB THEN ndFlag := 1; END;
+      IF ndMode == 3 AND ndXW >= ndLoB AND ndXW <= ndHiB THEN ndFlag := 1; END;
+      IF ndMode == 4 AND (ndXW <= ndLoB OR ndXW >= ndHiB) THEN ndFlag := 1; END;
+      IF ndFlag == 1 THEN
+        ndPY := BOT - IP(MIN(ndPdf(ndPX-LFT+1)/ndYmx, 1) * PH);
+        IF ndPY < TOP THEN ndPY := TOP; END;
+        LINE_P(G1, ndPX, BOT-1, ndPX, ndPY, NTAIL);
+      END;
+    END;
+  END;
+
+  // ---- overlap of the two curves (min of the pdfs) ----
+  IF ndC2 == 1 THEN
+    FOR ndPX FROM LFT+1 TO RGT DO
+      ndYW := MIN(ndPdf(ndPX-LFT+1), ndPdf2(ndPX-LFT+1));
+      ndPY := BOT - IP(MIN(ndYW/ndYmx, 1) * PH);
+      IF ndPY < TOP THEN ndPY := TOP; END;
+      IF ndPY < BOT-1 THEN LINE_P(G1, ndPX, BOT-1, ndPX, ndPY, NOVL); END;
+    END;
+  END;
+
+  // ---- axes + ticks ----
+  LINE_P(G1, LFT, BOT, RGT, BOT, NBLACK);
+  LINE_P(G1, LFT, TOP, LFT, BOT, NBLACK);
+  ndXV := CEILING(ndMin / ndStp) * ndStp;
+  WHILE ndXV <= ndMax + ndStp/1000 DO
+    ndTX := LFT + IP((ndXV - ndMin) / ndSpan * PW);
+    LINE_P(G1, ndTX, BOT, ndTX, BOT+4, NBLACK);
+    ndLbl := STRING(ndXV, 2, ndDec);
+    // centre the label under its tick: labels run 3 or 4 digits
+    // wide for distributions like N(500,100)
+    TEXTOUT_P(ndLbl, G1, ndTX - 3*SIZE(ndLbl), BOT+7, 1, NBLACK);
+    ndXV := ndXV + ndStp;
+  END;
+
+  // ---- sample histogram (NBINS bins, density scale) ----
+  IF ndN > 0 THEN
+    FOR ndB FROM 1 TO NBINS DO
+      IF ndBarH(ndB) >= 0 THEN                 // -1 marks an empty bin
+        ndBH := BOT - IP(MIN(ndBarH(ndB)/ndYmx, 1) * PH);
+        IF ndBH < TOP THEN ndBH := TOP; END;
+        ndBL := LFT + IP((NE_HLO + (ndB-1)*NE_HW - ndMin) / ndSpan * PW);
+        ndBR := LFT + IP((NE_HLO + ndB*NE_HW - ndMin) / ndSpan * PW);
+        // clip to the plot box: bins can fall outside a custom window
+        IF ndBR > LFT AND ndBL < RGT THEN
+          IF ndBL < LFT THEN ndBL := LFT; END;
+          IF ndBR > RGT THEN ndBR := RGT; END;
+          LINE_P(G1, ndBL, ndBH, ndBR, ndBH, NGRN);
+          LINE_P(G1, ndBL, ndBH, ndBL, BOT-1, NGRN);
+          LINE_P(G1, ndBR, ndBH, ndBR, BOT-1, NGRN);
+        END;
+      END;
+    END;
+  END;
+
+  // ---- reference curve N(0,1) ----
+  // Only meaningful when the standard normal actually FITS, in
+  // both directions.  Horizontally: on N(500,100) it would be a
+  // spike off at the far left.  Vertically: its peak is 0.3989,
+  // so against a wide sigma (sigma = 7 peaks at 0.057) it is
+  // seven times too tall and clips into a flat-topped grey box
+  // that reads as a leftover artefact.  Fails either test, skip
+  // it — a comparison curve nobody can interpret is worse than
+  // no comparison curve.
+  // When the reference is switched ON but cannot be drawn, say so.
+  // Otherwise the +/- toggle and the menu 9 entry both look dead:
+  // the setting flips, nothing changes on screen, and the user
+  // reasonably concludes the key is broken.
+  IF ndRef == 1 THEN
+    IF ndMin < 4 AND ndMax > -4 AND NORMALD(0, 1, 0) <= ndYmx THEN
+    ELSE
+      // y=24 is the gap between the title (y=4, font 2, ~16 px
+      // tall) and the top of the plot box at NPTOP=40.  The old
+      // position, y=195, was inside the box and overlaid the
+      // curve it was talking about.
+      TEXTOUT_P("N(0,1) reference does not fit at this scale",
+        G1, 40, 24, 1, NGRAY);
+    END;
+  END;
+  IF ndRef == 1 AND ndMin < 4 AND ndMax > -4
+     AND NORMALD(0, 1, 0) <= ndYmx THEN
+    ndLast := -1;
+    FOR ndPX FROM LFT TO RGT DO
+      ndXW := ndMin + (ndPX - LFT) / PW * ndSpan;
+      ndYW := NORMALD(0, 1, ndXW);
+      ndPY := BOT - IP(MIN(ndYW/ndYmx, 1) * PH);
+      IF ndPY < TOP THEN ndPY := TOP; END;
+      IF ndLast >= 0 THEN LINE_P(G1, ndPX-1, ndLast, ndPX, ndPY, NGRAY); END;
+      ndLast := ndPY;
+    END;
+  END;
+
+  // ---- second curve N(μ₂, σ) ----
+  IF ndC2 == 1 THEN
+    ndLast := -1;
+    FOR ndPX FROM LFT TO RGT DO
+      ndPY := BOT - IP(MIN(ndPdf2(ndPX-LFT+1)/ndYmx, 1) * PH);
+      IF ndPY < TOP THEN ndPY := TOP; END;
+      IF ndLast >= 0 THEN LINE_P(G1, ndPX-1, ndLast, ndPX, ndPY, NGRN); END;
+      ndLast := ndPY;
+    END;
+  END;
+
+  // ---- main curve N(μ, σ) ----
+  ndLast := -1;
+  FOR ndPX FROM LFT TO RGT DO
+    ndPY := BOT - IP(MIN(ndPdf(ndPX-LFT+1)/ndYmx, 1) * PH);
+    IF ndPY < TOP THEN ndPY := TOP; END;
+    IF ndLast >= 0 THEN LINE_P(G1, ndPX-1, ndLast, ndPX, ndPY, NBLUE); END;
+    ndLast := ndPY;
+  END;
+
+  // ---- solid vertical line at the mean ----
+  // Runs from the baseline up to the curve, not the full frame
+  // height: stopping at the peak shows that mu is the centre AND
+  // the mode, and keeps the plot from looking like it has been
+  // cut in half.
+  IF ndMU >= ndMin AND ndMU <= ndMax THEN
+    ndTX := LFT + IP((ndMU - ndMin) / ndSpan * PW);
+    ndPY := BOT - IP(MIN(NORMALD(ndMU, ndSG, ndMU)/ndYmx, 1) * PH);
+    IF ndPY < TOP THEN ndPY := TOP; END;
+    LINE_P(G1, ndTX, BOT-1, ndTX, ndPY, NMEAN);
+    TEXTOUT_P(CHAR(956), G1, ndTX-3, ndPY-14, 1, NMEAN);
+  END;
+
+  // ---- the comparison curve's own mean line ----
+  // Same construction in green.  Cohen's d IS the distance between
+  // these two lines measured in standard deviations, so drawing
+  // both makes the readout's number visible on the plot.
+  IF ndC2 == 1 AND ndMU2 >= ndMin AND ndMU2 <= ndMax THEN
+    ndTX := LFT + IP((ndMU2 - ndMin) / ndSpan * PW);
+    ndPY := BOT - IP(MIN(NORMALD(ndMU2, ndSG, ndMU2)/ndYmx, 1) * PH);
+    IF ndPY < TOP THEN ndPY := TOP; END;
+    LINE_P(G1, ndTX, BOT-1, ndTX, ndPY, NGRN);
+    TEXTOUT_P(CHAR(956) + CHAR(8322), G1, ndTX-3, ndPY-14, 1, NGRN);
+  END;
+
+  // ---- marker lines at the shading bounds ----
+  IF ndMode > 0 AND ndLoB >= ndMin AND ndLoB <= ndMax THEN
+    ndTX := LFT + IP((ndLoB - ndMin) / ndSpan * PW);
+    LINE_P(G1, ndTX, TOP, ndTX, BOT, NRED);
+  END;
+  IF ndMode >= 3 AND ndHiB >= ndMin AND ndHiB <= ndMax THEN
+    ndTX := LFT + IP((ndHiB - ndMin) / ndSpan * PW);
+    LINE_P(G1, ndTX, TOP, ndTX, BOT, NRED);
+  END;
+
+  // ---- title + readouts ----
+  TEXTOUT_P("Normal PDF Explorer", G1, 90, 4, 2, NBLUE);
+  TEXTOUT_P("μ = " + STRING(ndMU, 2, 2), G1, 42, 44, 2, NBLACK);
+  TEXTOUT_P("σ = " + STRING(ndSG, 2, 2), G1, 42, 60, 2, NBLACK);
+  // Everything below sigma is optional, so the column is laid out
+  // by a running cursor: each line that prints advances it.  Fixed
+  // rows meant the sample block collided with the comparison block
+  // whenever both were showing.
+  ndRY := 76;
+  IF ndC2 == 1 THEN
+    TEXTOUT_P("μ₂ = " + STRING(ndMU2,2,2), G1, 42, ndRY, 1, NGRN);
+    ndRY := ndRY + 13;
+    // d on its own line under mu2, not trailing it
+    TEXTOUT_P("d = " + STRING((ndMU2-ndMU)/ndSG,2,2), G1, 42, ndRY, 1, NGRN);
+    ndRY := ndRY + 13;
+  END;
+  IF ndN > 0 THEN
+    IF NE_HREAL == 1 THEN
+      TEXTOUT_P("your data n = " + STRING(ndN,2,0), G1, 42, ndRY, 1, NGRN);
+    ELSE
+      TEXTOUT_P("sample n = " + STRING(ndN,2,0), G1, 42, ndRY, 1, NGRN);
+    END;
+    ndRY := ndRY + 13;
+    // The sample's own statistics, beside the population parameters
+    // above them.  They land somewhere near mu and sigma and differ
+    // on every draw — which is the lesson.
+    // CHAR(57344) is x-bar as a single glyph: HP's font carries it
+    // at U+E000, with p-hat alongside at U+E001.  No drawn bar and
+    // no combining macron, both of which misplace the stroke.
+    // Stacked, not side by side: x-bar sits under mu and s under
+    // sigma, so each sample statistic lines up with the population
+    // parameter it is estimating.
+    TEXTOUT_P(CHAR(57344) + " = " + STRING(NE_HXB,2,2),
+      G1, 42, ndRY, 1, NGRN);
+    ndRY := ndRY + 13;
+    TEXTOUT_P("s = " + STRING(NE_HS,2,2), G1, 42, ndRY, 1, NGRN);
+  END;
+  // Only with a single curve: with two, this block collides with the
+  // mu2 label in the same corner, and the ranges describe one
+  // distribution anyway.  The shaded bands themselves stay on.
+  IF ndBand == 1 AND ndC2 == 0 THEN
+    // exact areas, not the rounded 68–95–99.7 headline
+    TEXTOUT_P("68.27%: " + STRING(ndMU-ndSG,2,2) + "…"
+      + STRING(ndMU+ndSG,2,2), G1, 186, 44, 1, NBLUE);
+    TEXTOUT_P("95.45%: " + STRING(ndMU-2*ndSG,2,2) + "…"
+      + STRING(ndMU+2*ndSG,2,2), G1, 186, 57, 1, NBLUE);
+    TEXTOUT_P("99.73%: " + STRING(ndMU-3*ndSG,2,2) + "…"
+      + STRING(ndMU+3*ndSG,2,2), G1, 186, 70, 1, NBLUE);
+  END;
+  IF ndMode == 1 THEN
+    ndPV := NORMALD_CDF(ndMU, ndSG, ndLoB);
+    TEXTOUT_P("x₀ = " + STRING(ndLoB,2,2) + "  z = "
+      + STRING((ndLoB-ndMU)/ndSG,2,2), G1, 186, 86, 1, NRED);
+    TEXTOUT_P("P(X < x₀) = " + STRING(ndPV,2,4), G1, 186, 99, 1, NRED);
+  END;
+  IF ndMode == 2 THEN
+    ndPV := 1 - NORMALD_CDF(ndMU, ndSG, ndLoB);
+    TEXTOUT_P("x₀ = " + STRING(ndLoB,2,2) + "  z = "
+      + STRING((ndLoB-ndMU)/ndSG,2,2), G1, 186, 86, 1, NRED);
+    TEXTOUT_P("P(X > x₀) = " + STRING(ndPV,2,4), G1, 186, 99, 1, NRED);
+  END;
+  IF ndMode == 3 THEN
+    ndPV := NORMALD_CDF(ndMU, ndSG, ndHiB) - NORMALD_CDF(ndMU, ndSG, ndLoB);
+    TEXTOUT_P("a = " + STRING(ndLoB,2,2) + "  b = " + STRING(ndHiB,2,2),
+      G1, 186, 86, 1, NRED);
+    TEXTOUT_P("P(a < X < b) = " + STRING(ndPV,2,4), G1, 186, 99, 1, NRED);
+  END;
+  IF ndMode == 4 THEN
+    ndPV := 1 - (NORMALD_CDF(ndMU, ndSG, ndHiB)
+                 - NORMALD_CDF(ndMU, ndSG, ndLoB));
+    TEXTOUT_P("a = " + STRING(ndLoB,2,2) + "  b = " + STRING(ndHiB,2,2),
+      G1, 186, 86, 1, NRED);
+    TEXTOUT_P("P(outside) = " + STRING(ndPV,2,4), G1, 186, 99, 1, NRED);
+  END;
+
+  // ---- key help ----
+  // The live keys only exist inside the Explorer.  On a result
+  // view any key simply returns, so advertising the arrows there
+  // invites the user to press one and lose the plot.
+  IF NE_KH == 1 THEN
+    TEXTOUT_P("←→ μ  ↑↓ σ  + − toggles  0 centre  tap: x₀  Esc",
+      G1, 24, 226, 1, NGRAY);
+  END;
+  IF NE_KH == 0 THEN
+    TEXTOUT_P("Press any key to return to the menu",
+      G1, 66, 226, 1, NGRAY);
+  END;
+
+  // ---- one blit to the screen: no tearing ----
+  BLIT_P(G0, 0, 0, G1);
+END;

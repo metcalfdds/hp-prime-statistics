@@ -1,0 +1,470 @@
+// ============================================================
+// STUDRANGEPY - beta 14  (was v1.4)
+// Studentized range (Tukey q) - MicroPython engine
+// ============================================================
+// Author: Roger Metcalf, 2026.  Written with AI assistance
+//   (Anthropic Claude); concept, direction and all hardware
+//   testing by the author.
+//
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Share it, teach with
+//   it, adapt it for your own classroom.  Please keep this
+//   header with the file and credit the author if you pass it
+//   on or build on it.  Not for sale or commercial
+//   redistribution.  Provided as is, with no warranty: check
+//   any result you intend to rely on.
+//
+// Tested on an HP Prime G2 running the 2026-09-09 firmware;
+//   the G1 now runs the same build.  REQUIRES Python firmware.
+//   The Prime's interpreter is MicroPython 1.9.4 (a 2018
+//   release) -- check those docs, not the current ones.
+//
+// Algorithm after Dunlap, Powell & Konnerth (1977), Behavior
+//   Research Methods & Instrumentation 9(4):373-375, with native
+//   erf/lgamma replacing their polynomial approximations and a
+//   u^2 substitution added for low degrees of freedom.
+// Companion: StudRange_beta11 (pure PPL, no Python needed, and
+//   it has the interactive plot with the alpha ladder).
+// Run StudRangePy() from the Program Catalog.
+// ============================================================
+// MAP OF THE FILE
+//
+//   Phi, prange, gpdf ..... standard-normal pieces
+//   outer ................. shared outer integral over
+//                           s = sqrt(chi2_v / v), u^2 substituted
+//   scdf / spdf ........... CDF and density; 64x96 Simpson for
+//                           results, 32x48 for the plot
+//   qsolve / qcrit ........ secant root-finder, ~9 CDF evals
+//   plotdist .............. the plot, drawn through hpprime
+//   ask / holdkey / getnum  UI, and two Prime-specific fixes:
+//                           input() does not echo, and wait()
+//                           gives up after one minute
+//   do_pval / do_qcrit / do_hsd / main
+//
+// IF YOU ARE READING FOR THE TECHNIQUES: compare outer() here
+// with SRCDF in the PPL twin -- same algorithm, but native erf
+// and lgamma delete a hand-written Lanczos approximation, and
+// the secant solver replaces 60 steps of bisection.  On a G2
+// that is a critical value in ~1.5 s instead of ~1 minute.
+//
+// Delivered as .txt on purpose: paste into the Connectivity Kit
+//   editor.  .hpprgm is binary and imports badly.
+// ============================================================
+
+#PYTHON srng
+# StudRangePy beta 14 - Studentized range (Tukey q), MicroPython
+# Roger Metcalf / Claude, Aug 2026. Verified vs scipy.stats.studentized_range:
+#   p-values rel err <1e-7, q-crit abs err <1e-6, PDF <1e-9 rel-to-peak (full nodes).
+# v1.2: distribution plot with full nice-tick grid (x and labeled y axis),
+#   shaded tail + q marker.
+# v1.4 (Sep 2026, rebuilt from v1.2 -- no v1.3 source was on disk):
+#   every entry is echoed (Prime's input() is silent); the plot is held
+#   by a real keypress via hpprime.keyboard() instead of wait(), which
+#   gives up after one minute; tiny p-values print as "< 0.000001".
+# u^2 substitution in outer integrals; Simpson 64x96 (results), 32x48 (plot);
+# secant root-finder for q-crit (~9 CDF evals). G2 timing: p-value instant,
+# q-crit ~1.5 s.
+from math import erf, exp, log, sqrt, pi, lgamma, floor
+import hpprime
+
+SQ2 = sqrt(2.0)
+CPH = 1.0 / sqrt(2.0 * pi)
+
+def Phi(z):
+    return 0.5 * (1.0 + erf(z / SQ2))
+
+def prange(w, k, n):
+    # P(range of k std normals <= w); Simpson on z in [-8,8]
+    if w <= 0.0:
+        return 0.0
+    h = 16.0 / n
+    acc = 0.0
+    i = 0
+    while i <= n:
+        z = -8.0 + i * h
+        d = Phi(z) - Phi(z - w)
+        if d > 0.0:
+            f = CPH * exp(-0.5 * z * z + (k - 1.0) * log(d))
+        else:
+            f = 0.0
+        if i == 0 or i == n:
+            acc += f
+        elif i % 2 == 1:
+            acc += 4.0 * f
+        else:
+            acc += 2.0 * f
+        i += 1
+    v = k * acc * h / 3.0
+    if v > 1.0:
+        v = 1.0
+    return v
+
+def gpdf(w, k, n):
+    # density of range of k std normals at w
+    if w <= 0.0:
+        return 0.0
+    h = 16.0 / n
+    acc = 0.0
+    i = 0
+    while i <= n:
+        z = -8.0 + i * h
+        d = Phi(z) - Phi(z - w)
+        if k == 2:
+            f = CPH * CPH * exp(-0.5 * z * z - 0.5 * (z - w) * (z - w))
+        elif d > 0.0:
+            f = CPH * CPH * exp(-0.5 * z * z - 0.5 * (z - w) * (z - w)
+                                + (k - 2.0) * log(d))
+        else:
+            f = 0.0
+        if i == 0 or i == n:
+            acc += f
+        elif i % 2 == 1:
+            acc += 4.0 * f
+        else:
+            acc += 2.0 * f
+        i += 1
+    return k * (k - 1.0) * acc * h / 3.0
+
+def outer(q, k, v, no, ni, wantpdf):
+    # shared outer integral over s = sqrt(chi2_v/v); u^2 substitution
+    lc = 0.5 * v * log(v) - lgamma(0.5 * v) - (0.5 * v - 1.0) * log(2.0)
+    smax = 1.0 + 10.0 / sqrt(2.0 * v)
+    if v < 4.0 and smax < 6.0:
+        smax = 6.0
+    umax = sqrt(smax)
+    h = umax / no
+    tot = 0.0
+    i = 0
+    while i <= no:
+        u = i * h
+        s = u * u
+        if s > 0.0:
+            f = 2.0 * u * exp(lc + (v - 1.0) * log(s) - 0.5 * v * s * s)
+            if wantpdf:
+                f = f * s * gpdf(q * s, k, ni)
+            else:
+                f = f * prange(q * s, k, ni)
+        else:
+            f = 0.0
+        if i == 0 or i == no:
+            tot += f
+        elif i % 2 == 1:
+            tot += 4.0 * f
+        else:
+            tot += 2.0 * f
+        i += 1
+    return tot * h / 3.0
+
+def scdf(q, k, v, no=64, ni=96):
+    if q <= 0.0:
+        return 0.0
+    if v > 25000.0:
+        return prange(q, k, ni)
+    val = outer(q, k, v, no, ni, 0)
+    if val > 1.0:
+        val = 1.0
+    return val
+
+def spdf(q, k, v, no=32, ni=48):
+    if q <= 0.0:
+        return 0.0
+    if v > 25000.0:
+        return gpdf(q, k, ni)
+    return outer(q, k, v, no, ni, 1)
+
+def qsolve(k, v, target, no, ni):
+    # solve scdf(q) = target by secant with warm start
+    q0 = 2.0 + 0.5 * pow(k, 0.6) * (1.0 + 4.0 / max(v, 1.0))
+    q1 = q0 * 1.2
+    f0 = scdf(q0, k, v, no, ni) - target
+    f1 = scdf(q1, k, v, no, ni) - target
+    j = 0
+    while j < 30:
+        if f1 == f0:
+            break
+        q2 = q1 - f1 * (q1 - q0) / (f1 - f0)
+        if q2 <= 0.0:
+            q2 = 0.5 * q1
+        f2 = scdf(q2, k, v, no, ni) - target
+        q0 = q1
+        f0 = f1
+        q1 = q2
+        f1 = f2
+        if abs(f2) < 1e-9 or abs(q1 - q0) < 5e-6:
+            break
+        j += 1
+    return q1
+
+def qcrit(k, v, alpha):
+    return qsolve(k, v, 1.0 - alpha, 64, 96)
+
+# ---------- plotting ----------
+CBLU = 0x003CC8   # curve
+CSHD = 0xAACDFF   # tail shade
+CRED = 0xFF0000   # marker
+CORG = 0xFF4500   # frame
+CGRY = 0x5A5A5A   # tick labels
+CGRD = 0xE1E4EB   # grid
+CWHT = 0xFFFFFF
+CBLK = 0x000000
+
+LFT = 36
+RGT = 310
+TOP = 22
+BOT = 205
+
+def nicestep(span, maxticks):
+    raw = span / maxticks
+    e = floor(log(raw) / log(10.0))
+    b = raw / pow(10.0, e)
+    if b <= 1.0:
+        nb = 1.0
+    elif b <= 2.0:
+        nb = 2.0
+    elif b <= 5.0:
+        nb = 5.0
+    else:
+        nb = 10.0
+    return nb * pow(10.0, e)
+
+def fmtq(x):
+    if x == int(x):
+        return str(int(x))
+    return "{0:.1f}".format(x)
+
+def fmty(x, stp):
+    d = -floor(log(stp) / log(10.0))
+    if d < 0:
+        d = 0
+    if d == 0:
+        return str(int(x + 0.5))
+    return ("{0:." + str(int(d)) + "f}").format(x)
+
+def plotdist(k, v, qm, ptail, lab):
+    # density curve 0..qmax, shade tail beyond qm, red marker at qm
+    print("computing plot...")
+    qmax = qsolve(k, v, 0.999, 32, 48)
+    if qmax < qm * 1.15:
+        qmax = qm * 1.15
+    NS = 64
+    ys = []
+    ymax = 0.0
+    i = 0
+    while i <= NS:
+        d = spdf(qmax * i / NS, k, v)
+        ys.append(d)
+        if d > ymax:
+            ymax = d
+        i += 1
+    ymax = ymax * 1.10
+    W = RGT - LFT
+    H = BOT - TOP
+
+    def px(q):
+        return LFT + int(q / qmax * W + 0.5)
+
+    def py(d):
+        return BOT - int(d / ymax * H + 0.5)
+
+    def dens(q):
+        # linear interpolation on the sample grid
+        t = q / qmax * NS
+        j = int(t)
+        if j >= NS:
+            return ys[NS]
+        return ys[j] + (ys[j + 1] - ys[j]) * (t - j)
+
+    hpprime.fillrect(0, 0, 0, 320, 240, CWHT, CWHT)
+    # vertical dotted gridlines at nice x ticks
+    stp = nicestep(qmax, 6)
+    t = stp
+    while t < qmax * 1.0001:
+        x = px(t)
+        yy = TOP
+        while yy < BOT:
+            hpprime.pixon(0, x, yy, CGRD)
+            yy += 4
+        t += stp
+    # horizontal dotted gridlines at nice y ticks
+    ystp = nicestep(ymax, 5)
+    ty = ystp
+    while ty < ymax * 1.0001:
+        yv = py(ty)
+        xx = LFT + 1
+        while xx < RGT:
+            hpprime.pixon(0, xx, yv, CGRD)
+            xx += 4
+        ty += ystp
+    # shaded tail beyond qm
+    x = px(qm)
+    while x <= RGT:
+        q = (x - LFT) / W * qmax
+        hpprime.line(0, x, py(dens(q)), x, BOT, CSHD)
+        x += 1
+    # axis frame (four lines; hpprime.rect signature unverified)
+    hpprime.line(0, LFT, TOP, RGT, TOP, CORG)
+    hpprime.line(0, RGT, TOP, RGT, BOT, CORG)
+    hpprime.line(0, RGT, BOT, LFT, BOT, CORG)
+    hpprime.line(0, LFT, BOT, LFT, TOP, CORG)
+    # curve
+    i = 0
+    while i < NS:
+        x1 = LFT + int(i / NS * W + 0.5)
+        x2 = LFT + int((i + 1) / NS * W + 0.5)
+        hpprime.line(0, x1, py(ys[i]), x2, py(ys[i + 1]), CBLU)
+        i += 1
+    # red marker at qm
+    xm = px(qm)
+    hpprime.line(0, xm, TOP, xm, BOT, CRED)
+    # x tick labels
+    t = 0.0
+    while t < qmax * 1.0001:
+        x = px(t)
+        hpprime.line(0, x, BOT, x, BOT + 3, CGRY)
+        hpprime.textout(0, x - 4, BOT + 5, fmtq(t), CGRY)
+        t += stp
+    # y tick labels (right-aligned into the left margin)
+    ty = ystp
+    while ty < ymax * 1.0001:
+        yv = py(ty)
+        yl = fmty(ty, ystp)
+        hpprime.line(0, LFT - 3, yv, LFT, yv, CGRY)
+        hpprime.textout(0, LFT - 5 - 7 * len(yl), yv - 4, yl, CGRY)
+        ty += ystp
+    # titles
+    hpprime.textout(0, LFT, 4, "Q(k=" + str(k) + ", df=" + lab + ")", CBLK)
+    hpprime.textout(0, 190, 4, "P(Q>q)={0:.4f}".format(ptail), CRED)
+    hpprime.textout(0, LFT, 222, "q=" + "{0:.4f}".format(qm)
+                    + "   shaded = upper tail   any key = back", CGRY)
+    holdkey()
+
+# ---------- UI ----------
+def ask(prompt):
+    # Prime's input() shows no echo and no newline: print the entry
+    s = input(prompt)
+    print(s)
+    return s
+
+def holdkey():
+    # Wait for a real keypress: release, press, release.  PPL wait()
+    # returns on its own after one minute, which dropped the plot
+    # mid-lecture.  Falls back to wait() if keyboard() is missing.
+    try:
+        kb = hpprime.keyboard
+        while kb():
+            pass
+        while not kb():
+            pass
+        while kb():
+            pass
+    except Exception:
+        hpprime.eval("wait()")
+
+def getnum(prompt, lo, hi, isint):
+    while True:
+        s = ask(prompt)
+        try:
+            x = float(s)
+        except:
+            print("  (not a number, try again)")
+            continue
+        if x < lo or x > hi:
+            print("  (must be between " + str(lo) + " and " + str(hi) + ")")
+            continue
+        if isint:
+            return int(x)
+        return x
+
+def nstr(v):
+    if v == int(v):
+        return str(int(v))
+    return str(v)
+
+def askplot(k, v, qm, ptail):
+    s = ask("plot it? (y/n): ")
+    if s == "y" or s == "Y":
+        plotdist(k, v, qm, ptail, nstr(v))
+
+def do_pval():
+    print("")
+    print("-- P-value: P(Q > q) --")
+    k = getnum("k groups (2-50): ", 2, 50, 1)
+    v = getnum("df error (>=1): ", 1, 100000, 0)
+    q = getnum("q statistic: ", 0.0001, 1000, 0)
+    print("computing...")
+    p = 1.0 - scdf(q, k, v)
+    print("")
+    if p < 1e-6:
+        print("P(Q > {0}) < 0.000001".format(q))
+    else:
+        print("P(Q > {0}) = {1:.6f}".format(q, p))
+    if p < 0.001:
+        print("  = {0:.4e}".format(p))
+    print("")
+    askplot(k, v, q, p)
+    print("")
+
+def do_qcrit():
+    print("")
+    print("-- Critical value q(alpha; k, df) --")
+    k = getnum("k groups (2-50): ", 2, 50, 1)
+    v = getnum("df error (>=1): ", 1, 100000, 0)
+    a = getnum("alpha (e.g. .05): ", 0.000001, 0.5, 0)
+    print("computing...")
+    q = qcrit(k, v, a)
+    print("")
+    print("q({0}; k={1}, df={2}) = {3:.4f}".format(a, k, nstr(v), q))
+    print("")
+    askplot(k, v, q, a)
+    print("")
+
+def do_hsd():
+    print("")
+    print("-- Tukey HSD --")
+    k = getnum("k groups (2-50): ", 2, 50, 1)
+    v = getnum("df error (>=1): ", 1, 100000, 0)
+    mse = getnum("MS error: ", 0, 1e12, 0)
+    n = getnum("n per group: ", 1, 1e9, 0)
+    a = getnum("alpha (e.g. .05): ", 0.000001, 0.5, 0)
+    print("computing...")
+    q = qcrit(k, v, a)
+    hsd = q * sqrt(mse / n)
+    print("")
+    print("q crit  = {0:.4f}".format(q))
+    print("HSD     = {0:.4f}".format(hsd))
+    print("Mean pairs differing by more")
+    print("than HSD are significant.")
+    print("")
+    askplot(k, v, q, a)
+    print("")
+
+def main():
+    print("")
+    print("== StudRangePy beta 14 ==")
+    print("Studentized range (Tukey q)")
+    print("MicroPython engine + plot")
+    while True:
+        print("1) P-value from q")
+        print("2) Critical value")
+        print("3) Tukey HSD")
+        print("4) Quit")
+        c = ask("choice: ")
+        if c == "1":
+            do_pval()
+        elif c == "2":
+            do_qcrit()
+        elif c == "3":
+            do_hsd()
+        elif c == "4":
+            print("bye")
+            return
+        else:
+            print("(enter 1-4)")
+
+main()
+#END
+
+EXPORT StudRangePy()
+BEGIN
+PRINT();
+PYTHON(srng);
+END;

@@ -1,0 +1,9 @@
+# HP Prime binaries - this repo distributes .txt on purpose
+*.hpprgm
+*.hpappdir/
+
+# editors / OS
+.DS_Store
+Thumbs.db
+*~
+*.swp
