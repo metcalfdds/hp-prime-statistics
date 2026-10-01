@@ -7,6 +7,7 @@
 | `implementation-notes.md` | Why the code looks the way it does. Annotated excerpts, for people who write PPL. |
 | `normexplorer-guide.md` | User's guide to NormExplorer, written for students. |
 | `studrange-guide.md` | User's guide to StudRange and StudRangePy. |
+| `historical-cross-checks.md` | Worked examples from HP's own 1970s statistics programs, used as a second check on NormExplorer and BayesTree, plus reference cases for testing your own programs. |
 
-All five are free for educational and personal use; see the LICENSE in the
+All six are free for educational and personal use; see the LICENSE in the
 repository root.
