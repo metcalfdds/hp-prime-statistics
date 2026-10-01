@@ -4,7 +4,7 @@ Sep 27, 2026 · Roger Dale Metcalf Sr
 
 *The studentized range (Tukey's q) on the HP Prime — p-values, critical values, and Tukey HSD*
 
-*Describes StudRange beta 12 (PPL) and StudRangePy beta 14a (MicroPython), tested on an HP Prime G2 running the 2026-09-09 firmware — the G1 now runs the same build*
+*Describes StudRange beta 12a (PPL) and StudRangePy beta 14b (MicroPython), tested on an HP Prime G2 running the 2026-09-09 firmware — the G1 now runs the same build*
 
 ## What this is for
 
@@ -22,7 +22,7 @@ The program also works in both directions on the distribution itself — a p-val
 
 There are two programs on the calculator. They compute the same quantities by the same algorithm; they differ in what runs the arithmetic.
 
-|  | StudRange beta 12 | StudRangePy beta 14a |
+|  | StudRange beta 12a | StudRangePy beta 14b |
 | --- | --- | --- |
 | Engine | PPL | MicroPython |
 | Launch | `StudRange()` | `StudRangePy()` |
@@ -148,8 +148,8 @@ The Prime versions replace those approximations with native functions — `NORMA
 
 | Version | Agreement with `scipy.stats.studentized_range` |
 | --- | --- |
-| StudRange beta 12 | maximum absolute error about 1.3×10⁻⁵ |
-| StudRangePy beta 14a | p-values under 1×10⁻⁷ relative; critical values under 1×10⁻⁶; density under 1×10⁻⁹ relative to peak |
+| StudRange beta 12a | maximum absolute error about 1.3×10⁻⁵ |
+| StudRangePy beta 14b | p-values under 1×10⁻⁷ relative; critical values under 1×10⁻⁶; density under 1×10⁻⁹ relative to peak |
 
 Both reproduce the classic Harter table values — 3.877, 3.958, 4.102, 5.270 — to every tabled digit.
 
@@ -169,4 +169,4 @@ The concept, the source material and the direction of both programs are Roger Me
 
 **Free for educational and personal use.** Share it, teach with it, adapt it for your own classroom. Please keep the attribution with the files and credit the author if you pass them on or build on them. Not for sale or commercial redistribution. Provided as is, with no warranty — check any result you intend to rely on.
 
-© 2026 Roger Metcalf. Written with AI assistance (Anthropic Claude). The programs are distributed as `StudRange_beta12.txt` and `StudRangePy_beta14a.txt`.
+© 2026 Roger Metcalf. Written with AI assistance (Anthropic Claude). The programs are distributed as `StudRange_beta12a.txt` and `StudRangePy_beta14b.txt`.

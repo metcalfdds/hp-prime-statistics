@@ -1,19 +1,24 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// BAYESTREE - beta 3
+// BAYESTREE - beta 4
 // ============================================================
 // FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
 //   the file and credit the author if you pass it on.  Not for
 //   sale or commercial redistribution.  Provided as is.
-// Tested on an HP Prime G2 and G1, both on the 2026-09-09
-//   firmware, plus the desktop Virtual Calculator.
+// beta 3 was tested on an HP Prime G2 and G1, both on the
+//   2026-09-09 firmware, plus the desktop Virtual Calculator.
+//   beta 4 has NOT yet been run on hardware.
 //
 // beta 3: TAP ANY NODE for an explanation of that count -- what
 //   it is, the formula behind it, and which pair it belongs to.
 //   WAIT(-1) returns {type, x, y} for a screen event, so the
 //   main loop now takes touch as well as keys.  Nothing else
 //   changed from beta 2.
+//
+// beta 4 (29 Sep 2026): the key/touch variable in BayesTree() is
+//   renamed from key to kk (house rule: KEY heads user-key
+//   definitions).  Nothing else changed from beta 3.
 // ============================================================
 
 // (C) 2026 Roger D Metcalf
@@ -348,7 +353,7 @@ EXPORT BayesTree()
 BEGIN
   LOCAL prior, sens, spec;
   LOCAL cAx,cTx,cX0,cPos,cNeg,cPnl,cDb;
-  LOCAL key,menuIdx,NP,j,pr2,se2,sp2;
+  LOCAL kk,menuIdx,NP,j,pr2,se2,sp2;
   LOCAL pl,pidx,bestd,dtmp,np2;
   LOCAL nD,nH,tp,fn,fp,tn;
   LOCAL ppv,npv,lrp,lrm,podd,posto;
@@ -380,17 +385,17 @@ BEGIN
   y0 := 112; yD := 52; yH := 170;
   yTP := 32; yFN := 84; yFP := 148; yTN := 200;
 
-  key := 30;   // seed Enter so the options menu pops up first
+  kk := 30;   // seed Enter so the options menu pops up first
 
   REPEAT
     // ---- act on the key (menu handled here, BEFORE drawing) ----
-    IF key == 7  THEN spec := MAX(0.01, spec-0.01); END;                     // Left  : spec down
-    IF key == 8  THEN spec := MIN(0.999, spec+0.01); END;                     // Right : spec up
-    IF key == 2  THEN sens := MIN(0.999, sens+0.01); END;                     // Up    : sens up
-    IF key == 12 THEN sens := MAX(0.01, sens-0.01); END;                      // Down  : sens down
-    IF key == 50 THEN pidx := MIN(SIZE(pl), pidx+1); prior := pl(pidx); END;  // (+)   : prior up
-    IF key == 45 THEN pidx := MAX(1, pidx-1); prior := pl(pidx); END;         // (-)   : prior down
-    IF key == 30 THEN                                                          // Enter
+    IF kk == 7  THEN spec := MAX(0.01, spec-0.01); END;                     // Left  : spec down
+    IF kk == 8  THEN spec := MIN(0.999, spec+0.01); END;                     // Right : spec up
+    IF kk == 2  THEN sens := MIN(0.999, sens+0.01); END;                     // Up    : sens up
+    IF kk == 12 THEN sens := MAX(0.01, sens-0.01); END;                      // Down  : sens down
+    IF kk == 50 THEN pidx := MIN(SIZE(pl), pidx+1); prior := pl(pidx); END;  // (+)   : prior up
+    IF kk == 45 THEN pidx := MAX(1, pidx-1); prior := pl(pidx); END;         // (-)   : prior down
+    IF kk == 30 THEN                                                          // Enter
       menuIdx := 0;
       CHOOSE(menuIdx, "BayesTree Options", {
         "Enter values",
@@ -515,9 +520,9 @@ BEGIN
     // WAIT(-1) returns a key code, or {type, x, y} for a touch.
     // It also returns -1 by itself after about a minute; that just
     // falls through and redraws, which is harmless here.
-    key := WAIT(-1);
-    IF TYPE(key) == 6 THEN
-      btMX := key(2); btMY := key(3);
+    kk := WAIT(-1);
+    IF TYPE(kk) == 6 THEN
+      btMX := kk(2); btMY := kk(3);
       btNode := 0;
       // hit-test against the boxes the tree just drew
       IF btMX >= x1-4 AND btMX <= x1+74 AND btMY >= y0-12 AND btMY <= y0+10 THEN btNode := 1; END;
@@ -534,7 +539,7 @@ BEGIN
       IF btNode > 0 THEN
         NodeInfo(btNode, {NP,nD,nH,tp,fn,fp,tn,ppv,npv,prior,sens,spec});
       END;
-      key := 0;
+      kk := 0;
     END;
-  UNTIL key == 4;                                     // Esc
+  UNTIL kk == 4;                                     // Esc
 END;

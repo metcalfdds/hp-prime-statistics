@@ -1,5 +1,5 @@
 // ============================================================
-// STUDRANGE - beta 12
+// STUDRANGE - beta 12a
 // Studentized range (Tukey q) - PPL engine
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
@@ -23,13 +23,15 @@
 //   Behavior Research Methods & Instrumentation 9(4):373-375,
 //   with native distribution functions replacing their
 //   polynomial approximations and a u^2 substitution added.
-// Companion: StudRangePy_beta14 (MicroPython, much faster,
+// Companion: StudRangePy_beta14b (MicroPython, much faster,
 //   and it handles df below 3, which this version cannot).
 // Run StudRange() from the Program Catalog.
 // beta 12: the plot takes touch -- tap or drag anywhere in the
 //   plot box to move the observed q, and the tail probability
 //   sweeps with your finger.  WAIT(-1) was already returning the
 //   touch list; the old code threw it away.
+// beta 12a (30 Sep 2026): header names the current MicroPython
+//   twin, StudRangePy_beta14b.  No code change from beta 12.
 // ============================================================
 // MAP OF THE FILE
 //
@@ -56,7 +58,7 @@
 // ============================================================
 
 // ============================================================
-// StudRange beta 12 — Studentized Range Distribution (Tukey q)
+// StudRange beta 12a — Studentized Range Distribution (Tukey q)
 // ============================================================
 // Modernized from: Dunlap, Powell & Konnerth (1977),
 //   "A FORTRAN IV function for calculating probabilities

@@ -1,5 +1,5 @@
 // ============================================================
-// STUDRANGEPY - beta 14a  (was v1.4)
+// STUDRANGEPY - beta 14b  (was v1.4)
 // Studentized range (Tukey q) - MicroPython engine
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
@@ -22,7 +22,7 @@
 //   Research Methods & Instrumentation 9(4):373-375, with native
 //   erf/lgamma replacing their polynomial approximations and a
 //   u^2 substitution added for low degrees of freedom.
-// Companion: StudRange_beta12 (pure PPL, no Python needed, and
+// Companion: StudRange_beta12a (pure PPL, no Python needed, and
 //   it has the interactive plot with the alpha ladder).
 // Run StudRangePy() from the Program Catalog.
 // ============================================================
@@ -49,12 +49,16 @@
 // beta 14a (29 Sep 2026): header now names the current PPL twin,
 //   StudRange_beta12.  No code change from beta 14.
 //
+// beta 14b (30 Sep 2026): header names the current PPL twin,
+//   StudRange_beta12a.  No code change from beta 14a apart from
+//   the version string it prints.
+//
 // Delivered as .txt on purpose: paste into the Connectivity Kit
 //   editor.  .hpprgm is binary and imports badly.
 // ============================================================
 
 #PYTHON srng
-# StudRangePy beta 14a - Studentized range (Tukey q), MicroPython
+# StudRangePy beta 14b - Studentized range (Tukey q), MicroPython
 # Roger Metcalf / Claude, Aug 2026. Verified vs scipy.stats.studentized_range:
 #   p-values rel err <1e-7, q-crit abs err <1e-6, PDF <1e-9 rel-to-peak (full nodes).
 # v1.2: distribution plot with full nice-tick grid (x and labeled y axis),
@@ -442,7 +446,7 @@ def do_hsd():
 
 def main():
     print("")
-    print("== StudRangePy beta 14a ==")
+    print("== StudRangePy beta 14b ==")
     print("Studentized range (Tukey q)")
     print("MicroPython engine + plot")
     while True:

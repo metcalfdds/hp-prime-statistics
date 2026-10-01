@@ -1,5 +1,5 @@
 # HP Prime Lessons Learned
-*Roger Metcalf & Claude · rewritten 28 September 2026*
+*Roger Metcalf & Claude · v3 · rewritten 28 September 2026; fleet table updated 30 September 2026*
 
 Working notes for writing PPL and MicroPython on the HP Prime. Everything here was found on hardware, not read in a manual — where a claim is inferred rather than observed, it says so.
 
@@ -224,16 +224,16 @@ Panels: coloured border, light fill, matching text. Legends comma-separated — 
 
 | Program | State |
 | --- | --- |
-| **Norm Explorer beta 39** | Menu-first normal workbench: auto-scaling window for any μ and σ, four probability directions, inverse calculations, z-formula solver, touch input, data module reading D1 / C1 / C2, simulated sampling, Cohen's d, standardize animation, diagnostics page. Guide written. Data module emulator-tested only. |
-| **StudRange beta 11** | Studentized range in PPL: p-value, critical value, Tukey HSD, interactive plot with α ladder. df ≥ 3. |
-| **StudRangePy beta 14** | The MicroPython twin. Handles df ≥ 1, far faster on critical values, static plot. |
-| **EpiStats v1.1** | Seven-module epi suite. *Pending: M-H confidence intervals, Breslow-Day.* |
-| **FEP** | Fisher exact plus chi-square, corrected p-values. |
-| **ConTable2** | Contingency battery, row-based RR/RD, Haldane-Anscombe, McNemar. |
-| **StatDist** | 17 distributions live, 10 stubbed. |
-| **SampDist** | Sampling-distribution explorer. |
-| **Burr3 / Norm3** | Parameter explorers with CDF overlay and mean marker. |
-| **BayesTree** | Natural-frequency tree, ROC view, PPV-vs-prevalence, 2×2 view. *Pending: sequential evidence, Fagan nomogram.* |
+| **Norm Explorer beta 39a** | Menu-first normal workbench: auto-scaling window for any μ and σ, four probability directions, inverse calculations, z-formula solver, touch input, data module reading D1 / C1 / C2, simulated sampling, Cohen's d, standardize animation, diagnostics page. Guide written. Data module emulator-tested only. |
+| **StudRange beta 12a** | Studentized range in PPL: p-value, critical value, Tukey HSD, interactive plot with α ladder; tap or drag the plot to move q (touch emulator-tested only). df ≥ 3. |
+| **StudRangePy beta 14b** | The MicroPython twin. Handles df ≥ 1, far faster on critical values, static plot. |
+| **EpiStats v1.2** | Seven-module epi suite. *Pending: M-H confidence intervals, Breslow-Day.* |
+| **FEP v1.2** | Fisher exact plus chi-square, corrected p-values. |
+| **ConTable2 v1.1** | Contingency battery, row-based RR/RD, Haldane-Anscombe, McNemar. |
+| **StatDist v2.3** | 17 distributions live, 10 stubbed. |
+| **SampDist v2.0** | Sampling-distribution explorer. |
+| **Burr3 / Norm3 v2.1** | Parameter explorers with CDF overlay and mean marker. |
+| **BayesTree beta 4** | Natural-frequency tree, ROC view, PPV-vs-prevalence, 2×2 view. *Pending: sequential evidence, Fagan nomogram.* |
 | **PyVer / JoinTest / GenTest** | Throwaway diagnostics. `PyVer` reports interpreter version and module list. |
 
 *Shelved: a three-level Bayes tree for desktop — R/Shiny favoured for the classroom.*
