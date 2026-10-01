@@ -1,6 +1,6 @@
 # HP Prime statistics
 
-Teaching programs for the HP Prime graphing calculator, written in PPL and MicroPython for university statistics courses.
+Teaching programs for the HP Prime graphing calculator, written in PPL and MicroPython, and originally intended for upper-level university statistics courses.  
 
 **And a set of notes on what the Prime actually does**, as opposed to what the manual says — hard limits, commands that behave differently than documented, the MicroPython bridge and how it fails. Those notes are not specific to statistics; if you write PPL for anything, [docs/lessons-learned.md](docs/lessons-learned.md) is the part worth your time.
 
@@ -63,7 +63,7 @@ Short throwaway programs for finding out what your own calculator does.
 
 ## The notes
 
-[**docs/lessons-learned.md**](docs/lessons-learned.md) is the substantial document here: everything found the expensive way across roughly forty build iterations on real hardware. Hard limits, command behaviour that contradicts the manual, graphics and input idioms, the MicroPython bridge, numerical methods, and a list of disproved theories recorded as disproved.
+[**docs/lessons-learned.md**](docs/lessons-learned.md) is the substantial document here: everything found the expensive way across roughly forty build iterations on real hardware. Hard limits, command behaviour that contradicts the manual, graphics and input idioms, the MicroPython bridge, numerical methods, and a list of disproved theories recorded as disproved. The lessons learned document can be uploaded to your favorite AI to assist with coding.  
 
 A few things from it that are hard to find elsewhere:
 
@@ -80,7 +80,9 @@ A few things from it that are hard to find elsewhere:
 
 Concept, direction, classroom judgement and all hardware testing: **Roger Metcalf**, 2026.
 
-Implementation, numerical work and documentation: written with AI assistance (Anthropic Claude).
+Dozens of community PPL programs from various HP-related forums were read as reference while working out how the Prime actually behaves — several entries in the notes exist because a corpus program showed a construct working that the manual does not describe. None of those programs are reproduced here.
+
+Implementation, numerical work and documentation: written, expanded, and vastly improved with incredible and amazing AI assistance from Anthropic Claude--mostly Opus 5 and Fable 5.1.  Much of the notes and the user's guides were essentially written by Claude.
 
 The studentized range algorithm is after Dunlap, Powell & Konnerth (1977). Accuracy figures were verified against SciPy. Several MicroPython findings credited in the notes come from [JordiRigau/hp-prime-kit](https://github.com/JordiRigau/hp-prime-kit), measured independently on a different G2.
 
