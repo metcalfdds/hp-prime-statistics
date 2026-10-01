@@ -4,7 +4,7 @@ Teaching programs for the HP Prime graphing calculator, written in PPL and Micro
 
 **And a set of notes on what the Prime actually does**, as opposed to what the manual says — hard limits, commands that behave differently than documented, the MicroPython bridge and how it fails. Those notes are not specific to statistics; if you write PPL for anything, [docs/lessons-learned.md](docs/lessons-learned.md) is the part worth your time.
 
-Everything here is **free for educational and personal use**. See [LICENSE](LICENSE).
+Everything here is **free for educational and personal use**. See [LICENSE](LICENSE.txt).
 
 **Tested on** an HP Prime G2 and G1, both running the **2026-09-09** firmware, plus the desktop Virtual Calculator.
 

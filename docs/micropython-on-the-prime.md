@@ -18,9 +18,13 @@ Everything that follows was observed on a physical G1 and G2. Where something is
 
 The question asked most often is not about any of the failures below. It is how to get a Python program running at all, and nothing HP ships answers it.
 
-**Check the firmware first.** Python arrived with HP's 2021 beta firmware, released for both the G1 and the G2. A Prime of either generation on older firmware has no Python app at all — press **Apps** and look for a Python icon. If it is not there, the fix is a firmware update, not a setting. Both calculators behind these notes run Python, and the sampler described below runs on each.
+**Check the firmware first.** Python arrived in firmware **2.1.14567**, April 2021, for both the G1 and the G2 — worth stating precisely, because 2.1.14181 is sometimes quoted and that build is from November 2018 and has no Python at all. It was the last major update *before* Python, during the stretch when the Prime had fallen out of step with the French curriculum's move to Python. Check Help → Tree → About, or press **Apps** and look for a Python icon. If it is not there, the fix is a firmware update, not a setting. Both calculators behind these notes run Python, and the sampler described below runs on each.
 
-**Route 1: Python inside a PPL program.** This is the route to use for anything you share. The whole program is one text file, with the Python sitting between two markers and a short PPL wrapper underneath:
+There are then **two entirely different routes**, and confusing them is the support question.
+
+### Route A — Python inside a PPL program
+
+This is the route to use for anything you share. The whole program is one text file, with the Python sitting in a `#PYTHON name … #END` block and a short PPL wrapper underneath:
 
 ```
 #PYTHON pyname
@@ -33,62 +37,33 @@ BEGIN
 END;
 ```
 
-It installs exactly as any PPL program does — paste it into a new program in the Connectivity Kit — and it then appears in the Program Catalog (**Shift 1**) under its EXPORT name. That is `Hello`, not `pyname`: the name after `#PYTHON` is internal. If you import the `.txt` file instead of pasting it, the Kit can leave a few stray CJK characters at the very end; delete them. Every program distributed with these notes, `PyVer.txt` included, is built this way, so nothing else in this section is needed to run them.
+It installs exactly as any PPL program does — paste it into a new program in the Connectivity Kit and sync — and it then appears in the Program Catalog (**Shift 1**) under its EXPORT name. That is `Hello`, not `pyname`: the name after `#PYTHON` is internal. **There is never a separate `.py` file**, and the user need never open the Python app. If you import the `.txt` file instead of pasting it, the Kit can leave a few stray CJK characters at the very end; delete them.
 
-**Route 2: a Python app.** For a script that is Python from top to bottom. Press **Apps**, open Python, press **Save** and give the copy a name. On the calculator, **Symb** opens the editor and **Num** runs the scripts and shows the Terminal. To load a `.py` file from a computer instead, open the Connectivity Kit, expand the calculator's Application Library, find your app, right-click its Files folder and choose **Add file**. The app then launches from the Apps screen like any other.
+Every Python program distributed with these notes, `PyVer.txt` included, is built this way, and it is the reason "how do I install a Python program" has not come up once with them — Route A makes the question disappear. For anything classroom-facing, or anything you hand to someone else, use it.
 
-**Which to choose.** Route 1 is one file and one paste, launches like every other program, and lets PPL keep the interface and graphics while Python does the arithmetic — the arrangement the rest of these notes are about. Route 2 suits stand-alone scripts.
+### Route B — a standalone script in the Python app
 
-**Two things to know before the first run.** `print()` and `input()` use the Terminal, and `input()` echoes nothing — no characters, no newline — so print the user's entry back yourself. And a Python error does not stop the program with a message the way a PPL error does; its traceback goes to the Terminal. If something appears to do nothing, the reason is there. The next sections are about exactly that.
+For a script that is Python from top to bottom. Press **Apps**, open Python, press **Save** and give the copy a name. On the calculator, **Symb** opens the editor and **Num** runs the scripts and shows the Terminal; from the Shell, `import filename` runs one too.
 
-The quickest way to confirm a calculator is ready is `PyVer.txt`: paste it in, run it, and it reports the interpreter version and module list on the Terminal.
+`.py` files do **not** appear in the Program Catalog. They live in the Python app's own file list. This is the single biggest source of confusion: people sync a `.py`, look in the Program Catalog, find nothing, and conclude the transfer failed.
 
-## Getting Python onto the Prime at all
+To load a `.py` file from a computer, open the Connectivity Kit, expand the calculator's Application Library, find your app, right-click its Files folder and choose **Add file**. The app then launches from the Apps screen like any other. *(That loading step is the standard documented route rather than something verified here — nothing in this bundle ships that way.)*
 
-The step people get stuck on, and it is worth covering before anything else here applies.
+### Which to choose
 
-**The firmware gate.** Python arrived in firmware **2.1.14567**, April 2021 — worth stating precisely, because 2.1.14181 is sometimes quoted and that build is from November 2018 and has no Python at all. It was the last major update *before* Python, during the stretch when the Prime had fallen out of step with the French curriculum's move to Python. No 2.1.14567-or-later firmware, no Python, and nothing below applies. Check Help → Tree → About. Confirmed running on both a G1 and a G2 here.
+Route A is one file and one paste, launches like every other program, and lets PPL keep the interface and graphics while Python does the arithmetic — the arrangement the rest of these notes are about. It is also the honest answer to "how do I give a Python program to someone who has never opened the Python app": you hand them one `.txt`, and it behaves like a normal Prime program. Route B suits stand-alone scripts.
 
-There are then **two entirely different routes**, and confusing them is the support question.
+### Before the first run
 
-### Route A — Python embedded in a PPL program
+**`print()` and `input()` use the Terminal**, and `input()` echoes nothing — no characters, no newline — so print the user's entry back yourself. Output and tracebacks both land there: Shift-View.
 
-The Python source lives inside the program file, in a `#PYTHON name … #END` block, called by a PPL wrapper:
-
-```
-#PYTHON srng
-...
-main()
-#END
-
-EXPORT StudRangePy()
-BEGIN
-  PRINT();
-  PYTHON(srng);
-END;
-```
-
-Installation is identical to any PPL program: paste the `.txt` into a new program in the Connectivity Kit and sync. **There is never a separate `.py` file.** It launches from the Program Catalog like anything else, and the user need never open the Python app.
-
-This is what all three programs in this bundle use, and it is the reason "how do I install a Python program" has not come up once with them — Route A makes the question disappear. For anything classroom-facing, or anything you hand to someone else, use it.
-
-### Route B — a standalone `.py` in the Python app
-
-`.py` files do **not** appear in the Program Catalog. They live in the Python app's own file list, under Apps → Python → Files. This is the single biggest source of confusion: people sync a `.py`, look in the Program Catalog, find nothing, and conclude the transfer failed.
-
-On the calculator: open the Python app, create a file, paste the code, run it there — or from the Shell with `import filename`. Through the Connectivity Kit the file goes under the calculator's Application Library → Python entry rather than under Programs. *(That last detail is the standard documented route rather than something verified here — nothing in this bundle ships that way.)*
-
-Output and tracebacks appear in the Terminal, the same place bridge tracebacks land: Shift-View.
-
-### Traps that catch both routes
+**A Python error never raises a PPL error.** Its traceback goes to the Terminal and the program carries on. A Route A program needs the clear-then-validate pattern below; in Route B the Shell prompt simply returns as though nothing happened. If something appears to do nothing, the reason is in the Terminal.
 
 **Paste, do not retype.** Indentation survives a paste into the Connectivity Kit; hand entry on the device invites a tab-and-space mismatch that is miserable to find on a 320×240 screen.
 
-**A Python error never raises a PPL error.** Route A programs need the clear-then-validate pattern below. Route B users have to read the Terminal, because the Shell prompt simply returns as though nothing happened.
-
 **The desktop emulator hides hardware differences.** Any new Python path gets tested on real hardware with the Terminal open — see the join episode further down for what that costs when skipped.
 
-One more reason to prefer Route A when sharing: it is the honest answer to "how do I give a Python program to someone who has never opened the Python app." You hand them one `.txt`, and it behaves like a normal Prime program.
+The quickest way to confirm a calculator is ready is `PyVer.txt`: paste it in, run it, and it reports the interpreter version and module list on the Terminal.
 
 ## Two shapes for an embedded program
 
@@ -311,7 +286,7 @@ A practical consequence: since the ROM is identical, *any* difference you observ
 
 ## What is still unknown
 
-Three things I could not settle, offered in case someone reading this can.
+Three things I could not settle at first. The first has since been answered; the other two are offered in case someone reading this can.
 
 **~~Which MicroPython version.~~ Answered.** `sys.implementation` on a G2 running the 2026-09-09 firmware reports **MicroPython 1.9.4**. The documentation for that release was last updated in December 2018, and the MicroPython of that era tracks CPython 3.4 — a language version from 2014.
 

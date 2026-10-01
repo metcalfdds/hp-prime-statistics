@@ -1,5 +1,5 @@
 // ============================================================
-// NORM EXPLORER - beta 37
+// NORM EXPLORER - beta 39a
 // Normal distribution workbench for the HP Prime
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
@@ -22,7 +22,7 @@
 // A companion user's guide is available separately.
 // Run NormExp() from the Program Catalog.
 // ============================================================
-// MAP OF THE FILE  (1970 lines; this is where things live)
+// MAP OF THE FILE  (2074 lines; this is where things live)
 //
 //   Constants, session globals ............ top, after this block
 //   NiceNum .......... nice 1/2/5 tick steps, Heckbert
@@ -60,7 +60,7 @@
 // ============================================================
 
 // =====================================================
-// NORM EXPLORER — beta 39
+// NORM EXPLORER — beta 39a
 // NORMAL DISTRIBUTION WORKBENCH
 // HP Prime (PPL + optional MicroPython sampler)
 // =====================================================
@@ -98,6 +98,9 @@
 //       (e) ResidLoad separates "every x identical" from "nearly
 //       collinear".
 //       (f) Clearing a custom window now says so.
+// beta 39a (30 Sep 2026): the banner at the top of the file said
+//       beta 37; it now names the build, and the file map gives
+//       the right line count.  No code change from beta 39.
 // beta 37a: the "reference does not fit" notice moves out of the
 //       plot box to just under the title.  At y=195 it sat on top
 //       of the distribution it was describing.

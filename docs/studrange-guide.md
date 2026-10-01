@@ -4,7 +4,7 @@ Sep 27, 2026 · Roger Dale Metcalf Sr
 
 *The studentized range (Tukey's q) on the HP Prime — p-values, critical values, and Tukey HSD*
 
-*Describes StudRange v1.1 (PPL) and StudRangePy v1.4 (MicroPython), tested on an HP Prime G2 running the 2026-09-09 firmware — the G1 now runs the same build*
+*Describes StudRange beta 12 (PPL) and StudRangePy beta 14a (MicroPython), tested on an HP Prime G2 running the 2026-09-09 firmware — the G1 now runs the same build*
 
 ## What this is for
 
@@ -22,7 +22,7 @@ The program also works in both directions on the distribution itself — a p-val
 
 There are two programs on the calculator. They compute the same quantities by the same algorithm; they differ in what runs the arithmetic.
 
-|  | StudRange v1.1 | StudRangePy v1.4 |
+|  | StudRange beta 12 | StudRangePy beta 14a |
 | --- | --- | --- |
 | Engine | PPL | MicroPython |
 | Launch | `StudRange()` | `StudRangePy()` |
@@ -128,7 +128,7 @@ What you see:
 
 The two dotted lines are the point of the picture. When the observed q sits right of the critical line, it is in the tail; when it sits left, it is not. "Significant" stops being a verdict handed down by a table and becomes a position on a curve.
 
-**Live controls, StudRange only.** ← and → move the observed q, in round steps on a NiceNum grid so the readout stays legible. ↑ and ↓ climb a five-rung α ladder — .10, .05, .025, .01, .005 — starting at .05. Esc leaves. Both redraw immediately, so you can slide q across the critical line and watch the p-value cross .05, or change α and watch the critical line move to meet a fixed q.
+**Live controls, StudRange only.** ← and → move the observed q, in round steps on a NiceNum grid so the readout stays legible. ↑ and ↓ climb a five-rung α ladder — .10, .05, .025, .01, .005 — starting at .05. Esc leaves. Both redraw immediately, so you can slide q across the critical line and watch the p-value cross .05, or change α and watch the critical line move to meet a fixed q. Beta 12 adds touch: tap or drag anywhere in the plot box and the observed q follows your finger, with the tail probability sweeping as you drag. Touch has so far been tested on the emulator only.
 
 StudRangePy's plot is a static picture of the result you just computed, held until you press a key. It shades the upper tail beyond your q and prints P(Q > q) in the corner.
 
@@ -148,8 +148,8 @@ The Prime versions replace those approximations with native functions — `NORMA
 
 | Version | Agreement with `scipy.stats.studentized_range` |
 | --- | --- |
-| StudRange v1.1 | maximum absolute error about 1.3×10⁻⁵ |
-| StudRangePy v1.4 | p-values under 1×10⁻⁷ relative; critical values under 1×10⁻⁶; density under 1×10⁻⁹ relative to peak |
+| StudRange beta 12 | maximum absolute error about 1.3×10⁻⁵ |
+| StudRangePy beta 14a | p-values under 1×10⁻⁷ relative; critical values under 1×10⁻⁶; density under 1×10⁻⁹ relative to peak |
 
 Both reproduce the classic Harter table values — 3.877, 3.958, 4.102, 5.270 — to every tabled digit.
 
@@ -169,4 +169,4 @@ The concept, the source material and the direction of both programs are Roger Me
 
 **Free for educational and personal use.** Share it, teach with it, adapt it for your own classroom. Please keep the attribution with the files and credit the author if you pass them on or build on them. Not for sale or commercial redistribution. Provided as is, with no warranty — check any result you intend to rely on.
 
-© 2026 Roger Metcalf. Written with AI assistance (Anthropic Claude). The programs are distributed as `StudRange_beta11.txt` and `StudRangePy_beta14.txt`.
+© 2026 Roger Metcalf. Written with AI assistance (Anthropic Claude). The programs are distributed as `StudRange_beta12.txt` and `StudRangePy_beta14a.txt`.

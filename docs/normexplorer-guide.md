@@ -2,7 +2,7 @@
 
 Sep 17, 2026 · Roger Dale Metcalf Sr
 
-*HP Prime graphing calculator · beta 39*
+*HP Prime graphing calculator · beta 39a*
 
 ## What Norm Explorer is
 
@@ -126,7 +126,7 @@ The rearrangement is worth reading, not skipping. Finding a z-score is easy enou
 
 ### Values carry over
 
-μ and σ arrive from the session distribution, so whatever you set in menu 2 is already in the boxes. x and z persist from your last visit. Anything you enter or solve for flows back out to the session, so the plotted curve follows along.
+μ and σ arrive from the session distribution, so whatever you set in menu 1 is already in the boxes. x and z persist from your last visit. Anything you enter or solve for flows back out to the session, so the plotted curve follows along.
 
 In practice: solve for z with x = 115, μ = 100, σ = 15 → z = 1. Go back in, switch to solving for x, and μ, σ and z are still filled in. Change z to 1.96 and you get x = 129.4 without retyping anything.
 
@@ -332,7 +332,7 @@ So a critical value can be computed in the program and then used in further arit
 
 ### Version
 
-This guide describes beta 39. Menu numbering, key assignments and default values are as shipped in that build; earlier versions differ, particularly in the solver, the plot window and the menu order.
+This guide describes beta 39a (the same code as beta 39). Menu numbering, key assignments and default values are as shipped in that build; earlier versions differ, particularly in the solver, the plot window and the menu order.
 
 **Tested on:** an HP Prime G2 and G1, plus the desktop Virtual Calculator. Both calculators now run the 2026-09-09 firmware, though the G1 results recorded here were obtained before it was updated to that build. Behaviour on other firmware may differ — in particular, which characters render and which app variables a program can reach have both turned out to be firmware-dependent.
 
