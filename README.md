@@ -2,7 +2,7 @@
 
 Teaching programs for the HP Prime graphing calculator, written in PPL and MicroPython, and originally intended for upper-level university statistics courses.  
 
-**And a set of notes on what the Prime actually does**, as opposed to what the manual says — hard limits, commands that behave differently than documented, the MicroPython bridge and how it fails. Those notes are not specific to statistics; if you write PPL for anything, [docs/lessons-learned_v3.md](docs/lessons-learned_v3.md) is the part worth your time.
+**And a set of notes on what the Prime actually does**, as opposed to what the manual says — hard limits, commands that behave differently than documented, the MicroPython bridge and how it fails. Those notes are not specific to statistics; if you write PPL for anything, [docs/lessons-learned_v5.md](docs/lessons-learned_v5.md) is the part worth your time.
 
 Everything here is **free for educational and personal use**. See [LICENSE](LICENSE.txt).
 
@@ -63,7 +63,7 @@ Short throwaway programs for finding out what your own calculator does.
 
 ## The notes
 
-[**docs/lessons-learned_v3.md**](docs/lessons-learned_v3.md) is the substantial document here: everything found the expensive way across roughly forty build iterations on real hardware. Hard limits, command behaviour that contradicts the manual, graphics and input idioms, the MicroPython bridge, numerical methods, and a list of disproved theories recorded as disproved. The lessons learned document can be uploaded to your favorite AI to assist with coding.  
+[**docs/lessons-learned_v5.md**](docs/lessons-learned_v5.md) is the substantial document here: everything found the expensive way across roughly forty build iterations on real hardware. Hard limits, command behaviour that contradicts the manual, graphics and input idioms, the MicroPython bridge, numerical methods, and a list of disproved theories recorded as disproved. The lessons learned document can be uploaded to your favorite AI to assist with coding.  
 
 A few things from it that are hard to find elsewhere:
 

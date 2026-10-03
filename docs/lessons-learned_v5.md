@@ -1,5 +1,20 @@
 # HP Prime Lessons Learned
-*Roger Metcalf & Claude · v3 · rewritten 28 September 2026; fleet table updated 30 September 2026*
+*Roger Metcalf & Claude · v5 · 3 October 2026 (v4 1 October 2026; v3 rewritten 28 September 2026)*
+
+**What changed in v5** (corrections only; no rule changed):
+
+- The University of Delaware Python pages are **Mike Markowski's**. v4 wrongly credited them to "Mark Mitchell" (§9a).
+- The box above §1 no longer calls `HPPrimeProgrammingUDelaware.pdf` the only Python document in the library. Streeter's book and a saved copy of Markowski's pages are both in `Community_Library\docs`.
+- That PDF is not a ZIP of page images, as v4 said. The copy on Roger's computer is an ordinary 7-page PDF, printed from Markowski's page in January 2024, whose text layer is garbled.
+- §9a now says where each Python source is saved in the library.
+
+**What changed in v4:**
+
+- The `LOCAL` rule is now 6 per line (§2).
+- Every update gets a new version number, and stale copies are archived (§14.7).
+- Search the whole library, not just the Project's 83 programs (box above §1, §14.11).
+- Today's PyProbe findings are folded in: argv, matplotl, the module contents, MSGBOX, Terminal scrolling (§3, §7, §8, §9).
+- Python's arrival date is corrected from HP's release notes (§8).
 
 Working notes for writing PPL and MicroPython on the HP Prime. Everything here was found on hardware, not read in a manual — where a claim is inferred rather than observed, it says so.
 
@@ -11,9 +26,9 @@ Working notes for writing PPL and MicroPython on the HP Prime. Everything here w
 >
 > Not after. In one September session, four bugs were rediscovered the expensive way — the `STRING` mode, the FREEZE pause, the x-bar glyph, and the LOCAL limit — and all four were already written down here.
 >
-> Then: **grep the uploaded `.txt` corpus** for anything this file does not cover. `<>` was avoided for a whole session as "unverified" when five corpus programs use it.
+> Then: **search the whole library** for anything this file does not cover. That means the `.txt` programs uploaded to the Project, plus everything in `C:\HP-Prime` on Roger's computer: the fleet, about 400 hpcalc.org zips, and `Community_Library` (see its `INDEX.md`). `<>` was avoided for a whole session as "unverified" when five corpus programs use it.
 >
-> Then: **read the uploaded reference PDFs.** Note that `HPPrimeProgrammingUDelaware.pdf` is actually a ZIP of page images with a broken text layer — it will not turn up in a text search and has to be unzipped and read as images. It is the only document in the library that covers Python.
+> Then: **read the uploaded reference PDFs.** Note that `HPPrimeProgrammingUDelaware.pdf` (Mike Markowski's University of Delaware page, printed to PDF in January 2024) has a garbled text layer — it will not turn up in a text search and has to be read as page images. It is not the only Python document in the library: Markowski's pages are also saved as HTML in `Community_Library\docs\markowski_udel\`, and Neil Streeter's *HP Prime Python Activities Book* is `Community_Library\docs\hpprime-python-activities.pdf`. §9a lists every Python source and where it is.
 
 ---
 
@@ -21,7 +36,7 @@ Working notes for writing PPL and MicroPython on the HP Prime. Everything here w
 
 **PPL by default.** It is good at calculating, and the native `_P` graphics have no Python equivalent worth reimplementing. Anything that redraws on a keypress stays pure PPL.
 
-**Python (MicroPython) when the arithmetic earns it.** Compute-heavy engines — quadrature, root-finding, simulation — get a real speed-up because the math primitives are compiled C while PPL loops are interpreted. A measured case: StudRange's critical value takes about a minute in PPL (60-step bisection) and about 1.5 seconds in Python (secant, ~9 evaluations).
+**Python (MicroPython) when it makes a program faster, or supplies a needed feature PPL lacks** (Roger's rule, 1 Oct 2026). Compute-heavy engines get a real speed-up, because the math primitives are compiled C while PPL loops are interpreted. Examples are quadrature, root-finding and simulation. A measured case: StudRange's critical value takes about a minute in PPL (60-step bisection) and about 1.5 seconds in Python (secant, ~9 evaluations).
 
 The counter-example matters as much. A live power visualiser with held-key stepping and four reshaded regions per frame gains nothing — its arithmetic is a handful of CDFs per redraw, and the bridge crossing would cost more than the computation. **Of nine programs in this fleet, one was worth converting.**
 
@@ -36,7 +51,12 @@ State *why* in one line before splitting any project across languages.
 - **Never test `CHOOSE`'s return value for a specific number.** Initialise the index variable to 0, call `CHOOSE`, then test the index variable itself. Cancel leaves it 0.
 - **`INPUT`'s first argument must be a list of variable NAMES**, written back in place. Value lists give "Invalid Input".
 - **Never `INPUT` into a function parameter.** Copy to a `LOCAL`, `INPUT` that, assign back. Parameters as targets fail silently.
-- **`LOCAL` statement size: 7 is known to work; 6 is the house habit.** BayesTree ships with three 7-variable `LOCAL` lines and runs fine on device, so the earlier "maximum 6" was over-cautious and whatever failure prompted it had another cause. The true ceiling has not been established — the documented figure was 8. Keep to 6 by habit, do not go rewriting working code that uses 7. **`LOCAL` inside `IF`/`CASE` is genuinely rejected** — hoist to the top of the function, splitting across several lines.
+- **`LOCAL` statement size: 6 per line. That is the rule** (Roger, 1 Oct 2026). For the record:
+  - 7 has been seen to work: BayesTree ships three 7-variable lines.
+  - The documented figure was 8.
+  - The true ceiling has never been established.
+  - New code uses at most 6. Split longer lists across several `LOCAL` lines.
+- **`LOCAL` inside `IF`/`CASE` is genuinely rejected.** Hoist it to the top of the function, splitting across several lines.
 - **A PPL function cannot modify its caller's variables.** Parameters pass by value. Shared state therefore lives in exported globals, which means every write path to that state must be audited together.
 - **Parameter names must not collide with built-in FUNCTION names** (`FP`, `IP`, `LN`, `RE`, `IM`, `SIGN`…). `fp` as a parameter is a syntax error even though `LOCAL fp` parses fine — the parameter parser is stricter.
 - **Programs with parameters get an auto-generated argument form** from the catalog. Menu-driven tools take zero arguments and hold defaults internally; plot explorers launched from Home with values keep theirs.
@@ -50,6 +70,7 @@ State *why* in one line before splitting any project across languages.
 - **Confirmed working:** `NORMALD` / `NORMALD_CDF` / `NORMALD_ICDF`, `STUDENT(_CDF)`, `FISHER(_CDF)`, `BINOMIAL(_CDF)` including the 4-argument form, `POISSON(_CDF)`, `COMB`, `IFTE`, `MAKELIST`, `CONCAT`, `RANDOM`, `PIXON_P`, `TYPE` (6 = list), `SIZE`, `CHAR`, `ROUND(v, places)`, `MOUSE`, `VIEW`, `mean`, `stddev`, `variance`.
 - **Do not exist:** `GEOMETRIC*` — compute p(1−p)^(k−1) by hand. `LNGAMMA` outside the CAS — carry a Lanczos helper, or use Python's `lgamma` and delete it.
 - Prefer native `NORMALD_ICDF` to any hand-rolled inverse normal.
+- **`MSGBOX` shows about 5 lines.** A 6th line was simply lost (PyProbe beta 1, emulator, 1 Oct 2026). Keep message boxes to 5 lines; put longer output on a screen of your own.
 
 ## 4 · Input fields
 
@@ -104,17 +125,62 @@ REPEAT k := GETKEY; UNTIL k == -1;   // drain that one
 
 **The key-help footer must match what the keys actually do.** Live arrows exist only in an explorer; on a result view any key returns. Advertising arrows there invites a press that loses the plot. Drive the footer from a state flag.
 
+**The Terminal can only be scrolled after the program ends.** While a program waits in a `GETKEY` loop, it takes every key, the arrows included, so arrows only move the program on.
+
+- End the program with a `PRINT`. The Terminal then stays open, and Up/Down scroll it (User Guide, PRINT entry).
+- Del erases the Terminal, so warn the user.
+- Its scroll bar does not respond to touch.
+
+Verified with PyProbe beta 2a, 1 Oct 2026. For output the user must read while the program is still running, draw your own scrolling screen, as PyProbe beta 2b does.
+
 ## 8 · MicroPython: getting it running
 
 **The interpreter is MicroPython 1.9.4** — confirmed by `sys.implementation` on a G2 with the 2026-09-09 firmware. That release's documentation was last updated December 2018 and tracks CPython 3.4. **Check the 1.9.4 docs, not the current ones.** Most of the quirks below follow from this one fact.
 
-**Python arrived in firmware 2.1.14567, April 2021.** Not 2.1.14181 — that build is from November 2018 and has no Python at all, though it is sometimes quoted.
+**Python arrived in firmware build 2.1.14566, released 2021/04/28** (HP's release notes, "Add Python app").
 
-**Module inventory on this firmware:** `math`, `cmath`, `urandom`, `hpprime`, `arit`, `linalg`, `matplotl` and `gc` all present. **`random` and `time` are absent.** `urandom.getrandbits()` is the natural random source here.
+- It did not arrive in 2.1.14181. That build is dated 2018/10/16 in the same notes, and it has no Python at all, though it is sometimes quoted.
+- v3 had the build as 14567 and that date as November 2018. Both are corrected here.
+
+**What is in each module.** PyProbe beta 2, `dir()` on the 2026-09-09 emulator, 1 Oct 2026. `sys.implementation` = micropython (1, 9, 4).
+
+- **Present:** `math`, `cmath`, `urandom`, `hpprime`, `arit`, `linalg`, `matplotl`, `graphic`, `cas`, `gc`.
+- **Absent:** `random` and `time`. Also **`os`**: `import os` fails in a `#PYTHON` block. HP's 2.4.2 notes mention `os.read` fixes; perhaps `os` exists only inside the Python app. That is untested.
+- **`urandom`:** `random()`, `uniform()`, `randint()`, `randrange()`, `choice()`, `getrandbits()`, `seed()`.
+- **`math` extras:**
+  - Present: `erf`, `erfc`, `lgamma`, `gamma`, `log2`, `log10`, `expm1`. `erf` gives the normal CDF directly.
+  - Missing: `fsum`, `isclose`, `factorial`, `comb`.
+- **`linalg`:** `det`, `inv`, `solve`, `rref`, `eig`, `eigenvects`, `transpose`, `mul`, `dot`, `cross`, `fft`, `ifft`, `linspace`, `arange`, `matrix`, `zeros`, `ones`, `eye`, `identity`, and polynomial helpers. That is enough for regression and ANOVA without hand-written matrix code.
+- **`graphic`:**
+  - Drawing: `draw_line`, `draw_rectangle`, `draw_filled_rectangle`, `draw_circle`, `draw_filled_circle`, `draw_arc`, `draw_filled_arc`, `draw_polygon`, `draw_filled_polygon`, `draw_string`, `draw_pixel`, `fill_rect`, `get_pixel`, `set_pixel`.
+  - Screen: `clear_screen`, `show`, `show_screen`.
+  - Named colours: black, white, red, green, blue, cyan, magenta, yellow.
+  - Argument orders are not yet tested.
+- **`cas`:** `caseval`, `eval_expr`, `get_key`, `xcas`.
+- **`arit`:** `gcd`, `lcm`, `iegcd`, `ifactor`, `isprime`, `nextprime`, `prevprime`, `nprimes`, `euler`, `asc`, `char`.
+
+**Do not use `matplotl` for teaching charts** (PyProbe beta 2). Every function is accepted, but the module is unusable:
+
+- `clf()` clears nothing.
+- Pictures pile up, even across separate `PYTHON()` runs.
+- `axis()` has no visible effect, so the Prime picks the window.
+- `text()` draws only a small square, never the letters.
+- A colour argument is accepted but ignored.
+- Everything is blue or black outline.
+
+Only the shapes are right: `histogram` counts in width-1 classes from the minimum, and `barplot` bars are centred at x = 0, 1, 2…. Draw charts yourself, with PPL `_P` commands or with Python's `hpprime` or `graphic`.
 
 The missing `time` is independently confirmed by hp-prime-kit on a different G2, and they give the workaround: build your own on **`eval('ticks()')`**, which returns milliseconds. Worth knowing that `ticks()` exists — it is the only timing source on the Python side.
 
-**`hpprime` has more than `eval`.** In confirmed use: `fillrect(gr,x,y,w,h,edge,fill)` with `gr=0` meaning the screen, `keyboard()` for any-key-down, and `dimgrob(n,w,h,colour)` for an off-screen grob (used to measure text). Colours are 24-bit `0xRRGGBB` integers. A longer list — `arc`, `blit`, `circle`, `line`, `mouse`, `pixon`, `rect`, `textout` and `_c` variants — is documented by the community but unverified; nearly all have a PPL equivalent reachable through `eval` anyway.
+**`hpprime` has more than `eval`.** In confirmed use:
+
+- `fillrect(gr,x,y,w,h,edge,fill)`, with `gr=0` meaning the screen.
+- `keyboard()` for any-key-down.
+- `dimgrob(n,w,h,colour)` for an off-screen grob (used to measure text).
+
+Colours are 24-bit `0xRRGGBB` integers.
+
+The full list is now confirmed present (PyProbe): `arc`, `blit`, `circle`, `dimgrob`, `eval`, `fillpoly`, `fillrect`, `get_cartesian`, `getpix`, `grobh`, `grobw`, `invert`, `keyboard`, `line`, `mouse`, `pixon`, `rect`, `set_cartesian`, `strblit`, `strblit2`, `textout`, `ticks`, most with `_c` (Cartesian-coordinate) variants. Their argument orders are not yet verified; test before relying on them. Nearly all have a PPL equivalent reachable through `eval` anyway.
 
 **Two installation routes, and confusing them is the support question.**
 
@@ -127,6 +193,18 @@ The missing `time` is independently confirmed by hp-prime-kit on a different G2,
 ## 9 · MicroPython: the bridge
 
 **The pattern.** PPL writes named globals, Python reads them with `hpprime.eval`, and writes back by assembling a PPL assignment as text. `eval` also writes and reads PPL globals directly (`ev('CX:=3.5')`, `ev('CX')`) and calls your own PPL functions (`ev('MYFUNC(1.0)')`).
+
+**`PYTHON(name, a, b, …)` passes values in `sys.argv`, but only use it for small whole numbers and plain text.** PyProbe, 1 Oct 2026, emulator.
+
+- Every value arrives as text, and `argv[0]` is the first value; there is no script name in front.
+- Numbers arrive formatted as the Home screen would display them:
+  - −2.5 came as `'−2.5'`, with U+2212 as the minus sign.
+  - 1E20 came as `'1ᴇ20'`, with U+1D07 as the E.
+  - 123456789012 came as `'123﹐456﹐789﹐012'`, with U+FE50 digit-group marks.
+  - `float()` rejects all three.
+- A 200-value list arrived cut off at 214 characters, which was 47 values. All seven arguments together came to 257 characters.
+- So pass a test number or a mode this way. Have Python read real numbers and data lists directly from PPL variables with `hpprime.eval`; they arrive as true floats.
+- A different Home number format, such as Fixed 2, would presumably change what arrives. That is untested.
 
 **Cost of a crossing: about 0.2 ms.** *(Measured by hp-prime-kit on a G2 at firmware 2.4.15515 — not by us.)* Thirty to forty lookups cost around 8 ms, which is nothing. This **corrects an earlier blanket rule here** that said never to cross inside a loop: that is too strong. The real limit is per-pixel work — 272 columns × 2 crossings a frame is about 109 ms, which a live redraw will feel. So: cross freely for tens of lookups, keep it out of per-pixel loops, and keep a returned payload fixed-size so 5000 draws cost the same as 200.
 
@@ -161,11 +239,11 @@ Then go to Home and type `PZ` to see how far it got. *(hp-prime-kit's technique;
 
 ## 9a · Where the Python knowledge actually lives
 
-There is no official HP documentation for the Python side. Four sources are worth knowing, in rough order of value:
+HP's own Python documentation is thin, though the 2.4.2 firmware (2026-09-09) substantially improved the built-in Python help: press Help in each Python app view. Four outside sources are worth knowing, in rough order of value:
 
-- **`JordiRigau/hp-prime-kit`** on GitHub — `docs/topics/micropython.md` in particular. Every claim is labelled measured or unverified, and measured ones name the firmware. Also ships a PPL linter, an interpreter, and a `.hpprgm` builder. The best single source found.
-- **Mark Mitchell's HP Prime Programming page** (udel.edu/~mm/hp/primePython/) — the `hpprime.eval` bridge, calling `CHOOSE` and `DRAWMENU` from Python, `AVars()` for typed values, touch via `mouse`. Also in this project as a PDF, though that file is a ZIP of page images with a broken text layer.
-- **Neil Streeter's HP Prime Python Activities** (hpcalc literature, June 2025) — HP-adjacent introduction, the `#PYTHON` wrapper, writing in VS Code and pasting.
+- **`JordiRigau/hp-prime-kit`** on GitHub — `docs/topics/micropython.md` in particular. Every claim is labelled measured or unverified, and measured ones name the firmware. Also ships a PPL linter, an interpreter, and a `.hpprgm` builder. The best single source found. *Saved copy:* `Community_Library\github\JordiRigau__hp-prime-kit.zip`.
+- **Mike Markowski's HP Prime Programming page** (udel.edu/~mm/hp/primePython/) — the `hpprime.eval` bridge, calling `CHOOSE` and `DRAWMENU` from Python, `AVars()` for typed values, touch via `mouse`. *Saved copies:* the HTML pages, with his `upython.html` module inventory and the `hat.py` and `spiro.ppl` examples, are in `Community_Library\docs\markowski_udel\`. Roger's January 2024 printout is `HPPrimeProgrammingUDelaware.pdf` (in the Project and in `C:\HP-Prime`); its text layer is garbled, so read the HTML copy instead.
+- **Neil Streeter's HP Prime Python Activities** (hpcalc literature, June 2025) — HP-adjacent introduction, the `#PYTHON` wrapper, writing in VS Code and pasting. *Saved copy:* `Community_Library\docs\hpprime-python-activities.pdf` (22 pages).
 - **Cemetech and the HP Museum forums** — scattered, but where the version information and most failure reports surface.
 
 Note that hp-prime-kit lists the PPL→Python direction (`PYTHON(name)` with `#PYTHON … #END`, our Route A) as **unverified — "here to put the door on record rather than because it was tried."** That is the direction this fleet has shipped three programs on. If anything here gets published, that is the gap worth filling.
@@ -214,11 +292,19 @@ Panels: coloured border, light fill, matching text. Legends comma-separated — 
 4. **Ask how it was installed before theorising about the code.** A duplicate paste into the Connectivity Kit gives duplicate `EXPORT` declarations and an error deep in the file, which looks exactly like a firmware or capacity limit. Environment before code.
 5. **Never parse PPL block structure by counting `END;`.** `IF`, `FOR`, `WHILE`, `CASE` and function bodies all close with the same token, so a depth counter terminates at the first inner `IF`. A rename script built this way silently mangled a working file. Track the opening keyword; regenerate rather than patch. Identifier rewrites must also skip string literals, or `"x = "` gets renamed along with `x`.
 6. **Sweep every reference when something is renamed.** Menu numbers, key assignments and variable names appear in more places than the obvious one — two menu numbers in a user's guide stayed wrong for several builds after a swap.
-7. **Version the filename with the build**, and delete stale copies so there is never ambiguity about which file is current.
+7. **Version the filename with every update**, for programs and documents alike, Lessons Learned included (v4 → v5).
+   - When unsure of the next number, add a letter: beta14 → beta14a.
+   - Always work from the most recent version.
+   - **Archive** stale copies: move them to a `_superseded…` folder rather than deleting them, so there is never ambiguity about which file is current.
+   - The exceptions are files whose names tools depend on, such as `CLAUDE.md` and `INDEX.md`. Those are edited in place.
 8. **An outside code review is worth having, but not worth pasting.** A reviewer with only the source text can spot real problems — two genuine per-frame costs were found this way, both verified against the file. But a full-file rewrite produced without the actual file silently drops things: one such rewrite omitted a `LOCAL` declaration that existed in the original, introduced a lowercase exponent literal, and downgraded 81 working Greek glyphs to ASCII on a speculative "paste fidelity" argument against device evidence. **Take the findings, implement them on the verified file.**
 9. **Record disproved theories AS disproved.** A note that reads like a diagnosed cause will send the next session down the same dead end. Two confident explanations of the `join` failure were tested and failed; both are now labelled.
 10. **When Roger pastes his edited version, sync to his edits first.** His device copy is the source of truth.
-11. The ~600-program corpus zips do **not** persist between sessions. The 83 individual `.txt` files in the project do. For the full corpus, grep a local folder from Claude Code rather than uploading.
+11. **Search the whole library, every time.** It persists, and all of it is reachable:
+    - the 83 `.txt` programs uploaded to the Project;
+    - on Roger's computer, `C:\HP-Prime`: the fleet, about 400 hpcalc.org zips at the top level, and `Community_Library`. That folder holds hpcalc, GitHub and cnCalc material plus docs; its `INDEX.md` lists everything.
+
+    Reach it through the link to his computer, or a Claude Code session on eliteone. Read archives in place with Python's `zipfile` rather than uploading them. (This corrects v3, which said the corpus zips do not persist between sessions.)
 
 ## 15 · Current fleet
 
@@ -234,6 +320,8 @@ Panels: coloured border, light fill, matching text. Legends comma-separated — 
 | **SampDist v2.0** | Sampling-distribution explorer. |
 | **Burr3 / Norm3 v2.1** | Parameter explorers with CDF overlay and mean marker. |
 | **BayesTree beta 4** | Natural-frequency tree, ROC view, PPV-vs-prevalence, 2×2 view. *Pending: sequential evidence, Fagan nomogram.* |
+| **CentralLimit beta 1** | Central Limit Theorem explorer, built as an app on Statistics 1Var (after Colin Croft's HP 39G aplet). Awaiting a device test. |
+| **PyProbe beta 2b / PyDirect beta 1** | MicroPython probes: argv, matplotl, module inventory. Beta 2b shows its output on its own scrolling screen. PyDirect tests the direct-call `#PYTHON name(args)` form. |
 | **PyVer / JoinTest / GenTest** | Throwaway diagnostics. `PyVer` reports interpreter version and module list. |
 
 *Shelved: a three-level Bayes tree for desktop — R/Shiny favoured for the classroom.*
