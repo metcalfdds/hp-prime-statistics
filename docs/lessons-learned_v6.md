@@ -1,5 +1,10 @@
 # HP Prime Lessons Learned
-*Roger Metcalf & Claude · v5 · 3 October 2026 (v4 1 October 2026; v3 rewritten 28 September 2026)*
+*Roger Metcalf & Claude · v6 · 6 October 2026 (v5 3 October 2026; v4 1 October 2026; v3 rewritten 28 September 2026)*
+
+**What changed in v6** (paths only; no rule changed):
+
+- The master folder is now **`D:\HP-Prime` on Rogers-HP**. The EliteOne died in early October 2026; its files were copied to D: on Rogers-HP, Roger's new main computer, and kept there for space (Roger, 6 Oct 2026). Every `C:\HP-Prime` below is now `D:\HP-Prime` (box above §1, §9a, §14.11).
+- The count of zips at the top of the folder is corrected from "about 400" to **about 940** (938 on 3 Oct 2026, mostly from hpcalc.org).
 
 **What changed in v5** (corrections only; no rule changed):
 
@@ -26,7 +31,7 @@ Working notes for writing PPL and MicroPython on the HP Prime. Everything here w
 >
 > Not after. In one September session, four bugs were rediscovered the expensive way — the `STRING` mode, the FREEZE pause, the x-bar glyph, and the LOCAL limit — and all four were already written down here.
 >
-> Then: **search the whole library** for anything this file does not cover. That means the `.txt` programs uploaded to the Project, plus everything in `C:\HP-Prime` on Roger's computer: the fleet, about 400 hpcalc.org zips, and `Community_Library` (see its `INDEX.md`). `<>` was avoided for a whole session as "unverified" when five corpus programs use it.
+> Then: **search the whole library** for anything this file does not cover. That means the `.txt` programs uploaded to the Project, plus everything in `D:\HP-Prime` on Roger's computer (Rogers-HP): the fleet, about 940 zips (mostly hpcalc.org), and `Community_Library` (see its `INDEX.md`). `<>` was avoided for a whole session as "unverified" when five corpus programs use it.
 >
 > Then: **read the uploaded reference PDFs.** Note that `HPPrimeProgrammingUDelaware.pdf` (Mike Markowski's University of Delaware page, printed to PDF in January 2024) has a garbled text layer — it will not turn up in a text search and has to be read as page images. It is not the only Python document in the library: Markowski's pages are also saved as HTML in `Community_Library\docs\markowski_udel\`, and Neil Streeter's *HP Prime Python Activities Book* is `Community_Library\docs\hpprime-python-activities.pdf`. §9a lists every Python source and where it is.
 
@@ -242,7 +247,7 @@ Then go to Home and type `PZ` to see how far it got. *(hp-prime-kit's technique;
 HP's own Python documentation is thin, though the 2.4.2 firmware (2026-09-09) substantially improved the built-in Python help: press Help in each Python app view. Four outside sources are worth knowing, in rough order of value:
 
 - **`JordiRigau/hp-prime-kit`** on GitHub — `docs/topics/micropython.md` in particular. Every claim is labelled measured or unverified, and measured ones name the firmware. Also ships a PPL linter, an interpreter, and a `.hpprgm` builder. The best single source found. *Saved copy:* `Community_Library\github\JordiRigau__hp-prime-kit.zip`.
-- **Mike Markowski's HP Prime Programming page** (udel.edu/~mm/hp/primePython/) — the `hpprime.eval` bridge, calling `CHOOSE` and `DRAWMENU` from Python, `AVars()` for typed values, touch via `mouse`. *Saved copies:* the HTML pages, with his `upython.html` module inventory and the `hat.py` and `spiro.ppl` examples, are in `Community_Library\docs\markowski_udel\`. Roger's January 2024 printout is `HPPrimeProgrammingUDelaware.pdf` (in the Project and in `C:\HP-Prime`); its text layer is garbled, so read the HTML copy instead.
+- **Mike Markowski's HP Prime Programming page** (udel.edu/~mm/hp/primePython/) — the `hpprime.eval` bridge, calling `CHOOSE` and `DRAWMENU` from Python, `AVars()` for typed values, touch via `mouse`. *Saved copies:* the HTML pages, with his `upython.html` module inventory and the `hat.py` and `spiro.ppl` examples, are in `Community_Library\docs\markowski_udel\`. Roger's January 2024 printout is `HPPrimeProgrammingUDelaware.pdf` (in the Project and in `D:\HP-Prime`); its text layer is garbled, so read the HTML copy instead.
 - **Neil Streeter's HP Prime Python Activities** (hpcalc literature, June 2025) — HP-adjacent introduction, the `#PYTHON` wrapper, writing in VS Code and pasting. *Saved copy:* `Community_Library\docs\hpprime-python-activities.pdf` (22 pages).
 - **Cemetech and the HP Museum forums** — scattered, but where the version information and most failure reports surface.
 
@@ -292,7 +297,7 @@ Panels: coloured border, light fill, matching text. Legends comma-separated — 
 4. **Ask how it was installed before theorising about the code.** A duplicate paste into the Connectivity Kit gives duplicate `EXPORT` declarations and an error deep in the file, which looks exactly like a firmware or capacity limit. Environment before code.
 5. **Never parse PPL block structure by counting `END;`.** `IF`, `FOR`, `WHILE`, `CASE` and function bodies all close with the same token, so a depth counter terminates at the first inner `IF`. A rename script built this way silently mangled a working file. Track the opening keyword; regenerate rather than patch. Identifier rewrites must also skip string literals, or `"x = "` gets renamed along with `x`.
 6. **Sweep every reference when something is renamed.** Menu numbers, key assignments and variable names appear in more places than the obvious one — two menu numbers in a user's guide stayed wrong for several builds after a swap.
-7. **Version the filename with every update**, for programs and documents alike, Lessons Learned included (v4 → v5).
+7. **Version the filename with every update**, for programs and documents alike, Lessons Learned included (v5 → v6).
    - When unsure of the next number, add a letter: beta14 → beta14a.
    - Always work from the most recent version.
    - **Archive** stale copies: move them to a `_superseded…` folder rather than deleting them, so there is never ambiguity about which file is current.
@@ -302,9 +307,9 @@ Panels: coloured border, light fill, matching text. Legends comma-separated — 
 10. **When Roger pastes his edited version, sync to his edits first.** His device copy is the source of truth.
 11. **Search the whole library, every time.** It persists, and all of it is reachable:
     - the 83 `.txt` programs uploaded to the Project;
-    - on Roger's computer, `C:\HP-Prime`: the fleet, about 400 hpcalc.org zips at the top level, and `Community_Library`. That folder holds hpcalc, GitHub and cnCalc material plus docs; its `INDEX.md` lists everything.
+    - on Roger's computer (Rogers-HP), `D:\HP-Prime`: the fleet, about 940 zips (mostly hpcalc.org) at the top level, and `Community_Library`. That folder holds hpcalc, GitHub and cnCalc material plus docs; its `INDEX.md` lists everything.
 
-    Reach it through the link to his computer, or a Claude Code session on eliteone. Read archives in place with Python's `zipfile` rather than uploading them. (This corrects v3, which said the corpus zips do not persist between sessions.)
+    Reach it through the link to his computer, or a Claude Code session on Rogers-HP. Read archives in place with Python's `zipfile` rather than uploading them. (This corrects v3, which said the corpus zips do not persist between sessions.)
 
 ## 15 · Current fleet
 
