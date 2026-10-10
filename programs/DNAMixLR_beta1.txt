@@ -1,0 +1,921 @@
+#pragma mode( separator(.,;) integer(h32) )
+
+// ============================================================
+// DNAMIXLR - beta 1
+// Likelihood ratio for a DNA mixture, with coancestry (theta)
+// ============================================================
+// Author: Roger Metcalf, 2026.  Written with AI assistance
+//   (Anthropic Claude); concept, direction and all hardware
+//   testing by the author.
+//
+// The statistics follow the NRC II report (1996), recommendation
+//   4.2, as extended to mixtures by Weir, Triggs, Starling, Stowell,
+//   Walsh and Buckleton (J Forensic Sci 1997;42:213-222) and, with
+//   coancestry, by Curran, Triggs, Buckleton and Weir (J Forensic
+//   Sci 1999;44:987-995).  Fung and Hu's DNAMIXTURE program (2000)
+//   implements the same model; this is a new implementation for
+//   the Prime, written for the classroom, not a translation.
+//
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
+//   the file and credit the author if you pass it on.  Not for
+//   sale or commercial redistribution.  Provided as is, with no
+//   warranty: this is a TEACHING tool.  Casework needs validated
+//   software and a qualified analyst.
+//
+// Firmware: written for the 2026-09-09 firmware (2.4.2).  This
+//   version has NOT yet been run on hardware.
+//
+// Run DNAMixLR() from the Program Catalog.
+// ============================================================
+//
+// THE QUESTION
+//   A crime-scene stain shows a MIXTURE of alleles at a locus.
+//   Prosecution hypothesis Hp:  the suspect is one contributor
+//   (perhaps with the victim, perhaps with unknown people).
+//   Defence hypothesis Hd:  the suspect is not; someone unknown
+//   contributed instead.
+//   LR = P(mixture | Hp) / P(mixture | Hd), locus by locus, and
+//   the loci multiply (independent loci).
+//
+// THE MODEL
+//   At one locus the mixture shows the set of alleles M.  Under a
+//   hypothesis the KNOWN contributors (victim, suspect ...) must
+//   have all their alleles inside M, and the x UNKNOWN contributors
+//   must supply every allele of M the knowns do not, and nothing
+//   outside M.  The probability that 2x random alleles do exactly
+//   that is found by inclusion-exclusion over the required alleles.
+//   With coancestry theta, allele probabilities are the NRC II
+//   conditional ones: an allele already seen among the TYPED people
+//   becomes more likely to be seen again,
+//        P(allele a next | n seen, n_a of them a)
+//            = [n_a*theta + (1-theta)*p_a] / [1 + (n-1)*theta].
+//   theta = 0 gives the plain product rule.  0.01 is typical for a
+//   broad population; 0.03 is the conservative value NRC II suggests
+//   for small isolated subpopulations.
+//
+// HOW TO USE IT
+//   1  Hypotheses: pick a preset (victim + suspect vs victim +
+//      unknown, and so on) or build your own.
+//   2  Enter a locus: alleles in the mixture, their population
+//      frequencies, and the typed people's genotypes.  Repeat
+//      for each locus.  The LR is shown after every locus.
+//   3  Results and the two plots: LR by locus, and LR against
+//      theta, to see how much population structure matters.
+//
+// HOME EXPORTS
+//   DM_LR    combined likelihood ratio        DM_LOG  its log10
+//   DM_LOCI  list of per-locus LRs            DM_TH   theta used
+// ============================================================
+
+
+// ---- forward declaration: called before it is defined ----
+dmClearLoci();
+
+// ------------------------------------------------------------
+// RESULTS VISIBLE FROM HOME
+// ------------------------------------------------------------
+EXPORT DM_LR, DM_LOG, DM_LOCI, DM_TH;
+
+// ------------------------------------------------------------
+// SESSION STATE (private to this program; set in dmInit)
+// ------------------------------------------------------------
+LOCAL dmTh, dmNL, dmLoc, dmLR, dmPp, dmPd;
+//  dmTh   coancestry theta           dmNL   number of loci entered
+//  dmLoc  one record per locus: {labels, frequencies, genotypes}
+//  dmLR   per-locus LR (0 = suspect excluded, -1 = Hd impossible)
+//  dmPp, dmPd  per-locus P(E|Hp) and P(E|Hd)
+LOCAL dmPres, dmHp, dmHd, dmPreset, dmComb;
+//  dmPres  {victim?, suspect?, third?}: which typed persons exist
+//  dmHp    {V contributes?, S?, T?, unknowns}  under Hp
+//  dmHd    the same under Hd
+//  dmPreset which preset is in force (5 = custom)
+//  dmComb  combined LR over the loci
+LOCAL dmLab, dmFq, dmGen, dmM;
+//  the locus being worked on: labels, frequencies, the six genotype
+//  entries {V1, V2, S1, S2, T1, T2} as indices into the allele list
+//  (0 = an allele that is NOT in the mixture), and m = SIZE(dmLab)
+
+// Colours (house palette)
+LOCAL dmBLUE, dmMAG, dmGRN, dmRED, dmGRAY, dmFOOT;
+LOCAL dmORNG, dmPANL, dmGRID;
+
+
+// ------------------------------------------------------------
+// SMALL HELPERS
+// ------------------------------------------------------------
+
+// Fixed decimals (STRING mode 2 keeps trailing zeros).
+dmF(fv, fd)
+BEGIN
+  RETURN STRING(fv, 2, fd);
+END;
+
+// A likelihood ratio as text: 3 decimals when small, 1 when large,
+// and mantissa-E-exponent beyond a million (STRING has no reliable
+// scientific mode, so it is built by hand with LOG).
+dmBig(bgV)
+BEGIN
+  LOCAL bgE, bgM;
+  IF bgV == 0 THEN RETURN "0"; END;
+  IF bgV >= 1000000 OR bgV < 0.0001 THEN
+    bgE := FLOOR(LOG(bgV));
+    bgM := bgV / 10^bgE;
+    RETURN STRING(bgM, 2, 2) + "E" + STRING(bgE, 2, 0);
+  END;
+  IF bgV >= 100 THEN RETURN STRING(bgV, 2, 1); END;
+  RETURN STRING(bgV, 2, 3);
+END;
+
+// The ENFSI verbal scale for a likelihood ratio.
+dmVerbal(vbLR)
+BEGIN
+  LOCAL vbV, vbS;
+  IF vbLR <= 0 THEN RETURN ""; END;
+  vbV := vbLR;
+  vbS := "Hp";
+  IF vbLR < 1 THEN vbV := 1 / vbLR; vbS := "Hd"; END;
+  CASE
+    IF vbV < 2 THEN RETURN "about equal support for Hp and Hd"; END;
+    IF vbV < 10 THEN RETURN "weak support for " + vbS; END;
+    IF vbV < 100 THEN RETURN "moderate support for " + vbS; END;
+    IF vbV < 1000 THEN RETURN "moderately strong support for " + vbS; END;
+    IF vbV < 10000 THEN RETURN "strong support for " + vbS; END;
+    IF vbV < 1000000 THEN RETURN "very strong support for " + vbS; END;
+    DEFAULT RETURN "extremely strong support for " + vbS;
+  END;
+END;
+
+// "Nice" numbers for axis ticks: 1, 2 or 5 times a power of ten.
+dmNice(nnV, nnRound)
+BEGIN
+  LOCAL nnE, nnF, nnN;
+  IF nnV <= 0 THEN RETURN 1; END;
+  nnE := FLOOR(LOG(nnV));
+  nnF := nnV / 10^nnE;
+  IF nnRound THEN
+    CASE
+      IF nnF < 1.5 THEN nnN := 1; END;
+      IF nnF < 3 THEN nnN := 2; END;
+      IF nnF < 7 THEN nnN := 5; END;
+      DEFAULT nnN := 10;
+    END;
+  ELSE
+    CASE
+      IF nnF <= 1 THEN nnN := 1; END;
+      IF nnF <= 2 THEN nnN := 2; END;
+      IF nnF <= 5 THEN nnN := 5; END;
+      DEFAULT nnN := 10;
+    END;
+  END;
+  RETURN nnN * 10^nnE;
+END;
+
+// Wait for a key (drain, wait, drain), ignoring touch.
+dmWaitKey()
+BEGIN
+  LOCAL wkK;
+  REPEAT wkK := GETKEY; UNTIL wkK == -1;
+  REPEAT wkK := GETKEY; UNTIL wkK > -1;
+  REPEAT wkK := GETKEY; UNTIL wkK == -1;
+END;
+
+// Describe a hypothesis: which typed persons contribute, how many
+// unknowns.  hsH is {V?, S?, T?, x}.
+dmHypStr(hsH)
+BEGIN
+  LOCAL hsS, hsU;
+  hsS := "";
+  IF dmPres(1) == 1 AND hsH(1) == 1 THEN hsS := "V"; END;
+  IF dmPres(2) == 1 AND hsH(2) == 1 THEN
+    IF hsS <> "" THEN hsS := hsS + " + "; END;
+    hsS := hsS + "S";
+  END;
+  IF dmPres(3) == 1 AND hsH(3) == 1 THEN
+    IF hsS <> "" THEN hsS := hsS + " + "; END;
+    hsS := hsS + "T";
+  END;
+  hsU := "";
+  IF hsH(4) == 1 THEN hsU := "1 unknown"; END;
+  IF hsH(4) > 1 THEN hsU := STRING(hsH(4), 2, 0) + " unknowns"; END;
+  IF hsU <> "" THEN
+    IF hsS <> "" THEN hsS := hsS + " + "; END;
+    hsS := hsS + hsU;
+  ELSE
+    IF hsS == "" THEN hsS := "nobody"; ELSE hsS := hsS + ", no unknown"; END;
+  END;
+  RETURN hsS;
+END;
+
+// The alleles of a locus as text, e.g. "12, 13, 14, 15".
+dmAllStr(alL)
+BEGIN
+  LOCAL alI, alS;
+  alS := "";
+  FOR alI FROM 1 TO SIZE(alL) DO
+    IF alI > 1 THEN alS := alS + ", "; END;
+    alS := alS + STRING(alL(alI), 2, IFTE(FP(alL(alI)) == 0, 0, 1));
+  END;
+  RETURN alS;
+END;
+
+
+// ------------------------------------------------------------
+// THE PROBABILITY ENGINE
+//
+// dmProb(x, knowns, typed) = probability that the mixture shows
+// exactly the allele set M, given x unknown contributors, the
+// known contributors' alleles (indices into dmFq; a 0 means an
+// allele outside M, which makes the hypothesis impossible) and
+// the alleles of EVERY typed person (contributor or not), which
+// condition the theta-corrected probabilities.
+//
+//   U  = alleles of M not carried by the knowns (the unknowns must
+//        supply them)
+//   P  = sum over subsets S of U of (-1)^|S| x
+//        prod_{j=0}^{2x-1} [ (t(M\S) + j) th + (1 - th) p(M\S) ]
+//                        / [ 1 + (nT + j - 1) th ]
+//   where p(A) is the total frequency of the alleles in A, t(A) the
+//   number of typed alleles in A, and nT the number of typed
+//   alleles in all.  With th = 0 this is the product-rule formula
+//   of Weir et al. (1997).  Verified against brute-force enumeration
+//   of every allele assignment (Python, 400 random cases).
+// ------------------------------------------------------------
+dmProb(pbX, pbKn, pbTy)
+BEGIN
+  LOCAL pbIn, pbU, pbNU, pbNT, pbT, pbI;
+  LOCAL pbMask, pbQ, pbBit, pbNS, pbPA, pbTA;
+  LOCAL pbJ, pbTerm, pbTot, pbPM, pbTM;
+
+  // a known contributor with an allele outside the mixture: impossible
+  FOR pbI FROM 1 TO SIZE(pbKn) DO
+    IF pbKn(pbI) == 0 THEN RETURN 0; END;
+  END;
+
+  // which alleles of M still have to come from the unknowns
+  pbIn := MAKELIST(1, K, 1, dmM, 1);
+  FOR pbI FROM 1 TO SIZE(pbKn) DO pbIn(pbKn(pbI)) := 0; END;
+  pbU := {};
+  FOR pbI FROM 1 TO dmM DO
+    IF pbIn(pbI) == 1 THEN pbU := CONCAT(pbU, {pbI}); END;
+  END;
+  pbNU := SIZE(pbU);
+  IF pbNU > 2 * pbX THEN RETURN 0; END;     // too few unknown alleles to cover M
+  IF pbX == 0 THEN RETURN 1; END;           // knowns explain M exactly
+
+  // typed alleles: how many in all, and how many of each M allele
+  pbNT := SIZE(pbTy);
+  pbT := MAKELIST(0, K, 1, dmM, 1);
+  FOR pbI FROM 1 TO pbNT DO
+    IF pbTy(pbI) > 0 THEN pbT(pbTy(pbI)) := pbT(pbTy(pbI)) + 1; END;
+  END;
+  pbPM := 0; pbTM := 0;
+  FOR pbI FROM 1 TO dmM DO pbPM := pbPM + dmFq(pbI); pbTM := pbTM + pbT(pbI); END;
+
+  // inclusion-exclusion over the subsets S of U, coded as bit masks
+  pbTot := 0;
+  FOR pbMask FROM 0 TO 2^pbNU - 1 DO
+    pbPA := pbPM; pbTA := pbTM; pbNS := 0;
+    pbQ := pbMask;
+    FOR pbI FROM 1 TO pbNU DO
+      pbBit := pbQ MOD 2;
+      pbQ := (pbQ - pbBit) / 2;
+      IF pbBit == 1 THEN
+        pbNS := pbNS + 1;
+        pbPA := pbPA - dmFq(pbU(pbI));
+        pbTA := pbTA - pbT(pbU(pbI));
+      END;
+    END;
+    // probability that all 2x unknown alleles fall in M \ S
+    pbTerm := 1;
+    FOR pbJ FROM 0 TO 2 * pbX - 1 DO
+      pbTerm := pbTerm * ((pbTA + pbJ) * dmTh + (1 - dmTh) * pbPA) / (1 + (pbNT + pbJ - 1) * dmTh);
+    END;
+    IF (pbNS MOD 2) == 1 THEN pbTot := pbTot - pbTerm; ELSE pbTot := pbTot + pbTerm; END;
+  END;
+  RETURN MAX(0, pbTot);
+END;
+
+// The alleles a hypothesis treats as KNOWN contributors', and the
+// alleles of every typed person, both from the six genotype entries.
+dmKnowns(knH)
+BEGIN
+  LOCAL knL;
+  knL := {};
+  IF dmPres(1) == 1 AND knH(1) == 1 THEN knL := CONCAT(knL, {dmGen(1), dmGen(2)}); END;
+  IF dmPres(2) == 1 AND knH(2) == 1 THEN knL := CONCAT(knL, {dmGen(3), dmGen(4)}); END;
+  IF dmPres(3) == 1 AND knH(3) == 1 THEN knL := CONCAT(knL, {dmGen(5), dmGen(6)}); END;
+  RETURN knL;
+END;
+
+dmTyped()
+BEGIN
+  LOCAL tyL;
+  tyL := {};
+  IF dmPres(1) == 1 THEN tyL := CONCAT(tyL, {dmGen(1), dmGen(2)}); END;
+  IF dmPres(2) == 1 THEN tyL := CONCAT(tyL, {dmGen(3), dmGen(4)}); END;
+  IF dmPres(3) == 1 THEN tyL := CONCAT(tyL, {dmGen(5), dmGen(6)}); END;
+  RETURN tyL;
+END;
+
+// Evaluate the locus held in dmLab / dmFq / dmGen under both
+// hypotheses.  Returns {P(E|Hp), P(E|Hd), LR}, with LR = 0 when the
+// suspect is excluded and -1 when Hd cannot explain the mixture.
+dmEval()
+BEGIN
+  LOCAL evTy, evP, evD, evLR;
+  dmM := SIZE(dmLab);
+  evTy := dmTyped();
+  evP := dmProb(dmHp(4), dmKnowns(dmHp), evTy);
+  evD := dmProb(dmHd(4), dmKnowns(dmHd), evTy);
+  IF evD <= 0 THEN
+    evLR := -1;
+  ELSE
+    evLR := evP / evD;
+  END;
+  RETURN {evP, evD, evLR};
+END;
+
+// Recompute every stored locus (after theta changes) and the
+// combined LR.  A locus with LR 0 or -1 is left out of the product
+// and reported on its own.
+dmRecalc()
+BEGIN
+  LOCAL rcI, rcRec, rcR;
+  dmPp := {}; dmPd := {}; dmLR := {};
+  dmComb := 1;
+  FOR rcI FROM 1 TO dmNL DO
+    rcRec := dmLoc(rcI);
+    dmLab := rcRec(1); dmFq := rcRec(2); dmGen := rcRec(3);
+    rcR := dmEval();
+    dmPp := CONCAT(dmPp, {rcR(1)});
+    dmPd := CONCAT(dmPd, {rcR(2)});
+    dmLR := CONCAT(dmLR, {rcR(3)});
+    IF rcR(3) > 0 THEN dmComb := dmComb * rcR(3); END;
+  END;
+  IF dmNL == 0 THEN dmComb := 0; END;
+  DM_LR := dmComb; DM_LOCI := dmLR; DM_TH := dmTh;
+  IF dmComb > 0 THEN DM_LOG := LOG(dmComb); ELSE DM_LOG := 0; END;
+END;
+
+// Combined LR at some other theta, without disturbing the session.
+// Used by the theta plot.
+dmCombAt(caTh)
+BEGIN
+  LOCAL caSave, caI, caRec, caR, caC;
+  caSave := dmTh;
+  dmTh := caTh;
+  caC := 1;
+  FOR caI FROM 1 TO dmNL DO
+    caRec := dmLoc(caI);
+    dmLab := caRec(1); dmFq := caRec(2); dmGen := caRec(3);
+    caR := dmEval();
+    IF caR(3) > 0 THEN caC := caC * caR(3); END;
+  END;
+  dmTh := caSave;
+  RETURN caC;
+END;
+
+
+// ------------------------------------------------------------
+// ENTERING A LOCUS
+// ------------------------------------------------------------
+
+// Ask for liM numbers with a common label; returns the list, or {}
+// if cancelled.  INPUT needs a literal list of variable NAMES, so
+// there is one call per size.  liD is the default for every field.
+dmAskList(liM, liTtl, liLbl, liHlp, liD)
+BEGIN
+  LOCAL a1, a2, a3, a4, a5, a6;
+  LOCAL a7, a8, liOK;
+  a1 := liD; a2 := liD; a3 := liD; a4 := liD; a5 := liD; a6 := liD; a7 := liD; a8 := liD;
+  liOK := 0;
+  CASE
+    IF liM == 2 THEN liOK := INPUT({a1, a2}, liTtl, {liLbl + " 1:", liLbl + " 2:"}, {liHlp, liHlp}); END;
+    IF liM == 3 THEN liOK := INPUT({a1, a2, a3}, liTtl, {liLbl + " 1:", liLbl + " 2:", liLbl + " 3:"}, {liHlp, liHlp, liHlp}); END;
+    IF liM == 4 THEN liOK := INPUT({a1, a2, a3, a4}, liTtl, {liLbl + " 1:", liLbl + " 2:", liLbl + " 3:", liLbl + " 4:"}, {liHlp, liHlp, liHlp, liHlp}); END;
+    IF liM == 5 THEN liOK := INPUT({a1, a2, a3, a4, a5}, liTtl, {liLbl + " 1:", liLbl + " 2:", liLbl + " 3:", liLbl + " 4:", liLbl + " 5:"}, {liHlp, liHlp, liHlp, liHlp, liHlp}); END;
+    IF liM == 6 THEN liOK := INPUT({a1, a2, a3, a4, a5, a6}, liTtl, {liLbl + " 1:", liLbl + " 2:", liLbl + " 3:", liLbl + " 4:", liLbl + " 5:", liLbl + " 6:"}, {liHlp, liHlp, liHlp, liHlp, liHlp, liHlp}); END;
+    IF liM == 7 THEN liOK := INPUT({a1, a2, a3, a4, a5, a6, a7}, liTtl, {liLbl + " 1:", liLbl + " 2:", liLbl + " 3:", liLbl + " 4:", liLbl + " 5:", liLbl + " 6:", liLbl + " 7:"}, {liHlp, liHlp, liHlp, liHlp, liHlp, liHlp, liHlp}); END;
+    IF liM == 8 THEN liOK := INPUT({a1, a2, a3, a4, a5, a6, a7, a8}, liTtl, {liLbl + " 1:", liLbl + " 2:", liLbl + " 3:", liLbl + " 4:", liLbl + " 5:", liLbl + " 6:", liLbl + " 7:", liLbl + " 8:"}, {liHlp, liHlp, liHlp, liHlp, liHlp, liHlp, liHlp, liHlp}); END;
+  END;
+  IF liOK == 0 THEN RETURN {}; END;
+  RETURN SUB({a1, a2, a3, a4, a5, a6, a7, a8}, 1, liM);
+END;
+
+// Ask for the genotypes of the typed persons: two allele indices
+// each (1..m, or 0 for an allele that is not in the mixture).
+// Returns 1 if dmGen was filled in, 0 if cancelled.
+dmAskGen()
+BEGIN
+  LOCAL g1, g2, g3, g4, g5, g6;
+  LOCAL gnOK, gnHlp, gnI;
+  gnHlp := "1 to " + STRING(dmM, 2, 0) + " = allele number in the list; 0 = not in the mixture";
+  g1 := 1; g2 := 2; g3 := 1; g4 := 2; g5 := 1; g6 := 2;
+  gnOK := 0;
+  CASE
+    IF dmPres(1) == 1 AND dmPres(2) == 1 AND dmPres(3) == 0 THEN
+      gnOK := INPUT({g1, g2, g3, g4}, "Genotypes (allele numbers)",
+        {"Victim 1:", "Victim 2:", "Suspect 1:", "Suspect 2:"}, {gnHlp, gnHlp, gnHlp, gnHlp});
+    END;
+    IF dmPres(1) == 0 AND dmPres(2) == 1 AND dmPres(3) == 0 THEN
+      gnOK := INPUT({g3, g4}, "Suspect genotype (allele numbers)",
+        {"Suspect 1:", "Suspect 2:"}, {gnHlp, gnHlp});
+    END;
+    DEFAULT
+      gnOK := INPUT({g1, g2, g3, g4, g5, g6}, "Genotypes (allele numbers)",
+        {"Victim 1:", "Victim 2:", "Suspect 1:", "Suspect 2:", "Third 1:", "Third 2:"},
+        {gnHlp, gnHlp, gnHlp, gnHlp, gnHlp, gnHlp});
+  END;
+  IF gnOK == 0 THEN RETURN 0; END;
+  dmGen := {IP(g1), IP(g2), IP(g3), IP(g4), IP(g5), IP(g6)};
+  // persons who are not part of the hypotheses carry no alleles
+  IF dmPres(1) == 0 THEN dmGen(1) := 0; dmGen(2) := 0; END;
+  IF dmPres(2) == 0 THEN dmGen(3) := 0; dmGen(4) := 0; END;
+  IF dmPres(3) == 0 THEN dmGen(5) := 0; dmGen(6) := 0; END;
+  FOR gnI FROM 1 TO 6 DO
+    IF dmGen(gnI) < 0 OR dmGen(gnI) > dmM THEN
+      MSGBOX("Allele numbers run from 1 to " + STRING(dmM, 2, 0) + " (0 = not in the mixture).");
+      RETURN 0;
+    END;
+  END;
+  RETURN 1;
+END;
+
+// Show the result for the locus just evaluated.
+dmLocusPanel(lpN, lpR)
+BEGIN
+  LOCAL lpS;
+  RECT_P(G0, 0, 0, 319, 239, #FFFFFFh);
+  RECT_P(G0, 8, 6, 311, 216, dmORNG, dmPANL);
+  TEXTOUT_P("Locus " + STRING(lpN, 2, 0), G0, 18, 12, 2, dmBLUE);
+  TEXTOUT_P("mixture alleles: " + dmAllStr(dmLab), G0, 18, 32, 1, dmBLUE);
+  LINE_P(G0, 18, 46, 300, 46, dmGRAY);
+  TEXTOUT_P("Hp: " + dmHypStr(dmHp), G0, 20, 54, 1, #000000h);
+  TEXTOUT_P("P(E|Hp) = " + dmBig(lpR(1)), G0, 180, 54, 1, dmBLUE);
+  TEXTOUT_P("Hd: " + dmHypStr(dmHd), G0, 20, 70, 1, #000000h);
+  TEXTOUT_P("P(E|Hd) = " + dmBig(lpR(2)), G0, 180, 70, 1, dmBLUE);
+  LINE_P(G0, 18, 88, 300, 88, dmGRAY);
+  CASE
+    IF lpR(3) == 0 THEN
+      TEXTOUT_P("LR = 0: a known contributor under Hp has an", G0, 20, 98, 1, dmRED);
+      TEXTOUT_P("allele the mixture does not show.  Excluded.", G0, 20, 112, 1, dmRED);
+    END;
+    IF lpR(3) < 0 THEN
+      TEXTOUT_P("Hd cannot produce this mixture (P = 0),", G0, 20, 98, 1, dmRED);
+      TEXTOUT_P("so no LR is defined.  Check the genotypes.", G0, 20, 112, 1, dmRED);
+    END;
+    DEFAULT
+      TEXTOUT_P("LR = " + dmBig(lpR(3)), G0, 20, 96, 2, dmMAG);
+      TEXTOUT_P("log10 LR = " + dmF(LOG(lpR(3)), 3), G0, 180, 98, 1, dmMAG);
+      TEXTOUT_P(dmVerbal(lpR(3)), G0, 20, 120, 1, dmGRN);
+  END;
+  lpS := "theta = " + dmF(dmTh, 3);
+  IF dmTh == 0 THEN lpS := lpS + "  (plain product rule)"; END;
+  TEXTOUT_P(lpS, G0, 20, 142, 1, dmGRAY);
+  TEXTOUT_P("Loci so far: " + STRING(dmNL, 2, 0), G0, 20, 158, 1, #000000h);
+  IF dmComb > 0 THEN
+    TEXTOUT_P("Combined LR = " + dmBig(dmComb) + "   log10 = " + dmF(LOG(dmComb), 3), G0, 20, 174, 1, dmMAG);
+  END;
+  TEXTOUT_P("Any key: back to the menu", G0, 20, 200, 1, dmGRAY);
+  dmWaitKey();
+END;
+
+// The whole locus-entry conversation.
+dmEnterLocus()
+BEGIN
+  LOCAL elM, elI, elSum, elR, elL;
+  IF dmNL >= 12 THEN
+    MSGBOX("Twelve loci is the limit for this teaching tool.");
+    RETURN;
+  END;
+  elM := 4;
+  IF INPUT({elM}, "Locus " + STRING(dmNL + 1, 2, 0),
+    {"Alleles in the mixture:"},
+    {"How many DIFFERENT alleles the mixed profile shows: 2 to 8"}) == 0 THEN RETURN; END;
+  elM := IP(elM);
+  IF elM < 2 OR elM > 8 THEN
+    MSGBOX("Enter a whole number from 2 to 8.");
+    RETURN;
+  END;
+  dmM := elM;
+
+  // the allele names, as numbers (STR alleles are repeat counts: 12, 13, 14.3 ...)
+  elL := dmAskList(elM, "Allele names (repeat numbers)", "Allele", "The allele's name, e.g. 12 or 14.3", 10);
+  IF SIZE(elL) == 0 THEN RETURN; END;
+  dmLab := elL;
+
+  // population frequencies, which must leave room for the alleles not seen
+  elL := dmAskList(elM, "Population frequencies", "p of allele", "Frequency in the reference population, between 0 and 1", 0.1);
+  IF SIZE(elL) == 0 THEN RETURN; END;
+  elSum := 0;
+  FOR elI FROM 1 TO elM DO
+    IF elL(elI) <= 0 OR elL(elI) >= 1 THEN
+      MSGBOX("Every frequency must be between 0 and 1.");
+      RETURN;
+    END;
+    elSum := elSum + elL(elI);
+  END;
+  IF elSum > 1.000001 THEN
+    MSGBOX("These frequencies add to " + dmF(elSum, 3) + ".  Alleles in one population cannot total more than 1.");
+    RETURN;
+  END;
+  dmFq := elL;
+
+  IF dmAskGen() == 0 THEN RETURN; END;
+
+  // evaluate, store, show
+  elR := dmEval();
+  dmLoc := CONCAT(dmLoc, {{dmLab, dmFq, dmGen}});
+  dmNL := dmNL + 1;
+  dmRecalc();
+  dmLocusPanel(dmNL, elR);
+END;
+
+
+// ------------------------------------------------------------
+// HYPOTHESES AND THETA
+// ------------------------------------------------------------
+
+// Set the typed persons and both hypotheses.  Changing WHO is typed
+// makes the stored genotypes meaningless, so the loci are cleared
+// then; changing only the contributor flags keeps them.
+dmSetHyp()
+BEGIN
+  LOCAL shI, shPres, cuV, cuS, cuT, cuX;
+  LOCAL hdV, hdS, hdT, hdX, shOK;
+  shI := 0;
+  CHOOSE(shI, "Hypotheses  Hp  vs  Hd", {
+    "Victim + suspect   vs   victim + 1 unknown",
+    "Suspect + 1 unknown   vs   2 unknowns",
+    "Suspect alone   vs   1 unknown  (single source)",
+    "Victim + suspect + 1 unknown   vs   victim + 2 unknowns",
+    "Custom: choose the persons and contributors"});
+  IF shI == 0 THEN RETURN; END;
+  shPres := dmPres;
+  CASE
+    IF shI == 1 THEN shPres := {1, 1, 0}; dmHp := {1, 1, 0, 0}; dmHd := {1, 0, 0, 1}; END;
+    IF shI == 2 THEN shPres := {0, 1, 0}; dmHp := {0, 1, 0, 1}; dmHd := {0, 0, 0, 2}; END;
+    IF shI == 3 THEN shPres := {0, 1, 0}; dmHp := {0, 1, 0, 0}; dmHd := {0, 0, 0, 1}; END;
+    IF shI == 4 THEN shPres := {1, 1, 0}; dmHp := {1, 1, 0, 1}; dmHd := {1, 0, 0, 2}; END;
+    DEFAULT
+      cuV := dmPres(1); cuS := dmPres(2); cuT := dmPres(3);
+      shOK := INPUT({cuV, cuS, cuT}, "Typed persons (1 = yes, 0 = no)",
+        {"Victim typed?", "Suspect typed?", "Third person typed?"},
+        {"A victim whose profile is known", "The suspect", "Another typed person, e.g. a consensual partner"});
+      IF shOK == 0 THEN RETURN; END;
+      shPres := {IP(cuV), IP(cuS), IP(cuT)};
+      cuV := dmHp(1); cuS := dmHp(2); cuT := dmHp(3); cuX := dmHp(4);
+      shOK := INPUT({cuV, cuS, cuT, cuX}, "Hp (prosecution): who contributed?",
+        {"Victim contributes?", "Suspect contributes?", "Third contributes?", "Unknown contributors:"},
+        {"1 = yes, 0 = no", "1 = yes, 0 = no", "1 = yes, 0 = no", "0 to 4 unknown people"});
+      IF shOK == 0 THEN RETURN; END;
+      hdV := dmHd(1); hdS := dmHd(2); hdT := dmHd(3); hdX := dmHd(4);
+      shOK := INPUT({hdV, hdS, hdT, hdX}, "Hd (defence): who contributed?",
+        {"Victim contributes?", "Suspect contributes?", "Third contributes?", "Unknown contributors:"},
+        {"1 = yes, 0 = no", "1 = yes, 0 = no", "1 = yes, 0 = no", "0 to 4 unknown people"});
+      IF shOK == 0 THEN RETURN; END;
+      dmHp := {IP(cuV), IP(cuS), IP(cuT), IP(cuX)};
+      dmHd := {IP(hdV), IP(hdS), IP(hdT), IP(hdX)};
+      IF dmHp(4) < 0 OR dmHp(4) > 4 OR dmHd(4) < 0 OR dmHd(4) > 4 THEN
+        MSGBOX("Unknown contributors: 0 to 4 under each hypothesis.");
+        RETURN;
+      END;
+  END;
+  dmPreset := shI;
+  IF shPres(1) <> dmPres(1) OR shPres(2) <> dmPres(2) OR shPres(3) <> dmPres(3) THEN
+    IF dmNL > 0 THEN
+      MSGBOX("The typed persons changed, so the " + STRING(dmNL, 2, 0) + " stored loci were cleared: their genotypes no longer match.");
+    END;
+    dmPres := shPres;
+    dmClearLoci();
+  ELSE
+    dmRecalc();
+  END;
+END;
+
+dmClearLoci()
+BEGIN
+  dmNL := 0; dmLoc := {}; dmLR := {}; dmPp := {}; dmPd := {}; dmComb := 0;
+  DM_LR := 0; DM_LOG := 0; DM_LOCI := {}; DM_TH := dmTh;
+END;
+
+dmSetTheta()
+BEGIN
+  LOCAL stT;
+  stT := dmTh;
+  IF INPUT({stT}, "Coancestry coefficient", {"theta:"},
+    {"0 = product rule; 0.01 typical; 0.03 conservative (NRC II)"}) == 1 THEN
+    IF stT < 0 OR stT >= 0.5 THEN
+      MSGBOX("theta must be at least 0 and well below 0.5; 0.01 to 0.03 is the usual range.");
+      RETURN;
+    END;
+    dmTh := stT;
+    dmRecalc();
+  END;
+END;
+
+
+// ------------------------------------------------------------
+// RESULTS AND PLOTS
+// ------------------------------------------------------------
+
+dmResults()
+BEGIN
+  LOCAL rsI, rsY, rsRec, rsS, rsLR;
+  IF dmNL == 0 THEN
+    MSGBOX("No loci yet.  Choose the hypotheses, then enter a locus.");
+    RETURN;
+  END;
+  RECT_P(G0, 0, 0, 319, 239, #FFFFFFh);
+  RECT_P(G0, 6, 4, 313, 235, dmORNG, dmPANL);
+  TEXTOUT_P("Likelihood ratios by locus", G0, 14, 8, 2, dmBLUE);
+  TEXTOUT_P("Hp: " + dmHypStr(dmHp) + "    Hd: " + dmHypStr(dmHd), G0, 14, 28, 1, #000000h);
+  TEXTOUT_P("theta = " + dmF(dmTh, 3), G0, 14, 41, 1, dmGRAY);
+  rsY := 56;
+  FOR rsI FROM 1 TO dmNL DO
+    rsRec := dmLoc(rsI);
+    rsLR := dmLR(rsI);
+    rsS := STRING(rsI, 2, 0) + ". " + dmAllStr(rsRec(1));
+    IF SIZE(rsS) > 24 THEN rsS := LEFT(rsS, 22) + ".."; END;
+    TEXTOUT_P(rsS, G0, 14, rsY, 1, #000000h);
+    CASE
+      IF rsLR == 0 THEN TEXTOUT_P("excluded (LR = 0)", G0, 170, rsY, 1, dmRED); END;
+      IF rsLR < 0 THEN TEXTOUT_P("Hd impossible", G0, 170, rsY, 1, dmRED); END;
+      DEFAULT
+        TEXTOUT_P("LR " + dmBig(rsLR), G0, 170, rsY, 1, dmMAG);
+        TEXTOUT_P("log " + dmF(LOG(rsLR), 2), G0, 258, rsY, 1, dmGRAY);
+    END;
+    rsY := rsY + 11;
+  END;
+  LINE_P(G0, 14, rsY + 2, 305, rsY + 2, dmGRAY);
+  IF dmComb > 0 THEN
+    TEXTOUT_P("Combined LR = " + dmBig(dmComb) + "   log10 = " + dmF(LOG(dmComb), 3), G0, 14, rsY + 8, 1, dmMAG);
+    TEXTOUT_P(dmVerbal(dmComb), G0, 14, rsY + 21, 1, dmGRN);
+  END;
+  TEXTOUT_P("Any key: back to the menu", G0, 14, 224, 1, dmGRAY);
+  dmWaitKey();
+END;
+
+// Plot 1: log10 LR for each locus (bars) and the running total
+// (magenta line).  Excluded or impossible loci are marked.
+dmPlotLoci()
+BEGIN
+  LOCAL plI, plLo, plHi, plStp, plV, plY;
+  LOCAL plX, plBw, plCum, plPrev, plZero, plL;
+  LOCAL plT, plB, plR, plDec, plS, plH;
+  IF dmNL == 0 THEN
+    MSGBOX("No loci yet.  Enter a locus first.");
+    RETURN;
+  END;
+  plL := 44; plR := 306; plT := 30; plB := 200;      // the plot box
+  // vertical range: every bar and the cumulative line, including 0
+  plLo := 0; plHi := 0; plCum := 0;
+  FOR plI FROM 1 TO dmNL DO
+    IF dmLR(plI) > 0 THEN
+      plV := LOG(dmLR(plI));
+      plCum := plCum + plV;
+      plLo := MIN(MIN(plLo, plV), plCum); plHi := MAX(MAX(plHi, plV), plCum);
+    END;
+  END;
+  IF plHi - plLo < 0.5 THEN plHi := plLo + 0.5; END;
+  plStp := dmNice((plHi - plLo) / 5, 1);
+  plLo := FLOOR(plLo / plStp) * plStp;
+  plHi := CEILING(plHi / plStp) * plStp;
+  IF plHi == plLo THEN plHi := plLo + plStp; END;
+  plDec := MAX(0, -FLOOR(LOG(plStp)));
+  plH := plB - plT;
+
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  TEXTOUT_P("log10 LR by locus", G1, 100, 4, 2, dmBLUE);
+  // grid and y labels
+  plV := plLo;
+  WHILE plV <= plHi + plStp / 1000 DO
+    plY := plB - IP((plV - plLo) / (plHi - plLo) * plH);
+    LINE_P(G1, plL, plY, plR, plY, dmGRID);
+    plS := STRING(plV, 2, plDec);
+    TEXTOUT_P(plS, G1, plL - 4 - 6 * SIZE(plS), plY - 5, 1, dmGRAY);
+    plV := plV + plStp;
+  END;
+  plZero := plB - IP((0 - plLo) / (plHi - plLo) * plH);
+  LINE_P(G1, plL, plZero, plR, plZero, #000000h);
+  LINE_P(G1, plL, plT, plL, plB, #000000h);
+  // bars
+  plBw := IP((plR - plL) / dmNL);
+  plCum := 0; plPrev := -1;
+  FOR plI FROM 1 TO dmNL DO
+    plX := plL + (plI - 1) * plBw;
+    IF dmLR(plI) > 0 THEN
+      plV := LOG(dmLR(plI));
+      plY := plB - IP((plV - plLo) / (plHi - plLo) * plH);
+      IF plY < plZero THEN
+        RECT_P(G1, plX + 3, plY, plX + plBw - 3, plZero, dmBLUE, #AACDFFh);
+      ELSE
+        RECT_P(G1, plX + 3, plZero, plX + plBw - 3, plY, dmBLUE, #FFE0E0h);
+      END;
+      plS := dmF(plV, 2);
+      TEXTOUT_P(plS, G1, plX + IP(plBw / 2) - 3 * SIZE(plS), MIN(plY, plZero) - 12, 1, dmBLUE);
+      // cumulative total
+      plCum := plCum + plV;
+      plY := plB - IP((plCum - plLo) / (plHi - plLo) * plH);
+      IF plPrev >= 0 THEN LINE_P(G1, plX - IP(plBw / 2), plPrev, plX + IP(plBw / 2), plY, dmMAG); END;
+      RECT_P(G1, plX + IP(plBw / 2) - 2, plY - 2, plX + IP(plBw / 2) + 2, plY + 2, dmMAG, dmMAG);
+      plPrev := plY;
+    ELSE
+      TEXTOUT_P("excl.", G1, plX + IP(plBw / 2) - 15, plZero - 12, 1, dmRED);
+    END;
+    TEXTOUT_P(STRING(plI, 2, 0), G1, plX + IP(plBw / 2) - 3, plB + 4, 1, dmGRAY);
+  END;
+  TEXTOUT_P("locus", G1, 280, plB + 4, 1, dmGRAY);
+  TEXTOUT_P("bars: log10 LR per locus; line: cumulative", G1, 30, 214, 1, dmGRAY);
+  IF dmComb > 0 THEN
+    TEXTOUT_P("combined LR = " + dmBig(dmComb), G1, 44, 226, 1, dmMAG);
+  END;
+  TEXTOUT_P("any key", G1, 270, 226, 1, dmGRAY);
+  BLIT_P(G0, 0, 0, G1);
+  dmWaitKey();
+END;
+
+// Plot 2: the combined log10 LR as theta runs from 0 to 0.05.
+// Dotted red lines at 0.01 and 0.03; the session theta in green.
+dmPlotTheta()
+BEGIN
+  LOCAL ptI, ptN, ptTh, ptV, ptVals, ptLo;
+  LOCAL ptHi, ptStp, ptDec, ptX, ptY, ptPrev;
+  LOCAL ptL, ptR, ptT, ptB, ptS, ptH;
+  IF dmNL == 0 THEN
+    MSGBOX("No loci yet.  Enter a locus first.");
+    RETURN;
+  END;
+  ptL := 44; ptR := 306; ptT := 30; ptB := 196;
+  ptN := 20;                              // 21 points, theta = 0, 0.0025 ... 0.05
+  ptVals := MAKELIST(0, K, 0, ptN, 1);
+  ptLo := 1E10; ptHi := -1E10;
+  FOR ptI FROM 0 TO ptN DO
+    ptTh := 0.05 * ptI / ptN;
+    ptV := dmCombAt(ptTh);
+    IF ptV > 0 THEN ptV := LOG(ptV); ELSE ptV := 0; END;
+    ptVals(ptI + 1) := ptV;
+    ptLo := MIN(ptLo, ptV); ptHi := MAX(ptHi, ptV);
+  END;
+  IF ptHi - ptLo < 0.2 THEN ptHi := ptHi + 0.1; ptLo := ptLo - 0.1; END;
+  ptStp := dmNice((ptHi - ptLo) / 4, 1);
+  ptLo := FLOOR(ptLo / ptStp) * ptStp;
+  ptHi := CEILING(ptHi / ptStp) * ptStp;
+  IF ptHi == ptLo THEN ptHi := ptLo + ptStp; END;
+  ptDec := MAX(0, -FLOOR(LOG(ptStp)));
+  ptH := ptB - ptT;
+
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  TEXTOUT_P("Combined log10 LR against theta", G1, 60, 4, 2, dmBLUE);
+  ptV := ptLo;
+  WHILE ptV <= ptHi + ptStp / 1000 DO
+    ptY := ptB - IP((ptV - ptLo) / (ptHi - ptLo) * ptH);
+    LINE_P(G1, ptL, ptY, ptR, ptY, dmGRID);
+    ptS := STRING(ptV, 2, ptDec);
+    TEXTOUT_P(ptS, G1, ptL - 4 - 6 * SIZE(ptS), ptY - 5, 1, dmGRAY);
+    ptV := ptV + ptStp;
+  END;
+  LINE_P(G1, ptL, ptB, ptR, ptB, #000000h);
+  LINE_P(G1, ptL, ptT, ptL, ptB, #000000h);
+  FOR ptI FROM 0 TO 5 DO
+    ptX := ptL + IP(ptI / 5 * (ptR - ptL));
+    LINE_P(G1, ptX, ptB, ptX, ptB + 3, #000000h);
+    ptS := STRING(0.01 * ptI, 2, 2);
+    TEXTOUT_P(ptS, G1, MIN(ptX - 3 * SIZE(ptS), 316 - 7 * SIZE(ptS)), ptB + 6, 1, dmGRAY);
+  END;
+  // reference thetas: dotted red at 0.01 and 0.03, green at the session value
+  FOR ptI FROM 1 TO 3 STEP 2 DO
+    ptX := ptL + IP(ptI / 5 * (ptR - ptL));
+    FOR ptY FROM ptT TO ptB STEP 3 DO PIXON_P(G1, ptX, ptY, dmRED); END;
+  END;
+  IF dmTh <= 0.05 THEN
+    ptX := ptL + IP(dmTh / 0.05 * (ptR - ptL));
+    FOR ptY FROM ptT TO ptB STEP 2 DO PIXON_P(G1, ptX, ptY, dmGRN); END;
+  END;
+  // the curve
+  ptPrev := -1;
+  FOR ptI FROM 0 TO ptN DO
+    ptX := ptL + IP(ptI / ptN * (ptR - ptL));
+    ptY := ptB - IP((ptVals(ptI + 1) - ptLo) / (ptHi - ptLo) * ptH);
+    IF ptPrev >= 0 THEN LINE_P(G1, ptL + IP((ptI - 1) / ptN * (ptR - ptL)), ptPrev, ptX, ptY, dmBLUE); END;
+    RECT_P(G1, ptX - 1, ptY - 1, ptX + 1, ptY + 1, dmBLUE, dmBLUE);
+    ptPrev := ptY;
+  END;
+  TEXTOUT_P("LR: 0 " + dmBig(dmCombAt(0)) + "   0.01 " + dmBig(dmCombAt(0.01)) + "   0.03 " + dmBig(dmCombAt(0.03)), G1, 10, 212, 1, #000000h, 306);
+  TEXTOUT_P("green: yours, theta " + dmF(dmTh, 3) + "; red: 0.01 and 0.03", G1, 10, 226, 1, dmGRAY);
+  BLIT_P(G0, 0, 0, G1);
+  dmWaitKey();
+END;
+
+
+// ------------------------------------------------------------
+// WORKED EXAMPLE, HELP, RESET
+// ------------------------------------------------------------
+
+// Three invented loci under the classic hypotheses.  With theta 0
+// the LRs are 66.67, 20 and 4 (combined 5333.3); with theta 0.01
+// the first locus gives 56.79.  Both were checked in Python.
+dmExample()
+BEGIN
+  dmPres := {1, 1, 0};
+  dmHp := {1, 1, 0, 0}; dmHd := {1, 0, 0, 1}; dmPreset := 1;
+  dmClearLoci();
+  dmLoc := {{{12, 13, 14, 15}, {0.10, 0.20, 0.15, 0.05}, {1, 2, 3, 4, 0, 0}},
+            {{8, 9, 11}, {0.30, 0.25, 0.10}, {1, 1, 2, 3, 0, 0}},
+            {{16, 17}, {0.20, 0.30}, {1, 2, 1, 2, 0, 0}}};
+  dmNL := 3;
+  dmRecalc();
+  MSGBOX("Loaded: victim + suspect vs victim + 1 unknown, 3 loci, theta = " + dmF(dmTh, 3) + ".  Locus 1: victim 12/13, suspect 14/15, mixture 12,13,14,15.  Now see Results and the plots.");
+END;
+
+dmHelp()
+BEGIN
+  RECT_P(G0, 0, 0, 319, 239, #FFFFFFh);
+  RECT_P(G0, 6, 4, 313, 235, dmORNG, dmPANL);
+  TEXTOUT_P("DNAMixLR help  (1 of 2)", G0, 14, 8, 2, dmBLUE);
+  TEXTOUT_P("Each locus shows a SET of alleles, called M.", G0, 14, 30, 1, #000000h);
+  TEXTOUT_P("Under a hypothesis, known contributors must", G0, 14, 43, 1, #000000h);
+  TEXTOUT_P("have all their alleles in M; the x unknown", G0, 14, 56, 1, #000000h);
+  TEXTOUT_P("people supply the rest of M and nothing else.", G0, 14, 69, 1, #000000h);
+  TEXTOUT_P("P(E|H): the chance 2x random alleles do that.", G0, 14, 82, 1, dmMAG);
+  TEXTOUT_P("LR = P(E|Hp) / P(E|Hd); loci multiply.", G0, 14, 95, 1, dmMAG);
+  TEXTOUT_P("Example: mixture 12,13,14,15; victim 12/13.", G0, 14, 115, 1, dmGRN);
+  TEXTOUT_P("Hd (victim + 1 unknown): the unknown must be", G0, 14, 128, 1, dmGRN);
+  TEXTOUT_P("14/15, P = 2 p14 p15.  Hp (victim + suspect", G0, 14, 141, 1, dmGRN);
+  TEXTOUT_P("14/15): P = 1.  LR = 1 / (2 p14 p15).", G0, 14, 154, 1, dmGRN);
+  TEXTOUT_P("Genotype entries are POSITIONS in your allele", G0, 14, 174, 1, #000000h);
+  TEXTOUT_P("list (1 = the first allele); 0 means an", G0, 14, 187, 1, #000000h);
+  TEXTOUT_P("allele the mixture does not show.", G0, 14, 200, 1, #000000h);
+  TEXTOUT_P("Any key: next page", G0, 14, 222, 1, dmGRAY);
+  dmWaitKey();
+  RECT_P(G0, 0, 0, 319, 239, #FFFFFFh);
+  RECT_P(G0, 6, 4, 313, 235, dmORNG, dmPANL);
+  TEXTOUT_P("DNAMixLR help  (2 of 2)", G0, 14, 8, 2, dmBLUE);
+  TEXTOUT_P("THETA (coancestry, Fst): people in the same", G0, 14, 30, 1, #000000h);
+  TEXTOUT_P("subpopulation share ancestry: an allele seen", G0, 14, 43, 1, #000000h);
+  TEXTOUT_P("in a typed person is likelier in the unknown.", G0, 14, 56, 1, #000000h);
+  TEXTOUT_P("NRC II (1996) 4.2: P(next = a | n seen, n_a", G0, 14, 69, 1, dmMAG);
+  TEXTOUT_P("are a) = (n_a th + (1-th) p_a)/(1 + (n-1) th)", G0, 14, 82, 1, dmMAG);
+  TEXTOUT_P("ALL typed people condition it, contributors", G0, 14, 95, 1, #000000h);
+  TEXTOUT_P("or not (Curran et al. 1999).  0.01 is usual,", G0, 14, 108, 1, #000000h);
+  TEXTOUT_P("0.03 conservative.  The theta plot shows how", G0, 14, 121, 1, #000000h);
+  TEXTOUT_P("much the LR falls as theta rises.", G0, 14, 134, 1, #000000h);
+  TEXTOUT_P("ENFSI scale: LR 1-10 weak, 10-100 moderate,", G0, 14, 154, 1, dmGRN);
+  TEXTOUT_P("100-1000 moderately strong, 1e3-1e4 strong,", G0, 14, 167, 1, dmGRN);
+  TEXTOUT_P("1e4-1e6 very strong, above 1e6 extremely so.", G0, 14, 180, 1, dmGRN);
+  TEXTOUT_P("Teaching tool only: casework needs validated", G0, 14, 198, 1, dmRED);
+  TEXTOUT_P("software and a qualified analyst.", G0, 14, 211, 1, dmRED);
+  TEXTOUT_P("Any key: back to the menu", G0, 14, 224, 1, dmGRAY);
+  dmWaitKey();
+END;
+
+dmInit()
+BEGIN
+  dmBLUE := #003CC8h; dmMAG := #C800C8h; dmGRN := #008C3Ch;
+  dmRED := #FF0000h; dmGRAY := #5A5A5Ah; dmFOOT := #1E90FFh;
+  dmORNG := #FF4500h; dmPANL := #FFF8F0h; dmGRID := #E1E4EBh;
+  dmTh := 0.01;
+  dmPres := {1, 1, 0};
+  dmHp := {1, 1, 0, 0}; dmHd := {1, 0, 0, 1}; dmPreset := 1;
+  dmLab := {}; dmFq := {}; dmGen := {0, 0, 0, 0, 0, 0}; dmM := 0;
+  dmClearLoci();
+END;
+
+
+// ------------------------------------------------------------
+// MAIN MENU
+// ------------------------------------------------------------
+EXPORT DNAMixLR()
+BEGIN
+  LOCAL mnI, mnRun, mnT;
+  dmInit();
+  mnRun := 1;
+  WHILE mnRun == 1 DO
+    mnT := "DNAMixLR  loci " + STRING(dmNL, 2, 0);
+    IF dmComb > 0 THEN mnT := mnT + "  LR " + dmBig(dmComb); END;
+    mnI := 0;
+    CHOOSE(mnI, mnT, {
+      "1  Enter a locus",
+      "2  Hypotheses:  " + dmHypStr(dmHp) + "  vs  " + dmHypStr(dmHd),
+      "3  Coancestry theta = " + dmF(dmTh, 3),
+      "4  Results table",
+      "5  Plot: LR by locus",
+      "6  Plot: LR against theta",
+      "7  Load the worked example",
+      "8  Clear all loci",
+      "9  Help",
+      "Quit"});
+    CASE
+      IF mnI == 0 OR mnI == 10 THEN mnRun := 0; END;
+      IF mnI == 1 THEN dmEnterLocus(); END;
+      IF mnI == 2 THEN dmSetHyp(); END;
+      IF mnI == 3 THEN dmSetTheta(); END;
+      IF mnI == 4 THEN dmResults(); END;
+      IF mnI == 5 THEN dmPlotLoci(); END;
+      IF mnI == 6 THEN dmPlotTheta(); END;
+      IF mnI == 7 THEN dmExample(); END;
+      IF mnI == 8 THEN dmClearLoci(); END;
+      IF mnI == 9 THEN dmHelp(); END;
+    END;
+  END;
+END;

@@ -6,7 +6,7 @@ Teaching programs for the HP Prime graphing calculator, written in PPL and Micro
 
 Everything here is **free for educational and personal use**. See [LICENSE](LICENSE.txt).
 
-**Tested on** an HP Prime G2 and G1, both running the **2026-09-09** firmware, plus the desktop Virtual Calculator.
+**Tested on** an HP Prime G2 and G1, both running the **2026-09-09** firmware, plus the desktop Virtual Calculator — **except the newer programs listed under [Not yet tested on hardware](#not-yet-tested-on-hardware)**, which have not been run on a calculator yet.
 
 ---
 
@@ -51,6 +51,27 @@ A diagnostic-testing tree: N people split by prevalence, then by the test. PPV r
 
 ---
 
+## Not yet tested on hardware
+
+> **These programs are new (October 2026) and have NOT yet been run on an HP Prime.** They were written for the 2026-09-09 firmware and checked off the calculator, but none has been run on one yet. Treat them as betas: expect rough edges, check any result you intend to rely on, and please report what you find. Each file's header says the same thing.
+
+### GaltonBoard — Galton's quincunx *(untested)*
+Balls fall through rows of pegs, bouncing right with probability p, and the bins build a Binomial(R, p) histogram. The binomial expected counts and the normal approximation are drawn over it. Tap the pegs to drop a ball, or tap a bar to compare its observed share with the binomial probability. The arrows change p and the number of rows, and the menu sends the bins to D1/D2 for the Statistics 1Var app. After Galton (1873) and the QUINCUNX demo in CDC Epi Info 6.
+
+### CentralLimit — Central Limit Theorem explorer *(untested)*
+**This one is an app, not a plain program.** It lives inside a saved copy of the Statistics 1Var app, so it can set up the built-in histograms; the installation steps are in the file's header. Build a population (uniform, normal, exponential, geometric, bimodal, or your own data in D1), draw repeated samples, and watch the sample means pile up into a bell centred on μ with spread σ/√n. Sample sizes are offered only as perfect squares, so σ / SD(means) can be compared with √n at a glance. After Colin Croft's HP 39G aplet (2003).
+
+### TrendTest — chi-square test for linear trend *(untested)*
+For a 2 × k table with ordered exposure levels: Mantel's chi-square for trend (1 df), Pearson's chi-square, and the departure from linearity. Each level gets a Wilson interval for its proportion and an odds ratio against level 1 with a Woolf interval. There are two plots, proportions with the weighted trend line and odds ratios on a log scale; tap a dot for its numbers. The arithmetic was checked against SciPy and statsmodels on 300 random tables before the PPL was written. The built-in example (snoring and heart disease, Norton & Dunn 1985) lists its expected results in the header, so the first hardware run can be checked against them.
+
+### TestChooser — which statistical test? *(untested)*
+Two tapped questions, the outcome's measurement scale and the study design, lead to a suggested test. Each test page says what it compares, what it assumes, where to find it on the Prime, what to do afterwards, and the alternative when an assumption fails. You can also browse the whole table and tap a cell. The scheme follows Stanton Glantz's *Primer of Biostatistics*.
+
+### DNAMixLR — likelihood ratio for a DNA mixture *(untested)*
+The likelihood ratio for a mixed DNA profile under prosecution and defence hypotheses, locus by locus, with the NRC II coancestry (θ) correction, following Weir et al. (1997) and Curran et al. (1999). It offers preset or custom hypotheses, up to 12 loci, the ENFSI verbal scale, and plots of the LR by locus and against θ. The probability engine was checked against brute-force enumeration in Python (400 random cases), and a worked example is built in. **A teaching tool only:** casework needs validated software and a qualified analyst.
+
+---
+
 ## Diagnostics
 
 Short throwaway programs for finding out what your own calculator does.
@@ -58,6 +79,8 @@ Short throwaway programs for finding out what your own calculator does.
 **`PyVer`** is the useful one. It reports your MicroPython version, probes ten modules, and tests two behaviours known to vary. Two minutes, and it tells you more about your firmware's Python than any document can.
 
 `JoinTest` and `GenTest` isolate a specific `str.join` failure — kept because they document a real investigation, including the part where it did not reproduce.
+
+**`PyProbe`** (beta 2b) asks what the Prime's MicroPython can actually do: how values pass from PPL into Python, what the `matplotl` charts really draw, and what each module contains. It has been run on the Virtual Calculator only, **not yet on hardware**. Its findings so far are in the file's header: `argv` text is cut off at about 250 characters in total, and `matplotl` is not usable for teaching charts (`clf()` clears nothing, `axis()` has no visible effect, colour is ignored).
 
 ---
 
