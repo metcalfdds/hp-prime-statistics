@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// TRENDTEST - beta 1
+// TRENDTEST - beta 1a
 // Chi-square for linear trend in proportions (2 x k table)
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
@@ -14,7 +14,13 @@
 //   warranty.
 //
 // Firmware: written for the 2026-09-09 firmware (2.4.2).  This
-//   version has NOT yet been run on hardware.  The arithmetic
+//   version has NOT yet been run on hardware.
+//
+// beta 1a (11 Oct 2026): clean exits.  Every "wait for the finger
+//   to lift" loop now goes through trDrain(), which gives up after
+//   one second, so a phantom touch cannot freeze the program; and
+//   Quit returns the summary line to Home instead of PRINTing it,
+//   so no Terminal screen is left open.  Nothing else changed.  The arithmetic
 //   was checked line for line against scipy and statsmodels
 //   (300 random tables) before the PPL was written.
 //
@@ -170,18 +176,29 @@ BEGIN
   END;
 END;
 
+// Wait for the finger to lift -- but never for more than a second.
+// MOUSE(1) is -1 while nothing touches the screen.  Without the
+// time limit a stuck or phantom touch would hold the program here
+// for ever, and the only way out would be a reset.
+trDrain()
+BEGIN
+  LOCAL drT;
+  drT := TICKS;                                  // milliseconds
+  REPEAT UNTIL MOUSE(1) == -1 OR TICKS - drT > 1000;
+END;
+
 // Wait for any key or tap (drain, wait, drain).
 trWaitAny()
 BEGIN
   LOCAL waK, waM, waM1;
   REPEAT waK := GETKEY; UNTIL waK == -1;
-  REPEAT UNTIL MOUSE(1) == -1;
+  trDrain();
   REPEAT
     waK := GETKEY;
     waM := MOUSE;
     waM1 := waM(1);
   UNTIL waK > -1 OR SIZE(waM1) > 0;
-  REPEAT UNTIL MOUSE(1) == -1;
+  trDrain();
   REPEAT waK := GETKEY; UNTIL waK == -1;
 END;
 
@@ -627,7 +644,7 @@ BEGIN
   plXlo := plXlo - plPad; plXhi := plXhi + plPad;
   plGo := 1;
   REPEAT plK := GETKEY; UNTIL plK == -1;
-  REPEAT UNTIL MOUSE(1) == -1;
+  trDrain();
   WHILE plGo == 1 DO
     IF plWhich == 1 THEN trDrawProp(); ELSE trDrawOR(); END;
     REPEAT
@@ -643,7 +660,7 @@ BEGIN
         IF ABS(plM1(1) - plX) < plD THEN plD := ABS(plM1(1) - plX); plBest := plI; END;
       END;
       IF plBest > 0 THEN trSel := plBest; END;
-      REPEAT UNTIL MOUSE(1) == -1;
+      trDrain();
     ELSE
       IF plK == 7 THEN trSel := MAX(1, trSel - 1); END;
       IF plK == 8 THEN trSel := MIN(trK, trSel + 1); END;
@@ -744,8 +761,11 @@ BEGIN
       IF mnI == 6 THEN trHelp(); END;
     END;
   END;
+  // Hand the summary back as the program's value: Home shows it in
+  // the history and no Terminal screen opens.  The numbers stay in
+  // TR_X2T TR_P TR_X2 TR_DF TR_OR TR_B.
   IF trHas == 1 THEN
-    PRINT("TrendTest: X2 trend = " + STRING(trX2T, 2, 4) + " (1 df), " + trPStr(trPT));
-    PRINT("Pearson X2 = " + STRING(trX2P, 2, 4) + " (" + STRING(trK - 1, 2, 0) + " df); exports TR_X2T TR_P TR_X2 TR_DF TR_OR TR_B");
+    RETURN "TrendTest: X2 trend = " + STRING(trX2T, 2, 4) + " (1 df), " + trPStr(trPT) + "; Pearson X2 = " + STRING(trX2P, 2, 4) + " (" + STRING(trK - 1, 2, 0) + " df)";
   END;
+  RETURN "TrendTest: no table";
 END;

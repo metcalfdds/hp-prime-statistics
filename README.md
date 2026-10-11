@@ -2,7 +2,7 @@
 
 Teaching programs for the HP Prime graphing calculator, written in PPL and MicroPython, and originally intended for upper-level university statistics courses.  
 
-**And a set of notes on what the Prime actually does**, as opposed to what the manual says — hard limits, commands that behave differently than documented, the MicroPython bridge and how it fails. Those notes are not specific to statistics; if you write PPL for anything, [docs/lessons-learned_v7c.md](docs/lessons-learned_v7c.md) is the part worth your time.
+**And a set of notes on what the Prime actually does**, as opposed to what the manual says — hard limits, commands that behave differently than documented, the MicroPython bridge and how it fails. Those notes are not specific to statistics; if you write PPL for anything, [docs/lessons-learned_v7d.md](docs/lessons-learned_v7d.md) is the part worth your time.
 
 Everything here is **free for educational and personal use**. See [LICENSE](LICENSE.txt).
 
@@ -27,7 +27,7 @@ The MicroPython inside `StudRangePy` and `NormExplorer` lives in a `#PYTHON … 
 
 ## The programs
 
-*The versions in `programs/` dated 10 October 2026 (BayesTree beta 5, NormExplorer beta 40, StudRange beta 13, ChiTable beta 1k) carry the helper-name and wait-loop fixes described under* The notes *and have not yet been re-run on hardware; the versions they replace were tested as stated.*
+*The versions in `programs/` dated 10–11 October 2026 (BayesTree beta 5, NormExplorer beta 40, StudRange beta 13, ChiTable beta 1k, and the beta 1a releases below) carry the helper-name and wait-loop fixes described under* The notes *and have not yet been re-run on hardware; the versions they replace were tested as stated.*
 
 ### NormExplorer — normal distribution workbench
 A ten-item menu covering the normal distribution: set any μ and σ, four kinds of probability question, three kinds of inverse question, a z-formula solver, a live explorer you can drag with your finger, Cohen's d, a standardize animation, and a diagnostics page.
@@ -61,6 +61,8 @@ Pick 2 × 2, 2 × 3 or 3 × 2, tap the cells to type the observed counts (soft k
 ## Not yet tested on hardware
 
 > **These programs are new (October 2026) and have NOT yet been run on an HP Prime.** They were written for the 2026-09-09 firmware and checked off the calculator, but none has been run on one yet. Treat them as betas: expect rough edges, check any result you intend to rely on, and please report what you find. Each file's header says the same thing.
+>
+> The beta 1a releases (11 October 2026) of GaltonBoard, CentralLimit, TrendTest and TestChooser put a one-second limit on every "wait for the finger to lift" loop and, where the program printed a summary on the way out, return it to Home instead; nothing else changed. DNAMixLR needed no change.
 
 ### GaltonBoard — Galton's quincunx *(untested)*
 Balls fall through rows of pegs, bouncing right with probability p, and the bins build a Binomial(R, p) histogram. The binomial expected counts and the normal approximation are drawn over it. Tap the pegs to drop a ball, or tap a bar to compare its observed share with the binomial probability. The arrows change p and the number of rows, and the menu sends the bins to D1/D2 for the Statistics 1Var app. After Galton (1873) and the QUINCUNX demo in CDC Epi Info 6.
@@ -93,7 +95,7 @@ Short throwaway programs for finding out what your own calculator does.
 
 ## The notes
 
-[**docs/lessons-learned_v7c.md**](docs/lessons-learned_v7c.md) is the substantial document here: everything found the expensive way across roughly forty build iterations on real hardware. Hard limits, command behaviour that contradicts the manual, graphics and input idioms, the MicroPython bridge, numerical methods, and a list of disproved theories recorded as disproved. The lessons learned document can be uploaded to your favorite AI to assist with coding.  
+[**docs/lessons-learned_v7d.md**](docs/lessons-learned_v7d.md) is the substantial document here: everything found the expensive way across roughly forty build iterations on real hardware. Hard limits, command behaviour that contradicts the manual, graphics and input idioms, the MicroPython bridge, numerical methods, and a list of disproved theories recorded as disproved. The lessons learned document can be uploaded to your favorite AI to assist with coding.  
 
 A few things from it that are hard to find elsewhere:
 

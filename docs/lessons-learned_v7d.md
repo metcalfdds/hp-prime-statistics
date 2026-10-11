@@ -1,5 +1,11 @@
 # HP Prime Lessons Learned
-*Roger Metcalf & Claude · v7c · 10 October 2026 (v7b, v7a and v7 earlier the same day; v6 6 October 2026; v5 3 October 2026; v4 1 October 2026; v3 rewritten 28 September 2026)*
+*Roger Metcalf & Claude · v7d · 11 October 2026 (v7c, v7b, v7a and v7 on 10 October 2026; v6 6 October 2026; v5 3 October 2026; v4 1 October 2026; v3 rewritten 28 September 2026)*
+
+**What changed in v7d** (fleet table completed; the exit review extended to the five programs that arrived on 9 October):
+
+- §15 now lists GaltonBoard, TrendTest, TestChooser and DNAMixLR, which were committed to the repository on 9 October 2026 but had never been entered here, and marks CentralLimit as the app it is. All five are still untested on hardware.
+- GaltonBoard beta 1a, TrendTest beta 1a and TestChooser beta 1a: every finger-lift drain goes through a capped `xxDrain()` (§7), and GaltonBoard and TrendTest return their summary line instead of printing it. DNAMixLR needed nothing (key-only waits, no trailing `PRINT`). All four already carried tagged helpers (`gb`, `tr`, `tc`, `dm`); `fleet_names_v1.py` over the whole fleet of 20 files: 0 collisions, 0 untagged.
+- The masters of these four now live in `D:\HP-Prime` alongside the rest (until 11 October they existed only in the Project and the repository).
 
 **What changed in v7c** (one new rule, device-found, and three loop rules from the fleet exit review, 10 Oct 2026):
 
@@ -385,7 +391,11 @@ Panels: coloured border, light fill, matching text. Legends comma-separated — 
 | **Burr3 / Norm3 v2.2** | Parameter explorers with CDF overlay and mean marker. |
 | **BayesTree beta 5** | Natural-frequency tree, ROC view, PPV-vs-prevalence, 2×2 view. Beta 5 = beta 4 with every helper tagged `bt_` and a `SIZE`/type check on the tap list; not yet re-run on hardware. *Pending: sequential evidence, Fagan nomogram.* |
 | **ChiTable beta 1k** | Chi-square for a 2 x 2, 2 x 3 or 3 x 2 table (PPL): touch-grid entry, expected counts, row/column %, X2/df/p/critical value, G2, V, adjusted residuals, interpretation page, 2 x 2 extras (Yates, Fisher, z, RD, RR, OR), bar, mosaic and chi-square-curve plots. Was ChiSquare beta 1/1a — renamed because `ChiSquare` is `CHISQUARE`. Tested on the G2 and the G1 (10 Oct 2026): entry grid with soft keys, Values form, results pages, all three plots. Beta 1k adds the capped `csDrain()` and returns the summary instead of printing it; not yet re-run on hardware. |
-| **CentralLimit beta 1a** | Central Limit Theorem explorer, built as an app on Statistics 1Var (after Colin Croft's HP 39G aplet). Beta 1a adds the capped `cltDrain()`. Awaiting a device test. |
+| **CentralLimit beta 1a** | Central Limit Theorem explorer, built as an APP on Statistics 1Var (after Colin Croft's HP 39G aplet); its program is pasted into the app's own program, not the catalog. Beta 1a adds the capped `cltDrain()`. Awaiting a device test. |
+| **GaltonBoard beta 1a** | Galton's quincunx: animated balls through R rows of pegs, bins build a Binomial(R, p) histogram with binomial and normal overlays; tap the pegs to drop a ball, tap a bar for its numbers; bins to D1/D2. Beta 1a: capped `gbDrain()`, `RETURN` instead of `PRINT`. Untested on hardware. |
+| **TrendTest beta 1a** | Chi-square for linear trend in a 2 × k table (Mantel, 1 df), Pearson's chi-square and the departure from linearity; Wilson intervals, odds ratios with Woolf intervals; two plots. Checked against SciPy/statsmodels on 300 tables. Beta 1a: capped `trDrain()`, `RETURN` instead of `PRINT`. Untested on hardware. |
+| **TestChooser beta 1a** | "Which statistical test?" — two tapped questions (scale, design) lead to a test page: what it compares, assumes, where it is on the Prime, what follows, and the fallback; browse the whole table by tapping. After Glantz. Beta 1a: capped `tcDrain()`. Untested on hardware. |
+| **DNAMixLR beta 1** | Likelihood ratio for a DNA mixture, locus by locus, with the NRC II coancestry (θ) correction (Weir et al. 1997; Curran et al. 1999); preset or custom hypotheses, up to 12 loci, ENFSI verbal scale, LR-by-locus and LR-against-θ plots. Engine checked against brute-force enumeration (400 cases). Teaching tool only. Untested on hardware. |
 | **PyProbe beta 2b / PyDirect beta 1** | MicroPython probes: argv, matplotl, module inventory. Beta 2b shows its output on its own scrolling screen. PyDirect tests the direct-call `#PYTHON name(args)` form. |
 | **PyVer / JoinTest / GenTest** | Throwaway diagnostics. `PyVer` reports interpreter version and module list. |
 

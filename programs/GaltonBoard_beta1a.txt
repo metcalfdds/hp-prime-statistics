@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// GALTONBOARD - beta 1
+// GALTONBOARD - beta 1a
 // Galton's quincunx (bean machine) for the HP Prime
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
@@ -23,6 +23,12 @@
 //
 // Firmware: written for the 2026-09-09 firmware (2.4.2).  This
 //   version has NOT yet been run on hardware.
+//
+// beta 1a (11 Oct 2026): clean exits.  Every "wait for the finger
+//   to lift" loop now goes through gbDrain(), which gives up after
+//   one second, so a phantom touch cannot freeze the program; and
+//   Esc returns the summary line to Home instead of PRINTing it,
+//   so no Terminal screen is left open.  Nothing else changed.
 //
 // Run GaltonBoard() from the Program Catalog.
 // ============================================================
@@ -163,6 +169,17 @@ BEGIN
   RETURN (MAX(0, (gbSq - gbN * sdM * sdM) / (gbN - 1)))^0.5;
 END;
 
+// Wait for the finger to lift -- but never for more than a second.
+// MOUSE(1) is -1 while nothing touches the screen.  Without the
+// time limit a stuck or phantom touch would hold the program here
+// for ever, and the only way out would be a reset.
+gbDrain()
+BEGIN
+  LOCAL drT;
+  drT := TICKS;                                  // milliseconds
+  REPEAT UNTIL MOUSE(1) == -1 OR TICKS - drT > 1000;
+END;
+
 // Wait for any key or any tap, then let go of it.  Drain first: a
 // key or finger left over from a menu would otherwise skip the
 // screen that was just drawn.
@@ -170,13 +187,13 @@ gbWaitAny()
 BEGIN
   LOCAL waK, waM, waM1;
   REPEAT waK := GETKEY; UNTIL waK == -1;
-  REPEAT UNTIL MOUSE(1) == -1;
+  gbDrain();
   REPEAT
     waK := GETKEY;
     waM := MOUSE;
     waM1 := waM(1);
   UNTIL waK > -1 OR SIZE(waM1) > 0;
-  REPEAT UNTIL MOUSE(1) == -1;
+  gbDrain();
   REPEAT waK := GETKEY; UNTIL waK == -1;
 END;
 
@@ -604,16 +621,16 @@ BEGIN
     IF SIZE(mlM1) > 0 THEN
       // a tap: element 1 is x, element 2 is y
       IF mlM1(2) < gbHT - 4 THEN
-        REPEAT UNTIL MOUSE(1) == -1;             // let go before the animation
+        gbDrain();             // let go before the animation
         gbDropAnim();
       ELSE
         IF mlM1(2) <= gbHB + 12 AND mlM1(1) >= gbX0 AND mlM1(1) < gbX0 + (gbR + 1) * gbBw THEN
           mlBin := IP((mlM1(1) - gbX0) / gbBw);
-          REPEAT UNTIL MOUSE(1) == -1;
+          gbDrain();
           gbBinInfo(mlBin);
         END;
       END;
-      REPEAT UNTIL MOUSE(1) == -1;
+      gbDrain();
     ELSE
       IF mlK == 4 THEN mlGo := 0; END;                                      // Esc
       IF mlK == 50 THEN gbDropFast(100); END;                               // +
@@ -626,7 +643,7 @@ BEGIN
     END;
   END;
   gbExport();
-  PRINT();
-  PRINT("Galton Board: " + STRING(gbN, 2, 0) + " balls, R = " + STRING(gbR, 2, 0) + ", p = " + gbF(gbP, 2));
-  PRINT("Bin counts (0 .. R) are in GB_CNT.");
+  // Hand the summary back as the program's value: Home shows it in
+  // the history and no Terminal screen opens.  GB_CNT holds the bins.
+  RETURN "Galton Board: " + STRING(gbN, 2, 0) + " balls, R = " + STRING(gbR, 2, 0) + ", p = " + gbF(gbP, 2) + "; bins in GB_CNT";
 END;

@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// CENTRALLIMIT - beta 1
+// CENTRALLIMIT - beta 1a
 // Central Limit Theorem explorer -- an HP Prime APP built on
 // the Statistics 1Var app
 // ============================================================
@@ -24,6 +24,10 @@
 //
 // Firmware: written for the 2026-09-09 firmware (2.4.2).  This
 //   version has NOT yet been run on hardware.
+//
+// beta 1a (10 Oct 2026): every "wait for the finger to lift" loop
+//   now goes through cltDrain(), which gives up after one second,
+//   so a phantom touch cannot freeze the app.  No other change.
 // ============================================================
 //
 // THIS IS AN APP, NOT AN ORDINARY PROGRAM.  To install it:
@@ -694,6 +698,17 @@ END;
 // WAITING, HELP AND MENUS
 // ------------------------------------------------------------
 
+// Wait for the finger to lift -- but never for more than a second.
+// MOUSE(1) is -1 while nothing touches the screen.  Without the
+// time limit a stuck or phantom touch would hold the app here for
+// ever, and the only way out would be a reset.
+cltDrain()
+BEGIN
+  LOCAL drT;
+  drT := TICKS;                                  // milliseconds
+  REPEAT UNTIL MOUSE(1) == -1 OR TICKS - drT > 1000;
+END;
+
 // Wait for any key or any tap.  Drain first (a key or finger left
 // over from a menu would otherwise skip this screen), then wait,
 // then let go.
@@ -701,13 +716,13 @@ cltWaitAny()
 BEGIN
   LOCAL waK, waM, waM1;
   REPEAT waK := GETKEY; UNTIL waK == -1;
-  REPEAT UNTIL MOUSE(1) == -1;
+  cltDrain();
   REPEAT
     waK := GETKEY;
     waM := MOUSE;
     waM1 := waM(1);
   UNTIL waK > -1 OR SIZE(waM1) > 0;
-  REPEAT UNTIL MOUSE(1) == -1;
+  cltDrain();
 END;
 
 // The opening screen.
@@ -792,7 +807,7 @@ BEGIN
       // a tap: element 1 is x, element 2 is y
       IF dlM1(2) >= cT1 AND dlM1(2) <= cB1 THEN cltSample(); END;            // top: fresh samples
       IF dlM1(2) >= cT2 AND dlM1(2) <= cB2 THEN cltOver := 1 - cltOver; END; // bottom: curve on/off
-      REPEAT UNTIL MOUSE(1) == -1;              // wait for the finger to lift
+      cltDrain();              // wait for the finger to lift
     ELSE
       IF dlK == 4 THEN dlGo := 0; END;                                  // Esc
       IF dlK == 50 THEN cltK := MIN(10, cltK + 1); cltSample(); END;    // +
