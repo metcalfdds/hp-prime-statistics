@@ -2,7 +2,7 @@
 
 Teaching programs for the HP Prime graphing calculator, written in PPL and MicroPython, and originally intended for upper-level university statistics courses.  
 
-**And a set of notes on what the Prime actually does**, as opposed to what the manual says — hard limits, commands that behave differently than documented, the MicroPython bridge and how it fails. Those notes are not specific to statistics; if you write PPL for anything, [docs/lessons-learned_v6.md](docs/lessons-learned_v6.md) is the part worth your time.
+**And a set of notes on what the Prime actually does**, as opposed to what the manual says — hard limits, commands that behave differently than documented, the MicroPython bridge and how it fails. Those notes are not specific to statistics; if you write PPL for anything, [docs/lessons-learned_v7c.md](docs/lessons-learned_v7c.md) is the part worth your time.
 
 Everything here is **free for educational and personal use**. See [LICENSE](LICENSE.txt).
 
@@ -27,6 +27,8 @@ The MicroPython inside `StudRangePy` and `NormExplorer` lives in a `#PYTHON … 
 
 ## The programs
 
+*The versions in `programs/` dated 10 October 2026 (BayesTree beta 5, NormExplorer beta 40, StudRange beta 13, ChiTable beta 1k) carry the helper-name and wait-loop fixes described under* The notes *and have not yet been re-run on hardware; the versions they replace were tested as stated.*
+
 ### NormExplorer — normal distribution workbench
 A ten-item menu covering the normal distribution: set any μ and σ, four kinds of probability question, three kinds of inverse question, a z-formula solver, a live explorer you can drag with your finger, Cohen's d, a standardize animation, and a diagnostics page.
 
@@ -49,6 +51,11 @@ A diagnostic-testing tree: N people split by prevalence, then by the test. PPV r
 
 **Tap any node** for an explanation of that count — what it is, the formula behind it, and which pair it belongs to.
 
+### ChiTable — chi-square for a two-way table
+Pick 2 × 2, 2 × 3 or 3 × 2, tap the cells to type the observed counts (soft keys: Edit, Values, Clear, Cancel, Run), and get the expected counts, row and column percentages, χ² with df, p and the critical value, the likelihood-ratio G², Cramér's V, each cell's contribution and adjusted residual, and an interpretation in words with an APA-style line. A 2 × 2 table adds Yates, Fisher's exact test, the two-proportion z, risk difference, relative risk and odds ratio with 95% intervals. Three plots: observed beside expected, a mosaic coloured by residual, and the χ² curve with the p-value shaded. Four built-in examples, including the Florida death-penalty tables that show Simpson's paradox.
+
+**Status: beta 1k.** Beta 1j was tested on a G2 and a G1, both on the 2026-09-09 firmware (10 Oct 2026): the entry grid and its soft keys, the Values form, the results pages and all three plots. Beta 1k only changes how it waits and how it quits (below) and has not been re-run yet. The arithmetic is verified against scipy and statsmodels; [docs/chitable-guide.md](docs/chitable-guide.md) is the user's guide.
+
 ---
 
 ## Diagnostics
@@ -63,7 +70,7 @@ Short throwaway programs for finding out what your own calculator does.
 
 ## The notes
 
-[**docs/lessons-learned_v6.md**](docs/lessons-learned_v6.md) is the substantial document here: everything found the expensive way across roughly forty build iterations on real hardware. Hard limits, command behaviour that contradicts the manual, graphics and input idioms, the MicroPython bridge, numerical methods, and a list of disproved theories recorded as disproved. The lessons learned document can be uploaded to your favorite AI to assist with coding.  
+[**docs/lessons-learned_v7c.md**](docs/lessons-learned_v7c.md) is the substantial document here: everything found the expensive way across roughly forty build iterations on real hardware. Hard limits, command behaviour that contradicts the manual, graphics and input idioms, the MicroPython bridge, numerical methods, and a list of disproved theories recorded as disproved. The lessons learned document can be uploaded to your favorite AI to assist with coding.  
 
 A few things from it that are hard to find elsewhere:
 
@@ -71,6 +78,9 @@ A few things from it that are hard to find elsewhere:
 - **A Python exception does not raise a PPL error.** The traceback goes to the Terminal and PPL carries on with whatever the bridge variable held before. `IFERR` around `PYTHON(...)` catches nothing. In this fleet a sampler failed on every run for eleven consecutive builds with nothing on screen to show it.
 - **`FREEZE` is not a pause.** It suppresses the screen refresh at program *end*. Mid-program it does nothing.
 - **`STRING(x, 1, digits)` ignores the digits argument.** Mode 1 is Standard. Fixed decimals need mode 2.
+- **Built-in names are matched case-insensitively.** `LOCAL csC` is a syntax error because `csC` is `CSC`, the cosecant; a program named `ChiSquare` is `CHISQUARE`. Scan every name, prefix or not.
+- **Every program's routines go into one shared pool.** A helper that is not `EXPORT`ed is still visible to every other program on the calculator, and two programs that define the same name (`NiceNum`, `fmtp`...) can run each other's code: a runtime error, the Program Editor open on the *other* program, and a reset to get out. The 10 October 2026 versions in `programs/` give every helper a program tag (`sr_NiceNum`, `bt_fmtp`), and `tools/fleet_names_v1.py` checks a folder of programs for duplicates.
+- **A finger lift can arrive from `WAIT(-1)` as a one-element list.** Read `kk(2)` from it and the program stops with an error. Check `SIZE` first, and give any "wait for the finger to lift" loop a time limit.
 - **Data columns are reachable from a standalone program; app settings are not.** `D1`, `C1`, `C2` can be read and written. `H1Type` and `SetSample` are a syntax error at paste time.
 - **The desktop emulator runs the real ROM**, so any difference you see on hardware is necessarily timing, memory or display — and no amount of further emulator testing will find it.
 
