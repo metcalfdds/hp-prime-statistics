@@ -1,0 +1,798 @@
+// ============================================================
+// PYPROBE - beta 2b
+// What can MicroPython on this Prime actually do?
+// ============================================================
+// Author: Roger Metcalf, 2026.  Written with AI assistance
+//   (Anthropic Claude); concept, direction and all hardware
+//   testing by the author.
+//
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
+//   the file and credit the author if you pass it on.  Not for
+//   sale or commercial redistribution.  Provided as is, with no
+//   warranty.
+//
+// Firmware: written for 2.4.2 (2026-09-09).  Beta 2 run on the
+//   Virtual Calculator 1 Oct 2026.  2b changes only how the
+//   output is shown (see READING PYTHON'S OUTPUT).
+//
+// WHAT BETA 1 FOUND (Virtual Calculator, 1 Oct 2026)
+//   * PYTHON(script, a, b, ...) works.  Every value arrives in
+//     sys.argv as TEXT, and argv[0] is the first value (there is
+//     no script name in front).  1/3 arrived as '0.333333333333'
+//     and a list arrived as '{3.5, 1.25, 4, ...}'.
+//   * matplotl's show() WAITS until you press a key.
+//   * The charts were unreadable: no axes, bars running off the
+//     top, and some tests showed the PREVIOUS test's picture.
+//     Beta 1 never set the window with axis() before drawing
+//     (except the curve test), so beta 2 sets it every time and
+//     asks, step by step, what show() really does.
+//   * A message box showed only 5 lines; a 6th line was lost.
+//     Every MSGBOX here is kept to 5 lines or fewer.
+//
+// WHAT BETA 2 FOUND (Virtual Calculator, 1 Oct 2026)
+//   * argv text is cut off at about 250 characters in total: a
+//     200-value list arrived as 47 values.  Pass settings this
+//     way, never data.
+//   * matplotl: clf() clears nothing, old pictures pile up even
+//     across runs, axis() has no visible effect, text() draws
+//     only a small square, and colour is ignored.  Not usable
+//     for teaching charts; draw with hpprime or PPL instead.
+//
+// HOW TO USE
+//   Paste into a new program in the Connectivity Kit, sync, and
+//   run PyProbe() from the Program Catalog (Shift 1).  Pick a
+//   test from the menu.  Each chart test shows one or more
+//   pictures; press a key to move past each one.
+//
+// READING PYTHON'S OUTPUT
+//   The Terminal cannot be scrolled while a program runs: the
+//   program is waiting for a key, so the arrows only end the
+//   wait.  So after each test PyProbe shows everything Python
+//   wrote on a screen of its own, which it scrolls itself:
+//     Up / Down arrows      one line
+//     tap top / bottom half one page up / down
+//     Esc or Enter          done
+//
+//   PLEASE SCREENSHOT EVERY PICTURE.  Each one is labelled
+//   (A, B, C...) and the output says what it should look like,
+//   so the screenshots alone tell us what worked.
+//
+// WHAT IT TESTS
+//   1. Passing values INTO Python: negative numbers, tiny and
+//      huge numbers, text with a space, and a 200-value list.
+//   2. The chart window: does axis() work, does clf() clear,
+//      and does show() ever display an old picture?
+//   3. Histograms: how wide are the bars, and are the heights
+//      counts?  Also tries histogram(data, start, width).
+//   4. Box plot: which way does it point?
+//   5. Bar chart.
+//   6. Scatter + regression line, plain and in red.
+//   7. Curve with axis, grid and text.
+//   8. Module inventory (what each module really contains).
+//
+// HOW PYTHON AND PPL TALK HERE (the "bridge")
+//   PPL -> Python: PYTHON(pyprobe, test number, ...).  The test
+//     number arrives in sys.argv[0] as text.
+//   Python -> PPL: Python builds a PPL assignment as text and
+//     runs it with hpprime.eval, e.g.  PPmark:="hist: done".
+//   A Python error does NOT stop the PPL program -- it prints in
+//   the Terminal and PPL carries on.  So Python leaves progress
+//   notes in PPmark as it goes; whatever note is left tells us
+//   exactly how far it got.  (Lessons Learned, section 9.)
+// ============================================================
+
+// ---- globals shared with Python ----------------------------
+// EXPORT makes them reachable from Python by name.
+EXPORT PPmode := 0;     // test number (backup if argv fails)
+EXPORT PPmark := "";    // Python's latest progress note
+EXPORT PPmean := -1;    // a mean Python computed from a PPL list
+EXPORT PPcount := -1;   // how many list values Python could read
+EXPORT PPtext := "";    // everything Python wrote, one line per CHAR(10)
+
+#PYTHON pyprobe
+# ------------------------------------------------------------
+# PyProbe - the Python half.  One script; PPL says which test
+# to run by passing its number as the first argument.
+# Written for MicroPython 1.9.4 (what the Prime runs): no
+# f-strings, no .format() tricks, nothing newer than Python 3.4.
+# ------------------------------------------------------------
+import sys
+import math
+from hpprime import eval as ev     # ev("PPL text") runs PPL
+
+
+def mark(note):
+    # Leave a note in the PPL global PPmark.  It survives even if
+    # this script crashes, so PPL can report how far we got.
+    # Double quotes would break the PPL string, so swap them out.
+    try:
+        ev('PPmark:="' + str(note).replace('"', "'") + '"')
+    except Exception:
+        pass
+
+
+def out(line):
+    # Print to the Terminal AND add the line to the PPL string
+    # PPtext, which PyProbe shows on its own scrolling screen.
+    # The assignment hands back a string, which is safe to bring
+    # into Python (Lessons Learned 9: lists holding strings are
+    # not).  Double quotes and backslashes would break the PPL
+    # string, so they are swapped out first.
+    s = str(line)
+    print(s)
+    t = s.replace('"', "'").replace(chr(92), "/")
+    try:
+        ev('PPtext:=PPtext+"' + t + '"+CHAR(10)')
+    except Exception:
+        pass
+
+
+def now_ms():
+    # Milliseconds since some fixed moment.  hpprime.ticks()
+    # worked in beta 1; PPL's TICKS is the backup.
+    try:
+        import hpprime
+        return int(hpprime.ticks())
+    except Exception:
+        return int(float(ev("TICKS")))
+
+
+# ---- random numbers ------------------------------------------
+# The 'random' module is missing on our calculators; 'urandom'
+# is present.  getrandbits(24) gives a whole number 0..16777215,
+# which we turn into a uniform number strictly between 0 and 1.
+try:
+    from urandom import getrandbits
+
+    def unif():
+        return (getrandbits(24) + 0.5) / 16777216.0
+except ImportError:
+    def unif():
+        return float(ev("RANDOM"))
+
+
+def normal(mu, sd):
+    # Marsaglia polar method: pick a random point in a square,
+    # keep it only if it lands inside the unit circle, then
+    # stretch it into a normal value.  No sin or cos needed, so
+    # the calculator's angle mode cannot interfere.
+    while True:
+        u = 2.0 * unif() - 1.0
+        v = 2.0 * unif() - 1.0
+        s = u * u + v * v
+        if s > 0.0 and s < 1.0:
+            return mu + sd * u * math.sqrt(-2.0 * math.log(s) / s)
+
+
+def describe(values):
+    # Mean and sample standard deviation, two-pass for accuracy.
+    n = len(values)
+    m = sum(values) / n
+    ss = 0.0
+    for v in values:
+        ss = ss + (v - m) * (v - m)
+    return m, math.sqrt(ss / (n - 1))
+
+
+def quartiles(values):
+    # Q1, median, Q3 by the "median of each half" rule that most
+    # textbooks teach.  Used only to print what the box plot
+    # SHOULD show, so the picture can be checked by eye.
+    s = sorted(values)
+    n = len(s)
+
+    def med(t):
+        k = len(t)
+        if k % 2 == 1:
+            return t[k // 2]
+        return (t[k // 2 - 1] + t[k // 2]) / 2.0
+    half = n // 2
+    return med(s[:half]), med(s), med(s[n - half:])
+
+
+def chart_show(label, plt):
+    # show() waits for a keypress (beta 1 measured 15 to 43
+    # seconds -- the time spent looking).  We still time it, in
+    # case some chart returns at once without being seen.
+    mark(label + ": calling show()")
+    t0 = now_ms()
+    plt.show()
+    dt = now_ms() - t0
+    note = label + ": show() returned after " + str(dt) + " ms"
+    out(note)
+    mark(note)
+
+
+def f4(x):
+    # A number as text with 4 decimals, for printing.
+    return "%.4f" % x
+
+
+# ---- test 1: arguments passed from PPL ------------------------
+def non_ascii(s):
+    # List any character that is not plain ASCII, by its code.
+    # If PPL writes a special minus sign or exponent letter, this
+    # is how we will see it.
+    out = ""
+    for c in s:
+        if ord(c) > 127:
+            out = out + " " + hex(ord(c))
+    return out
+
+
+def to_number(s):
+    # float() first.  If that fails, swap the Prime's special
+    # minus sign (U+2212) and exponent letter (U+1D07) for plain
+    # ones and try again.  Returns (value, how) or (None, why).
+    try:
+        return float(s), "float() OK"
+    except ValueError:
+        pass
+    t = s.replace(chr(0x2212), "-").replace(chr(0x1D07), "e")
+    try:
+        return float(t), "OK after cleaning"
+    except ValueError:
+        return None, "unreadable"
+
+
+def t_argv():
+    mark("argv: started")
+    a = sys.argv
+    out("argc = " + str(len(a)))
+    k = 0
+    for s in a:
+        if len(s) > 50:
+            shown = repr(s[:50]) + "... (" + str(len(s)) + " chars)"
+        else:
+            shown = repr(s)
+        out("argv[" + str(k) + "] = " + shown + non_ascii(s[:50]))
+        k = k + 1
+
+    # argv[1] to argv[4] are the awkward single numbers.
+    out("-- single numbers --")
+    for s in a[1:5]:
+        val, how = to_number(s)
+        out(repr(s) + " -> " + how)
+
+    # The last argument is the 200-value list, as text.  Strip
+    # the braces, split on commas, read each piece.
+    txt = str(a[len(a) - 1])
+    for ch in "{}[]":
+        txt = txt.replace(ch, "")
+    vals = []
+    bad = 0
+    first_bad = ""
+    for piece in txt.split(","):
+        piece = piece.strip()
+        if piece == "":
+            continue
+        val, how = to_number(piece)
+        if val is None:
+            bad = bad + 1
+            if first_bad == "":
+                first_bad = piece
+        else:
+            vals.append(val)
+    out("-- the list --")
+    out("read " + str(len(vals)) + " values, " + str(bad) + " unreadable")
+    if first_bad != "":
+        out("first unreadable piece: " + repr(first_bad))
+    ev("PPcount:=" + str(len(vals)))
+    if len(vals) > 0:
+        m = sum(vals) / len(vals)
+        # Fixed-point, never repr(), so PPL can read it back.
+        ev("PPmean:=" + ("%.6f" % m))
+    # Kept short: the message box has room for about 5 lines.
+    mark("read " + str(len(vals)) + " values, " + str(bad) + " bad")
+
+
+# ---- test 2: the chart window ---------------------------------
+def t_window():
+    # Four small pictures, each with a letter, so a screenshot
+    # shows at once whether each command did its job.
+    import matplotl as plt
+    mark("window: started")
+
+    # A: window set FIRST, then one rising line.
+    plt.clf()
+    plt.axis(0, 10, 0, 10)
+    plt.plot([1.0, 9.0], [1.0, 9.0])
+    plt.text(1.0, 8.0, "A")
+    out("A: ONE line rising left to right, label A top-left")
+    chart_show("A", plt)
+
+    # B: clf(), then a falling line.  If clf() works, the rising
+    # line from A is gone.
+    plt.clf()
+    plt.axis(0, 10, 0, 10)
+    plt.plot([1.0, 9.0], [9.0, 1.0])
+    plt.text(1.0, 2.0, "B")
+    out("B: ONLY a falling line, label B bottom-left")
+    chart_show("B", plt)
+
+    # C: NO clf(), wider window -10..10.  The falling line from B
+    # should still be there, now smaller and up-right, plus a
+    # flat line across the middle.
+    plt.axis(-10, 10, -10, 10)
+    plt.plot([-9.0, 9.0], [0.0, 0.0])
+    plt.text(-9.0, 1.0, "C")
+    out("C: B's line, smaller, up-right; flat line across middle")
+    chart_show("C", plt)
+
+    # D: draw FIRST, set the window AFTER.  Same picture as A if
+    # the order does not matter.
+    plt.clf()
+    plt.plot([1.0, 9.0], [1.0, 9.0])
+    plt.text(1.0, 8.0, "D")
+    plt.axis(0, 10, 0, 10)
+    out("D: like A (axis() called after drawing)")
+    chart_show("D", plt)
+
+
+# ---- test 3: histograms ---------------------------------------
+def t_hist():
+    import matplotl as plt
+    mark("hist: started")
+
+    # E: nine values whose counts we know: one 1, two 2s, three
+    # 3s, two 4s, one 5.  The window is 0..7 wide and -1..5 high,
+    # so a bar 1 unit wide is 1/7 of the screen.
+    small = [1, 2, 2, 3, 3, 3, 4, 4, 5]
+    plt.clf()
+    plt.axis(0, 7, -1, 5)
+    plt.histogram(small)
+    plt.text(0.3, 4.4, "E")
+    out("E: if bars are counts: heights 1,2,3,2,1 at x = 1..5")
+    chart_show("E", plt)
+
+    # F: 200 values from N(100,15), in classes 10 wide from 40.
+    # First try the Giac-style form histogram(data, start, width);
+    # if the Prime refuses it, fall back to histogram(data).
+    data = [normal(100.0, 15.0) for k in range(200)]
+    m, s = describe(data)
+    counts = [0] * 12
+    for v in data:
+        j = int((v - 40.0) // 10.0)
+        if 0 <= j < 12:
+            counts[j] = counts[j] + 1
+    out("200 values: mean " + ("%.2f" % m) + ", sd " + ("%.2f" % s))
+    out("counts in 40-50, 50-60, ... 150-160:")
+    out(str(counts))
+    top = max(counts) + 5
+    plt.clf()
+    plt.axis(30, 170, -top / 10.0, top)
+    form = "histogram(data, 40, 10)"
+    try:
+        plt.histogram(data, 40, 10)
+    except Exception as err:
+        out("3-argument form refused: " + repr(err))
+        form = "histogram(data)"
+        plt.histogram(data)
+    plt.text(32, top * 0.9, "F")
+    out("F used " + form + "; tallest bar should be " + str(max(counts)))
+    mark("hist: " + form + " accepted")
+    chart_show("F", plt)
+
+
+# ---- test 4: box plot ------------------------------------------
+def t_box():
+    import matplotl as plt
+    mark("box: started")
+    data = [normal(100.0, 15.0) for k in range(60)]
+    data.append(160.0)        # one deliberate outlier
+    q1, q2, q3 = quartiles(data)
+    out("60 values from N(100,15) plus an outlier at 160")
+    out("Q1 " + ("%.1f" % q1) + "  median " + ("%.1f" % q2) + "  Q3 " + ("%.1f" % q3))
+    out("min " + ("%.1f" % min(data)) + "  max " + ("%.1f" % max(data)))
+
+    # G: a window that fits a HORIZONTAL box plot.
+    plt.clf()
+    plt.axis(40, 170, -2, 3)
+    plt.boxplot(data)
+    plt.text(42, 2.5, "G")
+    out("G: window for a horizontal box (x 40..170)")
+    chart_show("G", plt)
+
+    # H: the same data in a window that fits a VERTICAL box.
+    plt.clf()
+    plt.axis(-2, 3, 40, 170)
+    plt.boxplot(data)
+    plt.text(-1.8, 162, "H")
+    out("H: window for a vertical box (y 40..170)")
+    chart_show("H", plt)
+
+
+# ---- test 5: bar chart -----------------------------------------
+def t_bar():
+    import matplotl as plt
+    mark("bar: started")
+    counts = [12, 19, 7, 15, 9]
+    out("I: bar heights 12, 19, 7, 15, 9")
+    out("   note where the first bar sits: x = 0 or x = 1?")
+    plt.clf()
+    plt.axis(-1, 7, -2, 22)
+    plt.barplot(counts)
+    plt.text(-0.8, 20.5, "I")
+    chart_show("I", plt)
+
+
+# ---- test 6: scatter + regression line -------------------------
+def t_regr():
+    import matplotl as plt
+    mark("regr: started")
+    xs = []
+    ys = []
+    for k in range(1, 21):
+        xs.append(float(k))
+        ys.append(3.0 + 0.8 * k + normal(0.0, 1.5))
+    # Least-squares slope and intercept, so the drawn line can be
+    # checked: it should cross x = 0 at the intercept.
+    n = len(xs)
+    mx = sum(xs) / n
+    my = sum(ys) / n
+    sxy = 0.0
+    sxx = 0.0
+    for k in range(n):
+        sxy = sxy + (xs[k] - mx) * (ys[k] - my)
+        sxx = sxx + (xs[k] - mx) * (xs[k] - mx)
+    b = sxy / sxx
+    a0 = my - b * mx
+    out("20 points around y = 3 + 0.8x")
+    out("fitted: y = " + f4(a0) + " + " + f4(b) + "x")
+
+    # J: default colour.
+    plt.clf()
+    plt.axis(-1, 22, -2, 24)
+    plt.linear_regression_plot(xs, ys)
+    plt.text(0, 22, "J")
+    out("J: points plus the fitted line")
+    chart_show("J", plt)
+
+    # K: ask for red.  HP colours are 0xRRGGBB numbers; Giac uses
+    # small colour codes (1 = red).  Try HP's first.
+    plt.clf()
+    plt.axis(-1, 22, -2, 24)
+    how = "0xFF0000"
+    try:
+        plt.linear_regression_plot(xs, ys, 0xFF0000)
+    except Exception as err:
+        out("colour 0xFF0000 refused: " + repr(err))
+        how = "1"
+        plt.linear_regression_plot(xs, ys, 1)
+    plt.text(0, 22, "K")
+    out("K: same, colour " + how + " -- is it red?")
+    chart_show("K", plt)
+
+
+# ---- test 7: a curve with axis, grid and text -----------------
+def t_curve():
+    import matplotl as plt
+    mark("curve: started")
+    xs = []
+    ys = []
+    x = -4.0
+    while x <= 4.0001:
+        xs.append(x)
+        ys.append(math.exp(-x * x / 2.0) / math.sqrt(2.0 * math.pi))
+        x = x + 0.1
+    plt.clf()
+    plt.axis(-4.0, 4.0, -0.05, 0.45)
+    plt.grid(1)
+    plt.plot(xs, ys)
+    plt.text(0.4, 0.40, "L  N(0,1)")
+    out("L: bell curve, peak 0.40 near the top, axes visible")
+    chart_show("L", plt)
+
+
+# ---- test 8: what is really inside each module ----------------
+def listing(name, mod):
+    # dir() names everything a module contains; skip the
+    # double-underscore internals.  Built by concatenation, the
+    # house habit for strings.
+    line = ""
+    for s in sorted(dir(mod)):
+        if not s.startswith("__"):
+            line = line + s + " "
+    out(name + ": " + line)
+    return line
+
+
+def t_info():
+    mark("info: started")
+    out("implementation: " + str(sys.implementation))
+    # One import per try block, as in PyVer: __import__ may not
+    # exist here, and a loop built on it could report every
+    # module missing when none is.
+    short = ""
+    try:
+        import matplotl
+        short = listing("matplotl", matplotl)
+    except Exception as err:
+        out("matplotl: " + repr(err))
+    try:
+        import linalg
+        listing("linalg", linalg)
+    except Exception as err:
+        out("linalg: " + repr(err))
+    try:
+        import graphic
+        listing("graphic", graphic)
+    except Exception as err:
+        out("graphic: " + repr(err))
+    try:
+        import cas
+        listing("cas", cas)
+    except Exception as err:
+        out("cas: " + repr(err))
+    try:
+        import arit
+        listing("arit", arit)
+    except Exception as err:
+        out("arit: " + repr(err))
+    try:
+        import os
+        listing("os", os)
+    except Exception as err:
+        out("os: " + repr(err))
+    try:
+        import urandom
+        listing("urandom", urandom)
+    except Exception as err:
+        out("urandom: " + repr(err))
+    try:
+        import hpprime
+        listing("hpprime", hpprime)
+    except Exception as err:
+        out("hpprime: " + repr(err))
+    # The message box can hold about 5 lines, so only the
+    # matplotl list goes there; everything is in the Terminal.
+    mark("matplotl: " + short[:120])
+
+    # math extras that desktop Python has; which exist here?
+    line = ""
+    for nm in ["erf", "erfc", "lgamma", "gamma", "log2", "log10",
+               "expm1", "fsum", "isclose", "factorial", "comb"]:
+        if hasattr(math, nm):
+            line = line + nm + ":yes "
+        else:
+            line = line + nm + ":NO "
+    out("math extras: " + line)
+
+    # Where does the chart window come from?  get_cartesian (a
+    # 2025 addition to hpprime) reports the active app's window.
+    try:
+        import hpprime
+        out("get_cartesian(): " + repr(hpprime.get_cartesian()))
+    except Exception as err:
+        out("get_cartesian: " + repr(err))
+    try:
+        import matplotl as plt
+        plt.axis(-3, 3, -1, 1)
+        import hpprime
+        out("after axis(-3,3,-1,1): " + repr(hpprime.get_cartesian()))
+    except Exception as err:
+        out("axis check: " + repr(err))
+
+    # Timing: how long do 20000 additions take?
+    t0 = now_ms()
+    acc = 0.0
+    for k in range(20000):
+        acc = acc + k * 0.5
+    dt = now_ms() - t0
+    out("20000 additions took " + str(dt) + " ms")
+
+
+# ---- dispatcher -------------------------------------------------
+# The test number is the first value PPL passed.  If argv ever
+# comes back empty, fall back to the exported global PPmode.
+try:
+    mode = int(float(sys.argv[0]))
+except Exception:
+    mode = int(float(ev("PPmode")))
+out("")
+out("== PyProbe beta 2b, test " + str(mode) + " ==")
+try:
+    if mode == 1:
+        t_argv()
+    elif mode == 2:
+        t_window()
+    elif mode == 3:
+        t_hist()
+    elif mode == 4:
+        t_box()
+    elif mode == 5:
+        t_bar()
+    elif mode == 6:
+        t_regr()
+    elif mode == 7:
+        t_curve()
+    elif mode == 8:
+        t_info()
+    else:
+        mark("unknown mode " + str(mode))
+except Exception as err:
+    msg = "ERROR in test " + str(mode) + ": " + repr(err)
+    out(msg)
+    mark(msg[:150])
+#END
+
+// ============================================================
+// PPL half
+// ============================================================
+
+// ---- Python's output on a screen of its own -------------------
+// Cut the text Python collected (lines separated by CHAR(10))
+// into a list of screen lines no wider than ppW characters.
+// INSTRING, LEFT and MID are from the User Guide's string
+// commands.  LEFT(s,0) returns the WHOLE string there, so an
+// empty line is handled on its own.
+ppSplit(ppT)
+BEGIN
+  LOCAL ppOut, ppP, ppLn, ppW;
+  ppOut := {};
+  ppW := 46;                             // characters per screen line
+  WHILE DIM(ppT) > 0 DO
+    ppP := INSTRING(ppT, CHAR(10));      // where this line ends
+    IF ppP == 0 THEN                     // last line, no break after it
+      ppLn := ppT;
+      ppT := "";
+    ELSE
+      IF ppP == 1 THEN
+        ppLn := "";                      // an empty line
+      ELSE
+        ppLn := LEFT(ppT, ppP - 1);
+      END;
+      IF ppP >= DIM(ppT) THEN
+        ppT := "";
+      ELSE
+        ppT := MID(ppT, ppP + 1);        // the rest, after the break
+      END;
+    END;
+    // a long line becomes several screen lines
+    WHILE DIM(ppLn) > ppW DO
+      ppOut := CONCAT(ppOut, {LEFT(ppLn, ppW)});
+      ppLn := MID(ppLn, ppW + 1);
+    END;
+    ppOut := CONCAT(ppOut, {ppLn});
+  END;
+  RETURN ppOut;
+END;
+
+// Show PPtext, 15 lines at a time.  The page is drawn off-screen
+// in G1 and copied to the screen in one go (Lessons Learned 6).
+// Keys and touch are both watched, as in NormExplorer.
+ppView(ppTitle)
+BEGIN
+  LOCAL ppL, ppN, ppTop, ppK, ppM, ppM1;
+  LOCAL ppI, ppRun, ppPg, ppLast;
+  ppL := ppSplit(PPtext + "Last note: " + PPmark);
+  ppN := SIZE(ppL);
+  ppPg := 15;                            // lines per screen
+  ppTop := 1;                            // first line shown
+  ppRun := 1;
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  REPEAT ppK := GETKEY; UNTIL ppK == -1; // drain stale keys
+  REPEAT UNTIL MOUSE(1) == -1;           // and any touch
+  WHILE ppRun == 1 DO
+    // ---- draw one page ----
+    RECT_P(G1, 0, 0, 319, 239, #FFFFFFh);
+    RECT_P(G1, 0, 0, 319, 18, #0060C0h);             // title bar
+    TEXTOUT_P(ppTitle, G1, 4, 2, 2, #FFFFFFh);
+    FOR ppI FROM 0 TO ppPg - 1 DO
+      IF ppTop + ppI <= ppN THEN
+        TEXTOUT_P(ppL(ppTop + ppI), G1, 4, 22 + 13*ppI, 1, #000000h);
+      END;
+    END;
+    RECT_P(G1, 0, 220, 319, 239, #E8E8E8h);          // footer
+    ppLast := MIN(ppTop + ppPg - 1, ppN);              // last line shown
+    TEXTOUT_P("Lines " + STRING(ppTop,2,0) + "-" + STRING(ppLast,2,0) +
+              " of " + STRING(ppN,2,0) + "   arrows/tap: scroll   Esc: done",
+              G1, 4, 224, 1, #404040h);
+    BLIT_P(G0, 0, 0, G1);
+
+    // ---- wait for a key OR a touch ----
+    REPEAT
+      ppK := GETKEY;
+      ppM := MOUSE;
+      ppM1 := ppM(1);
+    UNTIL ppK > -1 OR SIZE(ppM1) > 0;
+
+    // A tap pages: top half up, bottom half down.  Wait for the
+    // finger to lift, so one tap moves exactly one page.
+    IF SIZE(ppM1) > 0 THEN
+      IF ppM1(2) < 120 THEN
+        ppTop := ppTop - ppPg;
+      ELSE
+        ppTop := ppTop + ppPg;
+      END;
+      REPEAT UNTIL MOUSE(1) == -1;
+      ppK := -1;                         // a touch is not a keypress
+    END;
+
+    IF ppK == 2 THEN ppTop := ppTop - 1; END;        // Up
+    IF ppK == 12 THEN ppTop := ppTop + 1; END;       // Down
+    IF ppK == 4 OR ppK == 30 THEN ppRun := 0; END;   // Esc / Enter
+
+    // keep the page inside the text
+    ppTop := MIN(ppTop, MAX(1, ppN - ppPg + 1));
+    ppTop := MAX(ppTop, 1);
+    REPEAT ppK := GETKEY; UNTIL ppK == -1;           // drain that key
+  END;
+END;
+
+// Run one chart test (2..7), then show what Python wrote.
+// The test number goes to Python as an argument (beta 1 showed
+// this works); PPmode is set too, as a backup.
+ppChart(ppMd, ppLbl)
+BEGIN
+  PPmode := ppMd;
+  PPmark := "(Python never started)";    // cleared: no stale note
+  PPtext := "";                          // cleared: no stale output
+  PYTHON(pyprobe, ppMd);
+  ppView(ppLbl);
+END;
+
+EXPORT PyProbe()
+BEGIN
+  LOCAL ppSel, ppRun, ppL, ppLab;
+
+  PRINT();                               // start with a clean Terminal
+  ppLab := {"", "Window: axis, clf, show", "Histograms",
+            "Box plot", "Bar chart", "Scatter + regression",
+            "Curve, axis, grid, text"};
+  ppRun := 1;
+
+  WHILE ppRun == 1 DO
+    ppSel := 0;                          // reset BEFORE every CHOOSE
+    CHOOSE(ppSel, "PyProbe beta 2b: pick a test", {
+      "1  Pass values to Python (argv)",
+      "2  Chart window: axis, clf, show",
+      "3  Histograms",
+      "4  Box plot",
+      "5  Bar chart",
+      "6  Scatter + regression (+ red)",
+      "7  Curve, axis, grid, text",
+      "8  Module inventory",
+      "Quit"});
+
+    // Cancel leaves ppSel at 0; test the index, never the return.
+    IF ppSel == 0 OR ppSel == 9 THEN
+      ppRun := 0;
+    END;
+
+    // ---- test 1: awkward values handed to Python ----
+    // A negative number, a tiny one, a 12-digit one, a huge one,
+    // text with a space, and a list of 200 values 0.5, 1, 1.5,
+    // ... 100 (mean exactly 50.25).  K is the Home variable
+    // MAKELIST counts with, as in CentralLimit.
+    IF ppSel == 1 THEN
+      ppL := MAKELIST(K*0.5, K, 1, 200, 1);
+      PPmode := 1;
+      PPmark := "(Python never started)";
+      PPmean := -1;
+      PPcount := -1;
+      PPtext := "";
+      PYTHON(pyprobe, 1, -2.5, 0.00000015, 123456789012, 1E20, "two words", ppL);
+      // Add the two answers side by side, then show everything.
+      PPtext := PPtext + "-- compare --" + CHAR(10) +
+                "Python: n=" + STRING(PPcount,2,0) + "  mean " + STRING(PPmean,2,4) + CHAR(10) +
+                "PPL:    n=" + STRING(SIZE(ppL),2,0) + "  mean " + STRING(mean(ppL),2,4) + CHAR(10);
+      ppView("Test 1: values passed to Python");
+    END;
+
+    // ---- tests 2-7: matplotl charts ----
+    IF ppSel >= 2 AND ppSel <= 7 THEN
+      ppChart(ppSel, ppLab(ppSel));
+    END;
+
+    // ---- test 8: module inventory ----
+    IF ppSel == 8 THEN
+      PPmode := 8;
+      PPmark := "(Python never started)";
+      PPtext := "";
+      PYTHON(pyprobe, 8);
+      ppView("Test 8: module inventory");
+    END;
+  END;
+  RETURN "PyProbe done";
+END;

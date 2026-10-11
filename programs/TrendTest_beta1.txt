@@ -1,0 +1,751 @@
+#pragma mode( separator(.,;) integer(h32) )
+
+// ============================================================
+// TRENDTEST - beta 1
+// Chi-square for linear trend in proportions (2 x k table)
+// ============================================================
+// Author: Roger Metcalf, 2026.  Written with AI assistance
+//   (Anthropic Claude); concept, direction and all hardware
+//   testing by the author.
+//
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
+//   the file and credit the author if you pass it on.  Not for
+//   sale or commercial redistribution.  Provided as is, with no
+//   warranty.
+//
+// Firmware: written for the 2026-09-09 firmware (2.4.2).  This
+//   version has NOT yet been run on hardware.  The arithmetic
+//   was checked line for line against scipy and statsmodels
+//   (300 random tables) before the PPL was written.
+//
+// Run TrendTest() from the Program Catalog.
+// ============================================================
+//
+// THE QUESTION
+//   k exposure levels have a natural ORDER and a score x_i
+//   (a dose, hours per day, 0/1/2/3 ...).  At each level a_i of
+//   n_i people have the outcome.  Pearson's chi-square (k-1 df)
+//   only asks "do the proportions differ?".  The chi-square for
+//   trend (1 df) asks "do they rise or fall STEADILY with the
+//   score?" -- the question an epidemiologist usually means.
+//
+// THE ARITHMETIC (Mantel 1963; Epi Info StatCalc's form)
+//   N = sum n_i,  A = sum a_i  (all cases)
+//   S = sum(x_i a_i) - A * sum(x_i n_i) / N
+//   V = A (N-A) / (N^2 (N-1)) * [ N sum(x_i^2 n_i) - (sum x_i n_i)^2 ]
+//   X2 trend = S^2 / V,  1 df   ( = (N-1) r^2, r = Pearson
+//     correlation of score with the 0/1 outcome over all N )
+//   Armitage (1955) uses N r^2 instead; the difference is
+//   N/(N-1), invisible at classroom sample sizes.
+//   X2 Pearson for the 2 x k table, k-1 df.
+//   X2 departure = X2 Pearson - X2 trend, k-2 df: large means the
+//     pattern is not a straight line.
+//   Weighted least-squares line through the proportions
+//     (weights n_i): slope b = S / sum n_i (x_i - xbar)^2.
+//   Each level: p_i with a 95% Wilson score interval; the odds
+//     ratio against level 1 with a Woolf (log) 95% interval.
+//     If any cell is 0, 0.5 is added to every cell (Haldane-
+//     Anscombe) and the screens say so.
+//
+// EXAMPLE (menu 5): snoring and heart disease, Norton & Dunn
+//   1985, used by Agresti.  Scores 0, 2, 4, 5; cases 24, 35, 21,
+//   30 of 1379, 638, 213, 254.  Expected: X2 trend 72.659
+//   (p < 0.0001), Pearson 72.782 (3 df), departure 0.123 (2 df,
+//   p = 0.940); slope 0.0200 per unit of score; ORs vs level 1:
+//   3.277 (1.932-5.558), 6.175 (3.373-11.306), 7.561 (4.341-
+//   13.172).
+//
+// SCREENS
+//   1  Enter data: how many levels (2-6), then the scores, the
+//      cases and the totals in three dialogs.
+//   2  Results: two pages (proportions and the test; odds ratios
+//      and the formulas).
+//   3  Plot: proportions with Wilson bars, the WLS trend line and
+//      the overall proportion.  Tap a dot or use the arrows.
+//   4  Plot: odds ratios vs level 1 on a log scale, Woolf bars.
+//   5  Example.   6  Help.
+//
+// HOME EXPORTS (after a run)
+//   TR_X2T  chi-square for trend     TR_P   its p-value (1 df)
+//   TR_X2   Pearson chi-square       TR_DF  its df (k - 1)
+//   TR_OR   list of odds ratios vs level 1
+//   TR_B    slope of the WLS line, per unit of score
+// ============================================================
+
+
+EXPORT TR_X2T, TR_P, TR_X2, TR_DF, TR_OR, TR_B;
+
+// ---- the data ----
+LOCAL trK, trX, trA, trN, trHas, trLbl;
+//  trK levels; trX scores, trA cases, trN totals (lists);
+//  trHas = 1 once data are loaded; trLbl names the data set.
+LOCAL trXDec;
+//  decimals used when a score is printed (0 if all are whole)
+
+// ---- the results (set in trCompute) ----
+LOCAL trNT, trAT, trS, trV, trX2T, trPT;
+LOCAL trX2P, trPP, trX2D, trPD, trDFD, trB;
+LOCAL trA0, trXbar, trP, trLo, trHi, trOR;
+LOCAL trORL, trORH, trHald, trZ;
+
+// ---- plot box, shared by the drawing code and the touch handler ----
+LOCAL trPL, trPR, trPT0, trPB, trSel;
+//  trSel: the level currently highlighted on a plot
+
+// ---- house colours ----
+LOCAL trBLUE, trMAG, trRED, trGRN, trORNG, trGRAY;
+LOCAL trFOOT, trGRID, trLORN, trLBLU, trLMAG;
+
+
+// ------------------------------------------------------------
+// SMALL HELPERS
+// ------------------------------------------------------------
+
+// A "nice" step (1, 2 or 5 times a power of ten) at least as big
+// as the value handed in -- Heckbert's rule, for axis ticks.
+trNice(nnV)
+BEGIN
+  LOCAL nnE, nnF;
+  IF nnV <= 0 THEN RETURN 1; END;
+  nnE := FLOOR(LOG(nnV));
+  nnF := nnV / 10^nnE;
+  IF nnF <= 1 THEN RETURN 10^nnE; END;
+  IF nnF <= 2 THEN RETURN 2 * 10^nnE; END;
+  IF nnF <= 5 THEN RETURN 5 * 10^nnE; END;
+  RETURN 10^(nnE + 1);
+END;
+
+// The sum of a list (a FOR loop, so nothing outside the verified
+// command set is needed).
+trSum(smL)
+BEGIN
+  LOCAL smI, smT;
+  smT := 0;
+  FOR smI FROM 1 TO SIZE(smL) DO
+    smT := smT + smL(smI);
+  END;
+  RETURN smT;
+END;
+
+// A p-value as text.  Tiny values are reported as "< 0.0001"
+// because 1 - CDF loses its digits there anyway.
+trPStr(psP)
+BEGIN
+  IF psP < 0.0001 THEN RETURN "p < 0.0001"; END;
+  RETURN "p = " + STRING(psP, 2, 4);
+END;
+
+// Decimals that show a coefficient's first three significant
+// digits (at least 2, at most 6).
+trDecOf(dcV)
+BEGIN
+  IF dcV == 0 THEN RETURN 2; END;
+  RETURN MAX(2, MIN(6, 2 - FLOOR(LOG(ABS(dcV)))));
+END;
+
+// An odds ratio as text: 3 decimals below 10, 2 below 100, else 1.
+trOrStr(osV)
+BEGIN
+  IF osV >= 100 THEN RETURN STRING(osV, 2, 1); END;
+  IF osV >= 10 THEN RETURN STRING(osV, 2, 2); END;
+  RETURN STRING(osV, 2, 3);
+END;
+
+// A filled dot of radius 3: three circles and the centre pixel
+// (ARC_P with one colour draws an outline only).
+trDot(dtG, dtX, dtY, dtCol)
+BEGIN
+  ARC_P(dtG, dtX, dtY, 3, dtCol);
+  ARC_P(dtG, dtX, dtY, 2, dtCol);
+  ARC_P(dtG, dtX, dtY, 1, dtCol);
+  PIXON_P(dtG, dtX, dtY, dtCol);
+END;
+
+// A dotted horizontal line (LINE_P has no dash style).
+trDotLine(dlG, dlX1, dlX2, dlY, dlCol)
+BEGIN
+  LOCAL dlI;
+  FOR dlI FROM dlX1 TO dlX2 STEP 3 DO
+    PIXON_P(dlG, dlI, dlY, dlCol);
+  END;
+END;
+
+// Wait for any key or tap (drain, wait, drain).
+trWaitAny()
+BEGIN
+  LOCAL waK, waM, waM1;
+  REPEAT waK := GETKEY; UNTIL waK == -1;
+  REPEAT UNTIL MOUSE(1) == -1;
+  REPEAT
+    waK := GETKEY;
+    waM := MOUSE;
+    waM1 := waM(1);
+  UNTIL waK > -1 OR SIZE(waM1) > 0;
+  REPEAT UNTIL MOUSE(1) == -1;
+  REPEAT waK := GETKEY; UNTIL waK == -1;
+END;
+
+// Ask for akM numbers (2 to 6) in one INPUT dialog.  INPUT needs
+// variable NAMES, so the values go through the locals a1..a6 and
+// come back as a list.  akD is the list of defaults.  Returns {}
+// if the user cancels.
+trAsk(akM, akTtl, akLbl, akHlp, akD)
+BEGIN
+  LOCAL a1, a2, a3, a4, a5, a6;
+  LOCAL akOK, akP;
+  akP := CONCAT(akD, {0, 0, 0, 0, 0, 0});
+  a1 := akP(1); a2 := akP(2); a3 := akP(3); a4 := akP(4); a5 := akP(5); a6 := akP(6);
+  akOK := 0;
+  CASE
+    IF akM == 2 THEN akOK := INPUT({a1, a2}, akTtl, {akLbl + " 1:", akLbl + " 2:"}, {akHlp, akHlp}); END;
+    IF akM == 3 THEN akOK := INPUT({a1, a2, a3}, akTtl, {akLbl + " 1:", akLbl + " 2:", akLbl + " 3:"}, {akHlp, akHlp, akHlp}); END;
+    IF akM == 4 THEN akOK := INPUT({a1, a2, a3, a4}, akTtl, {akLbl + " 1:", akLbl + " 2:", akLbl + " 3:", akLbl + " 4:"}, {akHlp, akHlp, akHlp, akHlp}); END;
+    IF akM == 5 THEN akOK := INPUT({a1, a2, a3, a4, a5}, akTtl, {akLbl + " 1:", akLbl + " 2:", akLbl + " 3:", akLbl + " 4:", akLbl + " 5:"}, {akHlp, akHlp, akHlp, akHlp, akHlp}); END;
+    IF akM == 6 THEN akOK := INPUT({a1, a2, a3, a4, a5, a6}, akTtl, {akLbl + " 1:", akLbl + " 2:", akLbl + " 3:", akLbl + " 4:", akLbl + " 5:", akLbl + " 6:"}, {akHlp, akHlp, akHlp, akHlp, akHlp, akHlp}); END;
+  END;
+  IF akOK == 0 THEN RETURN {}; END;
+  RETURN SUB({a1, a2, a3, a4, a5, a6}, 1, akM);
+END;
+
+
+// ------------------------------------------------------------
+// THE ARITHMETIC
+// ------------------------------------------------------------
+trCompute()
+BEGIN
+  LOCAL cpI, cpSxa, cpSxn, cpSxxn, cpEa, cpEb;
+  LOCAL cpP, cpDen, cpCen, cpHalf, cpSxx, cpAdj;
+  LOCAL cpA1, cpB1, cpAi, cpBi, cpO, cpSe;
+
+  // totals and the three sums the trend statistic needs
+  trNT := 0; trAT := 0; cpSxa := 0; cpSxn := 0; cpSxxn := 0;
+  FOR cpI FROM 1 TO trK DO
+    trNT := trNT + trN(cpI);
+    trAT := trAT + trA(cpI);
+    cpSxa := cpSxa + trX(cpI) * trA(cpI);
+    cpSxn := cpSxn + trX(cpI) * trN(cpI);
+    cpSxxn := cpSxxn + trX(cpI)^2 * trN(cpI);
+  END;
+
+  // chi-square for trend (Mantel): S^2 / V, 1 df
+  trS := cpSxa - trAT * cpSxn / trNT;
+  trV := trAT * (trNT - trAT) / (trNT^2 * (trNT - 1)) * (trNT * cpSxxn - cpSxn^2);
+  trX2T := trS^2 / trV;
+  trPT := 1 - CHISQUARE_CDF(1, trX2T);
+
+  // Pearson chi-square for the 2 x k table, k-1 df
+  trX2P := 0;
+  FOR cpI FROM 1 TO trK DO
+    cpEa := trN(cpI) * trAT / trNT;            // expected cases
+    cpEb := trN(cpI) - cpEa;                   // expected non-cases
+    trX2P := trX2P + (trA(cpI) - cpEa)^2 / cpEa + (trN(cpI) - trA(cpI) - cpEb)^2 / cpEb;
+  END;
+  trPP := 1 - CHISQUARE_CDF(trK - 1, trX2P);
+
+  // departure from linearity, k-2 df (needs at least 3 levels)
+  trDFD := trK - 2;
+  trX2D := MAX(0, trX2P - trX2T);
+  IF trDFD >= 1 THEN
+    trPD := 1 - CHISQUARE_CDF(trDFD, trX2D);
+  ELSE
+    trPD := -1;
+  END;
+
+  // weighted least-squares line through the proportions
+  trXbar := cpSxn / trNT;
+  cpSxx := cpSxxn - trNT * trXbar^2;
+  trB := trS / cpSxx;
+  trA0 := trAT / trNT - trB * trXbar;
+
+  // each level: proportion and its 95% Wilson score interval
+  trP := {}; trLo := {}; trHi := {};
+  FOR cpI FROM 1 TO trK DO
+    cpP := trA(cpI) / trN(cpI);
+    cpDen := 1 + trZ^2 / trN(cpI);
+    cpCen := (cpP + trZ^2 / (2 * trN(cpI))) / cpDen;
+    cpHalf := trZ * (cpP * (1 - cpP) / trN(cpI) + trZ^2 / (4 * trN(cpI)^2))^0.5 / cpDen;
+    trP := CONCAT(trP, {cpP});
+    trLo := CONCAT(trLo, {MAX(0, cpCen - cpHalf)});
+    trHi := CONCAT(trHi, {MIN(1, cpCen + cpHalf)});
+  END;
+
+  // odds ratios against level 1, with Woolf 95% intervals.
+  // A zero cell would make an OR 0 or infinite, so then 0.5 is
+  // added to every cell (Haldane-Anscombe) and trHald says so.
+  trHald := 0;
+  FOR cpI FROM 1 TO trK DO
+    IF trA(cpI) == 0 OR trA(cpI) == trN(cpI) THEN trHald := 1; END;
+  END;
+  cpAdj := 0.5 * trHald;
+  cpA1 := trA(1) + cpAdj;
+  cpB1 := trN(1) - trA(1) + cpAdj;
+  trOR := {}; trORL := {}; trORH := {};
+  FOR cpI FROM 1 TO trK DO
+    cpAi := trA(cpI) + cpAdj;
+    cpBi := trN(cpI) - trA(cpI) + cpAdj;
+    cpO := (cpAi * cpB1) / (cpBi * cpA1);
+    cpSe := (1 / cpAi + 1 / cpBi + 1 / cpA1 + 1 / cpB1)^0.5;
+    trOR := CONCAT(trOR, {cpO});
+    trORL := CONCAT(trORL, {EXP(LN(cpO) - trZ * cpSe)});
+    trORH := CONCAT(trORH, {EXP(LN(cpO) + trZ * cpSe)});
+  END;
+
+  // decimals for printing the scores
+  trXDec := 0;
+  FOR cpI FROM 1 TO trK DO
+    IF FP(trX(cpI)) <> 0 THEN trXDec := 2; END;
+  END;
+
+  // Home exports
+  TR_X2T := trX2T; TR_P := trPT; TR_X2 := trX2P; TR_DF := trK - 1;
+  TR_OR := trOR; TR_B := trB;
+  trHas := 1;
+  trSel := 1;
+END;
+
+
+// ------------------------------------------------------------
+// DATA ENTRY
+// ------------------------------------------------------------
+trEnter()
+BEGIN
+  LOCAL enK, enX, enA, enN, enI, enBad;
+  enK := 0;
+  CHOOSE(enK, "How many exposure levels?",
+    {"2 levels", "3 levels", "4 levels", "5 levels", "6 levels"});
+  IF enK == 0 THEN RETURN 0; END;
+  enK := enK + 1;
+
+  // scores: 1, 2, 3 ... unless real doses are known
+  enX := trAsk(enK, "Scores, in order of exposure", "Score",
+    "A number per level: 0,1,2.. or the dose itself", MAKELIST(K, K, 1, enK, 1));
+  IF SIZE(enX) == 0 THEN RETURN 0; END;
+
+  enA := trAsk(enK, "Cases (with the outcome)", "Cases",
+    "How many at this level have the outcome", MAKELIST(0, K, 1, enK, 1));
+  IF SIZE(enA) == 0 THEN RETURN 0; END;
+
+  enN := trAsk(enK, "Totals (everyone at the level)", "Total n",
+    "How many people are at this level in all", MAKELIST(0, K, 1, enK, 1));
+  IF SIZE(enN) == 0 THEN RETURN 0; END;
+
+  // ---- checks that teach ----
+  enBad := 0;
+  FOR enI FROM 1 TO enK DO
+    IF enN(enI) <= 0 THEN enBad := 1; END;
+    IF enA(enI) < 0 OR enA(enI) > enN(enI) THEN enBad := 2; END;
+    IF enI > 1 THEN
+      IF enX(enI) <= enX(enI - 1) THEN enBad := 3; END;
+    END;
+  END;
+  IF enBad == 1 THEN MSGBOX("Every total n must be above 0."); RETURN 0; END;
+  IF enBad == 2 THEN MSGBOX("Cases must be between 0 and the total at that level."); RETURN 0; END;
+  IF enBad == 3 THEN MSGBOX("Scores must increase from level 1 to level " + STRING(enK, 2, 0) + ": the levels are ordered, and the order is the point of the test."); RETURN 0; END;
+  IF trSum(enA) == 0 OR trSum(enA) == trSum(enN) THEN
+    MSGBOX("Every level has the same outcome (all cases, or none), so there is no trend to test.");
+    RETURN 0;
+  END;
+  IF trSum(enN) < 2 THEN MSGBOX("At least two people are needed."); RETURN 0; END;
+
+  trK := enK; trX := enX; trA := enA; trN := enN;
+  trLbl := "Your data: " + STRING(trK, 2, 0) + " levels, N = " + STRING(trSum(enN), 2, 0) + ", " + STRING(trSum(enA), 2, 0) + " cases";
+  trCompute();
+  RETURN 1;
+END;
+
+// The example data set (snoring and heart disease).
+trExample()
+BEGIN
+  trK := 4;
+  trX := {0, 2, 4, 5};
+  trA := {24, 35, 21, 30};
+  trN := {1379, 638, 213, 254};
+  trLbl := "Example: snoring and heart disease";
+  trCompute();
+END;
+
+
+// ------------------------------------------------------------
+// RESULTS: two drawn pages
+// ------------------------------------------------------------
+trResults()
+BEGIN
+  LOCAL rsI, rsY, rsS, rsDec;
+  // ---- page 1: the table and the tests ----
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 4, 4, 315, 235, trORNG, trLORN);
+  TEXTOUT_P("Chi-square test for linear trend", G1, 10, 6, 2, trBLUE);
+  TEXTOUT_P(trLbl, G1, 10, 26, 1, trGRAY, 300);
+  TEXTOUT_P("level", G1, 10, 42, 1, trGRAY);
+  TEXTOUT_P("score", G1, 44, 42, 1, trGRAY);
+  TEXTOUT_P("cases/n", G1, 92, 42, 1, trGRAY);
+  TEXTOUT_P("p", G1, 172, 42, 1, trGRAY);
+  TEXTOUT_P("95% CI", G1, 222, 42, 1, trGRAY);
+  LINE_P(G1, 10, 53, 309, 53, trGRAY);
+  FOR rsI FROM 1 TO trK DO
+    rsY := 56 + (rsI - 1) * 13;
+    TEXTOUT_P(STRING(rsI, 2, 0), G1, 16, rsY, 1, #000000h);
+    TEXTOUT_P(STRING(trX(rsI), 2, trXDec), G1, 44, rsY, 1, #000000h);
+    TEXTOUT_P(STRING(trA(rsI), 2, 0) + "/" + STRING(trN(rsI), 2, 0), G1, 92, rsY, 1, #000000h);
+    TEXTOUT_P(STRING(trP(rsI), 2, 4), G1, 172, rsY, 1, trBLUE);
+    TEXTOUT_P("(" + STRING(trLo(rsI), 2, 3) + "-" + STRING(trHi(rsI), 2, 3) + ")", G1, 222, rsY, 1, trBLUE);
+  END;
+  // the tests
+  TEXTOUT_P("Trend (1 df):  X2 = " + STRING(trX2T, 2, 3) + "   " + trPStr(trPT), G1, 10, 140, 1, trMAG, 300);
+  TEXTOUT_P("Pearson (" + STRING(trK - 1, 2, 0) + " df):  X2 = " + STRING(trX2P, 2, 3) + "   " + trPStr(trPP), G1, 10, 153, 1, trBLUE, 300);
+  IF trDFD >= 1 THEN
+    TEXTOUT_P("Departure (" + STRING(trDFD, 2, 0) + " df):  X2 = " + STRING(trX2D, 2, 3) + "   " + trPStr(trPD), G1, 10, 166, 1, trGRN, 300);
+  ELSE
+    TEXTOUT_P("Departure from linearity: needs 3+ levels.", G1, 10, 166, 1, trGRN, 300);
+  END;
+  rsDec := trDecOf(trB);
+  IF trB < 0 THEN rsS := " - " + STRING(-trB, 2, rsDec); ELSE rsS := " + " + STRING(trB, 2, rsDec); END;
+  TEXTOUT_P("WLS line:  p = " + STRING(trA0, 2, rsDec) + rsS + " * score", G1, 10, 179, 1, trGRAY, 300);
+  TEXTOUT_P("Home: TR_X2T TR_P TR_X2 TR_DF TR_OR TR_B", G1, 10, 196, 1, trGRAY, 300);
+  TEXTOUT_P("Any key: odds ratios and the formulas", G1, 10, 220, 1, trFOOT);
+  BLIT_P(G0, 0, 0, G1);
+  trWaitAny();
+
+  // ---- page 2: odds ratios and the formulas ----
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 4, 4, 315, 235, trMAG, trLMAG);
+  TEXTOUT_P("Odds ratios against level 1", G1, 10, 6, 2, trMAG);
+  TEXTOUT_P("level", G1, 10, 30, 1, trGRAY);
+  TEXTOUT_P("score", G1, 54, 30, 1, trGRAY);
+  TEXTOUT_P("OR", G1, 104, 30, 1, trGRAY);
+  TEXTOUT_P("95% CI (Woolf)", G1, 164, 30, 1, trGRAY);
+  LINE_P(G1, 10, 41, 309, 41, trGRAY);
+  FOR rsI FROM 1 TO trK DO
+    rsY := 44 + (rsI - 1) * 13;
+    TEXTOUT_P(STRING(rsI, 2, 0), G1, 16, rsY, 1, #000000h);
+    TEXTOUT_P(STRING(trX(rsI), 2, trXDec), G1, 54, rsY, 1, #000000h);
+    IF rsI == 1 THEN
+      TEXTOUT_P("1", G1, 104, rsY, 1, trMAG);
+      TEXTOUT_P("(reference level)", G1, 164, rsY, 1, trGRAY);
+    ELSE
+      TEXTOUT_P(trOrStr(trOR(rsI)), G1, 104, rsY, 1, trMAG);
+      TEXTOUT_P("(" + trOrStr(trORL(rsI)) + " - " + trOrStr(trORH(rsI)) + ")", G1, 164, rsY, 1, trMAG);
+    END;
+  END;
+  IF trHald == 1 THEN
+    TEXTOUT_P("Zero cell: +0.5 in every cell (Haldane).", G1, 10, 126, 1, trRED, 300);
+  END;
+  TEXTOUT_P("X2 trend = S^2 / V  (1 df),  where", G1, 10, 142, 1, #000000h);
+  TEXTOUT_P("S = sum(x a) - A sum(x n) / N", G1, 10, 155, 1, #000000h);
+  TEXTOUT_P("V = A (N-A) / (N^2 (N-1))", G1, 10, 168, 1, #000000h);
+  TEXTOUT_P("      * [ N sum(x^2 n) - (sum x n)^2 ]", G1, 10, 181, 1, #000000h);
+  TEXTOUT_P("Departure = Pearson X2 - trend X2, k-2 df", G1, 10, 194, 1, #000000h);
+  TEXTOUT_P("Any key: menu", G1, 10, 220, 1, trFOOT);
+  BLIT_P(G0, 0, 0, G1);
+  trWaitAny();
+END;
+
+
+// ------------------------------------------------------------
+// PLOT 1: proportions by level, Wilson bars, WLS trend line
+// ------------------------------------------------------------
+
+// pixel x of a score, for the plot window xlo..xhi
+trPxOf(pxV, pxLo, pxHi)
+BEGIN
+  RETURN trPL + IP((pxV - pxLo) / (pxHi - pxLo) * (trPR - trPL) + 0.5);
+END;
+
+trDrawProp()
+BEGIN
+  LOCAL dpI, dpXlo, dpXhi, dpPad, dpTop, dpStp;
+  LOCAL dpYhi, dpDec, dpX, dpY, dpY1, dpY2;
+  LOCAL dpV, dpCol, dpS, dpPx, dpXv, dpN;
+  // ---- window ----
+  dpXlo := trX(1); dpXhi := trX(trK);
+  dpPad := (dpXhi - dpXlo) * 0.1;
+  dpXlo := dpXlo - dpPad; dpXhi := dpXhi + dpPad;
+  dpTop := MAX(trHi);
+  dpStp := trNice(dpTop / 4);
+  dpYhi := CEILING(dpTop / dpStp - 0.000001) * dpStp;
+  IF dpYhi > 1 THEN dpYhi := 1; END;
+  dpDec := MAX(0, -FLOOR(LOG(dpStp)));
+
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  TEXTOUT_P("Proportion with the outcome, by level", G1, 10, 4, 2, #000000h);
+  // ---- grid and y ticks ----
+  dpN := 0;
+  dpV := 0;
+  WHILE dpV <= dpYhi + 0.000001 AND dpN < 12 DO
+    dpY := trPB - IP(dpV / dpYhi * (trPB - trPT0) + 0.5);
+    LINE_P(G1, trPL, dpY, trPR, dpY, trGRID);
+    TEXTOUT_P(STRING(dpV, 2, dpDec), G1, 6, dpY - 5, 1, trGRAY, 38);
+    dpV := dpV + dpStp;
+    dpN := dpN + 1;
+  END;
+  // ---- axes ----
+  LINE_P(G1, trPL, trPT0, trPL, trPB, #000000h);
+  LINE_P(G1, trPL, trPB, trPR, trPB, #000000h);
+  // ---- x ticks: one per level, labelled with its score ----
+  FOR dpI FROM 1 TO trK DO
+    dpX := trPxOf(trX(dpI), dpXlo, dpXhi);
+    LINE_P(G1, dpX, trPB, dpX, trPB + 3, #000000h);
+    TEXTOUT_P(STRING(trX(dpI), 2, trXDec), G1, dpX - 8, trPB + 6, 1, trGRAY, 40);
+  END;
+  TEXTOUT_P("score:", G1, 6, trPB + 6, 1, trGRAY);
+  // ---- overall proportion, dotted ----
+  dpY := trPB - IP(trAT / trNT / dpYhi * (trPB - trPT0) + 0.5);
+  trDotLine(G1, trPL, trPR, dpY, trGRAY);
+  TEXTOUT_P("overall", G1, trPR - 44, dpY - 11, 1, trGRAY);
+  // ---- the WLS line, pixel column by pixel column (2 px thick) ----
+  FOR dpPx FROM trPL TO trPR DO
+    dpXv := dpXlo + (dpPx - trPL) / (trPR - trPL) * (dpXhi - dpXlo);
+    dpV := trA0 + trB * dpXv;
+    IF dpV >= 0 AND dpV <= dpYhi THEN
+      dpY := trPB - IP(dpV / dpYhi * (trPB - trPT0) + 0.5);
+      PIXON_P(G1, dpPx, dpY, trMAG);
+      IF dpY > trPT0 THEN PIXON_P(G1, dpPx, dpY - 1, trMAG); END;
+    END;
+  END;
+  // ---- Wilson bars and the dots ----
+  FOR dpI FROM 1 TO trK DO
+    dpX := trPxOf(trX(dpI), dpXlo, dpXhi);
+    dpY1 := trPB - IP(trHi(dpI) / dpYhi * (trPB - trPT0) + 0.5);
+    dpY2 := trPB - IP(trLo(dpI) / dpYhi * (trPB - trPT0) + 0.5);
+    dpY := trPB - IP(trP(dpI) / dpYhi * (trPB - trPT0) + 0.5);
+    dpCol := trBLUE;
+    IF dpI == trSel THEN dpCol := trRED; END;
+    LINE_P(G1, dpX, dpY1, dpX, dpY2, dpCol);
+    LINE_P(G1, dpX - 3, dpY1, dpX + 3, dpY1, dpCol);
+    LINE_P(G1, dpX - 3, dpY2, dpX + 3, dpY2, dpCol);
+    trDot(G1, dpX, dpY, dpCol);
+  END;
+  // ---- legend ----
+  TEXTOUT_P("p with 95% Wilson CI", G1, trPL + 6, trPT0 + 2, 1, trBLUE);
+  TEXTOUT_P("WLS trend line", G1, trPL + 150, trPT0 + 2, 1, trMAG);
+  // ---- readout for the highlighted level ----
+  dpS := "L" + STRING(trSel, 2, 0) + ": x=" + STRING(trX(trSel), 2, trXDec) + "  " + STRING(trA(trSel), 2, 0) + "/" + STRING(trN(trSel), 2, 0) + "  p=" + STRING(trP(trSel), 2, 4) + " (" + STRING(trLo(trSel), 2, 3) + "-" + STRING(trHi(trSel), 2, 3) + ")";
+  TEXTOUT_P(dpS, G1, 6, 206, 1, trRED, 310);
+  TEXTOUT_P("X2t=" + STRING(trX2T, 2, 2) + " " + trPStr(trPT) + "  " + CHAR(8592) + CHAR(8594) + ": level  Esc: menu", G1, 6, 222, 1, trFOOT, 310);
+  BLIT_P(G0, 0, 0, G1);
+END;
+
+
+// ------------------------------------------------------------
+// PLOT 2: odds ratios vs level 1, log scale, Woolf bars
+// ------------------------------------------------------------
+trDrawOR()
+BEGIN
+  LOCAL doI, doXlo, doXhi, doPad, doLlo, doLhi;
+  LOCAL doSpan, doX, doY, doY1, doY2, doCol;
+  LOCAL doD, doM, doT, doS, doV, doMul;
+  // ---- window: x as in plot 1; y = log10(OR) ----
+  doXlo := trX(1); doXhi := trX(trK);
+  doPad := (doXhi - doXlo) * 0.1;
+  doXlo := doXlo - doPad; doXhi := doXhi + doPad;
+  doLlo := 0; doLhi := 0;                        // always include OR = 1
+  FOR doI FROM 2 TO trK DO
+    doLlo := MIN(doLlo, LOG(trORL(doI)));
+    doLhi := MAX(doLhi, LOG(trORH(doI)));
+  END;
+  doSpan := MAX(0.5, doLhi - doLlo);
+  doLlo := doLlo - 0.08 * doSpan; doLhi := doLhi + 0.08 * doSpan;
+
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  TEXTOUT_P("Odds ratio vs level 1 (log scale)", G1, 10, 4, 2, #000000h);
+  // ---- ticks at 1, 2, 5 in each decade ----
+  doMul := {1, 2, 5};
+  FOR doD FROM FLOOR(doLlo) TO CEILING(doLhi) DO
+    FOR doM FROM 1 TO 3 DO
+      doT := doD + LOG(doMul(doM));
+      IF doT >= doLlo AND doT <= doLhi THEN
+        doY := trPB - IP((doT - doLlo) / (doLhi - doLlo) * (trPB - trPT0) + 0.5);
+        LINE_P(G1, trPL, doY, trPR, doY, trGRID);
+        doV := doMul(doM) * 10^doD;
+        IF doV >= 1 THEN
+          TEXTOUT_P(STRING(doV, 2, 0), G1, 6, doY - 5, 1, trGRAY, 38);
+        ELSE
+          TEXTOUT_P(STRING(doV, 2, MAX(1, -doD)), G1, 6, doY - 5, 1, trGRAY, 38);
+        END;
+      END;
+    END;
+  END;
+  // ---- axes and the OR = 1 line ----
+  LINE_P(G1, trPL, trPT0, trPL, trPB, #000000h);
+  LINE_P(G1, trPL, trPB, trPR, trPB, #000000h);
+  doY := trPB - IP((0 - doLlo) / (doLhi - doLlo) * (trPB - trPT0) + 0.5);
+  trDotLine(G1, trPL, trPR, doY, trGRAY);
+  TEXTOUT_P("OR = 1", G1, trPR - 40, doY - 11, 1, trGRAY);
+  // ---- x ticks ----
+  FOR doI FROM 1 TO trK DO
+    doX := trPxOf(trX(doI), doXlo, doXhi);
+    LINE_P(G1, doX, trPB, doX, trPB + 3, #000000h);
+    TEXTOUT_P(STRING(trX(doI), 2, trXDec), G1, doX - 8, trPB + 6, 1, trGRAY, 40);
+  END;
+  TEXTOUT_P("score:", G1, 6, trPB + 6, 1, trGRAY);
+  // ---- level 1: a hollow circle at OR = 1 ----
+  doX := trPxOf(trX(1), doXlo, doXhi);
+  doCol := trGRAY;
+  IF trSel == 1 THEN doCol := trRED; END;
+  ARC_P(G1, doX, doY, 3, doCol);
+  TEXTOUT_P("ref", G1, doX - 8, doY + 6, 1, doCol);
+  // ---- the other levels: Woolf bars and dots ----
+  FOR doI FROM 2 TO trK DO
+    doX := trPxOf(trX(doI), doXlo, doXhi);
+    doY := trPB - IP((LOG(trOR(doI)) - doLlo) / (doLhi - doLlo) * (trPB - trPT0) + 0.5);
+    doY1 := trPB - IP((LOG(trORH(doI)) - doLlo) / (doLhi - doLlo) * (trPB - trPT0) + 0.5);
+    doY2 := trPB - IP((LOG(trORL(doI)) - doLlo) / (doLhi - doLlo) * (trPB - trPT0) + 0.5);
+    doCol := trMAG;
+    IF doI == trSel THEN doCol := trRED; END;
+    LINE_P(G1, doX, doY1, doX, doY2, doCol);
+    LINE_P(G1, doX - 3, doY1, doX + 3, doY1, doCol);
+    LINE_P(G1, doX - 3, doY2, doX + 3, doY2, doCol);
+    trDot(G1, doX, doY, doCol);
+  END;
+  // ---- readout and footer ----
+  IF trSel == 1 THEN
+    doS := "L1: the reference level, OR = 1";
+  ELSE
+    doS := "L" + STRING(trSel, 2, 0) + " vs L1:  OR " + trOrStr(trOR(trSel)) + "  (" + trOrStr(trORL(trSel)) + " - " + trOrStr(trORH(trSel)) + ")";
+  END;
+  TEXTOUT_P(doS, G1, 6, 206, 1, trRED, 310);
+  IF trHald == 1 THEN
+    TEXTOUT_P("+0.5 per cell (zero cell)  " + CHAR(8592) + CHAR(8594) + ": level  Esc: menu", G1, 6, 222, 1, trFOOT, 310);
+  ELSE
+    TEXTOUT_P("Woolf 95% CI   " + CHAR(8592) + CHAR(8594) + ": level  Esc: menu", G1, 6, 222, 1, trFOOT, 310);
+  END;
+  BLIT_P(G0, 0, 0, G1);
+END;
+
+
+// ------------------------------------------------------------
+// THE PLOT LOOP, shared by both plots (plWhich 1 or 2):
+// arrows move the highlight, a tap near a dot selects it,
+// Esc or Enter returns to the menu.
+// ------------------------------------------------------------
+trPlotLoop(plWhich)
+BEGIN
+  LOCAL plK, plM, plM1, plGo, plI, plBest;
+  LOCAL plXlo, plXhi, plPad, plD, plX;
+  plXlo := trX(1); plXhi := trX(trK);
+  plPad := (plXhi - plXlo) * 0.1;
+  plXlo := plXlo - plPad; plXhi := plXhi + plPad;
+  plGo := 1;
+  REPEAT plK := GETKEY; UNTIL plK == -1;
+  REPEAT UNTIL MOUSE(1) == -1;
+  WHILE plGo == 1 DO
+    IF plWhich == 1 THEN trDrawProp(); ELSE trDrawOR(); END;
+    REPEAT
+      plK := GETKEY;
+      plM := MOUSE;
+      plM1 := plM(1);
+    UNTIL plK > -1 OR SIZE(plM1) > 0;
+    IF SIZE(plM1) > 0 THEN
+      // a tap: the nearest level in x, if within 14 px
+      plBest := 0; plD := 15;
+      FOR plI FROM 1 TO trK DO
+        plX := trPxOf(trX(plI), plXlo, plXhi);
+        IF ABS(plM1(1) - plX) < plD THEN plD := ABS(plM1(1) - plX); plBest := plI; END;
+      END;
+      IF plBest > 0 THEN trSel := plBest; END;
+      REPEAT UNTIL MOUSE(1) == -1;
+    ELSE
+      IF plK == 7 THEN trSel := MAX(1, trSel - 1); END;
+      IF plK == 8 THEN trSel := MIN(trK, trSel + 1); END;
+      IF plK == 4 OR plK == 30 THEN plGo := 0; END;
+    END;
+  END;
+  REPEAT plK := GETKEY; UNTIL plK == -1;
+END;
+
+
+// ------------------------------------------------------------
+// HELP: two pages
+// ------------------------------------------------------------
+trHelp()
+BEGIN
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 4, 4, 315, 235, trBLUE, trLBLU);
+  TEXTOUT_P("Chi-square for trend: the idea", G1, 12, 8, 2, trBLUE);
+  TEXTOUT_P("Exposure levels have an ORDER (dose, hours,", G1, 12, 32, 1, #000000h);
+  TEXTOUT_P("grade).  Pearson's chi-square (k-1 df) asks", G1, 12, 45, 1, #000000h);
+  TEXTOUT_P("only 'do the proportions differ?'.  The trend", G1, 12, 58, 1, #000000h);
+  TEXTOUT_P("test (1 df) asks 'do they rise or fall", G1, 12, 71, 1, #000000h);
+  TEXTOUT_P("steadily with the score?'", G1, 12, 84, 1, #000000h);
+  TEXTOUT_P("With 1 df it has more power than Pearson", G1, 12, 103, 1, trMAG);
+  TEXTOUT_P("when the pattern really is a straight line.", G1, 12, 116, 1, trMAG);
+  TEXTOUT_P("Pearson - trend = departure from linearity", G1, 12, 129, 1, trGRN);
+  TEXTOUT_P("(k-2 df); large means 'not a straight line'.", G1, 12, 142, 1, trGRN);
+  TEXTOUT_P("Scores: use the doses themselves when known;", G1, 12, 161, 1, trGRAY);
+  TEXTOUT_P("otherwise 1, 2, 3 ...  The answer depends on", G1, 12, 174, 1, trGRAY);
+  TEXTOUT_P("the spacing you choose, so say what it was.", G1, 12, 187, 1, trGRAY);
+  TEXTOUT_P("Any key: page 2", G1, 12, 220, 1, trFOOT);
+  BLIT_P(G0, 0, 0, G1);
+  trWaitAny();
+
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 4, 4, 315, 235, trBLUE, trLBLU);
+  TEXTOUT_P("Reading the plots; the same test elsewhere", G1, 12, 8, 1, trBLUE);
+  TEXTOUT_P("Plot 3: one dot per level, p = cases / n,", G1, 12, 28, 1, trBLUE);
+  TEXTOUT_P("with its 95% Wilson interval; the weighted", G1, 12, 41, 1, trBLUE);
+  TEXTOUT_P("(WLS) trend line in magenta; overall p dotted.", G1, 12, 54, 1, trBLUE);
+  TEXTOUT_P("Plot 4: odds ratio of each level vs level 1", G1, 12, 73, 1, trMAG);
+  TEXTOUT_P("on a log scale, with Woolf 95% intervals;", G1, 12, 86, 1, trMAG);
+  TEXTOUT_P("the dotted line is OR = 1 (no difference).", G1, 12, 99, 1, trMAG);
+  TEXTOUT_P("Tap a dot, or use the arrows, for its numbers.", G1, 12, 118, 1, #000000h);
+  TEXTOUT_P("Elsewhere: Epi Info StatCalc 'chi square for", G1, 12, 137, 1, trGRAY);
+  TEXTOUT_P("trend'; R prop.trend.test(x, n, score);", G1, 12, 150, 1, trGRAY);
+  TEXTOUT_P("SAS PROC FREQ / TREND; JMP Cochran-Armitage.", G1, 12, 163, 1, trGRAY);
+  TEXTOUT_P("Mantel (1963): (N-1) r^2.  Armitage (1955):", G1, 12, 182, 1, trGRAY);
+  TEXTOUT_P("N r^2.  The two differ by N/(N-1) only.", G1, 12, 195, 1, trGRAY);
+  TEXTOUT_P("Any key: menu", G1, 12, 220, 1, trFOOT);
+  BLIT_P(G0, 0, 0, G1);
+  trWaitAny();
+END;
+
+
+// ------------------------------------------------------------
+// INIT AND MAIN
+// ------------------------------------------------------------
+trInit()
+BEGIN
+  trBLUE := #003CC8h; trMAG := #C800C8h; trRED := #FF0000h;
+  trGRN := #008C3Ch; trORNG := #FF4500h; trGRAY := #5A5A5Ah;
+  trFOOT := #1E90FFh; trGRID := #E1E4EBh; trLORN := #FFF0DCh;
+  trLBLU := #EBF2FFh; trLMAG := #FAEBFAh;
+  trPL := 46; trPR := 306; trPT0 := 30; trPB := 186;
+  trZ := 1.959964;
+  trHas := 0; trSel := 1; trK := 0; trXDec := 0;
+  trX := {}; trA := {}; trN := {}; trLbl := "";
+END;
+
+EXPORT TrendTest()
+BEGIN
+  LOCAL mnI, mnRun;
+  trInit();
+  mnRun := 1;
+  WHILE mnRun == 1 DO
+    mnI := 0;
+    CHOOSE(mnI, "Chi-square for linear trend", {
+      "1  Enter data (2-6 levels)",
+      "2  Results",
+      "3  Plot: proportions + trend line",
+      "4  Plot: odds ratios vs level 1",
+      "5  Example: snoring & heart disease",
+      "6  Help",
+      "Quit"});
+    CASE
+      IF mnI == 0 OR mnI == 7 THEN mnRun := 0; END;
+      IF mnI == 1 THEN
+        IF trEnter() == 1 THEN trResults(); END;
+      END;
+      IF mnI >= 2 AND mnI <= 4 AND trHas == 0 THEN
+        MSGBOX("No data yet.  Enter data (1) or load the example (5) first.");
+      END;
+      IF mnI == 2 AND trHas == 1 THEN trResults(); END;
+      IF mnI == 3 AND trHas == 1 THEN trPlotLoop(1); END;
+      IF mnI == 4 AND trHas == 1 THEN trPlotLoop(2); END;
+      IF mnI == 5 THEN trExample(); trResults(); END;
+      IF mnI == 6 THEN trHelp(); END;
+    END;
+  END;
+  IF trHas == 1 THEN
+    PRINT("TrendTest: X2 trend = " + STRING(trX2T, 2, 4) + " (1 df), " + trPStr(trPT));
+    PRINT("Pearson X2 = " + STRING(trX2P, 2, 4) + " (" + STRING(trK - 1, 2, 0) + " df); exports TR_X2T TR_P TR_X2 TR_DF TR_OR TR_B");
+  END;
+END;
