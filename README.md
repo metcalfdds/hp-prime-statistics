@@ -1,12 +1,14 @@
 # HP Prime statistics
 
-Teaching programs for the HP Prime graphing calculator, written in PPL and MicroPython, and originally intended for upper-level university statistics courses.  
+Teaching programs for the HP Prime graphing calculator, written in PPL and MicroPython, and originally intended for upper-level university statistics courses, and also to show off some of the capabilities of the HP Prime calculator. 
 
-**And a set of notes on what the Prime actually does**, as opposed to what the manual says — hard limits, commands that behave differently than documented, the MicroPython bridge and how it fails. Those notes are not specific to statistics; if you write PPL for anything, [docs/lessons-learned_v7d.md](docs/lessons-learned_v7d.md) is the part worth your time.
+**And a set of notes on what the Prime actually does**, as opposed to what the manual says — hard limits, commands that behave differently than documented, the MicroPython bridge and how it fails. Those notes are not specific to statistics; if you write PPL for anything, [docs/lessons-learned_v7d.md](docs/lessons-learned_v7d.md) is the part worth your time, I hope.
 
 Everything here is **free for educational and personal use**. See [LICENSE](LICENSE.txt).
 
-**Tested on** an HP Prime G2 and G1, both running the **2026-09-09** firmware, plus the desktop Virtual Calculator — **except the newer programs listed under [Not yet tested on hardware](#not-yet-tested-on-hardware)**, which have not been run on a calculator yet.
+These are mostly **tested on** an HP Prime G2 and G1, both running the **2026-09-09** firmware, plus the desktop Virtual Calculator —> **except the newer programs listed under [Not yet tested on hardware](#not-yet-tested-on-hardware)**, which have not been run on a calculator yet.
+
+These programs are works in progress and have not been extensively tested, and they are provided as is--you should not rely on the results from these programs for anything. Use at your own risk. Your mileage may vary.
 
 ---
 
