@@ -1,5 +1,10 @@
 # HP Prime Lessons Learned
-*Roger Metcalf & Claude · v7d · 11 October 2026 (v7c, v7b, v7a and v7 on 10 October 2026; v6 6 October 2026; v5 3 October 2026; v4 1 October 2026; v3 rewritten 28 September 2026)*
+*Roger Metcalf & Claude · v7e · 12 October 2026 (v7d 11 October 2026; v7c, v7b, v7a and v7 on 10 October 2026; v6 6 October 2026; v5 3 October 2026; v4 1 October 2026; v3 rewritten 28 September 2026)*
+
+**What changed in v7e** (a search index for the library; no PPL rule changed):
+
+- **The whole of `D:\HP-Prime` is now searchable in about a second** (box below, §14.11). `Library_Index.db` holds the text of every program and text file in all ~1,650 zips and the loose folders, every `.hpprgm`/`.hpappprgm` decoded (1,658 sources; 100 are compiled objects with no source, indexed by their strings), the text layer of every PDF (628 of 1,051 have one; the rest are scans), and the names of all ~67,000 files. `libsearch_v1.py` searches it; `library_index_build_v1.py` refreshes it incrementally. Build and search instructions are in `CLAUDE.md`.
+- Three `.hpprgm` variants turned up while building it: the usual binary header + UTF-16LE source; plain UTF-8 text that merely has the extension (our own September device pulls); and objects with the `7C 61 8A B2` header but no UTF-16 source at all. `Decode-HPPrime.ps1` handles only the first.
 
 **What changed in v7d** (fleet table completed; the exit review extended to the five programs that arrived on 9 October):
 
@@ -61,7 +66,7 @@ Working notes for writing PPL and MicroPython on the HP Prime. Everything here w
 >
 > Not after. In one September session, four bugs were rediscovered the expensive way — the `STRING` mode, the FREEZE pause, the x-bar glyph, and the LOCAL limit — and all four were already written down here.
 >
-> Then: **search the whole library** for anything this file does not cover. That means the `.txt` programs uploaded to the Project, plus everything in `D:\HP-Prime` on Roger's computer (Rogers-HP): the fleet, about 940 zips (mostly hpcalc.org), and `Community_Library` (see its `INDEX.md`). `<>` was avoided for a whole session as "unverified" when five corpus programs use it.
+> Then: **search the whole library** for anything this file does not cover — with the index, not by unzipping: `python3 libsearch_v1.py WORDS` (or `-s "exact text"`, `-r REGEX`, `-n filename`) in `D:\HP-Prime` answers in about a second across every zip, program, decoded `.hpprgm` and PDF there. That means the `.txt` programs uploaded to the Project, plus everything in `D:\HP-Prime` on Roger's computer (Rogers-HP): the fleet, about 940 zips (mostly hpcalc.org), and `Community_Library` (see its `INDEX.md`). `<>` was avoided for a whole session as "unverified" when five corpus programs use it.
 >
 > Then: **read the uploaded reference PDFs.** Note that `HPPrimeProgrammingUDelaware.pdf` (Mike Markowski's University of Delaware page, printed to PDF in January 2024) has a garbled text layer — it will not turn up in a text search and has to be read as page images. It is not the only Python document in the library: Markowski's pages are also saved as HTML in `Community_Library\docs\markowski_udel\`, and Neil Streeter's *HP Prime Python Activities Book* is `Community_Library\docs\hpprime-python-activities.pdf`. §9a lists every Python source and where it is.
 
@@ -372,7 +377,7 @@ Panels: coloured border, light fill, matching text. Legends comma-separated — 
     - the 83 `.txt` programs uploaded to the Project;
     - on Roger's computer (Rogers-HP), `D:\HP-Prime`: the fleet, about 940 zips (mostly hpcalc.org) at the top level, and `Community_Library`. That folder holds hpcalc, GitHub and cnCalc material plus docs; its `INDEX.md` lists everything.
 
-    Reach it through the link to his computer, or a Claude Code session on Rogers-HP. Read archives in place with Python's `zipfile` rather than uploading them. (This corrects v3, which said the corpus zips do not persist between sessions.)
+    Reach it through the link to his computer, or a Claude Code session on Rogers-HP. Search it with `libsearch_v1.py` (the index, `Library_Index.db`, covers all of `D:\HP-Prime`; refresh it with `library_index_build_v1.py` after adding files). For anything the index cannot answer, read archives in place with Python's `zipfile` rather than uploading them. (This corrects v3, which said the corpus zips do not persist between sessions.)
 12. **Check the whole fleet for duplicate routine names before every paste** (`python3 fleet_names_v1.py *.txt` in `D:\HP-Prime`), as well as the single-file checks (`ppl_check_v2.py`, `lint_ppl.py`). One program is never the whole picture on a calculator that pools every program's routines (§5).
 
 ## 15 · Current fleet
