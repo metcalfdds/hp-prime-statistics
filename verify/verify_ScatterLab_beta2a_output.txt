@@ -1,0 +1,41 @@
+==== Part A: the CAS templates in desktop Giac, against fractions, SymPy and statsmodels ====
+PASS SYNTHETIC example (16 points, 1 decimal)   SSE ok, d/da d/db ok, solve ok, OLS = polyfit = exact ok   b = 2441/2394, a = 3186173/191520
+PASS integers, tied x                           SSE ok, d/da d/db ok, solve ok, OLS = polyfit = exact ok   b = 73/52, a = 14/13
+PASS two decimals                               SSE ok, d/da d/db ok, solve ok, OLS = polyfit = exact ok   b = 165503/209298, a = 17541923/3488300
+PASS negative values                            SSE ok, d/da d/db ok, solve ok, OLS = polyfit = exact ok   b = 26353/11890, a = -3283/11890
+PASS years against crime-sized counts           SSE ok, d/da d/db ok, solve ok, OLS = polyfit = exact ok   b = 6701/650, a = -5243866/325
+PASS n = 3                                      SSE ok, d/da d/db ok, solve ok, OLS = polyfit = exact ok   b = 12/7, a = 0
+PASS forty points, one decimal                  SSE ok, d/da d/db ok, solve ok, OLS = polyfit = exact ok   b = 9683220/11837191, a = -72190339/118371910
+PASS a perfect line y = 2x + 1 (SSE 0)          SSE ok, d/da d/db ok, solve ok, OLS = polyfit = exact ok   b = 2, a = 1
+PASS flat: every y equal                        SSE ok, d/da d/db ok, solve ok, OLS = polyfit = exact ok   b = 0, a = 5
+PASS three decimals                             SSE ok, d/da d/db ok, solve ok, OLS = polyfit = exact ok   b = 9661/6625, a = 5446/6625
+PASS mixed precision                            SSE ok, d/da d/db ok, solve ok, OLS = polyfit = exact ok   b = -541/444, a = 14045/1184
+PASS a point at y = 1/3 (more than six decimals): no CAS text at all
+PASS the longest call (solve: the SSE twice) fits slCasMx = 4000   SSE text up to 1104 characters (forty points)
+PASS 2a: in the Prime's printing every solve answer is {[a,b]} (CASProbe T36), the SSE and its derivatives are unchanged   ['{[3186173/191520,2441/2394]}']
+
+==== Part B: the PPL program in the harness (ppl_run_v3b) ====
+PASS slCxMake builds exactly this SSE text, 11 data sets
+PASS the PPL reads solve's answer: a and b = the exact fractions, every set   []
+PASS the program's slB1, slB0 = the exact fractions to 1e-12
+PASS panel tap -> the page (Giac): badge, SSE, derivatives, fractions beside the decimals, the note   ['Least squares as calculus', 'exact (CAS)', 'The magenta line makes this SSE smallest:', 'SSE = sum (y - a - bx)^2 over all n = 16 points', 'SSE = 16×a^2+2608/5×a×b-5321/5×a+119443/25×b^2', '-36841/2×b+373319/20', 'Smallest where both slopes are 0 (CAS diff):', 'dSSE/da = 32×a+2608/5×b-5321/5 = 0', 'dSSE/db = 2608/5×a+238886/25×b-36841/2 = 0', 'Solved exactly (CAS solve), beside the decimals:', 'b = 2441/2394   (program 1.019632)', 'a = 3186173/191520   (program 16.63624)', 'No line has a smaller SSE (try Guess), and the', 'first equation puts it through the green cross:', 'a = y-bar - b \ue000.', 'Exact: x = 10.4 is 104/10, so nothing is rounded.', 'any key or tap = back to the plot']
+PASS the page: four CAS calls, all answered; the run ends normally   'ScatterLab: n = 16, y-hat = 16.64 + 1.020 x, r = 0.7512, SSE = 422.7'
+PASS 2a: every text asks for string(...), every answer quoted, the solve in braces; no CAS variable assigned, no CAS call of a variable   "{[3186173/191520,2441/2394]}"
+PASS cas=fail: decimal badge, the normal equations with the program's sums, no error   ['Least squares as calculus', 'decimal', 'The magenta line makes this SSE smallest:', 'SSE = sum (y - a - bx)^2 over all n = 16 points', 'The CAS did not answer: no exact fractions.', 'Both slopes of the SSE = 0, the normal equations:', 'n a + (sum x) b = sum y', '  16 a + 260.8 b = 532.1', '(sum x) a + (sum x^2) b = sum x y', '  260.8 a + 4777.72 b = 9210.25', "Solving them (the program's decimals):", '  b = 1.019632,  a = 16.63624', 'No line has a smaller SSE (try Guess), and the', 'first equation puts it through the green cross:', 'a = y-bar - b \ue000.', 'any key or tap = back to the plot']
+PASS Menu > Least squares as calculus, twice: 4 CAS calls, not 8   4
+PASS the menu has ten items, the new one fifth
+PASS a drag of point 1 (down 30 px): it moved; 8 CAS calls in all = 4 per page, none in the drag   point 1 now (10.4, 27.7), 8 calls
+PASS the page after the drag: the moved points' exact line   ['b = 57655/52668   (program 1.094687)'] want b = 57655/52668
+PASS slCas drops one surrounding pair of quotes: the quoted answers still give the exact page   16*sla^2+2608/5*sla*slb-5321/5*sla+119443/25*slb^2-36841/2*slb+373319/20
+PASS two points: no page, the note says why, no CAS call
+PASS a point at y = 1/3: "needs over 6 decimals", the decimal page, no CAS call
+PASS stale-key run: menu, Data, example, the page, quit (item A); nothing skipped   result 'ScatterLab: n = 16, y-hat = 16.64 + 1.020 x, r = 0.7512, SSE = 422.7', skips []
+PASS 2a: beta 2 in v3b: the page says "decimal" and gives no fractions -- the emulator's finding
+
+G. beta 2a: beta 2 in harness v3b, and beta 2a against beta 2
+PASS beta 2a: routines that differ from beta 2: ['slCas'] (want slCas)
+PASS beta 2a: outside those routines only comments differ
+PASS beta 2a: the #PYTHON blocks are unchanged
+  routines that differ from beta 2: slCas; everything else differs only in comments
+
+0 failure(s)

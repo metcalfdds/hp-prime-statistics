@@ -1,0 +1,2396 @@
+#pragma mode( separator(.,;) integer(h32) )
+
+// ============================================================
+// POWERVIZ - v2.5a
+// ============================================================
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
+//   the file and credit the author if you pass it on.  Not for
+//   sale or commercial redistribution.  Provided as is.
+// For academic use only - do not rely on results for anything
+//   important.  Results have not been rigorously verified.
+// (C) 2026 Roger D Metcalf
+// Program concept and rudimentary code by Roger D. Metcalf
+// Code corrected, expanded, and vastly improved by Claude Code
+//   Fable 5 (written with AI assistance, Anthropic Claude).
+// Firmware: written for the HP Prime G2 and G1 on the 2026-09-09
+//   firmware.  Earlier versions ran on both calculators; whether
+//   v2.1 ran with the "LOCAL pv_Name()" routine heads is for
+//   Roger to confirm.  v2.2, v2.3, v2.4, v2.5 and v2.5a have NOT yet
+//   been run on hardware.  v2.5 is the first version that calls the
+//   CAS; its call form (v2.5a) is the one CASProbe beta 1b found on
+//   the HP Prime Virtual Calculator (build 2026-09-09, 17 Oct 2026),
+//   see pv_Cas below.
+//
+// v2.5a (17 Oct 2026) - what changed: the CAS call form only.
+//   CASProbe beta 1b found that CAS(s) with s a variable hands the
+//   text back UNEVALUATED, so v2.5's pv_Cas (lines 366-388) returned
+//   its own input, pv_CasUse refused it ("pvn" still in it), and the
+//   formula page always showed the textbook form with "decimal".
+//   Its IFERR line is now
+//     STRING(EXPR("CAS(" + CHAR(34) + "string(" + s + ")" + CHAR(34) + ")"))
+//   (BRIEF_CAS_v2), the quotes STRING() adds are dropped, and an
+//   answer holding the infinity sign is refused like undef.  The
+//   readers needed no code change: pv_Strip already drops braces,
+//   which is how the Prime prints a solve ({...}, CASProbe T18), and
+//   the Prime already writes the root sign (T14b), which pv_Disp
+//   shows as it is (its "sqrt" -> root-sign step now only matters
+//   for desktop Giac).  Their comments say so.  Nothing else changed.
+//
+// v2.5 (16 Oct 2026) - what changed (the CAS version, built on
+//   v2.4; every v2.4 change is kept):
+//   * THE CLOSED-FORM SAMPLE SIZE beside the brute-force n80 in
+//     the panel: "n80 = 56 (55.6)".  n80 is still found by trying
+//     n = 2, 3, ... with the program's own power engine; the number
+//     in brackets is the formula's n, ((za*u + zb*w)/delta)^2,
+//     worked out by PPL from the same z values the plot uses.  Tap
+//     it (or Menu, "Sample-size formula") for the page below.
+//   * "WHERE THE FORMULA COMES FROM" (new drawn page): the power
+//     equation (delta - za*SE0)/SE1 = zb for the test on screen;
+//     the CAS SOLVES it for n symbolically, with za and zb kept as
+//     symbols (pvza, pvzb -- the z values are not whole numbers,
+//     and no decimal ever goes into CAS text); then the CAS puts
+//     in the student's sigma, means or proportions EXACTLY, still
+//     with za and zb as symbols ("n = (3 za + 3 zb)^2"); then PPL
+//     puts in the z values and gets the number; then the page
+//     rounds up and compares with n80, and says why the two can
+//     differ by one (the 2-sided far tail).  The CAS is asked only
+//     when the page opens, and only if the test or the values
+//     changed since the last time.  Badge: "exact (CAS)", or
+//     "decimal" (the CAS could not answer; the formula is then
+//     shown as textbooks print it, and the numbers are PPL's).
+//   * Power-vs-n view: under the green n80 label, the formula's n
+//     in magenta ("formula: 55.6 -> 56").
+//   * Help: a third page on the formula.  Menu: 9 items.
+//   * The one routine that calls the CAS is pv_Cas; pv_IStr writes
+//     whole numbers as plain digits for the CAS text (the house CAS
+//     kit, BRIEF_CAS 16 Oct 2026).
+//   * Two v2.4 locals renamed so no name differs from another only by
+//     case: POWERVIZ's and pv_PowNView's "mm1" (the first finger) is
+//     now mmF -- the file-level MM1 is mu1 -- and pv_Draw's "pW" (an
+//     area-label count) is now pWd -- the file-level PW is the power.
+//     If the device matches variable names ignoring case, as it does
+//     built-in and routine names, "mm1 := mm(1)" would overwrite mu1.
+//
+// v2.4 (16 Oct 2026) - what changed (the touch version, built on
+//   v2.3; every v2.3 fix below is kept):
+//   * Drag H1 with a finger: press inside the plot nearer the
+//     magenta H1 centre than the blue H0 centre and drag sideways.
+//     The alternative (mu1 or p1) follows the finger, snapped to
+//     the arrow-key grid; red/yellow/green re-shade and the big
+//     POWER number changes colour at 0.5 and 0.8.  The window is
+//     HELD during the drag (H0 stays put) and re-fitted on lift
+//     only if a curve would leave the frame.
+//   * Drag the dashed critical line (a press within 6 px of it) to
+//     set alpha = the H0 tail beyond the finger (doubled when
+//     2-sided: the dragged side sets it, the other side mirrors).
+//     "alpha = 0.037 (off the ladder)" while dragging; on lift it
+//     snaps to the nearest ladder rung within 15 %, otherwise the
+//     custom alpha is kept and the screen says so.  +/- and the
+//     soft keys step from a custom alpha to the next rung.
+//   * A mostly vertical drag (|dy| > 2|dx|) steps n, one pv_StepN
+//     step per 12 px (finger up = larger n).
+//   * Soft keys Edit, Tails, alpha-, alpha+, Pow-n, Menu after every
+//     blit.  The main view's footer legend is gone (the strip paints
+//     y 218-239); the plot (PYT 38, PYB 146) and the readout panel
+//     (y 162-217) moved up so nothing sits under the strip.  Every
+//     key works as before.
+//   * Tap a readout cell: "n =" opens a one-field form for n; the
+//     effect cell (mu1/p1, or d/h) opens one for mu1/p1; "alpha ="
+//     or "zcrit =" opens the alpha list.
+//   * n80, the smallest whole n per group with power >= 0.80: in
+//     the readout panel (searched with the same engine, n 2..5000)
+//     and as a green dotted line in the power-vs-n view.
+//   * Power-vs-n view: the 250 power values (one whole n per pixel
+//     column) are cached; touch the curve and drag along it -- a red
+//     marker and "at n = ...: power = ..." follow the finger, and on
+//     lift that n is adopted.  A key goes back unchanged.  Its x
+//     ticks now use the same n-to-pixel map as the curve.
+//   * New power-vs-effect-size view (Menu): power over d (or h)
+//     from 0 to 1.5 at the current n and alpha, Cohen's 0.2/0.5/0.8
+//     marked, red marker at the current effect.
+//   * Area labels "beta = 0.42" and "power = 0.58" at the centroid
+//     of the yellow and of the visible green region, left out when
+//     the region is narrower than its label.
+//   * A pale magenta ghost of H1 as it was before an arrow step or a
+//     drag, for one frame (copied from the cache, no extra NORMALD).
+//     H0's cache is reused when only H1 moved; neither curve is
+//     recomputed while alpha is dragged.
+//   * Teaching lines: "SE0 = sigma/sqrt n = 15/sqrt 30 = 2.74" with
+//     the numbers; the Cohen word beside d/h ("d = 0.33, small",
+//     pv_EffWord); when the tails toggle, one frame naming what
+//     changed ("2-sided: alpha = 0.050 is split, 0.025 in each
+//     tail, so the critical z is 1.960 instead of 1.645").
+//   * Help is two drawn pages: every key, soft key and gesture.
+//   * Every frame starts with DIMGROB_P(G1,320,240,white) and is
+//     shown with BLIT_P(G0,0,0,G1) (the fleet's verified idiom).
+//   * The "LOCAL pv_Name()" routine heads are still left as they
+//     are (LocalHeadProbe beta 1 settles them); the new routines
+//     use the same form, so one edit fixes all if it must change.
+//
+// v2.3 (16 Oct 2026) - what changed (fixes only):
+//   * Per-frame cost: pv_Draw evaluated NORMALD twice per pixel
+//     column in the fill pass and twice again in the outline pass
+//     (1,188 density calls plus 1,188 wrapper calls per frame while
+//     an arrow was held).  Both curves are now evaluated ONCE per
+//     column into two cached lists (CY0, CY1, allocated once in
+//     pv_Init, so the MAKELIST call -- Home's K as its counter, the
+//     verified form -- runs once per run, not per frame) in pass 1
+//     and read back in pass 2, calling NORMALD directly.  pv_NPDF
+//     is gone.
+//   * The 9-line help MSGBOX (the Prime shows about 5 lines of a
+//     message box) is now a drawn help page: every line kept.
+//   * House-form header block (this one); the stale "Candidate
+//     Module 8 for EpiStats" line is dropped (pending, not merged).
+//   * Footer legend in the house form: spaces round "=", commas.
+//   * Comment fix: the beta fill is light yellow, not gray.
+//   * Short arrow taps were lost: the live loop acted only on
+//     ISKEYDOWN and ignored the arrow code GETKEY had just returned.
+//     Now "kk == 7 OR ISKEYDOWN(7)" etc.; holding a key still steps.
+//   * The edit form said nothing when it reset an out-of-range
+//     n, alpha, proportion or sigma; a one-line MSGBOX now says so
+//     (only when the typed value is actually changed).
+//   * One magenta: the power-vs-n curve used RGB(255,0,255); it is
+//     now the house RGB(200,0,200).  The palette is built once in
+//     pv_Init() (file-level constants, ChiTable pattern) instead of
+//     eleven RGB() calls per frame.
+//   * The power-vs-n view waited on keys only, with no drain: now
+//     pv_WaitAny() (drain, wait, drain over GETKEY and MOUSE, so a
+//     tap also returns; finger lifts drained with a 1-second cap).
+//   * The "LOCAL pv_Name()" routine heads are left as they are
+//     (LocalHeadProbe beta 1 settles whether that form is legal).
+//
+// PowerViz - Interactive Statistical Power Visualizer
+// Merge of PowerViz v1.1 (four-test chassis, live controls,
+// exports, double-buffering, Roger's Greek styling) with
+// PowerCalc / Power Explorer (power-vs-n curve view, 7-rung
+// alpha ladder, teaching defaults, peak labels, INPUT help).
+// Roger Metcalf, with Claude - July 2026
+//
+// v2.2 (10 Oct 2026): every helper routine now carries the program
+//   tag "pv_" (FMTP -> pv_FMTP, Draw -> pv_Draw).
+//   The Prime keeps the routines of ALL programs in one shared
+//   pool, so two programs that define the same helper name
+//   (NiceNum, fmtp and lngamma were each shared by up to eight
+//   programs) can run each other's code.  That is what sent
+//   StudRange into a Burr3 screen and forced a reset.
+//   Rule: every non-EXPORT routine gets the program's tag.
+// v2.1 (Sep 2026) - lessons carried over from NormExp beta 29:
+//  * Effect readout is now a true standardized effect size:
+//    Cohen's d = (mu1-mu0)/sigma for the means tests, Cohen's h
+//    = 2asin(sqrt p1) - 2asin(sqrt p0) for proportions.  v2.0
+//    printed the RAW difference as "d", so 100 vs 105 (sigma 15)
+//    read "d = 5.0" when d is really 0.33.
+//  * Effect and n step in ROUND numbers on a pv_NiceNum grid, so the
+//    readouts stay legible (v2.0 gave 105.75, 106.5 ...).
+//  * The plot window is HELD while you explore: H0 stays put and
+//    H1 visibly slides; bigger n visibly narrows both curves.  It
+//    re-fits only when a curve would leave the frame, after any
+//    menu action, or on demand with the 0 key.
+//  * Key buffer drained before and after every hold, so the
+//    power-vs-n view no longer flashes past and the Enter used
+//    to leave it no longer reopens the menu.
+//  * House rules: no single-letter parameter names, <= 6 names per
+//    LOCAL, CHOOSE indexes reset to 0, INPUT result captured,
+//    STRING mode 2 on axis labels.
+//  * EP_N renamed EP_NPG: EpiStats also exports EP_N.
+// ============================================================
+//
+// LIVE CONTROLS (main view):
+//   Left / Right : effect size down / up (round steps)
+//   Up / Down    : n per group up / down (adaptive round step)
+//   0            : re-fit the plot window to the current scene
+//   +  /  -      : alpha ladder up / down
+//                  (0.001 0.005 0.01 0.02 0.05 0.10 0.20)
+//   Enter        : menu (edit / tails / alpha / power-vs-n /
+//                        power-vs-effect / sample-size formula /
+//                        change test / help)
+//   Esc          : exit; results exported to EP_* variables
+// SOFT KEYS (v2.4): Edit  Tails  alpha-  alpha+  Pow-n  Menu
+// TOUCH (v2.4):
+//   drag sideways near H1        : move the alternative
+//   drag the dashed red line     : set alpha (snaps on lift)
+//   drag up / down on the plot   : n (one step per 12 px)
+//   tap n / effect / alpha cells : edit that one value
+//   tap "n80 = ..." (v2.5)       : where the n formula comes from
+//   power-vs-n view              : drag along the curve to pick n
+//
+// DISPLAY (main view):
+//   Blue curve    = null sampling distribution H0
+//   Magenta curve = alternative sampling distribution H1
+//   Pale magenta  = H1 just before the last step or drag (ghost)
+//   Red fill      = alpha (rejection region under H0)
+//   Yellow fill   = beta  (H1 mass inside acceptance region;
+//                   light yellow, see pv_Init)
+//   Green fill    = POWER (H1 mass beyond critical value)
+//   Dashed red    = critical value(s)
+// POWER-VS-N VIEW: magenta power curve over n = 2..nmax,
+//   dotted green 0.80 reference, green dotted n80 line, red
+//   marker at current n.
+// POWER-VS-EFFECT VIEW: magenta power curve over d (or h) 0..1.5,
+//   Cohen's benchmarks dotted gray, red marker at current effect.
+// ============================================================
+
+EXPORT EP_PWR;
+EXPORT EP_NPG;
+EXPORT EP_ALPHA;
+EXPORT EP_DELTA;
+EXPORT EP_ZCRIT;
+
+// ---------------- shared state ----------------
+LOCAL TT:=1;                     // 1=1-mean 2=2-means 3=1-prop 4=2-props
+LOCAL MM0:=100, MM1:=105, SG:=15;// means tests (teaching defaults)
+LOCAL PP0:=0.5, PP1:=0.6;        // proportion tests
+LOCAL NN:=30, AL:=0.05, TL:=1;   // n per group, alpha, tails
+LOCAL ALAD:={0.001,0.005,0.01,0.02,0.05,0.10,0.20};
+LOCAL AIDX:=5;                   // ladder index of current alpha
+LOCAL M0v, M1v, SE0, SE1;        // scene parameters
+LOCAL XCL, XCU, ZC, PW, DIRN;    // criticals, power, direction
+LOCAL XMN, XMX, YSC;             // plot scaling
+// plot area (pixels).  v2.4: PYT 40 -> 38 and PYB 162 -> 146, so the
+// tick labels and the readout panel (y 162-217) end above the soft-key
+// strip, which DRAWMENU paints at y 218-239.  The drawing code AND the
+// touch handler read these same numbers.
+LOCAL PXL:=12, PXR:=308;
+LOCAL PYT:=38, PYB:=146;
+LOCAL C2PI:=2.50662827463;       // sqrt(2*pi)
+LOCAL WFIT:=1;                   // 1 = re-fit the window on next pv_Setup
+
+// ---------------- house palette (set once in pv_Init) ----------------
+// v2.3: these used to be rebuilt with eleven RGB() calls on every
+// frame inside pv_Draw.  Now they are file-level constants, filled
+// once at start-up (the ChiTable csInit pattern), and every view
+// reads the same values -- one magenta, one gray, one grid colour.
+LOCAL cnul, calt, cpow, cbet, cgrd, calp;   // curves and fills
+LOCAL ccrt, cgry, cgrn, cfrm, cfil, cfot;   // markers, text, panel, footer
+LOCAL cblk, cwht, cgho;                     // black, white, ghost (v2.4)
+
+// ---------------- per-column curve caches (v2.3) ----------------
+// One entry per pixel column of the plot (PXR-PXL+1 of them): the
+// pixel y of the H0 curve (CY0) and of the H1 curve (CY1), filled
+// by pv_Draw's fill pass and read back by its outline pass, so each
+// curve is evaluated once per column per frame instead of twice.
+// Allocated once here; refilled in place every frame.
+LOCAL CY0, CY1;
+
+// ---------------- v2.4 state ----------------
+// CK0, CK1: what CY0 and CY1 were computed FOR -- {centre, SE, XMN,
+//   XMX, YSC}.  When a frame's values match, the cache is reused
+//   and NORMALD is not called at all for that curve (H0 while H1 is
+//   dragged; both while alpha is dragged).
+// CYG, GWIN, GHOK, GREQ: the ghost of H1 (its pixel y per column,
+//   the window it was drawn in, "draw it", "copy it next frame").
+LOCAL CK0, CK1, CYG, GWIN, GHOK, GREQ;
+// WHLD: 1 while a finger drags (the window is held).  N80 and its key
+// N8K: the n80 readout and the inputs it was computed from.
+LOCAL WHLD:=0, N80:=-1, N8K;
+// one-frame messages: HNT/HNC the status line (replaces the colour
+// chips for one frame), HB1/HB2 a two-line callout over the plot top.
+LOCAL HNT, HNC, HB1, HB2;
+// hit boxes of the tappable readout cells (recorded by pv_Draw), the
+// action of each (1 n, 2 effect, 3 alpha), and the pixel x of the
+// two dashed critical lines (-100 when not drawn).
+LOCAL HX1, HY1, HX2, HY2, HACT, CLX;
+// the curve views: the cached sweep (250 power values), the largest
+// n shown, the sweep's n80, and the plot box shared by drawing and
+// the finger.
+LOCAL PWC, PNMX:=200, PN80:=-1;
+LOCAL PCL:=40, PCR:=290, PCT:=30, PCB:=195;
+// two glyph strings built once (see pv_Init): the root sign and
+// "n" with subscript 80.
+LOCAL SQG, N80L;
+// v2.5, the CAS.  Every CAS answer is cached TEXT, asked for only when
+// the formula page opens and its inputs changed:
+//   pvCasOK      1 = the CAS answered the last page's calls, 0 = not
+//                (drives the badge "exact (CAS)" / "decimal")
+//   FSY, FSYK    the symbolic formula for n (CAS text) and the test
+//                it was solved for (0 = none yet)
+//   FSN, FSNK    the formula with the student's numbers put in by
+//                the CAS (z kept as symbols), and the inputs it is for
+//   FCMS         how long the last CAS calls took (ms, TICKS)
+//   NCF          the closed-form n by PPL: ((za*u + zb*w)/delta)^2,
+//                -1 when there is no effect; worked out with n80
+LOCAL pvCasOK, FSY, FSYK, FSN, FSNK, FCMS;
+LOCAL NCF:=-1;
+
+LOCAL pv_Init()
+BEGIN
+ cnul:=RGB(0,60,200);          // blue = distribution (H0)
+ calt:=RGB(200,0,200);         // magenta = derived/alternative (H1, power curve)
+ cpow:=RGB(180,225,195);       // power fill (green family = detected)
+ cbet:=RGB(255,250,200);       // beta fill (very light yellow)
+ cgrd:=RGB(225,228,235);       // gridlines (grid gray)
+ calp:=RGB(255,200,200);       // alpha fill (light red)
+ ccrt:=RGB(255,0,0);           // red = "you are here" critical marker
+ cgry:=RGB(90,90,90);          // gray tick labels
+ cgrn:=RGB(0,140,60);          // green = detected / 0.80 reference / high power
+ cfrm:=RGB(255,69,0);          // orange frames/panels / middling power
+ cfil:=RGB(255,240,220);       // light orange panel fill
+ cfot:=RGB(30,144,255);        // dodger blue footer
+ cblk:=RGB(0,0,0);             // black axes and titles
+ cwht:=RGB(255,255,255);       // white background
+ cgho:=RGB(235,160,235);       // pale magenta: H1 before the last step/drag
+ // the curve caches, one slot per pixel column (see above).
+ // MAKELIST with Home's K as the counter is the device-verified form
+ // (it overwrites K; a LOCAL counter waits for GfxProbe T19).  Done
+ // once here, so K is written once per run, not once per frame.
+ // CYG is a list of its own (not "CYG:=CY1"): the ghost is copied
+ // into it one column at a time in pv_Draw.
+ CY0:=MAKELIST(0,K,1,PXR-PXL+1,1);
+ CY1:=MAKELIST(0,K,1,PXR-PXL+1,1);
+ CYG:=MAKELIST(0,K,1,PXR-PXL+1,1);
+ PWC:=MAKELIST(0,K,1,250,1);      // the curve views' sweep (250 columns)
+ CK0:={0}; CK1:={0};              // "never computed": no match possible
+ GWIN:={0,0,0}; GHOK:=0; GREQ:=0;
+ N8K:={0}; N80:=-1; WHLD:=0;
+ HNT:=""; HNC:=cfot; HB1:=""; HB2:="";
+ HX1:={0}; HY1:={0}; HX2:={0}; HY2:={0}; HACT:={0};
+ CLX:={-100,-100};
+ // CHAR(8730) is the root sign and CHAR(8328) subscript 8: neither
+ // is on the verified glyph list yet (GfxProbe T14 tests the root).
+ // If either shows as a box, change it HERE ONLY: SQG:="sqrt" and
+ // N80L:="n80".
+ SQG:=CHAR(8730);
+ N80L:="n"+CHAR(8328)+CHAR(8320);
+ // v2.5: nothing asked of the CAS yet
+ pvCasOK:=0; FSY:=""; FSYK:=0; FSN:=""; FSNK:={0}; FCMS:=0; NCF:=-1;
+END;
+
+// ============================================================
+// THE CAS KIT (v2.5; the house shapes from BRIEF_CAS, 16 Oct 2026,
+// with xx replaced by this program's tag, and this file's
+// "LOCAL pv_Name()" routine heads).
+// ============================================================
+
+// A whole number as plain digits: no digit-grouping marks, no
+// decimal point, no exponent.  Home's STRING() follows the Home
+// number format (PyProbe saw grouping marks and a special minus
+// sign), which the CAS cannot read, so CAS text is built only from
+// this routine.
+LOCAL pv_IStr(pv_N)
+BEGIN
+ LOCAL dS, dV, dD;
+ dV := ROUND(ABS(pv_N), 0);
+ IF dV == 0 THEN RETURN "0"; END;
+ dS := "";
+ WHILE dV > 0 DO
+  dD := dV MOD 10;
+  dS := CHAR(48 + dD) + dS;
+  dV := (dV - dD) / 10;
+ END;
+ IF pv_N < 0 THEN dS := "-" + dS; END;
+ RETURN dS;
+END;
+
+// The ONE place this program calls the CAS.  It returns the CAS answer as text,
+// or "" if the CAS failed, gave undef, an error or an infinity.
+// The call form is the one CASProbe beta 1b found on the HP Prime Virtual
+// Calculator (build 2026-09-09, 17 Oct 2026): CAS(s) with s a variable hands
+// the text back UNEVALUATED, so the text is built into a literal CAS("...")
+// that EXPR reads at run time, and the CAS is asked for string(...) of the
+// answer, so a big integer crosses into PPL whole, not as a 12-digit real.
+LOCAL pv_Cas(pv_S)
+BEGIN
+ LOCAL cR;
+ cR := "";
+ IFERR
+  cR := STRING(EXPR("CAS(" + CHAR(34) + "string(" + pv_S + ")" + CHAR(34) + ")"));
+ THEN
+  cR := "";
+ END;
+ // The answer is a PPL string, and STRING() of it adds one pair of quotes
+ // (CASProbe beta 1b T12, emulator): drop that pair.
+ IF DIM(cR) >= 2 THEN
+  IF LEFT(cR, 1) == CHAR(34) AND MID(cR, DIM(cR), 1) == CHAR(34) THEN
+   cR := MID(cR, 2, DIM(cR) - 2);
+  END;
+ END;
+ // undef, an error, or an infinity (CHAR(8734) is the infinity sign; it
+ // also catches the Prime's plus-minus infinity, 1/0): no usable answer
+ IF INSTRING(cR, "undef") > 0 OR INSTRING(cR, "rror") > 0 OR INSTRING(cR, CHAR(8734)) > 0 THEN cR := ""; END;
+ RETURN cR;
+END;
+
+// ---- helpers for the CAS texts (v2.5) ----
+
+// A typed value as CAS text, a ratio of whole numbers in brackets:
+// 15 -> "(15)", 2.5 -> "(25/10)", -5 -> "(-5)", 0.55 -> "(55/100)".
+// Every value this program uses is typed, or stepped on a 1-2-5 grid,
+// so at most 6 decimals covers it; a value with more returns "" and
+// the page leaves the CAS's numbers out (no decimal point may go into
+// CAS text).
+LOCAL pv_RatS(rsv)
+BEGIN
+ LOCAL rsd, rss;
+ FOR rsd FROM 0 TO 6 DO
+  rss := rsv*10^rsd;
+  IF ABS(rss - ROUND(rss,0)) < 0.000001 THEN
+   IF rsd == 0 THEN RETURN "(" + pv_IStr(rss) + ")"; END;
+   RETURN "(" + pv_IStr(rss) + "/" + pv_IStr(10^rsd) + ")";
+  END;
+ END;
+ RETURN "";
+END;
+
+// Replace every rpa in rps by rpb (CAS names -> the names on the
+// screen).  LEFT is never called with 0 characters (what it returns
+// then is not confirmed).
+LOCAL pv_Rep(rps, rpa, rpb)
+BEGIN
+ LOCAL rpr, rpt, rpi;
+ rpr := ""; rpt := rps;
+ rpi := INSTRING(rpt, rpa);
+ WHILE rpi > 0 DO
+  IF rpi > 1 THEN rpr := rpr + MID(rpt, 1, rpi - 1); END;
+  rpr := rpr + rpb;
+  rpt := MID(rpt, rpi + DIM(rpa), DIM(rpt));
+  rpi := INSTRING(rpt, rpa);
+ END;
+ RETURN rpr + rpt;
+END;
+
+// A CAS answer without its list wrapping: the Prime answers a solve
+// with braces, "{...}" (CASProbe beta 1b T18, emulator 17 Oct 2026);
+// desktop Giac writes "list[...]".  Brackets, braces and spaces go;
+// a leading "list" (desktop Giac only) goes too.
+LOCAL pv_Strip(sts)
+BEGIN
+ LOCAL stz, sti, stc;
+ stz := "";
+ FOR sti FROM 1 TO DIM(sts) DO
+  stc := MID(sts, sti, 1);
+  IF INSTRING("[]{} ", stc) == 0 THEN stz := stz + stc; END;
+ END;
+ IF INSTRING(stz, "list") == 1 THEN stz := MID(stz, 5, DIM(stz)); END;
+ RETURN stz;
+END;
+
+// 1 if a CAS answer is a usable EXACT formula for n: it still has both
+// z symbols, n has been solved away (no "pvn" left, no comma for a
+// second root), and it holds no decimal point (a CAS in approximate
+// mode would answer "9.0*pvza^2+..."; that is not exact, so it is not
+// shown as exact).  Anything else is dropped and the textbook form is
+// shown instead, with the badge "decimal".
+LOCAL pv_CasUse(cus)
+BEGIN
+ IF DIM(cus) == 0 THEN RETURN 0; END;
+ IF INSTRING(cus, "pvza") == 0 OR INSTRING(cus, "pvzb") == 0 THEN RETURN 0; END;
+ IF INSTRING(cus, "pvn") > 0 OR INSTRING(cus, ",") > 0 THEN RETURN 0; END;
+ IF INSTRING(cus, ".") > 0 THEN RETURN 0; END;
+ RETURN 1;
+END;
+
+// The difference the effect is measured by, as the screen names it:
+// "(μ₁−μ₀)", "(μ₂−μ₁)" for the two groups, "(p₁−p₀)", "(p₂−p₁)".
+LOCAL pv_DName()
+BEGIN
+ IF TT==1 THEN RETURN "(μ₁−μ₀)"; END;
+ IF TT==2 THEN RETURN "(μ₂−μ₁)"; END;
+ IF TT==3 THEN RETURN "(p₁−p₀)"; END;
+ RETURN "(p₂−p₁)";
+END;
+
+// A CAS formula for the screen: no list wrapping; the CAS names
+// turned into the names on the screen (pvza za, pvzb zb, pvs sigma,
+// pvd the difference, pvp/pvr the two proportions, pvm the pooled
+// p-hat); sqrt shown with the root glyph (SQG, the one place to
+// change it) -- the Prime's CAS already writes the root sign itself
+// (CASProbe beta 1b T14b: "√2"), so on the calculator that step
+// finds nothing, and only desktop Giac's "sqrt" is changed; * shown
+// as the verified times sign.  ^ and / stay.
+LOCAL pv_Disp(dss)
+BEGIN
+ LOCAL dst;
+ dst := pv_Strip(dss);
+ dst := pv_Rep(dst, "pvza", "zα");
+ dst := pv_Rep(dst, "pvzb", "zβ");
+ dst := pv_Rep(dst, "pvs", "σ");
+ dst := pv_Rep(dst, "pvd", pv_DName());
+ IF TT==3 THEN
+  dst := pv_Rep(dst, "pvp", "p₀");
+  dst := pv_Rep(dst, "pvr", "p₁");
+ ELSE
+  dst := pv_Rep(dst, "pvp", "p₁");
+  dst := pv_Rep(dst, "pvr", "p₂");
+ END;
+ dst := pv_Rep(dst, "pvm", CHAR(57345));
+ dst := pv_Rep(dst, "sqrt", SQG);
+ dst := pv_Rep(dst, "*", CHAR(215));
+ RETURN dst;
+END;
+
+// The power equation for n, as CAS text, for the test on screen.
+// The program's own model (pv_Model) has SE0 = u/sqrt(n) and
+// SE1 = w/sqrt(n) with
+//   1 mean      u = w = sigma
+//   2 means     u = w = sigma*sqrt(2)          (n per group)
+//   1 prop.     u = sqrt(p0(1-p0)),  w = sqrt(p1(1-p1))
+//   2 props.    u = sqrt(2 pbar(1-pbar)),  w = sqrt(p1(1-p1) + p2(1-p2))
+// and power 1 - beta when H1's centre is zb SE1 past the critical
+// line, which is za SE0 past H0's:  (delta - za*SE0)/SE1 = zb.
+// The one argument is a list of CAS text: either the symbols {pvs,
+// pvd, pvp, pvr, pvm} or the student's numbers as whole-number ratios.  sqrt(pvn) is
+// kept apart from the SDs, so the CAS finds the ONE positive root
+// (Giac 1.9, 16 Oct 2026: with sqrt(p(1-p)/n) together it returns two
+// roots, one false).  No factor(): Giac 1.9's factor gives a WRONG
+// answer on the symbolic proportion form.
+LOCAL pv_Eq(eqL)
+BEGIN
+ // eqL = {sigma, delta, p (H0 or group 1), p (H1 or group 2), pooled p}
+ // as CAS text; the entries a test does not use may be "".
+ LOCAL equ, eqw;
+ IF TT==1 THEN equ := "" + eqL(1); eqw := equ; END;
+ IF TT==2 THEN equ := eqL(1) + "*sqrt(2)"; eqw := equ; END;
+ IF TT==3 THEN
+  equ := "sqrt(" + eqL(3) + "*(1-" + eqL(3) + "))";
+  eqw := "sqrt(" + eqL(4) + "*(1-" + eqL(4) + "))";
+ END;
+ IF TT==4 THEN
+  equ := "sqrt(2*" + eqL(5) + "*(1-" + eqL(5) + "))";
+  eqw := "sqrt(" + eqL(3) + "*(1-" + eqL(3) + ")+" + eqL(4) + "*(1-" + eqL(4) + "))";
+ END;
+ RETURN "solve((" + eqL(2) + "-pvza*" + equ + "/sqrt(pvn))/(" + eqw + "/sqrt(pvn))=pvzb,pvn)";
+END;
+
+// The closed-form n by PPL (v2.5), from the same z values the plot
+// uses: za = z(1 - alpha/tails) (pv_Model's ZC), zb = z(0.80):
+//    n = ((za*u + zb*w)/|delta|)^2     (u, w as in pv_Eq)
+// Returns -1 when there is no effect (delta = 0: no n is enough).
+// Exact for a 1-sided test (the program's power IS
+// Phi((delta - za SE0)/SE1)); for a 2-sided test it leaves out the far
+// tail, so n80 can be one smaller (the formula page says so).
+LOCAL pv_NCF()
+BEGIN
+ LOCAL nca, ncb, ncu, ncw, ncd, ncp;
+ nca := NORMALD_ICDF(0,1,1-AL/TL);
+ ncb := NORMALD_ICDF(0,1,0.8);
+ IF TT<=2 THEN
+  ncd := MM1-MM0; ncu := SG; ncw := SG;
+  IF TT==2 THEN ncu := SG*2^.5; ncw := ncu; END;
+ ELSE
+  ncd := PP1-PP0;
+  IF TT==3 THEN
+   ncu := (PP0*(1-PP0))^.5; ncw := (PP1*(1-PP1))^.5;
+  ELSE
+   ncp := (PP0+PP1)/2;
+   ncu := (2*ncp*(1-ncp))^.5; ncw := (PP0*(1-PP0)+PP1*(1-PP1))^.5;
+  END;
+ END;
+ IF ncd == 0 THEN RETURN -1; END;
+ RETURN ((nca*ncu + ncb*ncw)/ABS(ncd))^2;
+END;
+
+// The formula's n for the panel: one decimal, or more when one would
+// round it UP to the whole number it is just below (304.99 shows as
+// "304.99", not "305.0", so the student sees why the answer is 305).
+LOCAL pv_NCFS()
+BEGIN
+ LOCAL ncd;
+ ncd := 1;
+ WHILE ncd < 4 AND ROUND(NCF,ncd) == CEILING(NCF) AND NCF < CEILING(NCF) - 0.0000001 DO
+  ncd := ncd + 1;
+ END;
+ RETURN pv_FMT(NCF,ncd);
+END;
+
+// A number for a DISPLAYED formula, as typed, up to 4 decimals
+// (pv_NumS above stops at 3): 0.0005 -> "0.0005".  Display only.
+LOCAL pv_NumD(ndv)
+BEGIN
+ LOCAL ndd, ndk;
+ ndk := 4;
+ FOR ndd FROM 0 TO 3 DO
+  IF ndk == 4 AND ABS(ndv*10^ndd - ROUND(ndv*10^ndd,0)) < 0.000001 THEN ndk := ndd; END;
+ END;
+ IF ndk == 0 THEN RETURN pv_IStr(ndv); END;
+ RETURN STRING(ndv,2,ndk);
+END;
+
+// Long text in lines of at most wrw characters, broken at a space in
+// the second half when there is one; continuation lines indented.
+LOCAL pv_Wrap(wrs, wrw)
+BEGIN
+ LOCAL wrl, wrt, wri, wrc, wrb;
+ wrl := {}; wrt := wrs;
+ WHILE DIM(wrt) > wrw DO
+  // the last space in the second half of the line; failing that, the
+  // last + , times sign or / (a formula from the CAS has no spaces),
+  // so a name such as p2 is never cut in two
+  wrc := 0; wrb := 0;
+  FOR wri FROM IP(wrw/2) TO wrw DO
+   IF INSTRING(MID(wrt, wri, 1), " ") > 0 THEN wrc := wri; END;
+   IF INSTRING("+/"+CHAR(215), MID(wrt, wri, 1)) > 0 THEN wrb := wri; END;
+  END;
+  IF wrc == 0 THEN wrc := wrb; END;
+  IF wrc == 0 THEN wrc := wrw; END;
+  wrl := CONCAT(wrl, {MID(wrt, 1, wrc)});
+  wrt := "    " + MID(wrt, wrc + 1, DIM(wrt));
+ END;
+ RETURN CONCAT(wrl, {wrt});
+END;
+
+// ---------------- small helpers ----------------
+// (v2.3: pv_NPDF, a one-line wrapper round NORMALD, is gone.  The
+//  draw loop calls NORMALD directly and caches the result.)
+
+// "Nice" number: 1, 2 or 5 x 10^e (Heckbert; same as NormExp)
+LOCAL pv_NiceNum(nnval, nnrnd)
+BEGIN
+ LOCAL nnexp, nnf, nnnf;
+ IF nnval <= 0 THEN RETURN 1; END;
+ nnexp := FLOOR(LOG(nnval));
+ nnf := nnval/10^nnexp;
+ IF nnrnd THEN
+  nnnf := IFTE(nnf<1.5,1,IFTE(nnf<3,2,IFTE(nnf<7,5,10)));
+ ELSE
+  nnnf := IFTE(nnf<=1,1,IFTE(nnf<=2,2,IFTE(nnf<=5,5,10)));
+ END;
+ RETURN nnnf*10^nnexp;
+END;
+
+// Effect step for the arrow keys: sigma/20 pushed to 1, 2 or 5.
+// N(100,15) steps by 1; N(0,1) by 0.05.  Proportions step 0.01.
+// (v2.4: the H1 drag snaps to this same grid.)
+LOCAL pv_EffStep()
+BEGIN
+ IF TT<=2 THEN RETURN pv_NiceNum(SG/20,1); END;
+ RETURN 0.01;
+END;
+
+// Decimals that show one effect step exactly (1 -> 0, 0.05 -> 2),
+// plus two more if mu1 was typed in off the grid (105.5 on a step
+// of 1), so an entered value is never shown rounded.
+LOCAL pv_EffDec()
+BEGIN
+ LOCAL edS, edD;
+ edS := pv_EffStep();
+ edD := MAX(0,-FLOOR(LOG(edS)+0.000001));
+ IF ABS(MM1/edS - ROUND(MM1/edS,0)) > 0.000001 THEN edD := edD+2; END;
+ RETURN edD;
+END;
+
+// arcsin in RADIANS whatever the Home angle mode (HAngle:
+// 0 radians, 1 degrees, 2 gradians).  Needed for Cohen's h.
+LOCAL pv_AsinR(av)
+BEGIN
+ LOCAL ar;
+ ar := ASIN(av);
+ IF HAngle==1 THEN ar := ar*3.14159265358979/180; END;
+ IF HAngle==2 THEN ar := ar*3.14159265358979/200; END;
+ RETURN ar;
+END;
+
+// sine of an angle given in RADIANS whatever the Home angle mode
+// (v2.4; the power-vs-effect view turns h back into p with it).
+LOCAL pv_SinR(srad)
+BEGIN
+ IF HAngle==1 THEN RETURN SIN(srad*180/3.14159265358979); END;
+ IF HAngle==2 THEN RETURN SIN(srad*200/3.14159265358979); END;
+ RETURN SIN(srad);
+END;
+
+// Standardized effect size: Cohen's d (means) or h (proportions)
+LOCAL pv_EffSz()
+BEGIN
+ IF TT<=2 THEN RETURN (MM1-MM0)/SG; END;
+ RETURN 2*pv_AsinR(SQRT(PP1)) - 2*pv_AsinR(SQRT(PP0));
+END;
+
+// Cohen's word for a standardized effect (v2.4).  Benchmarks for d
+// and h alike: 0.2 small, 0.5 medium, 0.8 large; below 0.2 "tiny".
+// The caller passes the value ROUNDED as it is shown, so "0.20" never
+// reads "tiny".
+LOCAL pv_EffWord(ewv)
+BEGIN
+ LOCAL ewa;
+ ewa := ABS(ewv);
+ IF ewa >= 0.8 THEN RETURN "large"; END;
+ IF ewa >= 0.5 THEN RETURN "medium"; END;
+ IF ewa >= 0.2 THEN RETURN "small"; END;
+ RETURN "tiny";
+END;
+
+// A typed-in value printed as typed: 15 -> "15", 2.5 -> "2.5",
+// 0.125 -> "0.125" (at most 3 decimals).  For the SE teaching line.
+LOCAL pv_NumS(nsv)
+BEGIN
+ LOCAL nsd, nsk, nsr;
+ nsk := 3;
+ FOR nsd FROM 0 TO 2 DO
+  IF nsk == 3 AND ABS(nsv*10^nsd - ROUND(nsv*10^nsd,0)) < 0.000001 THEN nsk := nsd; END;
+ END;
+ nsr := ROUND(nsv,0);
+ IF nsk == 0 THEN RETURN STRING(nsr,1,0); END;
+ RETURN STRING(nsv,2,nsk);
+END;
+
+// 1 if two lists hold the same numbers, 0 if not (v2.4: the cache
+// keys).  A plain loop with a flag -- no list comparison operator.
+LOCAL pv_Same(sma, smb)
+BEGIN
+ LOCAL smi, smr;
+ IF SIZE(sma) <> SIZE(smb) THEN RETURN 0; END;
+ smr := 1;
+ FOR smi FROM 1 TO SIZE(sma) DO
+  IF sma(smi) <> smb(smi) THEN smr := 0; END;
+ END;
+ RETURN smr;
+END;
+
+// Empty the key buffer: the Enter that closed a menu or form
+// must not be read as the next keypress (NormExp ZPanel fix).
+LOCAL pv_Drain()
+BEGIN
+ LOCAL dk;
+ REPEAT dk := GETKEY; UNTIL dk == -1;
+END;
+
+// Wait for the finger to lift -- but never for more than a second.
+// MOUSE(1) is -1 while nothing touches the screen.  Without the
+// time limit a stuck or phantom touch would hold the program here
+// for ever, and the only way out would be a reset.  (ChiTable's
+// csDrain, device-verified; v2.3.)
+LOCAL pv_TDrain()
+BEGIN
+ LOCAL drT;
+ drT := TICKS;                                  // milliseconds
+ REPEAT UNTIL MOUSE(1) == -1 OR TICKS - drT > 1000;
+END;
+
+// Wait for any key OR any tap (drain, wait, drain).  A key or a
+// finger left over from a menu would otherwise skip the screen
+// just drawn, and the key that ends the wait must not reach the
+// live loop.  (ChiTable's csWaitAny, device-verified; v2.3.)
+LOCAL pv_WaitAny()
+BEGIN
+ LOCAL waK, waM, waM1;
+ REPEAT waK := GETKEY; UNTIL waK == -1;
+ pv_TDrain();
+ REPEAT
+  waK := GETKEY;
+  waM := MOUSE;
+  waM1 := waM(1);
+ UNTIL waK > -1 OR SIZE(waM1) > 0;
+ pv_TDrain();
+ REPEAT waK := GETKEY; UNTIL waK == -1;
+END;
+
+// Fit the window around both curves: +/- 6 SE, peak at 62% of
+// the plot height, so there is room to explore before a re-fit.
+LOCAL pv_FitWin(fsmx, fpk)
+BEGIN
+ XMN := MIN(M0v,M1v) - 6*fsmx;
+ XMX := MAX(M0v,M1v) + 6*fsmx;
+ YSC := (PYB-PYT)*0.62/fpk;
+END;
+
+LOCAL pv_FMT(xx, dd)
+BEGIN
+ RETURN STRING(xx,2,dd);         // Fixed mode: keeps trailing zeros
+END;
+
+// pv_FMT with a floor, for PROBABILITIES only. At dd decimals anything smaller
+// than 10^-dd prints as a row of zeros -- "β = 0.000" reads as "zero chance of
+// a Type II error", which is never true. Reports "< 0.001" instead.
+// Deliberately NOT folded into pv_FMT: pv_FMT also formats axis tick labels (see the
+// tick loop), and "< 0.001" printed along an axis would look broken. Use pv_FMTP
+// for power/β/α, plain pv_FMT for ticks, means, effect sizes, zcrit and SE.
+LOCAL pv_FMTP(xx, dd)
+BEGIN
+ LOCAL thr;
+ thr := 10^(-dd);
+ IF xx != 0 AND ABS(xx) < thr THEN
+  IF xx > 0 THEN RETURN "< " + STRING(thr,2,dd); END;
+  RETURN "> -" + STRING(thr,2,dd);
+ END;
+ RETURN STRING(xx,2,dd);
+END;
+
+// ---------------- the engine ----------------
+// v2.4: the first half of v2.3's pv_Setup, with n passed in, so the
+// main view, the n80 search and both curve views all compute power
+// with ONE set of formulas.  Sets M0v, M1v, SE0, SE1, DIRN, ZC, XCL,
+// XCU and PW for n = nv per group; touches nothing else.
+LOCAL pv_Model(nv)
+BEGIN
+ LOCAL pb;
+
+ CASE
+  IF TT==1 THEN                  // one-sample mean (z)
+   M0v:=MM0; M1v:=MM1;
+   SE0:=SG/nv^.5; SE1:=SE0;
+  END;
+  IF TT==2 THEN                  // two-sample means (z, common sigma)
+   M0v:=0; M1v:=MM1-MM0;
+   SE0:=SG*(2/nv)^.5; SE1:=SE0;
+  END;
+  IF TT==3 THEN                  // one proportion
+   M0v:=PP0; M1v:=PP1;
+   SE0:=(PP0*(1-PP0)/nv)^.5;
+   SE1:=(PP1*(1-PP1)/nv)^.5;
+  END;
+  IF TT==4 THEN                  // two proportions (pooled null SE)
+   pb:=(PP0+PP1)/2;
+   M0v:=0; M1v:=PP1-PP0;
+   SE0:=(2*pb*(1-pb)/nv)^.5;
+   SE1:=(PP0*(1-PP0)/nv+PP1*(1-PP1)/nv)^.5;
+  END;
+ END;
+
+ DIRN:=SIGN(M1v-M0v);
+ IF DIRN==0 THEN DIRN:=1; END;
+
+ ZC:=NORMALD_ICDF(0,1,1-AL/TL);
+ IF TL==2 THEN
+  XCL:=M0v-ZC*SE0; XCU:=M0v+ZC*SE0;
+  PW:=NORMALD_CDF(M1v,SE1,XCL)+1-NORMALD_CDF(M1v,SE1,XCU);
+ ELSE
+  IF DIRN>0 THEN
+   XCU:=M0v+ZC*SE0; XCL:=-1E10;
+   PW:=1-NORMALD_CDF(M1v,SE1,XCU);
+  ELSE
+   XCL:=M0v-ZC*SE0; XCU:=1E10;
+   PW:=NORMALD_CDF(M1v,SE1,XCL);
+  END;
+ END;
+END;
+
+// n80 (v2.4): the smallest whole n per group, 2 to 5000, at which
+// power reaches 0.80, from the SAME engine as the plot.  Returns 0
+// when there is no effect (power stays at alpha for every n) and -1
+// when even n = 5000 falls short (the cap).  Power rises with n in
+// all four tests, so halving the interval finds it in about 13
+// engine calls; stepping n one at a time could take 5000, and this
+// runs again whenever the effect or alpha changes -- on every drag
+// sample.  Leaves the scene as it was (pv_Model(NN) at the end).
+LOCAL pv_N80()
+BEGIN
+ LOCAL nlo, nhi, nmd, nres;
+ pv_Model(5000);
+ IF M1v == M0v THEN
+  nres := 0;
+ ELSE
+  IF PW < 0.8 THEN
+   nres := -1;
+  ELSE
+   pv_Model(2);
+   IF PW >= 0.8 THEN
+    nres := 2;
+   ELSE
+    nlo := 2; nhi := 5000;        // power(nlo) < 0.80 <= power(nhi)
+    WHILE nhi - nlo > 1 DO
+     nmd := IP((nlo+nhi)/2);
+     pv_Model(nmd);
+     IF PW >= 0.8 THEN nhi := nmd; ELSE nlo := nmd; END;
+    END;
+    nres := nhi;
+   END;
+  END;
+ END;
+ pv_Model(NN);
+ RETURN nres;
+END;
+
+// ---------------- model setup ----------------
+LOCAL pv_Setup()
+BEGIN
+ LOCAL smx, pk, esc, nk;
+
+ // n80 depends on everything except n: recompute it only when one
+ // of those inputs changed since the last time (v2.4).
+ nk := {TT,TL,AL,MM0,MM1,SG,PP0,PP1};
+ IF pv_Same(N8K,nk) == 0 THEN
+  N8K := nk;
+  N80 := pv_N80();
+  // v2.5: the formula's n has the same inputs (it does not depend on
+  // n either), so it is worked out at the same moment -- by PPL, a
+  // few operations, never by the CAS (the CAS answers events, and a
+  // drag of H1 or alpha comes through here on every sample)
+  NCF := pv_NCF();
+ END;
+
+ pv_Model(NN);
+
+ smx:=MAX(SE0,SE1);
+ pk:=MAX(1/(SE0*C2PI),1/(SE1*C2PI));
+ // The window is HELD between keypresses (NormExp Explorer lesson):
+ // if it re-fitted every time, H1 would never appear to move and a
+ // larger n would never appear to narrow the curves.  Re-fit only
+ // on request (WFIT) or when the scene would leave the frame.
+ esc := 0;
+ IF MIN(M0v,M1v)-3*smx < XMN THEN esc := 1; END;
+ IF MAX(M0v,M1v)+3*smx > XMX THEN esc := 1; END;
+ IF pk*YSC > (PYB-PYT)*0.97 THEN esc := 1; END;
+ IF WHLD == 1 THEN
+  // v2.4: a finger is dragging.  The x-window must not jump under
+  // the finger, so it stays exactly as it is even if a curve runs
+  // off the edge; only the HEIGHT is re-fitted, and only if the peak
+  // would clip (a larger n makes taller curves).  The full re-fit
+  // waits for the lift (WHLD back to 0).
+  IF pk*YSC > (PYB-PYT)*0.97 THEN YSC := (PYB-PYT)*0.62/pk; END;
+ ELSE
+  IF WFIT==1 OR esc==1 THEN pv_FitWin(smx,pk); END;
+  WFIT := 0;
+ END;
+END;
+
+// ---------------- labels ----------------
+LOCAL pv_TName()
+BEGIN
+ CASE
+  IF TT==1 THEN RETURN "1-Sample Mean (z)"; END;
+  IF TT==2 THEN RETURN "2-Sample Means (z)"; END;
+  IF TT==3 THEN RETURN "One Proportion"; END;
+  IF TT==4 THEN RETURN "Two Proportions"; END;
+ END;
+ RETURN "";
+END;
+
+// The alternative, as a readout cell: "μ₁ = 105" or "p₁ = 0.60".
+LOCAL pv_EffVal()
+BEGIN
+ CASE
+  IF TT==1 THEN RETURN "μ₁ = "+pv_FMT(MM1,pv_EffDec()); END;
+  IF TT==2 THEN RETURN "μ₂ = "+pv_FMT(MM1,pv_EffDec()); END;
+  IF TT==3 THEN RETURN "p₁ = "+pv_FMT(PP1,2); END;
+  IF TT==4 THEN RETURN "p₂ = "+pv_FMT(PP1,2); END;
+ END;
+ RETURN "";
+END;
+
+// d and h are the STANDARDIZED effect: Cohen's d = (mu1-mu0)/sigma,
+// Cohen's h = 2asin(sqrt p1) - 2asin(sqrt p0).  Benchmarks for both:
+// 0.2 small, 0.5 medium, 0.8 large.  v2.4: the word is printed too,
+// "d = 0.33, small", from the value as shown (2 decimals).
+LOCAL pv_DLbl()
+BEGIN
+ LOCAL dlv;
+ dlv := ROUND(pv_EffSz(),2);
+ RETURN IFTE(TT<=2,"d","h")+" = "+pv_FMT(dlv,2)+", "+pv_EffWord(dlv);
+END;
+
+// both together, for the curve views' subtitle
+LOCAL pv_EffLbl()
+BEGIN
+ RETURN pv_EffVal()+", "+pv_DLbl();
+END;
+
+// The SE teaching line (v2.4): the null curve's standard error with
+// the numbers put in, e.g. "SE₀ = σ/√n = 15/√30 = 2.74".  Decimals:
+// two, or more for a small SE so three figures show (0.0500).
+LOCAL pv_SELine()
+BEGIN
+ LOCAL sdd, sqg2, pbl, nst;
+ sdd := MAX(2, 2-FLOOR(LOG(SE0)));
+ sqg2 := SQG;
+ nst := STRING(NN,1,0);
+ CASE
+  IF TT==1 THEN
+   RETURN "SE₀ = σ/"+sqg2+"n = "+pv_NumS(SG)+"/"+sqg2+nst+" = "+pv_FMT(SE0,sdd);
+  END;
+  IF TT==2 THEN
+   RETURN "SE₀ = σ"+sqg2+"(2/n) = "+pv_NumS(SG)+sqg2+"(2/"+nst+") = "+pv_FMT(SE0,sdd);
+  END;
+  IF TT==3 THEN
+   RETURN "SE₀ = "+sqg2+"("+pv_NumS(PP0)+CHAR(215)+pv_NumS(1-PP0)+"/"+nst+") = "+pv_FMT(SE0,sdd);
+  END;
+  IF TT==4 THEN
+   pbl := (PP0+PP1)/2;           // the pooled proportion under H0
+   RETURN "SE₀ = "+sqg2+"(2"+CHAR(215)+pv_NumS(pbl)+CHAR(215)+pv_NumS(1-pbl)+"/"+nst+") = "+pv_FMT(SE0,sdd);
+  END;
+ END;
+ RETURN "";
+END;
+
+// The n80 readout: "n₈₀ = 56", "n₈₀ > 5000" or "n₈₀: no effect".
+LOCAL pv_N80S()
+BEGIN
+ IF N80 > 0 THEN RETURN N80L+" = "+STRING(N80,1,0); END;
+ IF N80 == 0 THEN RETURN N80L+": no effect"; END;
+ RETURN N80L+" > 5000";
+END;
+
+// ---------------- alpha ladder ----------------
+LOCAL pv_SyncA()
+BEGIN
+ LOCAL i2, bd:=1E10, dv;
+ FOR i2 FROM 1 TO SIZE(ALAD) DO
+  dv:=ABS(ALAD(i2)-AL);
+  IF dv<bd THEN bd:=dv; AIDX:=i2; END;
+ END;
+END;
+
+// One rung up (asd > 0) or down the ladder (v2.4: used by +/- and the
+// two alpha soft keys).  From a rung this is the old AIDX+1 / AIDX-1;
+// from a custom alpha (set by dragging the critical line) it goes to
+// the next rung above or below it.  Stops at the ends.
+LOCAL pv_AStep(asd)
+BEGIN
+ LOCAL i2, anx;
+ anx := 0;
+ IF asd > 0 THEN
+  FOR i2 FROM 1 TO SIZE(ALAD) DO
+   IF anx == 0 AND ALAD(i2) > AL*1.000001 THEN anx := i2; END;
+  END;
+  IF anx == 0 THEN anx := SIZE(ALAD); END;
+ ELSE
+  FOR i2 FROM 1 TO SIZE(ALAD) DO
+   IF ALAD(i2) < AL*0.999999 THEN anx := i2; END;
+  END;
+  IF anx == 0 THEN anx := 1; END;
+ END;
+ AIDX := anx;
+ AL := ALAD(anx);
+END;
+
+// The rung nearest the current alpha, measured RELATIVE to the rung
+// (0.048 is 4 % from 0.05; 0.037 is 26 % from 0.05).
+LOCAL pv_ANear()
+BEGIN
+ LOCAL i2, abr, abi, arr;
+ abr := 1E10; abi := 1;
+ FOR i2 FROM 1 TO SIZE(ALAD) DO
+  arr := ABS(AL-ALAD(i2))/ALAD(i2);
+  IF arr < abr THEN abr := arr; abi := i2; END;
+ END;
+ RETURN abi;
+END;
+
+// The status line while the critical line is dragged.
+LOCAL pv_ADrag()
+BEGIN
+ LOCAL abi;
+ abi := pv_ANear();
+ IF ABS(AL-ALAD(abi))/ALAD(abi) <= 0.15 THEN
+  RETURN "α = "+pv_FMTP(AL,3)+" (lift: snaps to "+pv_FMTP(ALAD(abi),3)+")";
+ END;
+ RETURN "α = "+pv_FMTP(AL,3)+" (off the ladder)";
+END;
+
+// On lift after dragging the critical line: snap to the nearest rung
+// if it is within 15 %, otherwise keep the custom alpha -- and say
+// which on the status line.
+LOCAL pv_ASnap()
+BEGIN
+ LOCAL abi;
+ abi := pv_ANear();
+ IF ABS(AL-ALAD(abi))/ALAD(abi) <= 0.15 THEN
+  AL := ALAD(abi); AIDX := abi;
+  HNT := "α = "+pv_FMTP(AL,3)+": snapped to the ladder";
+ ELSE
+  pv_SyncA();
+  HNT := "α = "+pv_FMTP(AL,3)+" kept as a custom value (off the ladder)";
+ END;
+ HNC := ccrt;
+END;
+
+// The alpha list (menu item "Set α", and a tap on α or zcrit).
+// CHOOSE pattern: index set to 0 first, the index tested after.
+LOCAL pv_AChoose()
+BEGIN
+ LOCAL asel;
+ asel:=0;
+ CHOOSE(asel,"Alpha",
+  {"0.001","0.005","0.01","0.02","0.05","0.10","0.20"});
+ IF asel>0 THEN AIDX:=asel; AL:=ALAD(AIDX); END;
+END;
+
+// Toggle 1-/2-sided, and set up the one-frame callout that names
+// what changed (v2.4): where alpha went and what the critical z is.
+LOCAL pv_Tails()
+BEGIN
+ LOCAL tzo, tzn;
+ tzo := NORMALD_ICDF(0,1,1-AL/TL);
+ TL := 3-TL;
+ tzn := NORMALD_ICDF(0,1,1-AL/TL);
+ IF TL == 2 THEN
+  HB1 := "2-sided: α = "+pv_FMTP(AL,3)+" is split, "+
+         pv_FMTP(AL/2,IFTE(AL/2<0.01,4,3))+" in each tail,";
+ ELSE
+  HB1 := "1-sided: all of α = "+pv_FMTP(AL,3)+" sits in one tail,";
+ END;
+ HB2 := "so the critical z is "+pv_FMT(tzn,3)+" instead of "+pv_FMT(tzo,3)+".";
+END;
+
+// Ask for the ghost (v2.4): the next frame that recomputes H1 first
+// copies the H1 it is about to overwrite into CYG.  Called before an
+// arrow step and when a drag of H1 or of n begins.
+LOCAL pv_GSave()
+BEGIN
+ GREQ := 1;
+END;
+
+// ---------------- rendering: main view ----------------
+LOCAL pv_Draw()
+BEGIN
+ // colours come from the file-level palette set in pv_Init (v2.3)
+ LOCAL cpwr, nd0, nd1, cix, lbs;
+ LOCAL pxx, vx, y0, y1, rej, span;
+ LOCAL py0, py1, pv0, pv1, hg, lw;
+ LOCAL cv, cpx, yy, xv, seg, gcp;
+ LOCAL rw, ex, ff, stp, dec, tk;
+ LOCAL bA, bX, bY, bW, pA, pX;
+ LOCAL pY, pWd, lx, ly, ytp, ybt;   // v2.5: pW -> pWd (PW is the power; see CHANGES)
+
+ span:=XMX-XMN;
+
+ // v2.4: a clean white G1 every frame (the fleet's verified clear)
+ DIMGROB_P(G1,320,240,cwht);
+
+ // title (blue)
+ TEXTOUT_P("PowerViz  "+pv_TName()+"  "+STRING(TL,1,0)+"-sided",G1,4,2,2,cnul);
+
+ // status row: the legend chips, or (for one frame) a hint
+ IF DIM(HNT) > 0 THEN
+  TEXTOUT_P(HNT,G1,6,19,1,HNC);
+ ELSE
+  RECT_P(G1,12,20,24,28,calp);
+  TEXTOUT_P("α",G1,27,19,1,cgry);
+  RECT_P(G1,70,20,82,28,cbet);
+  TEXTOUT_P("β",G1,85,19,1,cgry);
+  RECT_P(G1,120,20,132,28,cpow);
+  TEXTOUT_P("power",G1,135,19,1,cgry);
+  TEXTOUT_P("crit",G1,236,19,1,ccrt);
+  // short dashed red sample after "crit" (matches the critical line style)
+  FOR cv FROM 0 TO 3 DO
+   cpx:=258+cv*7;
+   LINE_P(G1,cpx,24,cpx+3,24,ccrt);
+  END;
+ END;
+
+ // ----- pv_NiceNum step (computed early so the grid can use it) -----
+ rw:=span/5;
+ ex:=FLOOR(LOG(rw));
+ ff:=rw/10^ex;
+ stp:=IFTE(ff<1.5,1,IFTE(ff<3,2,IFTE(ff<7,5,10)))*10^ex;
+ dec:=MAX(0,-FLOOR(LOG(stp)));
+
+ // ----- vertical gridlines at the ticks (drawn first, under fills) -----
+ tk:=CEILING(XMN/stp)*stp;
+ WHILE tk<=XMX DO
+  cpx:=PXL+IP((tk-XMN)/span*(PXR-PXL));
+  LINE_P(G1,cpx,PYT,cpx,PYB-1,cgrd);
+  tk:=tk+stp;
+ END;
+
+ // ----- horizontal gridlines (drawn first, under fills) -----
+ FOR cv FROM 1 TO 4 DO
+  yy:=PYB-IP(cv/5*(PYB-PYT));
+  LINE_P(G1,PXL,yy,PXR,yy,cgrd);
+ END;
+
+ // ----- which cached curves are still good? (v2.4) -----
+ // A curve's cache is reused when its centre, SE and the window are
+ // exactly what they were when it was filled: H0 while H1 is dragged,
+ // both curves while alpha is dragged -- no NORMALD calls at all.
+ nd0 := 1-pv_Same(CK0,{M0v,SE0,XMN,XMX,YSC});
+ nd1 := 1-pv_Same(CK1,{M1v,SE1,XMN,XMX,YSC});
+ // the ghost copy happens in this frame if one was asked for and H1
+ // is about to be overwritten; it records the window H1 was drawn in
+ gcp := 0;
+ IF GREQ==1 AND nd1==1 THEN
+  gcp := 1;
+  IF SIZE(CK1) >= 5 THEN GWIN := {CK1(3),CK1(4),CK1(5)}; ELSE GWIN := {0,0,0}; END;
+ END;
+
+ // area-label sums (v2.4): beta (yellow) and the visible green
+ bA:=0; bX:=0; bY:=0; bW:=0;
+ pA:=0; pX:=0; pY:=0; pWd:=0;
+
+ // ----- pass 1: shaded fills, pixel column by pixel column -----
+ // v2.3: each curve's height is evaluated ONCE per column here and
+ // kept in CY0 (H0) and CY1 (H1), one entry per pixel column, so
+ // pass 2 reads them back instead of calling NORMALD again.  That
+ // halves the density work per frame (594 NORMALD calls instead of
+ // 1,188) and drops the wrapper calls altogether -- the cost a G1
+ // feels while an arrow key is held.  The lists hold the PIXEL y
+ // of each curve, already clamped to the plot top.  (Allocated once
+ // in pv_Init; element pxx-PXL+1 is column pxx.)
+ FOR pxx FROM PXL TO PXR DO
+  cix:=pxx-PXL+1;
+  vx:=XMN+(pxx-PXL)*span/(PXR-PXL);
+  IF nd0 THEN
+   y0:=MAX(PYT,PYB-NORMALD(M0v,SE0,vx)*YSC);
+   CY0(cix):=y0;
+  ELSE
+   y0:=CY0(cix);                         // cached: no NORMALD
+  END;
+  IF nd1 THEN
+   IF gcp THEN CYG(cix):=CY1(cix); END;  // the ghost: H1 as it was
+   y1:=MAX(PYT,PYB-NORMALD(M1v,SE1,vx)*YSC);
+   CY1(cix):=y1;
+  ELSE
+   y1:=CY1(cix);                         // cached: no NORMALD
+  END;
+  rej:=(vx<=XCL) OR (vx>=XCU);
+  IF rej THEN
+   LINE_P(G1,pxx,IP(y1),pxx,PYB,cpow);   // power under H1
+   LINE_P(G1,pxx,IP(y0),pxx,PYB,calp);   // alpha under H0 (on top)
+   // the green that stays visible is H1's band ABOVE H0 (y1 to y0),
+   // on H1's side only (the far tail of a 2-sided test is a sliver)
+   IF (DIRN>0 AND vx>=XCU) OR (DIRN<0 AND vx<=XCL) THEN
+    hg:=MAX(0,y0-y1);
+    pA:=pA+hg; pX:=pX+pxx*hg; pY:=pY+hg*(y0+y1)/2;
+    IF hg>=11 THEN pWd:=pWd+1; END;
+   END;
+  ELSE
+   LINE_P(G1,pxx,IP(y1),pxx,PYB,cbet);   // beta under H1
+   hg:=PYB-y1;
+   bA:=bA+hg; bX:=bX+pxx*hg; bY:=bY+hg*(y1+PYB)/2;
+   IF hg>=11 THEN bW:=bW+1; END;
+  END;
+ END;
+ CK0:={M0v,SE0,XMN,XMX,YSC};
+ CK1:={M1v,SE1,XMN,XMX,YSC};
+ IF gcp THEN GHOK:=1; GREQ:=0; END;
+
+ // ----- the ghost: H1 before the last step or drag (v2.4) -----
+ // Pale magenta, from CYG -- no NORMALD.  Only if the window is the
+ // one it was drawn in; after a re-fit its pixels mean nothing.
+ IF GHOK==1 THEN
+  IF pv_Same(GWIN,{XMN,XMX,YSC}) THEN
+   FOR pxx FROM PXL+1 TO PXR DO
+    LINE_P(G1,pxx-1,IP(CYG(pxx-PXL)),pxx,IP(CYG(pxx-PXL+1)),cgho);
+   END;
+  END;
+ END;
+
+ // ----- pass 2: curve outlines (from the cached heights) -----
+ pv0:=PYB; pv1:=PYB;
+ FOR pxx FROM PXL TO PXR DO
+  py0:=CY0(pxx-PXL+1);
+  py1:=CY1(pxx-PXL+1);
+  IF pxx>PXL THEN
+   LINE_P(G1,pxx-1,IP(pv0),pxx,IP(py0),cnul);
+   LINE_P(G1,pxx-1,IP(pv1),pxx,IP(py1),calt);
+  END;
+  pv0:=py0; pv1:=py1;
+ END;
+
+ // ----- H0 / H1 labels at the curve peaks (from PowerCalc) -----
+ cpx:=PXL+IP((M0v-XMN)/span*(PXR-PXL));
+ TEXTOUT_P("H₀",G1,MAX(PXL,cpx-8),PYT-8,1,cnul);
+ cpx:=PXL+IP((M1v-XMN)/span*(PXR-PXL));
+ TEXTOUT_P("H₁",G1,MIN(PXR-12,cpx-4),PYT-8,1,calt);
+
+ // ----- dotted color-keyed verticals at the H0 / H1 centers -----
+ cpx:=PXL+IP((M0v-XMN)/span*(PXR-PXL));
+ yy:=PYT;
+ WHILE yy<PYB DO
+  PIXON_P(G1,cpx,yy,cnul);
+  yy:=yy+4;
+ END;
+ cpx:=PXL+IP((M1v-XMN)/span*(PXR-PXL));
+ yy:=PYT;
+ WHILE yy<PYB DO
+  PIXON_P(G1,cpx,yy,calt);
+  yy:=yy+4;
+ END;
+
+ // baseline axis
+ LINE_P(G1,PXL,PYB,PXR,PYB,cgry);
+
+ // ----- labeled tick marks (gray, fixed decimals) -----
+ tk:=CEILING(XMN/stp)*stp;
+ WHILE tk<=XMX DO
+  cpx:=PXL+IP((tk-XMN)/span*(PXR-PXL));
+  LINE_P(G1,cpx,PYB,cpx,PYB+3,cgry);
+  TEXTOUT_P(pv_FMT(tk,dec),G1,cpx-9,PYB+5,1,cgry);
+  tk:=tk+stp;
+ END;
+
+ // ----- critical value dashed line(s), drawn manually -----
+ // v2.4: each line's pixel x is kept in CLX (1 lower, 2 upper) so a
+ // press within 6 px of it grabs alpha (pv_Touch).
+ CLX:={-100,-100};
+ FOR cv FROM 1 TO 2 DO
+  xv:=IFTE(cv==1,XCL,XCU);
+  IF (xv>XMN) AND (xv<XMX) THEN
+   cpx:=PXL+IP((xv-XMN)/span*(PXR-PXL));
+   CLX(cv):=cpx;
+   yy:=PYT;
+   WHILE yy<PYB DO
+    seg:=MIN(yy+3,PYB);
+    LINE_P(G1,cpx,yy,cpx,seg,ccrt);
+    yy:=yy+7;
+   END;
+  END;
+ END;
+
+ // ----- area labels inside the fills (v2.4) -----
+ // At the centroid of the yellow (beta) region and of the visible
+ // green (power) region.  Left out when the region is narrower than
+ // the label: bW / pWd count the columns at least 11 px tall (one line
+ // of the small font), and a label is taken as 5 px a character (an
+ // estimate: "abc" in font 2 measured 19 px).  The label is then kept
+ // inside its region at the centroid's column.
+ IF bA>0 THEN
+  lbs:="β = "+pv_FMTP(1-PW,2);
+  lw:=5*DIM(lbs);
+  IF bW>=lw+2 THEN
+   cix:=MIN(PXR-PXL+1,MAX(1,IP(bX/bA)-PXL+1));
+   ytp:=IP(CY1(cix))+1; ybt:=PYB-11;
+   IF ytp<=ybt THEN
+    ly:=MIN(ybt,MAX(ytp,IP(bY/bA)-5));
+    lx:=MIN(PXR-lw,MAX(PXL+2,IP(bX/bA-lw/2)));
+    TEXTOUT_P(lbs,G1,lx,ly,1,cgry);
+   END;
+  END;
+ END;
+ IF pA>0 THEN
+  lbs:="power = "+pv_FMTP(PW,2);
+  lw:=5*DIM(lbs);
+  IF pWd>=lw+2 THEN
+   cix:=MIN(PXR-PXL+1,MAX(1,IP(pX/pA)-PXL+1));
+   ytp:=IP(CY1(cix))+1; ybt:=IP(CY0(cix))-11;
+   IF ytp<=ybt THEN
+    ly:=MIN(ybt,MAX(ytp,IP(pY/pA)-5));
+    lx:=MIN(PXR-lw,MAX(PXL+2,IP(pX/pA-lw/2)));
+    TEXTOUT_P(lbs,G1,lx,ly,1,cgrn);
+   END;
+  END;
+ END;
+
+ // ----- the one-frame callout (v2.4: what the Tails toggle changed) -----
+ IF DIM(HB1) > 0 THEN
+  RECT_P(G1,8,PYT+2,312,PYT+30,cfrm,cwht);
+  TEXTOUT_P(HB1,G1,14,PYT+5,1,cblk);
+  TEXTOUT_P(HB2,G1,14,PYT+17,1,cblk);
+ END;
+
+ // ----- readout panel: orange frame, light fill (house style) -----
+ // v2.4: y 162-217, clear of the soft-key strip (218-239).  Rows of
+ // the small-2 font at y 165, 179, 193; the SE line (font 1) at 206.
+ RECT_P(G1,2,162,317,217,cfrm,cfil);
+ TEXTOUT_P("n = "+STRING(NN,1,0)+"/grp",G1,8,165,2,cgry);
+ TEXTOUT_P(pv_EffVal(),G1,8,179,2,cgry);
+ TEXTOUT_P("α = "+pv_FMTP(AL,3),G1,8,193,2,cgry);
+ TEXTOUT_P("zcrit = "+pv_FMT(ZC,3),G1,108,165,2,cgry);
+ TEXTOUT_P(pv_DLbl(),G1,108,179,2,cgry);
+ TEXTOUT_P("β = "+pv_FMTP(1-PW,3),G1,108,193,2,cgry);
+ TEXTOUT_P(pv_SELine(),G1,8,206,1,cgry);
+ // v2.5: the n80 line carries the formula's n in brackets, "n80 = 56
+ // (55.6)" (NCF, worked out by PPL in pv_Setup -- no CAS here: this is
+ // a frame).  It is pulled left when long so it ends inside the panel
+ // (5.5 px a character, the harness's estimate for the small font).
+ lbs:=pv_N80S();
+ IF N80<>0 AND NCF>0 AND NCF<100000 THEN lbs:=lbs+" ("+pv_NCFS()+")"; END;
+ lx:=MIN(228,314-IP(5.5*DIM(lbs)));
+ // the tappable cells, recorded with the same numbers the text uses:
+ // n (row 1, left), effect (row 2, both cells), alpha (row 3, left)
+ // and zcrit (row 1, middle), which is set by alpha; v2.5: the n80
+ // line (action 4, the formula page).
+ HX1:={4,4,4,106,106,lx-2};
+ HX2:={104,104,104,220,220,317};
+ HY1:={163,177,191,163,177,203};
+ HY2:={176,190,204,176,190,216};
+ HACT:={1,2,3,3,2,4};
+
+ // POWER in red below 0.5, orange to 0.8, green from 0.8 (palette constants)
+ cpwr:=ccrt;
+ IF PW>=0.5 THEN cpwr:=cfrm; END;
+ IF PW>=0.8 THEN cpwr:=cgrn; END;
+ TEXTOUT_P("POWER",G1,228,165,2,cgry);
+ TEXTOUT_P(pv_FMTP(PW,3),G1,222,180,5,cpwr);
+ TEXTOUT_P(lbs,G1,lx,206,1,cgrn);    // n80 (v2.4) and the formula's n (v2.5)
+
+ // v2.4: no footer legend here -- the soft keys take its place
+ // (DRAWMENU paints y 218-239).  The keys are on the help pages.
+ BLIT_P(G0,0,0,G1);
+ DRAWMENU({"Edit","Tails","α−","α+","Pow-n","Menu"});
+
+ // one-frame messages are spent; the ghost lasts until the finger
+ // lifts (WHLD) and is then dropped
+ HNT:=""; HB1:=""; HB2:="";
+ IF WHLD==0 THEN GHOK:=0; GREQ:=0; END;
+END;
+
+// ---------------- the two curve views (v2.4) ----------------
+// Column cc (1..250) of the power-vs-n plot is pixel x = PCL + cc and
+// one WHOLE n: the sweep, the drawing and the finger all use this.
+LOCAL pv_NofC(cc)
+BEGIN
+ RETURN ROUND(2+cc/250*(PNMX-2),0);
+END;
+
+// Draw a curve view from the cached sweep PWC (no engine calls).
+//   kind 1 = power vs n (x: n from 2 to PNMX)
+//   kind 2 = power vs effect size (x: d or h from 0 to 1.5)
+//   selc   = the column under the finger (0 = none): a red marker
+//            and "at n = ...: power = ..." follow it.
+LOCAL pv_PCDraw(kind, selc)
+BEGIN
+ LOCAL w2, h2, i2, tickx, ticky, x0p;
+ LOCAL nv, pyv, lastpy, cc, ev, lbs;
+ LOCAL cmk;
+ w2:=PCR-PCL; h2:=PCB-PCT;
+
+ DIMGROB_P(G1,320,240,cwht);
+ // title, the test, and what is held fixed
+ IF kind==1 THEN
+  TEXTOUT_P("Power vs sample size",G1,4,3,2,cblk);
+  lbs:=pv_EffLbl()+", α = "+pv_FMTP(AL,3)+", "+STRING(TL,1,0)+"-sided";
+ ELSE
+  TEXTOUT_P("Power vs effect size",G1,4,3,2,cblk);
+  lbs:="n = "+STRING(NN,1,0)+"/grp, α = "+pv_FMTP(AL,3)+", "+STRING(TL,1,0)+"-sided";
+  IF TT>=3 THEN lbs:=lbs+", p₀ = "+pv_FMT(PP0,2); END;
+ END;
+ TEXTOUT_P(pv_TName(),G1,196,7,1,cgry);
+ TEXTOUT_P(lbs,G1,4,19,1,cgry);
+
+ // grid: y ticks 0..1 by 0.2
+ FOR i2 FROM 0 TO 5 DO
+  ticky:=PCB-IP(i2/5*h2);
+  IF (i2>0) AND (i2<5) THEN LINE_P(G1,PCL+1,ticky,PCR,ticky,cgrd); END;
+  TEXTOUT_P(STRING(i2/5,2,1),G1,PCL-24,ticky-4,1,cgry);
+ END;
+ IF kind==1 THEN
+  // x ticks: nice step on 2..PNMX, placed with the curve's own map
+  nv:=PNMX/5;
+  i2:=FLOOR(LOG(nv));
+  nv:=IFTE(nv/10^i2<1.5,1,IFTE(nv/10^i2<3,2,IFTE(nv/10^i2<7,5,10)))*10^i2;
+  i2:=nv;
+  WHILE i2<=PNMX DO
+   tickx:=PCL+IP((i2-2)/(PNMX-2)*w2);
+   LINE_P(G1,tickx,PCT,tickx,PCB-1,cgrd);
+   TEXTOUT_P(STRING(i2,1,0),G1,tickx-8,PCB+6,1,cgry);
+   i2:=i2+nv;
+  END;
+ ELSE
+  // x ticks every 0.25 of d (or h), labels on the halves
+  FOR i2 FROM 1 TO 6 DO
+   tickx:=PCL+IP(i2*0.25/1.5*w2);
+   LINE_P(G1,tickx,PCT,tickx,PCB-1,cgrd);
+   IF FP(i2/2)==0 THEN TEXTOUT_P(STRING(i2*0.25,2,1),G1,tickx-8,PCB+6,1,cgry); END;
+  END;
+  TEXTOUT_P("0",G1,PCL-2,PCB+6,1,cgry);
+ END;
+ LINE_P(G1,PCL,PCB,PCR,PCB,cblk);
+ LINE_P(G1,PCL,PCT,PCL,PCB,cblk);
+
+ // 0.80 power reference (dotted green, manual dots)
+ ticky:=PCB-IP(0.8*h2);
+ FOR i2 FROM PCL+1 TO PCR STEP 4 DO
+  PIXON_P(G1,i2,ticky,cgrn);
+ END;
+ TEXTOUT_P("0.80",G1,PCR-26,ticky-12,1,cgrn);
+
+ IF kind==1 THEN
+  // n80: a green dotted vertical where power first reaches 0.80
+  IF PN80>0 THEN
+   x0p:=PCL+IP((PN80-2)/(PNMX-2)*w2);
+   FOR i2 FROM PCT TO PCB STEP 3 DO
+    PIXON_P(G1,x0p,i2,cgrn);
+   END;
+   lbs:=N80L+" = "+STRING(PN80,1,0);
+   tickx:=x0p+4;
+   IF x0p>PCR-70 THEN tickx:=x0p-6*DIM(lbs)-3; END;
+   TEXTOUT_P(lbs,G1,tickx,PCT+2,1,cgrn);
+   // v2.5: the formula's n beside it, in magenta (derived): what the
+   // closed form gives before and after rounding up (PPL's number)
+   IF NCF>0 AND NCF<100000 THEN
+    lbs:="formula: "+pv_NCFS()+" "+CHAR(8594)+" "+pv_IStr(MAX(2,CEILING(NCF)));
+    tickx:=x0p+4;
+    IF x0p>PCR-100 THEN tickx:=x0p-6*DIM(lbs)-3; END;
+    TEXTOUT_P(lbs,G1,MAX(PCL+2,tickx),PCT+14,1,calt);
+   END;
+  ELSE
+   TEXTOUT_P(pv_N80S(),G1,PCL+4,PCT+2,1,cgrn);
+  END;
+ ELSE
+  // Cohen's benchmarks: dotted gray at 0.2, 0.5 and 0.8
+  FOR cc FROM 1 TO 3 DO
+   ev:=IFTE(cc==1,0.2,IFTE(cc==2,0.5,0.8));
+   tickx:=PCL+IP(ev/1.5*w2);
+   FOR i2 FROM PCT TO PCB STEP 3 DO
+    PIXON_P(G1,tickx,i2,cgry);
+   END;
+   TEXTOUT_P(IFTE(cc==1,"small",IFTE(cc==2,"medium","large")),G1,tickx+3,PCT+2,1,cgry);
+  END;
+ END;
+
+ // the power curve, from the cache (a -1 entry is not drawn)
+ lastpy:=-1;
+ FOR cc FROM 1 TO 250 DO
+  IF PWC(cc)>=0 THEN
+   pyv:=PCB-IP(PWC(cc)*h2);
+   IF lastpy>=0 THEN LINE_P(G1,PCL+cc-1,lastpy,PCL+cc,pyv,calt); END;
+   lastpy:=pyv;
+  ELSE
+   lastpy:=-1;
+  END;
+ END;
+
+ // the current value: dotted vertical + marker, red -- or gray while
+ // a finger is choosing another one
+ cmk:=ccrt;
+ IF selc>0 THEN cmk:=cgry; END;
+ x0p:=-1;
+ IF kind==1 THEN
+  IF NN<=PNMX THEN x0p:=PCL+IP((NN-2)/(PNMX-2)*w2); END;
+ ELSE
+  ev:=ABS(pv_EffSz());
+  IF ev<=1.5 THEN x0p:=PCL+IP(ev/1.5*w2); END;
+ END;
+ IF x0p>=0 THEN
+  FOR i2 FROM PCT TO PCB STEP 4 DO
+   PIXON_P(G1,x0p,i2,cmk);
+  END;
+  ticky:=PCB-IP(PW*h2);
+  RECT_P(G1,x0p-3,ticky-3,x0p+3,ticky+3,cmk,cmk);
+ END;
+ // the finger's column: a red marker riding the curve
+ IF selc>0 THEN
+  tickx:=PCL+selc;
+  ticky:=PCB-IP(PWC(selc)*h2);
+  RECT_P(G1,tickx-3,ticky-3,tickx+3,ticky+3,ccrt,ccrt);
+ END;
+
+ // axis name and footer (no soft keys on these views)
+ IF kind==1 THEN
+  TEXTOUT_P("n",G1,160,214,1,cblk);
+  IF selc>0 THEN
+   lbs:="at n = "+STRING(pv_NofC(selc),1,0)+": power = "+pv_FMTP(PWC(selc),3)+", lift = use this n";
+  ELSE
+   lbs:="at n = "+STRING(NN,1,0)+": power = "+pv_FMTP(PW,3)+", touch = pick n, key = back";
+  END;
+ ELSE
+  TEXTOUT_P(IFTE(TT<=2,"Cohen's d","Cohen's h"),G1,136,214,1,cblk);
+  lbs:="at "+IFTE(TT<=2,"d","h")+" = "+pv_FMT(pv_EffSz(),2)+": power = "+pv_FMTP(PW,3)+", key or tap = back";
+ END;
+ TEXTOUT_P(lbs,G1,6,226,1,cfot);
+
+ BLIT_P(G0,0,0,G1);
+END;
+
+// ---------------- power-vs-n curve view (from PowerCalc) ----------------
+// v2.4: the 250 power values are computed ONCE on entry and kept in
+// PWC; a finger dragged along the curve only redraws from them.
+LOCAL pv_PowNView()
+BEGIN
+ LOCAL nn0, cc, nv, nlo, go, kk;
+ LOCAL mm, mmF, selc, tx;
+
+ nn0:=NN;                        // save current n (restored below)
+ // the range: at least 200, and wide enough to show the current n and
+ // n80 with room to spare; never past 5000, the largest n allowed
+ PNMX:=MAX(200,IP(NN*1.25));
+ IF N80>0 THEN PNMX:=MAX(PNMX,IP(N80*1.25)); END;
+ PNMX:=MIN(5000,PNMX);
+
+ // the sweep: one whole n per pixel column, all four tests through
+ // the shared engine; record the first column at power 0.80
+ nv:=0;
+ FOR cc FROM 1 TO 250 DO
+  pv_Model(pv_NofC(cc));
+  PWC(cc):=PW;
+  IF nv==0 AND PW>=0.8 THEN nv:=cc; END;
+ END;
+ // that column's n may overshoot by a few (one column spans several
+ // n when PNMX is large): step n down with the same engine to the
+ // FIRST whole n at 0.80 -- the same number pv_N80 prints in the panel
+ PN80:=-1;
+ IF nv>0 THEN
+  nlo:=2;
+  IF nv>1 THEN nlo:=pv_NofC(nv-1)+1; END;
+  PN80:=pv_NofC(nv);
+  go:=1;
+  WHILE go==1 AND PN80>nlo DO
+   pv_Model(PN80-1);
+   IF PW>=0.8 THEN PN80:=PN80-1; ELSE go:=0; END;
+  END;
+ END;
+ NN:=nn0;                        // restore and recompute current scene
+ pv_Model(NN);
+
+ // show it, then wait for a key or a touch (drain, wait, drain)
+ selc:=0;
+ pv_PCDraw(1,0);
+ REPEAT kk:=GETKEY; UNTIL kk==-1;
+ pv_TDrain();
+ REPEAT
+  kk:=GETKEY;
+  mm:=MOUSE;
+  mmF:=mm(1);
+ UNTIL kk>-1 OR SIZE(mmF)>0;
+ IF SIZE(mmF)>0 THEN
+  // a touch on the curve's box: follow the finger along the curve
+  // until it lifts, redrawing from the cache; on lift use that n.
+  // Esc while the finger is down lets go without choosing.
+  IF mmF(1)>=PCL AND mmF(1)<=PCR+4 AND mmF(2)>=PCT-12 AND mmF(2)<=PCB+14 THEN
+   go:=1;
+   WHILE go==1 DO
+    tx:=mmF(1);
+    IF tx>=0 AND tx<=319 THEN
+     cc:=MIN(250,MAX(1,IP(tx)-PCL));
+     IF cc<>selc THEN
+      selc:=cc;
+      pv_PCDraw(1,selc);
+     END;
+    ELSE
+     go:=0;                      // a phantom reading: treat as a lift
+    END;
+    mm:=MOUSE;
+    mmF:=mm(1);
+    kk:=GETKEY;
+    IF SIZE(mmF)==0 THEN go:=0; END;
+    IF kk==4 THEN go:=0; selc:=0; END;
+   END;
+   IF selc>0 THEN NN:=MIN(5000,MAX(2,pv_NofC(selc))); END;
+  END;
+  pv_TDrain();                   // capped: never more than a second
+ END;
+ REPEAT kk:=GETKEY; UNTIL kk==-1;
+ WFIT:=1;                        // back on the main view: re-fit
+END;
+
+// ---------------- power-vs-effect-size view (v2.4) ----------------
+// Power over the standardized effect, 0 to 1.5, at the current n and
+// alpha, in the direction of the current effect.  Means: mu1 = mu0 +
+// d*sigma.  Proportions: p1 = sin^2(asin(sqrt p0) + h/2), which runs
+// out where p1 would pass 0.98 (the program's own limit); the curve
+// simply stops there.
+LOCAL pv_PowEView()
+BEGIN
+ LOCAL cc, ev, sm1, sp1, sdir, a0;
+ LOCAL aa;
+ sm1:=MM1; sp1:=PP1;
+ pv_Model(NN);
+ sdir:=DIRN;
+ a0:=0;
+ IF TT>=3 THEN a0:=pv_AsinR(SQRT(PP0)); END;
+ FOR cc FROM 1 TO 250 DO
+  ev:=cc/250*1.5;
+  PWC(cc):=-1;
+  IF TT<=2 THEN
+   MM1:=MM0+sdir*ev*SG;
+   pv_Model(NN);
+   PWC(cc):=PW;
+  ELSE
+   aa:=a0+sdir*ev/2;
+   IF aa>0 AND aa<1.5707963 THEN
+    PP1:=pv_SinR(aa)^2;
+    IF PP1>=0.02 AND PP1<=0.98 THEN
+     pv_Model(NN);
+     PWC(cc):=PW;
+    END;
+   END;
+  END;
+ END;
+ MM1:=sm1; PP1:=sp1;             // the effect as it was
+ pv_Model(NN);
+ pv_PCDraw(2,0);
+ pv_WaitAny();
+ WFIT:=1;
+END;
+
+// ---------------- edit forms (with help strings, from PowerCalc) ----------------
+LOCAL pv_EditForm()
+BEGIN
+ LOCAL efok, efv;
+ efok := 1;
+ CASE
+  IF TT==1 THEN
+   efok:=INPUT({MM0,MM1,SG,NN,AL},"One-Sample Mean",
+    {"μ₀:","μ₁:","σ:","n:","α:"},
+    {"Null mean","Alternative mean","Population SD (>0)",
+     "Sample size (≥2)","Significance level"});
+  END;
+  IF TT==2 THEN
+   efok:=INPUT({MM0,MM1,SG,NN,AL},"Two-Sample Means",
+    {"μ grp1:","μ grp2:","σ:","n/group:","α:"},
+    {"Group 1 mean","Group 2 mean","Common SD (>0)",
+     "Per-group sample size (≥2)","Significance level"});
+  END;
+  IF TT==3 THEN
+   efok:=INPUT({PP0,PP1,NN,AL},"One Proportion",
+    {"p₀ (null):","p₁ (alt):","n:","α:"},
+    {"Null proportion","Alternative proportion",
+     "Sample size (≥2)","Significance level"});
+  END;
+  IF TT==4 THEN
+   efok:=INPUT({PP0,PP1,NN,AL},"Two Proportions",
+    {"p grp1:","p grp2:","n/group:","α:"},
+    {"Group 1 proportion","Group 2 proportion",
+     "Per-group sample size (≥2)","Significance level"});
+  END;
+ END;
+ IF efok==0 THEN RETURN 0; END;   // Cancel: values untouched
+ // sanity clamps.  v2.3: every clamp that CHANGES a typed value now
+ // says so first, in a one-line box, so a student learns why the
+ // plot does not show what was entered.  A value already in range
+ // passes silently.  (efv holds the in-range value.)
+ efv:=MIN(5000,MAX(2,IP(NN)));
+ IF efv<>NN THEN
+  MSGBOX("n must be a whole number from 2 to 5000 (you entered "+STRING(NN,2,2)+"): set to "+STRING(efv,1,0));
+  NN:=efv;
+ END;
+ IF (AL<=0) OR (AL>=1) THEN
+  MSGBOX("α must be between 0 and 1 (you entered "+STRING(AL,2,3)+"): reset to 0.05");
+  AL:=0.05;
+ END;
+ IF TT>=3 THEN
+  efv:=MIN(0.98,MAX(0.02,PP0));
+  IF efv<>PP0 THEN
+   MSGBOX("A proportion must be 0.02 to 0.98 (you entered "+STRING(PP0,2,3)+"): set to "+STRING(efv,2,2));
+   PP0:=efv;
+  END;
+  efv:=MIN(0.98,MAX(0.02,PP1));
+  IF efv<>PP1 THEN
+   MSGBOX("A proportion must be 0.02 to 0.98 (you entered "+STRING(PP1,2,3)+"): set to "+STRING(efv,2,2));
+   PP1:=efv;
+  END;
+ END;
+ IF SG<=0 THEN
+  MSGBOX("σ must be positive (you entered "+STRING(SG,2,3)+"): reset to 1");
+  SG:=1;
+ END;
+ pv_SyncA();                        // re-seat the alpha ladder
+ RETURN 1;
+END;
+
+// A tap on "n =" (v2.4): a one-field form for n alone.  INPUT goes
+// into a LOCAL (never a parameter), the label from a string variable
+// (both verified in ChiTable).  Same clamp and message as the form.
+LOCAL pv_EditN()
+BEGIN
+ LOCAL env, enok, enc, enl;
+ env:=NN;
+ enl:=IFTE(TT==1 OR TT==3,"n:","n/group:");
+ enok:=INPUT({env},"Sample size",{enl},{"A whole number from 2 to 5000"});
+ IF enok==0 THEN RETURN 0; END;
+ enc:=MIN(5000,MAX(2,IP(env)));
+ IF enc<>env THEN
+  MSGBOX("n must be a whole number from 2 to 5000 (you entered "+STRING(env,2,2)+"): set to "+STRING(enc,1,0));
+ END;
+ NN:=enc;
+ RETURN 1;
+END;
+
+// A tap on the effect cell (v2.4): a one-field form for mu1 or p1.
+LOCAL pv_EditEff()
+BEGIN
+ LOCAL eev, eeok, eel, eeh, eec;
+ IF TT<=2 THEN
+  eev:=MM1;
+  eel:=IFTE(TT==1,"μ₁:","μ grp2:");
+  eeh:=IFTE(TT==1,"Alternative mean","Group 2 mean");
+ ELSE
+  eev:=PP1;
+  eel:=IFTE(TT==3,"p₁ (alt):","p grp2:");
+  eeh:="A proportion, 0.02 to 0.98";
+ END;
+ eeok:=INPUT({eev},pv_TName(),{eel},{eeh});
+ IF eeok==0 THEN RETURN 0; END;
+ IF TT<=2 THEN
+  MM1:=eev;
+ ELSE
+  eec:=MIN(0.98,MAX(0.02,eev));
+  IF eec<>eev THEN
+   MSGBOX("A proportion must be 0.02 to 0.98 (you entered "+STRING(eev,2,3)+"): set to "+STRING(eec,2,2));
+  END;
+  PP1:=eec;
+ END;
+ RETURN 1;
+END;
+
+// ---------------- test selection ----------------
+// CHOOSE pattern per lessons learned: init 0, test the index
+LOCAL pv_SelTest()
+BEGIN
+ LOCAL tsel;
+ tsel:=0;
+ CHOOSE(tsel,"PowerViz - Select Test",
+  {"One-Sample Mean (z)",
+   "Two-Sample Means (z)",
+   "One Proportion",
+   "Two Proportions"});
+ IF tsel>0 THEN
+  TT:=tsel;
+  CASE
+   IF TT==1 THEN MM0:=100; MM1:=105; SG:=15; NN:=30; END;
+   IF TT==2 THEN MM0:=100; MM1:=105; SG:=15; NN:=30; END;
+   IF TT==3 THEN PP0:=0.5; PP1:=0.6; NN:=100; END;
+   IF TT==4 THEN PP0:=0.5; PP1:=0.6; NN:=100; END;
+  END;
+  AL:=0.05; TL:=1; pv_SyncA();
+ END;
+ RETURN tsel;
+END;
+
+// ---------------- where the n formula comes from (v2.5) ----------------
+// A drawn page: the power equation for the test on screen; the CAS
+// solves it for n with za and zb as SYMBOLS (they are not whole
+// numbers, and no decimal may go into CAS text); the CAS puts in the
+// student's sigma, means or proportions exactly, z still symbols; PPL
+// puts in the z values the plot uses and gets the number; rounding up;
+// the comparison with n80 (found by trying n = 2, 3, ...).
+// Opening the page is an event: the CAS is asked here and only here,
+// and only if the test (FSYK) or the values (FSNK) changed since the
+// last time.  Any key or tap goes back.
+LOCAL pv_Formula()
+BEGIN
+ LOCAL fza, fzb, fln, fcl, ft0;
+ LOCAL fdl, fs1, fs2, fs3, fnc, fok;
+ LOCAL fdn, fii;
+
+ fza := NORMALD_ICDF(0,1,1-AL/TL);       // the plot's own critical z
+ fzb := NORMALD_ICDF(0,1,0.8);           // power 0.80
+ fdl := ABS(IFTE(TT<=2, MM1-MM0, PP1-PP0));
+ fdn := pv_DName();
+ ft0 := TICKS; fok := 1;
+
+ // ---- the CAS: the symbolic solve (once per test) ----
+ IF FSYK <> TT THEN
+  FSY := pv_Strip(pv_Cas(pv_Eq({"pvs", "pvd", "pvp", "pvr", "pvm"})));
+  IF pv_CasUse(FSY) == 0 THEN FSY := ""; END;
+  FSYK := TT;
+ END;
+ IF DIM(FSY) == 0 THEN fok := 0; END;
+ // ---- the CAS: the student's numbers put in, z kept as symbols ----
+ fs1 := {TT, MM0, MM1, SG, PP0, PP1};
+ IF pv_Same(FSNK, fs1) == 0 THEN
+  FSN := "";
+  IF fdl > 0 THEN
+   IF TT<=2 THEN
+    fs2 := pv_RatS(SG);
+    fs3 := pv_RatS(MAX(MM0,MM1)) + "-" + pv_RatS(MIN(MM0,MM1));   // the size of the difference
+    IF DIM(fs2) > 0 AND DIM(pv_RatS(MM0)) > 0 AND DIM(pv_RatS(MM1)) > 0 THEN
+     FSN := pv_Strip(pv_Cas(pv_Eq({fs2, "(" + fs3 + ")", "", "", ""})));
+    END;
+   ELSE
+    fs2 := pv_RatS(PP0); fs3 := pv_RatS(PP1);
+    IF DIM(fs2) > 0 AND DIM(fs3) > 0 THEN
+     FSN := pv_Strip(pv_Cas(pv_Eq({"", "(" + pv_RatS(MAX(PP0,PP1)) + "-" + pv_RatS(MIN(PP0,PP1)) + ")",
+                                   fs2, fs3, "((" + fs2 + "+" + fs3 + ")/2)"})));
+    END;
+   END;
+   IF pv_CasUse(FSN) == 0 THEN FSN := ""; END;
+  END;
+  FSNK := fs1;
+ END;
+ IF DIM(FSN) == 0 AND fdl > 0 THEN fok := 0; END;
+ FCMS := TICKS - ft0;
+ pvCasOK := fok;
+
+ // ---- the lines of the page ----
+ // 1-2: what "power 0.80" means geometrically
+ fln := {"Power = 0.80 when H₁'s centre is zβ SE₁ past the",
+         "critical line, which is zα SE₀ past H₀'s centre:"};
+ fcl := {cnul, cnul};
+ // 3: the power equation, and the standard errors of the program's model
+ IF TT==1 THEN
+  fln := CONCAT(fln, {"  (μ₁−μ₀ − zα×SE₀)/SE₁ = zβ,  SE₀ = SE₁ = σ/"+SQG+"n"});
+  fcl := CONCAT(fcl, {cblk});
+ END;
+ IF TT==2 THEN
+  fln := CONCAT(fln, {"  (μ₂−μ₁ − zα×SE₀)/SE₁ = zβ,  SE₀ = SE₁ = σ"+SQG+"(2/n)"});
+  fcl := CONCAT(fcl, {cblk});
+ END;
+ IF TT==3 THEN
+  fln := CONCAT(fln, {"  (p₁−p₀ − zα×SE₀)/SE₁ = zβ,",
+                      "  SE₀ = "+SQG+"(p₀(1−p₀)/n),  SE₁ = "+SQG+"(p₁(1−p₁)/n)"});
+  fcl := CONCAT(fcl, {cblk, cblk});
+ END;
+ IF TT==4 THEN
+  fln := CONCAT(fln, {"  (p₂−p₁ − zα×SE₀)/SE₁ = zβ,  "+CHAR(57345)+" = (p₁+p₂)/2,",
+                      "  SE₀ = "+SQG+"(2"+CHAR(57345)+"(1−"+CHAR(57345)+")/n),  SE₁ = "+SQG+"((p₁(1−p₁)+p₂(1−p₂))/n)"});
+  fcl := CONCAT(fcl, {cblk, cblk});
+ END;
+ // 4-5: the CAS's symbolic solve (or the textbook form without it)
+ IF DIM(FSY) > 0 THEN
+  fln := CONCAT(fln, {"CAS, solved for n:"});
+  fs1 := pv_Wrap("  n = "+pv_Disp(FSY), 54);
+ ELSE
+  fln := CONCAT(fln, {"(no CAS: the formula as textbooks print it)"});
+  IF TT==1 THEN fs1 := {"  n = ((zα+zβ)×σ/(μ₁−μ₀))^2"}; END;
+  IF TT==2 THEN fs1 := {"  n = 2×((zα+zβ)×σ/(μ₂−μ₁))^2"}; END;
+  IF TT==3 THEN fs1 := pv_Wrap("  n = ((zα"+SQG+"(p₀(1−p₀)) + zβ"+SQG+"(p₁(1−p₁)))/(p₁−p₀))^2", 54); END;
+  IF TT==4 THEN fs1 := pv_Wrap("  n = ((zα"+SQG+"(2"+CHAR(57345)+"(1−"+CHAR(57345)+")) + zβ"+SQG+"(p₁(1−p₁)+p₂(1−p₂)))/(p₂−p₁))^2", 54); END;
+ END;
+ fcl := CONCAT(fcl, {cgry});
+ fln := CONCAT(fln, fs1);
+ FOR fii FROM 1 TO SIZE(fs1) DO fcl := CONCAT(fcl, {calt}); END;
+ // 6-7: the CAS with the student's numbers, z still symbols
+ IF TT<=2 THEN
+  fs2 := "σ = "+pv_NumD(SG)+", |"+MID(fdn,2,DIM(fdn)-2)+"| = "+pv_NumD(fdl);
+ ELSE
+  fs2 := IFTE(TT==3,"p₀","p₁")+" = "+pv_NumD(PP0)+", "+IFTE(TT==3,"p₁","p₂")+" = "+pv_NumD(PP1);
+ END;
+ IF fdl == 0 THEN
+  fln := CONCAT(fln, {"No effect ("+fs2+"): no n is enough."});
+  fcl := CONCAT(fcl, {ccrt});
+ ELSE
+  IF DIM(FSN) > 0 THEN
+   fln := CONCAT(fln, {"CAS, with "+fs2+" (z kept exact):"});
+   fs1 := pv_Wrap("  n = "+pv_Disp(FSN), 54);
+  ELSE
+   fln := CONCAT(fln, {"(no CAS line with "+fs2+")"});
+   fs1 := {};
+  END;
+  fcl := CONCAT(fcl, {cgry});
+  fln := CONCAT(fln, fs1);
+  FOR fii FROM 1 TO SIZE(fs1) DO fcl := CONCAT(fcl, {calt}); END;
+  // 8-9: PPL puts in the z values (the plot's own) and gets the number
+  fln := CONCAT(fln, {"PPL: zα = z("+pv_NumD(1-AL/TL)+") = "+pv_FMT(fza,3)+", zβ = z(0.80) = "+pv_FMT(fzb,3)});
+  fcl := CONCAT(fcl, {cgry});
+  IF TT==1 THEN fs3 := "(("+pv_NumD(SG)+"×"+pv_FMT(fza,3)+" + "+pv_NumD(SG)+"×"+pv_FMT(fzb,3)+")/"+pv_NumD(fdl)+")^2"; END;
+  IF TT==2 THEN fs3 := "(("+pv_NumD(SG)+SQG+"2×"+pv_FMT(fza,3)+" + "+pv_NumD(SG)+SQG+"2×"+pv_FMT(fzb,3)+")/"+pv_NumD(fdl)+")^2"; END;
+  IF TT==3 THEN fs3 := "(("+SQG+"("+pv_NumD(PP0*(1-PP0))+")×"+pv_FMT(fza,3)+" + "+SQG+"("+pv_NumD(PP1*(1-PP1))+")×"+pv_FMT(fzb,3)+")/"+pv_NumD(fdl)+")^2"; END;
+  IF TT==4 THEN
+   fnc := (PP0+PP1)/2;
+   fs3 := "(("+SQG+"("+pv_NumD(2*fnc*(1-fnc))+")×"+pv_FMT(fza,3)+" + "+SQG+"("+pv_NumD(PP0*(1-PP0)+PP1*(1-PP1))+")×"+pv_FMT(fzb,3)+")/"+pv_NumD(fdl)+")^2";
+  END;
+  IF DIM(fs3) + 15 <= 54 THEN
+   fs1 := {"  n = "+fs3+" = "+pv_FMT(NCF,2)};
+  ELSE
+   fs1 := CONCAT(pv_Wrap("  n = "+fs3, 54), {"    = "+pv_FMT(NCF,2)});
+  END;
+  fln := CONCAT(fln, fs1);
+  FOR fii FROM 1 TO SIZE(fs1) DO fcl := CONCAT(fcl, {cblk}); END;
+  // 10: round UP -- a fraction of a person is not a person, and a
+  // smaller whole n would fall short of 0.80
+  // and n80, found by trying n = 2, 3, 4 ... (the panel's number)
+  fnc := MAX(2, CEILING(NCF));
+  IF N80 > 0 THEN
+   fs2 := ";  trying n: "+N80L+" = "+pv_IStr(N80);
+  ELSE
+   fs2 := ";  trying n: "+N80L+" > 5000";
+  END;
+  IF CEILING(NCF) < 2 THEN
+   fln := CONCAT(fln, {"Round UP: "+pv_IStr(CEILING(NCF))+", but n starts at 2"+fs2});
+  ELSE
+   fln := CONCAT(fln, {"Round UP (whole people): n = "+pv_IStr(fnc)+fs2});
+  END;
+  fcl := CONCAT(fcl, {cgrn});
+  // 11-12: the comparison with n80, and why they can differ
+  IF TL == 1 THEN
+   IF N80 == fnc OR N80 < 0 THEN
+    fln := CONCAT(fln, {"1-sided: the formula is exact, so the two agree."});
+   ELSE
+    fln := CONCAT(fln, {"1-sided: exact; they differ only by rounding at",
+                        "a whole number."});
+   END;
+  ELSE
+   IF N80 == fnc OR N80 < 0 THEN
+    fln := CONCAT(fln, {"2-sided: the formula drops the far tail; its",
+                        "tiny extra power changes nothing here."});
+   ELSE
+    fln := CONCAT(fln, {"2-sided: the formula drops the far tail, whose",
+                        "tiny extra power lets "+N80L+" stop "+pv_IStr(fnc-N80)+" sooner."});
+   END;
+  END;
+  FOR fii FROM SIZE(fcl)+1 TO SIZE(fln) DO fcl := CONCAT(fcl, {cgry}); END;
+ END;
+
+ // ---- draw it: composed on G1, one blit (house idiom) ----
+ DIMGROB_P(G1,320,240,cwht);
+ RECT_P(G1,2,2,317,24,cfrm,cfil);
+ TEXTOUT_P("Where n comes from",G1,8,6,2,cfrm);
+ fs3 := "decimal";
+ IF pvCasOK==1 THEN fs3 := "exact (CAS)"; END;
+ TEXTOUT_P(fs3,G1,236,9,1,cfot);
+ // up to 15 lines of the small font, 13 px apart: y 30 ... 212
+ FOR fii FROM 1 TO MIN(15, SIZE(fln)) DO
+  TEXTOUT_P(fln(fii),G1,8,17+13*fii,1,fcl(fii));
+ END;
+ TEXTOUT_P("any key or tap = back   (CAS: "+pv_IStr(FCMS)+" ms)",G1,12,226,1,cfot);
+ BLIT_P(G0,0,0,G1);
+ pv_WaitAny();
+ WFIT:=1;
+END;
+
+// ---------------- help ----------------
+// v2.3: a drawn page instead of a MSGBOX (the Prime shows about five
+// lines of a message box).  v2.4: two pages -- keys and soft keys,
+// then touch and the picture.  Each is composed on G1 and shown with
+// one blit; any key or a tap moves on (drain, wait, drain).  v2.5: a
+// third page, the sample-size formula and what the CAS does there.
+LOCAL pv_ShowHelp()
+BEGIN
+ // ---- page 1: soft keys and keys ----
+ DIMGROB_P(G1,320,240,cwht);
+ RECT_P(G1,2,2,317,24,cfrm,cfil);
+ TEXTOUT_P("PowerViz  help  1/3: keys",G1,8,6,2,cfrm);
+ TEXTOUT_P("SOFT KEYS (the strip along the bottom):",G1,12,30,1,cnul);
+ TEXTOUT_P("Edit = all values,  Tails = 1- or 2-sided",G1,12,43,1,cblk);
+ TEXTOUT_P("α− / α+ = α ladder .001 .005 .01 .02 .05 .10 .20",G1,12,56,1,cblk);
+ TEXTOUT_P("Pow-n = power vs n (touch the curve to pick n)",G1,12,69,1,cblk);
+ TEXTOUT_P("Menu = effect-size view, n formula, test, help",G1,12,82,1,cblk);
+ TEXTOUT_P("LIVE CONTROLS (keys):",G1,12,98,1,cnul);
+ TEXTOUT_P("LEFT/RIGHT = effect size,  UP/DOWN = n per group",G1,12,111,1,cblk);
+ TEXTOUT_P("+/- = α ladder,  0 = re-fit the window",G1,12,124,1,cblk);
+ TEXTOUT_P("Enter = menu,  Esc = exit and export",G1,12,137,1,cblk);
+ TEXTOUT_P("d, h = Cohen's standardized effect",G1,12,153,1,calt);
+ TEXTOUT_P("  .2 small  .5 medium  .8 large  (below .2: tiny)",G1,12,166,1,calt);
+ TEXTOUT_P("SE₀ = the standard error of the H₀ curve, worked",G1,12,182,1,cgry);
+ TEXTOUT_P("out from your σ (or p) and n",G1,12,195,1,cgry);
+ TEXTOUT_P("any key or tap = next page",G1,12,222,1,cfot);
+ BLIT_P(G0,0,0,G1);
+ pv_WaitAny();
+
+ // ---- page 2: touch, and what the picture shows ----
+ DIMGROB_P(G1,320,240,cwht);
+ RECT_P(G1,2,2,317,24,cfrm,cfil);
+ TEXTOUT_P("PowerViz  help  2/3: touch",G1,8,6,2,cfrm);
+ TEXTOUT_P("DRAG ON THE PLOT:",G1,12,30,1,cnul);
+ TEXTOUT_P("sideways near H₁ = move the alternative",G1,12,43,1,cblk);
+ TEXTOUT_P("the dashed red line = set α by hand; on lift",G1,12,56,1,cblk);
+ TEXTOUT_P("  it snaps to the ladder if within 15 %",G1,12,69,1,cblk);
+ TEXTOUT_P("up or down = n (one step per 12 px)",G1,12,82,1,cblk);
+ TEXTOUT_P("TAP THE READOUT:",G1,12,98,1,cnul);
+ TEXTOUT_P("n = type n;  μ₁, p₁, d or h = type the effect",G1,12,111,1,cblk);
+ TEXTOUT_P("α or zcrit = pick α from the ladder",G1,12,124,1,cblk);
+ TEXTOUT_P("THE PICTURE:",G1,12,140,1,cnul);
+ TEXTOUT_P("blue = H₀, magenta = H₁, pale magenta = H₁ before",G1,12,153,1,cgry);
+ TEXTOUT_P("red = α, yellow = β, green = power, dashes = crit",G1,12,166,1,cgry);
+ TEXTOUT_P(N80L+" = smallest n per group with power of 0.80",G1,12,182,1,cgrn);
+ TEXTOUT_P("  or more (a green dotted line in Pow-n)",G1,12,195,1,cgrn);
+ TEXTOUT_P("any key or tap = next page",G1,12,222,1,cfot);
+ BLIT_P(G0,0,0,G1);
+ pv_WaitAny();
+
+ // ---- page 3 (v2.5): the sample-size formula and the CAS ----
+ DIMGROB_P(G1,320,240,cwht);
+ RECT_P(G1,2,2,317,24,cfrm,cfil);
+ TEXTOUT_P("PowerViz  help  3/3: the n formula",G1,8,6,2,cfrm);
+ TEXTOUT_P(N80L+" = 56 (55.6): 56 is found by TRYING n = 2, 3 ...",G1,12,30,1,cgrn);
+ TEXTOUT_P("  with the power engine; 55.6 is the FORMULA's n.",G1,12,43,1,cgrn);
+ TEXTOUT_P("Tap that line (or Menu, Sample-size formula):",G1,12,59,1,cnul);
+ TEXTOUT_P("  the power equation (μ₁−μ₀ − zα SE₀)/SE₁ = zβ,",G1,12,72,1,cblk);
+ TEXTOUT_P("  solved for n by the CAS with zα, zβ as symbols,",G1,12,85,1,cblk);
+ TEXTOUT_P("  then your σ and means put in exactly (CAS),",G1,12,98,1,cblk);
+ TEXTOUT_P("  then the z values put in (PPL): the number.",G1,12,111,1,cblk);
+ TEXTOUT_P("Round UP: 55.6 people means 56.",G1,12,127,1,cgrn);
+ TEXTOUT_P("1-sided: the formula is exact, so they agree.",G1,12,143,1,cgry);
+ TEXTOUT_P("2-sided: it drops the far tail, so "+N80L+" can be",G1,12,156,1,cgry);
+ TEXTOUT_P("  one smaller than the rounded formula.",G1,12,169,1,cgry);
+ TEXTOUT_P("exact (CAS) = the CAS did the algebra; decimal =",G1,12,185,1,cfot);
+ TEXTOUT_P("  no CAS: the formula is shown as texts print it.",G1,12,198,1,cfot);
+ TEXTOUT_P("any key or tap = back",G1,12,222,1,cfot);
+ BLIT_P(G0,0,0,G1);
+ pv_WaitAny();
+END;
+
+// ---------------- Enter menu (all extra features live here) ----------------
+LOCAL pv_MainMenu()
+BEGIN
+ LOCAL msel;
+ msel:=0;
+ CHOOSE(msel,"PowerViz Menu",
+  {"Edit values",
+   "Toggle 1/2-sided",
+   "Set α",
+   "Power vs n curve",
+   "Power vs effect size",
+   "Sample-size formula",
+   "Change test",
+   "Help",
+   "Return to plot"});
+ IF msel==1 THEN pv_EditForm(); END;
+ IF msel==2 THEN pv_Tails(); END;
+ IF msel==3 THEN pv_AChoose(); END;
+ IF msel==4 THEN pv_Setup(); pv_PowNView(); END;
+ IF msel==5 THEN pv_Setup(); pv_PowEView(); END;
+ // v2.5: where the n formula comes from (pv_Setup first: n80 and the
+ // formula's n must be for the values just edited)
+ IF msel==6 THEN pv_Setup(); pv_Formula(); END;
+ IF msel==7 THEN
+  IF pv_SelTest()>0 THEN pv_EditForm(); END;
+ END;
+ IF msel==8 THEN pv_ShowHelp(); END;
+END;
+
+// ---------------- effect / n stepping ----------------
+// Each press moves to the NEXT multiple of the step rather than adding
+// to whatever is there, so an odd value (103.7) snaps onto the grid
+// (104) and stays round from then on (NormExp beta 26).
+LOCAL pv_StepEff(dd)
+BEGIN
+ LOCAL es;
+ es := pv_EffStep();
+ IF TT<=2 THEN
+  IF dd>0 THEN
+   MM1:=ROUND((FLOOR(MM1/es+0.000001)+1)*es,6);
+  ELSE
+   MM1:=ROUND((CEILING(MM1/es-0.000001)-1)*es,6);
+  END;
+ ELSE
+  IF dd>0 THEN
+   PP1:=ROUND((FLOOR(PP1/es+0.000001)+1)*es,6);
+  ELSE
+   PP1:=ROUND((CEILING(PP1/es-0.000001)-1)*es,6);
+  END;
+  PP1:=MIN(0.98,MAX(0.02,PP1));
+ END;
+END;
+
+LOCAL pv_StepN(dd)
+BEGIN
+ LOCAL sn:=1;
+ IF dd>0 THEN
+  IF NN>=100 THEN
+   sn:=10;
+  ELSE
+   IF NN>=20 THEN sn:=5; END;
+  END;
+ ELSE
+  IF NN>100 THEN
+   sn:=10;
+  ELSE
+   IF NN>20 THEN sn:=5; END;
+  END;
+ END;
+ // snap to the grid of the step, as pv_StepEff does (33 -> 35 -> 40)
+ IF dd>0 THEN
+  NN:=(FLOOR(NN/sn+0.000001)+1)*sn;
+ ELSE
+  NN:=(CEILING(NN/sn-0.000001)-1)*sn;
+ END;
+ NN:=MIN(5000,MAX(2,NN));
+END;
+
+// ---------------- soft keys (v2.4) ----------------
+// Slot 1..6 of DRAWMENU({"Edit","Tails","α−","α+","Pow-n","Menu"}).
+// The labels never produce a key code; the hardware keys stay as
+// shortcuts (Enter = Menu, +/- = α+/α−).  Returns 1: redraw.
+LOCAL pv_Soft(sl)
+BEGIN
+ IF sl==1 THEN pv_EditForm(); pv_Drain(); WFIT:=1; END;   // Edit
+ IF sl==2 THEN pv_Tails(); END;                            // Tails
+ IF sl==3 THEN pv_AStep(-1); END;                          // α−
+ IF sl==4 THEN pv_AStep(1); END;                           // α+
+ IF sl==5 THEN pv_Setup(); pv_PowNView(); END;             // Pow-n
+ IF sl==6 THEN pv_MainMenu(); pv_Drain(); WFIT:=1; END;    // Menu
+ RETURN 1;
+END;
+
+// ---------------- one touch on the main view (v2.4) ----------------
+// Called by the live loop with the PRESS -- the first MOUSE reading,
+// whose x, y it has already checked are there (SIZE > 0).  Follows the
+// finger until it lifts and returns 1 if the main view must be
+// redrawn, 0 if not.  What the press landed on decides the gesture:
+//   y >= 218        a soft key: slot MIN(6, IP(x/53.4)+1)
+//   a readout cell  n / effect / alpha (hit boxes recorded by pv_Draw)
+//   the plot box    a critical line within 6 px (and nearer than H1's
+//                   centre): alpha; otherwise whichever centre is
+//                   nearer: H1 (ties too) or H0
+// Press or drag: until the finger has moved more than 8 px it is a
+// press; then a mostly vertical move (|dy| > 2|dx|) steps n, anything
+// else moves the thing pressed.  H0 never moves (it is the null).
+// MOUSE here is read as a list of finger lists; only the first
+// finger's x and y (elements 1 and 2) are used, after a SIZE check.
+LOCAL pv_Touch(tx0, ty0)
+BEGIN
+ LOCAL tg, sd, md, ns, nt, hb;
+ LOCAL tm, tm1, tk, tx, ty, dx;
+ LOCAL dy, vx, span, nw, na, i2;
+ LOCAL p0x, p1x, gone, es, hz, nw0;
+
+ // ---- 1. the soft-key strip: act once the finger is off ----
+ IF ty0>=218 THEN
+  pv_TDrain();
+  RETURN pv_Soft(MIN(6,IP(tx0/53.4)+1));
+ END;
+
+ // ---- 2. a readout cell ----
+ hb:=0;
+ FOR i2 FROM 1 TO SIZE(HX1) DO
+  IF tx0>=HX1(i2) AND tx0<=HX2(i2) AND ty0>=HY1(i2) AND ty0<=HY2(i2) THEN
+   hb:=HACT(i2);
+  END;
+ END;
+ IF hb>0 THEN
+  pv_TDrain();
+  IF hb==1 THEN pv_EditN(); END;
+  IF hb==2 THEN pv_EditEff(); END;
+  IF hb==3 THEN pv_AChoose(); END;
+  IF hb==4 THEN pv_Formula(); END;          // v2.5: where n comes from
+  pv_Drain();                               // the form's OK press is spent
+  RETURN 1;
+ END;
+
+ // ---- 3. anywhere else outside the plot box: nothing ----
+ IF tx0<PXL OR tx0>PXR OR ty0<PYT-10 OR ty0>PYB+4 THEN
+  pv_TDrain();
+  RETURN 0;
+ END;
+
+ // ---- 4. inside the plot box: what did the finger land on? ----
+ // tg: 1 = H1, 2 = a critical line (sd: 1 upper, -1 lower), 3 = H0
+ span:=XMX-XMN;
+ p0x:=PXL+(M0v-XMN)/span*(PXR-PXL);
+ p1x:=PXL+(M1v-XMN)/span*(PXR-PXL);
+ tg:=0; sd:=0;
+ IF ABS(tx0-CLX(2))<=6 THEN tg:=2; sd:=1; END;
+ IF ABS(tx0-CLX(1))<=6 THEN
+  IF tg==0 OR ABS(tx0-CLX(1))<ABS(tx0-CLX(2)) THEN tg:=2; sd:=-1; END;
+ END;
+ // the line often sits a few px from H1's centre (4.6 px at the
+ // defaults): a press nearer H1's dotted centre line than the dashed
+ // critical line is a grab of H1, not of alpha
+ IF tg==2 THEN
+  IF ABS(tx0-p1x)<ABS(tx0-CLX(IFTE(sd>0,2,1))) THEN tg:=0; sd:=0; END;
+ END;
+ IF tg==0 THEN
+  IF ABS(tx0-p1x)<=ABS(tx0-p0x) THEN tg:=1; ELSE tg:=3; END;
+ END;
+
+ // ---- 5. follow the finger until it lifts ----
+ // md: 0 not moved yet (a press), 1 H1, 2 alpha, 3 n, 4 H0 (stays)
+ WHLD:=1;                                   // pv_Setup holds the window
+ md:=0; ns:=0; gone:=0; hz:=0;
+ REPEAT
+  tm:=MOUSE;
+  tm1:=tm(1);
+  tk:=GETKEY;
+  IF SIZE(tm1)>0 THEN
+   tx:=tm1(1); ty:=tm1(2);
+   // a reading off the screen is a phantom touch: treat it as a lift
+   IF tx<0 OR tx>319 OR ty<0 OR ty>239 THEN gone:=1; END;
+  ELSE
+   gone:=1;                                 // the finger is off
+  END;
+  IF tk==4 THEN gone:=1; END;               // Esc lets go
+  IF gone==0 THEN
+   dx:=tx-tx0; dy:=ty-ty0;
+   IF md==0 AND (ABS(dx)>8 OR ABS(dy)>8) THEN
+    IF ABS(dy)>2*ABS(dx) THEN
+     md:=3;
+    ELSE
+     md:=4;
+     IF tg==1 THEN md:=1; END;
+     IF tg==2 THEN md:=2; END;
+    END;
+    IF md==1 OR md==3 THEN pv_GSave(); END; // the ghost: H1 as it was
+   END;
+   nw:=0;
+   // -- drag H1: the alternative follows the finger, on the grid --
+   IF md==1 THEN
+    vx:=XMN+(MIN(PXR,MAX(PXL,tx))-PXL)*span/(PXR-PXL);
+    es:=pv_EffStep();
+    IF TT<=2 THEN
+     IF TT==2 THEN vx:=vx+MM0; END;         // the axis is the difference
+     vx:=ROUND(ROUND(vx/es,0)*es,6);
+     IF vx<>MM1 THEN MM1:=vx; nw:=1; END;
+    ELSE
+     IF TT==4 THEN vx:=vx+PP0; END;
+     vx:=MIN(0.98,MAX(0.02,ROUND(ROUND(vx/es,0)*es,6)));
+     IF vx<>PP1 THEN PP1:=vx; nw:=1; END;
+    END;
+    HNT:="H₀ stays put; H₁ follows your finger"; HNC:=calt;
+   END;
+   // -- drag a critical line: alpha = the H0 tail beyond the finger --
+   IF md==2 THEN
+    vx:=XMN+(MIN(PXR,MAX(PXL,tx))-PXL)*span/(PXR-PXL);
+    IF sd>0 THEN
+     na:=1-NORMALD_CDF(M0v,SE0,vx);         // upper tail
+    ELSE
+     na:=NORMALD_CDF(M0v,SE0,vx);           // lower tail
+    END;
+    // 2-sided: the dragged side holds half of alpha (the other mirrors)
+    na:=MIN(0.5,MAX(0.001,na*TL));
+    IF ABS(na-AL)>0.0000001 THEN AL:=na; nw:=1; END;
+    HNT:=pv_ADrag(); HNC:=ccrt;
+   END;
+   // -- vertical drag: n, one step per 12 px (finger up = larger n) --
+   IF md==3 THEN
+    nw0:=NN;
+    nt:=IP(-dy/12);
+    WHILE ns<nt DO pv_StepN(1); ns:=ns+1; END;
+    WHILE ns>nt DO pv_StepN(-1); ns:=ns-1; END;
+    IF NN<>nw0 THEN nw:=1; END;
+    HNT:="n = "+STRING(NN,1,0)+" per group: drag up = larger n"; HNC:=cnul;
+   END;
+   // -- sideways from nearer H0: H0 does not move; say so once --
+   IF md==4 AND hz==0 THEN
+    HNT:="H₀ is the null: it stays put. Drag H₁ instead"; HNC:=cnul;
+    nw:=1; hz:=1;
+   END;
+   IF nw==1 THEN pv_Setup(); pv_Draw(); END;   // from the caches
+  END;
+ UNTIL gone==1;
+ pv_TDrain();                               // capped: never more than 1 s
+ WHLD:=0;                                   // the window may re-fit now
+ IF md==0 THEN
+  HNT:="Drag H₁, the dashed line (α), or up/down (n)"; HNC:=cfot;
+ END;
+ IF md==2 THEN pv_ASnap(); END;
+ RETURN 1;
+END;
+
+// ---------------- main (zero-argument signature) ----------------
+EXPORT POWERVIZ()
+BEGIN
+ LOCAL kk, rd, nl, mm, mmF;
+
+ pv_Init();                                          // palette constants (v2.3)
+
+ IF pv_SelTest()==0 THEN
+  RETURN "Cancelled";
+ END;
+ pv_EditForm();
+
+ DIMGROB_P(G1,320,240,cwht);
+ WFIT:=1;
+ pv_Setup();
+ HNT:="Drag H₁, the dashed line (α), or up/down (n)"; HNC:=cfot;
+ pv_Draw();
+ pv_Drain();                                         // the form's OK press
+ pv_TDrain();                                        // and any finger
+
+ // ---------- live loop: only device-verified key codes ----------
+ // v2.4: MOUSE is polled beside GETKEY.  A touch goes to pv_Touch,
+ // which follows it to the lift; the key paths are exactly as before.
+ REPEAT
+  kk:=GETKEY;
+  mm:=MOUSE;
+  mmF:=mm(1);
+  rd:=0;
+
+  IF SIZE(mmF)>0 THEN
+   rd:=pv_Touch(mmF(1),mmF(2));
+   IF kk<>4 THEN kk:=-1; END;                     // a touch is not a key
+  ELSE
+   // Arrows: act on the code GETKEY just returned OR on the key still
+   // being held.  v2.2 tested ISKEYDOWN alone, so a short tap whose
+   // code GETKEY had already consumed could be missed; a held key
+   // still steps every pass (ISKEYDOWN stays true while it is down).
+   // v2.4: pv_GSave first, so the next frame shows a ghost of H1.
+   IF kk==7  OR ISKEYDOWN(7)  THEN pv_GSave(); pv_StepEff(-1); rd:=1; END;  // Left
+   IF kk==8  OR ISKEYDOWN(8)  THEN pv_GSave(); pv_StepEff(1);  rd:=1; END;  // Right
+   IF kk==2  OR ISKEYDOWN(2)  THEN pv_GSave(); pv_StepN(1);    rd:=1; END;  // Up
+   IF kk==12 OR ISKEYDOWN(12) THEN pv_GSave(); pv_StepN(-1);   rd:=1; END;  // Down
+
+   IF kk==50 THEN pv_AStep(1);  rd:=1; END;       // + : alpha ladder up
+   IF kk==45 THEN pv_AStep(-1); rd:=1; END;       // - : alpha ladder down
+   IF kk==42 THEN WFIT:=1; rd:=1; END;            // 0 : re-fit window
+   IF kk==30 THEN                                  // Enter -> menu
+    pv_MainMenu();
+    pv_Drain();                                    // its Enter is spent
+    WFIT:=1; rd:=1;
+   END;
+  END;
+
+  IF rd THEN
+   pv_Setup();
+   pv_Draw();
+  END;
+  WAIT(0.03);
+ UNTIL kk==4;                                     // Esc
+
+ // ---------- export & summary ----------
+ EP_PWR:=PW;
+ EP_NPG:=NN;
+ EP_ALPHA:=AL;
+ EP_DELTA:=M1v-M0v;
+ EP_ZCRIT:=ZC;
+
+ nl:=CHAR(10);
+ MSGBOX(pv_TName()+nl+
+  "n = "+STRING(NN,1,0)+"/group  α = "+pv_FMTP(AL,3)+"  "+STRING(TL,1,0)+"-sided"+nl+
+  "effect = "+pv_FMT(M1v-M0v,4)+"   "+IFTE(TT<=2,"d","h")+" = "+pv_FMT(pv_EffSz(),3)+nl+
+  "POWER = "+pv_FMTP(PW,4)+"   (β = "+pv_FMTP(1-PW,4)+")"+nl+
+  "Exported: EP_PWR EP_NPG EP_ALPHA EP_DELTA EP_ZCRIT");
+
+ RETURN PW;
+END;

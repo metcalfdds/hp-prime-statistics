@@ -1,0 +1,151 @@
+== Part 1: the Formula page, cas = giac, 77 parameter sets ==
+  Normal             [0.0, 1.0, 0.0]            tail 1  badge exact (CAS)    177 ms  mean ok; e2 ok; var ok
+  Uniform            [0.0, 1.0, 0.0]            tail 1  badge exact (CAS)    157 ms  mean ok; e2 ok; var ok
+  Exponential        [1.0, 0.0, 0.0]            tail 1  badge exact (CAS)    309 ms  mean ok; e2 ok; var ok; cdf ok
+  Weibull            [2.0, 1.0, 0.0]            tail 1  badge exact (CAS)    266 ms  mean ok; e2 ok; var ok; cdf ok
+  LogNormal          [0.0, 1.0, 0.0]            tail 1  badge exact (CAS)    193 ms  mean ok; e2 ok; var ok
+  Laplace            [0.0, 1.0, 0.0]            tail 1  badge exact (CAS)    184 ms  mean ok; e2 ok; var ok
+  Student t          [10.0, 0.0, 0.0]           tail 1  badge exact (CAS)    295 ms  mean ok; e2 ok; var ok
+  Chi-square         [10.0, 0.0, 0.0]           tail 1  badge exact (CAS)    184 ms  mean ok; e2 ok; var ok
+  Fisher F           [10.0, 15.0, 0.0]          tail 1  badge exact (CAS)    243 ms  mean ok; e2 ok; var ok
+  Burr XII           [2.0, 2.0, 1.0]            tail 1  badge exact (CAS)    164 ms  mean ok; e2 ok; var ok
+  Gumbel (max)       [0.0, 1.0, 0.0]            tail 1  badge decimal         96 ms  mean not shown: left undone; e2 not shown: left undone
+  Pareto             [1.0, 3.0, 0.0]            tail 1  badge exact (CAS)    268 ms  mean ok; e2 ok; var ok; cdf ok
+  Rayleigh           [1.5, 0.0, 0.0]            tail 1  badge exact (CAS)    184 ms  mean ok; e2 ok; var ok
+  Logistic           [0.0, 1.0, 0.0]            tail 1  badge exact (CAS)    141 ms  mean ok; e2 not shown: disagreed with the program (-pi^2/3)
+  Binomial           [20.0, 0.5, 0.0]           tail 1  badge exact (CAS)    228 ms  prob ok; pmf ok; mean ok
+  Poisson            [5.0, 0.0, 0.0]            tail 1  badge exact (CAS)    150 ms  prob ok; pmf ok
+  Geometric          [0.3, 0.0, 0.0]            tail 1  badge exact (CAS)    131 ms  prob ok; pmf ok
+  Triangular         [2.0, 5.0, 12.0]           tail 1  badge exact (CAS)    182 ms  mean ok; e2 ok; var ok
+  Cauchy             [0.0, 1.0, 0.0]            tail 1  badge exact (CAS)     56 ms  mean infinite; e2 infinite
+  Frechet            [3.0, 1.0, 0.0]            tail 1  badge decimal         65 ms  mean not shown: left undone; e2 not shown: left undone
+  Gompertz           [0.01, 0.085, 0.0]         tail 1  badge decimal        191 ms  mean not shown: left undone; e2 not shown: left undone
+  Maxwell-Boltzmann  [1.0, 0.0, 0.0]            tail 1  badge exact (CAS)    189 ms  mean ok; e2 ok; var ok
+  Erlang             [3.0, 1.0, 0.0]            tail 1  badge exact (CAS)    177 ms  mean ok; e2 ok; var ok
+  Gamma              [2.5, 2.0, 0.0]            tail 1  badge exact (CAS)    195 ms  mean ok; e2 ok; var ok
+  Beta               [2.0, 5.0, 0.0]            tail 1  badge exact (CAS)    190 ms  mean ok; e2 ok; var ok
+  Negative binomial  [3.0, 0.4, 0.0]            tail 1  badge exact (CAS)    110 ms  prob ok; pmf ok
+  Hypergeometric     [50.0, 40.0, 6.0]          tail 1  badge exact (CAS)    177 ms  prob ok; pmf ok; mean ok
+  Exponential        [0.5, 0.0, 0.0]            tail 1  badge exact (CAS)    242 ms  mean ok; e2 ok; var ok; cdf ok
+  Normal             [100.0, 15.0, 0.0]         tail 1  badge exact (CAS)    180 ms  mean ok; e2 ok; var ok
+  Weibull            [2.5, 3.0, 0.0]            tail 1  badge exact (CAS)    328 ms  mean ok; e2 ok; var ok; cdf ok
+  LogNormal          [0.5, 0.25, 0.0]           tail 1  badge exact (CAS)    223 ms  mean ok; e2 ok; var ok
+  Laplace            [1.0, 2.0, 0.0]            tail 1  badge exact (CAS)    191 ms  mean ok; e2 ok; var ok
+  Student t          [1.0, 0.0, 0.0]            tail 1  badge exact (CAS)     75 ms  mean infinite; e2 infinite
+  Student t          [2.0, 0.0, 0.0]            tail 1  badge exact (CAS)    113 ms  mean ok; e2 infinite
+  Student t          [5.0, 0.0, 0.0]            tail 1  badge exact (CAS)    190 ms  mean ok; e2 ok; var ok
+  Chi-square         [3.0, 0.0, 0.0]            tail 1  badge exact (CAS)    196 ms  mean ok; e2 ok; var ok
+  Chi-square         [2.5, 0.0, 0.0]            tail 1  badge exact (CAS)    157 ms  mean ok; e2 ok; var ok
+  Fisher F           [4.0, 6.0, 0.0]            tail 1  badge exact (CAS)    185 ms  mean ok; e2 ok; var ok
+  Fisher F           [4.0, 2.0, 0.0]            tail 1  badge exact (CAS)     57 ms  mean infinite; e2 infinite
+  Burr XII           [3.0, 2.5, 2.0]            tail 1  badge decimal        157 ms  mean not shown: left undone; e2 not shown: left undone
+  Burr XII           [1.0, 1.0, 1.0]            tail 1  badge exact (CAS)     61 ms  mean infinite; e2 infinite
+  Pareto             [5.0, 1.5, 0.0]            tail 1  badge exact (CAS)    154 ms  mean ok; e2 infinite; cdf ok
+  Pareto             [1.0, 1.0, 0.0]            tail 1  badge exact (CAS)    131 ms  mean infinite; e2 infinite; cdf ok
+  Pareto             [2.0, 2.5, 0.0]            tail 1  badge exact (CAS)    255 ms  mean ok; e2 ok; var ok; cdf ok
+  Rayleigh           [2.0, 0.0, 0.0]            tail 1  badge exact (CAS)    190 ms  mean ok; e2 ok; var ok
+  Logistic           [1.0, 2.0, 0.0]            tail 1  badge exact (CAS)    190 ms  mean ok; e2 not shown: left undone
+  Triangular         [2.0, 2.0, 12.0]           tail 1  badge exact (CAS)    189 ms  mean ok; e2 ok; var ok
+  Triangular         [0.0, 10.0, 10.0]          tail 1  badge exact (CAS)    172 ms  mean ok; e2 ok; var ok
+  Cauchy             [3.0, 0.5, 0.0]            tail 1  badge exact (CAS)     57 ms  mean infinite; e2 infinite
+  Frechet            [1.5, 2.0, 1.0]            tail 1  badge decimal         92 ms  mean not shown: left undone; e2 not shown: left undone
+  Maxwell-Boltzmann  [2.0, 0.0, 0.0]            tail 1  badge exact (CAS)    197 ms  mean ok; e2 ok; var ok
+  Erlang             [2.0, 0.5, 0.0]            tail 1  badge exact (CAS)    229 ms  mean ok; e2 ok; var ok
+  Gamma              [0.5, 1.0, 0.0]            tail 1  badge exact (CAS)    246 ms  mean ok; e2 ok; var ok
+  Gamma              [3.0, 2.0, 0.0]            tail 1  badge exact (CAS)    201 ms  mean ok; e2 ok; var ok
+  Beta               [0.5, 0.5, 0.0]            tail 1  badge exact (CAS)    196 ms  mean ok; e2 ok; var ok
+  Beta               [0.3, 4.0, 0.0]            tail 1  badge exact (CAS)    208 ms  mean ok; e2 ok; var ok
+  Uniform            [-1.5, 4.0, 0.0]           tail 1  badge exact (CAS)    170 ms  mean ok; e2 ok; var ok
+  Gumbel (max)       [2.0, 3.0, 0.0]            tail 1  badge decimal        232 ms  mean not shown: left undone; e2 not shown: left undone
+  Exponential        [0.3333, 0.0, 0.0]         tail 1  badge exact (CAS)    275 ms  mean ok; e2 ok; var ok; cdf ok
+  Normal             [2.0, 0.3333, 0.0]         tail 1  badge exact (CAS)    185 ms  mean ok; e2 ok; var ok
+  Weibull            [2.0, 0.3333, 0.0]         tail 1  badge exact (CAS)    276 ms  mean ok; e2 ok; var ok; cdf ok
+  Pareto             [1.0, 0.3333, 0.0]         tail 1  badge exact (CAS)    153 ms  mean not shown: left undone; e2 not shown: left undone; cdf ok
+  Rayleigh           [3.1416, 0.0, 0.0]         tail 1  badge exact (CAS)    239 ms  mean ok; e2 ok; var ok
+  Gamma              [2.0, 0.3333, 0.0]         tail 1  badge exact (CAS)    199 ms  mean ok; e2 ok; var ok
+  Binomial           [20.0, 0.5, 0.0]           tail 2  badge exact (CAS)    189 ms  prob ok; pmf ok; mean ok
+  Binomial           [20.0, 0.37, 0.0]          tail 3  badge exact (CAS)    108 ms  prob ok; mean ok
+  Binomial           [5.0, 0.3333, 0.0]         tail 1  badge exact (CAS)    180 ms  prob ok; pmf ok; mean ok
+  Poisson            [5.0, 0.0, 0.0]            tail 2  badge exact (CAS)    130 ms  prob ok; pmf ok
+  Poisson            [2.5, 0.0, 0.0]            tail 3  badge exact (CAS)     70 ms  prob ok
+  Poisson            [0.3333, 0.0, 0.0]         tail 1  badge exact (CAS)    137 ms  prob ok; pmf ok
+  Geometric          [0.3, 0.0, 0.0]            tail 2  badge exact (CAS)    122 ms  prob ok; pmf ok
+  Negative binomial  [3.0, 0.4, 0.0]            tail 3  badge exact (CAS)     57 ms  prob ok
+  Hypergeometric     [50.0, 40.0, 6.0]          tail 2  badge exact (CAS)    188 ms  prob ok; pmf ok; mean ok
+  Hypergeometric     [1000.0, 400.0, 50.0]      tail 1  badge exact (CAS)    215 ms  prob ok; pmf ok; mean ok
+  Binomial           [500.0, 0.5, 0.0]          tail 1  badge decimal          0 ms  (no CAS: These numbers are too large for an exact sum)
+  Exponential        [0.5, 0.0, 0.0]            tail 3  badge exact (CAS)    285 ms  mean ok; e2 ok; var ok; cdf ok
+  Pareto             [1.0, 3.0, 0.0]            tail 2  badge exact (CAS)    241 ms  mean ok; e2 ok; var ok; cdf ok
+
+  [ok] every CAS answer the page shows agrees with SciPy (no wrong formula) -- 197 shown and correct, 16 rejected, 0 wrong
+  [ok] exact comparisons (fractions / SymPy integrals) agree -- 98 of 98
+  Giac time over all 77 pages: 13.6 s; slowest page 328 ms (Weibull [2.5, 3.0, 0.0])
+
+== Part 2: cas = fail, all 27 families at their defaults ==
+  [ok] all 27: "decimal" badge, the program's decimals, no runtime error -- []
+
+== Part 3: the touch and key paths ==
+  [ok] More, More: page 3 is {Formula, Help, , , Menu, More}
+  [ok] page 2 still {Edit, Numbers, CDF, Refit, Menu, More}
+  [ok] page 3, Formula: the Formula page opens (1 screens) and asks the CAS
+  [ok] page 3, Help: the help pages open (2.7b: the title says v2.7b)
+  [ok] page 3, Menu: leaves the plot
+  [ok] More three times comes back to page 1 -- ['P<=x', 'P>x', 'a<X<b', 'Zoom−', 'Zoom+', 'More']
+  [ok] Enter -> "Plot options" item 2 is "Formula page (CAS)" -- ['Numbers page', 'Formula page (CAS)', 'CDF curve on/off']
+  [ok] opened twice from the options: built once (8 CAS calls), shown twice
+  [ok] a drag on the plot (6 frames) calls the CAS 0 times
+  [ok] new parameters: the page is rebuilt (8 CAS calls), mean 4 shown
+  [ok] the plot frame (texts, shapes, soft keys) is identical to v2.6 for 5 distributions
+  [ok] st_Cas drops one surrounding pair of quotes: '"1/2"' -> '1/2'; "undef" -> ''; 2.7a: the infinity signs -> '', ''
+
+== Part 4 (2.7a): v2.7 in harness v3c; the infinity probe; the glyph refusals ==
+  [ok] 2.7a: v2.7 in v3b shows no closed form (badge ['decimal']) -- the emulator's finding
+  [ok] 2.7a: Exponential(0.5): exact page, every CAS text asks for string(...), every answer quoted, no CAS variable assigned, no CAS call of a variable
+  [ok] 2.7a: Cauchy [0.0, 1.0, 0.0]: the probe exp(-(...)) answered ['0', '0']; "NO mean" 1 (want 1), "NO variance" 1 (want 1)
+  [ok] 2.7a: Student t [1.0, 0.0, 0.0]: the probe exp(-(...)) answered ['0', '0']; "NO mean" 1 (want 1), "NO variance" 1 (want 1)
+  [ok] 2.7a: Student t [2.0, 0.0, 0.0]: the probe exp(-(...)) answered ['0']; "NO mean" 0 (want 0), "NO variance" 1 (want 1)
+  [ok] 2.7a: Fisher F [4.0, 2.0, 0.0]: the probe exp(-(...)) answered ['0', '0']; "NO mean" 1 (want 1), "NO variance" 1 (want 1)
+  [ok] 2.7a: Burr XII [1.0, 1.0, 1.0]: the probe exp(-(...)) answered ['0', '0']; "NO mean" 1 (want 1), "NO variance" 1 (want 1)
+  [ok] 2.7a: Pareto [1.0, 1.0, 0.0]: the probe exp(-(...)) answered ['0', '0']; "NO mean" 1 (want 1), "NO variance" 1 (want 1)
+  [ok] 2.7a: Pareto [5.0, 1.5, 0.0]: the probe exp(-(...)) answered ['0']; "NO mean" 0 (want 0), "NO variance" 1 (want 1)
+  [ok] 2.7a: Cauchy [3.0, 0.5, 0.0]: the probe exp(-(...)) answered ['0', '0']; "NO mean" 1 (want 1), "NO variance" 1 (want 1)
+  [ok] 2.7a: exp(-(simplify(int(stqx*exp(-stqx),stqx,0,inf)))) = 1/e^(1) -> 0.0
+  [ok] 2.7a: exp(-(simplify(int(-stqx/(pi*(1+stqx^2)),stqx,0,in)) = ∞ -> refused by st_Cas
+  [ok] 2.7a: exp(-(simplify(int(stqx/(pi*(1+stqx^2)),stqx,0,inf)) = 0 -> 1.0
+  [ok] 2.7a: exp(-(simplify(int(stqx/(pi*(1+stqx^2)),stqx,0,1)))) = e^(-ln(2)/(2*pi)) -> 0.0
+  [ok] 2.7a: st_FmGood refuses '∫(stqx^2,stqx,0,1)'
+  [ok] 2.7a: st_FmGood refuses '∑(stqk,stqk,0,5)'
+  [ok] 2.7a: st_FmGood refuses 'Σ(stqk,stqk,0,5)'
+  [ok] 2.7a: st_FmGood still takes an ordinary closed form
+
+== Part 5 (2.7b): a fractional df for the chi-square and F; the INPUT labels ==
+  [ok] 5a v2.7a in v3c: ChiSquare df 2.5 stops with "Invalid input" (the emulator's finding) -- CHISQUARE_CDF: Invalid input (df = 2.5 is not a whole number; the calculator's chi-square and F CDF and ICDF take whole-
+  [ok] 5a v2.7b: ChiSquare df 2.5, P(X <= 5) = 0.876911 (SciPy 0.876911), no error -- StatDist: P(X <= 5) = 0.876911 None
+  [ok] 5a v2.7b: the plot is drawn (the shaded tail and the P readout) -- 1
+  [ok] 5a v2.7b: ChiSquare df 2.5, P(X > 5) = 0.123089 -- StatDist: P(X > 5) = 0.123089 None
+  [ok] 5a v2.7a in v3c: F(2.5, 7.5) stops with "Invalid input" too -- FISHER_CDF: Invalid input (df = 2.5 is not a whole number; the calculator's chi-square and F CDF and ICDF take whole-num
+  [ok] 5a v2.7b: F(2.5, 7.5), P(X <= 2) = 0.800427 (SciPy; the emulator table: 0.80043) -- StatDist: P(X <= 2) = 0.800427 None
+  [ok] 5a v2.7b: F(4, 2.5) Between at its default bounds (one df whole, one not) = SciPy: StatDist: P(0.5 < X < 2) = 0.421381 -- None
+  [ok] 5a v2.7b: a whole df still uses CHISQUARE_CDF (the emulator's Chi-square(4): 0.712703) -- StatDist: P(X <= 5) = 0.712703 ['CHISQUARE', 'CHISQUARE_CDF', 'CHISQUARE_ICDF']
+  [ok] 5b chi-square, 7 fractional df x 8 x: CDF = SciPy chi2.cdf within 1E-9 (3.1e-12)
+  [ok] 5b chi-square, fractional df: the density (the built-in, which takes any df) = SciPy (rel 0.0e+00)
+  [ok] 5b chi-square, fractional df: the quantile (bisection on the new CDF; it fits the window) = chi2.ppf, |error| / (1 + x) 1.0e-10
+  [ok] 5b F, 7 df pairs (one or both fractional) x 7 x: CDF = SciPy f.cdf within 1E-9 (1.1e-11)
+  [ok] 5b F, fractional df: the density by the formula = SciPy f.pdf, rel 2.1e-11
+  [ok] 5b F, fractional df: the quantile (bisection, as before) = f.ppf, |error| / (1 + x) 3.9e-11
+  worst: chi cdf 3.1e-12, F cdf 1.1e-11, F pdf 2.1e-11, chi q 1.0e-10, F q 3.9e-11, chi pdf 0.0e+00
+  [ok] 5c no CHISQUARE_CDF/_ICDF, FISHER_CDF/_ICDF or FISHER density call with a fractional df (56 calls checked) -- []
+  [ok] 5c no warning about an unmeasured fractional-df F density
+  [ok] 5c the plot (fit, cache, all three tails) for 5 fractional-df cases: no error -- []
+  [ok] 5c Erlang(3, 1.5): CHISQUARE_CDF(6, ...) = SciPy erlang.cdf (0.576810)
+  [ok] 5c Poisson(4) Between 0 and 5: 0.785130 = SciPy, no POISSON_CDF(4, -1) (v3c would raise)
+  [ok] 5d no INPUT label is longer than 14 characters (133 labels; the longest: "k (successes):", 14)
+  [ok] 5d "Degrees of freedom:", "Denominator df:", "K (positives in N):" are gone
+  [ok] 5d the chi-square form reads "df:" and "X value:" -- ['df:', 'X value:']
+  [ok] 5d the F form reads "df1:", "df2:" with "Numerator df > 0", "Denominator df > 0" under them -- ['df1:', 'df2:', 'X value:']
+  [ok] 5e routines that differ from v2.7a: ['st_ask_cauchy', 'st_ask_chisquare', 'st_ask_fisher', 'st_ask_hypergeom', 'st_ask_student', 'st_cdf', 'st_pdf', 'st_show_help'] -- want ['st_ask_cauchy', 'st_ask_chisquare', 'st_ask_fisher', 'st_ask_hypergeom', 'st_ask_student', 'st_cdf', 'st_pdf', 'st_show_help']
+  [ok] 5e outside those routines only comments differ
+  [ok] 5e the #PYTHON blocks (if any) are unchanged
+  [ok] 5e st_Cas (the CAS call form) is byte-identical to v2.7a
+
+RESULT: ALL PASS

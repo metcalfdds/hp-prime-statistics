@@ -1,0 +1,2320 @@
+#pragma mode( separator(.,;) integer(h32) )
+
+// ============================================================
+// GALTONBOARD - beta 3b
+// Galton's quincunx (bean machine) for the HP Prime
+// ============================================================
+// Author: Roger Metcalf, 2026.  Written with AI assistance
+//   (Anthropic Claude); concept, direction and all hardware
+//   testing by the author.
+//
+// Idea after Francis Galton's quincunx of 1873 and the small
+//   DOS QUINCUNX demo shipped with CDC Epi Info 6.  A ball
+//   falls through R rows of pegs.  At every peg it bounces
+//   right with probability p, otherwise left.  The bin it lands
+//   in is the NUMBER OF RIGHT BOUNCES, so the bin counts build a
+//   Binomial(R, p) histogram, and with many rows the bell of the
+//   normal distribution appears (de Moivre-Laplace).
+//
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
+//   the file and credit the author if you pass it on.  Not for
+//   sale or commercial redistribution.  Provided as is, with no
+//   warranty: check any result you intend to rely on.
+//
+// Firmware: written for the 2026-09-09 firmware (2.4.2).  This
+//   version has NOT yet been run on hardware (beta 2 ran on the HP
+//   Prime Virtual Calculator, 17 Oct 2026).  Its MicroPython
+//   part ("Drop 100,000") has never run anywhere: test it with
+//   the Terminal open (Lessons Learned v7f section 9).  Its CAS
+//   lines have run only in the PC harness; their call form is the
+//   one CASProbe beta 1b found on the HP Prime Virtual Calculator
+//   (build 2026-09-09, 17 Oct 2026).
+//
+// WHAT CHANGED in beta 3b (17 Oct 2026): what the first emulator run
+//   found (HP Prime Virtual Calculator 2.4.2, build 2026-09-09;
+//   Emulator_Round1_Results_2026-10-17_v1.md).  Line numbers refer to
+//   beta 3a.  Nothing else changed.
+//   - SOLID PEGS AND BALLS.  GfxProbe beta 1 (T09) showed that ARC_P
+//     circles of radius 3, 2 and 1 plus the centre pixel, drawn to make
+//     a solid dot, leave white holes on the diagonals: every dot shows a
+//     white X.  On the emulator every peg looked like a circled plus,
+//     and so would the falling balls.  Both are now built from RECT_P
+//     bars, which fill every pixel: a ball is three overlapping bars
+//     (7 x 3, 3 x 7 and 5 x 5 px) that make exactly a disc of radius 3
+//     (gbDisc, 300-308); a peg is two (5 x 3 and 3 x 5), exactly a disc
+//     of radius 2 (gbScene, 935-941).  Same sizes, same colours, and
+//     fewer drawing calls than before (3 instead of 4 per ball, 2
+//     instead of 3 per peg), which matters on a G1.  (FILLPOLY_P also
+//     passed GfxProbe, but only on the emulator; RECT_P has run on both
+//     calculators and is exact at this size.)
+//   - THE BIN COUNTS ARE READABLE.  A count sat 11 px above its bar,
+//     where the magenta binomial line or square could cross it (the
+//     emulator showed a "9" half hidden).  It now sits above the HIGHER
+//     of the bar top and the overlays under the label's width -- the
+//     magenta square and line, and the green normal curve when it is
+//     shown (new gbLblTop; gbBar 828-855).  If that leaves no room below
+//     the pegs, the count goes inside the bar as before.
+//
+// WHAT CHANGED in beta 3a (17 Oct 2026): the CAS call form, and one
+//   check that read desktop Giac's printing.  Nothing else.  Line
+//   numbers refer to beta 3.
+//   - gbCas (391-408): CASProbe beta 1b, run on the emulator, found
+//     that CAS(s) with s a variable hands the text back UNEVALUATED,
+//     so beta 3's gbCas returned its own input and every exact line
+//     fell back to the decimal.  The call is now
+//     STRING(EXPR("CAS(" + CHAR(34) + "string(" + s + ")" + CHAR(34) + ")"))
+//     (BRIEF_CAS_v2), the quotes STRING() adds are dropped, and an
+//     answer holding the infinity sign is refused like undef.
+//   - gbPsLim (545-560): the answer had to contain "exp", but the
+//     Prime prints e^(...), never exp( -- so the Poisson limit could
+//     never have shown.  The text tests for "exp" and "inf" are gone
+//     (gbCas refuses an infinity); an answer still holding "limit" is
+//     refused as before, and the answer is now CHECKED BY ITS VALUE:
+//     the CAS's own round(answer x 10^E) must match PPL's POISSON(mu, k)
+//     to 6 significant digits.  New helper gbIVal reads that whole
+//     number.  The page makes two CAS calls per new k (was one).
+//   - Comments that said the call form was still to be decided.
+//
+// beta 3 (16 Oct 2026) - what changed: EXACT ANSWERS FROM THE CAS,
+//   built on beta 2 (every beta 2 feature is kept; the pour mode and
+//   the MicroPython "Drop 100,000" are untouched).  Nothing about the
+//   CAS has run on our calculators yet, so every CAS call goes
+//   through ONE routine, gbCas, every exact answer keeps the decimal
+//   the program already computes as its fallback, and a badge,
+//   "exact (CAS)" or "decimal", says which one is on screen.  Line
+//   numbers refer to beta 2.
+//   - Tap a bar (gbBinInfo, 1276): the bin's probability as an EXACT
+//     FRACTION beside the decimal: P(4) = C(8,4) x (1/2)^4 x (1/2)^4
+//     = 35/128 = 0.2734.  p is written as whole numbers (0.3 is 3/10,
+//     0.37 is 37/100); a p that is not a simple ratio gets the
+//     decimal and says so.  A fraction too long for the panel (large
+//     R with p = 37/100) is never cut: its digits are counted.  The
+//     panel now runs from y 14 to 127 (was 16 to 122), its lines 13
+//     px apart, to make room for the exact line.
+//   - Menu, new item "Where Poisson comes from (CAS)" (gbPoisson):
+//     with mu = Rp of the board held fixed, the binomial bars for R,
+//     4R and 16R rows (p = mu/R shrinking) close in on the Poisson
+//     bars, drawn from PPL's BINOMIAL and POISSON.  Tap a bar or use
+//     the arrows to pick k, and the CAS takes the limit of
+//     C(R,k) (mu/R)^k (1 - mu/R)^(R-k) as R grows, for that NUMERIC k
+//     (desktop Giac cannot do it with a symbolic k), and shows the
+//     answer beside mu^k e^(-mu) / k!.  (mu, a verified glyph, is used
+//     for the Poisson mean instead of lambda, which is not.)
+//   - Help page 3: what the CAS adds, and the badge.  Leave is now
+//     menu item 16 (the Prime labels it G).
+//   - The CAS kit (gbIStr, gbCas) and helpers (gbGcd, gbPFrac,
+//     gbIsFr, gbFrDig, gbShow, gbBadge, gbXBin, gbPsKey, gbPsLim), and
+//     the page's own routines (gbMuS, gbPsCalc, gbPsDraw, gbPoisson).
+//     The CAS is
+//     called on events only -- a tap on a bar, a new k on the Poisson
+//     page -- and never in the drop, pour, x10 or lattice animations
+//     or a p drag; answers are cached.
+//
+// beta 2 (16 Oct 2026) - what changed: the showcase version from
+//   the fleet review (section 6).  Built on beta 1b; every beta 1b
+//   fix is kept.  Line numbers refer to beta 1b.
+//   - POUR MODE: hold a finger on the funnel (or the Pour soft key,
+//     or the 0 key, for a stream that runs until you tap again) and
+//     balls launch every third frame, up to 8 in the air.  Per-ball
+//     state lives in parallel lists (gbQR, gbQK, gbQG, gbQF, gbQM);
+//     a frame is one blit of the scene, the discs, one blit.
+//   - THREE LAYERS: G3 holds the static scene, G2 = G3 plus the last
+//     five landed paths (light red), G1 = G2 plus the moving balls.
+//     A landed ball redraws only its own bar column on G3 (gbCol);
+//     the whole scene is rebuilt only when a bar outgrows the
+//     y-scale or the expected counts would move 3 px.
+//   - Ball trails: up to 6 fading dots behind every moving ball.
+//   - The Bernoulli string: while ONE ball falls, its choices are
+//     printed top left, one letter per row ("R L R R L R L L"), then
+//     "-> 4 rights -> bin 4"; the whole line stays in the footer.
+//   - Drag p: a sideways drag of more than 8 px over the pegs sets p
+//     (finger position across the board, 0.05 to 0.95, steps of
+//     0.01); theory re-flows live, the counts clear on lift.  A press
+//     with no movement still drops one ball.
+//   - Soft keys Drop, x10, x100, Pour, Rows, Menu; the three legend
+//     lines (beta 1b 346-350) are ONE line at y 206, so the bars
+//     regain height (gbHB 187 -> 191).  0 = pour on/off.
+//   - Tap a bar: a drawn panel (was a MSGBOX, 506-522) with P(k), the
+//     normal area from k - 0.5 to k + 0.5 (continuity correction) and
+//     C(R,k).  Tap the same bar again: every lattice path to it, drawn
+//     one by one in light blue (R <= 8).
+//   - Menu: Pascal's triangle beside the pegs (pass counts kept in
+//     GB_PEG, or C(r,k)); bars coloured by distance from Rp in SD
+//     units; Drop 100,000 in MicroPython with a PPL fallback of 5,000
+//     balls and an engine badge.
+//   - The normal curve is a filled area under the bars, and turns
+//     grey with "normal approximation poor (Rp = .. < 5)" when Rp or
+//     R(1-p) is below 5.  Its density is cached per pixel column.
+//   - MAX on a list (beta 1b 263-264) replaced by loops; string
+//     lengths by DIM (confirmed) instead of SIZE.
+//   - Help is two drawn pages: the bell comes from the ROWS.
+// beta 1b (16 Oct 2026): fixes from the fleet review of 16 Oct; no
+//   change to the simulation.  The "tap the pegs" zone became the
+//   peg field minus the two readout corners; the key legend took the
+//   house form and said that the arrow keys clear the counts; the
+//   "bins sent to D1/D2" box became four short lines; BINOMIAL
+//   arguments in the order (n, p, k); MAKELIST keeps Home's K as its
+//   counter pending GfxProbe T19.
+// beta 1a (11 Oct 2026): clean exits.  Every "wait for the finger
+//   to lift" loop now goes through gbDrain(), which gives up after
+//   one second, so a phantom touch cannot freeze the program; and
+//   Esc returns the summary line to Home instead of PRINTing it,
+//   so no Terminal screen is left open.  Nothing else changed.
+//
+// Run GaltonBoard() from the Program Catalog.
+// ============================================================
+//
+// WHAT YOU SEE
+//   Top: the triangle of pegs.  Balls are drawn bouncing down
+//        through it, with fading trails; the last five paths
+//        stay as thin light-red lines.
+//   Bottom: one bar per bin (blue, the counts so far).
+//        Magenta squares: the counts the binomial predicts.
+//        Green area: the normal approximation N(Rp, Rp(1-p)).
+//        Red dotted line: the observed mean position.
+//        Magenta dotted line: the expected mean Rp.
+//   Corners: n, the observed mean and SD of the bin positions,
+//        and the theoretical mean Rp and SD sqrt(Rp(1-p)).
+//
+// KEYS AND TOUCH
+//   tap the pegs ......... drop one ball and watch it fall
+//   hold the funnel ...... pour a stream of balls; lift = stop
+//   drag sideways ........ p follows the finger (clears the counts)
+//   tap a bar ............ that bin's numbers (P(k) as an exact
+//                          fraction, beta 3); tap it again = paths
+//   soft keys ............ Drop, x10, x100, Pour, Rows, Menu
+//   -  ................... drop one ball (watch)
+//   +  ................... drop 100 balls (fast, no animation)
+//   0  ................... pour on / off
+//   left / right ......... p down / up by 0.05   (clears the counts)
+//   up / down ............ more / fewer rows      (clears the counts)
+//   (a tap on the title or the corner readouts does nothing)
+//   Enter ................ menu (the Menu soft key too); the menu
+//                          has "Where Poisson comes from (CAS)"
+//   Esc .................. leave
+//
+// HOME EXPORTS (readable after the program ends)
+//   GB_CNT  list of bin counts, bins 0 .. R
+//   GB_N    balls dropped      GB_R  rows      GB_P  p
+//   GB_PEG  pass counts: GB_PEG(r, j+1) = balls that passed peg j
+//           (0 = leftmost) of row r
+//   GB_PYN, GB_PYO  the MicroPython bridge (input N, output counts)
+// ============================================================
+
+
+// ------------------------------------------------------------
+// RESULTS VISIBLE FROM HOME (and the Python bridge)
+// ------------------------------------------------------------
+EXPORT GB_CNT, GB_N, GB_R, GB_P;
+EXPORT GB_PEG, GB_PYN, GB_PYO;
+
+// ------------------------------------------------------------
+// SETTINGS SHARED BY EVERY ROUTINE (private to this program)
+// All of them are set in gbInit at the start of every run.
+// ------------------------------------------------------------
+LOCAL gbR, gbP, gbN, gbCnt, gbOvl, gbSpd;
+//  gbR   rows of pegs (3..12)       gbP   chance of a right bounce
+//  gbN   balls dropped so far       gbCnt counts, bins 0..R (R+1 entries)
+//  gbOvl overlays: 0 none, 1 binomial, 2 binomial and normal
+//  gbSpd animation frames per peg row (1 fast .. 4 slow)
+LOCAL gbBw, gbX0, gbDy, gbSum, gbSq, gbYmx;
+//  gbBw  bin width in pixels        gbX0  left edge of bin 0
+//  gbDy  vertical spacing of peg rows
+//  gbSum, gbSq  running sum and sum of squares of bin positions
+//  gbYmx the count that reaches the top of the histogram box
+
+// Screen layout.  Touch handling and drawing both use these, so a
+// tap always lands where the picture is.
+LOCAL gbTop, gbPegBot, gbHT, gbHB, gbMidX;
+//  gbTop    y where a ball starts; peg row r is at gbTop + r*gbDy
+//  gbPegBot lowest peg row is at or above this y
+//  gbHT     tallest possible bar top      gbHB  histogram baseline
+//  gbMidX   the board is centred here
+
+// Colours (house palette, plus the tints this program needs)
+LOCAL gbBLUE, gbFILL, gbMAG, gbGRN, gbRED, gbGRAY;
+LOCAL gbFOOT, gbORNG, gbLORN, gbLRED, gbLBLU, gbLGRN;
+LOCAL gbLGRY, gbGRY2, gbWHT, gbPINK;
+
+// Theory caches, filled by gbTheory and gbScene, read by gbCol
+LOCAL gbE, gbEmx, gbMu, gbSg, gbPoor, gbScN;
+//  gbE   binomial P(k), k = 0..R      gbEmx the largest of them
+//  gbMu  Rp      gbSg  sqrt(Rp(1-p))  gbPoor 1 if Rp or R(1-p) < 5
+//  gbScN the n the overlays on screen were drawn for
+LOCAL gbNd, gbNdR, gbNdP, gbNy, gbEy, gbXbPx;
+//  gbNd  normal density, one value per pixel column (cached for
+//        gbNdR rows and p = gbNdP)
+//  gbNy  pixel y of the normal curve per column; gbEy of each square
+//  gbXbPx pixel x of the red x-bar line (-1 = none)
+LOCAL gbNCol, gbNFil;
+//  colour of the normal curve and of the area under it
+
+// Display options and screen state
+LOCAL gbPas, gbSdc, gbPrev, gbDirty, gbMsg, gbMsgC;
+//  gbPas  Pascal numbers: 0 off, 1 pass counts, 2 C(r,k)
+//  gbSdc  1 = colour the bars by distance from Rp in SD units
+//  gbPrev 1 while p is being dragged (the old bars are hidden)
+//  gbDirty 1 when G3 changed and G2 must be rebuilt from it
+//  gbMsg, gbMsgC  a status line shown once in the footer, its colour
+LOCAL gbTapX, gbTapY, gbEng;
+//  where the last tap in gbWaitAny landed; the last engine badge
+
+// Landed paths and the Bernoulli string
+LOCAL gbPth, gbPthH, gbBOn, gbBL1, gbBL2;
+//  gbPth  the last five paths, each as a number whose R binary
+//         digits are the choices (1 = right, row 1 the highest);
+//         -1 = empty.  gbPthH: the slot of the newest.
+//  gbBOn  1 while a single ball is falling; gbBL1, gbBL2 its letters
+
+// Balls in the air (pour mode; slot 1 is also the single ball)
+LOCAL gbQR, gbQK, gbQG, gbQF, gbQM;
+//  gbQR  segment: -1 free, 0 funnel, 1..R above peg row r, R+1 into
+//        the bin.  gbQK rights so far, gbQG this row's choice,
+//  gbQF  frame within the segment,    gbQM the path so far
+LOCAL gbRX, gbRY, gbRH, gbRN, gbTrC;
+//  trails: a ring of 6 positions per ball (gbRX, gbRY, 8 x 6),
+//  gbRH newest slot, gbRN how many, gbTrC colours dark to pale
+
+// beta 3: the exact answers from the CAS, and their caches
+LOCAL gbCasOK, gbInf, gbXKey, gbXTxt;
+//  gbCasOK 1 = the last CAS answer was usable, 0 = it fell back
+//  gbInf   the CAS's word for infinity, "inf".  CASProbe beta 1b
+//          T16 passed with "inf" on the emulator (17 Oct 2026); if
+//          only "infinity" ever works on a calculator, change this
+//          one line in gbInit.
+//  gbXKey, gbXTxt  the bar panel's cache: the bin it belongs to
+//          ("8,1/2,4" = R, p, k) and the CAS's fraction ("" = none)
+LOCAL gbPsMN, gbPsMD, gbPsK, gbPsKm, gbPsB, gbPsR;
+//  the Poisson page: mu = Rp as the fraction gbPsMN / gbPsMD (MD = 0
+//  when p is not a simple ratio), the selected k, the largest k drawn,
+//  the bar heights (probabilities, 4 per k: R, 4R, 16R rows, then
+//  Poisson), and the three row counts {R, 4R, 16R}
+LOCAL gbPsCK, gbPsTx;
+//  the Poisson page's CAS cache: the k (and mu) the text belongs to,
+//  and the CAS's limit as text ("" = none)
+
+
+// ------------------------------------------------------------
+// SMALL HELPERS
+// ------------------------------------------------------------
+
+// A number as text with a FIXED number of decimals.  Mode 2 keeps
+// trailing zeros; mode 1 would ignore the digits argument.
+gbF(fv, fd)
+BEGIN
+  RETURN STRING(fv, 2, fd);
+END;
+
+// A count in at most four characters, for the small labels on the
+// bars and beside the pegs: 987, 1.2k, 27k, 104k, 1.0M.
+gbKfmt(kfV)
+BEGIN
+  IF kfV < 1000 THEN RETURN STRING(kfV, 2, 0); END;
+  IF kfV < 10000 THEN RETURN STRING(FLOOR(kfV / 100) / 10, 2, 1) + "k"; END;
+  IF kfV < 1000000 THEN RETURN STRING(FLOOR(kfV / 1000), 2, 0) + "k"; END;
+  RETURN STRING(FLOOR(kfV / 100000) / 10, 2, 1) + "M";
+END;
+
+// Pixel x of bin position v (v may be fractional).  After R rows a
+// ball with k right bounces sits at bin k, whose centre is
+// gbX0 + (k + 0.5) * gbBw.
+gbPx(pxV)
+BEGIN
+  RETURN gbX0 + IP((pxV + 0.5) * gbBw + 0.5);
+END;
+
+// A small filled disc, 7 px across (a falling ball).  beta 3b: three
+// overlapping RECT_P bars, which together cover exactly the pixels of
+// a disc of radius 3 around (dcX, dcY):
+//      . # # # .          the 7 x 3 bar  (rows -1..1)
+//    . # # # # # .        the 3 x 7 bar  (columns -1..1)
+//    # # # # # # #        the 5 x 5 square (the four in-between corners)
+//    # # # # # # #
+//    # # # # # # #        Up to beta 3a this was three concentric ARC_P
+//    . # # # # # .        circles and the centre pixel, which leave
+//      . # # # .          holes on the diagonals (GfxProbe T09).
+gbDisc(dcG, dcX, dcY, dcCol)
+BEGIN
+  RECT_P(dcG, dcX - 3, dcY - 1, dcX + 3, dcY + 1, dcCol, dcCol);
+  RECT_P(dcG, dcX - 1, dcY - 3, dcX + 1, dcY + 3, dcCol, dcCol);
+  RECT_P(dcG, dcX - 2, dcY - 2, dcX + 2, dcY + 2, dcCol, dcCol);
+END;
+
+// Work out the geometry for the current number of rows.
+// Bins are never wider than 40 px, and never wider than fits.
+gbLayout()
+BEGIN
+  gbBw := MIN(40, FLOOR(300 / (gbR + 1)));
+  gbX0 := gbMidX - IP((gbR + 1) * gbBw / 2);
+  gbDy := FLOOR((gbPegBot - gbTop) / gbR);
+END;
+
+// Wait for the finger to lift -- but never for more than a second.
+// MOUSE(1) is -1 while nothing touches the screen.  Without the
+// time limit a stuck or phantom touch would hold the program here
+// for ever, and the only way out would be a reset.
+gbDrain()
+BEGIN
+  LOCAL drT;
+  drT := TICKS;                                  // milliseconds
+  REPEAT UNTIL MOUSE(1) == -1 OR TICKS - drT > 1000;
+END;
+
+// Wait for any key or any tap, then let go of it (the house
+// xxWaitAny).  Drain first: a key or finger left over from a menu
+// would otherwise skip the screen that was just drawn.  Returns the
+// key code, or -1 for a tap, whose x and y are left in gbTapX, gbTapY.
+gbWaitAny()
+BEGIN
+  LOCAL waK, waM, waM1, waK2;
+  REPEAT waK := GETKEY; UNTIL waK == -1;
+  gbDrain();
+  REPEAT
+    waK := GETKEY;
+    waM := MOUSE;
+    waM1 := waM(1);
+  UNTIL waK > -1 OR SIZE(waM1) > 0;
+  gbTapX := -1; gbTapY := -1;
+  IF SIZE(waM1) > 0 THEN
+    gbTapX := waM1(1); gbTapY := waM1(2); waK := -1;
+  END;
+  gbDrain();
+  REPEAT waK2 := GETKEY; UNTIL waK2 == -1;
+  RETURN waK;
+END;
+
+// The soft keys.  DRAWMENU paints the SCREEN, not G1, so it is
+// called after every blit to G0 (ChiTable, G2 and G1).  A tap with
+// y >= 218 is read as slot MIN(6, IP(x / 53.4) + 1).
+gbMenuKeys()
+BEGIN
+  DRAWMENU({"Drop", CHAR(215) + "10", CHAR(215) + "100", "Pour", "Rows", "Menu"});
+END;
+
+
+// ------------------------------------------------------------
+// BETA 3: EXACT ANSWERS FROM THE CAS, BEHIND THE FENCE
+// (Lessons Learned v7g section 9b; the kit in BRIEF_CAS.md, tag gb)
+//
+// The CAS (the calculator's computer algebra system) does what the
+// rest of the program cannot: exact fractions (35/128 instead of
+// 0.2734) and limits (the binomial turning into the Poisson).
+//
+// The CAS has run only on the emulator (CASProbe beta 1b, 17 Oct
+// 2026), not on our calculators, so:
+//   - every CAS call goes through ONE routine, gbCas, in the call
+//     form CASProbe beta 1b found (beta 3a);
+//   - every exact answer keeps the decimal the program already has
+//     (BINOMIAL, POISSON) as its fallback, and a badge says "exact
+//     (CAS)" or "decimal";
+//   - CAS text is built from WHOLE NUMBERS only (gbIStr): p = 0.37
+//     goes in as 37/100, never as a decimal;
+//   - the CAS is asked on EVENTS only -- a tap on a bar, a new k on
+//     the Poisson page -- and the answer is cached.  It is never
+//     called in the drop, pour, x10 or lattice animations, or while
+//     p is dragged;
+//   - the CAS's own variable is gbq, a tagged name (a student may
+//     own n or k in the CAS view);
+//   - CAS answers are TEXT for display; every bar is drawn from PPL.
+// ------------------------------------------------------------
+
+// A whole number as plain digits: no digit-grouping marks, no decimal point, no
+// exponent.  Home's STRING() follows the Home number format (PyProbe saw grouping
+// marks and a special minus sign), which the CAS cannot read, so CAS text is built
+// only from this routine.
+// (The kit calls the parameter xxN; here it is gbIv, because gbN is
+// already this program's ball count.)
+gbIStr(gbIv)
+BEGIN
+  LOCAL dS, dV, dD;
+  dV := ROUND(ABS(gbIv), 0);
+  IF dV == 0 THEN RETURN "0"; END;
+  dS := "";
+  WHILE dV > 0 DO
+    dD := dV MOD 10;
+    dS := CHAR(48 + dD) + dS;
+    dV := (dV - dD) / 10;
+  END;
+  IF gbIv < 0 THEN dS := "-" + dS; END;
+  RETURN dS;
+END;
+
+// The ONE place this program calls the CAS.  It returns the CAS answer as text,
+// or "" if the CAS failed, gave undef, an error or an infinity.
+// The call form is the one CASProbe beta 1b found on the HP Prime Virtual
+// Calculator (build 2026-09-09, 17 Oct 2026): CAS(s) with s a variable hands
+// the text back UNEVALUATED, so the text is built into a literal CAS("...")
+// that EXPR reads at run time, and the CAS is asked for string(...) of the
+// answer, so a big integer crosses into PPL whole, not as a 12-digit real.
+gbCas(gbS)
+BEGIN
+  LOCAL cR;
+  cR := "";
+  IFERR
+    cR := STRING(EXPR("CAS(" + CHAR(34) + "string(" + gbS + ")" + CHAR(34) + ")"));
+  THEN
+    cR := "";
+  END;
+  // The answer is a PPL string, and STRING() of it adds one pair of quotes
+  // (CASProbe beta 1b T12, emulator): drop that pair.
+  IF DIM(cR) >= 2 THEN
+    IF LEFT(cR, 1) == CHAR(34) AND MID(cR, DIM(cR), 1) == CHAR(34) THEN
+      cR := MID(cR, 2, DIM(cR) - 2);
+    END;
+  END;
+  // undef, an error, or an infinity (CHAR(8734) is the infinity sign; it
+  // also catches the Prime's plus-minus infinity, 1/0): no usable answer
+  IF INSTRING(cR, "undef") > 0 OR INSTRING(cR, "rror") > 0 OR INSTRING(cR, CHAR(8734)) > 0 THEN cR := ""; END;
+  RETURN cR;
+END;
+
+// The greatest common divisor of two whole numbers (Euclid), to
+// write p = 50/100 as 1/2 on the screen.
+gbGcd(gcA, gcB)
+BEGIN
+  LOCAL gcX, gcY, gcT;
+  gcX := ABS(gcA); gcY := ABS(gcB);
+  WHILE gcY > 0 DO
+    gcT := gcX MOD gcY;
+    gcX := gcY;
+    gcY := gcT;
+  END;
+  IF gcX == 0 THEN gcX := 1; END;
+  RETURN gcX;
+END;
+
+// p as a fraction of whole numbers, in lowest terms: {m, d} with
+// p = m/d.  The board's p moves in steps of 0.05 (arrows) or 0.01
+// (drag), so p x 100 is a whole number; a typed p may need 1000.
+// Anything finer (0.3333) is not a "simple ratio": {0, 0}, and the
+// screen keeps the decimal.
+gbPFrac()
+BEGIN
+  LOCAL pfD, pfM, pfG;
+  pfD := 100;
+  pfM := ROUND(gbP * 100, 0);
+  IF ABS(gbP * 100 - pfM) > 0.000001 THEN
+    pfD := 1000;
+    pfM := ROUND(gbP * 1000, 0);
+    IF ABS(gbP * 1000 - pfM) > 0.000001 THEN RETURN {0, 0}; END;
+  END;
+  pfG := gbGcd(pfM, pfD);
+  RETURN {pfM / pfG, pfD / pfG};
+END;
+
+// 1 if fsS is an exact fraction or whole number ("35/128", "1"):
+// digits with at most one "/" between them.  A decimal "0.2734" (the
+// answer handed back as a Home real), an unevaluated expression or
+// an empty string is 0, and the decimal stays on screen.
+gbIsFr(fsS)
+BEGIN
+  LOCAL fsI, fsN, fsC, fsK, fsOK;
+  fsN := DIM(fsS);
+  IF fsN == 0 THEN RETURN 0; END;
+  fsOK := 1; fsK := 0;                       // fsK counts the "/" signs
+  FOR fsI FROM 1 TO fsN DO
+    fsC := MID(fsS, fsI, 1);
+    IF INSTRING("0123456789", fsC) == 0 THEN
+      IF fsC == "/" AND fsI > 1 AND fsI < fsN THEN
+        fsK := fsK + 1;
+      ELSE
+        fsOK := 0;
+      END;
+    END;
+  END;
+  IF fsK > 1 THEN fsOK := 0; END;
+  RETURN fsOK;
+END;
+
+// How many digits a CAS answer has: what a line says when the exact
+// answer is too long to show.
+gbFrDig(fgS)
+BEGIN
+  LOCAL fgI, fgN;
+  fgN := 0;
+  FOR fgI FROM 1 TO DIM(fgS) DO
+    IF INSTRING("0123456789", MID(fgS, fgI, 1)) > 0 THEN fgN := fgN + 1; END;
+  END;
+  RETURN fgN;
+END;
+
+// A CAS answer made readable: every * becomes the times sign
+// (CHAR(215), verified); ^ and / stay (BRIEF_CAS rule 7).
+gbShow(swS)
+BEGIN
+  LOCAL swI, swC, swR;
+  swR := "";
+  FOR swI FROM 1 TO DIM(swS) DO
+    swC := MID(swS, swI, 1);
+    IF swC == "*" THEN swC := CHAR(215); END;
+    swR := swR + swC;
+  END;
+  RETURN swR;
+END;
+
+// The badge beside an exact answer, in the footer's dodger blue:
+// "exact (CAS)" when the line came from the CAS, "decimal" when it
+// is the program's own number.
+gbBadge(bdX, bdY, bdOK)
+BEGIN
+  IF bdOK == 1 THEN
+    TEXTOUT_P("exact (CAS)", G1, bdX, bdY, 1, gbFOOT, 76);
+  ELSE
+    TEXTOUT_P("decimal", G1, bdX, bdY, 1, gbFOOT, 76);
+  END;
+END;
+
+// Bin xbK's probability as an EXACT fraction:
+// C(R,k) (m/d)^k ((d-m)/d)^(R-k), with p = m/d from gbPFrac -- for
+// p = 1/2 that is C(R,k)/2^R, 35/128 for R = 8, k = 4.  Asked only
+// when the bar is tapped, and only if R, p or k differ from the
+// last time (the cache gbXKey / gbXTxt).  Returns the fraction as
+// text, or "" (then the panel keeps BINOMIAL's decimal).
+gbXBin(xbK)
+BEGIN
+  LOCAL xbF, xbKy, xbM, xbD;
+  xbF := gbPFrac();
+  xbM := xbF(1); xbD := xbF(2);
+  xbKy := gbIStr(gbR) + "," + gbIStr(xbM) + "/" + gbIStr(xbD) + "," + gbIStr(xbK);
+  IF xbKy == gbXKey THEN RETURN gbXTxt; END;
+  gbXKey := xbKy; gbXTxt := "";
+  IF xbD > 0 THEN
+    gbXTxt := gbCas("comb(" + gbIStr(gbR) + "," + gbIStr(xbK) + ")*(" + gbIStr(xbM) + "/" + gbIStr(xbD) + ")^" + gbIStr(xbK) + "*(" + gbIStr(xbD - xbM) + "/" + gbIStr(xbD) + ")^" + gbIStr(gbR - xbK));
+    IF gbIsFr(gbXTxt) == 0 THEN gbXTxt := ""; END;
+  END;
+  gbCasOK := 0;
+  IF DIM(gbXTxt) > 0 THEN gbCasOK := 1; END;
+  RETURN gbXTxt;
+END;
+
+// The cache key of the limit for k = pkK: k and mu (gbPsLim and the
+// page loop both use it, so they cannot disagree).
+gbPsKey(pkK)
+BEGIN
+  RETURN gbIStr(pkK) + "|" + gbIStr(gbPsMN) + "/" + gbIStr(gbPsMD);
+END;
+
+// A whole number from CAS text (the CAS's round(...) answer), read
+// digit by digit, so no Home number format, decimal separator or
+// EXPR is involved.  Returns {value, 1}, or {0, 0} if the text is
+// not a whole number ("-" allowed in front only).  (beta 3a, for
+// gbPsLim's check of the limit against PPL's POISSON.)
+gbIVal(ivS)
+BEGIN
+  LOCAL ivI, ivC, ivD, ivV, ivSg, ivN;
+  LOCAL ivOK;
+  ivV := 0; ivSg := 1; ivN := 0; ivOK := 1;
+  FOR ivI FROM 1 TO DIM(ivS) DO
+    ivC := MID(ivS, ivI, 1);
+    ivD := INSTRING("0123456789", ivC);     // 1 for "0" ... 10 for "9"
+    IF ivD > 0 THEN
+      ivV := ivV * 10 + ivD - 1;
+      ivN := ivN + 1;
+    ELSE
+      IF ivI == 1 AND ivC == "-" THEN ivSg := -1; ELSE ivOK := 0; END;
+    END;
+  END;
+  IF ivN == 0 OR ivOK == 0 THEN RETURN {0, 0}; END;
+  RETURN {ivSg * ivV, 1};
+END;
+
+// The Poisson page's limit for the NUMERIC k plK, with mu = MN/MD:
+//   limit of C(gbq,k) (mu/gbq)^k (1 - mu/gbq)^(gbq-k) as gbq -> inf,
+// which the CAS works out to mu^k e^(-mu) / k! -- desktop Giac writes
+// 32/(3*exp(1)^4) for mu = 4, k = 3, and the Prime writes e^(...),
+// never exp(...) (CASProbe beta 1b).  Desktop Giac fails
+// with a symbolic k ("Limit: Max order reached"), so the page asks
+// once per k, when k changes, and caches the text (gbPsCK, gbPsTx).
+// An answer still holding "limit" is refused (gbCas already refuses
+// an infinity), and then the answer is CHECKED BY ITS VALUE (beta
+// 3a): the CAS is asked for round(answer x 10^plE), a whole number of
+// about ten digits, which must match PPL's POISSON(mu, k) to 6
+// significant digits.  Anything else and the decimal stays.
+gbPsLim(plK)
+BEGIN
+  LOCAL plKy, plMu, plS, plP, plE, plV;
+  plKy := gbPsKey(plK);
+  IF plKy == gbPsCK THEN RETURN gbPsTx; END;
+  gbPsCK := plKy; gbPsTx := "";
+  IF gbPsMD > 0 THEN
+    plMu := "(" + gbIStr(gbPsMN) + "/" + gbIStr(gbPsMD) + ")";
+    plS := "simplify(limit(comb(gbq," + gbIStr(plK) + ")*(" + plMu + "/gbq)^" + gbIStr(plK) + "*(1-" + plMu + "/gbq)^(gbq-" + gbIStr(plK) + "),gbq," + gbInf + "))";
+    gbPsTx := gbCas(plS);
+    IF INSTRING(gbPsTx, "limit") > 0 THEN gbPsTx := ""; END;
+    // beta 3a: the value check (an event, once per k: the page caches it)
+    IF DIM(gbPsTx) > 0 THEN
+      plP := POISSON(gbPsMN / gbPsMD, plK);
+      plV := {0, 0};
+      IF plP > 0 THEN
+        plE := 9 - FLOOR(LOG(plP));
+        plV := gbIVal(gbCas("round(evalf(" + gbPsTx + ")*10^(" + gbIStr(plE) + "))"));
+      END;
+      IF plV(2) == 0 THEN
+        gbPsTx := "";
+      ELSE
+        IF ABS(plV(1) / 10^plE - plP) > 0.000001 * plP THEN gbPsTx := ""; END;
+      END;
+    END;
+  END;
+  gbCasOK := 0;
+  IF DIM(gbPsTx) > 0 THEN gbCasOK := 1; END;
+  RETURN gbPsTx;
+END;
+
+
+// ------------------------------------------------------------
+// THE COUNTS
+// ------------------------------------------------------------
+
+// Forget every ball dropped so far: bins, pass counts and paths.
+gbClear()
+BEGIN
+  gbN := 0;
+  gbSum := 0;
+  gbSq := 0;
+  gbCnt := MAKELIST(0, K, 1, gbR + 1, 1);
+  // pass counts per peg: row r, peg j+1 (MAKEMAT then M(r,c) := v
+  // on an EXPORTed matrix is device-verified, ChiTable)
+  GB_PEG := MAKEMAT(0, gbR, gbR);
+  gbPth := {-1, -1, -1, -1, -1};
+  gbPthH := 0;
+  gbXbPx := -1;
+END;
+
+// One ball's final bin is k right bounces: record it.
+gbRecord(rcK)
+BEGIN
+  gbN := gbN + 1;
+  gbCnt(rcK + 1) := gbCnt(rcK + 1) + 1;
+  gbSum := gbSum + rcK;
+  gbSq := gbSq + rcK * rcK;
+END;
+
+// Observed mean of the bin positions.
+gbMean()
+BEGIN
+  IF gbN == 0 THEN RETURN 0; END;
+  RETURN gbSum / gbN;
+END;
+
+// Observed standard deviation of the bin positions, with the n-1
+// divisor: the balls are a sample from the Binomial(R, p) process.
+// MAX(0, ...) guards against rounding driving the variance a hair
+// below zero when every ball landed in the same bin.
+gbSD()
+BEGIN
+  LOCAL sdM;
+  IF gbN < 2 THEN RETURN 0; END;
+  sdM := gbSum / gbN;
+  RETURN (MAX(0, (gbSq - gbN * sdM * sdM) / (gbN - 1)))^0.5;
+END;
+
+
+// ------------------------------------------------------------
+// THEORY, cached
+// ------------------------------------------------------------
+
+// The binomial probabilities and the normal density for the current
+// R and p.  The density is evaluated ONCE per pixel column, and only
+// when R or p has changed (Lessons Learned section 6: cache it), so a
+// rebuild during pour mode costs no NORMALD calls at all.
+// BINOMIAL(n, p, k): the argument order StatDist has run on the device.
+// HP's Commands.pdf prints BINOMIAL(n, k, p) and its Command tree
+// BINOMIAL(n, p, k); GfxProbe T20 records whether the Prime takes both.
+gbTheory()
+BEGIN
+  LOCAL thK, thI, thV, thN;
+  gbMu := gbR * gbP;
+  gbSg := (gbR * gbP * (1 - gbP))^0.5;
+  // the usual rule: the normal approximation needs Rp >= 5 and R(1-p) >= 5
+  gbPoor := 0;
+  IF gbMu < 5 OR gbR * (1 - gbP) < 5 THEN gbPoor := 1; END;
+  IF gbNdR <> gbR OR gbNdP <> gbP THEN
+    gbE := MAKELIST(0, K, 1, gbR + 1, 1);
+    gbEmx := 0;
+    FOR thK FROM 0 TO gbR DO
+      gbE(thK + 1) := BINOMIAL(gbR, gbP, thK);
+      IF gbE(thK + 1) > gbEmx THEN gbEmx := gbE(thK + 1); END;
+    END;
+    // the normal density at the bin position of every pixel column;
+    // element i belongs to column gbX0 + i - 1
+    thN := (gbR + 1) * gbBw + 1;
+    gbNd := MAKELIST(0, K, 1, thN, 1);
+    FOR thI FROM 1 TO thN DO
+      thV := (thI - 1) / gbBw - 0.5;
+      gbNd(thI) := NORMALD(gbMu, gbSg, thV);
+    END;
+    gbNdR := gbR;
+    gbNdP := gbP;
+  END;
+END;
+
+
+// ------------------------------------------------------------
+// PIECES OF THE SCENE (all drawn on G3, the static layer)
+// ------------------------------------------------------------
+
+// Pascal's number beside peg j (0 = leftmost) of row r, just to its
+// left, in font 1: how many balls passed it, or C(r-1, j), the number
+// of paths that reach it.  plClr = 1 wipes the old number first.
+gbPegLbl(plR, plJ, plClr)
+BEGIN
+  LOCAL plX, plY, plS, plC;
+  plX := gbMidX + IP((plJ - (plR - 1) / 2) * gbBw + 0.5);
+  plY := gbTop + plR * gbDy;
+  IF gbPas == 2 THEN
+    plS := STRING(COMB(plR - 1, plJ), 2, 0);
+    plC := gbMAG;
+  ELSE
+    plS := gbKfmt(GB_PEG(plR, plJ + 1));
+    plC := gbBLUE;
+  END;
+  IF plClr == 1 THEN RECT_P(G3, plX - 24, plY - 8, plX - 4, plY + 2, gbWHT, gbWHT); END;
+  TEXTOUT_P(plS, G3, plX - 4 - 5 * DIM(plS), plY - 8, 1, plC);
+END;
+
+// A ball passed peg j of row r: count it, and refresh its number if
+// the counts are on screen.
+gbPass(psR, psJ)
+BEGIN
+  GB_PEG(psR, psJ + 1) := GB_PEG(psR, psJ + 1) + 1;
+  IF gbPas == 1 AND gbBw >= 28 THEN
+    gbPegLbl(psR, psJ, 1);
+    gbDirty := 1;
+  END;
+END;
+
+// One path through the board as a polyline.  pdM holds the R
+// choices as binary digits, row 1 the highest (1 = right).  The
+// corners are the points where a ball sits just above each peg, the
+// same points the animation uses.  pdClip = 1 stops at the lowest peg
+// level (the light-red paths on G2 never reach the bars); pdClip = 0
+// carries on down into the bin (the lattice paths on G1).
+gbPathDraw(pdG, pdM, pdCol, pdClip)
+BEGIN
+  LOCAL pdR, pdK, pdX0, pdY0, pdX1, pdY1;
+  LOCAL pdB, pdYc;
+  pdX1 := gbMidX; pdY1 := gbTop + gbDy - 5;
+  LINE_P(pdG, gbMidX, gbTop - 6, pdX1, pdY1, pdCol);
+  pdK := 0;
+  FOR pdR FROM 1 TO gbR DO
+    pdB := IP(pdM / 2^(gbR - pdR)) MOD 2;     // this row's choice
+    pdX0 := pdX1; pdY0 := pdY1;
+    pdK := pdK + pdB;
+    pdX1 := gbMidX + IP((pdK - pdR / 2) * gbBw + 0.5);
+    pdY1 := gbTop + (pdR + 1) * gbDy - 5;
+    IF pdClip == 1 AND pdY1 > gbPegBot + 2 THEN
+      pdYc := gbPegBot + 2;
+      pdX1 := pdX0 + IP((pdX1 - pdX0) * (pdYc - pdY0) / (pdY1 - pdY0) + 0.5);
+      pdY1 := pdYc;
+    END;
+    LINE_P(pdG, pdX0, pdY0, pdX1, pdY1, pdCol);
+  END;
+  IF pdClip == 0 THEN LINE_P(pdG, pdX1, pdY1, pdX1, gbHB - 2, pdCol); END;
+END;
+
+// G2 := the static scene (G3) plus the last five landed paths, oldest
+// first.  The paths are left out while Pascal's numbers are beside
+// the pegs (they would cross them) and while p is being dragged.
+gbRefresh()
+BEGIN
+  LOCAL rfI, rfJ;
+  BLIT_P(G2, 0, 0, G3);
+  IF gbPrev == 0 AND (gbPas == 0 OR gbBw < 28) THEN
+    FOR rfI FROM 1 TO 5 DO
+      rfJ := ((gbPthH + rfI - 1) MOD 5) + 1;
+      IF gbPth(rfJ) >= 0 THEN gbPathDraw(G2, gbPth(rfJ), gbLRED, 1); END;
+    END;
+  END;
+  gbDirty := 0;
+END;
+
+// The left readouts: n, x-bar and s.  rlClr = 1 wipes the old ones
+// first (nothing else is drawn in that corner).
+gbReadL(rlClr)
+BEGIN
+  LOCAL rlN;
+  rlN := gbN;
+  IF gbPrev == 1 THEN rlN := 0; END;
+  IF rlClr == 1 THEN RECT_P(G3, 0, 18, 103, 58, gbWHT, gbWHT); END;
+  TEXTOUT_P("n = " + STRING(rlN, 2, 0), G3, 4, 20, 1, gbBLUE);
+  IF rlN > 0 THEN
+    TEXTOUT_P(CHAR(57344) + " = " + gbF(gbMean(), 2), G3, 4, 33, 1, gbRED);
+  ELSE
+    TEXTOUT_P(CHAR(57344) + " = (no balls)", G3, 4, 33, 1, gbRED);
+  END;
+  IF rlN > 1 THEN
+    TEXTOUT_P("s = " + gbF(gbSD(), 2), G3, 4, 46, 1, gbBLUE);
+  END;
+END;
+
+// A dotted vertical line (LINE_P has no dash style).
+gbDotV(dvX, dvY1, dvY2, dvCol)
+BEGIN
+  LOCAL dvY;
+  FOR dvY FROM dvY1 TO dvY2 STEP 3 DO PIXON_P(G3, dvX, dvY, dvCol); END;
+END;
+
+// beta 3b: the highest pixel (smallest y) that the OVERLAYS reach under
+// a count label centred on bin ltK and ltW px either side of the bin's
+// centre: the magenta square (2 px round its centre), the magenta lines
+// to the neighbouring squares (straight, so their highest point under
+// the label is at the label's left or right edge), and, with the normal
+// shown, the green curve in every pixel column of the label.  Returns
+// gbHB when no overlay is shown.  gbEy and gbNy are the scene's caches.
+gbLblTop(ltK, ltW)
+BEGIN
+  LOCAL ltY, ltC, ltPX, ltI, ltN;
+  ltY := gbHB;
+  IF gbOvl >= 1 THEN
+    ltC := gbPx(ltK);
+    ltY := MIN(ltY, gbEy(ltK + 1) - 2);
+    IF ltK > 0 THEN
+      ltY := MIN(ltY, gbEy(ltK + 1) + (gbEy(ltK) - gbEy(ltK + 1)) * MIN(1, ltW / gbBw));
+    END;
+    IF ltK < gbR THEN
+      ltY := MIN(ltY, gbEy(ltK + 1) + (gbEy(ltK + 2) - gbEy(ltK + 1)) * MIN(1, ltW / gbBw));
+    END;
+    IF gbOvl >= 2 THEN
+      ltN := (gbR + 1) * gbBw + 1;
+      FOR ltPX FROM ltC - ltW TO ltC + ltW DO
+        ltI := ltPX - gbX0 + 1;
+        IF ltI >= 1 AND ltI <= ltN THEN ltY := MIN(ltY, gbNy(ltI)); END;
+      END;
+    END;
+  END;
+  RETURN FLOOR(ltY);
+END;
+
+// One bar and its count.  Blue normally; with the SD option, green
+// within 1 SD of Rp, orange within 2, red beyond.  The count goes
+// above the bar when there is room under the pegs, else inside it.
+// beta 3b: "above the bar" means above the bar AND above the overlays
+// under the label (gbLblTop), so the magenta line can no longer cross
+// the digits (the emulator showed a "9" half hidden).
+gbBar(bkK)
+BEGIN
+  LOCAL bkX, bkTop, bkS, bkC, bkF, bkD;
+  LOCAL bkY;
+  bkX := gbX0 + bkK * gbBw;
+  IF gbCnt(bkK + 1) > 0 AND gbPrev == 0 THEN
+    bkTop := gbHB - IP(gbCnt(bkK + 1) / gbYmx * (gbHB - gbHT) + 0.5);
+    bkC := gbBLUE; bkF := gbFILL;
+    IF gbSdc == 1 THEN
+      bkD := ABS(bkK - gbMu) / gbSg;           // distance from Rp in SDs
+      bkC := gbRED;
+      IF bkD <= 2 THEN bkC := gbORNG; END;
+      IF bkD <= 1 THEN bkC := gbGRN; END;
+      bkF := bkC;
+    END;
+    RECT_P(G3, bkX + 1, bkTop, bkX + gbBw - 1, gbHB - 1, bkC, bkF);
+    IF gbBw >= 28 THEN
+      bkS := gbKfmt(gbCnt(bkK + 1));
+      // beta 3b: the label's bottom row goes 2 px above the higher of the
+      // bar top and the overlays under it (the label is 3 px a character
+      // either side of the centre, plus 1)
+      bkY := MIN(bkTop, gbLblTop(bkK, 3 * DIM(bkS) + 1) - 1);
+      IF bkY - 11 >= 127 THEN
+        TEXTOUT_P(bkS, G3, bkX + IP(gbBw / 2) - 3 * DIM(bkS), bkY - 11, 1, gbBLUE);
+      ELSE
+        IF gbHB - bkTop >= 13 THEN
+          IF gbSdc == 1 THEN bkC := gbWHT; ELSE bkC := gbBLUE; END;
+          TEXTOUT_P(bkS, G3, bkX + IP(gbBw / 2) - 3 * DIM(bkS), bkTop + 2, 1, bkC);
+        END;
+      END;
+    END;
+  END;
+END;
+
+// Redraw ONE bin's column of the histogram on G3, in the scene's own
+// order (normal area, bar, count, magenta, green, dotted lines), so a
+// landed ball costs one column instead of a whole scene.  The column
+// is wiped from y = 127 (just below the lowest pegs) to the baseline.
+// The magenta segments and the green curve that cross into the two
+// neighbouring columns are drawn again there too: same pixels, same
+// order, so nothing changes in those columns.
+gbCol(ckK)
+BEGIN
+  LOCAL ckX, ckX1, ckX2, ckPX, ckI, ckN;
+  ckX := gbX0 + ckK * gbBw;
+  ckN := (gbR + 1) * gbBw;
+  RECT_P(G3, ckX, 127, ckX + gbBw - 1, gbHB - 1, gbWHT, gbWHT);
+  IF gbOvl >= 2 THEN
+    FOR ckPX FROM ckX TO ckX + gbBw - 1 DO
+      IF gbNy(ckPX - gbX0 + 1) < gbHB - 1 THEN
+        LINE_P(G3, ckPX, gbHB - 1, ckPX, gbNy(ckPX - gbX0 + 1), gbNFil);
+      END;
+    END;
+  END;
+  gbBar(ckK);
+  IF gbOvl >= 1 THEN
+    IF ckK > 0 THEN LINE_P(G3, gbPx(ckK - 1), gbEy(ckK), gbPx(ckK), gbEy(ckK + 1), gbMAG); END;
+    IF ckK < gbR THEN LINE_P(G3, gbPx(ckK), gbEy(ckK + 1), gbPx(ckK + 1), gbEy(ckK + 2), gbMAG); END;
+    ckI := gbPx(ckK);
+    RECT_P(G3, ckI - 2, gbEy(ckK + 1) - 2, ckI + 2, gbEy(ckK + 1) + 2, gbMAG, gbMAG);
+  END;
+  IF gbOvl >= 2 THEN
+    ckX1 := MAX(gbX0 + 1, ckX - gbBw);
+    ckX2 := MIN(gbX0 + ckN, ckX + 2 * gbBw - 1);
+    FOR ckPX FROM ckX1 TO ckX2 DO
+      LINE_P(G3, ckPX - 1, gbNy(ckPX - gbX0), ckPX, gbNy(ckPX - gbX0 + 1), gbNCol);
+    END;
+  END;
+  // the dotted lines go on top, where they fall in these columns
+  ckX1 := ckX - gbBw; ckX2 := ckX + 2 * gbBw - 1;
+  ckI := gbPx(gbMu);
+  IF ckI >= ckX1 AND ckI <= ckX2 THEN gbDotV(ckI, gbHT, gbHB - 2, gbMAG); END;
+  IF gbXbPx >= ckX1 AND gbXbPx <= ckX2 THEN gbDotV(gbXbPx, gbHT + 1, gbHB - 1, gbRED); END;
+END;
+
+
+// ------------------------------------------------------------
+// THE STATIC SCENE, drawn into G3 (and G2 = G3 + paths)
+// Pegs, bars, overlays and readouts.  The animation copies G2 and
+// adds the balls, which keeps it fast even on a G1.
+// ------------------------------------------------------------
+gbScene()
+BEGIN
+  LOCAL scR, scK, scX, scY, scStr, scH;
+  LOCAL scScale, scPX, scN, scI;
+
+  DIMGROB_P(G3, 320, 240, #FFFFFFh);
+  gbTheory();
+  // while p is dragged the old bars are hidden: draw as if n = 0
+  scN := gbN;
+  IF gbPrev == 1 THEN scN := 0; END;
+  // With no balls yet, the overlays show the SHAPE (probabilities
+  // scaled to fill the plot); with balls, they show expected counts.
+  IF scN > 0 THEN scScale := scN; ELSE scScale := 1; END;
+  // the normal curve is grey when the approximation is poor
+  gbNCol := gbGRN; gbNFil := gbLGRN;
+  IF gbPoor == 1 THEN gbNCol := gbGRY2; gbNFil := gbLGRY; END;
+
+  // ---- the title, or the warning that the normal is a poor fit ----
+  IF gbOvl >= 2 AND gbPoor == 1 THEN
+    IF gbMu < 5 THEN
+      scStr := "Rp = " + gbF(gbMu, 2);
+    ELSE
+      scStr := "R(1-p) = " + gbF(gbR * (1 - gbP), 2);
+    END;
+    TEXTOUT_P("normal approximation poor (" + scStr + " < 5)", G3, 4, 1, 1, gbGRAY);
+  ELSE
+    TEXTOUT_P("Galton Board", G3, 6, 1, 2, gbBLUE);
+  END;
+
+  // ---- the pegs: row r has r pegs, centred on the board ----
+  FOR scR FROM 1 TO gbR DO
+    scY := gbTop + scR * gbDy;
+    FOR scK FROM 0 TO scR - 1 DO
+      scX := gbMidX + IP((scK - (scR - 1) / 2) * gbBw + 0.5);
+      // beta 3b: a solid peg, 5 px across -- two RECT_P bars (5 x 3 and
+      // 3 x 5) cover exactly a disc of radius 2.  Two ARC_P circles and a
+      // pixel left holes on the diagonals (GfxProbe T09).
+      RECT_P(G3, scX - 2, scY - 1, scX + 2, scY + 1, gbGRAY, gbGRAY);
+      RECT_P(G3, scX - 1, scY - 2, scX + 1, scY + 2, gbGRAY, gbGRAY);
+    END;
+  END;
+  // the funnel the balls start from
+  LINE_P(G3, gbMidX - 10, gbTop - 10, gbMidX - 3, gbTop - 1, gbGRAY);
+  LINE_P(G3, gbMidX + 10, gbTop - 10, gbMidX + 3, gbTop - 1, gbGRAY);
+
+  // ---- Pascal's triangle beside the pegs (pegs 28 px apart or more) ----
+  IF gbBw >= 28 AND (gbPas == 2 OR (gbPas == 1 AND gbPrev == 0)) THEN
+    FOR scR FROM 1 TO gbR DO
+      FOR scK FROM 0 TO scR - 1 DO gbPegLbl(scR, scK, 0); END;
+    END;
+  END;
+
+  // ---- y scale: tallest bar, or tallest expectation if shown ----
+  // (a loop: MAX on a list is not in the device-verified list)
+  gbYmx := 0;
+  IF scN > 0 THEN
+    FOR scK FROM 1 TO gbR + 1 DO
+      IF gbCnt(scK) > gbYmx THEN gbYmx := gbCnt(scK); END;
+    END;
+  END;
+  IF gbOvl > 0 THEN gbYmx := MAX(gbYmx, scScale * gbEmx); END;
+  IF gbYmx <= 0 THEN gbYmx := 1; END;
+  gbYmx := gbYmx * 1.08;
+  gbScN := scN;
+  scH := gbHB - gbHT;                 // pixels available for the tallest bar
+
+  // pixel heights of the squares and of the normal curve, kept so a
+  // landed ball can redraw one column (gbCol) without recomputing
+  gbEy := MAKELIST(0, K, 1, gbR + 1, 1);
+  FOR scK FROM 0 TO gbR DO
+    gbEy(scK + 1) := gbHB - IP(scScale * gbE(scK + 1) / gbYmx * scH + 0.5);
+  END;
+  IF gbOvl >= 2 THEN
+    scI := (gbR + 1) * gbBw + 1;
+    gbNy := MAKELIST(0, K, 1, scI, 1);
+    FOR scPX FROM 1 TO scI DO
+      // height = density x n: each bin is one unit wide in position
+      scY := gbHB - IP(scScale * gbNd(scPX) / gbYmx * scH + 0.5);
+      IF scY < gbHT THEN scY := gbHT; END;
+      gbNy(scPX) := scY;
+    END;
+  END;
+
+  // ---- the histogram, in the order gbCol repeats ----
+  LINE_P(G3, gbX0 - 4, gbHB, gbX0 + (gbR + 1) * gbBw + 4, gbHB, #000000h);
+  // the normal as a filled area, one pixel column at a time, UNDER
+  // the bars: where a bar is shorter than the area the green shows
+  IF gbOvl >= 2 THEN
+    FOR scPX FROM gbX0 TO gbX0 + (gbR + 1) * gbBw - 1 DO
+      IF gbNy(scPX - gbX0 + 1) < gbHB - 1 THEN
+        LINE_P(G3, scPX, gbHB - 1, scPX, gbNy(scPX - gbX0 + 1), gbNFil);
+      END;
+    END;
+  END;
+  // the bars (observed counts)
+  FOR scK FROM 0 TO gbR DO gbBar(scK); END;
+  // overlay 1: binomial expected counts, magenta squares
+  IF gbOvl >= 1 THEN
+    FOR scK FROM 0 TO gbR DO
+      scX := gbPx(scK);
+      IF scK > 0 THEN LINE_P(G3, gbPx(scK - 1), gbEy(scK), scX, gbEy(scK + 1), gbMAG); END;
+    END;
+    FOR scK FROM 0 TO gbR DO
+      scX := gbPx(scK);
+      RECT_P(G3, scX - 2, gbEy(scK + 1) - 2, scX + 2, gbEy(scK + 1) + 2, gbMAG, gbMAG);
+    END;
+  END;
+  // overlay 2: the outline of the normal curve, no gaps
+  IF gbOvl >= 2 THEN
+    FOR scPX FROM gbX0 + 1 TO gbX0 + (gbR + 1) * gbBw DO
+      LINE_P(G3, scPX - 1, gbNy(scPX - gbX0), scPX, gbNy(scPX - gbX0 + 1), gbNCol);
+    END;
+  END;
+  // expected mean Rp (magenta) and observed mean (red), dotted
+  gbDotV(gbPx(gbMu), gbHT, gbHB - 2, gbMAG);
+  gbXbPx := -1;
+  IF scN > 0 THEN
+    gbXbPx := gbPx(gbMean());
+    gbDotV(gbXbPx, gbHT + 1, gbHB - 1, gbRED);
+  END;
+  // bin labels: the number of right bounces (y 194, clear of the
+  // footer line at 206 and the soft keys at 218)
+  FOR scK FROM 0 TO gbR DO
+    scX := gbX0 + scK * gbBw;
+    scStr := STRING(scK, 2, 0);
+    TEXTOUT_P(scStr, G3, scX + IP(gbBw / 2) - 3 * DIM(scStr), gbHB + 3, 1, gbGRAY);
+  END;
+
+  // ---- readouts: observed (left) and theory (right) ----
+  gbReadL(0);
+  TEXTOUT_P("R = " + STRING(gbR, 2, 0) + ", p = " + gbF(gbP, 2), G3, 212, 20, 1, #000000h);
+  TEXTOUT_P("Rp = " + gbF(gbMu, 2), G3, 212, 33, 1, gbMAG);
+  TEXTOUT_P(CHAR(8730) + "Rp(1-p) = " + gbF(gbSg, 2), G3, 212, 46, 1, gbMAG);
+  CASE
+    IF gbOvl == 0 THEN scStr := "overlays off"; END;
+    IF gbOvl == 1 THEN scStr := "binomial"; END;
+    DEFAULT scStr := "binomial+normal";
+  END;
+  TEXTOUT_P(scStr, G3, 212, 59, 1, gbGRAY);
+
+  // G2 = this scene plus the landed paths
+  DIMGROB_P(G2, 320, 240, #FFFFFFh);
+  gbRefresh();
+END;
+
+// The footer: ONE line at y 206, above the soft keys (218).  A status
+// message (gbMsg) when there is one, otherwise the key legend in the
+// house form.
+gbFoot(ftG)
+BEGIN
+  IF DIM(gbMsg) > 0 THEN
+    TEXTOUT_P(gbMsg, ftG, 4, 206, 1, gbMsgC);
+  ELSE
+    TEXTOUT_P("⇆ = p, ⇅ = rows (clear), tap bar = info, Esc = quit", ftG, 4, 206, 1, gbFOOT);
+  END;
+END;
+
+// Show the board: G1 = G2 + footer, one blit, then the soft keys.
+gbFrame()
+BEGIN
+  IF gbDirty == 1 THEN gbRefresh(); END;
+  BLIT_P(G1, 0, 0, G2);
+  gbFoot(G1);
+  BLIT_P(G0, 0, 0, G1);
+  gbMenuKeys();
+END;
+
+// A ball has landed in bin lnK after the choices lnM.  Record it,
+// keep its path, and update only its bar on G3 -- unless the bar has
+// outgrown the y-scale, or the expected counts n P(k) would now sit
+// 3 px or more higher: then the whole scene is rebuilt once.
+gbLand(lnK, lnM)
+BEGIN
+  LOCAL lnOld, lnB, lnH;
+  gbRecord(lnK);
+  gbPthH := (gbPthH MOD 5) + 1;
+  gbPth(gbPthH) := lnM;
+  gbDirty := 1;
+  lnH := gbHB - gbHT;
+  IF gbCnt(lnK + 1) > gbYmx OR (gbOvl > 0 AND (gbN - gbScN) * gbEmx / gbYmx * lnH >= 3) THEN
+    gbScene();
+    RETURN lnK;
+  END;
+  // only this bar's column, the x-bar line if it moved, the readouts
+  lnOld := gbXbPx;
+  gbXbPx := gbPx(gbMean());
+  gbCol(lnK);
+  IF lnOld >= 0 AND lnOld <> gbXbPx THEN
+    lnB := IP((lnOld - gbX0) / gbBw);
+    IF lnB <> lnK THEN gbCol(lnB); END;
+  END;
+  IF lnOld <> gbXbPx THEN gbDotV(gbXbPx, gbHT + 1, gbHB - 1, gbRED); END;
+  gbReadL(1);
+  RETURN lnK;
+END;
+
+
+// ------------------------------------------------------------
+// MOVING BALLS (drawn on G1 only)
+// ------------------------------------------------------------
+
+// Remember where ball tpI is, for its trail (a ring of 6 per ball).
+gbTrPush(tpI, tpX, tpY)
+BEGIN
+  LOCAL tpJ;
+  gbRH(tpI) := (gbRH(tpI) + 1) MOD 6;
+  tpJ := (tpI - 1) * 6 + gbRH(tpI) + 1;
+  gbRX(tpJ) := tpX;
+  gbRY(tpJ) := tpY;
+  IF gbRN(tpI) < 6 THEN gbRN(tpI) := gbRN(tpI) + 1; END;
+END;
+
+// Ball tdI's trail: small dots where it was, the oldest palest.  They
+// are drawn oldest first, so the newer, darker dots land on top.
+gbTrDraw(tdI)
+BEGIN
+  LOCAL tdA, tdJ, tdC, tdN, tdX, tdY;
+  tdN := gbRN(tdI);
+  FOR tdA FROM 1 TO tdN DO
+    tdJ := (tdI - 1) * 6 + ((gbRH(tdI) - (tdN - tdA) + 6) MOD 6) + 1;
+    tdC := gbTrC(tdN - tdA + 1);
+    tdX := gbRX(tdJ); tdY := gbRY(tdJ);
+    RECT_P(G1, tdX - 1, tdY - 1, tdX + 1, tdY + 1, tdC, tdC);
+  END;
+END;
+
+// Put a new ball in slot nbI, at the mouth of the funnel.
+gbNewBall(nbI)
+BEGIN
+  gbQR(nbI) := 0; gbQF(nbI) := 0; gbQK(nbI) := 0;
+  gbQG(nbI) := 0; gbQM(nbI) := 0;
+  gbRH(nbI) := 0; gbRN(nbI) := 0;
+END;
+
+// One frame for the ball in slot bsI: move it along its segment, draw
+// its trail and the ball on G1.  A segment is the funnel (2 frames),
+// one peg row (gbSpd frames) or the fall into the bin (4 frames) --
+// the same path the beta 1 animation took.  At the end of a segment
+// the ball passes the next peg (counted) and decides: right with
+// chance p.  Returns 0 when the ball has just landed (slot freed).
+gbBallStep(bsI)
+BEGIN
+  LOCAL bsS, bsF, bsNF, bsK, bsG, bsX0;
+  LOCAL bsY0, bsX1, bsY1, bsX, bsY, bsTop;
+  LOCAL bsL;
+  bsS := gbQR(bsI);
+  bsF := gbQF(bsI) + 1;
+  bsK := gbQK(bsI);
+  bsG := gbQG(bsI);
+  IF bsS == 0 THEN
+    // out of the funnel, down to just above the first peg
+    bsX0 := gbMidX; bsY0 := gbTop - 6;
+    bsX1 := gbMidX; bsY1 := gbTop + gbDy - 5;
+    bsNF := 2;
+  ELSE
+    IF bsS <= gbR THEN
+      // from just above peg row bsS to just above the next row
+      bsX0 := gbMidX + IP((bsK - (bsS - 1) / 2) * gbBw + 0.5);
+      bsY0 := gbTop + bsS * gbDy - 5;
+      bsX1 := gbMidX + IP((bsK + bsG - bsS / 2) * gbBw + 0.5);
+      bsY1 := gbTop + (bsS + 1) * gbDy - 5;
+      bsNF := gbSpd;
+    ELSE
+      // into the bin, onto the top of its bar as now drawn
+      bsX0 := gbMidX + IP((bsK - gbR / 2) * gbBw + 0.5);
+      bsY0 := gbTop + (gbR + 1) * gbDy - 5;
+      bsX1 := bsX0;
+      bsTop := gbHB - 4;
+      IF gbCnt(bsK + 1) > 0 THEN
+        bsTop := gbHB - IP(gbCnt(bsK + 1) / gbYmx * (gbHB - gbHT) + 0.5) - 4;
+      END;
+      bsY1 := bsTop;
+      bsNF := 4;
+    END;
+  END;
+  bsX := bsX0 + IP((bsX1 - bsX0) * bsF / bsNF + 0.5);
+  bsY := bsY0 + IP((bsY1 - bsY0) * bsF / bsNF + 0.5);
+  gbTrDraw(bsI);
+  gbDisc(G1, bsX, bsY, gbRED);
+  gbTrPush(bsI, bsX, bsY);
+  gbQF(bsI) := bsF;
+  IF bsF < bsNF THEN RETURN 1; END;
+  // the segment is done: on to the next one
+  gbQF(bsI) := 0;
+  IF bsS >= 1 AND bsS <= gbR THEN gbQK(bsI) := bsK + bsG; END;
+  bsS := bsS + 1;
+  gbQR(bsI) := bsS;
+  IF bsS <= gbR THEN
+    // just above peg (row bsS, peg k): count the pass, then decide
+    gbPass(bsS, gbQK(bsI));
+    gbQG(bsI) := 0;
+    IF RANDOM < gbP THEN gbQG(bsI) := 1; END;
+    gbQM(bsI) := 2 * gbQM(bsI) + gbQG(bsI);
+    // the Bernoulli string, for a single ball: one letter per row
+    IF gbBOn == 1 AND bsI == 1 THEN
+      bsL := "L ";
+      IF gbQG(bsI) == 1 THEN bsL := "R "; END;
+      IF bsS <= 6 THEN gbBL1 := gbBL1 + bsL; ELSE gbBL2 := gbBL2 + bsL; END;
+    END;
+    RETURN 1;
+  END;
+  IF bsS == gbR + 1 THEN RETURN 1; END;      // now falling into its bin
+  gbLand(gbQK(bsI), gbQM(bsI));
+  gbQR(bsI) := -1;
+  RETURN 0;
+END;
+
+// The Bernoulli string in the top-left text area (over the readouts,
+// which are stale while the ball is in the air): the letters so far,
+// six to a line, then "-> k rights" and "-> bin k" once all R are made.
+gbBBox()
+BEGIN
+  LOCAL bbK, bbS;
+  RECT_P(G1, 0, 17, 99, 71, gbRED, gbPINK);
+  IF DIM(gbBL1) > 0 THEN TEXTOUT_P(gbBL1, G1, 4, 20, 1, gbRED); END;
+  IF DIM(gbBL2) > 0 THEN TEXTOUT_P(gbBL2, G1, 4, 33, 1, gbRED); END;
+  IF gbQR(1) > gbR OR gbQR(1) < 0 THEN
+    bbK := gbQK(1);
+    bbS := " rights";
+    IF bbK == 1 THEN bbS := " right"; END;
+    TEXTOUT_P(CHAR(8594) + " " + STRING(bbK, 2, 0) + bbS, G1, 4, 46, 1, #000000h);
+    TEXTOUT_P(CHAR(8594) + " bin " + STRING(bbK, 2, 0), G1, 4, 59, 1, gbBLUE);
+  ELSE
+    TEXTOUT_P("R right, L left", G1, 4, 59, 1, gbGRAY);
+  END;
+END;
+
+
+// ------------------------------------------------------------
+// DROPPING BALLS
+// ------------------------------------------------------------
+
+// Drop one ball with animation and the Bernoulli string.  Each frame
+// copies G2 into G1, draws the ball, its trail and the string, and
+// shows G1.  Returns the bin.
+gbDropAnim()
+BEGIN
+  LOCAL daGo, daK, daS;
+  gbNewBall(1);
+  gbBOn := 1; gbBL1 := ""; gbBL2 := "";
+  gbMsg := "one ball: at every peg R (right, chance p) or L";
+  gbMsgC := gbFOOT;
+  daGo := 1;
+  WHILE daGo == 1 DO
+    IF gbDirty == 1 THEN gbRefresh(); END;
+    BLIT_P(G1, 0, 0, G2);
+    daGo := gbBallStep(1);
+    gbBBox();
+    gbFoot(G1);
+    BLIT_P(G0, 0, 0, G1);
+    gbMenuKeys();
+    WAIT(0.02);
+  END;
+  gbBOn := 0;
+  daK := gbQK(1);
+  daS := " rights ";
+  IF daK == 1 THEN daS := " right "; END;
+  // the whole string stays in the footer until the next action
+  gbMsg := gbBL1 + gbBL2 + CHAR(8594) + " " + STRING(daK, 2, 0) + daS + CHAR(8594) + " bin " + STRING(daK, 2, 0);
+  gbMsgC := gbRED;
+  RETURN daK;
+END;
+
+// POUR MODE: a stream of balls, up to 8 in the air.
+//   poMode 1: while a finger is held on the funnel (lift = stop)
+//   poMode 2: switched on by the Pour soft key or the 0 key; a tap,
+//             0 or Esc stops it
+//   poMode 3: exactly poMax balls (the x10 soft key)
+// Per frame: one blit of the scene (G2 -> G1), the balls and their
+// trails, one blit to the screen -- so the cost barely rises with
+// the number of balls.  A landed ball redraws only its bar (gbLand).
+// Frames are paced by TICKS (at least 25 ms), not WAIT, so a key
+// pressed during the pour is read by GETKEY (GfxProbe T15 asks
+// whether WAIT(0.02) swallows keys).  After a stop, the balls still
+// in the air finish their fall.  Returns the number launched.
+gbPour(poMode, poMax)
+BEGIN
+  LOCAL poI, poOn, poLive, poFr, poNew, poK;
+  LOCAL poM, poM1, poT, poSl, poN;
+  IF poMode == 2 THEN gbDrain(); END;          // the tap that started it
+  REPEAT poK := GETKEY; UNTIL poK == -1;
+  FOR poI FROM 1 TO 8 DO gbQR(poI) := -1; END;
+  gbBOn := 0;
+  poOn := 1; poLive := 0; poFr := 0; poNew := 0;
+  WHILE poOn == 1 OR poLive > 0 DO
+    poT := TICKS;
+    poFr := poFr + 1;
+    // a new ball every third frame while pouring, at most 8 in the air
+    IF poOn == 1 AND poLive < 8 AND (poFr MOD 3) == 1 THEN
+      poSl := 0;
+      FOR poI FROM 1 TO 8 DO
+        IF poSl == 0 AND gbQR(poI) < 0 THEN poSl := poI; END;
+      END;
+      IF poSl > 0 THEN
+        gbNewBall(poSl);
+        poLive := poLive + 1;
+        poNew := poNew + 1;
+        IF poMode == 3 AND poNew >= poMax THEN poOn := 0; END;
+      END;
+    END;
+    IF gbDirty == 1 THEN gbRefresh(); END;
+    BLIT_P(G1, 0, 0, G2);
+    FOR poI FROM 1 TO 8 DO
+      IF gbQR(poI) >= 0 THEN
+        IF gbBallStep(poI) == 0 THEN poLive := poLive - 1; END;
+      END;
+    END;
+    // the status line
+    poN := STRING(gbN, 2, 0);
+    IF poOn == 1 THEN
+      IF poMode == 1 THEN gbMsg := "pouring: n = " + poN + ", lift your finger = stop"; END;
+      IF poMode == 2 THEN gbMsg := "pouring: n = " + poN + ", tap, 0 or Esc = stop"; END;
+      IF poMode == 3 THEN gbMsg := "dropping " + STRING(poMax, 2, 0) + ": n = " + poN; END;
+    ELSE
+      gbMsg := "n = " + poN + ", the last balls are landing";
+    END;
+    gbMsgC := gbFOOT;
+    gbFoot(G1);
+    BLIT_P(G0, 0, 0, G1);
+    gbMenuKeys();
+    // stop pouring?
+    IF poOn == 1 THEN
+      poK := GETKEY;
+      IF poK == 4 THEN poOn := 0; END;                  // Esc, any mode
+      IF poMode == 1 THEN
+        poM := MOUSE; poM1 := poM(1);
+        IF SIZE(poM1) == 0 THEN poOn := 0; END;         // the finger lifted
+      END;
+      IF poMode == 2 THEN
+        IF poK == 42 THEN poOn := 0; END;               // 0 again
+        poM := MOUSE; poM1 := poM(1);
+        IF SIZE(poM1) > 0 THEN poOn := 0; END;          // a tap anywhere
+      END;
+    END;
+    // at least 25 ms a frame, so a G2 does not outrun what a G1 shows
+    REPEAT UNTIL TICKS - poT >= 25;
+  END;
+  gbDrain();
+  REPEAT poK := GETKEY; UNTIL poK == -1;
+  gbMsg := "poured " + STRING(poNew, 2, 0) + " balls: n = " + STRING(gbN, 2, 0);
+  gbMsgC := gbFOOT;
+  RETURN poNew;
+END;
+
+// Drop dfN balls with no animation: R random bounces each, every peg
+// passed is counted for Pascal's triangle.
+gbDropFast(dfN)
+BEGIN
+  LOCAL dfI, dfR, dfK;
+  // say what is happening; 1000 balls take a few seconds on a G1
+  RECT_P(G0, 60, 100, 260, 140, gbORNG, gbLORN);
+  TEXTOUT_P("Dropping " + STRING(dfN, 2, 0) + " balls ...", G0, 76, 112, 2, gbORNG);
+  FOR dfI FROM 1 TO dfN DO
+    dfK := 0;
+    FOR dfR FROM 1 TO gbR DO
+      GB_PEG(dfR, dfK + 1) := GB_PEG(dfR, dfK + 1) + 1;   // passes this peg
+      IF RANDOM < gbP THEN dfK := dfK + 1; END;
+    END;
+    gbRecord(dfK);
+  END;
+END;
+
+
+// ------------------------------------------------------------
+// DROP 100,000 -- "PPL animates, Python crunches"
+// NOT YET RUN ON HARDWARE.  Test with the Terminal open: a Python
+// error prints there, and PPL carries on with its fallback.
+// Route A (Lessons Learned section 8): the Python lives in this
+// file and is run by PYTHON(gbPyDrop) -- there is no .py file.
+// The bridge (section 9): PPL writes GB_R, GB_P and GB_PYN; Python
+// reads them with hpprime.eval (never argv) and writes the counts
+// back into GB_PYO ONE VALUE AT A TIME -- R(R+1)/2 peg counts, then
+// the R+1 bins, the last bin last -- so the payload is the same size
+// whether 100 or 100,000 balls were dropped.
+// ------------------------------------------------------------
+#PYTHON gbPyDrop
+# GaltonBoard beta 2: "Drop 100,000" -- the same board, in MicroPython.
+# NOT YET RUN ON HARDWARE.  MicroPython 1.9.4 has no 'random' module:
+# urandom is the one to import (Lessons Learned v7f section 8).
+from hpprime import eval as ppl
+from urandom import random, getrandbits
+
+def main():
+    R = int(float(ppl("GB_R")))
+    p = float(ppl("GB_P"))
+    n = int(float(ppl("GB_PYN")))
+    size = 1 << R
+    # hist[m] = how many balls made the choices m: R binary digits,
+    # row 1 the highest, 1 = right.  A ball's whole path is one number.
+    hist = [0] * size
+    if abs(p - 0.5) < 0.000001:
+        # Galton's board, p = 1/2: R fair left/right choices are
+        # exactly R random bits -- one call per ball
+        for _ in range(n):
+            hist[getrandbits(R)] += 1
+    else:
+        # any other p: one random() < p per peg, as in PPL
+        for _ in range(n):
+            m = 0
+            for _r in range(R):
+                m = m + m
+                if random() < p:
+                    m += 1
+            hist[m] += 1
+    # every path's pegs and bin, from its digits
+    pegs = [0] * (R * (R + 1) // 2)
+    bins = [0] * (R + 1)
+    for m in range(size):
+        h = hist[m]
+        if h:
+            k = 0
+            base = 0
+            for r in range(R):
+                pegs[base + k] += h
+                base += r + 1
+                if (m >> (R - 1 - r)) & 1:
+                    k += 1
+            bins[k] += h
+    # one value per crossing, built by concatenation (section 9)
+    L = len(pegs)
+    for i in range(L):
+        ppl("GB_PYO(" + str(i + 1) + "):=" + str(pegs[i]))
+    for k in range(R + 1):
+        ppl("GB_PYO(" + str(L + k + 1) + "):=" + str(bins[k]))
+
+main()
+#END
+
+// The PPL side of Drop 100,000 (Lessons Learned section 9, all
+// three parts): clear the output first, validate by READING the last
+// element inside IFERR (and check the bins add up to N), and always
+// keep the PPL fallback -- capped at 5,000 balls, because 100,000
+// would take many minutes in PPL.  The footer then names the engine
+// that really ran and the elapsed TICKS.
+gbBigDrop(bgN)
+BEGIN
+  LOCAL bgL, bgT, bgOK, bgChk, bgI, bgS;
+  LOCAL bgR, bgJ, bgC, bgM;
+  bgL := gbR * (gbR + 1) / 2;                  // pegs on the board
+  RECT_P(G0, 16, 90, 303, 150, gbORNG, gbLORN);
+  TEXTOUT_P("Dropping " + STRING(bgN, 2, 0) + " balls in MicroPython", G0, 26, 98, 2, gbORNG);
+  TEXTOUT_P("(if Python fails: PPL, 5,000 balls)", G0, 26, 120, 1, gbGRAY);
+  TEXTOUT_P("Please wait ...", G0, 26, 133, 1, gbGRAY);
+  // 1. the inputs Python reads, and the output cleared to -1
+  GB_R := gbR; GB_P := gbP; GB_PYN := bgN;
+  GB_PYO := MAKELIST(-1, K, 1, bgL + gbR + 1, 1);
+  bgT := TICKS;
+  IFERR
+    PYTHON(gbPyDrop);
+  THEN
+    bgOK := 0;          // (an error INSIDE Python never reaches here)
+  END;
+  bgT := TICKS - bgT;
+  // 2. validate by USING the result: the last element, inside IFERR
+  bgOK := 0;
+  IFERR
+    bgChk := GB_PYO(bgL + gbR + 1) + 0;
+    IF bgChk >= 0 THEN bgOK := 1; END;
+  THEN
+    bgOK := 0;
+  END;
+  // and the bins must add up to the balls asked for
+  IF bgOK == 1 THEN
+    bgS := 0;
+    FOR bgI FROM 0 TO gbR DO bgS := bgS + GB_PYO(bgL + bgI + 1); END;
+    IF bgS <> bgN THEN bgOK := 0; END;
+  END;
+  IF bgOK == 1 THEN
+    // fold Python's counts into the board: pegs, then bins
+    FOR bgR FROM 1 TO gbR DO
+      FOR bgJ FROM 0 TO bgR - 1 DO
+        bgI := bgR * (bgR - 1) / 2 + bgJ + 1;
+        GB_PEG(bgR, bgJ + 1) := GB_PEG(bgR, bgJ + 1) + GB_PYO(bgI);
+      END;
+    END;
+    FOR bgI FROM 0 TO gbR DO
+      bgC := GB_PYO(bgL + bgI + 1);
+      gbCnt(bgI + 1) := gbCnt(bgI + 1) + bgC;
+      gbN := gbN + bgC;
+      gbSum := gbSum + bgI * bgC;
+      gbSq := gbSq + bgI * bgI * bgC;
+    END;
+    gbEng := "engine: MicroPython";
+    gbMsgC := gbGRN;
+    bgM := bgN;
+  ELSE
+    // 3. the PPL fallback
+    bgM := MIN(bgN, 5000);
+    bgT := TICKS;
+    gbDropFast(bgM);
+    bgT := TICKS - bgT;
+    gbEng := "engine: PPL (5,000 cap)";
+    gbMsgC := gbORNG;
+  END;
+  gbMsg := gbEng + ", " + STRING(bgM, 2, 0) + " balls in " + STRING(bgT, 2, 0) + " ms";
+  RETURN bgOK;
+END;
+
+
+// ------------------------------------------------------------
+// ASKING THE USER
+// ------------------------------------------------------------
+
+// Change the number of rows.  Clears the counts: bins from a
+// different board mean something else.
+gbSetRows()
+BEGIN
+  LOCAL srR;
+  srR := gbR;
+  IF INPUT({srR}, "Rows of pegs", {"R:"},
+    {"3 to 12 rows; the bins are 0 .. R right bounces"}) == 1 THEN
+    srR := IP(srR);
+    IF srR < 3 OR srR > 12 THEN
+      MSGBOX("R must be a whole number from 3 to 12.");
+      RETURN 0;
+    END;
+    gbR := srR;
+    gbLayout();
+    gbClear();
+    RETURN 1;
+  END;
+  RETURN 0;
+END;
+
+// Change p, the chance of bouncing right at a peg.  Try 0.3 or
+// 0.7 to see a skewed binomial; 0.5 gives the symmetric board.
+gbSetP()
+BEGIN
+  LOCAL spP;
+  spP := gbP;
+  IF INPUT({spP}, "Chance of a right bounce", {"p:"},
+    {"Between 0.05 and 0.95; 0.5 is Galton's board"}) == 1 THEN
+    IF spP < 0.05 OR spP > 0.95 THEN
+      MSGBOX("p must be between 0.05 and 0.95 so that every bin is possible.");
+      RETURN 0;
+    END;
+    gbP := spP;
+    gbClear();
+    RETURN 1;
+  END;
+  RETURN 0;
+END;
+
+// Animation speed: frames per peg row.
+gbSetSpeed()
+BEGIN
+  LOCAL ssI;
+  ssI := 0;
+  CHOOSE(ssI, "Animation speed", {"Fast (1 frame per row)", "Normal (2)", "Slow (3)", "Very slow (4)"});
+  IF ssI > 0 THEN gbSpd := ssI; END;
+END;
+
+// Put the bins where the Statistics 1Var app can use them:
+// D1 = bin position 0..R, D2 = its count, so H1 can be D1 with
+// frequency D2.  D1 and D2 are global, so this works from here;
+// the app's own plot settings are not reachable, so the student
+// sets the histogram up in the app (one step, and a useful one).
+gbToStats()
+BEGIN
+  IFERR
+    D1 := MAKELIST(K - 1, K, 1, gbR + 1, 1);
+    D2 := gbCnt;
+    MSGBOX("D1 = bin position (0 to " + STRING(gbR, 2, 0) + ")" + CHAR(10)
+      + "D2 = the count in that bin" + CHAR(10)
+      + "Statistics 1Var, Symbolic view:" + CHAR(10)
+      + "H1 data D1, frequency D2");
+  THEN
+    MSGBOX("Could not write D1 and D2.  Open the Statistics 1Var app once, then try again.");
+  END;
+END;
+
+
+// ------------------------------------------------------------
+// A BAR'S NUMBERS, AND ITS PATHS
+// ------------------------------------------------------------
+
+// Every lattice path from the funnel to bin ltK, drawn one at a time
+// in light blue on G1 -- there are C(R, k) of them, which is WHY the
+// middle bins are tall.  Only for R <= 8 (C(8,4) = 70 paths at most).
+gbLattice(ltK)
+BEGIN
+  LOCAL ltM, ltR, ltS, ltN, ltC, ltT;
+  ltC := COMB(gbR, ltK);
+  ltT := "C(" + STRING(gbR, 2, 0) + "," + STRING(ltK, 2, 0) + ") = " + STRING(ltC, 2, 0);
+  IF gbDirty == 1 THEN gbRefresh(); END;
+  BLIT_P(G1, 0, 0, G2);
+  IF gbR > 8 THEN
+    gbMsg := "too many paths to draw (" + ltT + "), any key = back";
+    gbMsgC := gbORNG;
+    gbFoot(G1);
+    BLIT_P(G0, 0, 0, G1);
+    gbWaitAny();
+    gbMsg := "";
+    RETURN 0;
+  END;
+  ltN := 0;
+  FOR ltM FROM 0 TO 2^gbR - 1 DO
+    // how many rights does path ltM make?  one binary digit per row
+    ltS := 0;
+    FOR ltR FROM 1 TO gbR DO ltS := ltS + (IP(ltM / 2^(gbR - ltR)) MOD 2); END;
+    IF ltS == ltK THEN
+      gbPathDraw(G1, ltM, gbLBLU, 0);
+      ltN := ltN + 1;
+      RECT_P(G1, 0, 17, 99, 45, gbLBLU, gbWHT);
+      TEXTOUT_P(ltT + " paths", G1, 4, 20, 1, gbBLUE);
+      TEXTOUT_P("drawn: " + STRING(ltN, 2, 0), G1, 4, 32, 1, gbBLUE);
+      BLIT_P(G0, 0, 0, G1);
+    END;
+  END;
+  gbMsg := ltT + " paths lead to bin " + STRING(ltK, 2, 0) + ", any key = back";
+  gbMsgC := gbBLUE;
+  gbFoot(G1);
+  BLIT_P(G0, 0, 0, G1);
+  gbWaitAny();
+  gbMsg := "";
+  RETURN ltN;
+END;
+
+// Tap on a bar: what did that bin get, and what did theory say?  A
+// drawn panel over the pegs, so the bar stays in view.  A second tap
+// on the same bar shows its paths; a tap on another bar shows that
+// bar; anything else goes back.
+gbBinInfo(biK)
+BEGIN
+  LOCAL biP, biA, biC, biGo, biW, biB;
+  LOCAL biX, biS, biF, biE, biT, biQ;
+  biGo := 1;
+  WHILE biGo == 1 DO
+    biP := BINOMIAL(gbR, gbP, biK);         // (n, p, k) -- see gbTheory
+    // the continuity correction: bin k stands for the interval from
+    // k - 0.5 to k + 0.5, so its normal "area" takes two CDF calls
+    biA := NORMALD_CDF(gbMu, gbSg, biK + 0.5) - NORMALD_CDF(gbMu, gbSg, biK - 0.5);
+    biC := COMB(gbR, biK);
+    // beta 3: the same P(k) as an EXACT fraction from the CAS.  Asked
+    // here, once per tapped bar (gbXBin caches it), never per frame.
+    biE := "" + gbXBin(biK);                 // text ("" + marks it so for the lint)
+    biF := gbPFrac();                        // p = m/d, or {0, 0}
+    IF gbDirty == 1 THEN gbRefresh(); END;
+    BLIT_P(G1, 0, 0, G2);
+    // a red frame round the bar
+    biX := gbX0 + biK * gbBw;
+    LINE_P(G1, biX, gbHT - 2, biX + gbBw, gbHT - 2, gbRED);
+    LINE_P(G1, biX, gbHT - 2, biX, gbHB, gbRED);
+    LINE_P(G1, biX + gbBw, gbHT - 2, biX + gbBw, gbHB, gbRED);
+    // the panel.  beta 3: from y 14 to 127 (was 16 to 122) with the
+    // lines 13 px apart, to hold the exact line; it still ends above
+    // the bars' count labels (y 127 and below) and the red frame (132)
+    RECT_P(G1, 6, 14, 313, 127, gbORNG, gbLORN);
+    biS := " right bounces of ";
+    IF biK == 1 THEN biS := " right bounce of "; END;
+    TEXTOUT_P("Bin " + STRING(biK, 2, 0) + " (" + STRING(biK, 2, 0) + biS + STRING(gbR, 2, 0) + ")", G1, 14, 17, 2, gbBLUE);
+    IF gbN > 0 THEN
+      TEXTOUT_P("observed: " + STRING(gbCnt(biK + 1), 2, 0) + " of " + STRING(gbN, 2, 0) + " = " + gbF(gbCnt(biK + 1) / gbN, 3), G1, 14, 36, 1, gbBLUE);
+    ELSE
+      TEXTOUT_P("observed: no balls yet", G1, 14, 36, 1, gbBLUE);
+    END;
+    // beta 3: the binomial formula with this bin's own numbers, then
+    // its value -- exact from the CAS when it fits, the decimal always
+    IF biF(2) > 0 THEN
+      biT := "(" + STRING(biF(1), 2, 0) + "/" + STRING(biF(2), 2, 0) + ")";
+      biQ := "(" + STRING(biF(2) - biF(1), 2, 0) + "/" + STRING(biF(2), 2, 0) + ")";
+      TEXTOUT_P("P(" + STRING(biK, 2, 0) + ") = C(" + STRING(gbR, 2, 0) + "," + STRING(biK, 2, 0) + ") " + CHAR(215) + " " + biT + "^" + STRING(biK, 2, 0) + " " + CHAR(215) + " " + biQ + "^" + STRING(gbR - biK, 2, 0), G1, 14, 49, 1, gbMAG, 296);
+    ELSE
+      TEXTOUT_P("P(" + STRING(biK, 2, 0) + ") = C(R,k) p^k (1-p)^(R-k), p = " + gbF(gbP, 4), G1, 14, 49, 1, gbMAG, 296);
+    END;
+    biT := "  = " + biE + " = " + gbF(biP, 4);
+    IF DIM(biE) == 0 THEN
+      biT := "  = " + gbF(biP, 4);
+      IF biF(2) == 0 THEN biT := biT + " (p not a simple ratio)"; END;
+    ELSE
+      // never cut an exact fraction: too long for the line, say how long
+      IF DIM(biT) > 33 THEN biT := "  = " + gbF(biP, 4) + " (exact: " + STRING(gbFrDig(biE), 2, 0) + " digits)"; END;
+    END;
+    TEXTOUT_P(biT, G1, 14, 62, 1, gbMAG, 218);
+    gbBadge(236, 62, DIM(biE) > 0);
+    IF gbN > 0 THEN
+      TEXTOUT_P("expected count n P(k) = " + gbF(gbN * biP, 1), G1, 14, 75, 1, gbMAG);
+    END;
+    TEXTOUT_P("normal area " + gbF(biK - 0.5, 1) + " to " + gbF(biK + 0.5, 1) + " = " + gbF(biA, 4), G1, 14, 88, 1, gbNCol);
+    IF gbPoor == 1 THEN
+      TEXTOUT_P("(continuity corrected; Rp or R(1-p) < 5: poor)", G1, 14, 101, 1, gbGRAY);
+    ELSE
+      TEXTOUT_P("(continuity correction: the bar is 1 wide)", G1, 14, 101, 1, gbGRAY);
+    END;
+    TEXTOUT_P("C(" + STRING(gbR, 2, 0) + "," + STRING(biK, 2, 0) + ") = " + STRING(biC, 2, 0) + " paths lead to this bin", G1, 14, 114, 1, #000000h);
+    gbMsg := "tap this bar again = its paths, any key = back";
+    gbMsgC := gbFOOT;
+    gbFoot(G1);
+    BLIT_P(G0, 0, 0, G1);
+    biW := gbWaitAny();
+    biGo := 0;
+    IF biW == -1 THEN
+      IF gbTapY >= gbHT - 4 AND gbTapY <= gbHB + 12 AND gbTapX >= gbX0 AND gbTapX < gbX0 + (gbR + 1) * gbBw THEN
+        biB := IP((gbTapX - gbX0) / gbBw);
+        IF biB == biK THEN
+          gbLattice(biK);
+        ELSE
+          biK := biB;
+          biGo := 1;
+        END;
+      END;
+    END;
+  END;
+  gbMsg := "";
+END;
+
+
+// ------------------------------------------------------------
+// beta 3: WHERE POISSON COMES FROM
+// Hold mu = Rp of the board FIXED and let the rows grow: with R, 4R
+// and 16R rows the chance of a right bounce, p = mu/R, shrinks, and
+// the binomial bars close in on the Poisson(mu) bars, the law of
+// rare events.  Every bar comes from PPL's BINOMIAL and POISSON,
+// computed once as the page opens (gbPsCalc).  The CAS does the
+// algebra: for the k under the finger (or the arrows) it takes the
+// limit of C(R,k) (mu/R)^k (1 - mu/R)^(R-k) as R grows, and gets
+// mu^k e^(-mu) / k! -- the Poisson formula, derived, not quoted.
+// (mu is the Poisson mean here: CHAR(956) is a verified glyph, the
+// usual lambda is not.)
+// ------------------------------------------------------------
+
+// mu as text for the screen: 4, 3.7, 0.15 -- only the decimals it needs.
+gbMuS(msV)
+BEGIN
+  IF ABS(msV - ROUND(msV, 0)) < 0.000001 THEN RETURN STRING(msV, 2, 0); END;
+  IF ABS(msV * 10 - ROUND(msV * 10, 0)) < 0.000001 THEN RETURN STRING(msV, 2, 1); END;
+  IF ABS(msV * 100 - ROUND(msV * 100, 0)) < 0.000001 THEN RETURN STRING(msV, 2, 2); END;
+  RETURN STRING(msV, 2, 3);
+END;
+
+// The page's numbers, once per opening: mu as a fraction of whole
+// numbers for the CAS (gbPsMN / gbPsMD, from p = m/d: mu = R m / d in
+// lowest terms; gbPsMD = 0 if p is not a simple ratio), the three
+// row counts, the largest k drawn (about mu + 3 SD, 5 to 24), and the
+// bar heights: for every k the binomial with R, 4R and 16R rows and
+// p = mu/R each, then the Poisson.  A k beyond the rows is 0 (the
+// binomial has no bar there).
+gbPsCalc()
+BEGIN
+  LOCAL pcK, pcJ, pcR, pcF, pcG, pcMu;
+  pcMu := gbR * gbP;
+  pcF := gbPFrac();
+  gbPsMD := pcF(2);
+  gbPsMN := gbR * pcF(1);
+  IF gbPsMD > 0 THEN
+    pcG := gbGcd(gbPsMN, gbPsMD);
+    gbPsMN := gbPsMN / pcG;
+    gbPsMD := gbPsMD / pcG;
+  END;
+  gbPsR := {gbR, 4 * gbR, 16 * gbR};
+  gbPsKm := MIN(24, MAX(5, CEILING(pcMu + 3 * pcMu^0.5 + 1)));
+  gbPsB := MAKELIST(0, K, 1, 4 * (gbPsKm + 1), 1);
+  FOR pcK FROM 0 TO gbPsKm DO
+    FOR pcJ FROM 1 TO 3 DO
+      pcR := gbPsR(pcJ);
+      IF pcK <= pcR THEN gbPsB(4 * pcK + pcJ) := BINOMIAL(pcR, pcMu / pcR, pcK); END;
+    END;
+    gbPsB(4 * pcK + 4) := POISSON(pcMu, pcK);
+  END;
+END;
+
+// One frame of the page, from the caches -- no CAS call in here.
+// pwWait = 1 while the CAS is working on a new k (the answer line
+// says so, so a slow CAS on a G1 does not look like a hang).
+// Layout: title 2, the mu line 20, legend 32, bars in the box x 34 to
+// 312, y 46 to 138, k labels 141, the four values 154, the limit
+// 167 to 193, the Poisson formula 206, the footer 224 (this page has
+// no soft keys).
+gbPsDraw(pwWait)
+BEGIN
+  LOCAL pwK, pwJ, pwX, pwW, pwBw, pwH;
+  LOCAL pwMx, pwStp, pwYm, pwV, pwY, pwN;
+  LOCAL pwC, pwS, pwMu, pwKs, pwT, pwL;
+  pwMu := "" + gbMuS(gbR * gbP);             // text ("" + marks it so for the lint)
+  pwKs := STRING(gbPsK, 2, 0);
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  TEXTOUT_P("Where Poisson comes from", G1, 6, 2, 2, gbBLUE, 224);
+  gbBadge(236, 5, DIM(gbPsTx) > 0 AND pwWait == 0);
+  TEXTOUT_P(CHAR(956) + " = Rp = " + pwMu + " fixed: more rows R, smaller p = " + CHAR(956) + "/R", G1, 6, 20, 1, #000000h, 308);
+  // ---- legend: R, 4R, 16R rows (pale to dark blue), Poisson green ----
+  FOR pwJ FROM 1 TO 4 DO
+    pwX := 46 + (pwJ - 1) * 66;
+    IF pwJ == 1 THEN pwC := gbLBLU; END;
+    IF pwJ == 2 THEN pwC := #3C78E6h; END;
+    IF pwJ == 3 THEN pwC := gbBLUE; END;
+    IF pwJ == 4 THEN pwC := gbGRN; END;
+    RECT_P(G1, pwX, 34, pwX + 6, 40, pwC, pwC);
+    IF pwJ < 4 THEN pwS := "R = " + STRING(gbPsR(pwJ), 2, 0); ELSE pwS := "Poisson"; END;
+    TEXTOUT_P(pwS, G1, pwX + 9, 32, 1, pwC, 56);
+  END;
+  // ---- y scale: the tallest bar, a step of .02 .05 .1 or .2 ----
+  pwMx := 0;
+  FOR pwJ FROM 1 TO SIZE(gbPsB) DO
+    IF gbPsB(pwJ) > pwMx THEN pwMx := gbPsB(pwJ); END;
+  END;
+  pwStp := 0.02;
+  IF pwMx > 0.1 THEN pwStp := 0.05; END;
+  IF pwMx > 0.25 THEN pwStp := 0.1; END;
+  IF pwMx > 0.5 THEN pwStp := 0.2; END;
+  pwYm := CEILING(pwMx / pwStp) * pwStp;
+  IF pwYm <= pwMx THEN pwYm := pwYm + pwStp; END;
+  pwV := 0; pwN := 0;
+  WHILE pwV <= pwYm + pwStp / 1000 AND pwN < 12 DO
+    pwY := 138 - IP(pwV / pwYm * 92 + 0.5);
+    LINE_P(G1, 34, pwY, 312, pwY, #E1E4EBh);
+    TEXTOUT_P(STRING(pwV, 2, 2), G1, 2, pwY - 5, 1, gbGRAY, 30);
+    pwV := pwV + pwStp;
+    pwN := pwN + 1;
+  END;
+  // ---- the bars: one group of four per k ----
+  pwW := (312 - 34) / (gbPsKm + 1);           // pixels per k
+  pwBw := MAX(1, IP((pwW - 2) / 4));          // one bar
+  FOR pwK FROM 0 TO gbPsKm DO
+    pwX := 34 + IP(pwK * pwW) + 1;
+    FOR pwJ FROM 1 TO 4 DO
+      IF pwJ == 1 THEN pwC := gbLBLU; END;
+      IF pwJ == 2 THEN pwC := #3C78E6h; END;
+      IF pwJ == 3 THEN pwC := gbBLUE; END;
+      IF pwJ == 4 THEN pwC := gbGRN; END;
+      pwH := IP(gbPsB(4 * pwK + pwJ) / pwYm * 92 + 0.5);
+      IF pwH > 0 THEN
+        RECT_P(G1, pwX + (pwJ - 1) * pwBw, 138 - pwH, pwX + pwJ * pwBw - 1, 137, pwC, pwC);
+      END;
+    END;
+    // the selected k: a red frame round its group
+    IF pwK == gbPsK THEN
+      pwL := 34 + IP((pwK + 1) * pwW);
+      LINE_P(G1, pwX - 1, 44, pwL, 44, gbRED);
+      LINE_P(G1, pwX - 1, 44, pwX - 1, 139, gbRED);
+      LINE_P(G1, pwL, 44, pwL, 139, gbRED);
+    END;
+    // k labels: every k when there is room, else every other one
+    IF pwW >= 12 OR (pwK MOD 2) == 0 THEN
+      pwS := STRING(pwK, 2, 0);
+      TEXTOUT_P(pwS, G1, pwX + IP(pwW / 2) - 3 * DIM(pwS) - 1, 141, 1, gbGRAY, 20);
+    END;
+  END;
+  LINE_P(G1, 34, 46, 34, 138, #000000h);
+  LINE_P(G1, 34, 138, 312, 138, #000000h);
+  TEXTOUT_P("k =", G1, 2, 141, 1, gbGRAY, 30);
+  // ---- the four values for the selected k, under the legend ----
+  TEXTOUT_P("P(" + pwKs + "):", G1, 2, 154, 1, #000000h, 44);
+  FOR pwJ FROM 1 TO 4 DO
+    IF pwJ == 1 THEN pwC := gbLBLU; END;
+    IF pwJ == 2 THEN pwC := #3C78E6h; END;
+    IF pwJ == 3 THEN pwC := gbBLUE; END;
+    IF pwJ == 4 THEN pwC := gbGRN; END;
+    TEXTOUT_P(gbF(gbPsB(4 * gbPsK + pwJ), 4), G1, 46 + (pwJ - 1) * 66 + 9, 154, 1, pwC, 56);
+  END;
+  // ---- the limit, from the CAS ----
+  TEXTOUT_P("CAS: limit of C(R," + pwKs + ")(" + CHAR(956) + "/R)^" + pwKs + "(1-" + CHAR(956) + "/R)^(R-" + pwKs + ")", G1, 6, 167, 1, #000000h, 308);
+  pwT := "as R " + CHAR(8594) + " infinity";
+  CASE
+    IF pwWait == 1 THEN
+      TEXTOUT_P(pwT + ": asking the CAS ...", G1, 6, 180, 1, gbGRAY, 308);
+    END;
+    IF gbPsMD == 0 THEN
+      TEXTOUT_P(pwT + ": p is not a simple ratio, so", G1, 6, 180, 1, gbGRAY, 308);
+      TEXTOUT_P("there is no exact limit (decimals only)", G1, 6, 193, 1, gbGRAY, 308);
+    END;
+    IF DIM(gbPsTx) == 0 THEN
+      TEXTOUT_P(pwT + ": (the CAS did not answer)", G1, 6, 180, 1, gbGRAY, 308);
+    END;
+    DEFAULT
+      // the answer as the CAS wrote it, * shown as the times sign;
+      // on one line if it fits, else wrapped onto a second, else
+      // (never cut) its length is given
+      pwS := gbShow(gbPsTx);
+      IF DIM(pwT) + 3 + DIM(pwS) <= 46 THEN
+        TEXTOUT_P(pwT + " = " + pwS, G1, 6, 180, 1, gbMAG, 308);
+      ELSE
+        IF DIM(pwS) <= 44 THEN
+          TEXTOUT_P(pwT + ":", G1, 6, 180, 1, gbMAG, 308);
+          TEXTOUT_P("= " + pwS, G1, 6, 193, 1, gbMAG, 308);
+        ELSE
+          TEXTOUT_P(pwT + ":", G1, 6, 180, 1, gbMAG, 308);
+          TEXTOUT_P("(exact: " + STRING(gbFrDig(pwS), 2, 0) + " digits, too long to show)", G1, 6, 193, 1, gbMAG, 308);
+        END;
+      END;
+  END;
+  // ---- the Poisson formula with this k, and its decimal (PPL) ----
+  pwS := pwMu + "^" + pwKs + " e^(-" + pwMu + ")/" + pwKs + "! = " + gbF(gbPsB(4 * gbPsK + 4), 4);
+  IF DIM(pwS) <= 28 THEN
+    pwS := "= " + CHAR(956) + "^k e^(-" + CHAR(956) + ")/k! = " + pwS;
+  ELSE
+    pwS := "= " + pwS + " (Poisson)";
+  END;
+  TEXTOUT_P(pwS, G1, 6, 206, 1, gbGRN, 308);
+  TEXTOUT_P(CHAR(8646) + " or tap a bar = k, Esc or tap outside = back", G1, 6, 224, 1, gbFOOT, 308);
+  BLIT_P(G0, 0, 0, G1);
+END;
+
+// The page: open it from the menu.  Tap a bar (or its k label) or
+// use Left / Right to pick k; Esc, Enter or a tap anywhere else goes
+// back to the board.  The CAS is asked when k changes (an event),
+// never inside a frame; going back to a k already seen costs nothing
+// only if it is the last one (the cache holds one answer).
+gbPoisson()
+BEGIN
+  LOCAL pnK, pnGo, pnW, pnNew;
+  gbPsCalc();
+  // start at the k nearest mu (the Poisson's tallest bar, or next to it)
+  gbPsK := MIN(gbPsKm, MAX(0, FLOOR(gbR * gbP)));
+  pnGo := 1;
+  WHILE pnGo == 1 DO
+    // a new k: say the CAS is working, then ask it (event, not frame)
+    pnNew := 1;
+    IF gbPsKey(gbPsK) == gbPsCK THEN pnNew := 0; END;
+    IF gbPsMD > 0 AND pnNew == 1 THEN gbPsDraw(1); END;
+    gbPsLim(gbPsK);
+    gbPsDraw(0);
+    pnK := gbWaitAny();
+    IF pnK == -1 THEN
+      // a tap on the bars (or their k labels) picks that k
+      IF gbTapX >= 34 AND gbTapX < 312 AND gbTapY >= 40 AND gbTapY <= 152 THEN
+        pnW := (312 - 34) / (gbPsKm + 1);
+        gbPsK := MIN(gbPsKm, MAX(0, IP((gbTapX - 34) / pnW)));
+      ELSE
+        pnGo := 0;
+      END;
+    ELSE
+      IF pnK == 7 THEN gbPsK := MAX(0, gbPsK - 1); END;           // Left
+      IF pnK == 8 THEN gbPsK := MIN(gbPsKm, gbPsK + 1); END;      // Right
+      IF pnK == 4 OR pnK == 30 THEN pnGo := 0; END;               // Esc, Enter
+    END;
+  END;
+  gbMsg := "";
+END;
+
+
+// ------------------------------------------------------------
+// HELP, MENU, START-UP
+// ------------------------------------------------------------
+
+// Three pages of explanation (beta 3: the third is the CAS's).
+gbHelp()
+BEGIN
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 4, 4, 315, 235, gbORNG, gbLORN);
+  TEXTOUT_P("How to read the Galton board", G1, 12, 8, 2, gbBLUE);
+  TEXTOUT_P("Each ball makes R left/right choices, going", G1, 12, 30, 1, #000000h);
+  TEXTOUT_P("right with probability p.  Its bin is the", G1, 12, 43, 1, #000000h);
+  TEXTOUT_P("count of rights, so bins are Binomial(R, p):", G1, 12, 56, 1, #000000h);
+  TEXTOUT_P("P(k) = C(R,k) p^k (1-p)^(R-k),  mean Rp,", G1, 12, 69, 1, gbMAG);
+  TEXTOUT_P("SD = " + CHAR(8730) + "(Rp(1-p)).  Magenta squares: n P(k).", G1, 12, 82, 1, gbMAG);
+  TEXTOUT_P("The BELL comes from the number of ROWS: each", G1, 12, 99, 1, gbGRN);
+  TEXTOUT_P("bin is a sum of R small left/right steps, and", G1, 12, 112, 1, gbGRN);
+  TEXTOUT_P("a sum of many steps is nearly normal (de", G1, 12, 125, 1, gbGRN);
+  TEXTOUT_P("Moivre-Laplace).  Sweep rows 3 to 12 (up key).", G1, 12, 138, 1, gbGRN);
+  TEXTOUT_P("More BALLS do not make a bell: they only make", G1, 12, 155, 1, gbBLUE);
+  TEXTOUT_P("the blue bars match the magenta squares, and", G1, 12, 168, 1, gbBLUE);
+  TEXTOUT_P(CHAR(57344) + " and s settle toward Rp and " + CHAR(8730) + "(Rp(1-p)).", G1, 12, 181, 1, gbBLUE);
+  TEXTOUT_P("Green area: the normal curve; grey when Rp or", G1, 12, 198, 1, gbGRAY);
+  TEXTOUT_P("R(1-p) < 5 (the approximation is poor there).", G1, 12, 211, 1, gbGRAY);
+  TEXTOUT_P("Any key or tap: keys and touch", G1, 12, 224, 1, gbFOOT);
+  BLIT_P(G0, 0, 0, G1);
+  gbWaitAny();
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 4, 4, 315, 235, gbORNG, gbLORN);
+  TEXTOUT_P("Keys and touch", G1, 12, 8, 2, gbBLUE);
+  TEXTOUT_P("Soft keys: Drop = one ball, watch it fall;", G1, 12, 30, 1, #000000h);
+  TEXTOUT_P(CHAR(215) + "10 = ten in the air; " + CHAR(215) + "100 = fast, no animation;", G1, 12, 43, 1, #000000h);
+  TEXTOUT_P("Pour = a stream (tap again to stop); Rows; Menu.", G1, 12, 56, 1, #000000h);
+  TEXTOUT_P("Hold a finger on the funnel: pour; lift = stop.", G1, 12, 73, 1, gbRED);
+  TEXTOUT_P("Drag sideways over the pegs: p follows your", G1, 12, 86, 1, gbMAG);
+  TEXTOUT_P("finger; lift = a new board (the counts clear).", G1, 12, 99, 1, gbMAG);
+  TEXTOUT_P("Tap a bar: P(k) and the normal area k-0.5 to", G1, 12, 116, 1, gbBLUE);
+  TEXTOUT_P("k+0.5.  Tap it again: every path to that bin,", G1, 12, 129, 1, gbBLUE);
+  TEXTOUT_P("C(R,k) of them (R up to 8).", G1, 12, 142, 1, gbBLUE);
+  TEXTOUT_P("Keys: - = 1, + = 100, 0 = pour, arrows = p and", G1, 12, 159, 1, #000000h);
+  TEXTOUT_P("rows (both clear), Ent = menu, Esc = quit.", G1, 12, 172, 1, #000000h);
+  TEXTOUT_P("Menu: Pascal's triangle, SD colours, Drop", G1, 12, 189, 1, gbGRAY);
+  TEXTOUT_P("100,000 (MicroPython; PPL fallback 5,000).", G1, 12, 202, 1, gbGRAY);
+  TEXTOUT_P("Any key or tap: exact answers (page 3)", G1, 12, 224, 1, gbFOOT);
+  BLIT_P(G0, 0, 0, G1);
+  gbWaitAny();
+  // ---- beta 3: page 3, the exact answers from the CAS ----
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 4, 4, 315, 235, gbORNG, gbLORN);
+  TEXTOUT_P("Exact answers (CAS)", G1, 12, 8, 2, gbBLUE);
+  TEXTOUT_P("Tap a bar: P(k) as an EXACT fraction, worked", G1, 12, 30, 1, #000000h);
+  TEXTOUT_P("out by the calculator's CAS: with p = 1/2,", G1, 12, 43, 1, #000000h);
+  TEXTOUT_P("P(k) = C(R,k)/2^R, so 8 rows, bin 4 = 70/256", G1, 12, 56, 1, #000000h);
+  TEXTOUT_P("= 35/128.  p = 0.3 is used as 3/10.", G1, 12, 69, 1, #000000h);
+  TEXTOUT_P("Menu > Where Poisson comes from: keep " + CHAR(956) + " = Rp", G1, 12, 86, 1, gbMAG);
+  TEXTOUT_P("fixed and add rows; p = " + CHAR(956) + "/R shrinks and the", G1, 12, 99, 1, gbMAG);
+  TEXTOUT_P("binomial bars close in on the Poisson.  The CAS", G1, 12, 112, 1, gbMAG);
+  TEXTOUT_P("takes the limit for your k and gets", G1, 12, 125, 1, gbMAG);
+  TEXTOUT_P(CHAR(956) + "^k e^(-" + CHAR(956) + ")/k!: the Poisson formula, derived.", G1, 12, 138, 1, gbMAG);
+  TEXTOUT_P("Arrows or a tap on a bar pick k.", G1, 12, 151, 1, gbMAG);
+  TEXTOUT_P("Badge 'exact (CAS)': the CAS worked it out.", G1, 12, 168, 1, gbGRAY);
+  TEXTOUT_P("'decimal': it could not, or p is not a simple", G1, 12, 181, 1, gbGRAY);
+  TEXTOUT_P("fraction; the program's own decimal is shown.", G1, 12, 194, 1, gbGRAY);
+  TEXTOUT_P("Any key or tap to go back", G1, 12, 224, 1, gbFOOT);
+  BLIT_P(G0, 0, 0, G1);
+  gbWaitAny();
+END;
+
+// The Enter-key menu (the Menu soft key too).  Returns 1 to keep
+// going, 0 to leave.  The Prime numbers the items itself (1-9, then
+// A, B, C ...), so the strings carry no numbers.  beta 3: 16 items
+// (the list form of CHOOSE has no 14-item cap); "Where Poisson comes
+// from (CAS)" is 14 (E), Help 15 (F), Leave 16 (G).
+gbMenu()
+BEGIN
+  LOCAL mnI;
+  mnI := 0;
+  CHOOSE(mnI, "Galton Board", {
+    "Drop 1 ball (watch it fall)",
+    "Drop 10 balls (watch)",
+    "Drop 100 balls (fast)",
+    "Drop 1000 balls (fast)",
+    "Drop 100,000 (MicroPython)",
+    "Rows of pegs R",
+    "Chance of a right bounce p",
+    "Overlays: none / binomial / + normal",
+    "Colour bars by distance from Rp (SD)",
+    "Pascal's triangle: off / counts / C(r,k)",
+    "Animation speed",
+    "Send bins to D1, D2 (Statistics 1Var)",
+    "Reset the counts",
+    "Where Poisson comes from (CAS)",
+    "Help",
+    "Leave"});
+  IF mnI == 0 THEN RETURN 1; END;
+  IF mnI == 1 THEN gbDropAnim(); END;
+  IF mnI == 2 THEN gbPour(3, 10); END;
+  IF mnI == 3 THEN gbDropFast(100); END;
+  IF mnI == 4 THEN gbDropFast(1000); END;
+  IF mnI == 5 THEN gbBigDrop(100000); END;
+  IF mnI == 6 THEN gbSetRows(); END;
+  IF mnI == 7 THEN gbSetP(); END;
+  IF mnI == 8 THEN gbOvl := (gbOvl + 1) MOD 3; END;
+  IF mnI == 9 THEN gbSdc := 1 - gbSdc; END;
+  IF mnI == 10 THEN
+    gbPas := (gbPas + 1) MOD 3;
+    IF gbPas > 0 AND gbBw < 28 THEN
+      gbMsg := "Pascal's numbers need R <= 9 (pegs 28 px apart)";
+      gbMsgC := gbORNG;
+    END;
+  END;
+  IF mnI == 11 THEN gbSetSpeed(); END;
+  IF mnI == 12 THEN gbToStats(); END;
+  IF mnI == 13 THEN gbClear(); END;
+  IF mnI == 14 THEN gbPoisson(); END;        // beta 3
+  IF mnI == 15 THEN gbHelp(); END;
+  IF mnI == 16 THEN RETURN 0; END;           // beta 3: Leave is 16 (G)
+  RETURN 1;
+END;
+
+// A finger came down on the peg field at (prX, prY).  Watch it until
+// it lifts (house press-vs-drag rule):
+//   moved more than 8 px sideways -> a drag: p follows the finger,
+//     the theory re-flows live, and on lift the counts clear;
+//   held still on the funnel for 0.35 s -> pour while it is held;
+//   otherwise -> a tap: drop one ball.
+gbPress(prX, prY)
+BEGIN
+  LOCAL prM, prM1, prT, prMode, prNP, prF;
+  LOCAL prX1;
+  prMode := 0;
+  prF := 0;
+  IF prX >= gbMidX - 28 AND prX <= gbMidX + 28 AND prY <= gbTop + IP(gbDy / 2) THEN prF := 1; END;
+  prT := TICKS;
+  REPEAT
+    prM := MOUSE;
+    prM1 := prM(1);
+    IF SIZE(prM1) > 0 THEN
+      prX1 := prM1(1);
+      IF prMode == 0 AND ABS(prX1 - prX) > 8 THEN
+        prMode := 1;
+        gbPrev := 1;            // hide the old bars while p moves
+      END;
+      IF prMode == 1 THEN
+        // p = the finger's position across the board, 0.01 steps
+        prNP := ROUND((prX1 - gbX0) / ((gbR + 1) * gbBw), 2);
+        prNP := MAX(0.05, MIN(0.95, prNP));
+        IF prNP <> gbP THEN
+          gbP := prNP;
+          gbScene();
+          gbMsg := "p = " + gbF(gbP, 2) + ": lift to start a new board (counts clear)";
+          gbMsgC := gbMAG;
+          gbFrame();
+        END;
+      END;
+      IF prMode == 0 AND prF == 1 THEN
+        IF TICKS - prT > 350 THEN prMode := 2; END;
+      END;
+    END;
+  UNTIL SIZE(prM1) == 0 OR prMode == 2;
+  IF prMode == 2 THEN gbPour(1, 0); END;
+  IF prMode == 1 THEN
+    gbPrev := 0;
+    gbClear();
+    gbMsg := "p = " + gbF(gbP, 2) + " now: the counts were cleared (new board)";
+    gbMsgC := gbMAG;
+  END;
+  IF prMode == 0 THEN gbDropAnim(); END;
+END;
+
+gbInit()
+BEGIN
+  // layout: gbHB 191 leaves room for the bin labels (gbHB + 3 = 194)
+  // and the one footer line at 206, above the soft keys at 218
+  gbTop := 22; gbPegBot := 124; gbHT := 134; gbHB := 191; gbMidX := 160;
+  // colours
+  gbBLUE := #003CC8h; gbFILL := #AACDFFh; gbMAG := #C800C8h;
+  gbGRN := #008C3Ch; gbRED := #FF0000h; gbGRAY := #5A5A5Ah;
+  gbFOOT := #1E90FFh; gbORNG := #FF4500h; gbLORN := #FFF0DCh;
+  gbLRED := #F5A0A0h; gbLBLU := #78B4FFh; gbLGRN := #E8F6EBh;
+  gbLGRY := #EBEBEBh; gbGRY2 := #A0A0A0h; gbWHT := #FFFFFFh;
+  gbPINK := #FFEBEBh;
+  // trail colours, newest (darkest) first
+  gbTrC := {#FF4040h, #FF7070h, #FF9090h, #FFB0B0h, #FFC8C8h, #FFE0E0h};
+  // the board
+  gbR := 8;
+  gbP := 0.5;
+  gbOvl := 1;
+  gbSpd := 2;
+  gbYmx := 1;
+  gbPas := 0; gbSdc := 0; gbPrev := 0; gbDirty := 0;
+  gbMsg := ""; gbMsgC := gbFOOT; gbEng := "";
+  gbTapX := -1; gbTapY := -1;
+  gbBOn := 0; gbBL1 := ""; gbBL2 := "";
+  gbNdR := -1; gbNdP := -1; gbScN := 0;
+  // beta 3: the CAS caches start empty.  gbInf is the CAS's word for
+  // infinity: if CASProbe beta 1 T16 says only "infinity" works,
+  // change "inf" here (the one place it is written).
+  gbCasOK := 0; gbInf := "inf"; gbXKey := ""; gbXTxt := "";
+  gbPsMN := 0; gbPsMD := 0; gbPsK := 0; gbPsKm := 5;
+  gbPsB := {0}; gbPsR := {8, 32, 128}; gbPsCK := ""; gbPsTx := "";
+  // balls in the air, and their trails
+  gbQR := MAKELIST(-1, K, 1, 8, 1); gbQK := MAKELIST(0, K, 1, 8, 1);
+  gbQG := MAKELIST(0, K, 1, 8, 1); gbQF := MAKELIST(0, K, 1, 8, 1);
+  gbQM := MAKELIST(0, K, 1, 8, 1);
+  gbRX := MAKELIST(0, K, 1, 48, 1); gbRY := MAKELIST(0, K, 1, 48, 1);
+  gbRH := MAKELIST(0, K, 1, 8, 1); gbRN := MAKELIST(0, K, 1, 8, 1);
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  DIMGROB_P(G2, 320, 240, #FFFFFFh);
+  gbLayout();
+  gbClear();
+END;
+
+// Copy the session into the Home exports (GB_PEG is kept live).
+gbExport()
+BEGIN
+  GB_CNT := gbCnt;
+  GB_N := gbN;
+  GB_R := gbR;
+  GB_P := gbP;
+END;
+
+gbWelcome()
+BEGIN
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 4, 4, 315, 235, gbORNG, gbLORN);
+  TEXTOUT_P("Galton Board", G1, 14, 10, 4, gbBLUE);
+  TEXTOUT_P("Balls fall through rows of pegs and", G1, 14, 40, 2, #000000h);
+  TEXTOUT_P("bounce right with probability p.", G1, 14, 56, 2, #000000h);
+  TEXTOUT_P("The bins count the right bounces, so", G1, 14, 76, 2, gbMAG);
+  TEXTOUT_P("the pile is a Binomial(R, p) -- and", G1, 14, 92, 2, gbMAG);
+  TEXTOUT_P("with many ROWS it becomes a bell.", G1, 14, 108, 2, gbMAG);
+  TEXTOUT_P("Tap the pegs: one ball.  Hold the", G1, 14, 130, 2, gbGRN);
+  TEXTOUT_P("funnel: pour.  Drag sideways: p.", G1, 14, 146, 2, gbGRN);
+  TEXTOUT_P("Soft keys: Drop, " + CHAR(215) + "10, " + CHAR(215) + "100, Pour, Rows, Menu", G1, 14, 166, 1, gbGRN);
+  TEXTOUT_P("After Galton (1873); Epi Info 6 had a DOS one.", G1, 14, 190, 1, gbGRAY);
+  TEXTOUT_P("Any key or tap to begin", G1, 14, 214, 2, gbFOOT);
+  BLIT_P(G0, 0, 0, G1);
+  gbWaitAny();
+END;
+
+
+// ------------------------------------------------------------
+// MAIN: the live board
+// ------------------------------------------------------------
+EXPORT GaltonBoard()
+BEGIN
+  LOCAL mlK, mlM, mlM1, mlGo, mlX, mlY;
+  LOCAL mlSl, mlBin;
+  gbInit();
+  gbWelcome();
+  mlGo := 1;
+  WHILE mlGo == 1 DO
+    gbScene();
+    gbFrame();
+    gbMsg := "";                     // a status line is shown once
+    REPEAT mlK := GETKEY; UNTIL mlK == -1;      // drain any leftover key
+    REPEAT
+      mlK := GETKEY;
+      mlM := MOUSE;
+      mlM1 := mlM(1);                            // the first finger, if any
+    UNTIL mlK > -1 OR SIZE(mlM1) > 0;
+    IF SIZE(mlM1) > 0 THEN
+      // a touch: element 1 is x, element 2 is y
+      mlX := mlM1(1); mlY := mlM1(2);
+      IF mlY >= 218 THEN
+        // the soft-key strip: six 53-px slots, left to right
+        gbDrain();
+        mlSl := MIN(6, IP(mlX / 53.4) + 1);
+        IF mlSl == 1 THEN gbDropAnim(); END;
+        IF mlSl == 2 THEN gbPour(3, 10); END;
+        IF mlSl == 3 THEN gbDropFast(100); END;
+        IF mlSl == 4 THEN gbPour(2, 0); END;
+        IF mlSl == 5 THEN gbSetRows(); END;
+        IF mlSl == 6 THEN mlGo := gbMenu(); END;
+      ELSE
+        // The FUNNEL (56 px wide, from y = gbTop - 14) or the PEG
+        // FIELD: the width of the board, from the funnel top
+        // (gbTop - 10) down to just above the bars (gbHT - 4), minus
+        // the two corners that hold the readouts: x < 104 above y = 60
+        // (title, n, x-bar, s) and x > 210 above y = 72 (R, p, Rp, SD,
+        // overlays).  A press there is a tap, a drag or a hold (gbPress).
+        IF (mlX >= gbMidX - 28 AND mlX <= gbMidX + 28 AND mlY >= gbTop - 14 AND mlY <= gbTop + IP(gbDy / 2)) OR (mlY >= gbTop - 10 AND mlY < gbHT - 4 AND mlX >= gbX0 AND mlX <= gbX0 + (gbR + 1) * gbBw AND (mlX >= 104 OR mlY >= 60) AND (mlX <= 210 OR mlY >= 72)) THEN
+          gbPress(mlX, mlY);
+        ELSE
+          // a bar: from just above the bars to just below the bin labels
+          IF mlY >= gbHT - 4 AND mlY <= gbHB + 12 AND mlX >= gbX0 AND mlX < gbX0 + (gbR + 1) * gbBw THEN
+            mlBin := IP((mlX - gbX0) / gbBw);
+            gbDrain();
+            gbBinInfo(mlBin);
+          END;
+        END;
+        gbDrain();
+      END;
+    ELSE
+      IF mlK == 4 THEN mlGo := 0; END;                                      // Esc
+      IF mlK == 50 THEN gbDropFast(100); END;                               // +
+      IF mlK == 45 THEN gbDropAnim(); END;                                  // -
+      IF mlK == 42 THEN gbPour(2, 0); END;                                  // 0
+      IF mlK == 7 OR mlK == 8 THEN                                          // Left, Right
+        IF mlK == 7 THEN gbP := MAX(0.05, gbP - 0.05); ELSE gbP := MIN(0.95, gbP + 0.05); END;
+        gbClear();
+        gbMsg := "p = " + gbF(gbP, 2) + ": the counts were cleared (new board)";
+        gbMsgC := gbMAG;
+      END;
+      IF mlK == 2 THEN gbR := MIN(12, gbR + 1); gbLayout(); gbClear(); END; // Up
+      IF mlK == 12 THEN gbR := MAX(3, gbR - 1); gbLayout(); gbClear(); END; // Down
+      IF mlK == 30 THEN mlGo := gbMenu(); END;                              // Enter
+    END;
+  END;
+  gbExport();
+  // Hand the summary back as the program's value: Home shows it in
+  // the history and no Terminal screen opens.
+  RETURN "Galton Board: " + STRING(gbN, 2, 0) + " balls, R = " + STRING(gbR, 2, 0) + ", p = " + gbF(gbP, 2) + "; bins in GB_CNT, pegs in GB_PEG";
+END;

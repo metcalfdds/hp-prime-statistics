@@ -1,0 +1,77 @@
+A. Giac 1.9 (desktop icas)
+  symbolic k:                 "Limit: Max order reached or unable to make series expansion Error: Bad Argument Value" Undef/Unsign
+  numeric k = 3, mu = 4:      32/(3*exp(1)^4)
+  numeric k = 3, mu = 37/10:  50653*exp(-37/10)/6000
+  "+infinity" instead of inf: 32/(3*exp(1)^4)
+  comb(8,4)*(1/2)^4*(1/2)^4:  35/128
+  3a, in the Prime's printing: 32/(3*(e^(1))^4) ; 50653*e^(-37/10)/6000
+
+B. the exact bin probability (gbXBin), every R and k, against Fraction and SciPy
+  680 bins (R 3..12, every k, p in [0.5, 0.3, 0.37, 0.05, 0.95, 0.25, 0.75, 0.123]): fraction == Fraction, float == binom.pmf
+  p = 0.3333 and 1/7: not simple ratios -> no CAS call, decimal only
+  panel R =  8, p = 0.5  , k = 4:  P(4) = C(8,4) × (1/2)^4 × (1/2)^4          = 35/128 = 0.2734
+  panel R = 10, p = 0.3  , k = 3:  P(3) = C(10,3) × (3/10)^3 × (7/10)^7       = 66706983/250000000 = 0.2668
+  panel R = 12, p = 0.37 , k = 5:  P(5) = C(12,5) × (37/100)^5 × (63/100)^7   = 0.2163 (exact: 47 digits)
+  panel R = 12, p = 0.123, k = 6:  P(6) = C(12,6) × (123/1000)^6 × (877/1000)^6   = 0.0015 (exact: 69 digits)
+
+C. the Poisson page: the limit for each k against mu^k e^(-mu) / k!
+  R =  8, p = 0.5  mu = 4     k 0..11: 12 limits == mu^k e^-mu/k! exactly; bars == scipy (0.0e+00); sum|binom - Poisson| 0.337 > 0.066 > 0.016
+  R = 10, p = 0.37 mu = 37/10 k 0..11: 12 limits == mu^k e^-mu/k! exactly; bars == scipy (0.0e+00); sum|binom - Poisson| 0.228 > 0.047 > 0.011
+  R =  3, p = 0.05 mu = 3/20  k 0..5 :  6 limits == mu^k e^-mu/k! exactly; bars == scipy (3.3e-16); sum|binom - Poisson| 0.013 > 0.003 > 0.001
+  R = 12, p = 0.95 mu = 57/5  k 0..23: 24 limits == mu^k e^-mu/k! exactly; bars == scipy (1.6e-15); sum|binom - Poisson| 1.300 > 0.131 > 0.030
+  R =  8, p = 0.3  mu = 12/5  k 0..9 : 10 limits == mu^k e^-mu/k! exactly; bars == scipy (0.0e+00); sum|binom - Poisson| 0.182 > 0.039 > 0.010
+  R = 12, p = 0.5  mu = 6     k 0..15: 16 limits == mu^k e^-mu/k! exactly; bars == scipy (0.0e+00); sum|binom - Poisson| 0.341 > 0.064 > 0.015
+  R = 10, p = 0.05 mu = 1/2   k 0..5 :  6 limits == mu^k e^-mu/k! exactly; bars == scipy (0.0e+00); sum|binom - Poisson| 0.024 > 0.006 > 0.001
+  e.g. the last template: string(simplify(limit(comb(gbq,5)*((1/2)/gbq)^5*(1-(1/2)/gbq)^(gbq-5),gbq,inf)))
+       its answer:       "e^(-1/2)/3840"
+  3a: the value check:    string(round(evalf(e^(-1/2)/3840)*10^(13))) -> "1579506926"
+  3a: a wrong limit is refused by its value; the right one kept; an unevaluated one refused
+
+D. end to end in the harness
+  [giac] panel: P(4) = C(8,4) × (1/2)^4 × (1/2)^4 |   = 35/128 = 0.2734
+      pois| exact (CAS)
+      pois| μ = Rp = 4 fixed: more rows R, smaller p = μ/R
+      pois| P(3):
+      pois| CAS: limit of C(R,3)(μ/R)^3(1-μ/R)^(R-3)
+      pois| as R → infinity = 32/(3×(e^(1))^4)
+      pois| = μ^k e^(-μ)/k! = 4^3 e^(-4)/3! = 0.1954
+      pois| ⇆ or tap a bar = k, Esc or tap outside = back
+      CAS calls: 7; returned "Galton Board: 0 balls, R = 8, p = 0.50; bins in GB_CNT, pegs in GB_PEG"
+  [fail] panel: P(4) = C(8,4) × (1/2)^4 × (1/2)^4 |   = 0.2734
+      pois| decimal
+      pois| μ = Rp = 4 fixed: more rows R, smaller p = μ/R
+      pois| P(3):
+      pois| CAS: limit of C(R,3)(μ/R)^3(1-μ/R)^(R-3)
+      pois| as R → infinity: (the CAS did not answer)
+      pois| = μ^k e^(-μ)/k! = 4^3 e^(-4)/3! = 0.1954
+      pois| ⇆ or tap a bar = k, Esc or tap outside = back
+      CAS calls: 4; returned "Galton Board: 0 balls, R = 8, p = 0.50; bins in GB_CNT, pegs in GB_PEG"
+  [quoted] answers arrive as '"..."' (e.g. "35/128"): gbCas dropped the quotes; panel "  = 35/128 = 0.2734"
+  pour (held), x10, Drop, x100, a peg tap: n = 296 balls, 0 CAS calls
+
+E. the fence
+  gbCas <- ['gbPsLim', 'gbXBin']; gbXBin <- gbBinInfo (a tap on a bar); gbPsLim <- gbPoisson (a new k); no animation, drag or frame routine reaches it
+  byte-identical to beta 2: the #PYTHON block (Drop 100,000), gbPour, gbBigDrop, gbDropFast, gbBallStep, gbDropAnim, gbNewBall, gbPress, gbTheory, gbLattice, gbLand, gbCol, gbFrame, gbDrain, gbWaitAny
+
+F. layout
+  the bar panel (5 boards) and the Poisson page (7 boards): every line inside its frame
+
+G. beta 3 in harness v3c (its CAS finding stays), and beta 3b against beta 3a
+  beta 3 in v3b: gbXBin(4) = '', gbPsLim(3) = '': the emulator's finding, reproduced
+  routines that differ from beta 3a: gbBar, gbDisc, gbLblTop, gbScene; everything else differs only in comments
+
+P. 3b: solid pegs and balls (GfxProbe T09: ARC_P rings leave diagonal holes)
+  pegs: R 3, 8, 12 -- every peg is two grey RECT_P bars = exactly the pixels of a radius-2 disc
+  a ball: three red RECT_P = exactly a radius-3 disc (37 pixels), no ARC_P
+  one drop (Drop soft key): 25 frames, 733 drawing calls in all (beta 3a: 863, 282 of them ARC_P); the busiest frame 172 (3a 209)
+  x10 (up to 8 balls in the air): 52 frames, 4075 drawing calls in all (beta 3a: 4727, 1524 of them ARC_P); the busiest frame 255 (3a 297)
+  pour (hold the funnel): 25 frames, 733 drawing calls in all (beta 3a: 863, 282 of them ARC_P); the busiest frame 172 (3a 209)
+  scene R 8: 130 drawing calls (beta 3a: 166)
+  scene R 12: 226 drawing calls (beta 3a: 304)
+
+L. 3b: the bin counts clear of the overlays (the emulator: a "9" half hidden)
+  253 labels above their bars, 0 collisions (beta 3a in the same 42 boards: 142 collisions, e.g. [((8, 0.5, 1, 110, 1), [('29', 154.0, 129.0), ('23', 187.0, 140.0)])])
+  2000 balls, R 8, overlays 2: every label at y >= 127 ([131, 142, 151, 169, 176])
+
+4130 checks passed, 0 failed
+ALL OK

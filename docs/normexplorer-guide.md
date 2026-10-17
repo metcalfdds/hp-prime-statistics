@@ -1,345 +1,239 @@
-# Norm Explorer — User's Guide
+# NormExplorer beta 42 — User's Guide
 
-Sep 17, 2026 · Roger Dale Metcalf Sr
+A normal-distribution workbench for the HP Prime: set any N(μ, σ), find areas and the x-values behind them, solve the z-formula, look at your own data against a fitted curve, compare two curves, and — the heart of it — **explore the curve with your finger**: drag a cut point and watch the area change, drag the mean, stretch σ, and see the probability travel with the shaded region. PPL, with an optional MicroPython sampler for simulated histograms.
 
-*HP Prime graphing calculator · beta 39a*
+**Status:** beta 42 (16 Oct 2026) is the touch and graphics version. It has **not yet been run on hardware**. Builds up to beta 39 were tested on an HP Prime G2 and G1 (2026-09-09 firmware) and the Virtual Calculator; beta 40, 41 and 42 have not been. The arithmetic was checked against SciPy and the program's own code was run, path by path, in an off-device interpreter (see *How it was checked*). The device checklist is in `NormExplorer_beta42_CHANGES.md`.
 
-## What Norm Explorer is
+Install: paste `NormExplorer_beta42.txt` into the Connectivity Kit editor and send it to the calculator. Run **NormExp** from the Program Catalog (Shift-1).
 
-Norm Explorer is a normal-distribution workbench for the HP Prime. It does the ordinary work of a normal table — probabilities, percentiles, critical values, z-scores — and draws every answer on the curve, shaded, so the number and the picture arrive together.
-
-It is meant to be looked at as much as calculated with. Every result screen ends by showing the shaded region that produced the number, and three of its features exist mainly to be watched: the standardize animation, the two-curve effect-size view, and the simulated sample histogram.
-
-### Why μ and σ, and not x̄ and s
-
-Throughout this program you type μ and σ, never x̄ and s. That is deliberate. When you enter N(100, 15) you are *declaring a population* — stating that scores are distributed this way — and every probability the calculator returns is an exact area under that curve. Population parameters take Greek letters, so μ and σ are the correct symbols here.
-
-x̄ and s are what you compute *from data you collected*, as estimates of a μ and σ you do not know. They appear in menu 6, which fits a curve to a sample — simulated, or your own data from the Statistics apps — and reports the sample's x̄ and s beside the μ and σ of the fitted curve.
-
-### Installing it
-
-The program ships as a plain text file. Open the HP Prime Connectivity Kit, create a new program in the Program Catalog, and paste the whole file in.
-
-It needs no libraries and no setup. It will use the calculator's MicroPython to draw large samples quickly if the firmware has it, and fall back to pure PPL if not, so it runs on any Prime.
-
-### Launching it
-
-Run `NormExp()` from the Program Catalog, or type `NormExp()` in Home and press Enter. The main menu appears immediately.
-
-Every launch starts from the standard normal, N(0, 1), with no shading, no sample and no second curve. Quitting resets it the same way, so the next person to open it does not inherit the last session's numbers.
+---
 
 ## The main menu
 
-The menu title always shows the distribution currently in force — for example **NormExp — N(100.00, 15.00)** — so you can see at a glance what the next calculation will be based on.
+The Prime numbers the items itself: 1 to 9, then **A** and **B**.
 
-| # | Item | What it does |
-| --- | --- | --- |
-| 1 | Set μ and σ | Type the session distribution |
-| 2 | Explore the curve | Live keys, and touch the plot to set a cut point |
-| 3 | Probability from x | Area left, right, between, or outside |
-| 4 | x from probability | Percentile, critical value, central interval |
-| 5 | Z-formula solver | Any three of z, x, μ, σ → the fourth |
-| 6 | Data & histogram | Your own data from the Statistics apps, or a simulated sample |
-| 7 | Compare curves | Second curve and Cohen's d |
-| 8 | Standardize animation | Morphs N(μ, σ) into N(0, 1) |
-| 9 | Plot window & display | Range, band and reference toggles, reset |
-| 10 | Help | Two on-screen reference pages |
+| Item | What it does |
+|---|---|
+| 1 Set μ and σ | The session distribution. Any μ, any σ > 0: N(100,15), N(2.4,0.6), N(847,220) all plot. Changing it clears the shading, the histogram and the second curve, which all belonged to the old one. |
+| 2 Explore the curve | The live plot: touch, soft keys and arrow keys (below). |
+| 3 Probability from x | P(X < x), P(X > x), P(a < X < b), P(outside a, b). |
+| 4 x from probability | Percentile; critical value for a right-tail, left-tail or two-tailed α; central C% interval. |
+| 5 Z-formula solver | z = (x − μ)/σ: enter any three of z, x, μ, σ and get the fourth. |
+| 6 Data & histogram | Your own data from the Statistics apps, regression residuals, z-scores into D2, or a simulated sample. |
+| 7 Compare curves (d, power) | A second curve N(μ₂, σ), Cohen's d, and the power picture. |
+| 8 Standardize animation | Watch N(μ, σ) slide and squeeze into N(0, 1). |
+| 9 Plot window & display | Window, bands, N(0,1) reference or CDF overlay, diagnostics, reset. |
+| A Help | Three pages: the modules, the Explorer's two pages of soft keys, touch. |
+| B Quit | Leaves the program. Esc on the menu does the same. |
 
-Selecting **Quit**, or pressing Esc at the menu, leaves the program.
+Every calculation shows a **result panel** first (any key or a tap continues), then the result **shaded on the curve** — and the shaded area grows into place over about a second, with the running area printed, so you see the number as an accumulation of area. A key or a tap skips the growing.
 
-### One distribution, shared by everything
+---
 
-The program holds a single distribution for the whole session. Set μ and σ once and every module uses them: the probability calculations, the inverse calculations, the histogram, the plot. The solver in item 5 both reads it and writes back to it, so a value solved there becomes the distribution on the plot.
+## What is on the plot
 
-The practical consequence is that you rarely retype anything. Set N(100, 15) once and you can work through a dozen questions about it without touching μ or σ again.
+- **The curve** N(μ, σ) in blue, with a dark line at the mean (labelled μ) running up to the peak: the mean is also the highest point.
+- **68-95-99.7 bands** (on unless you turn them off): μ ± σ, ± 2σ, ± 3σ in three blues, with the exact areas and ranges in the top-right corner — 68.27 %, 95.45 %, 99.73 %, not the rounded headline.
+- **Shading** in orange for the area you asked about, with red lines at the bounds. The area is printed in a **small white box riding on the shaded region** (each tail gets its own box when you shade outside two bounds); when the region is narrower than 40 pixels the box is left out and the corner readout carries the number alone.
+- **Two rows of labels under the axis.** The black row is x. The grey row, marked **z** at the far left, is the z-score: −3 to 3, printed exactly at x = μ + kσ. Read down from an x-label to the z beneath it and you have z = (x − μ)/σ without arithmetic. (On a very narrow σ the z-row thins to every other label, or disappears.)
+- **Readouts:** μ and σ at the top left (and μ₂ and d with a second curve; n, x̄ and s with a histogram); x₀, its z and the probability at the top right.
+- **Optional:** the N(0,1) reference curve in grey (when it fits — otherwise a grey note says so), or the **CDF** S-curve in magenta (see below), a second curve in green, a histogram.
 
-Shading persists too. Compute a probability, go into the Explorer, and the shaded region is still there.
+---
 
-## 1 · Setting μ and σ
+## Explore the curve (item 2)
 
-Two boxes, prefilled with the current values. Any mean works, and any positive standard deviation.
+On entry the window is **frozen** at μ ± 6σ of the distribution you start with. That is deliberate: if the window followed μ, the bell would sit dead centre for ever and moving the mean would look like nothing happening. With the window held, μ visibly slides and σ visibly reshapes. **Centre** (or the 0 key) re-centres it.
 
-The plot window rescales itself to whatever you enter, so real distributions display properly: N(100, 15) for IQ, N(2.4, 0.6) for GPA, N(847, 220) for reaction times in milliseconds, N(0.5, 0.02) for a proportion. Axis labels and tick spacing adjust with the scale.
+### Soft keys (the bottom row)
 
-A negative or zero σ is rejected with a message rather than producing a broken plot.
+There are two pages of soft keys. **More**, always in the last slot, turns the page.
 
-**Changing the distribution clears any shading and any sample.** Those belonged to the old curve and would be misleading against the new one. This is deliberate, not a glitch — recompute the probability you want after changing μ or σ.
+**Page 1** (shown when you enter):
 
-## 3 · Probability from x
+| Soft key | Does | Key shortcut |
+|---|---|---|
+| **Bands** | 68-95-99.7 bands on or off | + |
+| **Ref** | cycles: N(0,1) reference curve → CDF S-curve → neither | − |
+| **Centre** | re-centre the window on the curve as it is now (the arrow steps re-fit too) | 0 |
+| **Shade** | cycles the shading: left of x₀ → right of x₀ → between → outside → none. "Between" starts symmetric about the mean, at μ ∓ \|x₀ − μ\| | — |
+| **Hist** | with a histogram on the plot: taps now read the bars (see *Reading a bar*); Hist again to go back. Without one, a note says where to make one | — |
+| **More** | page 2 | — |
 
-Given a cut point, what is the area? Four choices:
+**Page 2 — what the arrow keys move:**
 
-| Choice | Computes | Shades |
-| --- | --- | --- |
-| P(X < x) | Left tail | Everything below x |
-| P(X > x) | Right tail | Everything above x |
-| P(a < X < b) | Between | The middle band |
-| P(outside a, b) | Two tails | Both ends |
+| Soft key | Then ← → move … |
+|---|---|
+| **Bnd A** | the lower bound (x₀ when there is only one); with no shading yet, a left tail starts at x₀ |
+| **Bnd B** | the upper bound (needs between or outside shading — otherwise a note says so) |
+| **mu** | the mean |
+| **sigma** | σ: ← narrower, → wider |
+| **Menu** | back to the menu (Esc or Enter also work, from either page) |
+| **More** | back to page 1 |
 
-Boundary boxes start at 0 — type your own value. If you enter b below a in the two-boundary modes, they are swapped for you.
+The chosen handle is drawn thick and the line under the title says, for example, *arrows move: lower bound*. Bounds move in round steps (σ/10 pushed to 1, 2 or 5 × a power of ten); stepping one bound past the other swaps them. Tap the chosen key again to go back to the usual arrows. ↑ ↓ always change σ. This is the way to set a bound without touching the plot — and the way to nudge it exactly.
 
-The result panel gives the raw score, its z-score, the probability, and the complement. Press any key and the same result appears shaded on the curve, with the numbers repeated in the corner.
+The arrow keys still do what they always did: **← →** move μ and **↑ ↓** change σ, in round steps (σ/4 and σ/10 pushed to 1, 2 or 5 × a power of ten: on N(100,15), μ moves by 5 and σ by 2). Each press moves to the next round value, so an odd start such as 847 snaps to 850 and stays round.
 
-**Worked example.** IQ is N(100, 15). What proportion scores above 130?
+### Touch
 
-1. Menu 1 → μ = 100, σ = 15
-2. Menu 3 → P(X > x) → x = 130
-3. Panel reads z = 2.0000, P(X > x) = 0.0228
-4. Any key → the top 2.28% shaded orange, with a red line at 130
+What a finger does depends on **where it first lands**; while it stays down it drags that same thing; lifting it ends the drag.
 
-The two-tail option is the one to reach for with a two-tailed test: enter the two critical values and the shaded region is the rejection region.
+| Press on … | and drag … | Notes |
+|---|---|---|
+| a red bound line (within about 8 pixels) | that bound follows your finger | with two bounds (between, outside) the shading **stays two-bounded**; drag one past the other and they swap |
+| the dark **mean line** | sideways: μ moves with your finger | the line thickens while held; on lifting, μ snaps to the arrow step |
+| a **small square** on the curve — the shoulders, μ − σ and μ + σ | outward to widen σ, inward to narrow it | both shoulders thicken; the peak stays at the same height on screen while the y-axis labels change (σ changes the peak height); on lifting, σ snaps to the arrow step |
+| anywhere else in the plot | — | the **nearer bound jumps** to your finger and you drag it from there; with no shading yet, a left tail starts at your finger |
+| the bottom strip | — | a soft key, acted on when you lift |
 
-*Note:* leaving both boundaries at 0 in the between/outside modes gives an interval of zero width — P(between) = 0, P(outside) = 1. Correct, but not interesting until you enter real bounds.
+When two handles are within 8 pixels of your finger, the nearest wins. While you hold μ or σ, a grey line under the title says so. The window never moves during a drag; only σ re-fits the vertical scale.
 
-## 4 · x from probability
+A finger that wanders off the plot keeps dragging, pinned to the edge. Lift and press again to start something new.
 
-The inverse direction: given an area, what is the score? Three choices.
+To move a bound from the keyboard, choose it on soft-key page 2 (above) and use ← →. To type an exact bound, use menu 3 or 4, then tap the plot on the result view to carry on exploring from there.
 
-**x at a percentile.** Enter the area to the *left*, get the raw score and its z. Default 0.90. On N(100, 15), an area of 0.90 returns x = 119.22 — the 90th percentile.
+### Height is not probability
 
-**Critical value.** Enter α as the area in the *right* tail, get z\* and x\*. Default 0.05, which returns the familiar z\* = 1.6449. The shaded region is the one-tailed rejection region.
+In the Explorer the top-right corner reads, for a one-sided cut:
 
-**Central interval.** Enter a central proportion and get ±z\* and both endpoints. Accepts either 0.95 or 95. At 0.95 you get z\* = ±1.9600 and both bounds marked on the curve.
+> x₀ = 1.00  z = 1.00
+> area to the left = 0.8413
+> height 0.242 (density,
+> not a probability)
 
-This is *not* a confidence interval, and the difference matters. What you get here is the middle 95% of the distribution itself — the range a single observation falls in 95% of the time. A confidence interval is built from a sample to estimate an unknown parameter, and uses a standard error in place of σ. The ±1.96 looks the same in both, which is exactly why they are so easily confused.
+The **area** under the curve to the left of x₀ is the probability. The **height** of the curve at x₀ is a *density* — probability per unit of x. It is not the probability of anything: P(X = 1) is 0 for a continuous variable. Make σ small (menu 1, σ = 0.2) and tap at the mean: the height is 1.995, bigger than 1, which no probability can be.
 
-Note the asymmetry, which trips people up: percentile asks for the area to the **left**, critical value asks for the area to the **right**. That matches how each is normally used and how printed tables present them, but they are easy to confuse. The help line under each box tells you which one it wants.
+(With two bounds the corner reads "area between" or "area outside". With a second curve on, the corner shows the power instead of the height. In the result views after a calculation the corner keeps the P(X < x₀) notation of the panel you just read.)
 
-Each of these ends with the shaded picture, so the interval or tail is visible, not just tabulated.
+### The CDF overlay
 
-## 5 · The z-formula solver
+Cycle **Ref** (or −) to the CDF, or choose it in menu 9. The cumulative curve F(x) = P(X < x) appears in magenta on its own 0-to-1 scale up the **right-hand edge** ("1" at the top, a tick at ½). From the point where each bound meets the S-curve, a dotted magenta line runs across to that edge, and the corner adds "CDF(x₀) = …". The height of the S-curve at x₀ **is** the area to the left of x₀ — drag x₀ and watch both. With two bounds, the gap between the two dotted lines is the area between them. Where the bell is tallest the S-curve is steepest: they are one distribution, seen as a rate and as an accumulation.
 
-z = (x − μ)/σ has four quantities. Know any three and the fourth follows. This module solves for whichever one you choose.
+---
 
-**It works in two steps.** First a menu asks which quantity is *unknown*. Then three boxes appear — for the three you did not pick. That is why you see only three fields: the fourth is the answer.
+## The result views
 
-Press OK and a full-screen panel shows all four values, with **the solved one in red**, and underneath it the rearranged formula with your numbers substituted in:
+After every calculation (and after menu 9's display items) the plot stays up until you answer it:
 
-| Solving for | Formula shown |
-| --- | --- |
-| z | z = (x − μ)/σ |
-| x | x = μ + zσ |
-| μ | μ = x − zσ |
-| σ | σ = (x − μ)/z |
+| You | It |
+|---|---|
+| press any key | back to the menu |
+| tap inside the plot | opens the **Explorer** on this picture, shading kept — drag the bound you just computed |
+| tap a histogram bar | shows that bar's numbers (below) and stays |
+| tap outside the plot | back to the menu |
 
-The rearrangement is worth reading, not skipping. Finding a z-score is easy enough; rearranging the same formula to recover μ or σ is where most of the difficulty lives, and the panel shows you the algebra rather than only the answer.
+The footer says which: *tap plot = explore, any key = menu*, or with a histogram *tap bar = counts, tap plot = explore, any key = menu*.
 
-### Values carry over
+### Reading a bar
 
-μ and σ arrive from the session distribution, so whatever you set in menu 1 is already in the boxes. x and z persist from your last visit. Anything you enter or solve for flows back out to the session, so the plotted curve follows along.
+Tap a bar (on a result view) or, in the Explorer, press **Hist** and touch or slide along the bars. The bar is outlined in red and a small orange-framed panel reads, for example:
 
-In practice: solve for z with x = 115, μ = 100, σ = 15 → z = 1. Go back in, switch to solving for x, and μ, σ and z are still filled in. Change z to 1.96 and you get x = 129.4 without retyping anything.
+> bin 12: 148 observed, 151.3 expected (n×p)
+> x from −0.25 to 0.00,  p = 0.0987
 
-At launch all four sit at x = 0, μ = 0, σ = 1, z = 0 — values that satisfy the formula exactly.
+*Observed* is how many values fell in that bin. *Expected* is n × p, where p = F(right edge) − F(left edge) is the curve's probability for that bin — under the curve **as drawn now**. Move μ in the Explorer and the expected counts move with it, so a curve that fits badly shows it bar by bar.
 
-### Two guards
+---
 
-σ must be positive. And σ cannot be found when z = 0, since that divides by zero; the message says so. If your entries give a negative σ, the program explains that the sign of z must match the sign of x − μ — a common and instructive student error.
+## Probability from x (item 3)
 
-## 2 · Exploring the curve
+| Choice | You enter | Shaded |
+|---|---|---|
+| P(X < x) left tail | x | left of x |
+| P(X > x) right tail | x | right of x |
+| P(a < X < b) between | a, b (either order) | between |
+| P(outside a, b) two tails | a, b | both tails |
 
-This is the live view. The keys act immediately and the plot redraws on each press.
+The panel shows x (or a and b), z, the probability in red and its complement. `NE_X`, `NE_Z` and `NE_P` keep the last answer.
 
-| Key | Effect |
-| --- | --- |
-| ← → | Move the mean, in round steps |
-| ↑ ↓ | Change the std dev, in round steps |
-| **Tap or drag on the plot** | **Set the cut point where you touch** |
-| + | Toggle the 68–95–99.7 bands |
-| − | Toggle the N(0,1) reference curve |
-| 0 | Re-centre the window on the current curve |
-| Esc or Enter | Back to the menu |
+## x from probability (item 4)
 
-Step sizes scale with σ, so the arrows feel the same whether you are on N(0, 1) or N(500, 100).
+| Choice | You enter | Gives | Shaded |
+|---|---|---|---|
+| x at a percentile (area left) | area to the left (default .90) | z* and x | left tail |
+| Critical value: right tail (α) | α (default .05) | z* = Φ⁻¹(1 − α), x* | right of x* |
+| Critical value: left tail (α) | α | z* = Φ⁻¹(α) — negative — and x* | left of x* |
+| Critical values: two tails (α) | α, the total in both tails | z* = ± Φ⁻¹(1 − α/2), lower and upper x* | **both tails**, each boxed with α/2 |
+| Central C% interval | C (.95 or 95 both work) | z* = Φ⁻¹((1 + C)/2), the interval | between |
 
-### Why the window holds still
+The two-tailed picture and the central 95 % picture are the same two lines with complementary shading — worth showing side by side. (Item 5 was item 3 before beta 42.)
 
-On entry the window locks to roughly ±6σ around the starting distribution and stays there while you explore. This is deliberate. If the window followed μ, the bell would sit dead centre forever and moving the mean would look like nothing was happening. With the window held, μ visibly slides and σ visibly reshapes — which is what you want a class to see.
+## Z-formula solver (item 5)
 
-Wander too far and press **0** to re-centre.
+Pick the unknown — z, x, μ or σ — and enter the other three. The answer is shown with the formula filled in, e.g. *z = (x − μ)/σ = (130 − 100)/15*. The solver remembers its x and z between visits, and its μ and σ are the session's: solve for μ or σ and the plotted distribution follows. Solving for σ refuses a z whose sign disagrees with x − μ, and says so.
 
-## 6, 7 and 8 · The demonstration modules
+## Data & histogram (item 6)
 
-### 7 · Compare curves and Cohen's d
+| Choice | What it does |
+|---|---|
+| My data from D1 (Statistics 1Var) | Fits N(x̄, s) to the list D1 (s with the n − 1 divisor), makes it the session curve and draws your data as a histogram of 32 bins over x̄ ± 4s, on the density scale |
+| Two groups from C1, C2 (2Var) | A curve for each group, both drawn with the pooled s; Cohen's d in the corner |
+| Regression residuals from C1, C2 | Least-squares line of C2 on C1, then the residuals through the same view — the normality assumption behind slope inference, shown rather than told |
+| Write z-scores of D1 into D2 | So the next step can be done with the calculator's own apps |
+| Normal probability plot of D1 | Opens Statistics 1Var (set Plot1 to Normal Probability, then Plot, Autoscale) |
+| Simulate a sample | n = 200, 1000 or 5000 from the session N(μ, σ); the sample's own x̄ and s appear beside μ and σ — they differ on every draw, which is the lesson |
+| Clear histogram | |
 
-Enter a second mean, μ₂, and a green curve appears alongside the first, sharing the same σ. The overlap is shaded pale green, and the readout gives **d = (μ₂ − μ)/σ**.
+The bars are filled pale green under the curve. Where a bar stands inside the shaded region it is filled deep orange instead, so the shading still reads as one region; a bar that a bound crosses is split at the line.
 
-This turns effect size from a number into something you can see. Set μ = 0, σ = 1, then try μ₂ = 0.2, 0.5 and 0.8 in turn — the conventional small, medium and large — and watch the overlap shrink. If you have only ever met Cohen's d as a figure in a results table, the picture is usually more convincing.
+## Compare curves (item 7)
 
-### 6 · Data & histogram
+| Choice | What it does |
+|---|---|
+| Set μ₂ and show (same σ) | A second curve in green with its own mean line (μ₂). The gap between the two mean lines, measured in σ, is **Cohen's d = (μ₂ − μ)/σ**; the overlap of the two curves is shaded light green |
+| Turn second curve off | |
+| Power picture: right-tail α | Enter α; the cut x* = μ + z₁₋α σ is set, curve 2 turned on at the current μ₂, and a panel shows α, x*, μ₂, d, the **power** and β = 1 − power |
 
-This is where the program reaches into the calculator's built-in Statistics apps and works with real data, rather than only with a distribution you describe. Seven options.
+**The power picture** appears whenever the second curve is on and the shading is a right-tail cut x*. Curve 1 is the null hypothesis; its orange tail past x* is α. Curve 2 is the alternative; *all* of its area past x* is the power, and the light green shows the part of it above curve 1. The corner reads "power = …". Tap the plot to explore: drag x* left and α grows while power grows with it; drag right and both shrink. Move μ (the null) with the mean line or the arrows and d changes under your finger.
 
-**My data from D1.** Reads list D1 of the Statistics 1Var app — the same list the Technology Corner activities use — computes x̄ and s, fits N(x̄, s) to them, and draws your values as bars against that curve. Data already entered to make a Normal probability plot needs no retyping.
+## Standardize animation (item 8)
 
-**Two groups from C1, C2.** Reads two groups from the Statistics 2Var app, fits a curve to each, and reports Cohen's d. Both curves are drawn with the **pooled** standard deviation, sp = √(((n₁−1)s₁² + (n₂−1)s₂²)/(n₁+n₂−2)) — the standard denominator for d, and the only thing the plot can show, since it draws one σ. The histogram is cleared, because one set of bars under two curves would look like it belonged to both.
+Two phases on a window wide enough for the whole journey: the mean slides to 0 (*shift x − μ*), a pause, then the spread squeezes or stretches to 1 (*rescale (x − μ)/σ*), ending on N(0,1) with the formula over it. The session μ and σ are not changed. The z-row under the axis travels with the curve and, at the end, sits exactly under the x-row.
 
-**Regression residuals from C1, C2.** Fits the least-squares line of C2 on C1 and runs the residuals through the same normality view. Inference about a slope assumes the residuals are roughly normal, and this is the assumption students are usually told about rather than shown. A useful check: the residual mean should read 0.0000.
+## Plot window & display (item 9)
 
-**Write z-scores of D1 into D2.** Standardizes your data and stores the result in D2, where every other app can reach it. A message confirms n, x̄ and s.
+| Choice | |
+|---|---|
+| Auto: μ ± 4σ (default) | widened automatically to include the shading and a second curve |
+| Wide: μ ± 6σ | |
+| Custom: enter xmin, xmax | kept until μ or σ changes, then auto again — the program says so when it drops it |
+| Bands 68-95-99.7: ON / off | the menu line shows the current state |
+| N(0,1) reference curve: ON / off | the reference and the CDF share one setting, so turning one on turns the other off |
+| CDF overlay (S-curve): ON / off | |
+| Show current window | the x-range, its width in σ, the y-top and the peak |
+| Diagnostics | whether the MicroPython bridge answers, and which sampler drew the last histogram |
+| Reset everything to N(0,1) | a clean start without quitting |
 
-**Normal probability plot of D1.** Opens Statistics 1Var with your data in place. Set Plot1 to Normal Probability in Symbolic view, then Plot and Autoscale. This *leaves* NormExplorer — control passes to the Statistics app.
+---
 
-**Simulate a sample.** The original behaviour: a random sample of n = 200, 1000 or 5000 drawn from the current distribution. The point is sampling variability — at n = 200 the bars wobble around the curve, at n = 5000 they hug it, and drawing the same n repeatedly gives a different picture every time.
+## Home exports
 
-**Clear histogram.** Removes the bars.
+`NE_Z`, `NE_X` and `NE_P` hold the last z, x and probability (power, after the power picture) and are still there after Quit. NormExp also returns them as its result line, e.g. `NormExp: z = 1.6449, x = 124.6728, p = 0.2595`, so it appears in the Home history.
 
-Whichever route the data came from, the plot reports the sample's own **x̄ and s** stacked beneath the population μ and σ — x̄ under μ, s under σ, each estimate under the parameter it estimates. The readout says "your data" for real values and "sample" for simulated ones. Bins are 32 intervals across μ ± 4σ, so bar width scales with the distribution.
+## The arithmetic
 
-### 8 · Standardize animation
+- Areas: `NORMALD_CDF(μ, σ, x)`; P(a < X < b) = F(b) − F(a); outside = 1 − that.
+- Inverses: `NORMALD_ICDF`. Right-tail z* = Φ⁻¹(1 − α); left-tail z* = Φ⁻¹(α); two-tailed z* = Φ⁻¹(1 − α/2); central C: z* = Φ⁻¹((1 + C)/2); x = μ + z σ.
+- d = (μ₂ − μ)/σ. Power = P(X₂ > x*) = 1 − Φ((x* − μ₂)/σ), which is the textbook 1 − Φ(z₁₋α − d).
+- A bin's expected count = n [F(right) − F(left)].
+- Sample statistics use the n − 1 divisor; two groups use the pooled s_p = √(((n₁−1)s₁² + (n₂−1)s₂²)/(n₁+n₂−2)).
+- The density is `NORMALD(μ, σ, x)`, cached once per pixel column and kept across frames; the CDF S-curve is drawn from that cache by adding trapezoids (within 0.0001 of the exact curve at the usual windows). **Every number printed on screen comes from `NORMALD_CDF` / `NORMALD_ICDF` themselves**, never from the drawing caches.
 
-Animates your N(μ, σ) transforming into the Standard N(0, 1) in two labelled stages: first the curve slides until μ = 0, then it rescales until σ = 1. A pause between the two marks where subtracting the mean ends and dividing by the standard deviation begins.
+## How it was checked
 
-It runs about eleven seconds. Watch the μ and σ readouts change as it goes — that is the substance of the demonstration, not the motion itself. There is no key to press; it advances on its own.
+Every new formula was checked against SciPy in `verify_NormExplorer.py`, and the program itself was run in hp-prime-kit's PPL interpreter with scripted menu choices, keys and touches: all four probability types, all five inverse items, the solver, the power picture, the Explorer's drags, grabs and soft keys, a histogram bar tap, the CDF overlay, the animation, the help pages, the window menu and a whole session — 135 checks, none failed. None of that is a substitute for the calculator: the device checklist in `NormExplorer_beta42_CHANGES.md` lists what to try, least risky first.
 
-## Reading the plot
+## What changed in beta 42
 
-| What you see | Meaning |
-| --- | --- |
-| Blue curve | The session distribution N(μ, σ) |
-| Dark blue vertical line, marked μ | The mean, drawn from the axis up to the peak |
-| Blue bands, three shades | ±1σ, ±2σ, ±3σ — darkest nearest the mean |
-| Orange fill | The region whose probability was just computed |
-| Red vertical lines | The boundaries of that region |
-| Green curve | The comparison curve N(μ₂, σ) |
-| Pale green fill | Overlap of the two curves |
-| Green outline bars | The sample — simulated, or your own data |
-| Grey curve | N(0, 1) reference, when it fits |
+The touch and graphics version (on top of beta 41's fixes): drag either bound of between/outside shading with the area riding the region; two pages of soft keys (More turns the page; page 2 chooses what the arrow keys move); grab μ and σ; live result views (tap to explore, tap a bar); filled histogram bars and bar counts; the shading sweep; the CDF overlay; the z-ruler; "height is not probability"; left-tail and two-tailed critical values; the power picture; three help pages. Details, with line numbers, in `NormExplorer_beta42_CHANGES.md`.
 
-The corner readouts give μ and σ; the sample's x̄ and s when a histogram is drawn; μ₂ and Cohen's d when a second curve is on; the band ranges when bands are on and no second curve; and the current probability with its z-score when a region is shaded.
+Beta 41 (16 Oct 2026) was a fix version: unnumbered menus, the MicroPython sampler importing from `urandom`, Home exports kept after Quit, the N(0,1) reference cached, flicker-free animation captions, the custom window kept, the Explorer redrawing only on change.
 
-### The band percentages
+## Credit
 
-The band labels read 68.27%, 95.45% and 99.73% rather than the rounded 68–95–99.7. These exact figures are what the calculator computes; the familiar rule is a rounding of them, not a separate fact.
+Concept, source material, direction, classroom judgement and all hardware testing: Roger Metcalf. Implementation, the numerical work and its verification, and this guide: Claude (Anthropic).
 
-The labels are hidden while a second curve is on, because they would overlap its μ₂ marker and because the ranges describe one distribution only. The shaded bands themselves stay.
+*Free for educational and personal use. © 2026 Roger Metcalf. Written with AI assistance (Anthropic Claude). Keep this header with the file and credit the author if you pass it on. Not for sale or commercial redistribution. Provided as is, with no warranty.*
 
-### The footer line
-
-On a result view the footer reads *Press any key to return to the menu*, because that is all any key does there. Inside the Explorer it lists the live keys instead. If the footer offers you arrow keys, they work; if it does not, they do not.
-
-## 9 · Plot window & display
-
-Everything about how the plot looks, gathered in one place. Seven options.
-
-**Auto (μ ± 4σ)** is the default and suits almost everything. **Wide (μ ± 6σ)** brings more of the tails into view, or leaves room for a mean to move. **Custom** takes an explicit xmin and xmax — useful for putting two screens on identical axes, or zooming into a tail. A custom range is dropped automatically if you change μ or σ, since it would no longer fit.
-
-In auto and wide mode the window also widens on its own to take in anything being shaded and any second curve, so a critical value far out in a tail is never off the edge.
-
-**Bands 68-95-99.7** and **N(0,1) reference curve** switch those layers on and off. Each line shows its current state before you choose it, and the plot redraws straight away so you see the effect. These are the same two switches the Explorer's **+** and **−** keys drive — having them here means you can clear the bands off a busy result plot without detouring through the Explorer to do it.
-
-**Show current window** reports the range, its width in units and in σ, and the vertical scale.
-
-**Reset everything to N(0,1)** returns the session to its launch state: standard normal, no shading, no sample, no second curve, auto window, solver cleared. Handy between worked examples — it saves quitting and relaunching just to get a clean slate.
-
-### Why the grey reference curve sometimes vanishes
-
-The N(0, 1) reference curve is drawn only when it genuinely fits — horizontally *and* vertically.
-
-The standard normal peaks at 0.3989. A distribution with σ = 7 peaks at 0.057, about seven times shorter. Drawn together on one vertical scale, N(0, 1) would be clipped flat at the top of the frame and appear as a grey box rather than a bell.
-
-So the reference curve appears for σ up to about 1.15 and is suppressed above that. A comparison nobody can interpret is worse than no comparison.
-
-The practical consequence: at large σ, both the Explorer's **−** key and the menu 9 toggle will seem to do nothing. They are still flipping the setting; there is simply nothing that can be drawn.
-
-## Things to try
-
-Six short exercises. Each takes a few minutes, and each shows you something the formula alone does not.
-
-### The empirical rule is not three separate facts
-
-Set any μ and σ in menu 1, then go into the Explorer and press **+** to turn on the bands. Now move μ with the arrows and change σ, and watch carefully: the *ranges* under the bands change every time, but the *percentages* never do — 68.27, 95.45, 99.73, always.
-
-That is the whole rule. It is not about particular numbers; it is about how many standard deviations you are from the mean.
-
-### Why we standardize
-
-Set N(100, 15) in menu 1 — the IQ scale — then run the animation in menu 8. Your curve slides until its mean is 0, then shrinks until its spread is 1.
-
-That is exactly what z = (x − μ)/σ does to a single score. Now go to menu 5, solve for z with x = 130, and you will get 2 — the same journey, done to one number instead of the whole curve.
-
-### The same z, two different worlds
-
-In menu 5, solve for x with z = 1.5, μ = 100, σ = 15. You get 122.5.
-
-Now do it again with μ = 2.4, σ = 0.6 — a GPA. You get 3.3.
-
-Same z, completely different raw scores. Look at the plot after each: the shape is identical, only the numbers on the axis changed. A z-score tells you *where you stand*, not *how big you are*.
-
-### A sample is not its population
-
-Go to menu 6, choose Simulate a sample, and draw n = 200. Draw it again. And again. The bars land differently every time, even though the distribution underneath never moved.
-
-Now draw n = 5000. The bars settle onto the curve.
-
-Nothing changed except how much data you collected. This is what people mean when they say a small sample is unreliable — and it is worth remembering the next time you read a study.
-
-### Effect size you can see
-
-Set N(0, 1) in menu 1, then use menu 7 to add a second curve at μ₂ = 0.2. Note the d value in the corner. Try 0.5, then 0.8.
-
-At each one, ask yourself: if someone handed you a single observation and asked which curve it came from, could you tell? That question is what effect size measures, and the overlap you can see is the honest answer.
-
-Some figures to put against the picture. The shaded overlap is about **92%** of the area at d = 0.2, **80%** at d = 0.5, **69%** at d = 0.8, and still **32%** at d = 2. Even a very large effect leaves the two groups substantially overlapping — which is why an effect can be real, important, and still useless for telling one individual from another.
-
-### Checking your own work
-
-For any homework question of the form *what proportion is above / below / between*, use menu 1 to set the distribution and menu 3 to get the answer. Then look at the shaded picture and ask whether it matches what the question actually described.
-
-If the question said "above" and your shading is on the left, you have carefully answered the wrong question. The picture catches that far faster than re-checking your arithmetic does.
-
-### Is my own data normal?
-
-Type a set of real values into list D1 of the Statistics 1Var app — heights, test scores, reaction times, anything you have collected. Then menu 6, *My data from D1*.
-
-The program fits N(x̄, s) to your numbers and draws them against it. Ask whether the bars follow the curve: humped in the middle, thinning symmetrically at both ends. Then menu 6 again, *Normal probability plot of D1*, for the second opinion — the straighter that plot, the better the normal model fits.
-
-Two tools, one question, and the answer is a judgement rather than a number.
-
-## Notes, limits and troubleshooting
-
-### Results available in Home
-
-After any calculation, three variables hold the latest result and can be typed in Home:
-
-| Variable | Holds |
-| --- | --- |
-| `NE_Z` | The last z-score |
-| `NE_X` | The last raw score |
-| `NE_P` | The last probability |
-
-So a critical value can be computed in the program and then used in further arithmetic without copying it down. These are cleared when you quit.
-
-### Known limits
-
-**No blank input fields.** Every box shows a starting value, because the calculator cannot display an empty numeric field. Boundary and solver fields start at 0; area and confidence fields start at conventional values (0.90, 0.05, 0.95) because 0 is not a legal entry for them.
-
-**One σ for both curves.** The comparison curve shares the main curve's standard deviation, so Cohen's d here assumes equal spread. When two real groups are loaded from C1 and C2 the pooled s is used, which is the standard approach; for a typed μ₂ the single session σ applies to both.
-
-**Only D1, C1 and C2.** The data routes read those three lists specifically. Data in other columns has to be moved there first.
-
-**The animation cannot be interrupted.** It runs its full course, about eleven seconds.
-
-### If something looks wrong
-
-**A stray grey shape on the plot** — that was the reference curve being clipped, fixed in this version. If you see it again, the N(0,1) suppression rule needs another look.
-
-**"Invalid input" when drawing a histogram** — the MicroPython sampler failed and the fallback did not catch it. The Terminal (Shift-View) will show the Python error. Current versions validate the result and fall back to the PPL sampler, so this should not recur.
-
-**A histogram that takes a long time** — the PPL fallback is running because the Python path failed. It works, but n = 5000 is slow. The Terminal will say why.
-
-**A number you did not expect in a box** — check what the field's help line says it starts at. Prefilled values are deliberate, and several are 0 by design.
-
-### Version
-
-This guide describes beta 39a (the same code as beta 39). Menu numbering, key assignments and default values are as shipped in that build; earlier versions differ, particularly in the solver, the plot window and the menu order.
-
-**Tested on:** an HP Prime G2 and G1, plus the desktop Virtual Calculator. Both calculators now run the 2026-09-09 firmware, though the G1 results recorded here were obtained before it was updated to that build. Behaviour on other firmware may differ — in particular, which characters render and which app variables a program can reach have both turned out to be firmware-dependent.
-
-### Credit
-
-The concept, the direction and the classroom judgement behind this program are Roger Metcalf's, as is every round of testing on real hardware — which is where most of what matters was found. Claude did the implementation, the numerical work, the expansion beyond the original scope, and this guide.
-
-**Free for educational and personal use.** Share it, teach with it, adapt it for your own classroom. Please keep the attribution with the files and credit the author if you pass them on or build on them. Not for sale or commercial redistribution. Provided as is, with no warranty — check any result you intend to rely on.
-
-© 2026 Roger Metcalf. Written with AI assistance (Anthropic Claude).
+*Firmware: builds through beta 39 tested on HP Prime G2 and G1, 2026-09-09 firmware. Beta 42 has not yet been run on hardware.*

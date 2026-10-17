@@ -1,0 +1,144 @@
+== A. every CAS template through desktop Giac 1.9, against Python fractions ==
+   (icas: // (c) 2001, 2021 B. Parisse & others)
+PASS A1 bt_Rat: decimals as n/10^d, count ratios recovered exactly (92/95, 7/9, 2/3)   []
+PASS A1 bt_Rat: a value with more than 6 decimals is rounded and flagged (kind 2)   [123457, 1000000, 2]
+PASS A2 1188 CAS texts (PPV, NPV, 1 - PPV, break-even; 1 and 2 tests): Giac = Python fractions   []
+PASS A2 no CAS text holds a decimal point (BRIEF_CAS rule 1)   []
+PASS A3 ppv(prior 0.01, 0.95 / 0.95) = 19/118   19/118
+PASS A3 npv(prior 0.01, 0.95 / 0.95) = 1881/1882   1881/1882
+PASS A3 be(prior 0.01, 0.95 / 0.95) = 1/20   1/20
+PASS A3 ppv(prior 0.1, 0.9 / 0.95) = 2/3   2/3
+PASS A3 ppv(prior 0.1, 0.9 / 0.95, 2 tests) = 36/37   36/37
+PASS A3 be(prior 0.1, 0.9 / 0.95, 2 tests) = 1/325   1/325
+PASS A3 ppv(prior 0.05, 0.9 / 0.968421) = 3/5   3/5
+PASS A3 comp(prior 0.1, 0.9 / 0.95) = 1/3   1/3
+PASS A3 natural frequencies at N = 10000: TP 95, FP 495, PPV 95/590 = 19/118 = 0.161
+PASS A4 8a: the solves arrive in the Prime's braces ({(-btc+1)/(-btc+bts+1)}, {1/(btl*btm+1)}), which bt_Strip drops
+PASS A4 symbolic break-even, 1 test: Giac (-btc+1)/(-btc+bts+1) = SymPy (1 - btc)/(-btc + bts + 1)
+PASS A4 symbolic break-even, 2 tests: Giac 1/(btl*btm+1) = SymPy 1/(btl*btm + 1)
+PASS A4 the solve is linear in the prior: exactly one root, so the Strip step needs no choice
+PASS A5 bt_BEp (PPL, draws the mark) = the CAS break-even, every test and both chains   max diff 6.9e-17
+
+== B. the program in the harness (ppl_run_v3c), cas = giac and cas = fail ==
+PASS B1 defaults: panel PPV = 2/3, NPV = 171/173, badge exact (CAS)   ['PPV = 2/3', 'NPV = 171/173', 'exact (CAS), tap', 'Most T+ are false', 'if prior < 5.3 %']
+PASS B1 defaults: break-even lines "Most T+ are false / if prior < 5.3 %" (1/19)   ['Most T+ are false', 'if prior < 5.3 %']
+PASS B1 defaults: the CAS was asked 3 times for the first frame (PPV, NPV, break-even)   ['string((1/10*9/10)/(1/10*9/10+9/10*5/100))', 'string((9/10*95/100)/(9/10*95/100+1/10*1/10))', 'string(solve((btq*9/10)/(btq*9/10+(1-btq)*5/100)=1/2,btq))']
+PASS B1 summary on exit carries the exact PPV   BayesTree: PPV = 0.667 = 2/3, NPV = 0.988 (prior 0.100, sens 0.900, spec 0.950)
+PASS B1 8a: every CAS text asks for string(...), every answer arrives quoted; no CAS variable assigned, no CAS call of a variable   [('string((1/10*9/10)/(1/10*9/10+9/10*5/100))', '"2/3"', 24.070024490356445)]
+PASS B1 break-even mark: magenta line above the track at x = 214 (bt_SlX(1/19)), red tint left of it   1 mark, 1 tint
+PASS B1 layout: no tree text reaches the soft keys (y >= 218) or x 318   []
+PASS B2 example tree panel: PPV = 19/118, NPV = 1881/1882   ['PPV = 19/118', 'NPV = 1881/1882', 'exact (CAS), tap', 'Most T+ are false', 'if prior < 5.0 %']
+PASS B2 Exact page 1 shows "Picture N = 10000 people (natural frequencies):"
+PASS B2 Exact page 1 shows "TP = 95, FP = 495, FN = 5, TN = 9405"
+PASS B2 Exact page 1 shows "PPV = TP/(TP+FP) = 95/590"
+PASS B2 Exact page 1 shows "= 19/118 = 0.161"
+PASS B2 Exact page 1 shows "= 1881/1882 = 0.999"
+PASS B2 Exact page 1 shows "prior = 1/20 = 0.0500 = 5.0 %"
+PASS B2 Exact page 1 shows "Below a prior of 5.0 %, a positive result is more"
+PASS B2 Exact page 2 shows "PPV = TP/(TP+FP) = p×se / (p×se + (1−p)×(1−sp))"
+PASS B2 Exact page 2 shows "= 0.01×0.95 / (0.01×0.95 + 0.99×0.05)"
+PASS B2 Exact page 2 shows "p = (-sp+1)/(-sp+se+1)"
+PASS B2 Exact page 2 shows "your numbers: p = 1/20 = 0.0500"
+PASS B2 both pages carry the badge "exact (CAS)"
+PASS B2 layout: no Exact-page line past x 318 (estimated widths)   []
+PASS B2 opening the page asked the CAS once more (the symbolic solve), the rest was cached   ['frac', 'frac', 'solve', 'solve']
+PASS B3 slider drag: every drag frame says "exact: on lift" (no stale fraction shown)   ['exact: on lift', 'exact: on lift', 'exact: on lift', 'exact: on lift', 'exact: on lift']
+PASS B3 slider drag: CAS asked 3 times at the start and 2 times after the lift (PPV, NPV) -- no solve   ['frac', 'frac', 'solve', 'frac', 'frac']
+PASS B3 slider drag: the break-even lines stay put through the drag (they do not depend on the prior)   {'if prior < 5.3 %'}
+PASS B3 8b: slider drag: the four leaves re-count in every frame, the lift frame too, each pair adding up (7 frames)   []
+PASS B3 slider drag: exactly one extra frame after the lift (the CAS update), same prior as the last sample   7 frames
+PASS B3 after the lift the panel shows the exact PPV for the new prior (0.001): PPV = 2/113   ['PPV = 2/113', 'NPV = 18981/18983', 'exact (CAS), tap', 'Most T+ are false', 'if prior < 5.3 %']
+PASS B4 sens drag: the break-even mark moves in the drag frame, before the lift (PPL), [214.0, 215.0, 215.0]
+PASS B4 sens drag: CAS asked 3 times at the start, then 3 after the lift (PPV, NPV, solve)   ['frac', 'frac', 'solve', 'frac', 'frac', 'solve']
+PASS B5 a key (Right, spec 0.96): one update of 3 CAS calls, then the panel is exact   6 calls, ['PPV = 5/7', 'NPV = 432/437', 'exact (CAS), tap', 'Most T+ are false', 'if prior < 4.3 %']
+PASS B5 back to a value seen before still asks again (one cache, by design): 9 calls   9
+PASS B5 tapping a box and closing its page: no new CAS call (inputs unchanged)   3
+PASS B6 forensic panel: PPV = 2/3, 1−PPV = 1/3, "Most matches false / below 1 in 19"   ['PPV = 2/3', '1−PPV = 1/3', 'exact (CAS), tap', 'Most matches false', 'below 1 in 19']
+PASS B7 two tests panel: PPV = 36/37 (= 0.972973), NPV = 19/23, "Most T+T+ false / if prior < 0.31 %"   ['PPV = 36/37', 'NPV = 19/23', 'exact (CAS), tap', 'Most T+T+ false', 'if prior < 0.31 %']
+PASS B7 two tests Exact page: N = 100000, 13500 positive on test 1, prior = 1/325
+PASS B7 two tests page 2: the CAS solve in LR form, p = 1/(LR₁×LR₂+1)
+PASS B7 two tests: the slider mark sits at the base prior 1/325 (x = 185)
+PASS B8 Enter counts 45/5/30/920: PPV = 3/5 (= 45/75), NPV = 184/185 (= 920/925)   ['PPV = 3/5', 'NPV = 184/185', 'exact (CAS), tap', 'Most T+ are false', 'if prior < 3.4 %']
+PASS B9 a tap on the exact panel opens the Exact page
+PASS B10 soft key page 3, slot 5 "Exact" opens the Exact page
+PASS B11 PPV view: magenta square at the crossing (x 53, y 107)
+PASS B11 PPV view: "Below 5.3 %, most positives are false (PPV < 1/2)."
+PASS B11 PPV view layout: tick labels at y 189, the sentence at y 199, readout 212, footer 226   [189.0, 199.0, 212.0, 226.0]
+PASS B12 cas=fail: no runtime error, the program ends normally   None
+PASS B12 cas=fail: tree panel shows the decimals and "decimal, tap"   ['PPV = 0.161', 'NPV = 0.999', 'decimal, tap', 'Most T+ are false', 'if prior < 5.0 %']
+PASS B12 cas=fail: Exact pages say "decimal", keep the natural-frequency fraction 95/590 (PPL counts)
+PASS B12 cas=fail: page 2 gives the break-even by hand and says no CAS answer
+PASS B12 cas=fail: the summary has no fraction   BayesTree: PPV = 0.161, NPV = 0.999 (prior 0.010, sens 0.950, spec 0.950)
+PASS B13 slow CAS: after the first update the tree says "tap for exact" and asks no more   ['tap for exact', 'Most T+ are false', 'if prior < 4.3 %']
+PASS B13 slow CAS: a tap still opens the Exact page, which asks the CAS and says the tree waits for a tap
+PASS B14 stale-key mode: no page skipped on the way to and through the Exact pages   []
+PASS B15 help: four pages, page 4 "exact answers (CAS)", all text above y 218 and inside x 318
+PASS B17 answers wrapped in quotes: the kit strips them, the panel still shows PPV = 2/3, NPV = 171/173   ['PPV = 2/3', 'NPV = 171/173', 'exact (CAS), tap', 'Most T+ are false', 'if prior < 5.3 %']
+PASS B17 a decimal answer (approximate mode) is not shown as exact: PPV = 0.667, badge decimal   ['PPV = 0.667', 'NPV = 171/173', 'decimal, tap', 'Most T+ are false', 'if prior < 5.3 %']
+
+== B16. beta 7's verify_BayesTree.py run against beta 8b (harness v3c) ==
+   48 PASS, 4 FAIL
+   FAIL A summary returned   BayesTree: PPV = 0.667 = 2/3, NPV = 0.988 (prior 0.100, sens 0.900, spec 0.950)
+   FAIL B slider: one redraw per changed drag sample   ['prior 0.097', 'prior 0.010', 'prior 0.014', 'prior 0.860', 'prior 0.500', 'prior 0.500']
+   FAIL B slider: all six boxes re-count at every sample   priors [0.097, 0.01, 0.014, 0.86, 0.5]
+   FAIL E More cycles three pages and back   ['Values', 'Counts', 'ROC', 'PPV', '2×2', 'More']
+PASS B16 every other beta 7 check passes on beta 8 (48 pass; the 4 intended changes listed above)   []
+
+== G. beta 8 in harness v3c (the CAS finding stays), and beta 8b against beta 8a ==
+PASS G beta 8 in v3c: its bt_Cas hands back its own text, so the panel shows decimals only (['PPV = 0.667', 'NPV = 0.988', 'decimal, tap'])   ['PPV = 0.667', 'NPV = 0.988', 'decimal, tap', 'Most T+ are false', 'if prior < 5.3 %']
+
+G. beta 8b against beta 8a
+PASS beta 8b: routines that differ from beta 8a: ['BayesTree', 'bt_FaganView', 'bt_PrevView', 'bt_RCnt', 'bt_RPrb', 'bt_RocView', 'bt_WaitAny', 'bt_fmtq'] (want ['BayesTree', 'bt_FaganView', 'bt_PrevView', 'bt_RCnt', 'bt_RPrb', 'bt_RocView', 'bt_WaitAny', 'bt_fmtq'])
+PASS beta 8b: bt_RCnt, bt_RPrb, bt_fmtq are new
+PASS beta 8b: one new file-level LOCAL line, the stale-click list
+PASS beta 8b: outside those routines and that line only comments differ
+PASS beta 8b: bt_Cas (the CAS call form) is byte-identical to beta 8a
+  routines that differ from beta 8a: BayesTree, bt_FaganView, bt_PrevView, bt_RCnt, bt_RPrb, bt_RocView, bt_WaitAny, bt_fmtq; everything else differs only in comments
+
+== S. 8b: soft keys under WAIT(-1), as the emulator answers (harness v3c) ==
+PASS S1 8b: soft key 1 (Values) runs from the type-3 strip click alone   ['Exact Values'] ['BayesTree']
+PASS S1 8b: soft key 2 (Counts) runs from the type-3 strip click alone   ['Leaf Counts (2x2)'] ['BayesTree']
+PASS S1 8b: soft key 3 (ROC) runs from the type-3 strip click alone   [] ['BayesTree', 'bt_RocView']
+PASS S1 8b: soft key 4 (PPV) runs from the type-3 strip click alone   [] ['BayesTree', 'bt_PrevView']
+PASS S1 8b: soft key 5 (2×2) runs from the type-3 strip click alone   [] ['BayesTree', 'bt_Tbl2View']
+PASS S2 8b: beta 8a in v3c: soft key 1 does nothing (the emulator: "tapping Values or ROC does nothing")   ['BayesTree']
+PASS S2 8b: beta 8a in v3c: soft key 2 does nothing (the emulator: "tapping Values or ROC does nothing")   ['BayesTree']
+PASS S2 8b: beta 8a in v3c: soft key 3 does nothing (the emulator: "tapping Values or ROC does nothing")   ['BayesTree']
+PASS S3 8b: More (slot 6) steps page 1 -> 2 -> 3 -> 1 from type-3 clicks   ['Values', 'Diag', 'Test 2', 'Values']
+PASS S3 8b: page 2 slot 5 (Help) opens the help pages   ['BayesTree', 'bt_HelpView']
+PASS S3 8b: page 3 slot 4 (Leaves) turns the leaves into shares (T+ 0.090 ...)   ['T+ 0.090', 'T− 0.010', 'T+ 0.045', 'T− 0.855']
+PASS S4 8b: a type-0 PRESS on the strip (v3b model: {0, x, y}, {2}) does nothing -- neutralised   []
+PASS S4 8b: a firmware that sent {0}, {2} AND {3} for a strip tap would still run the key ONCE   ['Leaf Counts (2x2)']
+PASS S4 8b: a tap on the root box ({0}, {2}, {3}) opens its node page once, not twice   1 node pages
+PASS S4 8b: a tap on a branch number opens its page once, on the lift ({2}), not again on the click   1 node pages
+PASS S5 8b: bt_PrevView closed by a tap on its footer (x 150, y 226): its {2}, {3} reach the tree and run no soft key   ['BayesTree', 'bt_PrevView'] []
+PASS S5 8b: bt_RocView closed by a tap on its footer (x 100, y 226): its {2}, {3} reach the tree and run no soft key   ['BayesTree', 'bt_RocView'] []
+PASS S5 8b: bt_FaganView closed by a tap on its footer (x 230, y 226): its {2}, {3} reach the tree and run no soft key   ['BayesTree', 'bt_FaganView'] []
+PASS S5 8b: without the guard the PPV view's closing click WOULD run soft key 3 (ROC) on the tree   ['BayesTree', 'bt_PrevView', 'bt_RocView']
+PASS S5 8b: the guard skips that one click only: a tap at the same spot afterwards runs ROC   ['BayesTree', 'bt_PrevView', 'bt_RocView']
+PASS S6 8b: mouse_tail (not measured): a node page closed by a footer tap leaves its click, which the tree skips   ['BayesTree', 'bt_NodeInfo']
+PASS S6 8b: mouse_tail: four help pages closed by footer taps, back on the tree, no soft key fired   ['BayesTree', 'bt_HelpView']
+PASS S7 8b: the stale-click list is filled by the three WAIT(-1) views and bt_WaitAny, and reset by keys and presses
+PASS S7 8b: no WAIT(-1) type-0 test at y >= 218 acts any more; the strip is read from type 3 only
+
+== L. 8b: every pair on the tree adds up ==
+PASS L1 8b: sens 0.835, D+ 100: T+ 84, T− 16 (84 + 16 = 100); D− 900: T+ 45, T− 855   ['T+ 84', 'T− 16', 'T+ 45', 'T− 855']
+PASS L1 8b: beta 8a shows the emulator's T+ 84, T− 17 (101) for the same tree   ['T+ 84', 'T− 17', 'T+ 45', 'T− 855']
+PASS L2 8b: 144 trees (priors, sens/spec pairs, N 10, 37, 1000): root = D+ + D−, D+ = TP + FN, D− = FP + TN, and every branch pair adds to 1   []
+PASS L2 8b: every count is within one person of its exact value   []
+PASS L2 8b: 12 two-test trees (root = test 1's positives): every pair adds up   []
+PASS L3 8b: 6 trees in shares: every pair adds up at three decimals   []
+PASS L3 8b: a share that rounds to 0 still says "< 0.001", not "0.000" (prior 0.0001: TP, FN, D+, the prior branch)   ['prior < 0.001', '< 0.001', 'D+ < 0.001', 'T+ < 0.001', 'T− < 0.001', 'odds < 0.001 × LR+ = 0.002']
+PASS L4 8b: the FN box's page says "count = 16  (0.016 of N)", as the box   ['False negatives', 'count = 16  (0.016 of N)']
+PASS L4 8b: the 2×2 view: 84 + 16 = 100, 45 + 855 = 900, columns 129 + 871 = 1000 (8a: 84 + 17 ≠ 100)   [(84.0, 16.0, 100.0), (45.0, 855.0, 900.0), (129.0, 871.0, 1000.0)]
+
+== C. 8b: the first-level numbers off the branch lines ==
+PASS C1 8b: the prior number (0.100 at x 98, y 78) does not touch either branch line   (97.0, 78.0, 126.5, 88.0)
+PASS C1 8b: the 1 - prior number (0.900 at x 98, y 136) does not touch either branch line   (97.0, 136.0, 126.5, 146.0)
+PASS C1 8b: nothing is drawn at the old spots (x 84, y 70 / 142)
+PASS C1 8b: (for the record) the old spot x 84, y 70 lay on the upper branch line
+PASS C2 8b: a tap on the moved number (110, 82) opens "Branch: P(D+) = prior"   ['Branch: P(D+) = prior']
+PASS C2 8b: a tap on the moved number (110, 140) opens "Branch: P(D−) = 1 − prior"   ['Branch: P(D−) = 1 − prior']
+PASS C3 8b: no tree text runs past x 318   []
+
+120 PASS, 0 FAIL

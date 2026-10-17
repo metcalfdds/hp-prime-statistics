@@ -1,0 +1,285 @@
+#pragma mode( separator(.,;) integer(h32) )
+// ============================================================================
+//  TouchKit template v3 -- the house touch-and-graphics kit, as a starting point
+//  Roger Metcalf, 2026.  Written with AI assistance (Anthropic Claude).
+//
+//  Free for educational and personal use.  Keep this header with the file,
+//  credit the author.  Not for sale or commercial redistribution.  Provided
+//  as is, with no warranty.
+//
+//  HOW TO USE
+//  1. Copy this file and rename it for the new program.
+//  2. Replace the tag `tk` everywhere with the new program's own 2-4 letter
+//     tag (search for "tk" -- every helper, LOCAL and constant uses it), and
+//     `TouchKit` with the program's name.  All programs on a Prime share ONE
+//     pool of routine names, matched ignoring case, so the tag is what keeps
+//     this program's tkDrain from running another program's.
+//  3. Run the gate:  python3 ppl_gate_v1.py NewProgram.txt
+//     It checks the tag (fleet_names_v2.py) and every name against the
+//     built-ins, ignoring case (ppl_check_v3.py).
+//
+//  WHAT IS IN IT -- every piece is the device-verified shape from ChiTable
+//  beta 1j (G2 and G1, 2026-09-09 firmware), CentralLimit or GaltonBoard:
+//    tkInit()      palette constants (Lessons Learned section 13), set once
+//    tkDrain()     wait for the finger to lift, never more than one second
+//    tkWaitAny()   drain, wait for a key OR a tap, drain; returns the key or -1
+//    tkFrame()     a white G1 with a title band -- compose here, blit once
+//    tkShow()      BLIT_P(G0,0,0,G1), then the soft keys (they paint G0)
+//    tkSlot(x)     which soft key a tap at x is (y >= 218)
+//    tkHit(x, y)   which recorded hit box a tap is in (0 = none)
+//    tkNice(v)     a 1/2/5 x 10^e step for axis ticks and arrow steps
+//    tkSKPage, tkSK  soft-key PAGES: slot 6 is always "More" (v2)
+//    TouchKit()    a demo: a bar chart whose bars you tap and drag
+//
+//  WHAT CHANGED IN v3 (17 Oct 2026): a note, below, on how soft keys reach
+//  WAIT(-1) -- measured on the emulator.  The code is unchanged: it polls
+//  GETKEY and MOUSE, which see soft-key taps.
+//
+//  WHAT CHANGED IN v2 (16 Oct 2026): the "More" soft-key convention.  When a
+//  screen needs more than six actions, slot 6 reads "More" on EVERY page and
+//  steps to the next page of labels, wrapping to page 1 -- the job the NXT
+//  key did on the HP 48 (NEXT on the HP-28).  The demo has two pages.
+//
+//  WHAT IS NOT IN IT (not device-verified yet; GfxProbe beta 1 tests them):
+//  FILLPOLY_P / TRIANGLE_P alpha and blends, the 3-D TRIANGLE_P mesh, the
+//  10-argument scaled BLIT_P, a second MOUSE finger, WAIT(-1) types
+//  2/3/5/6/7, a LOCAL counter in MAKELIST.  Build shapes from RECT_P and
+//  LINE_P until the probe says otherwise.
+//
+//  Firmware tested on: none -- this template has NOT been run on hardware as
+//  a whole; its pieces have, in the programs named above.
+//
+//  SOFT KEYS AND WAIT(-1) -- read this before reading touch with WAIT(-1)
+//  (v3; measured on the HP Prime Virtual Calculator 2.4.2, build 2026-09-09,
+//  which runs the calculators' firmware, by MenuTapProbe beta 1 on 17 Oct
+//  2026 -- Emulator_Round1_Results_2026-10-17_v1.md):
+//    This template polls GETKEY and MOUSE.  MOUSE reports a finger on the
+//    soft-key strip like a finger anywhere else, so tkSlot() below works
+//    (ChiTable, G2 and G1).  WAIT(-1) is different.  With DRAWMENU on the
+//    screen, WAIT(-1) hands back (its own type table: 0 Down, 1 Move, 2 Up,
+//    3 Click, 5 Stretch, 6 Rotate, 7 Long click):
+//      a tap on a SOFT KEY (y >= 218) -> ONLY {3, x, y}: a click, with no
+//                                        press (type 0) and no lift (type 2)
+//      a tap ANYWHERE ELSE            -> {0, x, y}, then {2}, then {3, x, y}
+//      a drag                         -> {0, x, y}, {1, x, y} ..., {2}
+//    So a program that waits with WAIT(-1) must:
+//      - read a soft key from a TYPE 3 event with y >= 218,
+//          slot := MIN(6, IP(x / 53.4) + 1);
+//      - ignore a type 3 ABOVE the strip (that tap's press already acted;
+//        acting on both runs the tap twice), and let a type-0 press at
+//        y >= 218 do nothing, for the same reason;
+//      - check SIZE(ev) >= 3 before reading x and y (the lift {2} has none);
+//      - remember that a tap read as a press still owes its {2} and {3}: if
+//        that press closes a page, they reach whatever waits next, and a
+//        click on a footer (y >= 218) would pass for a soft key there.
+//        BayesTree beta 8b and StudRange beta 15a keep a list of such taps
+//        (btTLX, srTLX) and skip their clicks.
+//    WAIT(-1)'s numbers are whole numbers (#3Ch): arithmetic on them is
+//    fine, but STRING() prints them in hex -- add 0.0 first.
+//    (BayesTree beta 7 and StudRange beta 15 read soft keys from type 0;
+//    on the emulator not one of them did anything.  This is why.)
+// ============================================================================
+
+// ---- the demo's state (file-level LOCAL is verified: ChiTable) ----
+LOCAL tkVal, tkSel, tkTX1, tkTY1, tkTX2, tkTY2;
+LOCAL tkNB, tkTapX, tkTapY;
+LOCAL tkSK, tkSKPage;            // soft-key pages (a list of 6-label lists), which one shows
+
+// ---- palette (set in tkInit) ----
+LOCAL tkBLUE, tkMAG, tkRED, tkGRN, tkORNG, tkGRAY;
+LOCAL tkFOOT, tkGRID, tkLBLU, tkLORN;
+
+// ---- the plot box: the drawing AND the touch handler read these ----
+LOCAL tkPL, tkPR, tkPT, tkPB;
+
+tkInit()
+BEGIN
+  tkBLUE := #003CC8h;  tkMAG  := #C800C8h;  tkRED  := #FF0000h;
+  tkGRN  := #008C3Ch;  tkORNG := #FF4500h;  tkGRAY := #5A5A5Ah;
+  tkFOOT := #1E90FFh;  tkGRID := #E1E4EBh;  tkLBLU := #AACDFFh;
+  tkLORN := #FFF0DCh;
+  tkPL := 30; tkPR := 310; tkPT := 30; tkPB := 196;   // bottom stays above the soft keys
+END;
+
+// Wait for the finger to lift -- capped, so a stuck touch reading can
+// never freeze the program (Lessons Learned section 7).
+tkDrain()
+BEGIN
+  LOCAL drT;
+  drT := TICKS;
+  REPEAT UNTIL MOUSE(1) == -1 OR TICKS - drT > 1000;
+END;
+
+// Drain, wait for a key OR a tap, drain.  Returns the key code, or -1 for
+// a tap (its x and y are left in tkTapX, tkTapY).  A GETKEY drain alone
+// does not drain touch, which is why the MOUSE drain is here too.
+tkWaitAny()
+BEGIN
+  LOCAL wk, wm, wm1, wk2;
+  REPEAT wk := GETKEY; UNTIL wk == -1;
+  tkDrain();
+  REPEAT
+    wk := GETKEY;
+    wm := MOUSE;
+    wm1 := wm(1);
+  UNTIL wk > -1 OR SIZE(wm1) > 0;
+  tkTapX := -1; tkTapY := -1;
+  IF SIZE(wm1) > 0 THEN
+    tkTapX := wm1(1); tkTapY := wm1(2); wk := -1;
+  END;
+  tkDrain();
+  REPEAT wk2 := GETKEY; UNTIL wk2 == -1;
+  RETURN wk;
+END;
+
+// A white page on G1 with a title band.  Everything is drawn on G1 and
+// shown by ONE blit, so nothing flickers (Lessons Learned section 6).
+tkFrame(tkTtl)
+BEGIN
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 0, 0, 319, 18, tkORNG);
+  TEXTOUT_P(tkTtl, G1, 4, 2, 2, #FFFFFFh, 312);
+END;
+
+// Show the frame, then the soft keys.  DRAWMENU paints the SCREEN, not G1,
+// so it goes after the blit and is repeated every frame.
+tkShow(tkKeys)
+BEGIN
+  BLIT_P(G0, 0, 0, G1);
+  DRAWMENU(tkKeys);
+END;
+
+// Which of the six soft keys a tap at x is.  The labels never produce a
+// key code; a tap with y >= 218 is read this way (ChiTable, G2 and G1).
+tkSlot(tkX)
+BEGIN
+  RETURN MIN(6, IP(tkX / 53.4) + 1);
+END;
+
+// Which recorded hit box contains (x, y); 0 if none.  The drawing code
+// fills tkTX1..tkTY2 as it draws, so the two cannot disagree.
+tkHit(tkX, tkY)
+BEGIN
+  LOCAL hI;
+  FOR hI FROM 1 TO tkNB DO
+    IF tkX >= tkTX1(hI) AND tkX <= tkTX2(hI) AND tkY >= tkTY1(hI) AND tkY <= tkTY2(hI) THEN
+      RETURN hI;
+    END;
+  END;
+  RETURN 0;
+END;
+
+// A 1, 2 or 5 times a power of ten (Heckbert) -- for axis ticks and for
+// arrow steps, so values land on round numbers.
+tkNice(tkV)
+BEGIN
+  LOCAL nE, nF, nR;
+  IF tkV <= 0 THEN RETURN 1; END;
+  nE := FLOOR(LOG(tkV));
+  nF := tkV / 10^nE;
+  nR := 10;
+  IF nF <= 5 THEN nR := 5; END;
+  IF nF <= 2 THEN nR := 2; END;
+  IF nF <= 1 THEN nR := 1; END;
+  RETURN nR * 10^nE;
+END;
+
+// ---- the demo: five bars; tap one to select it, drag it to change it ----
+tkDraw()
+BEGIN
+  LOCAL bI, bX1, bX2, bY, bW;
+  tkFrame("TouchKit: tap a bar, drag it up or down");
+  RECT_P(G1, tkPL, tkPT, tkPR, tkPB, #FFFFFFh, #FFFFFFh);
+  LINE_P(G1, tkPL, tkPB, tkPR, tkPB, #000000h);
+  bW := IP((tkPR - tkPL) / 5);
+  tkNB := 5;
+  FOR bI FROM 1 TO 5 DO
+    bX1 := tkPL + (bI - 1) * bW + 8;
+    bX2 := tkPL + bI * bW - 8;
+    bY  := tkPB - IP(tkVal(bI) / 10 * (tkPB - tkPT));
+    IF bI == tkSel THEN
+      RECT_P(G1, bX1, bY, bX2, tkPB - 1, tkRED, tkLORN);
+    ELSE
+      RECT_P(G1, bX1, bY, bX2, tkPB - 1, tkBLUE, tkLBLU);
+    END;
+    TEXTOUT_P(STRING(tkVal(bI), 2, 1), G1, bX1 + 4, bY - 12, 1, tkGRAY, 40);
+    tkTX1(bI) := bX1; tkTX2(bI) := bX2;          // the hit box IS the bar column
+    tkTY1(bI) := tkPT; tkTY2(bI) := tkPB;
+  END;
+  TEXTOUT_P("Selected bar " + STRING(tkSel, 2, 0) + " = " + STRING(tkVal(tkSel), 2, 1) +
+            ",  " + CHAR(8646) + " = select, " + CHAR(8645) + " = change", G1, 6, 204, 1, tkFOOT, 308);
+  tkShow(tkSK(tkSKPage));                         // the page of soft keys now showing
+END;
+
+EXPORT TouchKit()
+BEGIN
+  LOCAL run, kk, mm, mm1, hb, sl;
+  tkInit();
+  tkVal := {2, 4, 6, 8, 5};
+  tkSel := 1;
+  // Two pages of soft keys.  "More" sits in slot 6 on BOTH pages, so a student
+  // always finds it in the same place; the most-used actions are on page 1.
+  tkSK := {{"Reset", "-0.5", "+0.5", "", "Quit", "More"},
+           {"Zero", "Half", "Full", "", "Quit", "More"}};
+  tkSKPage := 1;
+  tkTX1 := {0,0,0,0,0}; tkTY1 := {0,0,0,0,0};
+  tkTX2 := {0,0,0,0,0}; tkTY2 := {0,0,0,0,0};
+  run := 1;
+  REPEAT kk := GETKEY; UNTIL kk == -1;
+  tkDrain();
+  WHILE run == 1 DO
+    tkDraw();
+    // poll keys and touch together (Lessons Learned section 6)
+    REPEAT
+      kk := GETKEY;
+      mm := MOUSE;
+      mm1 := mm(1);
+    UNTIL kk > -1 OR SIZE(mm1) > 0;
+    IF SIZE(mm1) > 0 THEN
+      IF mm1(2) >= 218 THEN                       // a soft key
+        sl := tkSlot(mm1(1));
+        IF sl == 6 THEN
+          // "More": the next page of labels, back to page 1 after the last
+          tkSKPage := tkSKPage + 1;
+          IF tkSKPage > SIZE(tkSK) THEN tkSKPage := 1; END;
+        ELSE
+          IF sl == 5 THEN run := 0; END;                               // Quit, both pages
+          IF tkSKPage == 1 THEN
+            IF sl == 1 THEN tkVal := {2, 4, 6, 8, 5}; END;             // Reset
+            IF sl == 2 THEN tkVal(tkSel) := MAX(0, tkVal(tkSel) - 0.5); END;
+            IF sl == 3 THEN tkVal(tkSel) := MIN(10, tkVal(tkSel) + 0.5); END;
+          ELSE
+            IF sl == 1 THEN tkVal(tkSel) := 0; END;                    // Zero
+            IF sl == 2 THEN tkVal(tkSel) := 5; END;                    // Half
+            IF sl == 3 THEN tkVal(tkSel) := 10; END;                   // Full
+          END;
+        END;
+        tkDrain();
+      ELSE
+        hb := tkHit(mm1(1), mm1(2));
+        IF hb > 0 THEN
+          tkSel := hb;
+          // the drag: while the finger stays down, the bar follows it
+          REPEAT
+            mm := MOUSE;
+            mm1 := mm(1);
+            IF SIZE(mm1) > 0 THEN
+              tkVal(tkSel) := MAX(0, MIN(10, ROUND((tkPB - mm1(2)) / (tkPB - tkPT) * 10, 1)));
+              tkDraw();
+            END;
+          UNTIL SIZE(mm1) == 0;
+        END;
+        tkDrain();
+      END;
+    ELSE
+      IF kk == 7 THEN tkSel := MAX(1, tkSel - 1); END;                       // Left
+      IF kk == 8 THEN tkSel := MIN(5, tkSel + 1); END;                       // Right
+      IF kk == 2 THEN tkVal(tkSel) := MIN(10, tkVal(tkSel) + 0.5); END;      // Up
+      IF kk == 12 THEN tkVal(tkSel) := MAX(0, tkVal(tkSel) - 0.5); END;      // Down
+      IF kk == 4 THEN run := 0; END;                                         // Esc
+      REPEAT kk := GETKEY; UNTIL kk == -1;
+    END;
+  END;
+  RETURN "TouchKit: bars " + STRING(tkVal(1),2,1) + ", " + STRING(tkVal(2),2,1) + ", " +
+         STRING(tkVal(3),2,1) + ", " + STRING(tkVal(4),2,1) + ", " + STRING(tkVal(5),2,1);
+END;

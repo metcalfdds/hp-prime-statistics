@@ -1,0 +1,609 @@
+#pragma mode( separator(.,;) integer(h32) )
+// ============================================================================
+//  GfxProbe beta 1  --  what can the HP Prime draw, and what does touch say?
+//  Roger Metcalf, 2026.  Written with AI assistance (Anthropic Claude).
+//
+//  Free for educational and personal use.  Keep this header with the file,
+//  credit the author.  Not for sale or commercial redistribution.  Provided
+//  as is, with no warranty.
+//
+//  Firmware tested on: none yet -- beta 1 has NOT been run on hardware.
+//  Target: HP Prime G2 and G1, firmware 2026-09-09.
+//
+//  WHY THIS EXISTS
+//  The fleet review of 16 Oct 2026 found that nothing in the fleet uses
+//  translucent fills, blended triangles, the 3-D TRIANGLE_P mesh, the scaled
+//  BLIT_P, a second finger, or the WAIT(-1) gesture events.  All of them are
+//  in HP's Commands reference and in community programs, but none is in the
+//  Lessons Learned confirmed list.  This probe tries each one, on both
+//  calculators, and writes what happened to GP_LOG so the answers can go
+//  into Lessons Learned v7f.  It also settles three open questions:
+//  how many lines a MSGBOX really shows, whether CHISQUARE_CDF and
+//  FISHER_CDF accept non-integer df (the door to Gamma and Beta), what
+//  POISSON_CDF does with k = -1, and whether MAKELIST may count with a
+//  LOCAL instead of Home's K.
+//
+//  HOW TO RUN
+//  Paste into the Connectivity Kit, sync, run GfxProbe from the catalog with
+//  the Terminal closed.  Each visual test draws a picture and asks a yes/no
+//  question in the footer:  + = yes,  - = no,  Esc = skip.  The gesture tests
+//  ask you to touch the screen in a particular way.  At the end the results
+//  page scrolls through GP_LOG (arrows or tap; Esc = done).  GP_LOG and
+//  GP_LAST survive in Home: if the program ever stops silently, type GP_LAST
+//  in Home to see which test it was in.
+//
+//  Every test runs inside IFERR, so a command the firmware rejects at run
+//  time is logged as "ERROR" and the next test still runs.  A command the
+//  firmware rejects at PASTE time cannot be caught that way -- if the paste
+//  fails, the editor's cursor shows the line, and that is itself a finding.
+//
+//  House rules followed (Lessons Learned v7e): every helper is tagged gp;
+//  frames composed in G1 and blitted once; drain-wait-drain round every key
+//  wait; finger-lift drains capped by TICKS; LOCAL lines of six or fewer.
+// ============================================================================
+
+EXPORT GP_LOG := {};        // one string per finding -- read it in Home after the run
+EXPORT GP_LAST := "";       // the test that was running last (crash marker)
+EXPORT GP_PTS := [[0]];     // the 3-D mesh points   (test 7)
+EXPORT GP_TRI := [[0]];     // the 3-D mesh triangles (test 7)
+
+// ---------------------------------------------------------------- palette --
+// The house colours (Lessons Learned section 13), set once in gpInit().
+LOCAL gpBLUE, gpMAG, gpRED, gpGRN, gpORNG, gpFOOT;
+LOCAL gpGRAY, gpLBLU;
+
+gpInit()
+BEGIN
+  gpBLUE := RGB(0,60,200);     // the distribution
+  gpMAG  := RGB(200,0,200);    // derived quantities
+  gpRED  := RGB(255,0,0);      // "you are here"
+  gpGRN  := RGB(0,140,60);     // mean / detected
+  gpORNG := RGB(255,69,0);     // frames, panels
+  gpFOOT := RGB(30,144,255);   // footers
+  gpGRAY := RGB(90,90,90);     // tick labels
+  gpLBLU := RGB(170,205,255);  // shade fill
+END;
+
+// ---------------------------------------------------------------- helpers --
+
+// Add one finding to the log.
+gpNote(gpS)
+BEGIN
+  GP_LOG := CONCAT(GP_LOG, {gpS});
+END;
+
+// Wait for the finger to lift, but never for more than a second.
+gpDrain()
+BEGIN
+  LOCAL drT;
+  drT := TICKS;
+  REPEAT UNTIL MOUSE(1) == -1 OR TICKS - drT > 1000;
+END;
+
+// Drain stale keys.
+gpDrainKeys()
+BEGIN
+  LOCAL dk;
+  REPEAT dk := GETKEY; UNTIL dk == -1;
+END;
+
+// Title band and a white page on G1.
+gpPage(gpTtl)
+BEGIN
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 0, 0, 319, 18, gpORNG);
+  TEXTOUT_P(gpTtl, G1, 4, 2, 2, #FFFFFFh);
+END;
+
+// The question strip at the bottom of a test picture.
+gpFooter(gpQ)
+BEGIN
+  RECT_P(G1, 0, 200, 319, 239, RGB(235,242,255));
+  TEXTOUT_P(gpQ, G1, 4, 203, 1, #000000h);
+  TEXTOUT_P("+ = yes, - = no, Esc = skip", G1, 4, 222, 1, gpFOOT);
+END;
+
+// Blit the frame, ask the footer question, return "yes", "no" or "skip".
+gpAsk()
+BEGIN
+  LOCAL ak, ar;
+  BLIT_P(G0, 0, 0, G1);
+  gpDrainKeys();
+  gpDrain();
+  ar := "skip";
+  REPEAT
+    ak := GETKEY;
+  UNTIL ak == 50 OR ak == 45 OR ak == 4;      // +, -, Esc
+  IF ak == 50 THEN ar := "yes"; END;
+  IF ak == 45 THEN ar := "no";  END;
+  gpDrainKeys();
+  RETURN ar;
+END;
+
+// A row of blue bars across the middle of the page, so a translucent
+// shape drawn over them can be judged: if the bars show through, it works.
+gpBars()
+BEGIN
+  LOCAL bi;
+  FOR bi FROM 0 TO 9 DO
+    RECT_P(G1, 30 + bi*28, 60, 48 + bi*28, 190, gpBLUE);
+  END;
+END;
+
+// Fixed-decimal text for the log.
+gpF(gpV, gpD)
+BEGIN
+  RETURN STRING(gpV, 2, gpD);
+END;
+
+// ------------------------------------------------------------------ tests --
+
+// T01  FILLPOLY_P, opaque, list-of-lists coordinates.
+gpT01()
+BEGIN
+  LOCAL rep;
+  GP_LAST := "T01 FILLPOLY_P opaque";
+  gpPage("T01  FILLPOLY_P, opaque orange shape");
+  gpBars();
+  FILLPOLY_P(G1, {{60,80},{260,80},{200,170},{100,170}}, gpORNG);
+  gpFooter("Is there a solid ORANGE four-sided shape over the bars?");
+  rep := gpAsk();
+  gpNote("T01 FILLPOLY_P opaque {{x,y},...}: " + rep);
+END;
+
+// T02  FILLPOLY_P with an alpha argument (0-255).  128 should be half see-through.
+gpT02()
+BEGIN
+  LOCAL rep;
+  GP_LAST := "T02 FILLPOLY_P alpha";
+  gpPage("T02  FILLPOLY_P with alpha = 110");
+  gpBars();
+  FILLPOLY_P(G1, {{60,80},{260,80},{200,170},{100,170}}, gpORNG, 110);
+  gpFooter("Can you SEE THE BLUE BARS THROUGH the orange shape?");
+  rep := gpAsk();
+  gpNote("T02 FILLPOLY_P alpha 110 translucent: " + rep);
+END;
+
+// T03  FILLPOLY_P, the flat-list form {x1,y1,x2,y2,...} seen in two corpus programs.
+gpT03()
+BEGIN
+  LOCAL rep;
+  GP_LAST := "T03 FILLPOLY_P flat list";
+  gpPage("T03  FILLPOLY_P, flat list {x1,y1,x2,y2,...}");
+  gpBars();
+  FILLPOLY_P(G1, {60,80, 260,80, 200,170, 100,170}, gpMAG);
+  gpFooter("Is there a solid MAGENTA shape over the bars?");
+  rep := gpAsk();
+  gpNote("T03 FILLPOLY_P flat list form: " + rep);
+END;
+
+// T04  TRIANGLE_P, one colour.
+gpT04()
+BEGIN
+  LOCAL rep;
+  GP_LAST := "T04 TRIANGLE_P one colour";
+  gpPage("T04  TRIANGLE_P, one colour");
+  gpBars();
+  TRIANGLE_P(G1, 60, 180, 260, 180, 160, 70, gpGRN);
+  gpFooter("Is there a solid GREEN triangle over the bars?");
+  rep := gpAsk();
+  gpNote("T04 TRIANGLE_P one colour: " + rep);
+END;
+
+// T05  TRIANGLE_P, three colours: the manual says they blend between the vertices.
+gpT05()
+BEGIN
+  LOCAL rep;
+  GP_LAST := "T05 TRIANGLE_P three colours";
+  gpPage("T05  TRIANGLE_P, three colours (blend?)");
+  TRIANGLE_P(G1, 60, 180, 260, 180, 160, 50, gpRED, gpGRN, gpBLUE);
+  gpFooter("Does the triangle BLEND red / green / blue between corners?");
+  rep := gpAsk();
+  gpNote("T05 TRIANGLE_P three-colour blend: " + rep);
+END;
+
+// T06  TRIANGLE_P, three colours and alpha 128 over the bars.
+gpT06()
+BEGIN
+  LOCAL rep;
+  GP_LAST := "T06 TRIANGLE_P alpha";
+  gpPage("T06  TRIANGLE_P, three colours + alpha 128");
+  gpBars();
+  TRIANGLE_P(G1, 60, 180, 260, 180, 160, 50, gpRED, gpGRN, gpBLUE, 128);
+  gpFooter("Blended triangle AND bars visible through it?");
+  rep := gpAsk();
+  gpNote("T06 TRIANGLE_P blend + alpha 128: " + rep);
+END;
+
+// T07  TRIANGLE_P, the 3-D mesh form used by Advanced Graph 3D:
+//      points matrix [x y z colour], triangle matrix of point indices, and a
+//      control list {rotation or -1, "N", eye or -1, {xmin,xmax,ymin,ymax,zmin,zmax}}.
+//      A 4 x 4 grid of z = x^2 - y^2 (a saddle), 18 triangles.
+gpT07()
+BEGIN
+  LOCAL rep, gi, gj, gn, gx, gy;
+  LOCAL gz, gt;
+  GP_LAST := "T07 TRIANGLE_P 3-D mesh";
+  GP_PTS := MAKEMAT(0, 16, 4);
+  GP_TRI := MAKEMAT(0, 18, 3);
+  gn := 1;
+  FOR gi FROM 0 TO 3 DO
+    FOR gj FROM 0 TO 3 DO
+      gx := -1 + gj*2/3;
+      gy := -1 + gi*2/3;
+      gz := gx*gx - gy*gy;
+      GP_PTS(gn, 1) := gx;
+      GP_PTS(gn, 2) := gy;
+      GP_PTS(gn, 3) := gz;
+      GP_PTS(gn, 4) := IP(127 + 127*gz);     // colour code 0-255 as Advanced Graph 3D does
+      gn := gn + 1;
+    END;
+  END;
+  gt := 1;
+  FOR gi FROM 0 TO 2 DO
+    FOR gj FROM 1 TO 3 DO
+      gn := gi*4 + gj;                        // top-left corner of the cell
+      GP_TRI(gt, 1) := gn;     GP_TRI(gt, 2) := gn + 1; GP_TRI(gt, 3) := gn + 4;  gt := gt + 1;
+      GP_TRI(gt, 1) := gn + 1; GP_TRI(gt, 2) := gn + 5; GP_TRI(gt, 3) := gn + 4;  gt := gt + 1;
+    END;
+  END;
+  gpPage("T07  TRIANGLE_P 3-D mesh (saddle, 18 triangles)");
+  TRIANGLE_P(G1, GP_PTS, GP_TRI, {-1, "N", -1, {-1, 1, -1, 1, -1, 1}});
+  gpFooter("Did a coloured surface (any shape) appear?");
+  rep := gpAsk();
+  gpNote("T07 TRIANGLE_P 3-D mesh form drew something: " + rep);
+END;
+
+// T08  BLIT_P with ten arguments: copy a 60 x 40 checker from G2 into a
+//      120 x 80 rectangle on G1.  If the copy is scaled, the squares double.
+gpT08()
+BEGIN
+  LOCAL rep, gcI, gcJ;
+  GP_LAST := "T08 BLIT_P scaled";
+  DIMGROB_P(G2, 60, 40, #FFFFFFh);
+  FOR gcI FROM 0 TO 5 DO
+    FOR gcJ FROM 0 TO 3 DO
+      IF ((gcI + gcJ) MOD 2) == 0 THEN
+        RECT_P(G2, gcI*10, gcJ*10, gcI*10 + 9, gcJ*10 + 9, gpBLUE);
+      END;
+    END;
+  END;
+  gpPage("T08  BLIT_P scaled copy (small left, 2x right)");
+  BLIT_P(G1, 20, 80, 80, 120, G2, 0, 0, 60, 40);          // same size
+  BLIT_P(G1, 140, 60, 260, 140, G2, 0, 0, 60, 40);        // twice the size
+  gpFooter("Right checker TWICE as big as the left one?");
+  rep := gpAsk();
+  gpNote("T08 BLIT_P 10-argument scaled copy: " + rep);
+END;
+
+// T09  ARC_P at radii 3, 2, 1 plus a pixel: does it read as one solid dot?
+gpT09()
+BEGIN
+  LOCAL rep, di;
+  GP_LAST := "T09 ARC_P small discs";
+  gpPage("T09  ARC_P small discs (r = 3, 2, 1 + pixel)");
+  FOR di FROM 0 TO 5 DO
+    ARC_P(G1, 60 + di*40, 120, 3, gpRED);
+    ARC_P(G1, 60 + di*40, 120, 2, gpRED);
+    ARC_P(G1, 60 + di*40, 120, 1, gpRED);
+    PIXON_P(G1, 60 + di*40, 120, gpRED);
+  END;
+  TEXTOUT_P("GaltonBoard draws its balls this way", G1, 40, 150, 1, gpGRAY);
+  gpFooter("Six SOLID red dots (no holes, no gaps)?");
+  rep := gpAsk();
+  gpNote("T09 ARC_P r=3,2,1 + pixel solid dot: " + rep);
+END;
+
+// T10  MAX and SORT on a list -- automatic.
+gpT10()
+BEGIN
+  LOCAL mm, txt, ok;
+  GP_LAST := "T10 MAX SORT list";
+  mm := MAX({3, 1, 2});
+  txt := SORT({3, 1, 2});
+  ok := "no";
+  IF mm == 3 AND txt(1) == 1 AND txt(2) == 2 AND txt(3) == 3 THEN ok := "yes"; END;
+  gpNote("T10 MAX(list)=" + gpF(mm, 0) + " SORT(list) ascending: " + ok);
+END;
+
+// T11  Non-integer degrees of freedom -- automatic.
+//      SciPy: chi2.cdf(3, 2.5) = 0.69415;  f.cdf(2, 2.5, 7.5) = 0.80043.
+//      If both match, Gamma(k, theta) = CHISQUARE_CDF(2k, 2x/theta) and
+//      Beta(a, b) = FISHER_CDF(2a, 2b, b x / (a (1 - x))) are usable in StatDist.
+gpT11()
+BEGIN
+  LOCAL cc, ff;
+  GP_LAST := "T11 non-integer df";
+  cc := CHISQUARE_CDF(2.5, 3);
+  gpNote("T11a CHISQUARE_CDF(2.5,3) = " + gpF(cc, 5) + " (SciPy 0.69415)");
+  ff := FISHER_CDF(2.5, 7.5, 2);
+  gpNote("T11b FISHER_CDF(2.5,7.5,2) = " + gpF(ff, 5) + " (SciPy 0.80043)");
+END;
+
+// T12  POISSON_CDF with k = -1 -- automatic.  StatDist's Poisson "between"
+//      reaches this when the lower bound is 0.  SciPy gives 0.
+gpT12()
+BEGIN
+  LOCAL pp;
+  GP_LAST := "T12 POISSON_CDF(2,-1)";
+  pp := POISSON_CDF(2, -1);
+  gpNote("T12 POISSON_CDF(2,-1) = " + gpF(pp, 5) + " (SciPy 0)");
+END;
+
+// T13  How many lines does a MSGBOX show?  Ten numbered lines go in.
+gpT13()
+BEGIN
+  LOCAL rep, tt, lnI;
+  GP_LAST := "T13 MSGBOX lines";
+  tt := "line 1";
+  FOR lnI FROM 2 TO 10 DO
+    tt := tt + CHAR(10) + "line " + STRING(lnI, 1, 0);
+  END;
+  MSGBOX(tt);
+  gpPage("T13  MSGBOX line count");
+  TEXTOUT_P("The box had ten numbered lines.", G1, 10, 60, 2, #000000h);
+  TEXTOUT_P("Lessons Learned says about five show.", G1, 10, 80, 2, #000000h);
+  TEXTOUT_P("StatDist and FDAES depend on the answer.", G1, 10, 100, 2, #000000h);
+  gpFooter("Could you read 'line 10' (by scrolling or otherwise)?");
+  rep := gpAsk();
+  gpNote("T13 MSGBOX shows line 10 of 10: " + rep + " (note how many showed without scrolling)");
+END;
+
+// T14  Glyphs that programs would like to use but nobody has confirmed.
+gpT14()
+BEGIN
+  LOCAL rep;
+  GP_LAST := "T14 glyphs";
+  gpPage("T14  glyphs -- do all nine render?");
+  TEXTOUT_P("a: x" + CHAR(8323) + "   (subscript 3)",            G1, 10, 30, 2, #000000h);
+  TEXTOUT_P("b: " + CHAR(8593) + " " + CHAR(8595) + " " + CHAR(8592) + " " + CHAR(8594) + "   (arrows)", G1, 10, 48, 2, #000000h);
+  TEXTOUT_P("c: " + CHAR(8646) + " " + CHAR(8645) + "   (the house arrows)", G1, 10, 66, 2, #000000h);
+  TEXTOUT_P("d: " + CHAR(9312) + " " + CHAR(9313) + "   (circled digits)",   G1, 10, 84, 2, #000000h);
+  TEXTOUT_P("e: " + CHAR(8730) + " " + CHAR(8734) + "   (root, infinity)",   G1, 10, 102, 2, #000000h);
+  TEXTOUT_P("f: " + CHAR(967) + CHAR(178) + "   (chi-square, verified)",     G1, 10, 120, 2, #000000h);
+  TEXTOUT_P("g: " + CHAR(57344) + " " + CHAR(57345) + "   (x-bar, p-hat, verified)", G1, 10, 138, 2, #000000h);
+  TEXTOUT_P("h: " + CHAR(8805) + " " + CHAR(8804) + " " + CHAR(8800) + "   (>=, <=, not equal)", G1, 10, 156, 2, #000000h);
+  TEXTOUT_P("i: " + CHAR(952) + " " + CHAR(961) + " " + CHAR(955) + "   (theta, rho, lambda)", G1, 10, 174, 2, #000000h);
+  gpFooter("Do ALL nine lines show real symbols (no boxes)?");
+  rep := gpAsk();
+  gpNote("T14 all nine glyph lines render: " + rep + " (note any that did not)");
+END;
+
+// T15  WAIT(0.02) with a key held: does the key still reach GETKEY / ISKEYDOWN?
+//      GaltonBoard pauses 0.02 s per animation frame and must not lose key presses.
+gpT15()
+BEGIN
+  LOCAL wi, nGet, nDown, wk;
+  GP_LAST := "T15 WAIT(0.02) held key";
+  gpPage("T15  hold the RIGHT ARROW key now");
+  TEXTOUT_P("Hold Right for about three seconds.", G1, 10, 60, 2, #000000h);
+  TEXTOUT_P("The test counts how often the key is seen", G1, 10, 80, 2, #000000h);
+  TEXTOUT_P("between 100 pauses of WAIT(0.02).", G1, 10, 100, 2, #000000h);
+  BLIT_P(G0, 0, 0, G1);
+  WAIT(1.5);
+  nGet := 0; nDown := 0;
+  FOR wi FROM 1 TO 100 DO
+    WAIT(0.02);
+    wk := GETKEY;
+    IF wk == 8 THEN nGet := nGet + 1; END;
+    IF ISKEYDOWN(8) THEN nDown := nDown + 1; END;
+  END;
+  gpDrainKeys();
+  gpNote("T15 held Right across 100 x WAIT(0.02): GETKEY saw " + gpF(nGet, 0) + ", ISKEYDOWN " + gpF(nDown, 0));
+END;
+
+// T16  A second finger in MOUSE.  The manual says MOUSE returns one list per
+//      pointer, {x, y, x0, y0, type}, empty when that pointer is up.
+gpT16()
+BEGIN
+  LOCAL t0, mm, nTwo, nOne, ex, sz;
+  LOCAL fm2;
+  GP_LAST := "T16 MOUSE two fingers";
+  gpPage("T16  put TWO fingers on the screen (8 s)");
+  TEXTOUT_P("Touch with two fingers, move them,", G1, 10, 60, 2, #000000h);
+  TEXTOUT_P("then lift.  The test records what MOUSE", G1, 10, 80, 2, #000000h);
+  TEXTOUT_P("returned for the second finger.", G1, 10, 100, 2, #000000h);
+  BLIT_P(G0, 0, 0, G1);
+  t0 := TICKS; nTwo := 0; nOne := 0; ex := ""; sz := -1;
+  REPEAT
+    mm := MOUSE;
+    IF sz < 0 THEN sz := SIZE(mm); END;               // how many lists MOUSE returns
+    IF SIZE(mm(1)) > 0 THEN nOne := nOne + 1; END;
+    IF SIZE(mm) >= 2 THEN
+      fm2 := mm(2);                                     // the second finger's list
+      IF SIZE(fm2) > 0 THEN
+        nTwo := nTwo + 1;
+        IF ex == "" THEN
+          ex := "{" + gpF(fm2(1), 0) + "," + gpF(fm2(2), 0) + ",...} size " + gpF(SIZE(fm2), 0);
+        END;
+      END;
+    END;
+  UNTIL TICKS - t0 > 8000;
+  gpDrain();
+  IF ex == "" THEN ex := "never non-empty"; END;
+  gpNote("T16 MOUSE returns " + gpF(sz, 0) + " lists; finger 1 seen " + gpF(nOne, 0) + " polls, finger 2 " + gpF(nTwo, 0) + " polls; m(2) = " + ex);
+END;
+
+// T17  WAIT(-1) event types.  The manual's table: 0 down, 1 move, 2 up,
+//      3 click, 5 stretch (pinch), 6 rotate, 7 long click.  Only 0 and 1 are
+//      in the confirmed list.  Each distinct type seen is logged once with
+//      its list size and first elements.  Esc ends the test.
+gpT17()
+BEGIN
+  LOCAL ev, nn, seen, ty, txt, ii;
+  LOCAL t0;
+  GP_LAST := "T17 WAIT(-1) events";
+  gpPage("T17  tap, drag, hold 2 s, pinch, rotate; Esc ends");
+  TEXTOUT_P("Do each gesture once, slowly:", G1, 10, 40, 2, #000000h);
+  TEXTOUT_P("tap - drag - press and hold - two-finger", G1, 10, 60, 2, #000000h);
+  TEXTOUT_P("pinch - rotate.  Then press Esc.", G1, 10, 80, 2, #000000h);
+  TEXTOUT_P("(ends by itself after 40 events or 60 s)", G1, 10, 110, 1, gpGRAY);
+  BLIT_P(G0, 0, 0, G1);
+  gpDrainKeys();
+  gpDrain();
+  seen := {0, 0, 0, 0, 0, 0, 0, 0, 0};     // index = type + 1 (types 0..8)
+  nn := 0;
+  t0 := TICKS;
+  REPEAT
+    ev := WAIT(-1);
+    nn := nn + 1;
+    IF TYPE(ev) == 6 THEN                  // a touch list
+      ty := -1;
+      IF SIZE(ev) >= 1 THEN ty := ev(1); END;
+      IF ty >= 0 AND ty <= 8 THEN
+        IF seen(ty + 1) == 0 THEN
+          seen(ty + 1) := 1;
+          txt := "T17 WAIT(-1) type " + gpF(ty, 0) + ": size " + gpF(SIZE(ev), 0) + " {";
+          FOR ii FROM 1 TO MIN(SIZE(ev), 5) DO
+            txt := txt + gpF(ev(ii), 0);
+            IF ii < MIN(SIZE(ev), 5) THEN txt := txt + ","; END;
+          END;
+          txt := txt + "}";
+          gpNote(txt);
+        END;
+      END;
+    ELSE
+      IF ev == 4 THEN nn := 999; END;       // Esc ends the test
+    END;
+  UNTIL nn >= 40 OR TICKS - t0 > 60000;
+  gpDrainKeys();
+  gpDrain();
+  gpNote("T17 types seen (0..8): " + gpF(seen(1),0) + gpF(seen(2),0) + gpF(seen(3),0) + gpF(seen(4),0) + gpF(seen(5),0) + gpF(seen(6),0) + gpF(seen(7),0) + gpF(seen(8),0) + gpF(seen(9),0));
+END;
+
+// T18  TICKS resolution -- automatic.  Two readings a WAIT(0.1) apart.
+gpT18()
+BEGIN
+  LOCAL tkA, tkB;
+  GP_LAST := "T18 TICKS";
+  tkA := TICKS;
+  WAIT(0.1);
+  tkB := TICKS;
+  gpNote("T18 TICKS across WAIT(0.1): " + gpF(tkB - tkA, 0) + " ms (expect about 100)");
+END;
+
+// T19  MAKELIST with a LOCAL counter -- automatic.  The fleet uses Home's K as
+//      the counter (MAKELIST(0, K, 1, n, 1)), which overwrites K on every call.
+//      51 corpus programs use a LOCAL counter instead, but almost always with a
+//      constant expression.  This checks the case that matters: the expression
+//      USES the counter, and Home's K must come through untouched.
+gpT19()
+BEGIN
+  LOCAL gk, gpLa, gpLb, kSave, okA, okB;
+  LOCAL okK;
+  GP_LAST := "T19 MAKELIST LOCAL counter";
+  kSave := K;
+  K := 7;
+  gpLa := MAKELIST(gk*2, gk, 1, 5, 1);          // expect {2,4,6,8,10}
+  gpLb := MAKELIST(0, gk, 1, 3, 1);             // expect {0,0,0}
+  okA := "no"; okB := "no"; okK := "no";
+  IF SIZE(gpLa) == 5 THEN
+    IF gpLa(1) == 2 AND gpLa(5) == 10 THEN okA := "yes"; END;
+  END;
+  IF SIZE(gpLb) == 3 THEN okB := "yes"; END;
+  IF K == 7 THEN okK := "yes"; END;
+  K := kSave;
+  gpNote("T19 MAKELIST(gk*2,gk,1,5,1) = {2..10}: " + okA + "; constant form: " + okB + "; Home K untouched: " + okK);
+END;
+
+// T20  BINOMIAL argument order -- automatic.  HP's Commands.pdf prints
+//      BINOMIAL(n, k, p); its Command tree prints BINOMIAL(n, p, k).  StatDist
+//      runs the second; GaltonBoard beta 1a used the first.  SciPy:
+//      binom.pmf(2, 10, 0.3) = 0.233474;  binom.pmf(0, 8, 0.5) = 0.003906.
+gpT20()
+BEGIN
+  LOCAL bA, bB;
+  GP_LAST := "T20 BINOMIAL order";
+  bA := BINOMIAL(10, 0.3, 2);
+  gpNote("T20a BINOMIAL(10,0.3,2) = " + gpF(bA, 6) + " (SciPy 0.233474)");
+  IFERR
+    bB := BINOMIAL(10, 2, 0.3);
+    gpNote("T20b BINOMIAL(10,2,0.3) = " + gpF(bB, 6) + " (0.233474 if both orders work)");
+  THEN
+    gpNote("T20b BINOMIAL(10,2,0.3): ERROR -- only (n, p, k) works");
+  END;
+  IFERR
+    bB := BINOMIAL(8, 0, 0.5);
+    gpNote("T20c BINOMIAL(8,0,0.5) = " + gpF(bB, 6) + " (0.003906 if read as n,k,p)");
+  THEN
+    gpNote("T20c BINOMIAL(8,0,0.5): ERROR");
+  END;
+END;
+
+// ------------------------------------------------------- results viewer --
+// GP_LOG, a page at a time: arrows or tap scroll, Esc = done (PyProbe's pager).
+gpView()
+BEGIN
+  LOCAL vN, vTop, vPg, vK, vM, vM1;
+  LOCAL vI, vRun, vLast;
+  vN := SIZE(GP_LOG);
+  vPg := 14;
+  vTop := 1;
+  vRun := 1;
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  gpDrainKeys();
+  gpDrain();
+  WHILE vRun == 1 DO
+    RECT_P(G1, 0, 0, 319, 239, #FFFFFFh);
+    RECT_P(G1, 0, 0, 319, 18, gpORNG);
+    TEXTOUT_P("GfxProbe results (also in GP_LOG)", G1, 4, 2, 2, #FFFFFFh);
+    FOR vI FROM 0 TO vPg - 1 DO
+      IF vTop + vI <= vN THEN
+        TEXTOUT_P(GP_LOG(vTop + vI), G1, 4, 22 + 14*vI, 1, #000000h);
+      END;
+    END;
+    RECT_P(G1, 0, 220, 319, 239, RGB(235,242,255));
+    vLast := MIN(vTop + vPg - 1, vN);
+    TEXTOUT_P("Lines " + gpF(vTop,0) + "-" + gpF(vLast,0) + " of " + gpF(vN,0) +
+              ",  " + CHAR(8645) + " or tap = scroll, Esc = done", G1, 4, 224, 1, gpFOOT);
+    BLIT_P(G0, 0, 0, G1);
+    REPEAT
+      vK := GETKEY;
+      vM := MOUSE;
+      vM1 := vM(1);
+    UNTIL vK > -1 OR SIZE(vM1) > 0;
+    IF SIZE(vM1) > 0 THEN
+      IF vM1(2) < 120 THEN vTop := vTop - vPg; ELSE vTop := vTop + vPg; END;
+      gpDrain();
+      vK := -1;
+    END;
+    IF vK == 2  THEN vTop := vTop - 1; END;
+    IF vK == 12 THEN vTop := vTop + 1; END;
+    IF vK == 4 OR vK == 30 THEN vRun := 0; END;
+    vTop := MIN(vTop, MAX(1, vN - vPg + 1));
+    vTop := MAX(vTop, 1);
+    gpDrainKeys();
+  END;
+END;
+
+// --------------------------------------------------------------- the run --
+EXPORT GfxProbe()
+BEGIN
+  gpInit();
+  GP_LOG := {};
+  GP_LAST := "start";
+  gpNote("GfxProbe beta 1 -- 16 Oct 2026 build");
+  IFERR gpT01(); THEN gpNote("T01 FILLPOLY_P opaque: ERROR at run time"); END;
+  IFERR gpT02(); THEN gpNote("T02 FILLPOLY_P alpha: ERROR at run time"); END;
+  IFERR gpT03(); THEN gpNote("T03 FILLPOLY_P flat list: ERROR at run time"); END;
+  IFERR gpT04(); THEN gpNote("T04 TRIANGLE_P one colour: ERROR at run time"); END;
+  IFERR gpT05(); THEN gpNote("T05 TRIANGLE_P three colours: ERROR at run time"); END;
+  IFERR gpT06(); THEN gpNote("T06 TRIANGLE_P alpha: ERROR at run time"); END;
+  IFERR gpT07(); THEN gpNote("T07 TRIANGLE_P 3-D mesh: ERROR at run time"); END;
+  IFERR gpT08(); THEN gpNote("T08 BLIT_P scaled: ERROR at run time"); END;
+  IFERR gpT09(); THEN gpNote("T09 ARC_P discs: ERROR at run time"); END;
+  IFERR gpT10(); THEN gpNote("T10 MAX/SORT list: ERROR at run time"); END;
+  IFERR gpT11(); THEN gpNote("T11 non-integer df: ERROR at run time"); END;
+  IFERR gpT12(); THEN gpNote("T12 POISSON_CDF(2,-1): ERROR at run time"); END;
+  IFERR gpT13(); THEN gpNote("T13 MSGBOX lines: ERROR at run time"); END;
+  IFERR gpT14(); THEN gpNote("T14 glyphs: ERROR at run time"); END;
+  IFERR gpT15(); THEN gpNote("T15 WAIT(0.02) held key: ERROR at run time"); END;
+  IFERR gpT16(); THEN gpNote("T16 MOUSE two fingers: ERROR at run time"); END;
+  IFERR gpT17(); THEN gpNote("T17 WAIT(-1) events: ERROR at run time"); END;
+  IFERR gpT18(); THEN gpNote("T18 TICKS: ERROR at run time"); END;
+  IFERR gpT19(); THEN gpNote("T19 MAKELIST LOCAL counter: ERROR at run time"); END;
+  IFERR gpT20(); THEN gpNote("T20 BINOMIAL order: ERROR at run time"); END;
+  GP_LAST := "done";
+  gpView();
+  RETURN "GfxProbe: " + STRING(SIZE(GP_LOG), 1, 0) + " lines in GP_LOG";
+END;

@@ -1,0 +1,52 @@
+#pragma mode( separator(.,;) integer(h32) )
+// ============================================================================
+//  MenuTapProbe beta 1  --  what does WAIT(-1) return for a tap on the
+//  soft-key strip that DRAWMENU drew?
+//  Roger Metcalf, 2026.  Written with AI assistance (Anthropic Claude).
+//  Free for educational and personal use; keep the header; not for sale.
+//
+//  BayesTree beta 7's soft keys did nothing on the emulator (17 Oct 2026):
+//  its WAIT(-1) loop acts on type 0 (a press) with y >= 218.  This probe
+//  records every WAIT(-1) result, raw, until Esc or 12 events.  Tap the
+//  soft keys, then the screen above them, then press Esc.  MT_LOG in Home
+//  holds the record.
+// ============================================================================
+EXPORT MT_LOG := {};
+
+// a number as plain decimal text (WAIT(-1) hands back integers, which
+// STRING would print in hex)
+mtNum(mtV)
+BEGIN
+  RETURN STRING(mtV + 0.0, 1, 0);
+END;
+
+EXPORT MenuTapProbe()
+BEGIN
+  LOCAL ev, mtN, txt, mtI, mtEsc;
+  MT_LOG := {};
+  RECT_P(G0, 0, 0, 319, 239, #FFFFFFh);
+  TEXTOUT_P("Tap the soft keys, then the screen,", G0, 10, 40, 2, #000000h);
+  TEXTOUT_P("then press Esc.  Every WAIT(-1)", G0, 10, 60, 2, #000000h);
+  TEXTOUT_P("result goes into MT_LOG.", G0, 10, 80, 2, #000000h);
+  DRAWMENU("One", "Two", "Three", "Four", "Five", "Six");
+  mtN := 0;
+  mtEsc := 0;
+  REPEAT
+    ev := WAIT(-1);
+    mtN := mtN + 1;
+    IF TYPE(ev) == 6 THEN
+      txt := "list size " + mtNum(SIZE(ev)) + ": {";
+      FOR mtI FROM 1 TO SIZE(ev) DO
+        txt := txt + mtNum(ev(mtI));
+        IF mtI < SIZE(ev) THEN txt := txt + ","; END;
+      END;
+      txt := txt + "}";
+    ELSE
+      txt := "key " + mtNum(ev);
+      IF ev == 4 THEN mtEsc := 1; END;     // Esc (a list is never compared)
+    END;
+    MT_LOG := CONCAT(MT_LOG, {txt});
+    TEXTOUT_P(txt + "        ", G0, 10, 100 + 9*MIN(mtN, 12), 1, #0000FFh, 300, #FFFFFFh);
+  UNTIL mtEsc == 1 OR mtN >= 12;
+  RETURN MT_LOG;
+END;

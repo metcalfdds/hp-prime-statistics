@@ -1,0 +1,2585 @@
+#pragma mode( separator(.,;) integer(h32) )
+
+// ============================================================
+// ERRORRATE LAB - beta 1a
+// "Zero errors in 30 proficiency tests: how good is the examiner?"
+// ============================================================
+// Author: Roger Metcalf, 2026.  Written with AI assistance
+//   (Anthropic Claude); concept, direction and all hardware
+//   testing by the author.
+//
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
+//   the file and credit the author if you pass it on.  Not for
+//   sale or commercial redistribution.  Provided as is, with no
+//   warranty: check any result you intend to rely on.
+//
+// Firmware: written for the 2026-09-09 firmware (2.4.2).  This
+//   version has NOT yet been run on hardware.  It is the fleet's
+//   first program to call the CAS; no CAS call has run on our
+//   calculators yet, and the call form (beta 1a, see erlCas below)
+//   is the one CASProbe beta 1b found on the HP Prime Virtual
+//   Calculator (build 2026-09-09, 17 Oct 2026).
+//   Its MicroPython part (the simulation) has never run anywhere
+//   but the PC: test it with the Terminal open (Lessons Learned
+//   v7f section 9).  Every formula and every number quoted on the
+//   help pages was checked against SciPy and statsmodels, every
+//   CAS template through desktop Giac 1.9, and the whole program
+//   in the ppl_run_v3b harness (verify_ErrorRate_beta1a.py).
+//
+// Companion files: ErrorRate_beta1a_CHANGES.md (beta 1a),
+//   ErrorRate_beta1_NOTES.md (what it does, the verification
+//   output, the device-test checklist, what is not confirmed) and
+//   errorrate-guide_beta1.md (the user's guide; its Engines-page
+//   lines about CASProbe are out of date, see the CHANGES file).
+//
+// beta 1a (17 Oct 2026): the CAS call form only.  CASProbe beta 1b
+//   found that CAS(s) with s a variable hands the text back
+//   UNEVALUATED, so beta 1's erlCas (lines 453-486) returned its own
+//   input: the "Where the 3 comes from" page would have shown its own
+//   question, "limit(erlq*(1-(50/1000)^(1/erlq)),erlq,inf)", as the
+//   CAS's answer, under "exact (CAS)".  Its IFERR line is now
+//     STRING(EXPR("CAS(" + CHAR(34) + "string(" + s + ")" + CHAR(34) + ")"))
+//   (BRIEF_CAS_v2), the quotes STRING() adds are dropped, and an
+//   answer holding the infinity sign is refused like undef.  No
+//   reader changed: every answer is only shown (erlShow); the Prime
+//   already writes e^( where desktop Giac writes exp(, so erlShow's
+//   exp( -> e^( step finds nothing on the calculator.  The Engines
+//   page's last CAS line now says the call form is settled, and the
+//   comments that said it was still to be decided were updated.
+//   Nothing else changed.
+//
+// beta 1 (16 Oct 2026): first version, from CAS_Python_Ideas
+//   2026-10-16 v1, section 5.1 (approved by Roger 16 Oct 2026,
+//   21:15).  Built from the house touch kit (TouchKit template v2:
+//   file-level LOCAL state, palette constants, the capped finger-
+//   lift drain, the key-or-tap wait, DRAWMENU soft keys read as
+//   taps at y >= 218, the "More" soft-key page, every frame
+//   composed in G1 and blitted once), the verified Python bridge
+//   of GaltonBoard beta 2 / NormExplorer beta 42 (hpprime.eval,
+//   a fixed-size payload written one value at a time, the three
+//   guards, a PPL fallback and an engine badge; urandom, not
+//   random), and the CAS kit of BRIEF_CAS (erlIStr, erlCas, the
+//   "exact (CAS)" / "decimal" badge).  The Lanczos log-gamma is
+//   Burr3 v2.4's b3_lngamma under this program's tag.
+//
+// Run ErrorRate() from the Program Catalog.
+// ============================================================
+//
+// THE LESSON
+//   An examiner takes n = 30 proficiency tests and makes 0 errors.
+//   That is not a zero error rate: an examiner whose true rate is
+//   5 % would also score 0 of 30 about one time in five
+//   (0.95^30 = 21.5 %).  The honest summary is the UPPER 95 %
+//   CONFIDENCE BOUND: the largest error rate that still produces
+//   a record this good at least 5 % of the time.  For 0 errors in
+//   n tests it is 1 - 0.05^(1/n) (9.50 % for n = 30); the "rule
+//   of three", 3/n, is its large-n LIMIT.
+//
+//   PCAST (2016), Forensic Science in Criminal Courts, section 4.2,
+//   p. 51 and its footnote 116: "When reporting a false positive
+//   rate to a jury, it is scientifically important to state the
+//   'upper 95 percent one-sided confidence bound'".  Appendix A,
+//   pp. 152-153: "Upper 95 percent one-sided confidence bounds
+//   should thus be used ... (In this report, we used the Clopper-
+//   Pearson/Exact Binomial method.)"  That is the bound computed
+//   here.  Section 4.6, pp. 57-58, is the caveat: proficiency
+//   tests are not blind casework.
+//
+// WHAT YOU SEE (main screen)
+//   Blue curve ....... P(k or fewer errors in n | true rate p):
+//                      for k = 0 it is (1 - p)^n
+//   Orange dots ...... the alpha line (0.05, one-sided)
+//   Red marker ....... where the curve crosses alpha: the upper
+//                      bound, with its value
+//   Green dots ....... the rule-of-three line 3/n (for k > 0 or
+//                      another alpha: its Poisson version)
+//   Green / red bands  rates the record allows / rules out
+//   Magenta marker ... the true rate under your finger, and the
+//                      chance of the record at that rate
+//   Right edge ....... the n slider (5 to 1000, log scale)
+//
+// KEYS AND TOUCH (main screen)
+//   drag along the plot ..... the true rate (live)
+//   drag the right edge ..... n (live; the window refits on lift)
+//   Left / Right ............ the true rate down / up a step
+//   Up / Down ............... n + 1 / n - 1
+//   + / - ................... n up / down a step (10, 15, 20, 25,
+//                             30, 40, 50, 75, 100, ...)
+//   soft keys, page 1 ....... n, k | Rate | Why 3 | Bayes | Sim | More
+//   soft keys, page 2 ....... Trawl | Log y | Help | Eng | Quit | More
+//   Enter = menu, Esc = quit
+//
+// THE MATHS (every line checked against SciPy, verify_ErrorRate.py)
+//   Bound, k = 0:  (1 - p)^n = alpha   so   p = 1 - alpha^(1/n)
+//   Bound, k > 0:  BINOMIAL_CDF(n, p, k) = alpha, solved by
+//                  bisection (45 halvings); this IS the one-sided
+//                  Clopper-Pearson bound, beta.ppf(1-alpha, k+1, n-k)
+//   Rule:          n * bound -> -ln(alpha) = ln 20 = 2.996 (k = 0);
+//                  for k > 0 the Poisson bound mu with
+//                  P(Poisson(mu) <= k) = alpha, which is
+//                  CHISQUARE_ICDF(2k + 2, 1 - alpha) / 2
+//   Bayes:         prior Beta(a, b), posterior Beta(a+k, b+n-k);
+//                  mean (a+k)/(a+b+n); the upper credible bound by
+//                  bisection on the Beta CDF, which is
+//                  FISHER_CDF(2a, 2b, b x / (a (1 - x)))
+//   Simulation:    each programme jumps from one error to the next;
+//                  the run of clean tests before an error is
+//                  geometric, floor(ln(U) / ln(1 - p))
+//   Trawl:         P(at least one chance match) = 1 - (1 - RMP)^N
+//
+// THREE ENGINES, EACH WITH ONE HONEST JOB
+//   PPL ......... draws every screen, reads every touch, and
+//                 computes every number that is drawn
+//   CAS ......... exact TEXT: fractions, closed forms, limits,
+//                 series.  Called on events only (a page opening,
+//                 n changing), never in a drag; through ONE routine
+//                 (erlCas); every CAS line has a decimal fallback
+//                 and a badge, "exact (CAS)" or "decimal"
+//   MicroPython . 10,000 simulated proficiency programmes; if it
+//                 fails, PPL simulates 1,000 and the badge says so
+//
+// HOME EXPORTS (after the program ends)
+//   ER_UPPER  the upper bound        ER_N, ER_K, ER_ALPHA  the record
+//   ER_RATE   the true rate chosen   ER_PASS  P(k or fewer | ER_RATE)
+//   ER_RULE   the rule line (3/n)    ER_BMEAN, ER_BUPPER  Bayes
+//   ER_SIM    simulated share with k or fewer errors
+//   ER_TRAWL  P(at least one chance match) on the trawl page
+//   ER_PYN, ER_PYP, ER_PYM, ER_PYK, ER_PYW, ER_PYO, ER_PYZ  the
+//             MicroPython bridge (inputs, the 44 answers, a stage
+//             marker: 1 read, 2 simulated, 3 written)
+//
+// LAYOUT (y, pixels)
+//   header 1-23 | plot 27-165, tick labels 169 | panel 181, 193,
+//   205 | soft keys 218-239 (painted by DRAWMENU).  n slider x
+//   292-319.  Font 1 is about 6.5 px a character: lines are kept
+//   to 46 characters and every TEXTOUT_P passes a width.
+// ============================================================
+
+
+// ------------------------------------------------------------
+// RESULTS VISIBLE FROM HOME (and the MicroPython bridge)
+// ------------------------------------------------------------
+EXPORT ER_UPPER, ER_N, ER_K, ER_ALPHA;
+EXPORT ER_RATE, ER_PASS, ER_RULE, ER_BMEAN;
+EXPORT ER_BUPPER, ER_SIM, ER_TRAWL;
+EXPORT ER_PYN, ER_PYP, ER_PYM, ER_PYK;
+EXPORT ER_PYW, ER_PYO, ER_PYZ;
+
+// ------------------------------------------------------------
+// STATE SHARED BY EVERY ROUTINE (private to this program).
+// All of it is set in erlInit.
+// ------------------------------------------------------------
+// ---- the record and its bound ----
+LOCAL erlN, erlK, erlAm, erlAl, erlPU, erlRul;
+//  erlN tests taken, erlK errors made
+//  erlAm alpha in THOUSANDTHS (50 = 0.05), always a whole number,
+//        so the CAS can be handed the exact fraction erlAm/1000
+//  erlAl = erlAm / 1000;  erlPU the upper bound
+//  erlRul the large-n rule constant (-ln alpha for k = 0)
+LOCAL erlRuleM, erlP0, erlPass, erlLgMin;
+//  erlRuleM the constant the green line uses: exactly 3 for the
+//           classic rule (k = 0, alpha = 0.05), else erlRul
+//  erlP0 the true rate under the finger; erlPass the chance of k
+//  or fewer errors at that rate; erlLgMin the bottom decade of
+//  the log scale (10^erlLgMin)
+
+// ---- the main window (frozen during a drag, refit on lift) ----
+LOCAL erlPmax, erlStp, erlTDec, erlRStp, erlRDec, erlLog;
+//  window 0 .. erlPmax; erlStp tick step; erlTDec tick decimals
+//  (in percent); erlRStp the rate step a finger snaps to, erlRDec
+//  its decimals; erlLog 0 = linear y, 1 = log y
+
+// ---- the curve cache (one value per pixel column) ----
+LOCAL erlCP, erlCY, erlCN, erlCK, erlCM, erlCS;
+LOCAL erlCL;
+//  erlCP(i) the probability at column i - 1, erlCY(i) its pixel y;
+//  built for n = erlCN, k = erlCK, window erlCM, stride erlCS;
+//  erlCL the y-scale (linear/log and bottom decade) of erlCY
+
+// ---- geometry, shared by the drawing and the touch code ----
+LOCAL erlPL, erlPR, erlPT, erlPB, erlPW, erlSLX;
+LOCAL erlKT, erlKB, erlTX, erlTY, erlSKP;
+//  plot box erlPL..erlPR x erlPT..erlPB (erlPW = erlPR - erlPL
+//  columns); the n slider: touch zone x >= erlSLX, track from erlKT
+//  (n = 1000) down to erlKB (n = 5); erlTX, erlTY the last tap seen
+//  by erlWaitAny; erlSKP which soft-key page is showing (1 or 2)
+
+// ---- house colours (Lessons Learned section 13) ----
+LOCAL erlBLUE, erlMAG, erlRED, erlGRN, erlORNG, erlGRAY;
+LOCAL erlFOOT, erlGRID, erlSHAD, erlLGRN, erlLRED, erlLBLU;
+LOCAL erlLORN, erlTAIL, erlMGRN, erlBLK;
+
+// ---- display glyphs, built with CHAR() so the code stays ASCII ----
+LOCAL erlAlS, erlMuS, erlTms, erlUD, erlLR, erlArr;
+//  alpha, mu, the multiplication sign, the up-down and left-right
+//  arrows (verified), the right arrow (renders, section 13)
+
+// ---- the CAS: status, a call counter, cached answers ----
+LOCAL erlCasOK, erlCasN, erlCasKey, erlCa1, erlCa2, erlCa3;
+LOCAL erlCaB, erlCaBKey, erlCaT1, erlCaT2, erlCaT3, erlCaTKey;
+//  erlCasOK 1 = every CAS line on the last CAS page was exact,
+//           0 = at least one fell back to decimals, -1 = not yet
+//  erlCasN  CAS calls made this run (the Engines page shows it)
+//  erlCa1..3 the "Why 3" page's answers for the record erlCasKey;
+//  erlCaB the Bayes mean fraction (key erlCaBKey); erlCaT1..3 the
+//  trawl page's answers (key erlCaTKey)
+
+// ---- the Bayesian page ----
+LOCAL erlBa2, erlBb2, erlBNm, erlBD, erlBPr, erlBYm;
+LOCAL erlBMean, erlBUp, erlBMax, erlBStp, erlBDec, erlBOK;
+//  the prior Beta(a, b) kept as 2a, 2b (whole numbers, so both the
+//  F relation and the CAS fraction stay exact); erlBNm its name;
+//  erlBD, erlBPr the posterior and prior densities per column;
+//  erlBYm the y-scale top; erlBMean, erlBUp the posterior mean and
+//  upper credible bound; erlBMax, erlBStp, erlBDec the window;
+//  erlBOK 1 when the mean on screen is the CAS's exact fraction
+
+// ---- the simulation page ----
+LOCAL erlSmB, erlSm0, erlSmOK, erlSmM, erlSmTot, erlSmW;
+LOCAL erlSmEng, erlSmMs, erlSmN, erlSmP, erlSmK, erlSmNb;
+//  erlSmB(j) programmes with errors in bin j (bins of erlSmW,
+//  bin 41 = everything beyond); erlSm0 programmes with 0 errors,
+//  erlSmOK with k or fewer, erlSmTot all errors added up, erlSmM
+//  programmes run; erlSmEng 0 none yet, 1 MicroPython, 2 PPL;
+//  erlSmMs the elapsed TICKS; erlSmN, erlSmP, erlSmK the n, rate
+//  and k of that run; erlSmNb how many bars are drawn
+
+// ---- the database-trawl page ----
+LOCAL erlTm, erlTN, erlTCY, erlTMY, erlTKey;
+//  RMP = 10^-erlTm; erlTN profiles searched; erlTCY, erlTMY the
+//  pixel y of the curve and of the N x RMP line per column, built
+//  for erlTm = erlTKey
+
+// ---- the text-page buffer (help, CAS and engine pages) ----
+LOCAL erlPgL, erlPgC, erlPgN, erlInf;
+//  erlInf: how the CAS spells infinity in a limit ("inf"; CASProbe
+//  beta 1b T16 passed with "inf" on the emulator, 17 Oct 2026)
+
+
+// ------------------------------------------------------------
+// SMALL HELPERS
+// ------------------------------------------------------------
+
+// A number as text with a FIXED number of decimals.  Mode 2 keeps
+// trailing zeros; mode 1 would ignore the digits argument.
+erlFix(fxV, fxD)
+BEGIN
+  RETURN STRING(fxV, 2, fxD);
+END;
+
+// A whole number as plain digits: no digit-grouping marks, no
+// decimal point, no exponent (the CAS kit's xxIStr).  Home's
+// STRING() follows the Home number format, which the CAS cannot
+// read, so every piece of CAS text is built from this routine.
+erlIStr(isN)
+BEGIN
+  LOCAL dS, dV, dD;
+  dV := ROUND(ABS(isN), 0);
+  IF dV == 0 THEN RETURN "0"; END;
+  dS := "";
+  WHILE dV > 0 DO
+    dD := dV MOD 10;
+    dS := CHAR(48 + dD) + dS;
+    dV := (dV - dD) / 10;
+  END;
+  IF isN < 0 THEN dS := "-" + dS; END;
+  RETURN dS;
+END;
+
+// A whole number with thousands commas, for the screen only:
+// 10000 -> "10,000".
+erlComma(cmV)
+BEGIN
+  LOCAL cmS, cmO, cmL, cmI;
+  cmS := erlIStr(cmV);
+  cmO := "";
+  cmL := DIM(cmS);
+  FOR cmI FROM 1 TO cmL DO
+    cmO := cmO + MID(cmS, cmI, 1);
+    IF (cmL - cmI) MOD 3 == 0 AND cmI < cmL THEN cmO := cmO + ","; END;
+  END;
+  RETURN cmO;
+END;
+
+// The smallest "nice" number (1, 2 or 5 times a power of ten) at
+// least as big as nnV -- Heckbert's rule, for ticks and windows.
+// The tiny tolerances keep 0.2 / 0.1 = 2 from reading as 2.0000001.
+erlNice(nnV)
+BEGIN
+  LOCAL nnE, nnF;
+  IF nnV <= 0 THEN RETURN 1; END;
+  nnE := FLOOR(LOG(nnV));
+  nnF := nnV / 10^nnE;
+  IF nnF <= 1.000001 THEN RETURN 10^nnE; END;
+  IF nnF <= 2.000001 THEN RETURN 2 * 10^nnE; END;
+  IF nnF <= 5.000001 THEN RETURN 5 * 10^nnE; END;
+  RETURN 10^(nnE + 1);
+END;
+
+// A probability as a percentage with sensible decimals:
+// 0.2146 -> "21.5 %", 0.09503 -> "9.50 %", 0.00299 -> "0.299 %".
+erlPctS(pcV)
+BEGIN
+  LOCAL pcP, pcD;
+  pcP := 100 * pcV;
+  IF pcP <= 0 THEN RETURN "0 %"; END;
+  IF pcP < 0.0001 THEN RETURN "< 0.0001 %"; END;
+  // just under 100 %: enough decimals that it never reads as 100
+  // (1 - e^-10 = 99.9955 %, not "100.0 %")
+  IF pcP > 99.9 AND pcP < 100 THEN
+    pcD := 1 - FLOOR(LOG(100 - pcP));
+    IF pcD > 5 THEN RETURN "> 99.9999 %"; END;
+    RETURN STRING(pcP, 2, pcD) + " %";
+  END;
+  pcD := 1;
+  IF pcP < 10 THEN pcD := 2; END;
+  IF pcP < 1 THEN pcD := 3; END;
+  IF pcP < 0.1 THEN pcD := 4; END;
+  RETURN STRING(pcP, 2, pcD) + " %";
+END;
+
+// A true rate as a percentage, with the decimals of the step a
+// finger snaps to (window 0-20 %: "5.0 %").
+erlRateS(rsV)
+BEGIN
+  RETURN STRING(100 * rsV, 2, erlRDec) + " %";
+END;
+
+// alpha as typed: 0.05, 0.01, 0.025.
+erlAlFmt()
+BEGIN
+  IF erlAm MOD 10 == 0 THEN RETURN STRING(erlAl, 2, 2); END;
+  RETURN STRING(erlAl, 2, 3);
+END;
+
+// The confidence level that goes with alpha: "95", "99", "97.5".
+erlLvS()
+BEGIN
+  IF erlAm MOD 10 == 0 THEN RETURN STRING(100 - erlAm / 10, 2, 0); END;
+  RETURN STRING(100 - erlAm / 10, 2, 1);
+END;
+
+// A Beta parameter kept doubled (2a) as text: 2 -> "1", 1 -> "0.5".
+erlHalfS(hfV)
+BEGIN
+  IF hfV MOD 2 == 0 THEN RETURN erlIStr(hfV / 2); END;
+  RETURN erlIStr((hfV - 1) / 2) + ".5";
+END;
+
+// Wait for the finger to lift -- but never for more than a second.
+// MOUSE(1) is -1 while nothing touches the screen.  Without the
+// time limit a stuck or phantom touch would hold the program here
+// for ever, and the only way out would be a reset.
+erlDrain()
+BEGIN
+  LOCAL drT;
+  drT := TICKS;                                  // milliseconds
+  REPEAT UNTIL MOUSE(1) == -1 OR TICKS - drT > 1000;
+END;
+
+// Drain, wait for a key OR a tap, drain.  Returns the key code,
+// or -1 for a tap, whose x and y are left in erlTX, erlTY.  A GETKEY
+// drain alone does not drain touch, which is why the MOUSE drain is
+// here too (Lessons Learned v7f section 7).
+erlWaitAny()
+BEGIN
+  LOCAL wk, wm, wm1;
+  REPEAT wk := GETKEY; UNTIL wk == -1;
+  erlDrain();
+  REPEAT
+    wk := GETKEY;
+    wm := MOUSE;
+    wm1 := wm(1);
+  UNTIL wk > -1 OR SIZE(wm1) > 0;
+  erlTX := -1; erlTY := -1;
+  IF SIZE(wm1) > 0 THEN erlTX := wm1(1); erlTY := wm1(2); wk := -1; END;
+  erlDrain();
+  REPEAT UNTIL GETKEY == -1;
+  RETURN wk;
+END;
+
+
+// ------------------------------------------------------------
+// TEXT TOOLS FOR CAS ANSWERS (display only)
+// ------------------------------------------------------------
+
+// Every rpO in rpS replaced by rpN.  Built from INSTRING, LEFT, MID
+// and DIM; the guards keep LEFT and MID away from empty pieces.
+erlRepl(rpS, rpO, rpN)
+BEGIN
+  LOCAL rpT, rpOut, rpP, rpLn;
+  rpT := rpS;
+  rpOut := "";
+  rpLn := DIM(rpO);
+  rpP := 0;
+  IF DIM(rpT) > 0 THEN rpP := INSTRING(rpT, rpO); END;
+  WHILE rpP > 0 DO
+    IF rpP > 1 THEN rpOut := rpOut + LEFT(rpT, rpP - 1); END;
+    rpOut := rpOut + rpN;
+    IF rpP + rpLn > DIM(rpT) THEN
+      rpT := "";
+    ELSE
+      rpT := MID(rpT, rpP + rpLn);
+    END;
+    rpP := 0;
+    IF DIM(rpT) > 0 THEN rpP := INSTRING(rpT, rpO); END;
+  END;
+  RETURN rpOut + rpT;
+END;
+
+// A CAS answer made readable: the tagged CAS names become the
+// letters the page uses (erlq -> p or N, erll -> mu), exp( becomes
+// e^( (desktop Giac only: the Prime already writes e^(, CASProbe
+// beta 1b T17, so on the calculator that step finds nothing), and *
+// becomes the multiplication sign (the fence, rule 7).
+// Giac writes (1 - p)^m as (p-1)^m (m even) or -(p-1)^m (m odd);
+// both ARE (1-p)^m, so that leading factor is turned round.
+erlShow(shS, shV)
+BEGIN
+  LOCAL shT, shP;
+  shP := "" + shV;                         // the letter, as text
+  shT := erlRepl(shS, "erlq", shP);
+  shT := erlRepl(shT, "erll", erlMuS);
+  shT := erlRepl(shT, "exp(", "e^(");
+  shT := erlRepl(shT, "*", erlTms);
+  IF DIM(shT) > 7 THEN
+    IF LEFT(shT, 6) == "(" + shP + "-1)^" THEN
+      shT := "(1-" + shP + ")^" + MID(shT, 7);
+    ELSE
+      IF LEFT(shT, 7) == "-(" + shP + "-1)^" THEN
+        shT := "(1-" + shP + ")^" + MID(shT, 8);
+      END;
+    END;
+  END;
+  RETURN shT;
+END;
+
+// Where to break a long formula: the last "+", "=" or times sign
+// in characters 2..bkW, else the last "-", else 0 (cut at bkW).
+erlBreak(bkS, bkW)
+BEGIN
+  LOCAL bkI, bkC, bkA, bkM;
+  bkA := 0; bkM := 0;
+  FOR bkI FROM 2 TO MIN(bkW, DIM(bkS)) DO
+    bkC := MID(bkS, bkI, 1);
+    IF bkC == "+" OR bkC == "=" OR bkC == erlTms THEN bkA := bkI - 1; END;
+    IF bkC == "-" THEN bkM := bkI - 1; END;
+  END;
+  IF bkA >= 2 THEN RETURN bkA; END;
+  IF bkM >= 2 THEN RETURN bkM; END;
+  RETURN bkW;
+END;
+
+
+// ------------------------------------------------------------
+// THE CAS (the ONE place this program calls it)
+// ------------------------------------------------------------
+// It returns the CAS answer as text, or "" if the CAS failed, gave
+// undef, an error or an infinity.
+// The call form is the one CASProbe beta 1b found on the HP Prime Virtual
+// Calculator (build 2026-09-09, 17 Oct 2026): CAS(s) with s a variable hands
+// the text back UNEVALUATED, so the text is built into a literal CAS("...")
+// that EXPR reads at run time, and the CAS is asked for string(...) of the
+// answer, so a big integer crosses into PPL whole, not as a 12-digit real.
+// The rules this program keeps (BRIEF_CAS, the fence):
+//   - only whole numbers go into CAS text, built with erlIStr
+//     (alpha 0.05 is sent as 50/1000), never STRING(real), never
+//     a decimal point;
+//   - the CAS answers events (a page opening, n changing), never a
+//     frame or a drag; every answer is cached;
+//   - CAS answers are TEXT for the screen: every number that is
+//     drawn comes from PPL;
+//   - the symbolic names are tagged (erlq, erll, never x, n or p).
+erlCas(ecQ)
+BEGIN
+  LOCAL cR;
+  cR := "";
+  erlCasN := erlCasN + 1;
+  IFERR
+    cR := STRING(EXPR("CAS(" + CHAR(34) + "string(" + ecQ + ")" + CHAR(34) + ")"));
+  THEN
+    cR := "";
+  END;
+  // The answer is a PPL string, and STRING() of it adds one pair of quotes
+  // (CASProbe beta 1b T12, emulator): drop that pair.
+  IF DIM(cR) >= 2 THEN
+    IF LEFT(cR, 1) == CHAR(34) AND MID(cR, DIM(cR), 1) == CHAR(34) THEN
+      cR := MID(cR, 2, DIM(cR) - 2);
+    END;
+  END;
+  // undef, an error, or an infinity (CHAR(8734) is the infinity sign; it
+  // also catches the Prime's plus-minus infinity, 1/0): no usable answer
+  IF INSTRING(cR, "undef") > 0 OR INSTRING(cR, "rror") > 0 OR INSTRING(cR, CHAR(8734)) > 0 THEN cR := ""; END;
+  RETURN cR;
+END;
+
+
+// ------------------------------------------------------------
+// STATISTICS (all of it pure PPL, on verified built-ins)
+// ------------------------------------------------------------
+
+// log-gamma, Lanczos (Numerical Recipes' gammln; Burr3 v2.4's
+// b3_lngamma under this program's tag).  LNGAMMA does not exist
+// outside the CAS (Lessons Learned section 3).  Valid for lgV > 0.
+erlLnGam(lgV)
+BEGIN
+  LOCAL lgY, lgT, lgS, lgJ, lgC;
+  lgC := {76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.001208650973866179, -0.000005395239384953};
+  lgY := lgV;
+  lgT := lgV + 5.5;
+  lgT := lgT - (lgV + 0.5) * LN(lgT);
+  lgS := 1.000000000190015;
+  FOR lgJ FROM 1 TO 6 DO
+    lgY := lgY + 1;
+    lgS := lgS + lgC(lgJ) / lgY;
+  END;
+  RETURN -lgT + LN(2.5066282746310005 * lgS / lgV);
+END;
+
+// The chance of tlK or fewer errors in tlN tests when the true
+// error rate is tlP: the binomial CDF.  k = 0 is written out as
+// (1 - p)^n, the formula on the "Why 3" page.  BINOMIAL_CDF takes
+// (n, p, k) -- Lessons Learned section 3 and the harness notes.
+erlTail(tlN, tlP, tlK)
+BEGIN
+  IF tlP <= 0 OR tlK >= tlN THEN RETURN 1; END;
+  IF tlP >= 1 THEN RETURN 0; END;
+  IF tlK == 0 THEN RETURN (1 - tlP)^tlN; END;
+  RETURN BINOMIAL_CDF(tlN, tlP, tlK);
+END;
+
+// THE UPPER BOUND: the true rate at which a record of bdK or fewer
+// errors in bdN tests has chance exactly bdA.  This is the one-
+// sided Clopper-Pearson ("exact binomial") bound PCAST used.
+//   k = 0: (1 - p)^n = alpha gives p = 1 - alpha^(1/n) directly.
+//   k > 0: no closed form, so halve the interval [0, 1] 45 times,
+//          keeping the half where the curve crosses alpha (the
+//          curve falls as p rises).  2^-45 is 3E-14: far finer
+//          than any digit shown.
+//   k = n: every test was an error, and no rate is ruled out.
+erlBound(bdN, bdK, bdA)
+BEGIN
+  LOCAL bdLo, bdHi, bdM, bdI;
+  IF bdK >= bdN THEN RETURN 1; END;
+  IF bdK == 0 THEN RETURN 1 - bdA^(1 / bdN); END;
+  bdLo := 0;
+  bdHi := 1;
+  FOR bdI FROM 1 TO 45 DO
+    bdM := (bdLo + bdHi) / 2;
+    IF BINOMIAL_CDF(bdN, bdM, bdK) > bdA THEN
+      bdLo := bdM;              // still too likely: the bound is higher
+    ELSE
+      bdHi := bdM;
+    END;
+  END;
+  RETURN (bdLo + bdHi) / 2;
+END;
+
+// The large-n rule: n x bound tends to the Poisson bound mu, where
+// P(Poisson(mu) <= k) = alpha.  For k = 0 that is -ln(alpha)
+// (ln 20 = 2.996: "the rule of three"); in general it is half the
+// chi-square quantile with 2k + 2 df (CHISQUARE_ICDF is verified).
+erlRuleC(rcK, rcA)
+BEGIN
+  IF rcK == 0 THEN RETURN -LN(rcA); END;
+  RETURN CHISQUARE_ICDF(2 * rcK + 2, 1 - rcA) / 2;
+END;
+
+// P(Beta(a, b) <= x) with a, b given doubled (bcA2 = 2a, bcB2 = 2b).
+// If X is Beta(a, b), then (X / a) / ((1 - X) / b) has the F
+// distribution with 2a and 2b df, so the Beta CDF is a FISHER_CDF
+// (verified) with WHOLE-number df -- PPL has no Beta functions.
+erlBetaCdf(bcA2, bcB2, bcX)
+BEGIN
+  IF bcX <= 0 THEN RETURN 0; END;
+  IF bcX >= 1 THEN RETURN 1; END;
+  RETURN FISHER_CDF(bcA2, bcB2, bcB2 * bcX / (bcA2 * (1 - bcX)));
+END;
+
+// The Beta quantile: the x with P(Beta <= x) = bqQ, by 50 halvings.
+erlBetaQ(bqA2, bqB2, bqQ)
+BEGIN
+  LOCAL bqLo, bqHi, bqM, bqI;
+  bqLo := 0;
+  bqHi := 1;
+  FOR bqI FROM 1 TO 50 DO
+    bqM := (bqLo + bqHi) / 2;
+    IF erlBetaCdf(bqA2, bqB2, bqM) < bqQ THEN bqLo := bqM; ELSE bqHi := bqM; END;
+  END;
+  RETURN (bqLo + bqHi) / 2;
+END;
+
+
+// ------------------------------------------------------------
+// THE MODEL BEHIND THE MAIN SCREEN
+// ------------------------------------------------------------
+
+// The record in words: "0 errors in 30 tests", "1 error in 30 tests".
+erlRecS()
+BEGIN
+  IF erlK == 1 THEN RETURN "1 error in " + erlIStr(erlN) + " tests"; END;
+  RETURN erlIStr(erlK) + " errors in " + erlIStr(erlN) + " tests";
+END;
+
+// The green line's name: "3/n" for the classic rule, else "6.30/n".
+erlRuleS()
+BEGIN
+  IF erlRuleM == 3 THEN RETURN "3/n"; END;
+  RETURN erlFix(erlRuleM, 2) + "/n";
+END;
+
+// Copy the main results into the Home exports.
+erlExport()
+BEGIN
+  ER_UPPER := erlPU; ER_N := erlN; ER_K := erlK; ER_ALPHA := erlAl;
+  ER_RATE := erlP0; ER_PASS := erlPass; ER_RULE := erlRuleM / erlN;
+END;
+
+// A new true rate: the chance of the record at that rate.
+erlSetP0(spV)
+BEGIN
+  erlP0 := spV;
+  erlPass := erlTail(erlN, erlP0, erlK);
+  ER_RATE := erlP0; ER_PASS := erlPass;
+END;
+
+// Everything that follows from n, k and alpha.
+erlRecalc()
+BEGIN
+  erlAl := erlAm / 1000;
+  erlLgMin := FLOOR(LOG(erlAl) + 0.000001) - 1;
+  erlPU := erlBound(erlN, erlK, erlAl);
+  erlRul := erlRuleC(erlK, erlAl);
+  erlRuleM := erlRul;
+  IF erlK == 0 AND erlAm == 50 THEN erlRuleM := 3; END;
+  erlPass := erlTail(erlN, erlP0, erlK);
+  erlExport();
+END;
+
+// Fit the window: twice the larger of the bound and the rule line,
+// rounded up to 1, 2 or 5 times a power of ten (n = 30: 0 to 20 %).
+// ftKeep = 1 widens it to keep the true rate in view (a typed
+// rate); ftKeep = 0 moves the rate into the window instead.
+erlFit(ftKeep)
+BEGIN
+  LOCAL ftW;
+  ftW := 2 * MAX(erlPU, erlRuleM / erlN);
+  IF ftKeep == 1 AND erlP0 * 1.15 > ftW THEN ftW := erlP0 * 1.15; END;
+  erlPmax := MIN(1, erlNice(ftW));
+  erlStp := erlNice(erlPmax / 5);
+  erlTDec := MAX(0, -FLOOR(LOG(100 * erlStp) + 0.000001));
+  erlRStp := erlNice(erlPmax / 200);
+  erlRDec := MAX(0, -FLOOR(LOG(100 * erlRStp) + 0.000001));
+  IF erlP0 > erlPmax THEN
+    erlSetP0(erlRStp * ROUND(erlPmax / 4 / erlRStp, 0));
+  END;
+END;
+
+// Refit only when the bound has drifted far from the middle of the
+// window (arrow keys), so a few steps of n are seen on ONE window:
+// the curve steepens and the bound slides, which is the lesson.
+erlSoftFit()
+BEGIN
+  LOCAL sfM;
+  sfM := MAX(erlPU, erlRuleM / erlN);
+  IF sfM > 0.8 * erlPmax OR sfM < 0.2 * erlPmax THEN erlFit(0); END;
+END;
+
+// Pixel column of a rate on the main window.
+erlPX(pxV)
+BEGIN
+  RETURN IP(erlPL + pxV / erlPmax * erlPW + 0.5);
+END;
+
+// Pixel row of a probability: linear 0..1, or log from 1 down to
+// 10^erlLgMin (where the k = 0 curve is almost a straight line of
+// slope -n: the rule of three, drawn).
+erlYpx(ypV)
+BEGIN
+  IF erlLog == 0 THEN RETURN IP(erlPB - ypV * (erlPB - erlPT) + 0.5); END;
+  IF ypV <= 10^erlLgMin THEN RETURN erlPB; END;
+  RETURN IP(erlPT + LOG(ypV) / erlLgMin * (erlPB - erlPT) + 0.5);
+END;
+
+// The curve cache.  The probabilities are recomputed only when n,
+// k or the window changed (or a finer stride is wanted); the pixel
+// rows only when the scale changed too.  cvS = 1 computes every
+// column; cvS = 3 (a live drag of n with k > 0) every third, with
+// straight lines between, so a G1 keeps up with the finger.
+erlCurve(cvS)
+BEGIN
+  LOCAL cvI, cvA, cvB, cvF;
+  IF erlCN <> erlN OR erlCK <> erlK OR erlCM <> erlPmax OR erlCS > cvS THEN
+    cvI := 0;
+    WHILE cvI <= erlPW DO
+      erlCP(cvI + 1) := erlTail(erlN, erlPmax * cvI / erlPW, erlK);
+      IF cvI == erlPW THEN
+        cvI := erlPW + 1;
+      ELSE
+        cvI := MIN(erlPW, cvI + cvS);
+      END;
+    END;
+    IF cvS > 1 THEN
+      FOR cvI FROM 1 TO erlPW - 1 DO
+        IF cvI MOD cvS <> 0 THEN
+          cvA := cvI - (cvI MOD cvS);
+          cvB := MIN(erlPW, cvA + cvS);
+          cvF := (cvI - cvA) / (cvB - cvA);
+          erlCP(cvI + 1) := erlCP(cvA + 1) + cvF * (erlCP(cvB + 1) - erlCP(cvA + 1));
+        END;
+      END;
+    END;
+    erlCN := erlN; erlCK := erlK; erlCM := erlPmax; erlCS := cvS;
+    erlCL := -99;                             // the rows must follow
+  END;
+  IF erlCL <> erlLog * 100 - erlLgMin THEN
+    FOR cvI FROM 1 TO erlPW + 1 DO erlCY(cvI) := erlYpx(erlCP(cvI)); END;
+    erlCL := erlLog * 100 - erlLgMin;
+  END;
+END;
+
+
+// ------------------------------------------------------------
+// DRAWING THE MAIN SCREEN (composed in G1, then one blit)
+// ------------------------------------------------------------
+
+// The soft-key labels of the page now showing.  "More" is slot 6 on
+// BOTH pages (the house convention, BRIEF_TOUCH); the most-used
+// actions are on page 1.
+erlSKLab()
+BEGIN
+  IF erlSKP == 1 THEN RETURN {"n, k", "Rate", "Why 3", "Bayes", "Sim", "More"}; END;
+  IF erlLog == 0 THEN RETURN {"Trawl", "Log y", "Help", "Eng", "Quit", "More"}; END;
+  RETURN {"Trawl", "Lin y", "Help", "Eng", "Quit", "More"};
+END;
+
+// The y-axis grid and labels: quarters (linear) or decades (log).
+erlYAxis()
+BEGIN
+  LOCAL yaI, yaY, yaS, yaL;
+  IF erlLog == 0 THEN
+    yaL := {"0", ".25", ".5", ".75", "1"};
+    FOR yaI FROM 0 TO 4 DO
+      yaY := erlYpx(yaI / 4);
+      IF yaI > 0 THEN LINE_P(G1, erlPL, yaY, erlPR, yaY, erlGRID); END;
+      TEXTOUT_P(yaL(yaI + 1), G1, 2, MAX(erlPT - 2, yaY - 5), 1, erlGRAY, 26);
+    END;
+  ELSE
+    FOR yaI FROM 0 TO -erlLgMin DO
+      yaY := erlYpx(10^(-yaI));
+      IF yaI > 0 THEN LINE_P(G1, erlPL, yaY, erlPR, yaY, erlGRID); END;
+      yaS := "1";
+      IF yaI >= 1 AND yaI <= 3 THEN yaS := LEFT(".001", yaI) + "1"; END;
+      IF yaI == 1 THEN yaS := ".1"; END;
+      IF yaI >= 4 THEN yaS := "1E-" + erlIStr(yaI); END;
+      TEXTOUT_P(yaS, G1, 2, MIN(erlPB - 9, MAX(erlPT - 2, yaY - 5)), 1, erlGRAY, 26);
+    END;
+  END;
+END;
+
+// The plot: bands, grid, ticks, alpha line, the curve and the three
+// markers.  Everything is read from caches: no CDF is evaluated here
+// except the one at the rate under the finger (in erlSetP0).
+erlDrawPlot()
+BEGIN
+  LOCAL dpX, dpU, dpY, dpI, dpT, dpS;
+  LOCAL dpK1, dpYa, dpX3, dpLx, dpW;
+  // the bands: rates the record allows (green) and rules out (red)
+  dpU := erlPX(MIN(erlPU, erlPmax));
+  RECT_P(G1, erlPL, erlPT, dpU, erlPB, erlLGRN, erlLGRN);
+  IF dpU < erlPR THEN RECT_P(G1, dpU + 1, erlPT, erlPR, erlPB, erlLRED, erlLRED); END;
+  // vertical grid and the rate ticks, labelled in percent
+  dpK1 := FLOOR(erlPmax / erlStp + 0.000001);
+  FOR dpI FROM 0 TO dpK1 DO
+    dpT := dpI * erlStp;
+    dpX := erlPX(dpT);
+    IF dpI > 0 THEN LINE_P(G1, dpX, erlPT, dpX, erlPB, erlGRID); END;
+    LINE_P(G1, dpX, erlPB, dpX, erlPB + 3, erlGRAY);
+    dpS := STRING(100 * dpT, 2, erlTDec);
+    IF dpI == dpK1 THEN dpS := dpS + " %"; END;
+    TEXTOUT_P(dpS, G1, MAX(0, dpX - 3 * DIM(dpS)), erlPB + 4, 1, erlGRAY, 40);
+  END;
+  erlYAxis();
+  LINE_P(G1, erlPL, erlPB, erlPR, erlPB, erlBLK);
+  LINE_P(G1, erlPL, erlPT, erlPL, erlPB, erlBLK);
+  // the alpha line: orange dashes, labelled at the left
+  dpYa := erlYpx(erlAl);
+  FOR dpX FROM erlPL TO erlPR - 1 STEP 4 DO
+    LINE_P(G1, dpX, dpYa, dpX + 1, dpYa, erlORNG);
+  END;
+  TEXTOUT_P(erlAlS + " = " + erlAlFmt(), G1, erlPL + 3, dpYa - 11, 1, erlORNG, 60);
+  // the curve, two pixels thick, from the cache
+  FOR dpI FROM 1 TO erlPW DO
+    LINE_P(G1, erlPL + dpI - 1, erlCY(dpI), erlPL + dpI, erlCY(dpI + 1), erlBLUE);
+    LINE_P(G1, erlPL + dpI - 1, erlCY(dpI) - 1, erlPL + dpI, erlCY(dpI + 1) - 1, erlBLUE);
+  END;
+  // the rule line: green dots, labelled at the top
+  dpX3 := -1;
+  IF erlRuleM / erlN <= erlPmax THEN
+    dpX3 := erlPX(erlRuleM / erlN);
+    FOR dpY FROM erlPT TO erlPB STEP 3 DO
+      PIXON_P(G1, dpX3, dpY, erlGRN);
+      PIXON_P(G1, dpX3 + 1, dpY, erlGRN);
+    END;
+    TEXTOUT_P(erlRuleS(), G1, MIN(erlPR - 40, dpX3 + 4), erlPT + 2, 1, erlGRN, 44);
+  END;
+  // the upper bound: red, from the crossing down to the axis, with
+  // its value just right of the crossing (where the curve is below
+  // alpha, so the label never sits on it)
+  IF erlPU <= erlPmax THEN
+    LINE_P(G1, dpU, dpYa, dpU, erlPB, erlRED);
+    LINE_P(G1, dpU + 1, dpYa, dpU + 1, erlPB, erlRED);
+    RECT_P(G1, dpU - 2, dpYa - 2, dpU + 2, dpYa + 2, erlRED, erlRED);
+    dpLx := MAX(dpU, dpX3) + 4;
+    dpS := erlPctS(erlPU);
+    IF dpLx + 6 * DIM(dpS) > erlPR THEN dpLx := dpU - 4 - 6 * DIM(dpS); END;
+    TEXTOUT_P(dpS, G1, dpLx, dpYa - 13, 1, erlRED, 60);
+  ELSE
+    // during a drag of n the bound can leave the frozen window
+    TEXTOUT_P("bound " + erlPctS(erlPU) + " " + erlArr, G1, erlPR - 96, dpYa - 13, 1, erlRED, 96);
+  END;
+  // "ruled out" in the red band, when there is room for it
+  dpS := "ruled out at " + erlLvS() + " %";
+  dpW := 6 * DIM(dpS) + 4;
+  IF erlPR - dpU > dpW + 6 THEN
+    TEXTOUT_P(dpS, G1, erlPR - dpW, erlPT + 14, 1, erlRED, dpW);
+  END;
+  // the true rate under the finger (magenta): a line up to the
+  // curve, dots across to the y axis, and a dot on the curve
+  dpX := erlPX(erlP0);
+  dpY := erlYpx(erlPass);
+  LINE_P(G1, dpX, dpY, dpX, erlPB, erlMAG);
+  FOR dpI FROM erlPL + 1 TO dpX - 1 STEP 3 DO PIXON_P(G1, dpI, dpY, erlMAG); END;
+  RECT_P(G1, dpX - 2, dpY - 2, dpX + 2, dpY + 2, erlMAG, erlMAG);
+END;
+
+// Pixel row of n on the slider track (log scale, 5 at the bottom,
+// 1000 at the top); n beyond the track sits at its end.
+erlYofN(ynN)
+BEGIN
+  LOCAL ynF;
+  ynF := (LOG(MAX(5, MIN(1000, ynN))) - LOG(5)) / (LOG(1000) - LOG(5));
+  RETURN IP(erlKB - ynF * (erlKB - erlKT) + 0.5);
+END;
+
+// The n under a finger at height nyY, snapped to values a student
+// would type: whole numbers to 50, then steps of 5, 10 and 50.
+erlNofY(nyY)
+BEGIN
+  LOCAL nyF, nyV;
+  nyF := MAX(0, MIN(1, (erlKB - nyY) / (erlKB - erlKT)));
+  nyV := 10^(LOG(5) + nyF * (LOG(1000) - LOG(5)));
+  IF nyV < 50 THEN
+    nyV := ROUND(nyV, 0);
+  ELSE
+    IF nyV < 200 THEN
+      nyV := 5 * ROUND(nyV / 5, 0);
+    ELSE
+      IF nyV < 500 THEN nyV := 10 * ROUND(nyV / 10, 0); ELSE nyV := 50 * ROUND(nyV / 50, 0); END;
+    END;
+  END;
+  RETURN MAX(MAX(5, erlK), MIN(1000, nyV));
+END;
+
+// The n slider at the right edge: a grey track, ticks at 10, 30,
+// 100, 300 and 1000, and the magenta knob.
+erlDrawSlider()
+BEGIN
+  LOCAL dsI, dsY, dsN, dsL;
+  dsN := {10, 30, 100, 300, 1000};
+  dsL := {"10", "30", "100", "300", "1k"};
+  TEXTOUT_P("n", G1, 312, erlKT - 13, 1, erlMAG, 8);
+  LINE_P(G1, 315, erlKT, 315, erlKB, erlGRAY);
+  FOR dsI FROM 1 TO 5 DO
+    dsY := erlYofN(dsN(dsI));
+    LINE_P(G1, 311, dsY, 319, dsY, erlGRAY);
+    TEXTOUT_P(dsL(dsI), G1, 292, dsY - 5, 1, erlGRAY, 18);
+  END;
+  dsY := erlYofN(erlN);
+  RECT_P(G1, 310, dsY - 3, 319, dsY + 3, erlMAG, erlMAG);
+END;
+
+// The header and the panel.
+erlDrawText()
+BEGIN
+  LOCAL txS, txC;
+  TEXTOUT_P(erlRecS() + ", one-sided " + erlAlS + " = " + erlAlFmt(), G1, 2, 1, 1, erlBLK, 286);
+  TEXTOUT_P(erlLvS() + " % upper bound on the error rate: " + erlPctS(erlPU), G1, 2, 13, 1, erlRED, 286);
+  // the rate under the finger, in words (red once the record would
+  // be rarer than alpha at that rate: that rate is ruled out)
+  TEXTOUT_P("An examiner whose true rate is " + erlRateS(erlP0) + " has", G1, 2, 181, 1, erlMAG, 316);
+  txC := erlMAG;
+  IF erlPass < erlAl THEN txC := erlRED; END;
+  IF erlK == 0 THEN
+    txS := "0 errors in " + erlIStr(erlN) + " tests ";
+  ELSE
+    txS := "at most " + erlIStr(erlK) + " errors in " + erlIStr(erlN) + ": ";
+  END;
+  TEXTOUT_P(txS + erlPctS(erlPass) + " of the time.", G1, 2, 193, 1, txC, 316);
+  // the rule, and how close n x bound has come to it
+  IF erlK >= erlN THEN
+    txS := "every test was an error: no rate is ruled out";
+  ELSE
+    txS := erlRuleS() + " = " + erlPctS(erlRuleM / erlN) + ", n " + erlTms + " bound = " + erlFix(erlN * erlPU, 2) + " " + erlArr + " " + erlFix(erlRul, 2);
+  END;
+  TEXTOUT_P(txS, G1, 2, 205, 1, erlGRN, 316);
+END;
+
+// One whole frame: compose in G1, blit once, then the soft keys
+// (DRAWMENU paints the screen, so it comes after the blit, every
+// frame).  dmS is the curve stride (1, or 3 in a live drag of n).
+erlDrawMain(dmS)
+BEGIN
+  LOCAL dmL;
+  erlCurve(dmS);
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  erlDrawPlot();
+  erlDrawSlider();
+  erlDrawText();
+  BLIT_P(G0, 0, 0, G1);
+  dmL := erlSKLab();
+  DRAWMENU(dmL);
+END;
+
+
+// ------------------------------------------------------------
+// CHANGING n AND THE TRUE RATE
+// ------------------------------------------------------------
+
+// The next value of n up (ldD > 0) or down on a ladder of round
+// numbers, for the + and - keys.
+erlLadder(ldN, ldD)
+BEGIN
+  LOCAL ldL, ldI, ldR;
+  ldL := {1, 2, 3, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 150, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000, 10000};
+  IF ldD > 0 THEN
+    ldR := 10000;
+    FOR ldI FROM 1 TO SIZE(ldL) DO
+      IF ldL(ldI) > ldN AND ldL(ldI) < ldR THEN ldR := ldL(ldI); END;
+    END;
+  ELSE
+    ldR := 1;
+    FOR ldI FROM 1 TO SIZE(ldL) DO
+      IF ldL(ldI) < ldN AND ldL(ldI) > ldR THEN ldR := ldL(ldI); END;
+    END;
+  END;
+  RETURN ldR;
+END;
+
+// n up or down by one (snL = 0) or a ladder step (snL = 1).  n never
+// falls below k: k errors need at least k tests.
+erlStepN(snD, snL)
+BEGIN
+  LOCAL snN;
+  IF snL == 0 THEN snN := erlN + snD; ELSE snN := erlLadder(erlN, snD); END;
+  snN := MAX(MAX(1, erlK), MIN(10000, snN));
+  IF snN <> erlN THEN
+    erlN := snN;
+    erlRecalc();
+    erlSoftFit();
+  END;
+END;
+
+// The rate down or up one arrow step (a 1/2/5 step, about 1/40 of
+// the window), snapped onto that step's grid.
+erlStepRate(stD)
+BEGIN
+  LOCAL stS;
+  stS := erlNice(erlPmax / 40);
+  erlSetP0(MAX(0, MIN(erlPmax, (ROUND(erlP0 / stS, 0) + stD) * stS)));
+END;
+
+// The rate under a finger at column rxX, snapped to erlRStp.
+erlRateFromX(rxX)
+BEGIN
+  LOCAL rxV;
+  rxV := (rxX - erlPL) / erlPW * erlPmax;
+  rxV := ROUND(rxV / erlRStp, 0) * erlRStp;
+  RETURN MAX(0, MIN(erlPmax, rxV));
+END;
+
+// THE SHOWCASE: drag the true rate along the axis.  While the finger
+// stays down, every MOUSE sample moves the magenta marker and its
+// chance is recomputed (one CDF); the curve comes from the cache.
+// A key, a lift or a reading off the screen ends the drag.
+erlDragRate(dgX)
+BEGIN
+  LOCAL dgK, dgM, dgM1, dgGo, dgV;
+  erlSetP0(erlRateFromX(dgX));
+  erlDrawMain(1);
+  dgGo := 1;
+  WHILE dgGo == 1 DO
+    dgK := GETKEY;
+    dgM := MOUSE;
+    dgM1 := dgM(1);
+    IF dgK > -1 OR SIZE(dgM1) == 0 THEN
+      dgGo := 0;
+    ELSE
+      IF dgM1(1) < 0 OR dgM1(1) > 319 OR dgM1(2) < 0 OR dgM1(2) > 239 THEN
+        dgGo := 0;
+      ELSE
+        dgV := erlRateFromX(dgM1(1));
+        IF dgV <> erlP0 THEN
+          erlSetP0(dgV);
+          erlDrawMain(1);
+        END;
+      END;
+    END;
+  END;
+  erlDrain();
+  REPEAT dgK := GETKEY; UNTIL dgK == -1;
+END;
+
+// Drag n on the right edge.  The window stays FROZEN while the finger
+// is down, so the curve visibly steepens and the red bound slides
+// toward the axis as n grows (and n x bound creeps up toward 3).
+// With k > 0 each new n costs a 45-step bisection and a curve of
+// BINOMIAL_CDFs, so the drag draws every third column.  On lift the
+// window is refit.
+erlDragN(dnY)
+BEGIN
+  LOCAL dnK, dnM, dnM1, dnGo, dnV, dnS;
+  dnS := 1;
+  IF erlK > 0 THEN dnS := 3; END;
+  dnV := erlNofY(dnY);
+  IF dnV <> erlN THEN erlN := dnV; erlRecalc(); END;
+  erlDrawMain(dnS);
+  dnGo := 1;
+  WHILE dnGo == 1 DO
+    dnK := GETKEY;
+    dnM := MOUSE;
+    dnM1 := dnM(1);
+    IF dnK > -1 OR SIZE(dnM1) == 0 THEN
+      dnGo := 0;
+    ELSE
+      IF dnM1(1) < 0 OR dnM1(1) > 319 OR dnM1(2) < 0 OR dnM1(2) > 239 THEN
+        dnGo := 0;
+      ELSE
+        dnV := erlNofY(dnM1(2));
+        IF dnV <> erlN THEN
+          erlN := dnV;
+          erlRecalc();
+          erlDrawMain(dnS);
+        END;
+      END;
+    END;
+  END;
+  erlFit(0);
+  erlDrain();
+  REPEAT dnK := GETKEY; UNTIL dnK == -1;
+END;
+
+
+// ------------------------------------------------------------
+// TEXT PAGES (drawn: a MSGBOX shows only about five lines)
+// ------------------------------------------------------------
+
+// One page: a title, up to 14 lines of font 1 (46 characters at
+// most) in the colours given, a footer, and a badge top right
+// ("exact (CAS)" or "decimal"; "" for none).  It only DRAWS; the
+// caller waits.
+erlPage(pgT, pgL, pgC, pgF, pgB)
+BEGIN
+  LOCAL pgI;
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 4, 4, 315, 235, erlBLUE, erlLBLU);
+  TEXTOUT_P(pgT, G1, 12, 8, 2, erlBLUE, 220);
+  IF DIM(pgB) > 0 THEN TEXTOUT_P(pgB, G1, 236, 10, 1, erlFOOT, 76); END;
+  FOR pgI FROM 1 TO SIZE(pgL) DO
+    IF DIM(pgL(pgI)) > 0 THEN
+      TEXTOUT_P(pgL(pgI), G1, 12, 28 + 13 * (pgI - 1), 1, pgC(pgI), 296);
+    END;
+  END;
+  TEXTOUT_P(pgF, G1, 12, 220, 1, erlFOOT, 296);
+  BLIT_P(G0, 0, 0, G1);
+END;
+
+// The page buffer, for pages whose lines depend on the numbers.
+erlPgReset()
+BEGIN
+  erlPgL := {"", "", "", "", "", "", "", "", "", "", "", "", "", ""};
+  erlPgC := MAKELIST(0, K, 1, 14, 1);
+  erlPgN := 0;
+END;
+
+erlAdd(adS, adC)
+BEGIN
+  IF erlPgN < 14 THEN
+    erlPgN := erlPgN + 1;
+    erlPgL(erlPgN) := adS;
+    erlPgC(erlPgN) := adC;
+  END;
+END;
+
+// A CAS formula after a prefix, wrapped onto up to three lines at
+// a "+", "=" or times sign.  The fence's rule 7: never cut an exact
+// answer silently -- one that will not fit says how long it is.
+erlAddW(awP, awS, awC)
+BEGIN
+  LOCAL awW, awT, awB, awI, awPad;
+  awW := 44 - DIM(awP);
+  IF DIM(awS) > 3 * awW THEN
+    erlAdd(awP + "(the exact answer has " + erlIStr(DIM(awS)) + " characters:", awC);
+    erlAdd("    too long to show; decimals below)", awC);
+    RETURN;
+  END;
+  awPad := "";
+  FOR awI FROM 1 TO DIM(awP) DO awPad := awPad + " "; END;
+  awT := awS;
+  awI := 0;
+  WHILE DIM(awT) > awW DO
+    awB := erlBreak(awT, awW);
+    IF awI == 0 THEN erlAdd(awP + LEFT(awT, awB), awC); ELSE erlAdd(awPad + LEFT(awT, awB), awC); END;
+    awT := MID(awT, awB + 1);
+    awI := awI + 1;
+  END;
+  IF awI == 0 THEN erlAdd(awP + awT, awC); ELSE erlAdd(awPad + awT, awC); END;
+END;
+
+// The buffer as a page.
+erlPgShow(psT, psF, psB)
+BEGIN
+  erlPage(psT, erlPgL, erlPgC, psF, psB);
+END;
+
+
+// ------------------------------------------------------------
+// "WHY 3": THE ALGEBRA, BY THE CAS
+// ------------------------------------------------------------
+
+// The polynomial part of P(k or fewer errors).  Every term of the
+// binomial sum has the factor (1-p)^(n-k), so
+//   P(X <= k) = (1-p)^(n-k) * [ sum of C(n,j) p^j (1-p)^(k-j), j = 0..k ]
+// and the CAS is asked to multiply out only the bracket (normal):
+// a polynomial of degree k with EXACT coefficients (C(1000,5) has
+// 13 digits, past PPL's 12), at the same cost for any n.  (Asking
+// it to factor the whole sum expands (1-p)^n first: for n = 10000 that
+// took desktop Giac over a minute, and would freeze a calculator.)
+// Numeric j only: a sum over a symbolic index sends Giac solving
+// Gamma equations (BRIEF_CAS).  For n = 30, k = 2 the text is
+// comb(30,0)*erlq^0*(1-erlq)^2+comb(30,1)*erlq^1*(1-erlq)^1+...
+erlBinTerms()
+BEGIN
+  LOCAL btS, btJ, btN;
+  btN := "" + erlIStr(erlN);
+  btS := "";
+  FOR btJ FROM 0 TO erlK DO
+    IF btJ > 0 THEN btS := btS + "+"; END;
+    btS := btS + "comb(" + btN + "," + erlIStr(btJ) + ")*erlq^" + erlIStr(btJ) + "*(1-erlq)^" + erlIStr(erlK - btJ);
+  END;
+  RETURN btS;
+END;
+
+// The same chance with p = erll/erlq (erll = mu, erlq = n), the
+// binomial coefficient written as a falling factorial over j!, so
+// the CAS can let n grow: its limit is the Poisson chance.
+erlPoiTerms()
+BEGIN
+  LOCAL ptS, ptJ, ptI, ptF, ptT;
+  ptS := "(1-erll/erlq)^erlq";
+  ptF := 1;
+  FOR ptJ FROM 1 TO erlK DO
+    ptF := ptF * ptJ;
+    ptT := "erlq";
+    FOR ptI FROM 1 TO ptJ - 1 DO ptT := ptT + "*(erlq-" + erlIStr(ptI) + ")"; END;
+    ptS := ptS + "+" + ptT + "/" + erlIStr(ptF) + "*(erll/erlq)^" + erlIStr(ptJ) + "*(1-erll/erlq)^(erlq-" + erlIStr(ptJ) + ")";
+  END;
+  RETURN ptS;
+END;
+
+// Ask the CAS for this record's three lines -- once per record (n, k,
+// alpha); the answers are cached.  An answer that failed is retried
+// next time the page opens.
+erlCasFill()
+BEGIN
+  LOCAL cfKey;
+  cfKey := erlIStr(erlN) + "," + erlIStr(erlK) + "," + erlIStr(erlAm);
+  IF cfKey == erlCasKey THEN RETURN; END;
+  erlCa1 := ""; erlCa2 := ""; erlCa3 := "";
+  IF erlK < erlN THEN
+    erlCa1 := erlCas(erlIStr(erlAm) + "/1000");
+    IF erlK == 0 THEN
+      erlCa2 := erlCas("1-(" + erlIStr(erlAm) + "/1000)^(1/" + erlIStr(erlN) + ")");
+      erlCa3 := erlCas("limit(erlq*(1-(" + erlIStr(erlAm) + "/1000)^(1/erlq)),erlq," + erlInf + ")");
+    ELSE
+      IF erlK <= 6 THEN
+        erlCa2 := erlCas("normal(" + erlBinTerms() + ")");    // normal, not expand: expand left (-p)^2 beside p^2
+        erlCa3 := erlCas("factor(limit(" + erlPoiTerms() + ",erlq," + erlInf + "))");
+      END;
+    END;
+  END;
+  erlCasOK := 1;
+  IF erlCa1 == "" OR erlCa2 == "" OR erlCa3 == "" THEN erlCasOK := 0; END;
+  IF erlK > 6 OR erlK >= erlN THEN erlCasOK := -1; END;     // no CAS lines on this page
+  IF erlCasOK == 0 THEN erlCasKey := ""; ELSE erlCasKey := cfKey; END;
+END;
+
+// The page.  Magenta lines are the CAS's exact text (or, if it failed,
+// the same formula written by PPL, and the badge says "decimal");
+// red lines are PPL's decimals.
+erlCasDraw()
+BEGIN
+  LOCAL cdF, cdS, cdN, cdT, cdB;
+  erlPgReset();
+  cdN := "" + erlIStr(erlN);
+  cdF := "" + erlCa1;
+  IF cdF == "" THEN cdF := erlAlFmt(); END;      // alpha: 1/20, or 0.05
+  IF erlK >= erlN THEN
+    cdT := "The bound when k = n";
+    erlAdd(erlRecS() + ": every test was an error.", erlBLK);
+    erlAdd("The upper bound is then 100 %: no rate is", erlBLK);
+    erlAdd("ruled out.  Choose k < n to see the algebra.", erlBLK);
+  ELSE
+    IF erlK == 0 THEN
+      cdT := "Where the 3 comes from";
+      erlAdd(erlRecS() + ".", erlBLK);
+      erlAdd("The upper bound is the rate p that makes", erlBLK);
+      erlAdd("a clean record only " + cdF + " likely:", erlBLK);
+      erlAdd("   (1-p)^" + cdN + " = " + cdF, erlBLUE);
+      IF erlCa2 <> "" THEN cdS := erlShow(erlCa2, "p"); ELSE cdS := "1-" + erlAlFmt() + "^(1/" + cdN + ")"; END;
+      erlAddW("   p = ", cdS, erlMAG);
+      erlAdd("     = " + erlFix(erlPU, 5) + " = " + erlPctS(erlPU), erlRED);
+      erlAdd("Rule: " + erlRuleS() + " = " + erlPctS(erlRuleM / erlN) + ".  n " + erlTms + " bound = " + erlFix(erlN * erlPU, 3) + ".", erlBLK);
+      erlAdd("As n grows, the CAS finds the limit:", erlBLK);
+      IF erlCa3 <> "" THEN cdS := erlShow(erlCa3, "p"); ELSE cdS := "-ln(" + erlAlFmt() + ")"; END;
+      erlAddW("   n(1-(" + cdF + ")^(1/n)) " + erlArr + " ", cdS, erlMAG);
+      erlAdd("     = " + erlFix(-LN(erlAl), 4), erlRED);
+      IF erlAm == 50 THEN
+        erlAdd("So 3/n is a large-n LIMIT, a little too", erlBLK);
+        erlAdd("high for small n (n = 10: 2.59, not 3).", erlBLK);
+      ELSE
+        erlAdd("So " + erlRuleS() + " is a large-n LIMIT; for small", erlBLK);
+        erlAdd("n the bound is a little lower than that.", erlBLK);
+      END;
+    ELSE
+      cdT := "The equation for k > 0";
+      erlAdd(erlRecS() + ".", erlBLK);
+      erlAdd("The upper bound is the rate p that makes", erlBLK);
+      erlAdd("at most " + erlIStr(erlK) + " errors only " + cdF + " likely:", erlBLK);
+      IF erlK > 6 THEN
+        erlAdd("   (k > 6: the CAS lines are skipped)", erlGRAY);
+      ELSE
+        // (1-p)^(n-k) times the CAS's exact polynomial (k < n here)
+        cdS := "(1-p)";
+        IF erlN - erlK > 1 THEN cdS := cdS + "^" + erlIStr(erlN - erlK); END;
+        IF erlCa2 <> "" THEN
+          cdS := cdS + erlTms + "(" + erlShow(erlCa2, "p") + ") = " + cdF;
+        ELSE
+          cdS := "sum of C(" + cdN + ",j) p^j (1-p)^(" + cdN + "-j), j = 0.." + erlIStr(erlK) + ", = " + cdF;
+        END;
+        erlAddW("   ", cdS, erlMAG);
+      END;
+      erlAdd("No closed form: PPL halves an interval", erlBLK);
+      erlAdd("45 times (bisection on BINOMIAL_CDF):", erlBLK);
+      erlAdd("   p = " + erlFix(erlPU, 5) + " = " + erlPctS(erlPU), erlRED);
+      erlAdd("As n grows with n " + erlTms + " p = " + erlMuS + " held fixed:", erlBLK);
+      IF erlK <= 6 THEN
+        IF erlCa3 <> "" THEN
+          cdS := erlShow(erlCa3, "p") + " = " + cdF;
+        ELSE
+          cdS := "e^(-" + erlMuS + ")(1+" + erlMuS + "+...+" + erlMuS + "^k/k!) = " + cdF;
+        END;
+        erlAddW("   ", cdS, erlMAG);
+      END;
+      erlAdd("   " + erlMuS + " = " + erlFix(erlRul, 3) + ", so the rule is " + erlFix(erlRul, 2) + "/n.", erlRED);
+      erlAdd("Here n " + erlTms + " bound = " + erlFix(erlN * erlPU, 3) + ".", erlBLK);
+    END;
+  END;
+  cdB := "";
+  IF erlCasOK == 1 THEN cdB := "exact (CAS)"; END;
+  IF erlCasOK == 0 THEN cdB := "decimal"; END;
+  erlPgShow(cdT, "+/- or " + erlUD + " = n, other keys = back", cdB);
+END;
+
+// The "Why 3" page: the CAS is asked when the page opens and again
+// whenever n changes (an event, never a frame).
+erlCasPage()
+BEGIN
+  LOCAL cpK, cpGo, cpN0;
+  cpN0 := erlN;
+  cpGo := 1;
+  WHILE cpGo == 1 DO
+    erlCasFill();
+    erlCasDraw();
+    cpK := erlWaitAny();
+    cpGo := 0;
+    IF cpK == 2 THEN erlStepN(1, 0); cpGo := 1; END;
+    IF cpK == 12 THEN erlStepN(-1, 0); cpGo := 1; END;
+    IF cpK == 50 THEN erlStepN(1, 1); cpGo := 1; END;
+    IF cpK == 45 THEN erlStepN(-1, 1); cpGo := 1; END;
+  END;
+  IF erlN <> cpN0 THEN erlFit(0); END;
+END;
+
+
+// ------------------------------------------------------------
+// THE BAYESIAN VIEW
+// ------------------------------------------------------------
+
+// The posterior Beta(a + k, b + n - k) (all kept doubled), its mean
+// and upper credible bound, the window, the densities per column,
+// and the mean as an exact fraction from the CAS (cached).
+erlBayesCalc()
+BEGIN
+  LOCAL bcA2, bcB2, bcKey;
+  bcA2 := erlBa2 + 2 * erlK;
+  bcB2 := erlBb2 + 2 * (erlN - erlK);
+  erlBMean := bcA2 / (bcA2 + bcB2);
+  erlBUp := erlBetaQ(bcA2, bcB2, 1 - erlAl);
+  ER_BMEAN := erlBMean; ER_BUPPER := erlBUp;
+  erlBMax := MIN(1, erlNice(1.25 * MAX(MAX(erlBUp, MIN(1, erlPU)), erlP0)));
+  erlBStp := erlNice(erlBMax / 5);
+  erlBDec := MAX(0, -FLOOR(LOG(100 * erlBStp) + 0.000001));
+  erlBayesDens(bcA2, bcB2);
+  // (a + k)/(a + b + n) = (2a + 2k)/(2a + 2b + 2n): whole numbers only
+  bcKey := erlIStr(bcA2) + "/" + erlIStr(bcA2 + bcB2);
+  IF bcKey <> erlCaBKey THEN
+    erlCaB := erlCas("(" + erlIStr(bcA2) + ")/(" + erlIStr(bcA2 + bcB2) + ")");
+    IF erlCaB <> "" THEN erlCaBKey := bcKey; ELSE erlCaBKey := ""; END;
+  END;
+  erlBOK := 0;
+  IF erlCaB <> "" THEN erlBOK := 1; END;
+END;
+
+// The posterior and prior densities at the centre of every column:
+// log f(x) = (a - 1) ln x + (b - 1) ln(1 - x) - ln B(a, b), with
+// ln B from the Lanczos log-gamma.  The y-scale skips the first two
+// columns, so a prior with a < 1 (Jeffreys, k = 0) climbs off the
+// top near 0 instead of flattening everything else.
+erlBayesDens(bdA2, bdB2)
+BEGIN
+  LOCAL bdA, bdB, bdLB, bdI, bdX, bdF;
+  LOCAL bdPa, bdPb, bdPLB, bdM;
+  bdA := bdA2 / 2; bdB := bdB2 / 2;
+  bdLB := erlLnGam(bdA) + erlLnGam(bdB) - erlLnGam(bdA + bdB);
+  bdPa := erlBa2 / 2; bdPb := erlBb2 / 2;
+  bdPLB := erlLnGam(bdPa) + erlLnGam(bdPb) - erlLnGam(bdPa + bdPb);
+  erlBD := MAKELIST(0, K, 1, erlPW + 1, 1);
+  erlBPr := MAKELIST(0, K, 1, erlPW + 1, 1);
+  bdM := 0;
+  FOR bdI FROM 0 TO erlPW DO
+    bdX := erlBMax * (bdI + 0.5) / (erlPW + 1);
+    bdF := EXP((bdA - 1) * LN(bdX) + (bdB - 1) * LN(1 - bdX) - bdLB);
+    erlBD(bdI + 1) := bdF;
+    IF bdI >= 2 AND bdF > bdM THEN bdM := bdF; END;
+    erlBPr(bdI + 1) := EXP((bdPa - 1) * LN(bdX) + (bdPb - 1) * LN(1 - bdX) - bdPLB);
+  END;
+  IF bdM <= 0 THEN bdM := 1; END;
+  erlBYm := 1.1 * bdM;
+END;
+
+// Pixel column of a rate on the Bayes window, and the row of a
+// density (clipped at the top).
+erlBX(bxV)
+BEGIN
+  RETURN IP(erlPL + bxV / erlBMax * erlPW + 0.5);
+END;
+
+erlBYpx(byV)
+BEGIN
+  RETURN IP(erlPB - MIN(1, byV / erlBYm) * (erlPB - erlPT) + 0.5);
+END;
+
+// A label beside a vertical line at column lbX, row lbY: to the
+// right, or to the left near the right edge.
+erlLabel(lbS, lbX, lbY, lbC)
+BEGIN
+  LOCAL lbW;
+  lbW := 6 * DIM(lbS) + 2;
+  IF lbX + 3 + lbW > erlPR THEN
+    TEXTOUT_P(lbS, G1, lbX - 3 - lbW, lbY, 1, lbC, lbW);
+  ELSE
+    TEXTOUT_P(lbS, G1, lbX + 3, lbY, 1, lbC, lbW);
+  END;
+END;
+
+// The Bayes frame.  Under the posterior: light blue up to the true
+// rate, pink beyond it (that pink area IS P(true rate > p0)).
+erlBayesDraw()
+BEGIN
+  LOCAL bwI, bwX, bwY, bwV, bwS, bwK1;
+  LOCAL bwA2, bwB2, bwL;
+  bwA2 := erlBa2 + 2 * erlK;
+  bwB2 := erlBb2 + 2 * (erlN - erlK);
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  // header: prior, badge, posterior
+  TEXTOUT_P("Bayes: prior Beta(" + erlHalfS(erlBa2) + ", " + erlHalfS(erlBb2) + "), " + erlBNm, G1, 2, 1, 1, erlBLK, 228);
+  IF erlBOK == 1 THEN bwS := "exact (CAS)"; ELSE bwS := "decimal"; END;
+  TEXTOUT_P(bwS, G1, 240, 1, 1, erlFOOT, 78);
+  TEXTOUT_P("posterior Beta(" + erlHalfS(bwA2) + ", " + erlHalfS(bwB2) + ") after " + erlIStr(erlK) + " of " + erlIStr(erlN) + " wrong", G1, 2, 13, 1, erlMAG, 316);
+  // the area under the posterior, column by column
+  FOR bwI FROM 0 TO erlPW DO
+    bwY := erlBYpx(erlBD(bwI + 1));
+    bwV := erlBMax * (bwI + 0.5) / (erlPW + 1);
+    IF bwY < erlPB THEN
+      IF bwV <= erlP0 THEN
+        LINE_P(G1, erlPL + bwI, bwY, erlPL + bwI, erlPB - 1, erlSHAD);
+      ELSE
+        LINE_P(G1, erlPL + bwI, bwY, erlPL + bwI, erlPB - 1, erlTAIL);
+      END;
+    END;
+  END;
+  // grid and rate ticks (percent)
+  bwK1 := FLOOR(erlBMax / erlBStp + 0.000001);
+  FOR bwI FROM 0 TO bwK1 DO
+    bwX := erlBX(bwI * erlBStp);
+    IF bwI > 0 THEN LINE_P(G1, bwX, erlPT, bwX, erlPB, erlGRID); END;
+    LINE_P(G1, bwX, erlPB, bwX, erlPB + 3, erlGRAY);
+    bwS := STRING(100 * bwI * erlBStp, 2, erlBDec);
+    IF bwI == bwK1 THEN bwS := bwS + " %"; END;
+    TEXTOUT_P(bwS, G1, MAX(0, bwX - 3 * DIM(bwS)), erlPB + 4, 1, erlGRAY, 40);
+  END;
+  LINE_P(G1, erlPL, erlPB, erlPR, erlPB, erlBLK);
+  LINE_P(G1, erlPL, erlPT, erlPL, erlPB, erlBLK);
+  TEXTOUT_P("density", G1, erlPL + 3, erlPT + 2, 1, erlGRAY, 50);
+  // the prior: grey dots
+  FOR bwI FROM 0 TO erlPW STEP 2 DO
+    bwY := erlBYpx(erlBPr(bwI + 1));
+    IF bwY < erlPB THEN PIXON_P(G1, erlPL + bwI, bwY, erlGRAY); END;
+  END;
+  // the posterior: magenta, two pixels thick
+  FOR bwI FROM 1 TO erlPW DO
+    LINE_P(G1, erlPL + bwI - 1, erlBYpx(erlBD(bwI)), erlPL + bwI, erlBYpx(erlBD(bwI + 1)), erlMAG);
+    LINE_P(G1, erlPL + bwI - 1, erlBYpx(erlBD(bwI)) - 1, erlPL + bwI, erlBYpx(erlBD(bwI + 1)) - 1, erlMAG);
+  END;
+  // the upper credible bound (magenta), Clopper-Pearson (red dots),
+  // the posterior mean (green dots) and the true rate (orange)
+  bwX := erlBX(erlBUp);
+  LINE_P(G1, bwX, erlPT, bwX, erlPB, erlMAG);
+  erlLabel(erlLvS() + " %", bwX, erlPT + 2, erlMAG);
+  IF erlPU <= erlBMax THEN
+    bwX := erlBX(erlPU);
+    FOR bwY FROM erlPT TO erlPB STEP 3 DO PIXON_P(G1, bwX, bwY, erlRED); PIXON_P(G1, bwX + 1, bwY, erlRED); END;
+    erlLabel("CP", bwX, erlPT + 14, erlRED);
+  END;
+  bwX := erlBX(erlBMean);
+  FOR bwY FROM erlPT TO erlPB STEP 3 DO PIXON_P(G1, bwX, bwY, erlGRN); END;
+  erlLabel("mean", bwX, erlPT + 26, erlGRN);
+  bwX := erlBX(erlP0);
+  LINE_P(G1, bwX, erlPT + 38, bwX, erlPB, erlORNG);
+  // the panel
+  IF erlBOK == 1 THEN
+    bwL := erlCaB + " = " + erlPctS(erlBMean);
+  ELSE
+    bwL := erlPctS(erlBMean);
+  END;
+  TEXTOUT_P("mean (a+k)/(a+b+n) = " + bwL, G1, 2, 181, 1, erlGRN, 316);
+  TEXTOUT_P(erlLvS() + " % credible bound " + erlPctS(erlBUp) + " (CP " + erlPctS(erlPU) + ")", G1, 2, 193, 1, erlMAG, 316);
+  bwV := 1 - erlBetaCdf(bwA2, bwB2, erlP0);
+  TEXTOUT_P("P(true rate > " + erlRateS(erlP0) + ") = " + erlPctS(bwV) + "  (drag)", G1, 2, 205, 1, erlORNG, 316);
+  BLIT_P(G0, 0, 0, G1);
+  DRAWMENU({"Unif", "Jeff", "a, b", "", "Back", ""});
+END;
+
+// Your own prior Beta(a, b): a and b in halves from 0.5 to 100.
+erlAskPrior()
+BEGIN
+  LOCAL apA, apB, apOK, apGo, apMsg;
+  apA := erlBa2 / 2; apB := erlBb2 / 2;
+  apGo := 1;
+  WHILE apGo == 1 DO
+    apOK := INPUT({apA, apB}, "Prior Beta(a, b)", {"a:", "b:"}, {"0.5 to 100, in steps of 0.5 (prior errors)", "0.5 to 100, in steps of 0.5 (prior passes)"});
+    IF apOK <> 1 THEN RETURN 0; END;
+    apMsg := "";
+    IF FP(2 * apA) <> 0 OR FP(2 * apB) <> 0 THEN apMsg := "a and b must be multiples of 0.5."; END;
+    IF apA < 0.5 OR apA > 100 OR apB < 0.5 OR apB > 100 THEN apMsg := "a and b must be from 0.5 to 100."; END;
+    IF apMsg == "" THEN apGo := 0; ELSE MSGBOX(apMsg); END;
+  END;
+  erlBa2 := 2 * apA; erlBb2 := 2 * apB;
+  erlBNm := "your prior";
+  IF erlBa2 == 2 AND erlBb2 == 2 THEN erlBNm := "uniform"; END;
+  IF erlBa2 == 1 AND erlBb2 == 1 THEN erlBNm := "Jeffreys"; END;
+  RETURN 1;
+END;
+
+// The Bayes page: soft keys pick the prior; drag along the plot (or
+// Left / Right) moves the true rate, and the pink area follows.
+erlBayesPage()
+BEGIN
+  LOCAL bpK, bpM, bpM1, bpGo, bpX, bpY;
+  LOCAL bpA, bpS, bpV, bpG2;
+  erlBayesCalc();
+  bpGo := 1;
+  REPEAT bpK := GETKEY; UNTIL bpK == -1;
+  erlDrain();
+  WHILE bpGo == 1 DO
+    erlBayesDraw();
+    REPEAT
+      bpK := GETKEY;
+      bpM := MOUSE;
+      bpM1 := bpM(1);
+    UNTIL bpK > -1 OR SIZE(bpM1) > 0;
+    bpA := 0;
+    bpS := erlNice(erlBMax / 200);
+    IF SIZE(bpM1) > 0 THEN
+      bpX := bpM1(1); bpY := bpM1(2);
+      IF bpY >= 218 THEN
+        erlDrain();
+        bpA := MIN(6, IP(bpX / 53.4) + 1);
+      ELSE
+        IF bpY >= erlPT AND bpY <= erlPB + 12 THEN
+          // a live drag of the true rate (densities come from the cache)
+          bpG2 := 1;
+          WHILE bpG2 == 1 DO
+            bpV := MAX(0, MIN(erlBMax, ROUND((bpX - erlPL) / erlPW * erlBMax / bpS, 0) * bpS));
+            IF bpV <> erlP0 THEN erlSetP0(bpV); erlBayesDraw(); END;
+            bpK := GETKEY;
+            bpM := MOUSE;
+            bpM1 := bpM(1);
+            IF bpK > -1 OR SIZE(bpM1) == 0 THEN
+              bpG2 := 0;
+            ELSE
+              bpX := bpM1(1);
+              IF bpX < 0 OR bpX > 319 THEN bpG2 := 0; END;
+            END;
+          END;
+        END;
+        erlDrain();
+      END;
+    ELSE
+      IF bpK == 4 OR bpK == 30 THEN bpGo := 0; END;
+      IF bpK == 7 THEN erlSetP0(MAX(0, (ROUND(erlP0 / (5 * bpS), 0) - 1) * 5 * bpS)); END;
+      IF bpK == 8 THEN erlSetP0(MIN(erlBMax, (ROUND(erlP0 / (5 * bpS), 0) + 1) * 5 * bpS)); END;
+    END;
+    IF bpA == 1 THEN erlBa2 := 2; erlBb2 := 2; erlBNm := "uniform"; erlBayesCalc(); END;
+    IF bpA == 2 THEN erlBa2 := 1; erlBb2 := 1; erlBNm := "Jeffreys"; erlBayesCalc(); END;
+    IF bpA == 3 THEN
+      IF erlAskPrior() == 1 THEN erlBayesCalc(); END;
+      REPEAT bpK := GETKEY; UNTIL bpK == -1;
+      erlDrain();
+    END;
+    IF bpA == 5 THEN bpGo := 0; END;
+  END;
+  // the true rate may now be outside the main window
+  IF erlP0 > erlPmax THEN erlFit(1); END;
+END;
+
+
+// ------------------------------------------------------------
+// SIMULATION -- "PPL draws, Python crunches"
+// NOT YET RUN ON HARDWARE.  Test with the Terminal open: a Python
+// error prints there, and PPL carries on with its fallback.
+// Route A (Lessons Learned section 8): the Python lives in this file
+// and is run by PYTHON(erlPySim) -- there is no .py file.
+// The bridge (section 9): PPL writes ER_PYN, ER_PYP, ER_PYM, ER_PYK
+// and ER_PYW; Python reads them with hpprime.eval (never argv) and
+// writes ER_PYO back ONE VALUE AT A TIME -- 41 bin counts, then the
+// zero count, the pass count and the total, the total last -- so
+// the payload is the same 44 numbers whether 100 or 10,000
+// programmes were run.
+// ------------------------------------------------------------
+#PYTHON erlPySim
+# ErrorRate beta 1: proficiency programmes in MicroPython.
+# NOT YET RUN ON HARDWARE.  MicroPython 1.9.4 has no 'random' module:
+# urandom is the one to import (Lessons Learned v7f section 8).
+from hpprime import eval as ppl
+from urandom import random
+import math
+
+def mark(s):
+    # how far the script got, readable from Home as ER_PYZ
+    ppl("ER_PYZ:=" + str(s))
+
+def main():
+    mark(1)
+    n = int(float(ppl("ER_PYN")))
+    p = float(ppl("ER_PYP"))
+    m = int(float(ppl("ER_PYM")))
+    k = int(float(ppl("ER_PYK")))
+    w = int(float(ppl("ER_PYW")))
+    bins = [0] * 41
+    zero = 0
+    ok = 0
+    tot = 0
+    L = 0.0
+    if 0.0 < p < 1.0:
+        L = math.log(1.0 - p)
+    for _ in range(m):
+        e = 0
+        if p >= 1.0:
+            e = n
+        elif L < -1e-15:
+            # Jump from one error to the next instead of tossing a coin
+            # for every test: the run of clean tests before an error is
+            # geometric, so its length is floor(ln(U) / ln(1 - p)) with
+            # U uniform on (0, 1].  The next error is test pos + run + 1;
+            # if that is past test n, this programme is finished.
+            pos = 0
+            while True:
+                g = math.log(1.0 - random()) / L
+                if g >= n - pos:
+                    break
+                pos += int(g) + 1
+                e += 1
+        b = e // w
+        if b > 40:
+            b = 40
+        bins[b] += 1
+        if e == 0:
+            zero += 1
+        if e <= k:
+            ok += 1
+        tot += e
+    mark(2)
+    # one value per crossing, built by concatenation (section 9)
+    for i in range(41):
+        ppl("ER_PYO(" + str(i + 1) + "):=" + str(bins[i]))
+    ppl("ER_PYO(42):=" + str(zero))
+    ppl("ER_PYO(43):=" + str(ok))
+    ppl("ER_PYO(44):=" + str(tot))
+    mark(3)
+
+main()
+#END
+
+// The PPL fallback: the same jumps from error to error, spM
+// programmes.  RANDOM is in [0, 1), so 1 - RANDOM is in (0, 1] and
+// its LN is never undefined.
+erlSimPPL(spM)
+BEGIN
+  LOCAL spI, spE, spPos, spG, spL, spB;
+  LOCAL spGo;
+  erlSmB := MAKELIST(0, K, 1, 41, 1);
+  erlSm0 := 0; erlSmOK := 0; erlSmTot := 0; erlSmM := spM;
+  spL := 0;
+  IF erlP0 > 0 AND erlP0 < 1 THEN spL := LN(1 - erlP0); END;
+  FOR spI FROM 1 TO spM DO
+    spE := 0;
+    IF erlP0 >= 1 THEN spE := erlN; END;
+    IF spL < 0 THEN
+      spPos := 0;
+      spGo := 1;
+      WHILE spGo == 1 DO
+        spG := LN(1 - RANDOM) / spL;          // clean tests before the next error
+        IF spG >= erlN - spPos THEN
+          spGo := 0;                         // the next error is past test n
+        ELSE
+          spPos := spPos + IP(spG) + 1;
+          spE := spE + 1;
+        END;
+      END;
+    END;
+    spB := MIN(40, IP(spE / erlSmW)) + 1;
+    erlSmB(spB) := erlSmB(spB) + 1;
+    IF spE == 0 THEN erlSm0 := erlSm0 + 1; END;
+    IF spE <= erlK THEN erlSmOK := erlSmOK + 1; END;
+    erlSmTot := erlSmTot + spE;
+  END;
+END;
+
+// Run the simulation at the current n, k and true rate (Lessons
+// Learned section 9, all three guards): clear the output first,
+// validate by READING the last element inside IFERR (and check the
+// bins add up), and always keep the PPL fallback -- 1,000 programmes.
+// The badge then names the engine that really ran and the TICKS.
+erlRunSim()
+BEGIN
+  LOCAL rsT, rsOK, rsChk, rsI, rsS, rsMax;
+  // bars wide enough for the bulk of the error counts (at most 40)
+  rsMax := CEILING(erlN * erlP0 + 4 * (erlN * erlP0 * (1 - erlP0))^0.5 + 1);
+  rsMax := MIN(erlN, MAX(MAX(erlK + 2, 5), rsMax));
+  erlSmW := MAX(1, CEILING((rsMax + 1) / 40));
+  erlSmNb := MIN(41, CEILING((rsMax + 1) / erlSmW));
+  erlSmN := erlN; erlSmP := erlP0; erlSmK := erlK;
+  // 1. the inputs Python reads, and the output cleared to -1
+  ER_PYN := erlN; ER_PYP := erlP0; ER_PYM := 10000;
+  ER_PYK := erlK; ER_PYW := erlSmW; ER_PYZ := 0;
+  ER_PYO := MAKELIST(-1, K, 1, 44, 1);
+  rsT := TICKS;
+  IFERR
+    PYTHON(erlPySim);
+  THEN
+    rsOK := 0;          // (an error INSIDE Python never reaches here)
+  END;
+  rsT := TICKS - rsT;
+  // 2. validate by USING the result: the last element, inside IFERR
+  rsOK := 0;
+  IFERR
+    rsChk := ER_PYO(44) + 0;
+    IF rsChk >= 0 THEN rsOK := 1; END;
+  THEN
+    rsOK := 0;
+  END;
+  // and the bins must add up to the programmes asked for
+  IF rsOK == 1 THEN
+    rsS := 0;
+    FOR rsI FROM 1 TO 41 DO rsS := rsS + ER_PYO(rsI); END;
+    IF rsS <> 10000 OR ER_PYO(42) > ER_PYO(43) OR ER_PYO(43) > 10000 THEN rsOK := 0; END;
+  END;
+  IF rsOK == 1 THEN
+    erlSmB := MAKELIST(0, K, 1, 41, 1);
+    FOR rsI FROM 1 TO 41 DO erlSmB(rsI) := ER_PYO(rsI); END;
+    erlSm0 := ER_PYO(42); erlSmOK := ER_PYO(43); erlSmTot := ER_PYO(44);
+    erlSmM := 10000;
+    erlSmEng := 1;
+    erlSmMs := rsT;
+  ELSE
+    // 3. the PPL fallback
+    rsT := TICKS;
+    erlSimPPL(1000);
+    erlSmMs := TICKS - rsT;
+    erlSmEng := 2;
+  END;
+  ER_SIM := erlSmOK / erlSmM;
+END;
+
+// The simulation frame: one bar per error count (green = a record
+// at least as good as the examiner's), magenta squares = what the
+// binomial expects, and the engine badge.
+erlSimDraw()
+BEGIN
+  LOCAL sdI, sdC, sdE, sdX, sdBw, sdX0;
+  LOCAL sdY, sdYm, sdS, sdLo, sdHi, sdStp;
+  LOCAL sdCnt, sdExp, sdEx, sdM, sdPB;
+  sdPB := 150;                               // this page's axis row
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  TEXTOUT_P(erlComma(erlSmM) + " examiners, each with true rate " + erlRateS(erlSmP), G1, 2, 1, 1, erlBLK, 316);
+  TEXTOUT_P("each takes " + erlIStr(erlSmN) + " tests; bars = their error counts", G1, 2, 13, 1, erlBLK, 316);
+  // counts and expected counts per bar (the last bar takes the rest)
+  sdCnt := MAKELIST(0, K, 1, erlSmNb, 1);
+  sdExp := MAKELIST(0, K, 1, erlSmNb, 1);
+  FOR sdI FROM 1 TO 41 DO
+    sdC := MIN(erlSmNb, sdI);
+    sdCnt(sdC) := sdCnt(sdC) + erlSmB(sdI);
+  END;
+  FOR sdI FROM 1 TO erlSmNb DO
+    sdLo := (sdI - 1) * erlSmW;
+    sdHi := sdI * erlSmW - 1;
+    IF sdI == erlSmNb THEN sdHi := erlSmN; END;
+    sdEx := erlTail(erlSmN, erlSmP, MIN(erlSmN, sdHi));
+    IF sdLo > 0 THEN sdEx := sdEx - erlTail(erlSmN, erlSmP, sdLo - 1); END;
+    sdExp(sdI) := erlSmM * sdEx;
+  END;
+  sdYm := 1;
+  FOR sdI FROM 1 TO erlSmNb DO
+    sdYm := MAX(sdYm, MAX(sdCnt(sdI), sdExp(sdI)));
+  END;
+  sdYm := 1.1 * sdYm;
+  // y grid and count labels
+  sdStp := erlNice(sdYm / 4);
+  FOR sdI FROM 1 TO FLOOR(sdYm / sdStp) DO
+    sdY := IP(sdPB - sdI * sdStp / sdYm * (sdPB - erlPT) + 0.5);
+    LINE_P(G1, erlPL, sdY, erlPR, sdY, erlGRID);
+    TEXTOUT_P(erlComma(sdI * sdStp), G1, 0, sdY - 5, 1, erlGRAY, 29);
+  END;
+  // the bars
+  sdBw := MIN(30, FLOOR(erlPW / erlSmNb));
+  sdX0 := erlPL + IP((erlPW - erlSmNb * sdBw) / 2);
+  sdM := MAX(1, CEILING(22 / sdBw));          // label every sdM-th bar
+  FOR sdI FROM 1 TO erlSmNb DO
+    sdX := sdX0 + (sdI - 1) * sdBw;
+    sdY := IP(sdPB - sdCnt(sdI) / sdYm * (sdPB - erlPT) + 0.5);
+    IF sdCnt(sdI) > 0 THEN
+      IF sdI * erlSmW - 1 <= erlSmK THEN
+        RECT_P(G1, sdX + 1, sdY, sdX + sdBw - 1, sdPB - 1, erlGRN, erlMGRN);
+      ELSE
+        RECT_P(G1, sdX + 1, sdY, sdX + sdBw - 1, sdPB - 1, erlBLUE, erlSHAD);
+      END;
+    END;
+    sdE := IP(sdPB - sdExp(sdI) / sdYm * (sdPB - erlPT) + 0.5);
+    RECT_P(G1, sdX + IP(sdBw / 2) - 2, sdE - 2, sdX + IP(sdBw / 2) + 2, sdE + 2, erlMAG, erlMAG);
+    IF (sdI - 1) MOD sdM == 0 THEN
+      sdS := erlIStr((sdI - 1) * erlSmW);
+      IF sdI == erlSmNb AND erlSmNb * erlSmW <= erlSmN THEN sdS := sdS + "+"; END;
+      TEXTOUT_P(sdS, G1, sdX + IP(sdBw / 2) - 3 * DIM(sdS), sdPB + 3, 1, erlGRAY, 30);
+    END;
+  END;
+  LINE_P(G1, erlPL, sdPB, erlPR, sdPB, erlBLK);
+  IF erlSmW == 1 THEN
+    sdS := "errors in " + erlIStr(erlSmN) + " tests";
+  ELSE
+    sdS := "errors in " + erlIStr(erlSmN) + " tests (bars of " + erlIStr(erlSmW) + ")";
+  END;
+  TEXTOUT_P(sdS, G1, 110, sdPB + 14, 1, erlGRAY, 200);
+  // the panel: the share with a record this good, the exact chance,
+  // and the badge
+  IF erlSmK == 0 THEN
+    sdS := "0 errors: " + erlComma(erlSm0) + " of " + erlComma(erlSmM) + " = " + erlPctS(erlSm0 / erlSmM);
+    TEXTOUT_P(sdS, G1, 2, 177, 1, erlGRN, 316);
+    TEXTOUT_P("exact chance (1 - p)^" + erlIStr(erlSmN) + " = " + erlPctS(erlTail(erlSmN, erlSmP, 0)), G1, 2, 189, 1, erlMAG, 316);
+  ELSE
+    sdS := "at most " + erlIStr(erlSmK) + " errors: " + erlComma(erlSmOK) + " of " + erlComma(erlSmM) + " = " + erlPctS(erlSmOK / erlSmM);
+    TEXTOUT_P(sdS, G1, 2, 177, 1, erlGRN, 316);
+    TEXTOUT_P("exact chance (BINOMIAL_CDF) = " + erlPctS(erlTail(erlSmN, erlSmP, erlSmK)), G1, 2, 189, 1, erlMAG, 316);
+  END;
+  IF erlSmEng == 1 THEN
+    TEXTOUT_P("engine: MicroPython, " + erlComma(erlSmM) + " in " + erlComma(erlSmMs) + " ms", G1, 2, 201, 1, erlGRN, 316);
+  ELSE
+    TEXTOUT_P("engine: PPL fallback, " + erlComma(erlSmM) + " in " + erlComma(erlSmMs) + " ms", G1, 2, 201, 1, erlORNG, 316);
+  END;
+  BLIT_P(G0, 0, 0, G1);
+  DRAWMENU({"Again", "Rate-", "Rate+", "", "Back", ""});
+END;
+
+// A box while the simulation runs (a G1 takes a moment).
+erlSimBusy()
+BEGIN
+  RECT_P(G1, 40, 90, 280, 140, erlORNG, erlLORN);
+  TEXTOUT_P("Simulating " + erlComma(10000) + " programmes ...", G1, 52, 98, 2, erlORNG, 224);
+  TEXTOUT_P("(MicroPython; if that fails, PPL: 1,000)", G1, 52, 120, 1, erlGRAY, 224);
+  BLIT_P(G0, 0, 0, G1);
+END;
+
+// The simulation page.  Again (or Enter) runs it again; Rate- and
+// Rate+ (or Left / Right) move the true rate and run again.
+erlSimPage()
+BEGIN
+  LOCAL smK, smGo, smRun, smS;
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  smRun := 1;
+  smGo := 1;
+  WHILE smGo == 1 DO
+    IF smRun == 1 THEN
+      erlSimBusy();
+      erlRunSim();
+      smRun := 0;
+    END;
+    erlSimDraw();
+    smK := erlWaitAny();
+    IF smK == -1 THEN
+      IF erlTY >= 218 THEN
+        smS := MIN(6, IP(erlTX / 53.4) + 1);
+        IF smS == 1 THEN smK := 30; END;
+        IF smS == 2 THEN smK := 7; END;
+        IF smS == 3 THEN smK := 8; END;
+        IF smS == 5 THEN smK := 4; END;
+      END;
+    END;
+    IF smK == 4 THEN smGo := 0; END;
+    IF smK == 30 THEN smRun := 1; END;
+    IF smK == 7 OR smK == 8 THEN
+      IF smK == 7 THEN erlStepRate(-1); ELSE erlStepRate(1); END;
+      smRun := 1;
+    END;
+  END;
+END;
+
+
+// ------------------------------------------------------------
+// THE DATABASE TRAWL
+// ------------------------------------------------------------
+
+// P(at least one chance match) among tpN profiles, RMP = 10^-erlTm:
+// 1 - (1 - RMP)^N = 1 - e^(N ln(1 - RMP)).  ln(1 - RMP) is taken
+// from its series (RMP <= 0.001, four terms are exact to 12 digits),
+// and for a tiny exponent so is 1 - e^-x, so no digits are lost.
+erlTrP(tpN)
+BEGIN
+  LOCAL tpR, tpL, tpX;
+  tpR := 10^(-erlTm);
+  tpL := tpR + tpR * tpR / 2 + tpR^3 / 3 + tpR^4 / 4;   // -ln(1 - RMP)
+  tpX := tpN * tpL;
+  IF tpX < 0.0001 THEN RETURN tpX - tpX * tpX / 2 + tpX^3 / 6; END;
+  RETURN 1 - EXP(-tpX);
+END;
+
+// Pixel column of a database size (log scale, 1 to 100 million).
+erlTrX(txN)
+BEGIN
+  RETURN IP(erlPL + LOG(MAX(1, txN)) / 8 * erlPW + 0.5);
+END;
+
+// The curve and the N x RMP line, once per RMP.
+erlTrCurve()
+BEGIN
+  LOCAL tcI, tcN, tcP;
+  IF erlTKey == erlTm THEN RETURN; END;
+  erlTCY := MAKELIST(0, K, 1, erlPW + 1, 1);
+  erlTMY := MAKELIST(0, K, 1, erlPW + 1, 1);
+  FOR tcI FROM 0 TO erlPW DO
+    tcN := 10^(8 * tcI / erlPW);
+    tcP := erlTrP(tcN);
+    erlTCY(tcI + 1) := IP(erlPB - tcP * (erlPB - erlPT) + 0.5);
+    erlTMY(tcI + 1) := IP(erlPB - MIN(1, tcN * 10^(-erlTm)) * (erlPB - erlPT) + 0.5);
+  END;
+  erlTKey := erlTm;
+END;
+
+// The trawl frame.
+erlTrDraw()
+BEGIN
+  LOCAL twI, twX, twY, twP, twL;
+  erlTrCurve();
+  twP := erlTrP(erlTN);
+  ER_TRAWL := twP;
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  TEXTOUT_P("Database trawl: RMP 1 in " + erlComma(10^erlTm), G1, 2, 1, 1, erlBLK, 316);
+  TEXTOUT_P("(illustrative RMP values, not casework)", G1, 2, 13, 1, erlGRAY, 316);
+  // decades across, quarters up
+  twL := {"1", "10", "100", "1k", "10k", "100k", "1M", "10M", "100M"};
+  FOR twI FROM 0 TO 8 DO
+    twX := erlTrX(10^twI);
+    IF twI > 0 THEN LINE_P(G1, twX, erlPT, twX, erlPB, erlGRID); END;
+    LINE_P(G1, twX, erlPB, twX, erlPB + 3, erlGRAY);
+    TEXTOUT_P(twL(twI + 1), G1, MAX(0, twX - 3 * DIM(twL(twI + 1))), erlPB + 4, 1, erlGRAY, 30);
+  END;
+  FOR twI FROM 1 TO 4 DO
+    twY := IP(erlPB - twI / 4 * (erlPB - erlPT) + 0.5);
+    LINE_P(G1, erlPL, twY, erlPR, twY, erlGRID);
+    TEXTOUT_P(STRING(twI / 4, 2, 2), G1, 0, twY - 5, 1, erlGRAY, 29);
+  END;
+  LINE_P(G1, erlPL, erlPB, erlPR, erlPB, erlBLK);
+  LINE_P(G1, erlPL, erlPT, erlPL, erlPB, erlBLK);
+  // N x RMP (magenta dots) while it is below 1, labelled where it
+  // reaches 1
+  FOR twI FROM 0 TO erlPW STEP 2 DO
+    IF erlTMY(twI + 1) > erlPT THEN PIXON_P(G1, erlPL + twI, erlTMY(twI + 1), erlMAG); END;
+  END;
+  twX := erlTrX(10^erlTm);
+  TEXTOUT_P("N " + erlTms + " RMP", G1, MAX(erlPL + 2, twX - 60), erlPT + 2, 1, erlMAG, 60);
+  // the chance of at least one chance match (blue, two pixels)
+  FOR twI FROM 1 TO erlPW DO
+    LINE_P(G1, erlPL + twI - 1, erlTCY(twI), erlPL + twI, erlTCY(twI + 1), erlBLUE);
+    LINE_P(G1, erlPL + twI - 1, erlTCY(twI) - 1, erlPL + twI, erlTCY(twI + 1) - 1, erlBLUE);
+  END;
+  // the database size under the finger (red)
+  twX := erlTrX(erlTN);
+  twY := IP(erlPB - twP * (erlPB - erlPT) + 0.5);
+  LINE_P(G1, twX, twY, twX, erlPB, erlRED);
+  LINE_P(G1, twX + 1, twY, twX + 1, erlPB, erlRED);
+  FOR twI FROM erlPL + 1 TO twX - 1 STEP 3 DO PIXON_P(G1, twI, twY, erlRED); END;
+  RECT_P(G1, twX - 2, twY - 2, twX + 2, twY + 2, erlRED, erlRED);
+  // the panel
+  TEXTOUT_P("N = " + erlComma(erlTN) + " profiles searched", G1, 2, 181, 1, erlRED, 316);
+  TEXTOUT_P("P(at least one chance match) = " + erlPctS(twP), G1, 2, 193, 1, erlBLUE, 316);
+  TEXTOUT_P("expected chance matches N " + erlTms + " RMP = " + erlFix(erlTN * 10^(-erlTm), 3), G1, 2, 205, 1, erlMAG, 316);
+  BLIT_P(G0, 0, 0, G1);
+  DRAWMENU({"RMP", "N", "Exact", "", "Back", ""});
+END;
+
+// A database size snapped to two significant digits, 1 to 1E8.
+erlTrSnap(tsV)
+BEGIN
+  LOCAL tsE;
+  IF tsV < 10 THEN RETURN MAX(1, ROUND(tsV, 0)); END;
+  tsE := FLOOR(LOG(tsV) + 0.000001) - 1;
+  RETURN MIN(100000000, ROUND(tsV / 10^tsE, 0) * 10^tsE);
+END;
+
+// The next 1-2-5 database size up or down (Left / Right).
+erlTrStep(tsD)
+BEGIN
+  LOCAL tsE, tsM, tsV;
+  tsE := FLOOR(LOG(erlTN) + 0.000001);
+  tsM := erlTN / 10^tsE;
+  IF tsD > 0 THEN
+    tsV := 10^(tsE + 1);
+    IF tsM < 4.999999 THEN tsV := 5 * 10^tsE; END;
+    IF tsM < 1.999999 THEN tsV := 2 * 10^tsE; END;
+  ELSE
+    tsV := 5 * 10^(tsE - 1);
+    IF tsM > 1.000001 THEN tsV := 10^tsE; END;
+    IF tsM > 2.000001 THEN tsV := 2 * 10^tsE; END;
+    IF tsM > 5.000001 THEN tsV := 5 * 10^tsE; END;
+  END;
+  erlTN := MAX(1, MIN(100000000, ROUND(tsV, 0)));
+END;
+
+// The CAS lines for the trawl, cached per RMP.  The exact chance is
+// never evaluated by the CAS: (999999/1000000)^1000000 as an exact
+// fraction would have millions of digits.  It shows the expression;
+// PPL computes the number.
+erlTrCas()
+BEGIN
+  IF erlCaTKey == erlIStr(erlTm) THEN RETURN; END;
+  erlCaT1 := erlCas("1-(1-1/" + erlIStr(10^erlTm) + ")^erlq");
+  erlCaT2 := erlCas("limit(1-(1-erll/erlq)^erlq,erlq," + erlInf + ")");
+  erlCaT3 := erlCas("convert(series(1-exp(-erll),erll=0,3),polynom)");
+  erlCaTKey := "";
+  IF erlCaT1 <> "" AND erlCaT2 <> "" AND erlCaT3 <> "" THEN erlCaTKey := erlIStr(erlTm); END;
+END;
+
+// The "Exact" page of the trawl: the exact expression, its limit and
+// its series, from the CAS, with PPL's numbers at this N.
+erlTrExact()
+BEGIN
+  LOCAL teS, teR, teM, teB, teOK;
+  erlTrCas();
+  teR := 10^(-erlTm);
+  teM := erlTN * teR;
+  teOK := 1;
+  erlPgReset();
+  erlAdd("Each of N profiles is compared with the", erlBLK);
+  erlAdd("crime-scene profile.  If the source is not", erlBLK);
+  erlAdd("in the database, each one matches by chance", erlBLK);
+  erlAdd("with probability RMP = 1/" + erlComma(10^erlTm) + ", so", erlBLK);
+  IF erlCaT1 <> "" THEN teS := erlShow(erlCaT1, "N"); ELSE teS := "1-(1-RMP)^N"; teOK := 0; END;
+  erlAddW("  P(at least one) = ", teS, erlMAG);
+  erlAdd("As N grows with N " + erlTms + " RMP = " + erlMuS + " fixed:", erlBLK);
+  IF erlCaT2 <> "" THEN teS := erlShow(erlCaT2, "N"); ELSE teS := "1-e^(-" + erlMuS + ")"; teOK := 0; END;
+  erlAddW("  P " + erlArr + " ", teS, erlMAG);
+  erlAdd("and for small " + erlMuS + " (series):", erlBLK);
+  IF erlCaT3 <> "" THEN teS := erlShow(erlCaT3, "N"); ELSE teS := erlMuS + "-" + erlMuS + "^2/2+" + erlMuS + "^3/6"; teOK := 0; END;
+  erlAddW("  P = ", teS + " - ...", erlMAG);
+  erlAdd("so P is close to " + erlMuS + " only while " + erlMuS + " is small.", erlBLK);
+  erlAdd("At N = " + erlComma(erlTN) + ": P = " + erlPctS(erlTrP(erlTN)) + " exactly,", erlRED);
+  erlAdd("1-e^(-" + erlMuS + ") = " + erlPctS(1 - EXP(-teM)) + ", " + erlMuS + " = " + erlFix(teM, 3) + ".", erlRED);
+  erlAdd("Half-way (P = 50 %): N = about " + erlComma(ROUND(LN(2) / (teR + teR * teR / 2 + teR^3 / 3), 0)), erlRED);
+  erlAdd("RMP values are illustrative, not casework.", erlGRAY);
+  IF teOK == 1 THEN teB := "exact (CAS)"; ELSE teB := "decimal"; END;
+  erlPgShow("Exact and approximate", "any key or tap = back", teB);
+  erlWaitAny();
+END;
+
+// RMP: one of seven illustrative values.
+erlAskRMP()
+BEGIN
+  LOCAL arI;
+  arI := 0;
+  CHOOSE(arI, "Random match probability", {
+    "1 in 1,000", "1 in 10,000", "1 in 100,000", "1 in 1 million",
+    "1 in 10 million", "1 in 100 million", "1 in 1 billion"});
+  IF arI > 0 THEN erlTm := arI + 2; END;
+END;
+
+// N typed in: 1 to 100 million.
+erlAskTN()
+BEGIN
+  LOCAL anN, anOK;
+  anN := erlTN;
+  anOK := INPUT({anN}, "Database size", {"N:"}, {"Profiles searched, 1 to 100000000"});
+  IF anOK == 1 THEN
+    IF FP(anN) <> 0 OR anN < 1 OR anN > 100000000 THEN
+      MSGBOX("N must be a whole number from 1 to 100,000,000.");
+    ELSE
+      erlTN := anN;
+    END;
+  END;
+END;
+
+// The trawl page: drag along the plot (or Left / Right) for N.
+erlTrawlPage()
+BEGIN
+  LOCAL tgK, tgM, tgM1, tgGo, tgX, tgY;
+  LOCAL tgA, tgG2, tgV;
+  tgGo := 1;
+  REPEAT tgK := GETKEY; UNTIL tgK == -1;
+  erlDrain();
+  WHILE tgGo == 1 DO
+    erlTrDraw();
+    REPEAT
+      tgK := GETKEY;
+      tgM := MOUSE;
+      tgM1 := tgM(1);
+    UNTIL tgK > -1 OR SIZE(tgM1) > 0;
+    tgA := 0;
+    IF SIZE(tgM1) > 0 THEN
+      tgX := tgM1(1); tgY := tgM1(2);
+      IF tgY >= 218 THEN
+        erlDrain();
+        tgA := MIN(6, IP(tgX / 53.4) + 1);
+      ELSE
+        IF tgY >= erlPT AND tgY <= erlPB + 12 THEN
+          tgG2 := 1;
+          WHILE tgG2 == 1 DO
+            tgV := erlTrSnap(10^(8 * MAX(0, MIN(erlPW, tgX - erlPL)) / erlPW));
+            IF tgV <> erlTN THEN erlTN := tgV; erlTrDraw(); END;
+            tgK := GETKEY;
+            tgM := MOUSE;
+            tgM1 := tgM(1);
+            IF tgK > -1 OR SIZE(tgM1) == 0 THEN
+              tgG2 := 0;
+            ELSE
+              tgX := tgM1(1);
+              IF tgX < 0 OR tgX > 319 THEN tgG2 := 0; END;
+            END;
+          END;
+        END;
+        erlDrain();
+      END;
+    ELSE
+      IF tgK == 4 OR tgK == 30 THEN tgGo := 0; END;
+      IF tgK == 7 THEN erlTrStep(-1); END;
+      IF tgK == 8 THEN erlTrStep(1); END;
+    END;
+    IF tgA == 1 THEN erlAskRMP(); END;
+    IF tgA == 2 THEN erlAskTN(); END;
+    IF tgA == 3 THEN erlTrExact(); END;
+    IF tgA == 5 THEN tgGo := 0; END;
+    IF tgA >= 1 THEN
+      REPEAT tgK := GETKEY; UNTIL tgK == -1;
+      erlDrain();
+    END;
+  END;
+END;
+
+
+// ------------------------------------------------------------
+// ENGINES: WHO DID WHAT (a Python or CAS failure is otherwise
+// invisible -- Lessons Learned section 9)
+// ------------------------------------------------------------
+erlEngPage()
+BEGIN
+  LOCAL egC, egCs, egK, egOK, egS, egI;
+  // live CAS check
+  egC := erlCas("1/2+1/3");
+  egCs := "no answer (the CAS call failed)";
+  IF egC == "5/6" THEN egCs := "1/2+1/3 = 5/6, as it should"; END;
+  IF egC <> "" AND egC <> "5/6" THEN egCs := "1/2+1/3 gave " + egC; END;
+  // live Python check: 50 programmes of 10 tests at a rate of 1/2
+  ER_PYN := 10; ER_PYP := 0.5; ER_PYM := 50;
+  ER_PYK := 0; ER_PYW := 1; ER_PYZ := 0;
+  ER_PYO := MAKELIST(-1, K, 1, 44, 1);
+  IFERR
+    PYTHON(erlPySim);
+  THEN
+    egOK := 0;
+  END;
+  egOK := 0;
+  IFERR
+    egK := ER_PYO(44) + 0;
+    IF egK >= 0 THEN egOK := 1; END;
+  THEN
+    egOK := 0;
+  END;
+  IF egOK == 1 THEN
+    egS := 0;
+    FOR egI FROM 1 TO 41 DO egS := egS + ER_PYO(egI); END;
+    IF egS <> 50 THEN egOK := 0; END;
+  END;
+  erlPgReset();
+  erlAdd("PPL draws every screen, reads every touch,", erlBLK);
+  erlAdd("and computes every number that is drawn.", erlBLK);
+  egS := "not called yet";
+  IF erlCasOK == 1 THEN egS := "exact on the last page"; END;
+  IF erlCasOK == 0 THEN egS := "FAILED on the last page"; END;
+  erlAdd("CAS (exact text): " + egS, erlMAG);
+  erlAdd("  live check: " + egCs, erlMAG);
+  erlAdd("  CAS calls this run: " + erlIStr(erlCasN), erlMAG);
+  egS := "not run yet";
+  IF erlSmEng == 1 THEN egS := "MicroPython, " + erlComma(erlSmM) + " in " + erlComma(erlSmMs) + " ms"; END;
+  IF erlSmEng == 2 THEN egS := "PPL fallback, " + erlComma(erlSmM) + " in " + erlComma(erlSmMs) + " ms"; END;
+  erlAdd("Simulation: " + egS, erlGRN);
+  IF egOK == 1 THEN
+    erlAdd("  live check: MicroPython answers", erlGRN);
+  ELSE
+    erlAdd("  live check: no answer; stage ER_PYZ = " + erlIStr(ER_PYZ), erlORNG);
+  END;
+  erlAdd("", erlBLK);
+  erlAdd("The CAS call form is the one CASProbe", erlGRAY);
+  erlAdd("beta 1b found on the emulator (erlCas).", erlGRAY);
+  erlAdd("A Python error prints in the Terminal", erlGRAY);
+  erlAdd("(Shift-View); PPL carries on regardless.", erlGRAY);
+  erlPgShow("Engines: who did what", "any key or tap = back", "");
+  erlWaitAny();
+END;
+
+
+// ------------------------------------------------------------
+// HELP (nine drawn pages; any key or tap turns the page, Esc leaves)
+// ------------------------------------------------------------
+erlHelp()
+BEGIN
+  LOCAL hpK, hpN, hpF, hpB, hpM, hpR;
+  LOCAL hpG, hpY, hpO;
+  hpN := erlBLK; hpB := erlBLUE; hpM := erlMAG; hpR := erlRED;
+  hpG := erlGRAY; hpY := erlGRN; hpO := erlORNG;
+  hpF := "any key or tap = next page, Esc = done";
+
+  erlPage("Zero errors is not a zero rate", {
+    "An examiner takes n = 30 proficiency tests",
+    "and makes 0 errors.  Is the error rate 0?",
+    "No: an examiner whose true rate is 5 % also",
+    "scores 0 of 30 about one time in five",
+    "(0.95^30 = 21.5 %).",
+    "",
+    "The upper 95 % confidence bound is the",
+    "highest rate that still gives a record this",
+    "good at least 5 % of the time:",
+    "1 - 0.05^(1/30) = 9.50 %.  Higher rates are",
+    "ruled out; lower ones are not.",
+    "PCAST (2016) asks for this number: the",
+    "'upper 95 percent one-sided confidence",
+    "bound' (sec. 4.2, p. 51; App. A, pp. 152-3)."},
+    {hpN, hpN, hpM, hpM, hpM, hpN, hpR, hpR, hpR, hpR, hpR, hpB, hpB, hpB}, hpF, "");
+  hpK := erlWaitAny();
+  IF hpK == 4 THEN RETURN; END;
+
+  erlPage("Reading the main plot", {
+    "Blue: the chance of a record this good (k",
+    "or fewer errors in n) at each true rate.",
+    "Orange dashes: " + erlAlS + " = 0.05.  Where the curve",
+    "crosses it (red) is the upper bound.",
+    "Green band: rates the record allows.",
+    "Red band: rates it rules out (one-sided).",
+    "Green dots: the rule-of-three line, 3/n.",
+    "Magenta: the rate under your finger, and",
+    "the chance of the record at that rate.",
+    "",
+    "Drag along the plot (or " + erlLR + ") = the rate.",
+    "Drag the right edge = n (" + erlUD + " = n + or - 1,",
+    "+/- = n up or down a step).",
+    "Log y (page 2): the k = 0 curve is a line."},
+    {hpB, hpB, hpO, hpR, hpY, hpR, hpY, hpM, hpM, hpN, hpN, hpN, hpN, hpG}, hpF, "");
+  hpK := erlWaitAny();
+  IF hpK == 4 THEN RETURN; END;
+
+  erlPage("The rule of three", {
+    "For 0 errors the bound solves (1 - p)^n = " + erlAlS + ",",
+    "so p = 1 - " + erlAlS + "^(1/n).  For large n that is",
+    "close to -ln(" + erlAlS + ")/n = 3.00/n at " + erlAlS + " = 0.05:",
+    "0 errors in n tests gives a bound of 3/n.",
+    "",
+    "It is a LIMIT.  n " + erlTms + " bound = 2.59 at n = 10,",
+    "2.85 at 30, 2.95 at 100, 2.99 at 1000, so",
+    "for small n, 3/n is a little too high.",
+    "",
+    "With errors the 3 grows: 1 error 4.74/n,",
+    "2 errors 6.30/n, 3 errors 7.75/n (the",
+    "Poisson bounds).  For k > 0 there is no",
+    "closed form; PPL bisects on BINOMIAL_CDF.",
+    "Why 3 (soft key) shows the CAS algebra."},
+    {hpN, hpN, hpN, hpY, hpN, hpR, hpR, hpR, hpN, hpB, hpB, hpB, hpN, hpM}, hpF, "");
+  hpK := erlWaitAny();
+  IF hpK == 4 THEN RETURN; END;
+
+  erlPage("Confidence or credibility?", {
+    "Clopper-Pearson (exact): no prior.  Over",
+    "repeated studies the bound is above the",
+    "true rate at least 95 % of the time.",
+    "Bayes: a prior Beta(a, b), plus k errors and",
+    "n - k passes, gives Beta(a+k, b+n-k).",
+    "Uniform prior (1, 1): 0 of 30 gives a mean",
+    "of 1/32 and a 95 % upper bound of 9.21 %.",
+    "Jeffreys prior (1/2, 1/2): mean 1/62,",
+    "bound 6.15 %: the Jeffreys interval, one of",
+    "PCAST's four acceptable methods.  For 0 of",
+    "100 they give: Clopper-Pearson 3.0 %,",
+    "Wilson 2.6 %, Agresti-Coull 3.2 %,",
+    "Jeffreys 1.9 % (App. A, p. 153).",
+    "The prior matters most when n is small."},
+    {hpR, hpR, hpR, hpM, hpM, hpM, hpM, hpM, hpM, hpB, hpB, hpB, hpB, hpN}, hpF, "");
+  hpK := erlWaitAny();
+  IF hpK == 4 THEN RETURN; END;
+
+  erlPage("Simulation: absence of evidence", {
+    "Sim gives 10,000 examiners the SAME true",
+    "rate (the one under your finger), and each",
+    "takes n tests.  The bars count their errors;",
+    "green bars are records at least as good as",
+    "this one (k or fewer errors).",
+    "At 5 %, about 2,150 of the 10,000 finish",
+    "30 tests with no errors at all.  A clean",
+    "record from a small n is weak evidence.",
+    "",
+    "MicroPython runs 10,000.  If it fails, PPL",
+    "runs 1,000 and the badge says so.",
+    "Each run jumps from one error to the next:",
+    "the clean run before an error has a",
+    "geometric length, ln(U)/ln(1 - p)."},
+    {hpN, hpN, hpN, hpY, hpY, hpM, hpM, hpM, hpN, hpG, hpG, hpG, hpG, hpG}, hpF, "");
+  hpK := erlWaitAny();
+  IF hpK == 4 THEN RETURN; END;
+
+  erlPage("Database trawls", {
+    "Search a database of N profiles for a match",
+    "to a crime-scene profile with a random match",
+    "probability RMP.  If the source is not in",
+    "the database, each profile matches by",
+    "chance with probability RMP, so",
+    "P(at least one chance match) = 1-(1-RMP)^N.",
+    "Expected chance matches: N " + erlTms + " RMP.  When",
+    "that is 1, P is 63.2 %, not 100 %.",
+    "As N grows: P " + erlArr + " 1 - e^(-N " + erlTms + " RMP) (CAS).",
+    "",
+    "A cold hit from a big database needs more",
+    "support than the RMP alone.",
+    "",
+    "RMP values offered are illustrative only."},
+    {hpN, hpN, hpN, hpN, hpN, hpB, hpM, hpM, hpM, hpN, hpR, hpR, hpN, hpG}, hpF, "");
+  hpK := erlWaitAny();
+  IF hpK == 4 THEN RETURN; END;
+
+  erlPage("Honest caveats", {
+    "Proficiency tests are not blind casework:",
+    "examiners who know they are being tested",
+    "do better (PCAST sec. 4.6, pp. 57-58).",
+    "The bound assumes independent tests of",
+    "equal difficulty.  Easy or similar items",
+    "make it too optimistic.",
+    "Count only conclusive answers (PCAST p. 51).",
+    "It describes THIS examiner on THESE tests,",
+    "not a whole discipline, and not one case.",
+    "A false-positive rate needs different-",
+    "source tests; a miss rate, same-source ones.",
+    "One-sided 95 % is the upper end of a two-",
+    "sided 90 % interval, not of a 95 % one.",
+    "Change alpha with the n, k soft key."},
+    {hpR, hpR, hpR, hpN, hpN, hpN, hpB, hpM, hpM, hpN, hpN, hpO, hpO, hpG}, hpF, "");
+  hpK := erlWaitAny();
+  IF hpK == 4 THEN RETURN; END;
+
+  erlPage("Keys and touch", {
+    "Page 1: n, k = set n, k and " + erlAlS + "; Rate = type",
+    "a true rate; Why 3 = the algebra (CAS);",
+    "Bayes = the posterior; Sim = simulate.",
+    "Page 2: Trawl = database search; Log y;",
+    "Help; Eng = engines; Quit.  More = pages.",
+    "Drag the plot = rate; drag right edge = n.",
+    erlLR + " = rate, " + erlUD + " = n + or - 1, +/- = n step,",
+    "Ent = menu, Esc = quit.",
+    "Bayes: Unif, Jeff, a, b; drag = rate.",
+    "Sim: Again, Rate-, Rate+.  Trawl: RMP, N,",
+    "Exact; drag or " + erlLR + " = N.",
+    "Home after quitting: ER_UPPER, ER_N, ER_K,",
+    "ER_ALPHA, ER_RATE, ER_PASS, ER_RULE,",
+    "ER_BMEAN, ER_BUPPER, ER_SIM, ER_TRAWL."},
+    {hpN, hpN, hpN, hpN, hpN, hpM, hpM, hpM, hpN, hpN, hpN, hpG, hpG, hpG}, hpF, "");
+  hpK := erlWaitAny();
+  IF hpK == 4 THEN RETURN; END;
+
+  erlPage("Three engines", {
+    "PPL draws every screen, reads every touch",
+    "and computes every number that is drawn.",
+    "The CAS writes exact text: fractions such",
+    "as 1/32, closed forms such as 1-(1/20)^(1/30),",
+    "limits such as ln(20).  Its lines carry the",
+    "badge 'exact (CAS)'.  If the CAS fails, the",
+    "page shows decimals and says 'decimal'.",
+    "MicroPython simulates 10,000 programmes;",
+    "if it fails, PPL simulates 1,000 and the",
+    "badge says 'PPL fallback'.",
+    "",
+    "Eng (page 2) checks the CAS and Python",
+    "live and says which ran last.",
+    "Nothing here has run on a calculator yet."},
+    {hpN, hpN, hpM, hpM, hpM, hpM, hpM, hpY, hpY, hpY, hpN, hpB, hpB, hpR},
+    "any key or tap = back", "");
+  erlWaitAny();
+END;
+
+
+// ------------------------------------------------------------
+// ASKING THE USER
+// ------------------------------------------------------------
+
+// n, k and alpha.  A bad value gets a message saying why, and the
+// form comes back.  alpha may be typed as a percent (5 = 0.05).
+erlAskNK()
+BEGIN
+  LOCAL akN, akK, akA, akOK, akMsg, akGo;
+  LOCAL akL3;
+  akN := erlN; akK := erlK; akA := erlAl;
+  akL3 := erlAlS + ":";
+  akGo := 1;
+  WHILE akGo == 1 DO
+    akOK := INPUT({akN, akK, akA}, "The test record", {"n:", "k:", akL3}, {"Tests taken: a whole number, 1 to 10000", "Errors made: a whole number, 0 to n", "One-sided, 0.001 to 0.5 (PCAST: 0.05)"});
+    IF akOK <> 1 THEN RETURN 0; END;
+    akMsg := "";
+    IF akA >= 1 THEN akA := akA / 100; END;          // typed as a percent
+    IF akA < 0.001 OR akA > 0.5 THEN
+      akMsg := erlAlS + " must be from 0.001 to 0.5 (0.05 for a 95 % bound).";
+    END;
+    IF FP(akK) <> 0 OR akK < 0 OR akK > akN THEN
+      akMsg := "k must be a whole number from 0 to n: you cannot make more errors than tests.";
+    END;
+    IF FP(akN) <> 0 OR akN < 1 OR akN > 10000 THEN
+      akMsg := "n must be a whole number from 1 to 10000.";
+    END;
+    IF akMsg == "" THEN akGo := 0; ELSE MSGBOX(akMsg); END;
+  END;
+  erlN := akN; erlK := akK;
+  erlAm := MAX(1, ROUND(akA * 1000, 0));
+  erlRecalc();
+  erlFit(0);
+  RETURN 1;
+END;
+
+// A true rate typed in (0.05, or 5 for 5 %).  The window widens to
+// show it.
+erlAskRate()
+BEGIN
+  LOCAL arP, arOK;
+  arP := erlP0;
+  arOK := INPUT({arP}, "True error rate", {"rate:"}, {"0 to 1, or a percent (5 = 5 %)"});
+  IF arOK == 1 THEN
+    IF arP > 1 THEN arP := arP / 100; END;
+    IF arP < 0 OR arP > 1 THEN
+      MSGBOX("The rate must be from 0 to 1 (0 % to 100 %).");
+    ELSE
+      erlSetP0(arP);
+      erlFit(1);
+    END;
+  END;
+END;
+
+// The Enter menu.  Returns 1 to keep going, 0 to quit.
+erlMenu()
+BEGIN
+  LOCAL mnI;
+  mnI := 0;
+  CHOOSE(mnI, "ErrorRate Lab", {
+    "Set n, k and " + erlAlS,
+    "Set the true rate",
+    "Where the 3 comes from (CAS)",
+    "Bayesian view",
+    "Simulate 10,000 programmes",
+    "Database trawl",
+    "Linear or log scale",
+    "Help",
+    "Engines: CAS and Python",
+    "Quit"});
+  IF mnI == 1 THEN erlAskNK(); END;
+  IF mnI == 2 THEN erlAskRate(); END;
+  IF mnI == 3 THEN erlCasPage(); END;
+  IF mnI == 4 THEN erlBayesPage(); END;
+  IF mnI == 5 THEN erlSimPage(); END;
+  IF mnI == 6 THEN erlTrawlPage(); END;
+  IF mnI == 7 THEN erlLog := 1 - erlLog; END;
+  IF mnI == 8 THEN erlHelp(); END;
+  IF mnI == 9 THEN erlEngPage(); END;
+  IF mnI == 10 THEN RETURN 0; END;
+  RETURN 1;
+END;
+
+// The opening page.
+erlWelcome()
+BEGIN
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 4, 4, 315, 235, erlORNG, erlLORN);
+  TEXTOUT_P("ErrorRate Lab", G1, 14, 10, 4, erlBLUE, 296);
+  TEXTOUT_P("0 errors is not a 0 % error rate", G1, 14, 44, 2, erlMAG, 296);
+  TEXTOUT_P("An examiner passes 30 proficiency", G1, 14, 66, 2, erlBLK, 296);
+  TEXTOUT_P("tests with no errors.  How good is", G1, 14, 82, 2, erlBLK, 296);
+  TEXTOUT_P("the examiner, really?", G1, 14, 98, 2, erlBLK, 296);
+  TEXTOUT_P("The upper 95 % bound says how high", G1, 14, 120, 2, erlRED, 296);
+  TEXTOUT_P("the error rate could still be.", G1, 14, 136, 2, erlRED, 296);
+  TEXTOUT_P("Drag along the plot = true rate; drag", G1, 14, 160, 1, erlGRAY, 296);
+  TEXTOUT_P("the right edge = n.  More = soft keys page 2.", G1, 14, 173, 1, erlGRAY, 296);
+  TEXTOUT_P("PPL draws, Python simulates, the CAS is exact.", G1, 14, 186, 1, erlGRAY, 296);
+  TEXTOUT_P("Any key or tap to start", G1, 14, 210, 2, erlFOOT, 296);
+  BLIT_P(G0, 0, 0, G1);
+  erlWaitAny();
+END;
+
+
+// ------------------------------------------------------------
+// START-UP AND THE MAIN LOOP
+// ------------------------------------------------------------
+erlInit()
+BEGIN
+  // house colours (Lessons Learned section 13), plus three tints
+  erlBLUE := #003CC8h; erlMAG := #C800C8h; erlRED := #FF0000h;
+  erlGRN := #008C3Ch; erlORNG := #FF4500h; erlGRAY := #5A5A5Ah;
+  erlFOOT := #1E90FFh; erlGRID := #E1E4EBh; erlSHAD := #AACDFFh;
+  erlLGRN := #E8F6EBh; erlLRED := #FFEBEBh; erlLBLU := #EBF2FFh;
+  erlLORN := #FFF0DCh; erlTAIL := #FFC8C8h; erlMGRN := #96D7AAh;
+  erlBLK := #000000h;
+  // glyphs: alpha, mu, times (verified), the house arrows, and the
+  // right arrow (renders: Lessons Learned section 13)
+  erlAlS := CHAR(945); erlMuS := CHAR(956); erlTms := CHAR(215);
+  erlUD := CHAR(8645); erlLR := CHAR(8646); erlArr := CHAR(8594);
+  // geometry (see LAYOUT in the header)
+  erlPL := 30; erlPR := 288; erlPT := 27; erlPB := 165;
+  erlPW := erlPR - erlPL;
+  erlSLX := 292; erlKT := 34; erlKB := 158;
+  erlTX := -1; erlTY := -1;
+  erlSKP := 1;
+  // the defaults are the lesson: 0 errors in 30 tests, alpha 0.05
+  // one-sided (PCAST), and a 5 % examiner under the finger
+  erlN := 30; erlK := 0; erlAm := 50;
+  erlP0 := 0.05;
+  erlLog := 0;
+  // caches empty
+  erlCP := MAKELIST(0, K, 1, erlPW + 1, 1);
+  erlCY := MAKELIST(0, K, 1, erlPW + 1, 1);
+  erlCN := -1; erlCK := -1; erlCM := -1; erlCS := 99; erlCL := -99;
+  erlCasOK := -1; erlCasN := 0; erlCasKey := "";
+  erlCa1 := ""; erlCa2 := ""; erlCa3 := "";
+  erlCaB := ""; erlCaBKey := ""; erlBOK := 0;
+  erlCaT1 := ""; erlCaT2 := ""; erlCaT3 := ""; erlCaTKey := "";
+  erlInf := "inf";                 // CASProbe beta 1b T16: "inf" works (emulator)
+  // Bayes: the uniform prior; simulation: not run; trawl: RMP 1 in
+  // a million, a database of a million profiles
+  erlBa2 := 2; erlBb2 := 2; erlBNm := "uniform";
+  erlSmEng := 0; erlSmM := 0; erlSmMs := 0;
+  erlSmB := MAKELIST(0, K, 1, 41, 1);
+  erlTm := 6; erlTN := 1000000; erlTKey := -1;
+  ER_SIM := 0; ER_TRAWL := 0; ER_BMEAN := 0; ER_BUPPER := 0;
+  erlRecalc();
+  erlFit(0);
+END;
+
+// The live screen: draw, wait for a key or a touch, act.
+erlLoop()
+BEGIN
+  LOCAL lpK, lpM, lpM1, lpGo, lpX, lpY;
+  LOCAL lpA;
+  lpGo := 1;
+  REPEAT lpK := GETKEY; UNTIL lpK == -1;
+  erlDrain();
+  WHILE lpGo == 1 DO
+    erlDrawMain(1);
+    REPEAT
+      lpK := GETKEY;
+      lpM := MOUSE;
+      lpM1 := lpM(1);
+    UNTIL lpK > -1 OR SIZE(lpM1) > 0;
+    // lpA: 1-5 page-1 soft keys, 11-15 page-2 soft keys, 20 menu
+    lpA := 0;
+    IF SIZE(lpM1) > 0 THEN
+      lpX := lpM1(1);
+      lpY := lpM1(2);
+      IF lpY >= 218 THEN
+        // the soft-key strip: six 53-px slots; slot 6 turns the page
+        erlDrain();
+        lpA := MIN(6, IP(lpX / 53.4) + 1);
+        IF lpA == 6 THEN
+          erlSKP := erlSKP + 1;
+          IF erlSKP > 2 THEN erlSKP := 1; END;
+          lpA := 0;
+        ELSE
+          IF erlSKP == 2 THEN lpA := lpA + 10; END;
+        END;
+      ELSE
+        IF lpX >= erlSLX AND lpY >= erlKT - 10 AND lpY <= erlKB + 10 THEN
+          erlDragN(lpY);                      // the n slider
+        ELSE
+          IF lpX < erlSLX AND lpY >= erlPT AND lpY <= erlPB + 12 THEN
+            erlDragRate(lpX);                 // the true rate
+          ELSE
+            erlDrain();
+          END;
+        END;
+      END;
+    ELSE
+      // the keys remain as shortcuts for everything the touch does
+      IF lpK == 4 THEN lpGo := 0; END;                 // Esc   = quit
+      IF lpK == 30 THEN lpA := 20; END;                // Enter = menu
+      IF lpK == 7 THEN erlStepRate(-1); END;           // Left  = rate down
+      IF lpK == 8 THEN erlStepRate(1); END;            // Right = rate up
+      IF lpK == 2 THEN erlStepN(1, 0); END;            // Up    = n + 1
+      IF lpK == 12 THEN erlStepN(-1, 0); END;          // Down  = n - 1
+      IF lpK == 50 THEN erlStepN(1, 1); END;           // +     = n up a step
+      IF lpK == 45 THEN erlStepN(-1, 1); END;          // -     = n down a step
+    END;
+    IF lpA == 1 THEN erlAskNK(); END;
+    IF lpA == 2 THEN erlAskRate(); END;
+    IF lpA == 3 THEN erlCasPage(); END;
+    IF lpA == 4 THEN erlBayesPage(); END;
+    IF lpA == 5 THEN erlSimPage(); END;
+    IF lpA == 11 THEN erlTrawlPage(); END;
+    IF lpA == 12 THEN erlLog := 1 - erlLog; END;
+    IF lpA == 13 THEN erlHelp(); END;
+    IF lpA == 14 THEN erlEngPage(); END;
+    IF lpA == 15 THEN lpGo := 0; END;
+    IF lpA == 20 THEN lpGo := erlMenu(); END;
+    // a dialog's closing tap or key can arrive again on the screen
+    // underneath, so drain both before the next frame
+    IF lpA > 0 THEN
+      REPEAT lpK := GETKEY; UNTIL lpK == -1;
+      erlDrain();
+    END;
+  END;
+END;
+
+EXPORT ErrorRate()
+BEGIN
+  erlInit();
+  erlWelcome();
+  erlLoop();
+  erlExport();
+  // Hand the summary back as the program's value: Home shows it in
+  // the history and no Terminal screen opens.
+  RETURN "ErrorRate: " + erlRecS() + " -> " + erlLvS() + " % upper bound " + erlPctS(erlPU) + " (" + erlRuleS() + " = " + erlPctS(erlRuleM / erlN) + "); see ER_UPPER";
+END;

@@ -1,0 +1,2586 @@
+#pragma mode( separator(.,;) integer(h32) )
+
+// ============================================================
+// CENTRALLIMIT - beta 3a
+// Central Limit Theorem explorer -- an HP Prime APP built on
+// the Statistics 1Var app
+// ============================================================
+// Author: Roger Metcalf, 2026.  Written with AI assistance
+//   (Anthropic Claude); concept, direction and all hardware
+//   testing by the author.
+//
+// Idea after Colin Croft's HP 39G aplet "Central Limits
+//   Theorem" (Applications in Mathematics, 2003, hpcalc.org):
+//   build a population, draw repeated samples, plot the sample
+//   means, and watch sigma / SD(means) approach sqrt(n), with
+//   sample sizes offered only as perfect squares so that the
+//   square root is obvious.  The design is his; this code is a
+//   new implementation for the Prime, not a translation.
+//
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
+//   the file and credit the author if you pass it on.  Not for
+//   sale or commercial redistribution.  Provided as is, with no
+//   warranty: check any result you intend to rely on.
+//
+// Firmware: written for the 2026-09-09 firmware (2.4.2).  This
+//   version has NOT yet been run on hardware.  The CAS has run only
+//   in the PC harness; the call form (beta 3a, routine cltCas below)
+//   is the one CASProbe beta 1b found on the HP Prime Virtual
+//   Calculator (build 2026-09-09, 17 Oct 2026).
+//
+// beta 3a (17 Oct 2026) - what changed: the CAS call form only.
+//   CASProbe beta 1b found that CAS(s) with s a variable hands the
+//   text back UNEVALUATED, so beta 3's cltCas (584-603) returned its
+//   own input; the program's checks (every answer is re-fed to the
+//   CAS as round(evalf(...)*10^E) and compared with its own number)
+//   then refused everything, and both CAS pages always showed "no
+//   closed form shown" and the decimals.  Its IFERR line is now
+//     STRING(EXPR("CAS(" + CHAR(34) + "string(" + s + ")" + CHAR(34) + ")"))
+//   (BRIEF_CAS_v2), the quotes STRING() adds are dropped, and an
+//   answer holding the infinity sign is refused like undef.  No
+//   reader changed: the answers are checked by VALUE, not by their
+//   text (the text tests only look for an unevaluated "sum",
+//   "limit", "series" or "order"), and they are re-fed to the CAS in
+//   the Prime's own printing.  On the calculator the MGF limit reads
+//   e^(t^2/2) (CASProbe T17: e^(cxt^2/2)), not exp(t^2/2); two
+//   comments say so.  Nothing else changed.
+//
+// beta 3 (16 Oct 2026) - what changed: the CAS version, built on
+//   beta 2 with every beta 2 change kept.  Line numbers refer to
+//   beta 2.  The CAS is used behind the fleet's fence: ONE call
+//   routine (cltCas), whole numbers only inside CAS text
+//   (cltIStr), tagged CAS variable names (cltqs, cltqk, cltqt,
+//   cltqn, cltqu), CAS calls only when a page OPENS (never in a
+//   frame, a drag or an animation), every CAS answer CHECKED
+//   against the program's own decimal before it is shown, and a
+//   decimal fallback with a "decimal" badge if the CAS fails.
+//   - THE EXACT CURVE (uniform population only).  The mean of n
+//     draws from a flat population has an exact density, a
+//     piecewise polynomial (the Irwin-Hall density, rescaled).  It
+//     is drawn as black dots over the blue normal curve in the
+//     bottom panel, worked out ONCE per n into a cache of the 301
+//     pixel columns (cltExCache) and only read by every frame.
+//     The program's own sum (cltIH) draws it, kept stable by the
+//     curve's symmetry; it is accurate to 0.02 px up to n = 49
+//     and is not drawn above that (the
+//     alternating sum then loses its digits -- and the exact and
+//     normal curves are within 0.2 px anyway).  Legend: "exact &
+//     N(mu, sigma/sqrt n)".  The flat population used has the
+//     population's own mu and sigma, so the two curves differ
+//     only in SHAPE.  Other shapes: no exact curve (Help says so).
+//   - THE EXACT-CURVE PAGE (new menu item and View entry): the
+//     CAS writes the polynomial pieces with whole-number
+//     coefficients and the peak height as an exact fraction
+//     (n = 9: 259723/573440), beside the normal curve's peak and
+//     the program's 12-digit sum (how many digits agree).
+//   - WHY THE BELL? (new menu item and View entry): the MGF of the
+//     standardized sum of n fair +/-1 coin flips is
+//     cosh(t/sqrt n)^n; the CAS takes the limit as n grows,
+//     e^(t^2/2) (beta 3a: as the Prime prints it), the MGF of
+//     N(0, 1), and the series
+//     t^2/2 - t^4/(12 n) + ...; the page plots cosh(t/sqrt n)^n
+//     for n = 1, 4, 16 against e^(t^2/2) (PPL numbers).
+//   - The Curve button (and 0 key, menu "Curves on / off") turns
+//     both curves on and off; the menu has 12 items (Leave is C).
+//   - Help has a third page: the exact curve, the MGF page and
+//     the badge.  New: cltIStr, cltCas, cltIVal, cltRepl, cltShow,
+//     cltWrap, cltCasNum, cltScale, cltIH, cltExCache, cltPgAdd,
+//     cltPgWrap, cltCasPage, cltExact, cltMgf.
+//
+// beta 2 (16 Oct 2026) - what changed: the touch and graphics
+//   version from the fleet review (section 6), built on beta 1b
+//   with every beta 1b fix kept.  Line numbers refer to beta 1b.
+//   - ONE SAMPLE, WATCHED: the "1 sample" button (or Up, or a tap
+//     on the lower-left corner of the top panel) lights up the n
+//     members of one sample as red dots on the population's axis,
+//     marks their mean with a red bar, then drops that mean into
+//     the pile below over three frames; its bar grows by one.  The
+//     first one of a session is captioned.  Any key or tap skips
+//     the animation.  New: cltOneSample, cltPause.
+//   - "+1" (or Down) adds one more sample mean to the pile at once.
+//   - DRAG along the top panel to choose n: the finger's x picks
+//     sqrt n = 1 ... 10 (a ruler of n values appears), and the
+//     predicted curve N(mu, sigma/sqrt n) redraws for that n with
+//     NO new data -- the old means turn grey.  Lifting the finger
+//     draws the samples.  A tap that does not move still draws a
+//     fresh set (842).  Left / Right step sqrt n by one.  New:
+//     cltTopPress, cltKAt.
+//   - A row of six drawn buttons, y 220-239: 1 sample, +1, n-, n+,
+//     Curve, Menu, read from any tap at y >= 218 in 53.4-px slots.
+//     (DRAWMENU inside an app program is untested, so it is not
+//     used.)  The two footer lines (506-507) are gone; "Esc = quit"
+//     is in the title row; every button has a hardware key.  No
+//     "More" page (the house convention for over six actions): six
+//     actions fit, and the Menu button's list holds the rest, so
+//     every action is reachable without the keyboard.
+//   - BAR NUMBERS: tap a bar in the bottom panel, or HOLD a bar in
+//     the top panel for 0.6 s (a plain tap there still resamples),
+//     and a box on the screen gives its interval, count and share.
+//     Hit boxes are recorded while the bars are drawn.
+//   - The SQUARE-ROOT LAW page (new menu item and View entry): the
+//     SD of the means for every n tried with this population, as
+//     squares over the curve sigma/sqrt n, with a table.
+//   - The means bars are coloured by distance from mu in standard
+//     errors: green within 1, orange within 2, red beyond, and the
+//     readout gives the shares of the means within 1 and 2 SE.
+//   - The population panel carries the shape's own density as a
+//     black line (the pmf for the geometric), worked out once per
+//     population and cached per pixel column (cltDenCache).
+//   - The dashboard redraws after EVERY sample for the first 20,
+//     then every reps/40 as before (553).
+//   - n starts at 1 on a fresh start and with each new population
+//     (106); + and - step n through 1, 4, 16, 64, 100 (847-848);
+//     the SD readout names the standard error (495).
+//   - The predicted curve reads a table of the normal density built
+//     once (cltPhi), not NORMALD per pixel column (445); MAX and MIN
+//     of a list are taken in a loop (cltLMax, cltLMin; 277-278, 407,
+//     424, 714, 720); integer labels use STRING(n, 2, 0).
+//   - cltDrain and cltWaitAny moved up to the helpers (738-759) so
+//     the animation can use them; cltWaitAny now returns the key
+//     (-1 for a tap) and drains keys at the end, as ChiTable's does.
+//   - Help is two pages: reading the dashboard, then every button,
+//     tap, drag and key (782-802).
+// beta 1b (16 Oct 2026) - what changed: fixes from the fleet review
+//   of 16 Oct; no change to the sampling or to the app plumbing (H1,
+//   H2, CHECK, STARTVIEW).  Line numbers refer to beta 1a.
+//   - cltNice's parameter x and local f are now cltX and cltFr
+//     (119, 121): bare x is the CAS variable.  (cltF is already the
+//     number formatter at 146, hence cltFr.)
+//   - The dashboard footer names every control, on two lines:
+//     "+/- = n, tap top = redraw, tap bottom = curve" and "Ent =
+//     menu, Esc = quit" (476).  To make room the bottom panel ends
+//     at y 166 instead of 168 (cB2, 109) and the readouts move from
+//     y 184 / 196 / 208 to 182 / 194 / 206, 12 px apart.
+//   - The "no samples yet" hint says that + also raises n (431).
+//   - When the 60,000-pick cap trims a run, the means panel says
+//     "600 of 2000 samples (quick)" instead of "600 sample means"
+//     (500, 429).
+//   - Help: the n menu's item 10 (n = 100) shows as (A), and a big
+//     n draws fewer samples.
+//   - MAKELIST keeps Home's K as its counter (222, 276, 322, 502),
+//     pending GfxProbe T19.
+// beta 1a (10 Oct 2026): every "wait for the finger to lift" loop
+//   now goes through cltDrain(), which gives up after one second,
+//   so a phantom touch cannot freeze the app.  No other change.
+// ============================================================
+//
+// THIS IS AN APP, NOT AN ORDINARY PROGRAM.  To install it:
+//   1. Press Apps.  Highlight Statistics 1Var (do not open it),
+//      tap Save, name the copy  CentralLimit , and tap OK twice.
+//   2. Open CentralLimit's own program.  On the calculator it is
+//      the FIRST entry in the Program Catalog while the app is
+//      active; in the Connectivity Kit it sits with the app in
+//      the Application Library.
+//   3. Replace whatever is there with this whole file, then Check.
+//   4. Start the app from the Application Library.
+//
+// WHY AN APP?  A standalone program can fill the data columns D1
+//   and D2, but it cannot set the Statistics 1Var plot settings
+//   (H1, Hwidth, CHECK ...).  Code that lives INSIDE a copy of
+//   the Statistics 1Var app can.  That is how HP's own
+//   DiceSimulation and Sicherman examples work, and it is how
+//   the Plot key here shows a correctly scaled histogram.
+//
+// WHAT IT DOES
+//   D1 holds the POPULATION (the whole group we sample from).
+//   D2 holds the SAMPLE MEANS (one mean per sample drawn).
+//   The CLT dashboard draws both histograms on the SAME x-axis,
+//   so you can see the means bunch up around the population
+//   mean mu, with spread close to sigma / sqrt(n), and with a
+//   bell shape even when the population is not a bell at all.
+//
+// THE VIEWS MENU (press the View key while the app is active)
+//   CLT dashboard ......... the colour picture; live controls
+//   Choose population ..... pick a shape and its size
+//   Draw samples .......... choose n, then draw the samples
+//   Plot population ....... the app's own histogram of D1
+//   Plot sample means ..... the app's own histogram of D2
+//   Square-root law ....... SD of the means against n (beta 2)
+//   Exact curve (uniform) . the CAS's exact polynomial (beta 3)
+//   Why the bell? (MGF) ... coin flips and e^(t^2/2) (beta 3)
+//   Help .................. three pages of explanation
+//   The Plot key shows the app's own histogram too, and the Num
+//   key shows the numbers themselves in columns D1 and D2.
+//
+// DASHBOARD CONTROLS (beta 2: drawn buttons along the bottom;
+// the hardware key for each is in brackets)
+//   1 sample  (Up)      watch ONE sample: its members, their
+//                       mean, and the mean falling into the pile
+//   +1        (Down)    one more mean, added at once
+//   n- / n+   (- / +)   n = 1, 4, 16, 64, 100, and draw samples
+//   Curve     (0)       curves on / off (the normal curve, and
+//                       for a uniform population the exact one)
+//   Menu      (Enter)   settings, the square-root law, the exact
+//                       curve, why the bell, Help
+//   tap top panel       draw a fresh set of samples
+//   drag on top panel   choose n: the curve moves first, and
+//                       lifting the finger draws the samples
+//   Left / Right        sqrt n down / up by one, and draw samples
+//   hold a top bar,     a box with that bar's interval, count
+//   tap a bottom bar    and share
+//   tap the top panel's lower-left corner: same as 1 sample
+//   Esc                 leave the dashboard
+// ============================================================
+
+
+// ------------------------------------------------------------
+// SETTINGS SHARED BY EVERY ROUTINE IN THIS APP
+// LOCAL outside any function = private to this program, but
+// visible to all of its functions.  (EXPORT would make them
+// global; nothing here needs to be.)
+// ------------------------------------------------------------
+LOCAL cltPop := 0, cltA := 0, cltB := 10, cltNpop := 500;
+//  cltPop  population shape: 0 none yet, 1 uniform, 2 normal,
+//          3 exponential, 4 geometric, 5 bimodal, 6 data in D1
+//  cltA, cltB  the shape's two parameters (meaning depends on shape)
+//  cltNpop     population size N
+LOCAL cltK := 1, cltReps := 200, cltOver := 1, cltPlot := 1;
+//  cltK    square root of the sample size, so n = cltK*cltK.
+//          (beta 2: it starts at 1.  With n = 1 every "mean" is a
+//          single member, so the pile of means IS the population.)
+//  cltReps how many samples to draw
+//  cltOver normal curve on (1) or off (0)
+//  cltPlot which built-in histogram the Plot key shows: 1 D1, 2 D2
+LOCAL cltMu := 0, cltSg := 1, cltMin := 0, cltMax := 1;
+//  population mean, standard deviation (divide by N), min, max
+LOCAL cltPLo := 0, cltPW := 1, cltPNb := 10, cltPCnt := {};
+//  population histogram: left edge, bar width, number of bars, counts
+LOCAL cltMLo := 0, cltMW := 1, cltMNb := 10, cltMCnt := {};
+//  sample-means histogram: left edge, bar width, number of bars, counts
+LOCAL cltMade := 0, cltSum := 0, cltSq := 0, cltMM := 0, cltMS := 0;
+LOCAL cltWant := 200;
+//  samples drawn so far, running sum and sum of squares of the
+//  means, and the mean (cltMM) and SD (cltMS) of the means.
+//  cltWant is how many samples the user asked for; cltReps is how
+//  many are actually drawn (fewer when n is large, to keep it quick)
+
+// Screen layout.  The touch code and the drawing code both use
+// these numbers, so a tap always lands where the picture is.
+LOCAL cLft := 10, cWid := 300;          // plot area: x = 10 .. 310
+LOCAL cT1 := 16, cB1 := 88;             // top panel (population)
+LOCAL cT2 := 96, cB2 := 166;            // bottom panel (sample means)
+//  (cB2 166, not 168: the readouts below it moved up 2 px in beta
+//  1b; in beta 2 the buttons sit at y 220-239, under the readouts
+//  at 182 / 194 / 206)
+
+// ---- beta 2: the showcase, the drag, the bar numbers, the law ----
+LOCAL cltPvK := 0, cltAnSt := 0, cltAnY := 0, cltOne := 0;
+//  cltPvK  the sqrt n a finger is previewing on the top panel (0 = none)
+//  cltAnSt one-sample animation: 0 off, 1 members lit, 2 plus their
+//          mean, 3 the mean falling (at height cltAnY)
+//  cltOne  after a single sample: 1 keep its members and mean on show,
+//          2 mark only where its mean landed (the +1 button), 0 nothing
+LOCAL cltSmV := {}, cltSmJ := {}, cltSmN := 0, cltSmM := 0, cltSmB := 1;
+//  the last single sample: its members' values, their jitter (px),
+//  how many, their mean, and the bar of the pile that mean went into
+LOCAL cltFirst1 := 1, cltCapOn := 0, cltTip := 0, cltTipB := 0, cltTipX := 0;
+//  cltFirst1 1 until the first single sample has been shown (it gets
+//            the caption, cltCapOn = 1, on the frame after it lands)
+//  cltTip    the bar-numbers box: 0 none, 1 a population bar, 2 a
+//            means bar; cltTipB which bar; cltTipX where the tap was
+LOCAL cltHX1 := {}, cltHY1 := {}, cltHX2 := {}, cltHY2 := {};
+LOCAL cltHP := {}, cltHB := {}, cltHN := 0;
+//  hit boxes, recorded while the bars are drawn: x1 y1 x2 y2, the
+//  panel (1 top, 2 bottom) and the bar; cltHN boxes in use (max 100)
+LOCAL cltPhi := {}, cltDenPY := {}, cltPTop := 1, cltDenOn := 0;
+//  cltPhi   the standard normal density at z = 0, 0.02, ... 4.5
+//           (226 values, worked out once, read by every curve)
+//  cltDenPY the population's own density as a pixel row for each of
+//           the 301 columns, worked out once per population
+//  cltPTop  the top panel's count scale (bars and density share it)
+//  cltDenOn 0 no density line (your own data), 1 a curve, 2 a pmf
+LOCAL cltLawSD := {}, cltLawM := {}, cltIn1 := 0, cltIn2 := 0;
+//  the square-root law: the SD of the means for each sqrt n = 1..10
+//  tried with this population, and how many means it is based on
+//  (0 = not tried).  cltIn1, cltIn2: how many of the current means
+//  lie within 1 and 2 standard errors of mu
+LOCAL cltTX := -1, cltTY := -1;
+//  where the last tap that cltWaitAny saw landed (-1 = a key)
+
+// ---- beta 3: the CAS, the exact curve and the MGF page ----
+LOCAL cltCasOK := 0, cltExN := 0, cltExD := {}, cltExC0 := 0, cltExC1 := -1;
+//  cltCasOK  the badge: 1 = the page on show has CAS answers (each
+//            one checked against the program's own decimal),
+//            0 = it fell back to decimals ("decimal")
+//  cltExN    the n whose exact curve is in the cache (0 = none);
+//            cltExD the exact density of the MEAN at each of the
+//            301 pixel columns, nonzero from cltExC0 to cltExC1
+LOCAL cltExPgN := 0, cltExPgL := {}, cltExPgC := {}, cltExPgOK := 0;
+//  the exact-curve page, built once per n (it calls the CAS): its
+//  lines, their colours and its badge, kept until n changes
+LOCAL cltMgOn := 0, cltMgL := {}, cltMgC := {}, cltMgOK := 0;
+//  the MGF page's text lines, built once (they never change)
+LOCAL cltPgL := {}, cltPgC := {};
+//  the lines (and colours) of the page being built (cltPgAdd)
+
+
+// ------------------------------------------------------------
+// SMALL HELPERS
+// ------------------------------------------------------------
+
+// "Nice" numbers for axis ticks and bar widths: 1, 2 or 5 times
+// a power of ten (Heckbert's method).  roundf = 1 rounds to the
+// nearest nice number; roundf = 0 rounds UP to one.  (cltX, not x:
+// bare x is the CAS variable; cltFr is the leading fraction.)
+cltNice(cltX, roundf)
+BEGIN
+  LOCAL expv, cltFr, nf;
+  IF cltX <= 0 THEN RETURN 1; END;
+  expv := FLOOR(LOG(cltX));
+  cltFr := cltX / 10^expv;
+  IF roundf THEN
+    CASE
+      IF cltFr < 1.5 THEN nf := 1; END;
+      IF cltFr < 3 THEN nf := 2; END;
+      IF cltFr < 7 THEN nf := 5; END;
+      DEFAULT nf := 10;
+    END;
+  ELSE
+    CASE
+      IF cltFr <= 1 THEN nf := 1; END;
+      IF cltFr <= 2 THEN nf := 2; END;
+      IF cltFr <= 5 THEN nf := 5; END;
+      DEFAULT nf := 10;
+    END;
+  END;
+  RETURN nf * 10^expv;
+END;
+
+// A number as text with a FIXED number of decimals.  STRING mode
+// 2 keeps trailing zeros (0.50 stays 0.50); mode 1 would drop
+// them and ignore the digits argument.
+cltF(fv, fd)
+BEGIN
+  RETURN STRING(fv, 2, fd);
+END;
+
+// How many decimals suit numbers whose typical size is dfS:
+// two significant figures past the leading digit, 0 to 4 places.
+cltDecFor(dfS)
+BEGIN
+  IF dfS <= 0 THEN RETURN 2; END;
+  RETURN MIN(4, MAX(0, 2 - FLOOR(LOG(dfS))));
+END;
+
+// The name of each population shape, for labels.
+cltName(nmT)
+BEGIN
+  IF nmT == 1 THEN RETURN "Uniform"; END;
+  IF nmT == 2 THEN RETURN "Normal"; END;
+  IF nmT == 3 THEN RETURN "Exponential"; END;
+  IF nmT == 4 THEN RETURN "Geometric"; END;
+  IF nmT == 5 THEN RETURN "Bimodal"; END;
+  IF nmT == 6 THEN RETURN "Data in D1"; END;
+  RETURN "No population";
+END;
+
+// One standard normal random number, by Marsaglia's polar method:
+// pick a random point in the square, keep it only if it falls
+// inside the unit circle, then transform.  No sine or cosine, so
+// the angle mode (degrees or radians) cannot affect it.
+cltNorm()
+BEGIN
+  LOCAL nv1, nv2, ns;
+  REPEAT
+    nv1 := 2*RANDOM - 1;
+    nv2 := 2*RANDOM - 1;
+    ns := nv1*nv1 + nv2*nv2;
+  UNTIL ns > 0 AND ns < 1;
+  RETURN nv1 * (-2*LN(ns)/ns)^0.5;
+END;
+
+// One random member of the chosen population shape.
+// RANDOM gives a number in [0, 1); every shape is built from it.
+cltDraw1()
+BEGIN
+  LOCAL dwU;
+  // Uniform: equally likely anywhere between cltA and cltB
+  IF cltPop == 1 THEN RETURN cltA + (cltB - cltA)*RANDOM; END;
+  // Normal: mean cltA, standard deviation cltB
+  IF cltPop == 2 THEN RETURN cltA + cltB*cltNorm(); END;
+  // Exponential with mean cltA (skewed right: many small values,
+  // a long tail of large ones).  1 - RANDOM is in (0, 1], so LN
+  // never sees zero.
+  IF cltPop == 3 THEN RETURN -cltA*LN(1 - RANDOM); END;
+  // Geometric: the number of tries until the first success, when
+  // each try succeeds with probability cltA.  Whole numbers 1, 2,
+  // 3 ... and very skewed.  Inverting the CDF 1 - (1 - p)^k gives
+  // k = ceiling( LN(U) / LN(1 - p) ).
+  IF cltPop == 4 THEN
+    dwU := 1 - RANDOM;
+    RETURN MAX(1, CEILING(LN(dwU)/LN(1 - cltA)));
+  END;
+  // Bimodal: two equal humps (each a normal with SD 1), centred on
+  // cltA and cltB; a coin flip decides which hump each member is in.
+  IF cltPop == 5 THEN
+    IF RANDOM < 0.5 THEN RETURN cltA + cltNorm(); END;
+    RETURN cltB + cltNorm();
+  END;
+  RETURN 0;
+END;
+
+// Count how many values of a list fall in each histogram bar.
+// Bar i covers [lo + (i-1)w, lo + iw).  Anything beyond either
+// end is counted in the end bar, so no value is ever lost.
+cltCount(ctL, ctLo, ctW, ctNb)
+BEGIN
+  LOCAL ctC, ctI, ctB;
+  ctC := MAKELIST(0, K, 1, ctNb, 1);
+  FOR ctI FROM 1 TO SIZE(ctL) DO
+    ctB := FLOOR((ctL(ctI) - ctLo)/ctW) + 1;
+    ctB := MAX(1, MIN(ctNb, ctB));
+    ctC(ctB) := ctC(ctB) + 1;
+  END;
+  RETURN ctC;
+END;
+
+// beta 2: the largest and the smallest value in a list, by a plain
+// loop.  (MAX and MIN given a whole list are not on the confirmed
+// list yet; these replace MAX(D1), MIN(D1), MAX(cltPCnt) ... )
+cltLMax(lxL)
+BEGIN
+  LOCAL lxI, lxM;
+  IF SIZE(lxL) < 1 THEN RETURN 0; END;
+  lxM := lxL(1);
+  FOR lxI FROM 2 TO SIZE(lxL) DO
+    IF lxL(lxI) > lxM THEN lxM := lxL(lxI); END;
+  END;
+  RETURN lxM;
+END;
+
+cltLMin(lnL)
+BEGIN
+  LOCAL lnI, lnM;
+  IF SIZE(lnL) < 1 THEN RETURN 0; END;
+  lnM := lnL(1);
+  FOR lnI FROM 2 TO SIZE(lnL) DO
+    IF lnL(lnI) < lnM THEN lnM := lnL(lnI); END;
+  END;
+  RETURN lnM;
+END;
+
+// beta 2: the + key and the n+ button step n through 1, 4, 16,
+// 64, 100 (sqrt n 1, 2, 4, 8, 10): each step halves the standard
+// error, as the help suggests trying.  - and n- step back down.
+// From an n set by the drag or the menu (say 25) they go to the
+// next one of these up or down.
+cltKUp(kuK)
+BEGIN
+  IF kuK < 2 THEN RETURN 2; END;
+  IF kuK < 4 THEN RETURN 4; END;
+  IF kuK < 8 THEN RETURN 8; END;
+  RETURN 10;
+END;
+
+cltKDn(kdK)
+BEGIN
+  IF kdK > 8 THEN RETURN 8; END;
+  IF kdK > 4 THEN RETURN 4; END;
+  IF kdK > 2 THEN RETURN 2; END;
+  RETURN 1;
+END;
+
+// beta 2: the square-root law's record, one slot per sqrt n.
+cltLawClear()
+BEGIN
+  cltLawSD := MAKELIST(0, K, 1, 10, 1);
+  cltLawM := MAKELIST(0, K, 1, 10, 1);
+END;
+
+// Make sure the record exists (the lists start empty).
+cltLawInit()
+BEGIN
+  IF SIZE(cltLawSD) <> 10 OR SIZE(cltLawM) <> 10 THEN cltLawClear(); END;
+END;
+
+// beta 2: a new population starts the story again: n = 1 first
+// (the means ARE the population), no square-root record yet (it
+// belongs to the old sigma), nothing left on show.
+cltNewPop()
+BEGIN
+  cltK := 1;
+  cltLawClear();
+  cltOne := 0; cltTip := 0; cltCapOn := 0; cltPvK := 0; cltAnSt := 0;
+END;
+
+// Wait for the finger to lift -- but never for more than a second.
+// MOUSE(1) is -1 while nothing touches the screen.  Without the
+// time limit a stuck or phantom touch would hold the app here for
+// ever, and the only way out would be a reset.
+// (beta 2: moved up from the menus section so the animation can
+// use it; unchanged.)
+cltDrain()
+BEGIN
+  LOCAL drT;
+  drT := TICKS;                                  // milliseconds
+  REPEAT UNTIL MOUSE(1) == -1 OR TICKS - drT > 1000;
+END;
+
+// Wait for any key or any tap.  Drain first (a key or finger left
+// over from a menu would otherwise skip this screen), then wait,
+// then let go.  Returns the key code, or -1 for a tap, whose x and
+// y are left in cltTX, cltTY.  (beta 2: the house kit's shape, with
+// the return value and the closing key drain.)
+cltWaitAny()
+BEGIN
+  LOCAL waK, waM, waM1, waK2;
+  REPEAT waK := GETKEY; UNTIL waK == -1;
+  cltDrain();
+  REPEAT
+    waK := GETKEY;
+    waM := MOUSE;
+    waM1 := waM(1);
+  UNTIL waK > -1 OR SIZE(waM1) > 0;
+  cltTX := -1; cltTY := -1;
+  IF SIZE(waM1) > 0 THEN
+    cltTX := waM1(1); cltTY := waM1(2); waK := -1;
+  END;
+  cltDrain();
+  REPEAT waK2 := GETKEY; UNTIL waK2 == -1;
+  RETURN waK;
+END;
+
+// beta 2: hold an animation frame on screen for paMs milliseconds,
+// watching keys and the screen all the while.  Returns 1 if a key
+// or a tap came (the animation then skips to its end), after
+// letting go of it so it does nothing else; 0 if the time ran out.
+cltPause(paMs)
+BEGIN
+  LOCAL paT, paK, paM, paM1, paHit;
+  paT := TICKS;
+  paHit := 0;
+  REPEAT
+    paK := GETKEY;
+    paM := MOUSE;
+    paM1 := paM(1);
+    IF paK > -1 OR SIZE(paM1) > 0 THEN paHit := 1; END;
+  UNTIL paHit OR TICKS - paT > paMs;
+  IF paHit THEN
+    cltDrain();
+    REPEAT paK := GETKEY; UNTIL paK == -1;
+  END;
+  RETURN paHit;
+END;
+
+
+// ------------------------------------------------------------
+// THE CAS (beta 3)
+// The fleet's CAS kit (BRIEF_CAS, copied exactly, xx -> clt) and
+// the small helpers around it.  The fence:
+//   * cltCas is the ONE place this app calls the CAS;
+//   * CAS text holds whole numbers only, written by cltIStr (never
+//     STRING of a real: Home's number format can add digit marks);
+//   * CAS variables carry the tag: cltqs, cltqk, cltqt, cltqn, cltqu
+//     (a student may own s, k, t or n in the CAS view);
+//   * the CAS is asked only when a page OPENS, and its answers are
+//     kept; no frame, drag or animation ever calls it;
+//   * a CAS answer is shown only after the program's own decimal
+//     agrees with it (cltCasNum), so a CAS slip cannot put a wrong
+//     formula on the screen;
+//   * the numbers the dashboard DRAWS come from the program's own
+//     arithmetic (cltIH), never from the CAS.
+// ------------------------------------------------------------
+
+// A whole number as plain digits: no digit-grouping marks, no decimal
+// point, no exponent.  Home's STRING() follows the Home number format
+// (PyProbe saw grouping marks and a special minus sign), which the
+// CAS cannot read, so CAS text is built only from this routine.
+cltIStr(cltN)
+BEGIN
+  LOCAL dS, dV, dD;
+  dV := ROUND(ABS(cltN), 0);
+  IF dV == 0 THEN RETURN "0"; END;
+  dS := "";
+  WHILE dV > 0 DO
+    dD := dV MOD 10;
+    dS := CHAR(48 + dD) + dS;
+    dV := (dV - dD) / 10;
+  END;
+  IF cltN < 0 THEN dS := "-" + dS; END;
+  RETURN dS;
+END;
+
+// The ONE place this program calls the CAS.  It returns the CAS answer as text,
+// or "" if the CAS failed, gave undef, an error or an infinity.
+// The call form is the one CASProbe beta 1b found on the HP Prime Virtual
+// Calculator (build 2026-09-09, 17 Oct 2026): CAS(s) with s a variable hands
+// the text back UNEVALUATED, so the text is built into a literal CAS("...")
+// that EXPR reads at run time, and the CAS is asked for string(...) of the
+// answer, so a big integer crosses into PPL whole, not as a 12-digit real.
+cltCas(cltS)
+BEGIN
+  LOCAL cR;
+  cR := "";
+  IFERR
+    cR := STRING(EXPR("CAS(" + CHAR(34) + "string(" + cltS + ")" + CHAR(34) + ")"));
+  THEN
+    cR := "";
+  END;
+  // The answer is a PPL string, and STRING() of it adds one pair of quotes
+  // (CASProbe beta 1b T12, emulator): drop that pair.
+  IF DIM(cR) >= 2 THEN
+    IF LEFT(cR, 1) == CHAR(34) AND MID(cR, DIM(cR), 1) == CHAR(34) THEN
+      cR := MID(cR, 2, DIM(cR) - 2);
+    END;
+  END;
+  // undef, an error, or an infinity (CHAR(8734) is the infinity sign; it
+  // also catches the Prime's plus-minus infinity, 1/0): no usable answer
+  IF INSTRING(cR, "undef") > 0 OR INSTRING(cR, "rror") > 0 OR INSTRING(cR, CHAR(8734)) > 0 THEN cR := ""; END;
+  RETURN cR;
+END;
+
+// The CAS answers some questions with a whole number (round(...)):
+// read it back digit by digit, so no Home number format, decimal
+// separator or EXPR is involved.  Returns {value, 1}, or {0, 0} if
+// the text holds no number.  A leading minus (either glyph) is
+// read; the first non-digit after the digits ends the number.
+cltIVal(ivS)
+BEGIN
+  LOCAL ivI, ivC, ivD, ivV, ivSg, ivN;
+  LOCAL ivGo;
+  ivV := 0; ivSg := 1; ivN := 0; ivI := 1; ivGo := 1;
+  WHILE ivGo AND ivI <= DIM(ivS) DO
+    ivC := MID(ivS, ivI, 1);
+    ivD := INSTRING("0123456789", ivC);     // 1 for "0" ... 10 for "9"
+    IF ivD > 0 THEN
+      ivV := ivV*10 + ivD - 1;
+      ivN := ivN + 1;
+    ELSE
+      IF ivN == 0 AND (ivC == "-" OR ivC == CHAR(8722)) THEN
+        ivSg := -1;
+      ELSE
+        IF ivN > 0 OR ivC <> " " THEN ivGo := 0; END;
+      END;
+    END;
+    ivI := ivI + 1;
+  END;
+  IF ivN == 0 THEN RETURN {0, 0}; END;
+  RETURN {ivSg*ivV, 1};
+END;
+
+// Every rpO in the text rpS replaced by rpN.  (LEFT is never asked
+// for 0 characters: what it does then is not verified.)
+cltRepl(rpS, rpO, rpN)
+BEGIN
+  LOCAL rpR, rpT, rpP, rpLn;
+  rpR := ""; rpT := rpS; rpLn := DIM(rpO);
+  rpP := INSTRING(rpT, rpO);
+  WHILE rpP > 0 DO
+    IF rpP > 1 THEN rpR := rpR + LEFT(rpT, rpP - 1); END;
+    rpR := rpR + rpN;
+    IF rpP + rpLn > DIM(rpT) THEN
+      rpT := "";
+    ELSE
+      rpT := MID(rpT, rpP + rpLn, DIM(rpT) - rpP - rpLn + 1);
+    END;
+    rpP := INSTRING(rpT, rpO);
+  END;
+  RETURN rpR + rpT;
+END;
+
+// CAS text made readable: * shown as the times sign (the house rule
+// keeps ^ and /), and the tagged CAS names shown as plain letters.
+cltShow(shS)
+BEGIN
+  LOCAL shT;
+  shT := cltRepl(shS, "*", CHAR(215));
+  shT := cltRepl(shT, "cltqs", "s");
+  shT := cltRepl(shT, "cltqt", "t");
+  shT := cltRepl(shT, "cltqn", "n");
+  shT := cltRepl(shT, "cltqu", "u");
+  RETURN shT;
+END;
+
+// Long text cut into screen lines of at most wrW characters.  A line
+// is broken just before a + or - (or at a space) near its end when
+// there is one, so a polynomial breaks between its terms.
+cltWrap(wrS, wrW)
+BEGIN
+  LOCAL wrL, wrR, wrB, wrI, wrC;
+  wrL := {}; wrR := wrS;
+  WHILE DIM(wrR) > wrW DO
+    wrB := 0;
+    wrI := wrW;
+    WHILE wrB == 0 AND wrI > wrW - 16 DO
+      wrC := MID(wrR, wrI, 1);
+      IF wrC == "+" OR wrC == "-" OR wrC == " " THEN wrB := wrI - 1; END;
+      wrI := wrI - 1;
+    END;
+    IF wrB < 1 THEN wrB := wrW; END;
+    wrL := CONCAT(wrL, {LEFT(wrR, wrB)});
+    wrR := MID(wrR, wrB + 1, DIM(wrR) - wrB);
+  END;
+  RETURN CONCAT(wrL, {wrR});
+END;
+
+// The power of ten that makes scV a whole number of about ten
+// digits (for cltCasNum).  Zero gets 10^9.
+cltScale(scV)
+BEGIN
+  IF ABS(scV) < 1E-300 THEN RETURN 9; END;
+  RETURN 9 - FLOOR(LOG(ABS(scV)));
+END;
+
+// The CAS's own decimal for its answer cnT: it is asked for
+// round(value x 10^cnE), a whole number, which cltIVal reads.
+// Returns {value, 1}, or {0, 0} if the CAS could not do it.  This
+// is how every CAS answer is checked against the program's number
+// before it is shown.
+cltCasNum(cnT, cnE)
+BEGIN
+  LOCAL cnR, cnV;
+  cnR := cltCas("round(evalf(" + cnT + ")*10^(" + cltIStr(cnE) + "))");
+  cnV := cltIVal(cnR);
+  IF cnV(2) == 0 THEN RETURN {0, 0}; END;
+  RETURN {cnV(1)/10^cnE, 1};
+END;
+
+// The density of S, the SUM of n draws from uniform(0, 1) (the
+// Irwin-Hall density), at s, by its closed form
+//   f(s) = (1/(n-1)!) x sum over k = 0 .. floor(s) of
+//          (-1)^k C(n, k) (s - k)^(n-1).
+// ihF is (n-1)!, worked out once by the caller.  The terms alternate
+// in sign and grow fast, so 12-digit arithmetic loses digits; using
+// the curve's SYMMETRY, f(s) = f(n - s), keeps s <= n/2, which
+// keeps the terms small enough: checked in 12-digit decimals
+// (verify_CentralLimit_beta3.py), the error is below 3E-4 of the
+// peak (0.02 px) up to n = 49 and 15 % at n = 64; without the
+// symmetry it is 15 times the peak already at n = 36.  So the exact
+// curve is drawn up to n = 49 only.  C(n, k+1) comes from C(n, k).
+cltIH(ihN, ihS, ihF)
+BEGIN
+  LOCAL ihT, ihC, ihK, ihV, ihSg;
+  IF ihS <= 0 OR ihS >= ihN THEN RETURN 0; END;
+  IF ihN == 1 THEN RETURN 1; END;           // n = 1: flat at 1 on (0, 1)
+  ihV := ihS;
+  IF ihV > ihN/2 THEN ihV := ihN - ihV; END;   // the symmetric twin
+  ihT := 0; ihC := 1; ihSg := 1; ihK := 0;
+  WHILE ihK <= ihV DO
+    ihT := ihT + ihSg*ihC*(ihV - ihK)^(ihN - 1);
+    ihC := ihC*(ihN - ihK)/(ihK + 1);
+    ihSg := -ihSg;
+    ihK := ihK + 1;
+  END;
+  RETURN ihT/ihF;
+END;
+
+
+// ------------------------------------------------------------
+// THE POPULATION
+// ------------------------------------------------------------
+
+// beta 2: the population's own density, drawn over its bars, so
+// that "the population is NOT a bell" is SEEN, not inferred.  It is
+// worked out once per population, one value per pixel column, and
+// kept as pixel rows in cltDenPY; the dashboard only reads the list.
+// Heights are expected COUNTS per bar (N x bar width x density),
+// the same units as the bars, so the two can be compared by eye.
+// The geometric is whole numbers, so it gets its pmf instead: the
+// expected count of each whole bar, drawn flat across the bar.
+// "My own data in D1" has no formula, so nothing is drawn for it.
+cltDenCache()
+BEGIN
+  LOCAL dcI, dcV, dcF, dcMx, dcHt, dcSpan;
+  LOCAL dcB, dcQ, dcLo, dcEx;
+  dcHt := cB1 - cT1 - 13;                  // the tallest bar, as in cltDash
+  dcSpan := cltPNb*cltPW;                  // the width of the shared axis
+  cltPTop := MAX(1, cltLMax(cltPCnt));     // the bars' own scale
+  cltDenOn := 0;
+  cltDenPY := MAKELIST(cB1, K, 1, cWid + 1, 1);
+  IF cltPop < 1 OR cltPop > 5 THEN RETURN 0; END;
+  dcEx := MAKELIST(0, K, 1, cWid + 1, 1);  // expected count, column by column
+  dcQ := 1 - cltA;                         // geometric: the chance a try fails
+  dcMx := 0;
+  FOR dcI FROM 1 TO cWid + 1 DO
+    dcV := cltPLo + (dcI - 1)/cWid*dcSpan; // the x value at this column
+    dcF := 0;
+    IF cltPop == 1 THEN
+      // uniform: flat at 1/(b - a) between a and b, zero outside
+      IF dcV >= cltA AND dcV <= cltB THEN dcF := 1/(cltB - cltA); END;
+    END;
+    // normal: mean a, SD b
+    IF cltPop == 2 THEN dcF := NORMALD(cltA, cltB, dcV); END;
+    IF cltPop == 3 THEN
+      // exponential with mean a: e^(-x/a) / a for x >= 0
+      IF dcV >= 0 THEN dcF := EXP(-dcV/cltA)/cltA; END;
+    END;
+    IF cltPop == 5 THEN
+      // bimodal: half of a normal(a, 1) plus half of a normal(b, 1)
+      dcF := 0.5*NORMALD(cltA, 1, dcV) + 0.5*NORMALD(cltB, 1, dcV);
+    END;
+    IF cltPop == 4 THEN
+      // geometric: P(k) = p (1-p)^(k-1) for k = 1, 2, 3 ...  The bar
+      // this column is in holds the whole numbers dcLo ... dcLo+w-1,
+      // so its expected count is N (q^(dcLo-1) - q^(dcLo+w-1)), with
+      // q = 1 - p.  The last bar also takes everything beyond it.
+      dcB := MAX(1, MIN(cltPNb, FLOOR((dcV - cltPLo)/cltPW) + 1));
+      dcLo := cltPLo + (dcB - 1)*cltPW + 0.5;
+      IF dcB == cltPNb THEN
+        dcEx(dcI) := cltNpop*dcQ^(dcLo - 1);
+      ELSE
+        dcEx(dcI) := cltNpop*(dcQ^(dcLo - 1) - dcQ^(dcLo + cltPW - 1));
+      END;
+    ELSE
+      dcEx(dcI) := cltNpop*cltPW*dcF;      // expected count in a bar here
+    END;
+    IF dcEx(dcI) > dcMx THEN dcMx := dcEx(dcI); END;
+  END;
+  // one scale for the bars and the curve, so the curve never runs
+  // off the top of the panel
+  cltPTop := MAX(cltPTop, dcMx);
+  FOR dcI FROM 1 TO cWid + 1 DO
+    cltDenPY(dcI) := cB1 - IP(dcEx(dcI)/cltPTop*dcHt + 0.5);
+  END;
+  cltDenOn := 1;
+  IF cltPop == 4 THEN cltDenOn := 2; END;  // 2: flat pieces, not joined up
+  RETURN 1;
+END;
+
+// Summarise the population in D1: its mean, its standard
+// deviation, and the histogram layout that every picture shares.
+//
+// sigma here divides by N, not N - 1.  D1 IS the whole population,
+// not a sample from something bigger, and dividing by N is what
+// makes  SD(sample mean) = sigma / sqrt(n)  come out exactly.
+cltPopStats()
+BEGIN
+  LOCAL psN, psJ, psS, psQ, psR;
+  psN := SIZE(D1);
+  cltNpop := psN;
+  // two passes: first the mean, then squared distances from it
+  // (more accurate than summing x^2 when the values are large)
+  psS := 0;
+  FOR psJ FROM 1 TO psN DO psS := psS + D1(psJ); END;
+  cltMu := psS/psN;
+  psQ := 0;
+  FOR psJ FROM 1 TO psN DO psQ := psQ + (D1(psJ) - cltMu)^2; END;
+  cltSg := (psQ/psN)^0.5;
+  cltMin := cltLMin(D1);                // beta 2: a loop, not MIN(D1)
+  cltMax := cltLMax(D1);
+  psR := cltMax - cltMin;
+  IF psR <= 0 THEN psR := 1; END;       // all values equal: give the axis some width
+  IF cltPop == 4 THEN
+    // whole numbers: bars of whole-number width, centred on the values
+    cltPW := MAX(1, cltNice(psR/28, 0));
+    cltPLo := cltMin - 0.5;
+  ELSE
+    // about 28 bars across the population's range
+    cltPW := cltNice(psR/28, 1);
+    cltPLo := FLOOR(cltMin/cltPW)*cltPW;
+  END;
+  cltPNb := FLOOR((cltMax - cltPLo)/cltPW) + 1;
+  cltPCnt := cltCount(D1, cltPLo, cltPW, cltPNb);
+  cltDenCache();                        // beta 2: the shape's own density
+  cltExN := 0;                          // beta 3: the exact curve belongs to the old mu, sigma
+END;
+
+// Build a fresh population of cltNpop members in D1.
+cltMakePop()
+BEGIN
+  LOCAL mpI;
+  D1 := MAKELIST(0, K, 1, cltNpop, 1);
+  FOR mpI FROM 1 TO cltNpop DO
+    D1(mpI) := cltDraw1();
+  END;
+  cltPopStats();
+END;
+
+// If the program's settings were reset (the app was reopened, or
+// this file was edited) but D1 still holds data, adopt that data
+// as the population so the pictures keep working.
+cltRecover()
+BEGIN
+  LOCAL rcN;
+  IF cltPop > 0 THEN RETURN 1; END;
+  IFERR rcN := SIZE(D1); THEN rcN := 0; END;
+  IF rcN < 2 THEN RETURN 0; END;
+  cltPop := 6;
+  cltPopStats();
+  cltMade := 0;
+  cltNewPop();                          // beta 2: n = 1 first, a fresh record
+  RETURN 1;
+END;
+
+
+// ------------------------------------------------------------
+// THE SAMPLE MEANS
+// ------------------------------------------------------------
+
+// Lay out the bars for the sample-means histogram.  Theory says
+// the means spread with SD = sigma/sqrt(n), so the bars are sized
+// to that (about 24 bars across +/- 4 SDs).  They stay inside the
+// population's range: an average can never be smaller than the
+// smallest member or larger than the largest.
+cltMeanBins()
+BEGIN
+  LOCAL mbS, mbLo, mbHi, mbW, mbMin;
+  mbS := cltSg/cltK;
+  IF mbS <= 0 THEN mbS := cltPW; END;
+  mbLo := MAX(cltPLo, cltMu - 4*mbS);
+  mbHi := MIN(cltPLo + cltPNb*cltPW, cltMu + 4*mbS);
+  mbW := cltNice(mbS/3, 1);
+  // never narrower than 2 pixels on the shared axis
+  mbMin := (cltPNb*cltPW)*2/cWid;
+  IF mbW < mbMin THEN mbW := cltNice(mbMin, 0); END;
+  cltMW := mbW;
+  cltMLo := FLOOR(mbLo/mbW)*mbW;
+  cltMNb := MAX(1, FLOOR((mbHi - cltMLo)/mbW) + 1);
+  cltMCnt := MAKELIST(0, K, 1, cltMNb, 1);
+END;
+
+// Mean and standard deviation of the collected sample means, from
+// the list D2.  This SD divides by (count - 1): the means are a
+// SAMPLE from the sampling distribution, not all of it.
+// beta 2: the same pass also counts the means within 1 and 2
+// standard errors (SE = sigma/sqrt n) of mu, for the 68-95 readout.
+cltMeanStats()
+BEGIN
+  LOCAL msI, msS, msQ, msSE, msD;
+  cltIn1 := 0; cltIn2 := 0;
+  IF cltMade < 2 THEN RETURN 0; END;
+  msS := 0;
+  FOR msI FROM 1 TO cltMade DO msS := msS + D2(msI); END;
+  cltMM := msS/cltMade;
+  msSE := cltSg/cltK;
+  msQ := 0;
+  FOR msI FROM 1 TO cltMade DO
+    msQ := msQ + (D2(msI) - cltMM)^2;
+    msD := ABS(D2(msI) - cltMu);
+    IF msD <= msSE THEN cltIn1 := cltIn1 + 1; END;
+    IF msD <= 2*msSE THEN cltIn2 := cltIn2 + 1; END;
+  END;
+  cltMS := (msQ/(cltMade - 1))^0.5;
+  RETURN 1;
+END;
+
+// beta 3: the EXACT density of the mean of ecN draws, at each of the
+// 301 pixel columns, kept in cltExD.  It is worked out once per n (and
+// again after a new population), then every frame only reads it.
+// The flat population used has the SAME mean and SD as yours: a
+// uniform from mu - sqrt(3) sigma to mu + sqrt(3) sigma (a uniform
+// of width w has SD w/sqrt 12).  So the exact curve and the normal
+// curve share their centre and spread, and differ only in SHAPE --
+// which is the lesson.  The mean of n draws is
+//   x-bar = lo + w S / n,  S = the sum of n draws from uniform(0, 1),
+// so its density is (n / w) f_S(n (x-bar - lo) / w).  Columns more
+// than 5 standard errors from mu are left at 0 (the density there is
+// below 1E-5 of the peak: no pixel).
+cltExCache(ecN)
+BEGIN
+  LOCAL ecI, ecX, ecA, ecW, ecF, ecSE;
+  LOCAL ecLo, ecHi, ecSpan, ecK;
+  cltExD := MAKELIST(0, K, 1, cWid + 1, 1);
+  cltExN := ecN; cltExC0 := 0; cltExC1 := -1;
+  IF cltSg <= 0 OR ecN < 1 THEN RETURN 0; END;
+  ecW := 2*3^0.5*cltSg;                  // width of the flat population
+  ecA := cltMu - ecW/2;                  // its lowest value
+  ecSE := cltSg/ecN^0.5;                 // the standard error
+  ecLo := MAX(ecA, cltMu - 5*ecSE);
+  ecHi := MIN(ecA + ecW, cltMu + 5*ecSE);
+  ecSpan := cltPNb*cltPW;                // the shared axis, as in cltDash
+  ecF := 1;
+  FOR ecK FROM 2 TO ecN - 1 DO ecF := ecF*ecK; END;   // (n-1)!
+  FOR ecI FROM 1 TO cWid + 1 DO
+    ecX := cltPLo + (ecI - 1)/cWid*ecSpan;            // x-bar at this column
+    IF ecX >= ecLo AND ecX <= ecHi THEN
+      cltExD(ecI) := ecN/ecW*cltIH(ecN, ecN*(ecX - ecA)/ecW, ecF);
+      IF cltExC0 == 0 THEN cltExC0 := ecI; END;
+      cltExC1 := ecI;
+    END;
+  END;
+  RETURN 1;
+END;
+
+// beta 2: remember the SD of the means for this n, for the
+// square-root law page.  One slot per sqrt n, so at most ten; a
+// later run at the same n replaces the earlier one.
+cltLawPut()
+BEGIN
+  cltLawInit();
+  IF cltMade >= 2 AND cltK >= 1 AND cltK <= 10 THEN
+    cltLawSD(cltK) := cltMS;
+    cltLawM(cltK) := cltMade;
+  END;
+END;
+
+
+// ------------------------------------------------------------
+// THE CLT DASHBOARD PICTURE
+// ------------------------------------------------------------
+
+// x value -> pixel column on the shared axis
+cltPx(pxV)
+BEGIN
+  LOCAL pxR;
+  pxR := cLft + IP((pxV - cltPLo)/(cltPNb*cltPW)*cWid);
+  RETURN MAX(cLft, MIN(cLft + cWid, pxR));
+END;
+
+// beta 2: the sqrt n that a finger at column kaX is choosing when
+// it drags along the top panel: the left edge is 1, the right
+// edge 10, snapped to whole numbers (n = 1, 4, 9 ... 100).
+cltKAt(kaX)
+BEGIN
+  LOCAL kaV;
+  kaV := (kaX - cLft)/cWid*9;
+  kaV := MAX(0, MIN(9, kaV));
+  RETURN IP(kaV + 0.5) + 1;
+END;
+
+// beta 2: the standard normal density at z = 0, 0.02, 0.04 ... 4.5,
+// worked out once.  Every predicted curve reads it: the density of
+// N(mu, SE) at x is phi(z)/SE with z = |x - mu|/SE, so no curve
+// needs NORMALD per pixel column -- not even while a finger drags
+// n and the curve is redrawn for every new n.
+cltPhiInit()
+BEGIN
+  LOCAL piI;
+  IF SIZE(cltPhi) == 226 THEN RETURN 0; END;
+  cltPhi := MAKELIST(0, K, 1, 226, 1);
+  FOR piI FROM 1 TO 226 DO
+    cltPhi(piI) := NORMALD(0, 1, (piI - 1)*0.02);
+  END;
+  RETURN 1;
+END;
+
+// beta 2: the hit-box lists, made once at their full size (100).
+cltHitInit()
+BEGIN
+  IF SIZE(cltHB) == 100 THEN RETURN 0; END;
+  cltHX1 := MAKELIST(0, K, 1, 100, 1);
+  cltHY1 := MAKELIST(0, K, 1, 100, 1);
+  cltHX2 := MAKELIST(0, K, 1, 100, 1);
+  cltHY2 := MAKELIST(0, K, 1, 100, 1);
+  cltHP := MAKELIST(0, K, 1, 100, 1);
+  cltHB := MAKELIST(0, K, 1, 100, 1);
+  cltHN := 0;
+  RETURN 1;
+END;
+
+// beta 2: record one tappable bar while it is drawn, so the touch
+// code tests the very rectangle on the screen.
+cltHitAdd(haX1, haY1, haX2, haY2, haP, haB)
+BEGIN
+  IF cltHN >= 100 THEN RETURN 0; END;
+  cltHN := cltHN + 1;
+  cltHX1(cltHN) := haX1; cltHY1(cltHN) := haY1;
+  cltHX2(cltHN) := haX2; cltHY2(cltHN) := haY2;
+  cltHP(cltHN) := haP; cltHB(cltHN) := haB;
+  RETURN 1;
+END;
+
+// beta 2: which bar of panel htP (1 top, 2 bottom) the point is
+// in, from the boxes recorded by the last frame; 0 if none.
+cltHit(htX, htY, htP)
+BEGIN
+  LOCAL htI;
+  FOR htI FROM 1 TO cltHN DO
+    IF cltHP(htI) == htP AND htX >= cltHX1(htI) AND htX <= cltHX2(htI) AND htY >= cltHY1(htI) AND htY <= cltHY2(htI) THEN
+      RETURN cltHB(htI);
+    END;
+  END;
+  RETURN 0;
+END;
+
+// beta 2: the count that fills the bottom panel's height: the
+// tallest bar of means, or the predicted curve's peak if that is
+// higher (expected count in a bar = means x bar width x density).
+// With no means yet, a finger previewing n still gets a curve; it
+// is then drawn as a plain density, scaled so the n = 100 curve
+// just fits -- so the curve visibly narrows AND rises as n grows.
+cltMScale(msK)
+BEGIN
+  LOCAL msT, msP;
+  cltPhiInit();
+  msT := 1;
+  IF cltMade > 0 THEN msT := MAX(1, cltLMax(cltMCnt)); END;
+  IF cltSg > 0 THEN
+    IF cltMade > 0 THEN
+      IF cltOver OR cltPvK > 0 THEN
+        msP := cltMade*cltMW*cltPhi(1)*msK/cltSg;   // the curve's peak, in counts
+        msT := MAX(msT, msP);
+      END;
+    ELSE
+      msT := cltPhi(1)*10/cltSg;                    // the n = 100 density peak
+    END;
+  END;
+  RETURN msT;
+END;
+
+// beta 2: the six buttons along the bottom, drawn on G1 (DRAWMENU
+// inside an app program is untested).  Six actions fit, so there is
+// no "More" key (the house convention puts one in slot 6 only when a
+// screen needs more than six); everything else is under Menu.  Slot i covers x from
+// 53.4(i-1) to 53.4 i; a tap at y >= 218 is read as
+// MIN(6, IP(x/53.4) + 1), the soft-key geometry ChiTable uses.
+cltButtons()
+BEGIN
+  LOCAL buI, buX0, buX1, buL, buE, buF;
+  LOCAL buTx;
+  FOR buI FROM 1 TO 6 DO
+    buX0 := IP((buI - 1)*53.4) + 1;
+    buX1 := IP(buI*53.4) - 1;
+    CASE
+      IF buI == 1 THEN buL := "1 sample"; buE := #FF0000h; buF := #FFEBEBh; END;
+      IF buI == 2 THEN buL := "+1"; buE := #C800C8h; buF := #FAEBFAh; END;
+      IF buI == 3 THEN buL := "n−"; buE := #008C3Ch; buF := #E8F6EBh; END;
+      IF buI == 4 THEN buL := "n+"; buE := #008C3Ch; buF := #E8F6EBh; END;
+      IF buI == 5 THEN
+        buL := "Curve"; buE := #003CC8h; buF := #FFFFFFh;
+        IF cltOver THEN buF := #EBF2FFh; END;        // tinted while the curve is on
+      END;
+      DEFAULT buL := "Menu"; buE := #FF4500h; buF := #FFF0DCh;
+    END;
+    RECT_P(G1, buX0, 220, buX1, 239, buE, buF);
+    buTx := buX0 + IP((buX1 - buX0 - 6*SIZE(buL))/2);
+    TEXTOUT_P(buL, G1, buTx, 224, 1, buE);
+  END;
+END;
+
+// beta 2: the bar-numbers box -- interval, count and share -- drawn
+// on G1 beside the bar that was tapped (top panel: held), with that
+// bar outlined in black.  Not a MSGBOX: the dashboard stays in view.
+cltTipDraw()
+BEGIN
+  LOCAL tdLo, tdW, tdC, tdTot, tdDec, tdX;
+  LOCAL tdY, tdS1, tdS2, tdS3, tdX0, tdX1;
+  LOCAL tdH, tdCol, tdTop, tdHt, tdBox;
+  tdHt := cB1 - cT1 - 13;
+  IF cltTip == 1 THEN
+    IF cltTipB < 1 OR cltTipB > cltPNb THEN RETURN 0; END;
+    tdLo := cltPLo + (cltTipB - 1)*cltPW; tdW := cltPW;
+    tdC := cltPCnt(cltTipB); tdTot := cltNpop;
+    tdTop := MAX(1, cltPTop); tdY := cB1; tdCol := #003CC8h;
+  ELSE
+    IF cltTipB < 1 OR cltTipB > cltMNb OR cltMade < 1 THEN RETURN 0; END;
+    tdLo := cltMLo + (cltTipB - 1)*cltMW; tdW := cltMW;
+    tdC := cltMCnt(cltTipB); tdTot := cltMade;
+    tdTop := cltMScale(cltK); tdY := cB2; tdCol := #C800C8h;
+  END;
+  // the chosen bar, outlined in black so it stands out
+  tdX0 := cltPx(tdLo);
+  tdX1 := MAX(tdX0, cltPx(tdLo + tdW) - 1);
+  tdH := MAX(1, IP(tdC/tdTop*tdHt + 0.5));
+  LINE_P(G1, tdX0 - 1, tdY - tdH - 1, tdX1 + 1, tdY - tdH - 1, #000000h);
+  LINE_P(G1, tdX0 - 1, tdY - tdH - 1, tdX0 - 1, tdY, #000000h);
+  LINE_P(G1, tdX1 + 1, tdY - tdH - 1, tdX1 + 1, tdY, #000000h);
+  // the bar's interval [lo, lo + w); w is a 1/2/5 x 10^e number, so
+  // this many decimals shows both ends exactly
+  tdDec := MAX(0, -FLOOR(LOG(tdW)));
+  IF cltTip == 1 THEN
+    IF cltPop == 4 THEN
+      // whole numbers: the bar from k - 0.5 holds k ... k + w - 1
+      IF tdW <= 1 THEN
+        tdS1 := "value = " + STRING(tdLo + 0.5, 2, 0);
+      ELSE
+        tdS1 := "values " + STRING(tdLo + 0.5, 2, 0) + " to " + STRING(tdLo + tdW - 0.5, 2, 0);
+      END;
+    ELSE
+      tdS1 := "x from " + STRING(tdLo, 2, tdDec) + " to " + STRING(tdLo + tdW, 2, tdDec);
+    END;
+  ELSE
+    tdS1 := CHAR(57344) + " from " + STRING(tdLo, 2, tdDec) + " to " + STRING(tdLo + tdW, 2, tdDec);
+  END;
+  tdS2 := "count = " + STRING(tdC, 2, 0);
+  tdS3 := "share = " + STRING(100*tdC/tdTot, 2, 1) + "% of " + STRING(tdTot, 2, 0);
+  // the box goes beside the bar, on the side with more room
+  tdX := cltTipX + 12;
+  IF cltTipX > 160 THEN tdX := cltTipX - 162; END;
+  tdX := MAX(4, MIN(166, tdX));
+  tdBox := cT1 + 13;
+  IF cltTip == 2 THEN tdBox := cT2 + 13; END;
+  RECT_P(G1, tdX, tdBox, tdX + 150, tdBox + 40, #FF4500h, #FFF0DCh);
+  TEXTOUT_P(tdS1, G1, tdX + 4, tdBox + 2, 1, tdCol);
+  TEXTOUT_P(tdS2, G1, tdX + 4, tdBox + 14, 1, #000000h);
+  TEXTOUT_P(tdS3, G1, tdX + 4, tdBox + 26, 1, #000000h);
+  RETURN 1;
+END;
+
+// Draw the whole dashboard.  dsLive = 1 while samples are still
+// being drawn (the bottom line then shows progress).
+// Everything is drawn off-screen on G1 and copied to the screen
+// once at the end, so the picture never flickers.
+// beta 2: it also draws whatever the file-level state asks for --
+// the n a finger is previewing (cltPvK), the single sample being
+// watched (cltAnSt, cltOne), the caption, the bar-numbers box --
+// and the button row, and it records the bars' hit boxes.
+cltDash(dsLive)
+BEGIN
+  LOCAL dsI, dsX0, dsX1, dsH, dsC, dsTop;
+  LOCAL dsV, dsY, dsPY, dsPrev, dsSD, dsHi;
+  LOCAL dsStp, dsDec, dsStr, dsDP, dsDM, dsXm;
+  LOCAL dsN, dsHt, dsK, dsZs, dsZ, dsSc;
+  LOCAL dsE, dsF, dsC0, dsC1, dsD, dsXs;
+
+  cltPhiInit();                                   // made once, then only read
+  cltHitInit();
+  cltHN := 0;                                     // this frame records its own boxes
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);              // a clean white page
+  TEXTOUT_P("Central Limit Theorem", G1, 6, 1, 2, #000000h);
+  TEXTOUT_P("Esc = quit", G1, 256, 3, 1, #1E90FFh);
+
+  IF cltPop == 0 THEN
+    TEXTOUT_P("No population yet.", G1, 20, 80, 2, #FF4500h);
+    TEXTOUT_P("Press Enter or tap Menu.", G1, 20, 100, 2, #FF4500h);
+    cltButtons();
+    BLIT_P(G0, 0, 0, G1);
+    RETURN 0;
+  END;
+
+  dsK := cltK;
+  IF cltPvK > 0 THEN dsK := cltPvK; END;          // a finger is previewing this sqrt n
+  dsN := dsK*dsK;                                 // the sample size n
+  dsHi := cltPLo + cltPNb*cltPW;                  // right end of the shared axis
+  dsDP := cltDecFor(cltSg);                       // decimals for population values
+  dsSD := cltSg/dsK;                              // theory: SD of a sample mean (the SE)
+  dsDM := cltDecFor(dsSD);                        // decimals for the (narrower) means
+  dsZs := 0;
+  IF cltSg > 0 THEN dsZs := dsK/cltSg; END;       // 1/SE: turns a distance into SEs
+  dsHt := cB1 - cT1 - 13;                         // tallest bar (room left for a label)
+  TEXTOUT_P("n = " + STRING(dsN, 2, 0), G1, 170, 1, 2, #008C3Ch);
+
+  // ---- top panel: the population (blue) ----
+  RECT_P(G1, cLft-3, cT1-2, cLft+cWid+3, cB1+1, #003CC8h, #EBF2FFh);
+  dsTop := MAX(1, cltPTop);                       // bars and density share this scale
+  FOR dsI FROM 1 TO cltPNb DO
+    dsC := cltPCnt(dsI);
+    IF dsC > 0 THEN
+      dsX0 := cltPx(cltPLo + (dsI-1)*cltPW);
+      dsX1 := MAX(dsX0, cltPx(cltPLo + dsI*cltPW) - 1);   // 1-pixel gap between bars
+      dsH := MAX(1, IP(dsC/dsTop*dsHt + 0.5));
+      RECT_P(G1, dsX0, cB1-dsH, dsX1, cB1, #003CC8h, #AACDFFh);
+      cltHitAdd(dsX0, cT1, dsX1 + 1, cB1 + 1, 1, dsI);   // hold here: this bar's numbers
+    END;
+  END;
+  // the shape the population was drawn from (black), read from the
+  // cache made by cltDenCache: nothing is evaluated here
+  IF cltDenOn > 0 THEN
+    dsPrev := -1;
+    FOR dsI FROM 1 TO cWid + 1 DO
+      dsPY := cltDenPY(dsI);
+      dsX0 := cLft + dsI - 1;
+      IF cltDenOn == 2 THEN
+        LINE_P(G1, dsX0, dsPY - 1, dsX0, dsPY, #000000h);   // a pmf: flat, not joined
+      ELSE
+        IF dsPrev >= 0 THEN LINE_P(G1, dsX0 - 1, dsPrev, dsX0, dsPY, #000000h); END;
+        dsPrev := dsPY;
+      END;
+    END;
+  END;
+  IF cltPvK > 0 THEN
+    // A finger is choosing n: show the ruler it is reading, with
+    // the chosen n in red and a red line where the finger is.
+    FOR dsI FROM 1 TO 10 DO
+      dsX0 := cLft + IP((dsI - 1)*cWid/9 + 0.5);
+      dsStr := STRING(dsI*dsI, 2, 0);
+      dsX1 := MAX(cLft - 3, MIN(316 - 6*SIZE(dsStr), dsX0 - 3*SIZE(dsStr)));
+      IF dsI == dsK THEN
+        TEXTOUT_P(dsStr, G1, dsX1, cT1, 1, #FF0000h);
+        LINE_P(G1, dsX0, cT1 + 12, dsX0, cB1, #FF0000h);
+      ELSE
+        TEXTOUT_P(dsStr, G1, dsX1, cT1, 1, #5A5A5Ah);
+      END;
+    END;
+  ELSE
+    TEXTOUT_P(cltName(cltPop) + ", N = " + STRING(cltNpop, 2, 0), G1, cLft, cT1, 1, #003CC8h);
+    dsStr := "μ = " + cltF(cltMu, dsDP) + "  σ = " + cltF(cltSg, dsDP);
+    dsX0 := cLft + cWid - 6*SIZE(dsStr);
+    TEXTOUT_P(dsStr, G1, dsX0, cT1, 1, #003CC8h);
+  END;
+
+  // ---- a single sample being watched: its members, in red ----
+  IF cltAnSt > 0 OR cltOne == 1 THEN
+    FOR dsI FROM 1 TO cltSmN DO
+      dsX0 := cltPx(cltSmV(dsI));
+      dsY := cB1 - 3 - cltSmJ(dsI);               // jittered up 0-8 px so repeats show
+      RECT_P(G1, dsX0, dsY, dsX0 + 1, dsY + 1, #FF0000h, #FF0000h);
+    END;
+    IF cltAnSt >= 2 OR cltOne == 1 THEN
+      // their mean: a short red bar over them (the bar of x-bar)
+      dsXs := cltPx(cltSmM);
+      LINE_P(G1, dsXs - 7, cB1 - 16, dsXs + 7, cB1 - 16, #FF0000h);
+      LINE_P(G1, dsXs - 7, cB1 - 15, dsXs + 7, cB1 - 15, #FF0000h);
+      TEXTOUT_P(CHAR(57344), G1, dsXs - 3, cB1 - 28, 1, #FF0000h);
+    END;
+  END;
+
+  // ---- bottom panel: the sample means ----
+  RECT_P(G1, cLft-3, cT2-2, cLft+cWid+3, cB2+1, #C800C8h, #FAEBFAh);
+  dsTop := cltMScale(dsK);                        // tallest bar, or the curve's peak
+  IF cltMade > 0 THEN
+    FOR dsI FROM 1 TO cltMNb DO
+      dsC := cltMCnt(dsI);
+      IF dsC > 0 THEN
+        dsX0 := cltPx(cltMLo + (dsI-1)*cltMW);
+        dsX1 := MAX(dsX0, cltPx(cltMLo + dsI*cltMW) - 1);
+        dsH := MAX(1, IP(dsC/dsTop*dsHt + 0.5));
+        IF cltPvK > 0 THEN
+          dsE := #5A5A5Ah; dsF := #DCDCDCh;       // grey: these means are for the OLD n
+        ELSE
+          // Colour by how far the bar's centre is from mu, in standard
+          // errors (SE = sigma/sqrt n): the 68-95 rule for the MEANS,
+          // not for the population.
+          dsD := ABS(cltMLo + (dsI - 0.5)*cltMW - cltMu)*dsZs;
+          dsE := #008C3Ch; dsF := #A0DCB0h;       // within 1 SE: green
+          IF dsD > 1 THEN dsE := #FF4500h; dsF := #FFC08Ch; END;   // 1 to 2 SE: orange
+          IF dsD > 2 THEN dsE := #FF0000h; dsF := #F5A0A0h; END;   // beyond 2 SE: red
+        END;
+        RECT_P(G1, dsX0, cB2-dsH, dsX1, cB2, dsE, dsF);
+        cltHitAdd(dsX0, cT2 + 12, dsX1 + 1, cB2 + 1, 2, dsI);   // tap here: its numbers
+      END;
+    END;
+  END;
+  // The normal curve the CLT predicts, N(mu, sigma/sqrt(n)), one
+  // pixel column at a time so it has no gaps.  Drawn when the curve
+  // is on and there are means -- and ALWAYS while a finger previews
+  // a new n, before any data (theory first).  The density comes from
+  // the table cltPhi: phi(z) / SE with z = |x - mu| / SE.
+  IF cltSg > 0 AND (cltPvK > 0 OR (cltOver AND cltMade > 0)) THEN
+    dsSc := 1;                                    // no means yet: plain density
+    IF cltMade > 0 THEN dsSc := cltMade*cltMW; END;   // means: expected count per bar
+    dsC0 := cltPx(MAX(cltPLo, cltMu - 4*dsSD));
+    dsC1 := cltPx(MIN(dsHi, cltMu + 4*dsSD));
+    dsPrev := -1;
+    FOR dsI FROM dsC0 TO dsC1 DO
+      dsV := cltPLo + (dsI - cLft)/cWid*(cltPNb*cltPW);   // the x value at this column
+      dsZ := ABS(dsV - cltMu)*dsZs;                       // its distance from mu, in SEs
+      dsY := 0;
+      IF dsZ < 4.5 THEN dsY := cltPhi(IP(dsZ*50 + 0.5) + 1)*dsZs*dsSc; END;
+      dsPY := cB2 - IP(MIN(dsY, dsTop)/dsTop*dsHt + 0.5);
+      IF dsPrev >= 0 THEN LINE_P(G1, dsI-1, dsPrev, dsI, dsPY, #003CC8h); END;
+      dsPrev := dsPY;
+    END;
+  END;
+  // beta 3: the EXACT curve for a uniform population, as black dots
+  // over the blue one (dots, so that where the two agree -- by n = 16
+  // they do -- both stay visible).  Read from the cache made by
+  // cltExCache once per n; nothing is evaluated here.  Not while a
+  // finger previews n, and not above n = 49 (cltIH explains why).
+  IF cltPop == 1 AND cltOver AND cltMade > 0 AND cltPvK == 0 AND cltSg > 0 AND dsN <= 49 THEN
+    IF cltExN <> dsN THEN cltExCache(dsN); END;
+    dsSc := cltMade*cltMW;                        // expected count per bar, as for the blue curve
+    FOR dsI FROM cltExC0 TO cltExC1 STEP 2 DO
+      dsY := cltExD(dsI)*dsSc;
+      dsPY := cB2 - IP(MIN(dsY, dsTop)/dsTop*dsHt + 0.5);
+      dsX0 := cLft + dsI - 1;
+      PIXON_P(G1, dsX0, dsPY, #000000h);
+      PIXON_P(G1, dsX0, dsPY - 1, #000000h);
+    END;
+  END;
+  IF cltPvK > 0 THEN
+    TEXTOUT_P("n = " + STRING(dsN, 2, 0) + ": the curve first; lift to draw", G1, cLft, cT2, 1, #FF0000h);
+  ELSE
+    IF cltMade > 0 THEN
+      IF cltReps < cltWant THEN
+        // the 60,000-pick cap in cltSample trimmed the run: say so
+        TEXTOUT_P(STRING(cltMade, 2, 0) + " of " + STRING(cltWant, 2, 0) + " samples (quick)", G1, cLft, cT2, 1, #C800C8h);
+      ELSE
+        IF cltK == 1 THEN
+          TEXTOUT_P(STRING(cltMade, 2, 0) + " 'means' of 1 member each", G1, cLft, cT2, 1, #C800C8h);
+        ELSE
+          TEXTOUT_P(STRING(cltMade, 2, 0) + " sample means", G1, cLft, cT2, 1, #C800C8h);
+        END;
+      END;
+    ELSE
+      TEXTOUT_P("No samples yet.  Tap the top panel for a set,", G1, cLft+4, cT2+26, 1, #C800C8h);
+      TEXTOUT_P("or '1 sample' to watch ONE being drawn.", G1, cLft+4, cT2+40, 1, #C800C8h);
+      IF cltK == 1 THEN
+        TEXTOUT_P("n = 1 to start: each mean is one member.", G1, cLft+4, cT2+54, 1, #008C3Ch);
+      END;
+    END;
+    IF cltOver THEN
+      IF cltPop == 1 AND cltMade > 0 AND dsN <= 49 THEN
+        // beta 3: the legend for both curves -- "exact" in black (the
+        // dots), then the normal curve in blue
+        dsStr := "exact & N(μ, σ/√n)";
+        dsX0 := cLft + cWid - 6*SIZE(dsStr);
+        TEXTOUT_P("exact", G1, dsX0, cT2, 1, #000000h);
+        TEXTOUT_P("& N(μ, σ/√n)", G1, dsX0 + 36, cT2, 1, #003CC8h);
+      ELSE
+        dsStr := "curve = N(μ, σ/√n)";
+        dsX0 := cLft + cWid - 6*SIZE(dsStr);
+        TEXTOUT_P(dsStr, G1, dsX0, cT2, 1, #003CC8h);
+      END;
+    ELSE
+      dsStr := "curve off: tap here";
+      dsX0 := cLft + cWid - 6*SIZE(dsStr);
+      TEXTOUT_P(dsStr, G1, dsX0, cT2, 1, #5A5A5Ah);
+    END;
+  END;
+  // where the last single sample's mean landed: a red square on top
+  // of its bar (the newest member of the pile)
+  IF cltOne > 0 AND cltPvK == 0 AND cltMade > 0 AND cltSmB >= 1 AND cltSmB <= cltMNb THEN
+    dsXs := cltPx(cltSmM);
+    dsH := IP(cltMCnt(cltSmB)/dsTop*dsHt + 0.5);
+    RECT_P(G1, dsXs - 2, cB2 - dsH - 6, dsXs + 2, cB2 - dsH - 2, #FF0000h, #FF0000h);
+  END;
+  // the mean on its way down (animation stage 3)
+  IF cltAnSt == 3 THEN
+    dsXs := cltPx(cltSmM);
+    RECT_P(G1, dsXs - 2, cltAnY - 2, dsXs + 2, cltAnY + 2, #FF0000h, #FF0000h);
+  END;
+
+  // ---- the population mean, dotted green, through both panels ----
+  dsXm := cltPx(cltMu);
+  FOR dsI FROM cT1+12 TO cB2 STEP 3 DO
+    // skip the label row at the top of the bottom panel
+    IF dsI < cT2 OR dsI > cT2+11 THEN PIXON_P(G1, dsXm, dsI, #008C3Ch); END;
+  END;
+
+  // ---- one shared x-axis: ticks under both panels, labels below ----
+  dsStp := cltNice((dsHi - cltPLo)/6, 1);
+  dsDec := MAX(0, -FLOOR(LOG(dsStp)));
+  dsV := CEILING(cltPLo/dsStp)*dsStp;
+  dsI := 0;
+  WHILE dsV <= dsHi + dsStp/1000 AND dsI < 20 DO
+    dsX0 := cltPx(dsV);
+    LINE_P(G1, dsX0, cB1+2, dsX0, cB1+4, #5A5A5Ah);
+    LINE_P(G1, dsX0, cB2+2, dsX0, cB2+4, #5A5A5Ah);
+    dsStr := STRING(dsV, 2, dsDec);
+    TEXTOUT_P(dsStr, G1, MAX(0, MIN(319 - 6*SIZE(dsStr), dsX0 - 3*SIZE(dsStr))), cB2+4, 1, #5A5A5Ah);
+    dsV := dsV + dsStp;
+    dsI := dsI + 1;
+  END;
+
+  // ---- the readouts: centre, spread, and the square-root law ----
+  // (12 px apart, from y 182; the buttons start at y 220)
+  IF cltPvK > 0 THEN
+    TEXTOUT_P("If n = " + STRING(dsN, 2, 0) + ": standard error σ/√n = " + cltF(dsSD, dsDM), G1, cLft, 182, 1, #003CC8h);
+    TEXTOUT_P("Lift your finger to draw samples of this size.", G1, cLft, 194, 1, #FF4500h);
+    TEXTOUT_P("Theory first: the curve moves before the data.", G1, cLft, 206, 1, #5A5A5Ah);
+  ELSE
+    IF cltMade >= 2 THEN
+      TEXTOUT_P("mean of the " + CHAR(57344) + "'s = " + cltF(cltMM, dsDM+1) + "    (μ = " + cltF(cltMu, dsDM+1) + ")", G1, cLft, 182, 1, #000000h);
+      // the one place the words "standard error" appear: sigma/sqrt n
+      TEXTOUT_P("SD of " + CHAR(57344) + "'s = " + cltF(cltMS, dsDM) + "; σ/√n = " + cltF(dsSD, dsDM) + " (standard error)", G1, cLft, 194, 1, #000000h);
+    END;
+    IF dsLive THEN
+      TEXTOUT_P("drawing sample " + STRING(cltMade, 2, 0) + " of " + STRING(cltReps, 2, 0) + " ...", G1, cLft, 206, 1, #FF4500h);
+    ELSE
+      IF cltMade >= 2 AND cltMS > 0 THEN
+        TEXTOUT_P("σ/SD = " + cltF(cltSg/cltMS, 2), G1, cLft, 206, 1, #C800C8h);
+        TEXTOUT_P("√n = " + STRING(cltK, 2, 0), G1, 88, 206, 1, #008C3Ch);
+        // the shares of the means within 1 and 2 SE of mu (68% and
+        // 95% once the bell has formed; n = 1 shows the population's)
+        TEXTOUT_P(STRING(100*cltIn1/cltMade, 2, 0) + "% in 1 SE,", G1, 138, 206, 1, #008C3Ch);
+        TEXTOUT_P(STRING(100*cltIn2/cltMade, 2, 0) + "% in 2 SE", G1, 220, 206, 1, #FF4500h);
+      END;
+    END;
+  END;
+
+  // ---- the caption on the first single sample of a session ----
+  IF cltCapOn AND cltPvK == 0 THEN
+    dsX0 := 12;
+    IF cltPx(cltSmM) < 170 THEN dsX0 := 140; END;   // on the side away from the mean
+    RECT_P(G1, dsX0, cT2 + 14, dsX0 + 170, cT2 + 40, #FF0000h, #FFFFFFh);
+    TEXTOUT_P("This is ONE sample's mean", G1, dsX0 + 4, cT2 + 16, 1, #FF0000h);
+    TEXTOUT_P("- the pile is many of them.", G1, dsX0 + 4, cT2 + 28, 1, #C800C8h);
+  END;
+  IF cltTip > 0 AND cltPvK == 0 THEN cltTipDraw(); END;
+  cltButtons();
+  BLIT_P(G0, 0, 0, G1);                           // show the finished page
+  RETURN 1;
+END;
+
+
+// ------------------------------------------------------------
+// DRAWING THE SAMPLES
+// ------------------------------------------------------------
+
+// Draw cltReps samples of size n from D1 and store their means in
+// D2.  Each member is picked at random WITH replacement (it can be
+// picked again), which is exactly the setting in which
+// SD(mean) = sigma/sqrt(n) holds; Croft's 39G aplet did the same.
+// The dashboard is redrawn after EVERY one of the first 20 samples
+// (beta 2: the first few means landing one by one is what teaches),
+// then about 40 times along the way, so you can watch the
+// histogram of means grow.
+cltSample()
+BEGIN
+  LOCAL smN, smR, smJ, smT, smM, smB;
+  LOCAL smUpd;
+  IF cltRecover() == 0 THEN RETURN 0; END;
+  smN := cltK*cltK;
+  // keep the work reasonable: at most 60000 random picks per run.
+  // When this trims cltWant, the dashboard's means panel says
+  // "600 of 2000 samples (quick)" instead of "600 sample means".
+  cltReps := MAX(10, MIN(cltWant, IP(60000/smN)));
+  cltMeanBins();
+  D2 := MAKELIST(0, K, 1, cltReps, 1);
+  cltMade := 0; cltSum := 0; cltSq := 0;
+  cltOne := 0; cltTip := 0; cltIn1 := 0; cltIn2 := 0;   // beta 2: a fresh pile
+  smUpd := MAX(1, IP(cltReps/40));
+  FOR smR FROM 1 TO cltReps DO
+    // one sample: add up n random members, then divide by n
+    smT := 0;
+    FOR smJ FROM 1 TO smN DO
+      smT := smT + D1(MIN(cltNpop, 1 + IP(RANDOM*cltNpop)));
+    END;
+    smM := smT/smN;
+    D2(smR) := smM;
+    // drop this mean into its bar of the histogram
+    smB := MAX(1, MIN(cltMNb, FLOOR((smM - cltMLo)/cltMW) + 1));
+    cltMCnt(smB) := cltMCnt(smB) + 1;
+    // running totals, for the live readout while drawing
+    cltMade := smR;
+    cltSum := cltSum + smM;
+    cltSq := cltSq + smM*smM;
+    IF (smR <= 20 OR (smR MOD smUpd) == 0) AND smR < cltReps THEN
+      cltMM := cltSum/cltMade;
+      IF cltMade >= 2 THEN
+        cltMS := MAX(0, (cltSq - cltMade*cltMM^2)/(cltMade - 1))^0.5;
+      END;
+      cltDash(1);
+    END;
+  END;
+  cltMeanStats();                 // final numbers, computed carefully from D2
+  cltLawPut();                    // beta 2: one more point for the square-root law
+  cltPlot := 2;                   // the Plot key now shows the means
+  RETURN 1;
+END;
+
+// beta 2: ONE sample, added to the pile -- watched (osAnim = 1, the
+// "1 sample" button) or at once (osAnim = 0, the "+1" button).
+// Watched, it goes in four steps, each a frame held for a moment:
+//   1. its n members light up as red dots on the population's axis;
+//   2. a short red bar marks their mean;
+//   3. that mean falls into the bottom panel, three frames down;
+//   4. its bar grows by one (the dashboard drawn by the loop).
+// Any key or tap during steps 1-3 skips straight to step 4.
+cltOneSample(osAnim)
+BEGIN
+  LOCAL osN, osJ, osT, osV, osM, osB;
+  LOCAL osC, osSk, osY0, osY1, osF, osH;
+  IF cltRecover() == 0 THEN RETURN 0; END;
+  osN := cltK*cltK;
+  // a pile to add to: start a new one if there is none, or if D2 no
+  // longer matches it (someone edited D2 in the Num view)
+  IFERR osC := SIZE(D2); THEN osC := -1; END;
+  IF cltMade == 0 OR osC <> cltMade THEN
+    cltMeanBins();
+    D2 := {};
+    cltMade := 0; cltSum := 0; cltSq := 0;
+    cltReps := cltWant;            // no "(quick)" label on a pile built by hand
+  END;
+  // the n members, picked WITH replacement exactly as cltSample does
+  cltSmV := MAKELIST(0, K, 1, osN, 1);
+  cltSmJ := MAKELIST(0, K, 1, osN, 1);
+  osT := 0;
+  FOR osJ FROM 1 TO osN DO
+    osV := D1(MIN(cltNpop, 1 + IP(RANDOM*cltNpop)));
+    cltSmV(osJ) := osV;
+    cltSmJ(osJ) := IP(RANDOM*9);   // 0-8 px up from the axis, so repeats show
+    osT := osT + osV;
+  END;
+  osM := osT/osN;
+  cltSmN := osN; cltSmM := osM;
+  osB := MAX(1, MIN(cltMNb, FLOOR((osM - cltMLo)/cltMW) + 1));
+  cltSmB := osB;
+  cltOne := 0; cltTip := 0;
+  IF osAnim THEN
+    cltAnSt := 1;                  // 1. the members
+    cltDash(0);
+    osSk := cltPause(500);
+    IF osSk == 0 THEN
+      cltAnSt := 2;                // 2. their mean
+      cltDash(0);
+      osSk := cltPause(500);
+    END;
+    // 3. the fall: from just under the red bar to the top of the
+    // mean's bar in the bottom panel, a quarter of the way per frame
+    osY0 := cB1 - 15;
+    osH := IP(cltMCnt(osB)/cltMScale(cltK)*(cB1 - cT1 - 13) + 0.5);
+    osY1 := cB2 - osH - 4;
+    FOR osF FROM 1 TO 3 DO
+      IF osSk == 0 THEN
+        cltAnSt := 3;
+        cltAnY := osY0 + IP((osY1 - osY0)*osF/4);
+        cltDash(0);
+        osSk := cltPause(130);
+      END;
+    END;
+    cltAnSt := 0;
+  END;
+  // 4. into the pile: its bar, D2, the running totals, the readouts
+  cltMCnt(osB) := cltMCnt(osB) + 1;
+  D2 := CONCAT(D2, {osM});
+  cltMade := cltMade + 1;
+  cltSum := cltSum + osM;
+  cltSq := cltSq + osM*osM;
+  cltMM := osM; cltMS := 0;       // (only one mean so far: no SD yet)
+  cltMeanStats();
+  cltLawPut();
+  cltPlot := 2;
+  cltOne := 2;                    // +1: just mark where it landed
+  IF osAnim THEN
+    cltOne := 1;                  // watched: keep its members on show too
+    IF cltFirst1 THEN cltCapOn := 1; cltFirst1 := 0; END;
+  END;
+  RETURN 1;
+END;
+
+
+// ------------------------------------------------------------
+// ASKING THE USER
+// ------------------------------------------------------------
+
+// Pick a population shape and build it.  Returns 1 if a new
+// population is ready, 0 if the user cancelled.
+cltChoosePop()
+BEGIN
+  LOCAL cpT, cpA, cpB, cpN, cpOk, cpD;
+  cpT := 0;                       // house rule: index to 0, then test the index
+  CHOOSE(cpT, "Population shape", {"Uniform (flat)", "Normal (bell)",
+    "Exponential (skewed right)", "Geometric (whole numbers, skewed)",
+    "Bimodal (two humps)", "My own data, already in D1"});
+  IF cpT == 0 THEN RETURN 0; END;
+
+  // use what is already in D1 (class data, for example)
+  IF cpT == 6 THEN
+    IFERR cpD := SIZE(D1); THEN cpD := 0; END;
+    IF cpD < 2 THEN
+      MSGBOX("Put at least two numbers in column D1 first (Num view).");
+      RETURN 0;
+    END;
+    cltPop := 6;
+    cltPopStats();
+    cltMade := 0; D2 := {};
+    cltNewPop();                  // beta 2: n = 1 first, a fresh record
+    RETURN 1;
+  END;
+
+  cpN := cltNpop;
+  IF cpN < 20 OR cpN > 3000 THEN cpN := 500; END;
+  cpOk := 0;
+  IF cpT == 1 THEN
+    cpA := 0; cpB := 10;
+    IF INPUT({cpA, cpB, cpN}, "Uniform population",
+      {"Lowest:", "Highest:", "Size N:"},
+      {"Smallest possible value", "Largest possible value", "How many members, 20 to 3000"}) == 1 THEN
+      IF cpB > cpA THEN cpOk := 1; ELSE MSGBOX("Highest must be larger than lowest."); END;
+    END;
+  END;
+  IF cpT == 2 THEN
+    cpA := 50; cpB := 10;
+    IF INPUT({cpA, cpB, cpN}, "Normal population",
+      {"Mean μ:", "SD σ:", "Size N:"},
+      {"Centre of the bell", "Spread; must be positive", "How many members, 20 to 3000"}) == 1 THEN
+      IF cpB > 0 THEN cpOk := 1; ELSE MSGBOX("σ must be positive."); END;
+    END;
+  END;
+  IF cpT == 3 THEN
+    cpA := 5; cpB := 0;
+    IF INPUT({cpA, cpN}, "Exponential population",
+      {"Mean:", "Size N:"},
+      {"Average value; must be positive", "How many members, 20 to 3000"}) == 1 THEN
+      IF cpA > 0 THEN cpOk := 1; ELSE MSGBOX("The mean must be positive."); END;
+    END;
+  END;
+  IF cpT == 4 THEN
+    cpA := 0.3; cpB := 0;
+    IF INPUT({cpA, cpN}, "Geometric population",
+      {"p:", "Size N:"},
+      {"Chance of success on each try, between 0 and 1", "How many members, 20 to 3000"}) == 1 THEN
+      IF cpA > 0 AND cpA < 1 THEN cpOk := 1; ELSE MSGBOX("p must be between 0 and 1."); END;
+    END;
+  END;
+  IF cpT == 5 THEN
+    cpA := 2; cpB := 8;
+    IF INPUT({cpA, cpB, cpN}, "Bimodal population",
+      {"Hump 1 at:", "Hump 2 at:", "Size N:"},
+      {"Centre of the left hump (each hump has SD 1)", "Centre of the right hump", "How many members, 20 to 3000"}) == 1 THEN
+      cpOk := 1;
+    END;
+  END;
+  IF cpOk == 0 THEN RETURN 0; END;
+
+  cpN := IP(cpN);
+  IF cpN < 20 OR cpN > 3000 THEN
+    MSGBOX("N must be a whole number from 20 to 3000.");
+    RETURN 0;
+  END;
+  cltPop := cpT; cltA := cpA; cltB := cpB; cltNpop := cpN;
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  TEXTOUT_P("Building the population ...", G1, 40, 110, 2, #003CC8h);
+  BLIT_P(G0, 0, 0, G1);
+  cltMakePop();
+  cltMade := 0; D2 := {};        // old sample means belong to the old population
+  cltPlot := 1;
+  cltNewPop();                   // beta 2: n = 1 first, a fresh record
+  RETURN 1;
+END;
+
+// Pick the sample size.  Only perfect squares are offered, so that
+// sqrt(n) is a whole number you can compare with the ratio
+// sigma / SD(means) at a glance.  The menu position IS sqrt(n).
+cltChooseN()
+BEGIN
+  LOCAL cnI;
+  cnI := 0;
+  CHOOSE(cnI, "Sample size n", {"n = 1  (no averaging at all)", "n = 4", "n = 9",
+    "n = 16", "n = 25", "n = 36", "n = 49", "n = 64", "n = 81", "n = 100"});
+  IF cnI == 0 THEN RETURN 0; END;
+  cltK := cnI;
+  RETURN 1;
+END;
+
+// How many samples to draw.
+cltAskReps()
+BEGIN
+  LOCAL arR;
+  arR := cltWant;
+  IF INPUT({arR}, "Number of samples", {"Samples:"},
+    {"How many samples to draw, 10 to 2000"}) == 1 THEN
+    arR := IP(arR);
+    IF arR >= 10 AND arR <= 2000 THEN cltWant := arR; RETURN 1; END;
+    MSGBOX("Choose from 10 to 2000 samples.");
+  END;
+  RETURN 0;
+END;
+
+
+// ------------------------------------------------------------
+// THE APP'S OWN STATISTICS 1VAR PLOT
+// ------------------------------------------------------------
+
+// Set up the built-in histogram and show it.  This is the part a
+// standalone program cannot do: H1, H2, CHECK and Hwidth belong to
+// the Statistics 1Var app, and this code runs inside a copy of it.
+// Both histograms use the SAME x-range, so switching between them
+// shows how much narrower the means are than the population.
+cltBuiltin()
+BEGIN
+  LOCAL biY, biHi;
+  IF cltRecover() == 0 THEN
+    MSGBOX("Choose a population first (View menu).");
+    RETURN 0;
+  END;
+  biHi := cltPLo + cltPNb*cltPW;
+  // H1 = population in D1 (blue), H2 = sample means in D2 (magenta).
+  // Each entry: data column, frequency column, plot type
+  // (1 = histogram), option, colour.
+  H1 := {"D1", "", 1, 0, #003CC8:24h};
+  H2 := {"D2", "", 1, 0, #C800C8:24h};
+  Xmin := cltPLo;
+  Xmax := biHi;
+  Xtick := cltNice((biHi - cltPLo)/6, 1);
+  IF cltPlot == 2 AND cltMade > 0 THEN
+    UNCHECK(1); CHECK(2);               // show only the means
+    Hmin := cltMLo;
+    Hmax := cltMLo + cltMNb*cltMW;
+    Hwidth := cltMW;
+    biY := cltLMax(cltMCnt);            // beta 2: a loop, not MAX(list)
+  ELSE
+    CHECK(1); UNCHECK(2);               // show only the population
+    Hmin := cltPLo;
+    Hmax := biHi;
+    Hwidth := cltPW;
+    biY := cltLMax(cltPCnt);
+  END;
+  Ymin := -biY/10;
+  Ymax := biY*1.15;
+  Ytick := cltNice(biY/5, 1);
+  STARTVIEW(1, 1);                      // 1 = Plot view, drawn now
+  RETURN 1;
+END;
+
+
+// ------------------------------------------------------------
+// THE SQUARE-ROOT LAW (beta 2)
+// ------------------------------------------------------------
+
+// The SD of the sample means against n, for every n tried with this
+// population: one magenta square per n, over the curve sigma/sqrt n
+// (blue) drawn one pixel column at a time.  The squares sit on the
+// curve: four times the n, half the SD.  A table on the right gives
+// the numbers.  Any key or tap goes back.
+cltLaw()
+BEGIN
+  LOCAL lwL, lwR, lwT, lwB, lwYm, lwI;
+  LOCAL lwX, lwY, lwPrev, lwV, lwStp, lwDec;
+  LOCAL lwN, lwRow, lwDP, lwStr;
+  lwL := 34; lwR := 200; lwT := 30; lwB := 176;   // the plot box
+  cltLawInit();
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  TEXTOUT_P("The square-root law", G1, 6, 4, 2, #003CC8h);
+  lwStr := cltName(cltPop) + ", σ = " + cltF(cltSg, cltDecFor(cltSg));
+  lwX := 314 - 6*SIZE(lwStr);
+  TEXTOUT_P(lwStr, G1, lwX, 7, 1, #003CC8h);
+  IF cltSg <= 0 THEN
+    TEXTOUT_P("All members are equal: no spread to shrink.", G1, 10, 100, 1, #FF4500h);
+    TEXTOUT_P("Any key or tap to go back", G1, 6, 226, 1, #1E90FFh);
+    BLIT_P(G0, 0, 0, G1);
+    cltWaitAny();
+    RETURN 0;
+  END;
+  lwYm := cltSg*1.15;                             // y from 0 to a little above sigma
+  // ---- grid and y ticks ----
+  lwStp := cltNice(lwYm/5, 1);
+  lwDec := MAX(0, -FLOOR(LOG(lwStp)));
+  lwV := 0;
+  lwI := 0;
+  WHILE lwV <= lwYm + lwStp/1000 AND lwI < 12 DO
+    lwY := lwB - IP(lwV/lwYm*(lwB - lwT) + 0.5);
+    LINE_P(G1, lwL, lwY, lwR, lwY, #E1E4EBh);
+    lwStr := STRING(lwV, 2, lwDec);
+    lwX := MAX(0, lwL - 3 - 6*SIZE(lwStr));
+    TEXTOUT_P(lwStr, G1, lwX, lwY - 5, 1, #5A5A5Ah);
+    lwV := lwV + lwStp;
+    lwI := lwI + 1;
+  END;
+  // ---- x ticks: n = 0, 25, 50, 75, 100 ----
+  FOR lwI FROM 0 TO 4 DO
+    lwX := lwL + IP(lwI*25/100*(lwR - lwL) + 0.5);
+    LINE_P(G1, lwX, lwB, lwX, lwB + 3, #5A5A5Ah);
+    lwStr := STRING(lwI*25, 2, 0);
+    TEXTOUT_P(lwStr, G1, lwX - 3*SIZE(lwStr), lwB + 4, 1, #5A5A5Ah);
+  END;
+  TEXTOUT_P("n", G1, lwR + 6, lwB - 4, 1, #5A5A5Ah);
+  LINE_P(G1, lwL, lwT, lwL, lwB, #000000h);
+  LINE_P(G1, lwL, lwB, lwR, lwB, #000000h);
+  // ---- the curve sigma/sqrt(n), one pixel column at a time ----
+  lwPrev := -1;
+  FOR lwX FROM lwL TO lwR DO
+    lwN := (lwX - lwL)/(lwR - lwL)*100;           // the n at this column
+    IF lwN >= 1 THEN
+      lwY := lwB - IP(MIN(lwYm, cltSg/lwN^0.5)/lwYm*(lwB - lwT) + 0.5);
+      IF lwPrev >= 0 THEN LINE_P(G1, lwX - 1, lwPrev, lwX, lwY, #003CC8h); END;
+      lwPrev := lwY;
+    END;
+  END;
+  // ---- the n's tried: a square on the plot, a row in the table ----
+  lwDP := cltDecFor(cltSg/10);
+  TEXTOUT_P("n", G1, 210, lwT, 1, #5A5A5Ah);
+  TEXTOUT_P("SD(" + CHAR(57344) + ")", G1, 232, lwT, 1, #C800C8h);
+  TEXTOUT_P("σ/√n", G1, 274, lwT, 1, #003CC8h);
+  lwRow := 0;
+  FOR lwI FROM 1 TO 10 DO
+    IF cltLawM(lwI) >= 2 THEN
+      lwN := lwI*lwI;
+      lwX := lwL + IP(lwN/100*(lwR - lwL) + 0.5);
+      lwY := lwB - IP(MIN(lwYm, cltLawSD(lwI))/lwYm*(lwB - lwT) + 0.5);
+      RECT_P(G1, lwX - 2, lwY - 2, lwX + 2, lwY + 2, #C800C8h, #C800C8h);
+      lwRow := lwRow + 1;
+      lwY := lwT + 2 + 12*lwRow;
+      TEXTOUT_P(STRING(lwN, 2, 0), G1, 210, lwY, 1, #008C3Ch);
+      TEXTOUT_P(cltF(cltLawSD(lwI), lwDP), G1, 232, lwY, 1, #C800C8h);
+      TEXTOUT_P(cltF(cltSg/lwI, lwDP), G1, 274, lwY, 1, #003CC8h);
+    END;
+  END;
+  IF lwRow == 0 THEN
+    TEXTOUT_P("No n tried yet:", G1, 210, lwT + 14, 1, #FF4500h);
+    TEXTOUT_P("draw samples", G1, 210, lwT + 26, 1, #FF4500h);
+    TEXTOUT_P("first.", G1, 210, lwT + 38, 1, #FF4500h);
+  END;
+  TEXTOUT_P("Each square: the SD of the " + CHAR(57344) + "'s for one n.", G1, 6, 190, 1, #C800C8h);
+  TEXTOUT_P("Blue curve: σ/√n. Four times the n, half the SD.", G1, 6, 202, 1, #003CC8h);
+  TEXTOUT_P("(This population only; a new one starts afresh.)", G1, 6, 214, 1, #5A5A5Ah);
+  TEXTOUT_P("Any key or tap to go back", G1, 6, 226, 1, #1E90FFh);
+  BLIT_P(G0, 0, 0, G1);
+  cltWaitAny();
+  RETURN 1;
+END;
+
+
+// ------------------------------------------------------------
+// THE CAS PAGES (beta 3): the exact curve, and why the bell
+// ------------------------------------------------------------
+
+// One more line (and its colour) for the page being built.
+cltPgAdd(adT, adC)
+BEGIN
+  cltPgL := CONCAT(cltPgL, {adT});
+  cltPgC := CONCAT(cltPgC, {adC});
+END;
+
+// A long line, wrapped to the screen (font 1 is about 6 px a
+// character, so 49 fit); the lines after the first are indented.
+cltPgWrap(pwT, pwC)
+BEGIN
+  LOCAL pwL, pwI;
+  pwL := cltWrap(pwT, 49);
+  FOR pwI FROM 1 TO SIZE(pwL) DO
+    IF pwI == 1 THEN
+      cltPgAdd(pwL(pwI), pwC);
+    ELSE
+      cltPgAdd("   " + pwL(pwI), pwC);
+    END;
+  END;
+END;
+
+// A page of coloured lines (font 1, 12 px apart, 15 to a screen;
+// more turn over to a second screen), with the badge in the corner:
+// "exact (CAS)" when the page shows CAS answers (each checked),
+// "decimal" when the CAS was not used.  Any key or tap turns the
+// page; Esc goes straight back.
+cltCasPage(cpTtl, cpL, cpC, cpOK)
+BEGIN
+  LOCAL cpN, cpF, cpLa, cpI, cpY, cpK;
+  LOCAL cpB;
+  cpN := SIZE(cpL); cpF := 1;
+  cpB := "decimal";
+  IF cpOK THEN cpB := "exact (CAS)"; END;
+  REPEAT
+    cpLa := MIN(cpN, cpF + 14);
+    DIMGROB_P(G1, 320, 240, #FFFFFFh);
+    RECT_P(G1, 0, 0, 319, 20, #FF4500h, #FF4500h);   // orange title band
+    TEXTOUT_P(cpTtl, G1, 6, 3, 2, #FFFFFFh);
+    cpY := 26;
+    FOR cpI FROM cpF TO cpLa DO
+      TEXTOUT_P(cpL(cpI), G1, 6, cpY, 1, cpC(cpI));
+      cpY := cpY + 12;
+    END;
+    IF cpLa < cpN THEN
+      TEXTOUT_P("Any key or tap: next page", G1, 6, 226, 1, #1E90FFh);
+    ELSE
+      TEXTOUT_P("Any key or tap to go back", G1, 6, 226, 1, #1E90FFh);
+    END;
+    TEXTOUT_P(cpB, G1, 314 - 6*DIM(cpB), 226, 1, #1E90FFh);
+    BLIT_P(G0, 0, 0, G1);
+    cpK := cltWaitAny();
+    cpF := cpLa + 1;
+    IF cpK == 4 THEN cpF := cpN + 1; END;            // Esc: straight back
+  UNTIL cpF > cpN;
+END;
+
+// The "asking the CAS" screen, drawn before a page's CAS calls: the
+// G1's CAS speed is not known yet, and a blank wait looks like a hang.
+cltAsking()
+BEGIN
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  TEXTOUT_P("Asking the CAS ...", G1, 40, 96, 2, #003CC8h);
+  TEXTOUT_P("exact arithmetic: it can take a few", G1, 40, 122, 1, #5A5A5Ah);
+  TEXTOUT_P("seconds, once (the answer is kept)", G1, 40, 134, 1, #5A5A5Ah);
+  BLIT_P(G0, 0, 0, G1);
+END;
+
+// How many digits a text holds (for "exact fraction has 41 digits").
+cltDigits(dgS)
+BEGIN
+  LOCAL dgI, dgN;
+  dgN := 0;
+  FOR dgI FROM 1 TO DIM(dgS) DO
+    IF INSTRING("0123456789", MID(dgS, dgI, 1)) > 0 THEN dgN := dgN + 1; END;
+  END;
+  RETURN dgN;
+END;
+
+// THE EXACT CURVE PAGE.  For the current n: what the CAS says about
+// S, the sum of n draws from uniform(0, 1) -- its density's
+// polynomial pieces (whole-number coefficients over (n-1)!) and its
+// peak height as an exact fraction -- beside the normal curve's
+// peak and the program's own 12-digit sum, which draws the dots.
+// Built once per n (the CAS is asked only then) and kept.
+// Every CAS answer is checked before it is shown:
+//   a piece: at the middle of its interval, against the program's
+//            sum (cltIH) there;
+//   the peak: up to n = 49 against the program's sum (3 digits or
+//            better: in 12 digits the sum keeps 10 at n = 16, 6 at
+//            36 and 3.7 at 49); above 49 it has lost them, so the
+//            CAS's peak must lie within 1 % of the normal curve's
+//            peak instead (the true gap there is 0.2 % or less).
+// A failed check, or a CAS failure, shows "no closed form shown"
+// and the program's decimals, with the "decimal" badge.
+cltExact()
+BEGIN
+  LOCAL exN, exF, exJ, exT, exV, exD;
+  LOCAL exPv, exQ, exNm, exOk, exH, exJs;
+  LOCAL exI, exS, exPk, exPp, exL, exC;
+  exN := cltK*cltK;
+  IF cltExPgN <> exN THEN
+    cltAsking();
+    cltPgL := {}; cltPgC := {};
+    exOk := 0;
+    exF := 1;
+    FOR exI FROM 2 TO exN - 1 DO exF := exF*exI; END;    // (n-1)!
+    cltPgAdd("S = the SUM of n = " + cltIStr(exN) + " draws from uniform(0, 1).", #000000h);
+    IF exN == 1 THEN
+      cltPgAdd("S is itself uniform: density 1 on [0, 1).", #003CC8h);
+    ELSE
+      cltPgAdd("On each piece [j, j+1) its density is a", #000000h);
+      cltPgAdd("polynomial of degree " + cltIStr(exN - 1) + " (from the CAS, exact):", #000000h);
+      // the pieces to show: all four for n = 4; the first and the
+      // middle one for n = 9; above that each runs to hundreds of
+      // characters, so only the first is described
+      exJs := {};
+      IF exN <= 4 THEN
+        FOR exJ FROM 0 TO exN - 1 DO exJs := CONCAT(exJs, {exJ}); END;
+      ELSE
+        IF exN <= 9 THEN exJs := {0, IP(exN/2)}; END;
+      END;
+      FOR exI FROM 1 TO SIZE(exJs) DO
+        exJ := exJs(exI);
+        exT := cltCas("expand(sum(seq((-1)^cltqk*comb(" + cltIStr(exN) + ",cltqk)*(cltqs-cltqk)^(" + cltIStr(exN - 1) + "),cltqk,0," + cltIStr(exJ) + ")))");
+        // the same polynomial by the program, at the middle of the piece
+        exPv := exF*cltIH(exN, exJ + 0.5, exF);
+        exQ := {0, 0};
+        IF DIM(exT) > 0 AND INSTRING(exT, "sum") == 0 THEN
+          exQ := cltCasNum("subst(" + exT + ",cltqs," + cltIStr(2*exJ + 1) + "/2)", cltScale(exPv));
+        END;
+        exS := "[" + cltIStr(exJ) + ", " + cltIStr(exJ + 1) + "): ";
+        IF exQ(2) == 1 AND ABS(exQ(1) - exPv) <= 0.000001*MAX(ABS(exPv), 0.000000001) THEN
+          exT := cltShow(exT);
+          IF INSTRING(exT, "+") > 0 OR INSTRING(exT, "-") > 0 THEN exT := "(" + exT + ")"; END;
+          cltPgWrap(exS + exT + "/" + cltIStr(exF), #003CC8h);
+          exOk := 1;
+        ELSE
+          cltPgAdd(exS + "no closed form shown", #5A5A5Ah);
+        END;
+      END;
+      IF exN > 9 THEN
+        cltPgAdd("[0, 1): s^" + cltIStr(exN - 1) + "/" + cltIStr(exN - 1) + "!, then " + cltIStr(exN - 1) + " more pieces,", #003CC8h);
+        cltPgAdd("   each too long to show here.", #003CC8h);
+      END;
+    END;
+    cltPgAdd(CHAR(57344) + " = μ + 2√3 σ (S/n − 1/2): the same shape,", #000000h);
+    cltPgAdd("   rescaled to your population's μ and σ.", #000000h);
+    // ---- the peak, s = n/2 ----
+    cltPgAdd("The peak of S's density, at s = n/2:", #000000h);
+    exH := IP(exN/2);
+    exPk := cltCas("sum(seq((-1)^cltqk*comb(" + cltIStr(exN) + ",cltqk)*(" + cltIStr(exN) + "/2-cltqk)^(" + cltIStr(exN - 1) + "),cltqk,0," + cltIStr(exH) + "))/(" + cltIStr(exN - 1) + ")!");
+    exPp := cltIH(exN, exN/2, exF);                   // the program's 12-digit sum
+    exNm := (6/(3.14159265358979*exN))^0.5;           // the normal's peak, 1/sqrt(2 pi n/12)
+    exQ := {0, 0};
+    IF DIM(exPk) > 0 AND INSTRING(exPk, "sum") == 0 THEN exQ := cltCasNum(exPk, 12); END;
+    exV := 0;
+    IF exQ(2) == 1 THEN
+      IF exN <= 49 THEN
+        IF ABS(exQ(1) - exPp) <= 0.001*exQ(1) THEN exV := 1; END;
+      ELSE
+        IF ABS(exQ(1)/exNm - 1) < 0.01 THEN exV := 1; END;
+      END;
+    END;
+    IF exV THEN
+      exT := cltShow(exPk);
+      // never cut an exact fraction: say how long it is instead
+      IF DIM(exT) > 40 THEN exT := "fraction of " + cltIStr(cltDigits(exT)) + " digits"; END;
+      cltPgWrap("  exact: " + exT + " = " + cltF(exQ(1), 9), #C800C8h);
+      exOk := 1;
+    ELSE
+      cltPgAdd("  exact value: no closed form shown", #5A5A5Ah);
+    END;
+    IF exV THEN
+      // the normal curve's peak beside it, and how much lower the exact one is
+      cltPgAdd("  normal curve: " + cltF(exNm, 9) + "; exact is " + cltF(100*(1 - exQ(1)/exNm), 1) + "% lower", #003CC8h);
+      // how many digits the program's own 12-digit sum keeps
+      exD := 12;
+      IF exPp <> exQ(1) THEN exD := MAX(0, MIN(12, IP(-LOG(ABS(exPp - exQ(1))/exQ(1))))); END;
+      exC := #008C3Ch;
+      IF exD < 3 THEN exC := #FF0000h; END;
+      cltPgAdd("  program's sum: " + cltF(exPp, 9) + ", agrees to " + cltIStr(exD) + " digits", exC);
+    ELSE
+      cltPgAdd("  normal curve: " + cltF(exNm, 9), #003CC8h);
+      cltPgAdd("  program's sum: " + cltF(exPp, 9) + " (decimals only)", #008C3Ch);
+    END;
+    IF exN > 49 THEN
+      cltPgAdd("Above n = 49 the dots are not drawn: the sum", #FF0000h);
+      cltPgAdd("loses its digits (and the exact curve lies", #FF0000h);
+      cltPgAdd("within 0.2 px of the normal one anyway).", #FF0000h);
+    END;
+    cltExPgN := exN; cltExPgL := cltPgL; cltExPgC := cltPgC; cltExPgOK := exOk;
+  END;
+  // The page.  A population that is not uniform gets two lines first:
+  // there is no exact curve for it here.
+  exL := cltExPgL; exC := cltExPgC;
+  IF cltPop > 1 THEN
+    exL := CONCAT({"Your population is " + cltName(cltPop) + ": no exact", "curve is drawn for it. A uniform one's, n = " + cltIStr(exN) + ":"}, exL);
+    exC := CONCAT({#FF4500h, #FF4500h}, exC);
+  END;
+  cltCasOK := cltExPgOK;
+  cltCasPage("The exact curve, n = " + cltIStr(exN), exL, exC, cltExPgOK);
+  RETURN 1;
+END;
+
+// M(t) = cosh(t/sqrt n)^n, the MGF of the standardized sum of n
+// fair coin flips (+1 or -1), and cosh written with EXP so the
+// angle mode can never matter.
+cltMgfAt(mtT, mtN)
+BEGIN
+  LOCAL mtU;
+  mtU := mtT/mtN^0.5;
+  RETURN ((EXP(mtU) + EXP(-mtU))/2)^mtN;
+END;
+
+// WHY THE BELL?  The moment generating function M(t) = E[e^(tZ)]
+// pins a distribution down, and if the MGFs of a sequence close in
+// on e^(t^2/2) -- the MGF of N(0, 1) -- the distributions close in
+// on the bell.  For the standardized sum Z of n fair +/-1 coin
+// flips, M(t) = cosh(t/sqrt n)^n.  The CAS (once, kept): its limit
+// as n grows, e^(t^2/2) (the Prime writes e^, never exp, CASProbe
+// beta 1b T17); and the series of ln M(t), whose t^4 term
+// shrinks like 1/n.  Each is checked (at t = 1, and t = 1, n = 4)
+// before it is shown.  The plot -- the program's own numbers -- is
+// M(t) for n = 1, 4, 16 against e^(t^2/2).
+cltMgf()
+BEGIN
+  LOCAL mgL, mgS, mgQ, mgI, mgN, mgT;
+  LOCAL mgX, mgY, mgPrev, mgC, mgM, mgK;
+  LOCAL mgL0, mgR0, mgT0, mgB0, mgStr;
+  IF cltMgOn == 0 THEN
+    cltAsking();
+    cltPgL := {}; cltPgC := {}; cltMgOK := 0;
+    cltPgAdd("Flip a fair coin n times: X = +1 or -1 each time.", #000000h);
+    cltPgAdd("Z = (X1 + ... + Xn)/√n has mean 0 and SD 1.", #000000h);
+    cltPgAdd("Its MGF: M(t) = E[e^(tZ)] = cosh(t/√n)^n.", #003CC8h);
+    mgL := cltCas("limit(cosh(cltqt/sqrt(cltqn))^cltqn,cltqn,inf)");
+    mgQ := {0, 0};
+    IF DIM(mgL) > 0 AND INSTRING(mgL, "limit") == 0 THEN mgQ := cltCasNum("subst(" + mgL + ",cltqt,1)", 9); END;
+    IF mgQ(2) == 1 AND ABS(mgQ(1) - EXP(0.5)) < 0.000001 THEN
+      cltPgAdd("CAS: as n grows, M(t) -> " + cltShow(mgL) + ":", #C800C8h);
+      cltPgAdd("   the MGF of N(0, 1). The sum becomes a bell.", #C800C8h);
+      cltMgOK := 1;
+    ELSE
+      // the decimal fallback: the same convergence, at t = 1
+      cltPgAdd("M(1) = " + cltF(cltMgfAt(1, 1), 4) + ", " + cltF(cltMgfAt(1, 4), 4) + ", " + cltF(cltMgfAt(1, 16), 4) + ", " + cltF(cltMgfAt(1, 10000), 4) + " (n = 1, 4,", #5A5A5Ah);
+      cltPgAdd("   16, 10000) -> e^(1/2) = " + cltF(EXP(0.5), 4) + ", N(0, 1)'s MGF.", #5A5A5Ah);
+    END;
+    mgS := cltCas("expand(cltqn*subst(convert(series(ln(cosh(cltqu)),cltqu,0,5),polynom),cltqu,cltqt/sqrt(cltqn)))");
+    mgQ := {0, 0};
+    IF DIM(mgS) > 0 AND INSTRING(mgS, "series") == 0 AND INSTRING(mgS, "order") == 0 THEN
+      mgQ := cltCasNum("subst(subst(" + mgS + ",cltqt,1),cltqn,4)", 9);
+    END;
+    // t = 1, n = 4: 1/2 - 1/(12 x 4)
+    IF mgQ(2) == 1 AND ABS(mgQ(1) - (0.5 - 1/48)) < 0.000001 THEN
+      cltPgWrap("CAS: ln M(t) = " + cltShow(mgS) + " + ...", #008C3Ch);
+      cltPgAdd("   The t^4 term shrinks like 1/n; t^2/2 is left.", #008C3Ch);
+      cltMgOK := 1;
+    END;
+    cltMgL := cltPgL; cltMgC := cltPgC; cltMgOn := 1;
+  END;
+  // ---- the page: the text, then the plot of M(t) ----
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 0, 0, 319, 20, #FF4500h, #FF4500h);
+  TEXTOUT_P("Why the bell? Coin flips and MGFs", G1, 6, 3, 2, #FFFFFFh);
+  mgY := 24;
+  FOR mgI FROM 1 TO MIN(7, SIZE(cltMgL)) DO
+    TEXTOUT_P(cltMgL(mgI), G1, 6, mgY, 1, cltMgC(mgI));
+    mgY := mgY + 12;
+  END;
+  // the plot box: t from -2.5 to 2.5 across, M from 0 to 24 up
+  mgL0 := 34; mgR0 := 310; mgT0 := 110; mgB0 := 206;
+  FOR mgK FROM 1 TO 4 DO                             // grid and y labels 5, 10, 15, 20
+    mgY := mgB0 - IP(5*mgK/24*(mgB0 - mgT0) + 0.5);
+    LINE_P(G1, mgL0, mgY, mgR0, mgY, #E1E4EBh);
+    mgStr := STRING(5*mgK, 2, 0);
+    TEXTOUT_P(mgStr, G1, mgL0 - 4 - 6*DIM(mgStr), mgY - 5, 1, #5A5A5Ah);
+  END;
+  FOR mgK FROM -2 TO 2 DO                            // x ticks -2 ... 2
+    mgX := mgL0 + IP((mgK + 2.5)/5*(mgR0 - mgL0) + 0.5);
+    LINE_P(G1, mgX, mgT0, mgX, mgB0, #E1E4EBh);
+    mgStr := STRING(mgK, 2, 0);
+    TEXTOUT_P(mgStr, G1, mgX - 3*DIM(mgStr), mgB0 + 2, 1, #5A5A5Ah);
+  END;
+  TEXTOUT_P("t", G1, mgR0 + 3, mgB0 - 6, 1, #5A5A5Ah);
+  LINE_P(G1, mgL0, mgT0, mgL0, mgB0, #000000h);
+  LINE_P(G1, mgL0, mgB0, mgR0, mgB0, #000000h);
+  // the four curves, one pixel column at a time: n = 1, 4, 16, and
+  // the normal's e^(t^2/2) last, two pixels thick, so it stays on top
+  FOR mgC FROM 1 TO 4 DO
+    mgPrev := -1;
+    FOR mgX FROM mgL0 TO mgR0 DO
+      mgT := -2.5 + (mgX - mgL0)/(mgR0 - mgL0)*5;
+      IF mgC == 4 THEN
+        mgM := EXP(mgT^2/2);
+      ELSE
+        mgN := 4^(mgC - 1);                          // n = 1, 4, 16
+        mgM := cltMgfAt(mgT, mgN);
+      END;
+      mgY := mgB0 - IP(MIN(mgM, 24)/24*(mgB0 - mgT0) + 0.5);
+      IF mgPrev >= 0 THEN
+        CASE
+          IF mgC == 1 THEN LINE_P(G1, mgX - 1, mgPrev, mgX, mgY, #FF0000h); END;
+          IF mgC == 2 THEN LINE_P(G1, mgX - 1, mgPrev, mgX, mgY, #FF4500h); END;
+          IF mgC == 3 THEN LINE_P(G1, mgX - 1, mgPrev, mgX, mgY, #C800C8h); END;
+          DEFAULT
+            LINE_P(G1, mgX - 1, mgPrev, mgX, mgY, #003CC8h);
+            LINE_P(G1, mgX - 1, mgPrev - 1, mgX, mgY - 1, #003CC8h);
+        END;
+      END;
+      mgPrev := mgY;
+    END;
+  END;
+  // the legend, in the empty middle of the box (every curve is low there)
+  TEXTOUT_P("n = 1", G1, 126, mgT0 + 2, 1, #FF0000h);
+  TEXTOUT_P("n = 4", G1, 168, mgT0 + 2, 1, #FF4500h);
+  TEXTOUT_P("n = 16", G1, 210, mgT0 + 2, 1, #C800C8h);
+  TEXTOUT_P("e^(t^2/2): N(0, 1)", G1, 126, mgT0 + 14, 1, #003CC8h);
+  TEXTOUT_P("all meet at M(0) = 1", G1, 126, mgT0 + 26, 1, #5A5A5Ah);
+  mgStr := "decimal";
+  IF cltMgOK THEN mgStr := "exact (CAS)"; END;
+  TEXTOUT_P("Any key or tap to go back", G1, 6, 226, 1, #1E90FFh);
+  TEXTOUT_P(mgStr, G1, 314 - 6*DIM(mgStr), 226, 1, #1E90FFh);
+  cltCasOK := cltMgOK;
+  BLIT_P(G0, 0, 0, G1);
+  cltWaitAny();
+  RETURN 1;
+END;
+
+
+// ------------------------------------------------------------
+// WAITING, HELP AND MENUS
+// ------------------------------------------------------------
+// (cltDrain and cltWaitAny are with the small helpers at the top.)
+
+// The opening screen.
+cltWelcome()
+BEGIN
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 4, 4, 315, 235, #FF4500h, #FFF0DCh);
+  TEXTOUT_P("Central Limit Theorem", G1, 14, 10, 4, #003CC8h);
+  TEXTOUT_P("Build a population of any shape (D1).", G1, 14, 40, 2, #000000h);
+  TEXTOUT_P("Draw many samples of size n from it", G1, 14, 56, 2, #000000h);
+  TEXTOUT_P("and keep each sample's MEAN (in D2).", G1, 14, 72, 2, #000000h);
+  TEXTOUT_P("The means pile up in a bell shape,", G1, 14, 94, 2, #C800C8h);
+  TEXTOUT_P("centred on μ, with spread σ/√n,", G1, 14, 110, 2, #C800C8h);
+  TEXTOUT_P("even if the population is no bell.", G1, 14, 126, 2, #C800C8h);
+  TEXTOUT_P("View menu: dashboard and settings.", G1, 14, 150, 2, #008000h);
+  TEXTOUT_P("Plot key: the app's own histogram.", G1, 14, 166, 2, #008000h);
+  TEXTOUT_P("After Colin Croft's HP 39G aplet (2003).", G1, 14, 192, 1, #5A5A5Ah);
+  TEXTOUT_P("Any key or tap to begin", G1, 14, 214, 2, #1E90FFh);
+  BLIT_P(G0, 0, 0, G1);
+  cltWaitAny();
+END;
+
+// Two pages of explanation (beta 2): how to read the dashboard,
+// then every button, tap, drag and key.  Esc on the first page
+// goes straight back.
+cltHelp()
+BEGIN
+  LOCAL hpK;
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  TEXTOUT_P("How to read the dashboard", G1, 8, 4, 2, #003CC8h);
+  TEXTOUT_P("Top (blue): the population, every member.", G1, 8, 24, 1, #003CC8h);
+  TEXTOUT_P("Black line: the shape it was drawn from.", G1, 8, 37, 1, #000000h);
+  TEXTOUT_P("Bottom: one bar-count per sample mean " + CHAR(57344) + ".", G1, 8, 50, 1, #C800C8h);
+  TEXTOUT_P("Bar colours: how far from μ, in standard", G1, 8, 63, 1, #000000h);
+  TEXTOUT_P("  errors (SE = σ/√n): green within 1 SE,", G1, 8, 76, 1, #008C3Ch);
+  TEXTOUT_P("  orange within 2, red beyond (68-95 rule).", G1, 8, 89, 1, #FF4500h);
+  TEXTOUT_P("Both panels share ONE x-axis: means bunch up.", G1, 8, 102, 1, #000000h);
+  TEXTOUT_P("Green dots: the population mean μ.", G1, 8, 115, 1, #008C3Ch);
+  TEXTOUT_P("Blue curve: the normal shape the CLT predicts.", G1, 8, 128, 1, #003CC8h);
+  TEXTOUT_P("σ/SD: how many times narrower the means are;", G1, 8, 141, 1, #C800C8h);
+  TEXTOUT_P("  close to √n, so every n offered is a square.", G1, 8, 154, 1, #C800C8h);
+  TEXTOUT_P("Samples are drawn WITH replacement, where", G1, 8, 167, 1, #000000h);
+  TEXTOUT_P("  SD(mean) = σ/√n holds exactly.", G1, 8, 180, 1, #000000h);
+  TEXTOUT_P("Start at n = 1 (the means ARE the population),", G1, 8, 193, 1, #008000h);
+  TEXTOUT_P("  then 4, 16: watch the bell form.", G1, 8, 206, 1, #008000h);
+  TEXTOUT_P("Any key or tap: the buttons and gestures", G1, 8, 226, 1, #1E90FFh);
+  BLIT_P(G0, 0, 0, G1);
+  hpK := cltWaitAny();
+  IF hpK == 4 THEN RETURN 0; END;                 // Esc: straight back
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  TEXTOUT_P("Buttons, taps and keys", G1, 8, 4, 2, #003CC8h);
+  TEXTOUT_P("1 sample (or Up): watch ONE sample. Its n", G1, 8, 24, 1, #FF0000h);
+  TEXTOUT_P("  members light up red; their mean falls into", G1, 8, 37, 1, #FF0000h);
+  TEXTOUT_P("  the pile. Any key or tap skips. (Or tap the", G1, 8, 50, 1, #FF0000h);
+  TEXTOUT_P("  lower-left corner of the top panel.)", G1, 8, 63, 1, #FF0000h);
+  TEXTOUT_P("+1 (or Down): one more mean, added at once.", G1, 8, 76, 1, #C800C8h);
+  TEXTOUT_P("n− n+ (or − +): n = 1, 4, 16, 64, 100; draws.", G1, 8, 89, 1, #008C3Ch);
+  TEXTOUT_P("Curve (or 0): the curves on / off.", G1, 8, 102, 1, #003CC8h);
+  TEXTOUT_P("Menu (or Enter): settings, the CAS pages, Help.", G1, 8, 115, 1, #FF4500h);
+  TEXTOUT_P("Tap the top panel: a fresh set of samples.", G1, 8, 128, 1, #000000h);
+  TEXTOUT_P("Drag along the top panel to pick n: the curve", G1, 8, 141, 1, #000000h);
+  TEXTOUT_P("  moves first, lift to draw. Left/Right: n step.", G1, 8, 154, 1, #000000h);
+  TEXTOUT_P("Hold a blue bar, or tap a bottom bar, for its", G1, 8, 167, 1, #000000h);
+  TEXTOUT_P("  range, count and share of the total.", G1, 8, 180, 1, #000000h);
+  TEXTOUT_P("n = 100 is item (A); big n draws fewer samples.", G1, 8, 193, 1, #5A5A5Ah);
+  TEXTOUT_P("Esc (or Menu, Leave) leaves the dashboard.", G1, 8, 206, 1, #000000h);
+  TEXTOUT_P("Any key or tap: the exact curve and the MGF", G1, 8, 226, 1, #1E90FFh);
+  BLIT_P(G0, 0, 0, G1);
+  hpK := cltWaitAny();
+  IF hpK == 4 THEN RETURN 0; END;                 // Esc: straight back
+  // beta 3: page 3, the two CAS pages and the badge
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  TEXTOUT_P("The exact curve and the MGF", G1, 8, 4, 2, #003CC8h);
+  TEXTOUT_P("UNIFORM population only: the black dots in the", G1, 8, 24, 1, #000000h);
+  TEXTOUT_P("  bottom panel are the EXACT curve of the mean", G1, 8, 37, 1, #000000h);
+  TEXTOUT_P("  of n draws from a flat population with your", G1, 8, 50, 1, #000000h);
+  TEXTOUT_P("  μ and σ (Irwin-Hall). Blue: the normal one.", G1, 8, 63, 1, #003CC8h);
+  TEXTOUT_P("They differ at n = 1 and 4; by 16 they agree.", G1, 8, 76, 1, #008C3Ch);
+  TEXTOUT_P("Above n = 49 the dots are not drawn (12-digit", G1, 8, 89, 1, #5A5A5Ah);
+  TEXTOUT_P("  decimals cannot add up the exact formula).", G1, 8, 102, 1, #5A5A5Ah);
+  TEXTOUT_P("Other shapes have no exact curve here.", G1, 8, 115, 1, #FF4500h);
+  TEXTOUT_P("Menu, Exact curve: the CAS's polynomial and its", G1, 8, 128, 1, #C800C8h);
+  TEXTOUT_P("  peak as an exact fraction, for your n.", G1, 8, 141, 1, #C800C8h);
+  TEXTOUT_P("Menu, Why the bell?: coin flips, cosh(t/√n)^n", G1, 8, 154, 1, #C800C8h);
+  TEXTOUT_P("  and its limit e^(t^2/2), the bell's MGF.", G1, 8, 167, 1, #C800C8h);
+  TEXTOUT_P("Badge: exact (CAS) = CAS answers, each checked", G1, 8, 180, 1, #1E90FFh);
+  TEXTOUT_P("  against the program's own number; decimal =", G1, 8, 193, 1, #1E90FFh);
+  TEXTOUT_P("  the CAS was not used (or failed).", G1, 8, 206, 1, #1E90FFh);
+  TEXTOUT_P("Any key or tap to go back", G1, 8, 226, 1, #1E90FFh);
+  BLIT_P(G0, 0, 0, G1);
+  cltWaitAny();
+  RETURN 1;
+END;
+
+// The Enter-key menu inside the dashboard (also the Menu button).
+// Returns 1 to stay in the dashboard, 0 to leave it.
+cltMenu()
+BEGIN
+  LOCAL mnI;
+  mnI := 0;
+  // beta 3: twelve items (the Prime shows 10, 11, 12 as A, B, C; nothing
+  // on screen refers to them by number); "Curves on / off" turns both
+  // curves, and the two CAS pages come before Help
+  CHOOSE(mnI, "Central Limit", {"Draw new samples", "Change sample size n",
+    "Number of samples", "New population", "Curves on / off",
+    "Plot population (built-in)", "Plot sample means (built-in)",
+    "Square-root law", "Exact curve (uniform)", "Why the bell? (MGF)",
+    "Help", "Leave"});
+  IF mnI == 1 THEN cltSample(); END;
+  IF mnI == 2 THEN IF cltChooseN() THEN cltSample(); END; END;
+  IF mnI == 3 THEN IF cltAskReps() THEN cltSample(); END; END;
+  IF mnI == 4 THEN cltChoosePop(); END;
+  IF mnI == 5 THEN cltOver := 1 - cltOver; END;
+  // the built-in plot takes over the screen, so leave the dashboard
+  IF mnI == 6 THEN cltPlot := 1; cltBuiltin(); RETURN 0; END;
+  IF mnI == 7 THEN cltPlot := 2; cltBuiltin(); RETURN 0; END;
+  IF mnI == 8 THEN cltLaw(); END;
+  IF mnI == 9 THEN cltExact(); END;
+  IF mnI == 10 THEN cltMgf(); END;
+  IF mnI == 11 THEN cltHelp(); END;
+  IF mnI == 12 THEN RETURN 0; END;
+  RETURN 1;
+END;
+
+// beta 2: what each of the six buttons does (slot 1 = leftmost).
+// Returns 1 to stay in the dashboard, 0 to leave it.
+cltButton(bnS)
+BEGIN
+  IF bnS == 1 THEN cltOneSample(1); END;                     // 1 sample, watched
+  IF bnS == 2 THEN cltOneSample(0); END;                     // +1, at once
+  IF bnS == 3 THEN cltK := cltKDn(cltK); cltSample(); END;   // n-
+  IF bnS == 4 THEN cltK := cltKUp(cltK); cltSample(); END;   // n+
+  IF bnS == 5 THEN cltOver := 1 - cltOver; END;              // Curve
+  IF bnS == 6 THEN RETURN cltMenu(); END;                    // Menu
+  RETURN 1;
+END;
+
+// beta 2: a finger came down on the top panel at (tpX0, tpY0).
+// Follow it until it lifts (or 15 s pass, in case a touch reading
+// sticks), then decide what it was:
+//   moved more than 8 px ..... a DRAG: its x chooses sqrt n = 1..10.
+//                              While it moves, the dashboard shows
+//                              that n's predicted curve (no new
+//                              data); on lifting, samples are drawn.
+//   held 0.6 s on a bar ...... that bar's numbers
+//   on the lower-left corner . one sample, watched (as 1 sample)
+//   anything else ............ a fresh set of samples, as before
+cltTopPress(tpX0, tpY0)
+BEGIN
+  LOCAL tpT, tpM, tpM1, tpDrag, tpX, tpY;
+  LOCAL tpUp, tpK, tpHeld, tpB;
+  tpT := TICKS;
+  tpDrag := 0; tpUp := 0; tpK := cltK;
+  tpX := tpX0; tpY := tpY0;
+  cltPvK := 0;
+  REPEAT
+    tpM := MOUSE;
+    tpM1 := tpM(1);
+    IF SIZE(tpM1) > 0 THEN
+      tpX := tpM1(1); tpY := tpM1(2);
+      IF ABS(tpX - tpX0) > 8 OR ABS(tpY - tpY0) > 8 THEN tpDrag := 1; END;
+      IF tpDrag THEN
+        tpK := cltKAt(tpX);
+        IF tpK <> cltPvK THEN
+          cltPvK := tpK;
+          cltDash(0);              // redraw only when the n changes
+        END;
+      END;
+    ELSE
+      tpUp := 1;                   // the finger has lifted
+    END;
+  UNTIL tpUp OR TICKS - tpT > 15000;
+  tpHeld := TICKS - tpT;
+  cltPvK := 0;
+  cltDrain();
+  IF tpDrag THEN
+    cltK := tpK;
+    cltSample();                   // the data catches up with the theory
+    RETURN 1;
+  END;
+  IF tpHeld >= 600 THEN
+    tpB := cltHit(tpX0, tpY0, 1);
+    IF tpB > 0 THEN
+      cltTip := 1; cltTipB := tpB; cltTipX := tpX0;
+      RETURN 1;
+    END;
+  END;
+  IF tpX0 <= cLft + 44 AND tpY0 >= cB1 - 16 THEN
+    cltOneSample(1);
+    RETURN 1;
+  END;
+  cltSample();
+  RETURN 1;
+END;
+
+// beta 2: a tap on the bottom panel (the finger has already lifted).
+//   the curve label at the top right .. curve on / off
+//   a bar of means .................... its numbers
+//   anywhere else ..................... curve on / off, as before
+cltBotTap(btX, btY)
+BEGIN
+  LOCAL btB;
+  IF btY <= cT2 + 11 AND btX >= cLft + cWid - 120 THEN
+    cltOver := 1 - cltOver;
+    RETURN 1;
+  END;
+  btB := cltHit(btX, btY, 2);
+  IF btB > 0 THEN
+    cltTip := 2; cltTipB := btB; cltTipX := btX;
+    RETURN 1;
+  END;
+  cltOver := 1 - cltOver;
+  RETURN 1;
+END;
+
+// The dashboard's live loop: draw, wait for a key or a tap, act.
+cltDashLoop()
+BEGIN
+  LOCAL dlK, dlM, dlM1, dlGo, dlX, dlY;
+  cltRecover();
+  dlGo := 1;
+  WHILE dlGo DO
+    cltDash(0);
+    REPEAT dlK := GETKEY; UNTIL dlK == -1;      // drain any leftover key
+    REPEAT
+      dlK := GETKEY;
+      dlM := MOUSE;
+      dlM1 := dlM(1);                            // the first finger, if any
+    UNTIL dlK > -1 OR SIZE(dlM1) > 0;
+    // beta 2: the caption, the bar-numbers box and the last single
+    // sample's markers last until the next key or tap
+    cltCapOn := 0; cltTip := 0; cltOne := 0;
+    IF SIZE(dlM1) > 0 THEN
+      // a touch: element 1 is x, element 2 is y
+      dlX := dlM1(1); dlY := dlM1(2);
+      IF dlY >= 218 THEN
+        // the button row: six 53.4-px slots, acted on once the
+        // finger has lifted
+        cltDrain();
+        dlGo := cltButton(MIN(6, IP(dlX/53.4) + 1));
+      ELSE
+        IF dlY >= cT1-2 AND dlY <= cB1+1 THEN
+          cltTopPress(dlX, dlY);         // tap, hold or drag; it waits for the lift
+        ELSE
+          cltDrain();                    // wait for the finger to lift
+          IF dlY >= cT2-2 AND dlY <= cB2+1 THEN cltBotTap(dlX, dlY); END;
+        END;
+      END;
+    ELSE
+      IF dlK == 4 THEN dlGo := 0; END;                                  // Esc
+      IF dlK == 50 THEN cltK := cltKUp(cltK); cltSample(); END;         // +: n 1, 4, 16, 64, 100
+      IF dlK == 45 THEN cltK := cltKDn(cltK); cltSample(); END;         // -
+      IF dlK == 8 THEN cltK := MIN(10, cltK + 1); cltSample(); END;     // Right: sqrt n + 1
+      IF dlK == 7 THEN cltK := MAX(1, cltK - 1); cltSample(); END;      // Left: sqrt n - 1
+      IF dlK == 2 THEN cltOneSample(1); END;                            // Up: 1 sample
+      IF dlK == 12 THEN cltOneSample(0); END;                           // Down: +1
+      IF dlK == 42 THEN cltOver := 1 - cltOver; END;                    // 0: curve
+      IF dlK == 30 THEN dlGo := cltMenu(); END;                         // Enter
+    END;
+  END;
+END;
+
+
+// ------------------------------------------------------------
+// THE APP ITSELF
+// ------------------------------------------------------------
+
+// HP's own app examples carry an exported routine named after the
+// app; it does nothing.
+EXPORT CentralLimit()
+BEGIN
+END;
+
+// START runs whenever the app is started from the Application
+// Library.
+START()
+BEGIN
+  IF cltMade == 0 THEN cltK := 1; END;   // beta 2: a fresh start begins at n = 1
+  cltFirst1 := 1;                        // the first single sample gets its caption
+  cltWelcome();
+  cltRecover();
+  STARTVIEW(7, 1);                 // 7 = the View menu, so you see the choices
+END;
+
+// The Plot key: the app's own histogram, scaled to the data.
+// (A program routine named Plot replaces what the key does, as in
+// HP's Sicherman example.)
+Plot()
+BEGIN
+  IF cltRecover() THEN
+    cltBuiltin();
+  ELSE
+    STARTVIEW(1, 1);
+  END;
+END;
+
+// ---- the View menu: each VIEW line adds one entry ----
+
+VIEW "CLT dashboard", cltVDash()
+BEGIN
+  IF cltRecover() == 0 THEN
+    IF cltChoosePop() == 0 THEN RETURN; END;
+  END;
+  cltDashLoop();
+END;
+
+VIEW "Choose population", cltVPop()
+BEGIN
+  IF cltChoosePop() THEN cltDashLoop(); END;
+END;
+
+VIEW "Draw samples", cltVSamp()
+BEGIN
+  IF cltRecover() == 0 THEN
+    IF cltChoosePop() == 0 THEN RETURN; END;
+  END;
+  IF cltChooseN() THEN
+    cltSample();
+    cltDashLoop();
+  END;
+END;
+
+VIEW "Plot population", cltVPlotP()
+BEGIN
+  cltPlot := 1;
+  cltBuiltin();
+END;
+
+VIEW "Plot sample means", cltVPlotM()
+BEGIN
+  IF cltMade == 0 THEN
+    MSGBOX("Draw some samples first.");
+  ELSE
+    cltPlot := 2;
+    cltBuiltin();
+  END;
+END;
+
+// beta 2: the square-root law page, also on the dashboard's menu.
+VIEW "Square-root law", cltVLaw()
+BEGIN
+  IF cltRecover() == 0 THEN
+    MSGBOX("Choose a population first (View menu).");
+  ELSE
+    cltLaw();
+  END;
+END;
+
+// beta 3: the two CAS pages, also on the dashboard's menu.  Neither
+// needs a population: the exact-curve page is about uniform draws at
+// the current n, and the MGF page about coin flips.
+VIEW "Exact curve (uniform)", cltVExact()
+BEGIN
+  cltExact();
+END;
+
+VIEW "Why the bell? (MGF)", cltVMgf()
+BEGIN
+  cltMgf();
+END;
+
+VIEW "Help", cltVHelp()
+BEGIN
+  cltHelp();
+END;

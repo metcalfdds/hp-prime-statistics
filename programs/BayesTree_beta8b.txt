@@ -1,0 +1,2861 @@
+#pragma mode( separator(.,;) integer(h32) )
+
+// ============================================================
+// BAYESTREE - beta 8b
+// ============================================================
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
+//   the file and credit the author if you pass it on.  Not for
+//   sale or commercial redistribution.  Provided as is.
+// Written with AI assistance (Anthropic Claude); see the credit
+//   lines below the header.
+// beta 3 was tested on an HP Prime G2 and G1, both on the
+//   2026-09-09 firmware, plus the desktop Virtual Calculator.
+//   beta 4, beta 5, beta 6, beta 7, beta 8, beta 8a and beta 8b
+//   have NOT yet been run on hardware.  beta 7 ran on the HP Prime
+//   Virtual Calculator (2.4.2, build 2026-09-09, 17 Oct 2026); beta
+//   8b fixes what that run found.  beta 8 is the first version that
+//   calls the CAS; its call form (beta 8a) is the one CASProbe
+//   beta 1b found on the same emulator, see bt_Cas below.
+//
+// beta 8b (17 Oct 2026) - what changed: the emulator's findings on
+//   beta 7 (Emulator_Round1_Results_2026-10-17_v1.md).  Line numbers
+//   are beta 8a's.
+//   * SOFT KEYS FIRE.  On the emulator, tapping Values or ROC did
+//     nothing.  MenuTapProbe beta 1 showed why: with DRAWMENU on the
+//     screen, a tap on the soft-key strip reaches WAIT(-1) ONLY as
+//     {3, x, y} -- type 3, a "click" -- with no press (type 0) and
+//     no lift; a tap above the strip arrives as {0, x, y}, then {2},
+//     then {3, x, y}.  beta 8a read soft keys from a type-0 press
+//     with y >= 218 (2574-2585), which never comes.  The main loop
+//     now reads a soft key from a TYPE 3 event with y >= 218 (slot
+//     MIN(6, IP(x/53.4)+1), slot 6 = More as before).  Type 3 ABOVE
+//     the strip is still ignored (a screen tap sends 0, 2 and 3:
+//     acting on both would run it twice), and a type-0 press at
+//     y >= 218, should one ever arrive, now does nothing, for the
+//     same reason.  The PPV, ROC and Fagan views draw no soft keys
+//     (they take taps and drags only), so they needed no change
+//     except one line each (next item).
+//   * NO STALE CLICK.  A view that closes on a tap read from
+//     WAIT(-1) (PPV, ROC, Fagan) leaves that tap's {2} and {3, x, y}
+//     behind for the tree.  If the tap was on the view's footer
+//     (y >= 218), the tree would have read the click as a soft key.
+//     So every tap whose click may still be on its way is written
+//     down, in order (new file-level lists btTLX, btTLY and the
+//     pointer btTLi): the tree's own presses, the closing tap of
+//     those three views, and every tap a page held by bt_WaitAny
+//     reads (in case its click also reaches WAIT(-1) -- not seen,
+//     but not ruled out either).  Such clicks arrive first, in that
+//     order, before anything new, so the tree skips a click that
+//     matches the next one on the list and forgets the list at the
+//     first event that does not.
+//   * EVERY PAIR ADDS UP.  After a sens drag to 0.835, D+ 100 showed
+//     T+ 84 and T- 17 (83.5 and 16.5, each rounded): 101.  The counts
+//     are now rounded once (new bt_RCnt): D+ is rounded and D- is
+//     N - D+; T+ is rounded and T- is D+ - T+; the same in the D- row.
+//     The probabilities view (Leaves) and the branch numbers do the
+//     same at three decimals (new bt_RPrb and bt_fmtq).  A node page
+//     and the 2x2 view get the same rounded counts, so they agree
+//     with the box that was tapped.
+//   * The first-level numbers (prior and 1 - prior, 2422-2423) sat
+//     on the branch lines; they now sit to the right of them (x 98,
+//     y 78 and 136), and their tap boxes moved with them (2199-2202).
+//   Nothing else changed.
+//
+// beta 8a (17 Oct 2026) - what changed: the CAS call form only.
+//   CASProbe beta 1b found that CAS(s) with s a variable hands the
+//   text back UNEVALUATED, so beta 8's bt_Cas (lines 277-299)
+//   returned its own input and every exact answer fell back to the
+//   decimal.  Its IFERR line is now
+//     STRING(EXPR("CAS(" + CHAR(34) + "string(" + s + ")" + CHAR(34) + ")"))
+//   (BRIEF_CAS_v2), the quotes STRING() adds are dropped, and an
+//   answer holding the infinity sign is refused like undef.  The
+//   readers needed no change: bt_Strip already drops braces, which
+//   is how the Prime prints a solve ({1/20}, CASProbe T18), and
+//   bt_IsFr takes only digits, "/" and "-"; their comments now say
+//   what the emulator showed.  Nothing else changed.
+//
+// beta 8 (16 Oct 2026) - what changed (the CAS version, built on
+//   beta 7; every beta 7 change is kept, the event model too):
+//   * EXACT PPV AND NPV as fractions, from the CAS.  The program
+//     writes the student's prior, sens and spec as ratios of whole
+//     numbers (0.95 -> 95/100; a value from Enter counts, such as
+//     920/950, is recovered as 92/95) and asks the CAS for Bayes'
+//     theorem exactly: 1 % prior, 95 % / 95 % test -> PPV = 19/118.
+//     Shown on the tree between the FN and FP leaves (PPV, and NPV
+//     or, with forensic labels, 1 - PPV) with a badge, "exact
+//     (CAS)" or "decimal" (the CAS could not answer; the decimal
+//     is shown instead).  The CAS is asked only when the values
+//     changed AND no finger is dragging -- after a key, a lift, a
+//     menu or a view -- never once per drag sample.
+//   * BREAK-EVEN PREVALENCE: the CAS solves PPV = 1/2 for the
+//     prior (95 % / 95 %: 1/20 = 5 %).  A magenta mark on the
+//     prevalence slider, the track left of it tinted red, and two
+//     lines on the tree: "Most T+ are false / if prior < 5.0 %".
+//     The mark's POSITION comes from the program's own arithmetic,
+//     1/(1 + LR+), so it follows a sens/spec drag live; the CAS's
+//     exact answer is text on the Exact page.  It is recomputed
+//     only when sens or spec change, never during a slider drag.
+//     With TWO tests the mark is the prior BEFORE test 1 at which
+//     a person positive on BOTH tests is as likely to have it as
+//     not: 1/(1 + LR1+ x LR2+) (the slider sets that prior).
+//   * EXACT PAGE (soft key Exact on page 3, menu item "Exact
+//     answers (CAS)", or a tap on the fractions): page 1, the
+//     natural frequencies (the smallest N = 1000, 10000 ... at
+//     which every leaf is a whole number: "PPV = 95/590 = 19/118
+//     = 0.161") and the break-even prior with its sentence; page
+//     2, Bayes' formula with the student's numbers put in, and
+//     the CAS's symbolic solve of PPV = 1/2.
+//   * PPV VIEW: the break-even point marked where the PPV curve
+//     crosses 1/2, and the sentence under the plot (the plot is
+//     12 px shorter to make room).
+//   * HELP: a fourth page, "exact answers (CAS)".
+//   * The one routine that calls the CAS is bt_Cas; bt_IStr writes
+//     whole numbers as plain digits for the CAS text (the house
+//     CAS kit, BRIEF_CAS 16 Oct 2026).  No decimal point ever goes
+//     into CAS text.  If an update takes more than 1.5 s (the G1's
+//     CAS speed is unknown), the tree stops asking by itself and
+//     shows "tap for exact" instead.
+//   * Menu: 16 items (10-16 show as A-G); Close is now G.  On exit
+//     the summary adds the exact PPV ("PPV = 0.667 = 2/3").
+//
+// beta 7 (16 Oct 2026) - what changed (the touch and graphics
+//   version, built on beta 6; every beta 6 fix is kept):
+//   * PREVALENCE SLIDER in the top strip (replaces the text
+//     "prior = ..., sens = ..., spec = ..." of beta 6 line 590).
+//     The track is on a log-odds scale (0.001 ... 0.999).  Press
+//     it and the knob jumps to the finger; drag and the prior
+//     follows CONTINUOUSLY (rounded to two significant figures,
+//     never finer than 0.001), and all six boxes re-count on every
+//     drag sample.  It is NOT snapped to the ladder on lift; +/-
+//     then step to the next ladder rung above or below.
+//   * MOSAIC INSET beside the tree (top left): one rectangle split
+//     at the prior, each column split by sens (left) and spec
+//     (right): TP green, FN red, FP orange, TN light grey.  At 1 %
+//     prevalence the orange FP block swallows the green TP sliver.
+//     Tap it for "Same test, three prevalences".
+//   * The main loop still waits with WAIT(-1) (beta 6 line 643) and
+//     now also takes type 1 (move) events, after the SIZE >= 3
+//     check, for the drags.  It redraws only when something
+//     changed.  The finger-lift drain after every touch (beta 6
+//     line 671) is gone: it would freeze a drag; pages drain the
+//     finger themselves (bt_WaitAny).
+//   * SENS AND SPEC BY DRAGGING the second-level branches up or
+//     down (the D+ pair sets sens, the D- pair sets spec), with a
+//     grip mark at each branch number.  A drag takes over from a
+//     tap only when type 1 movement of more than 8 px is seen.
+//   * TAP A BRANCH NUMBER for its own page, in bt_NodeInfo's form
+//     (six new ids, 8-13): "P(T+ | D+) = sens - read along the
+//     ROW, not the column".  Node pages now wrap their text into
+//     short lines (beta 6's long lines ran off the panel).
+//   * SOFT KEYS, three pages, "More" in slot 6 on every page (the
+//     house convention of 16 Oct 2026): page 1 Values, Counts, ROC,
+//     PPV, 2x2; page 2 Diag, Fagan, Icons, 3 prev, Help; page 3
+//     Test 2, Reset, Forensic, Leaves.  DRAWMENU after every blit; a
+//     press with y >= 218 is slot MIN(6, IP(x/53.4)+1).  The footer
+//     line (beta 6 line 633) is gone; the readouts and a short key
+//     legend now end at y 214.
+//   * PPV VIEW: tap or drag the plot to move the prior; ROC VIEW:
+//     tap or drag to move the operating point ALONG the binormal
+//     curve (sens and spec change together).  Both curves are
+//     cached once per view.  New values come back through the
+//     file-level LOCALs btPr, btSe, btSp.
+//   * FAGAN NOMOGRAM (new view): prior on a log-odds axis (left,
+//     0.001 at the top as in Fagan's original), LR on log10 from
+//     0.001 to 1000 (centre, half scale), posterior (right); a
+//     magenta line prior -> LR+ -> PPV and a dodger-blue one
+//     through LR- -> 1 - NPV; drag the left axis to move the prior.
+//   * SECOND TEST (new menu item): test 1's PPV becomes test 2's
+//     prior; the tree's root is the T+ people of test 1 (greyed),
+//     a breadcrumb "0.10 -> 0.67 -> 0.97" replaces the title, and
+//     the nomogram chains the lines.  "Reset to one test" undoes it.
+//   * ICON ARRAY: 1000 people as a 40 x 25 grid of 6-px squares,
+//     the T+ people (TP then FP) first so they form one band.
+//   * LEAF BARS: a bar in each leaf box, length = count / N
+//     (linear from 1 %, a log stub below 1 %).
+//   * FORENSIC LABELS (menu toggle): D+ = source, D- = not source,
+//     T+ = match, prior = "1 in N" of the suspect pool; pages say
+//     that 1 - spec is the random-match probability and 1 - PPV the
+//     probability the matching person is NOT the source; the 2x2
+//     view names the prosecutor's fallacy.
+//   * SAME TEST, THREE PREVALENCES: three mosaics at 1/1000, 1/100
+//     and 1/10 with their PPVs.
+//   * LEAVES toggle: counts or probabilities (0.090 / 0.010 ...).
+//   * HELP: three drawn pages (beta 6 had none).  bt_WaitAny now
+//     returns the key (or -1 for a tap), as the house kit does.
+//   * The prior ladder is the file-level list btLad (beta 6's
+//     local pl, pidx, bestd, dtmp are gone); the menu has 15 items
+//     (items 10-15 show as A-F); the summary returned on exit
+//     is kept.
+//
+// beta 6 (16 Oct 2026) - what changed (fixes only):
+//   * Double-buffered: the tree and every sub-view (node page, 2x2
+//     table, Diagnostics, PPV-vs-prevalence, ROC) used to draw
+//     straight to the screen, one call at a time.  Each frame is
+//     now composed on G1 (DIMGROB_P to white, every RECT_P / LINE_P
+//     / TEXTOUT_P / PIXON_P retargeted) and shown with ONE BLIT_P.
+//   * Waits: the node page held with WAIT(-1) between two GETKEY
+//     drains, which do not drain touch -- so the finger lift from
+//     the tap that opened the page could close it, and WAIT(-1)
+//     gives up after about a minute.  The four sub-views waited on
+//     keys only, with no drain, so a stale Enter could skip them.
+//     All five now hold with bt_WaitAny(): drain keys AND the
+//     finger (bt_Drain, capped at one second by TICKS), wait for a
+//     key or a tap, drain again.  A tap closes a page too.
+//   * Main loop: still WAIT(-1) (device-tested at beta 3), with
+//     bt_Drain() after a touch so the lift cannot re-trigger it.
+//   * Names: the leaf count "fp" is now btFP (FP is a built-in,
+//     matched ignoring case); the plot locals W, H, i, p, v are
+//     tagged (prvW ... rocI); no LOCAL line carries more than 6
+//     names.
+//   * One magenta, RGB(200,0,200): the count on the node page, the
+//     "cols:" line of the 2x2 view, the F1/MCC/kappa lines and the
+//     PPV/NPV line used RGB(255,0,255).  ROC axis labels are the
+//     house red and green.  The main footer is dodger blue in the
+//     house form with spaces round "=".
+//   * Axis tick labels 0.0 ... 1.0 use STRING mode 2 (mode 1
+//     ignores the decimals argument).
+//   * Diagnostics: with no false negatives or no false positives
+//     (possible via Enter counts) the diagnostic odds ratio is
+//     printed as infinite with the reason, instead of dividing by
+//     a clamped near-zero.
+//   * Ends with RETURN "BayesTree: PPV = ..., NPV = ..." so Home
+//     shows a summary and nothing is left open.
+//
+// beta 5 (10 Oct 2026): every helper routine now carries the program
+//   tag "bt_" (fmtp -> bt_fmtp, NodeInfo -> bt_NodeInfo).
+//   The Prime keeps the routines of ALL programs in one shared
+//   pool, so two programs that define the same helper name
+//   (NiceNum, fmtp and lngamma were each shared by up to eight
+//   programs) can run each other's code.  That is what sent
+//   StudRange into a Burr3 screen and forced a reset.
+//   Rule: every non-EXPORT routine gets the program's tag.
+//   Also: the tree view only reads tap coordinates from a touch
+//   event that carries them (a finger LIFT arrives as a one-element
+//   list; reading kk(2) from it was a runtime error that opened the
+//   Program Editor), and only a new press (type 0) opens a node.
+//
+// beta 3: TAP ANY NODE for an explanation of that count -- what
+//   it is, the formula behind it, and which pair it belongs to.
+//   WAIT(-1) returns {type, x, y} for a screen event, so the
+//   main loop now takes touch as well as keys.  Nothing else
+//   changed from beta 2.
+//
+// beta 4 (29 Sep 2026): the key/touch variable in BayesTree() is
+//   renamed from key to kk (house rule: KEY heads user-key
+//   definitions).  Nothing else changed from beta 3.
+// ============================================================
+
+// (C) 2026 Roger D Metcalf
+// Program concept and rudimentary code by Roger D. Metcalf
+// Code corrected, expanded, and vastly improved by Claude Code Fable 5
+
+// Bayesian tree explorer — natural frequencies — Roger D Metcalf
+// Launch:  BayesTree()   — no arguments; the options menu pops up
+// first (defaults prior=0.1, sens=0.90, spec=0.95); Close it to
+// explore with the keys, the soft keys and the touch screen.
+// Controls:  Left/Right = specificity (±0.01)
+//            Up/Down    = sensitivity (±0.01)
+//            (-)/(+)    = prior (next rung of the teaching ladder)
+//            Enter      = menu (exact values incl N / counts / views
+//                         / nomogram / second test / toggles / help)
+//            Esc        = quit
+//            SLIDE the red knob in the top strip = prior
+//            DRAG a branch pair up/down = sens (D+ pair), spec (D- pair)
+//            TAP a box = explain that count
+//            TAP a branch number = explain that probability
+//            TAP the mosaic = the same test at three prevalences
+//            TAP the exact fractions (right, mid) = the Exact page
+//            SOFT KEYS (More = next page of keys):
+//              Values, Counts, ROC, PPV, 2x2 | Diag, Fagan, Icons,
+//              3 prev, Help | Test 2, Reset, Forensic, Leaves, Exact
+// Tree: N people → D+/D− by prior → T+/T− by sens/spec, all six
+// nodes boxed, counts at every leaf. T+ leaves highlighted:
+// PPV = TP/(TP+FP) read off the tree. Readouts: PPV, NPV, LR+, LR−.
+
+// ---- file-level state, shared by every routine below (file-level
+// LOCAL is device-verified: ChiTable).  beta 7.
+//   btPr, btSe, btSp  values handed BACK by the live views (a PPL
+//                     routine cannot change its caller's variables)
+//   btFor             1 = forensic labels (source / match)
+//   btPrb             1 = leaves show probabilities, 0 = counts
+//   btNS              number of tests in the chain (1 or 2)
+//   btSSe, btSSp      sens and spec of the EARLIER tests, in order
+//   btLad             the prior teaching ladder
+//   btTX, btTY        where the last page-closing tap landed
+//   btHX1..btHId      hit boxes of every tappable thing on the tree
+//   btSX1, btSX2      the slider track's ends (pixels)
+//   btSKP, btSK, btSKA  soft-key page showing, the label pages, and
+//                     the menu item each slot runs (flat: page*6+slot)
+//   btLGL, btLGH      the slider's log-odds range, ln(odds)
+// beta 8, the CAS (every CAS answer is cached TEXT; the CAS is never
+// asked again for the same inputs):
+//   btCasOK           1 = the last CAS update worked, 0 = something
+//                     fell back to a decimal (drives the badge)
+//   btXK              the inputs the cached exact texts are FOR
+//   btXP, btXN, btXC  exact PPV, NPV and 1 - PPV ("" = not available)
+//   btBK, btBE        the tests the break-even text is for, and the
+//                     CAS's exact break-even prior ("1/20")
+//   btBS, btBSK       the CAS's symbolic break-even formula, and the
+//                     number of tests it was solved for (0 = none)
+//   btCasMs           how long the last CAS update took (ms, TICKS)
+//   btCasAu           1 = the tree asks the CAS by itself; 0 = only
+//                     when the student taps (set if the CAS is slow)
+LOCAL btPr, btSe, btSp, btFor, btPrb, btNS;
+LOCAL btSSe, btSSp, btLad, btTX, btTY;
+LOCAL btHX1, btHY1, btHX2, btHY2, btHId;
+LOCAL btSX1, btSX2, btLGL, btLGH;
+LOCAL btSKP, btSK, btSKA;
+LOCAL btCasOK, btXK, btXP, btXN, btXC;
+LOCAL btBK, btBE, btBS, btBSK, btCasMs, btCasAu;
+
+// beta 8b: taps whose click (WAIT(-1) type 3) may still be on its way
+// to the tree, in order, and the next one due (see the main loop)
+LOCAL btTLX, btTLY, btTLi;
+
+bt_NodeInfo();
+
+// ============================================================
+// THE CAS KIT (beta 8; the house shapes from BRIEF_CAS, 16 Oct
+// 2026, with xx replaced by this program's tag).
+// ============================================================
+
+// A whole number as plain digits: no digit-grouping marks, no
+// decimal point, no exponent.  Home's STRING() follows the Home
+// number format (PyProbe saw grouping marks and a special minus
+// sign), which the CAS cannot read, so CAS text is built only from
+// this routine.
+bt_IStr(bt_N)
+BEGIN
+  LOCAL dS, dV, dD;
+  dV := ROUND(ABS(bt_N), 0);
+  IF dV == 0 THEN RETURN "0"; END;
+  dS := "";
+  WHILE dV > 0 DO
+    dD := dV MOD 10;
+    dS := CHAR(48 + dD) + dS;
+    dV := (dV - dD) / 10;
+  END;
+  IF bt_N < 0 THEN dS := "-" + dS; END;
+  RETURN dS;
+END;
+
+// The ONE place this program calls the CAS.  It returns the CAS answer as text,
+// or "" if the CAS failed, gave undef, an error or an infinity.
+// The call form is the one CASProbe beta 1b found on the HP Prime Virtual
+// Calculator (build 2026-09-09, 17 Oct 2026): CAS(s) with s a variable hands
+// the text back UNEVALUATED, so the text is built into a literal CAS("...")
+// that EXPR reads at run time, and the CAS is asked for string(...) of the
+// answer, so a big integer crosses into PPL whole, not as a 12-digit real.
+bt_Cas(bt_S)
+BEGIN
+  LOCAL cR;
+  cR := "";
+  IFERR
+    cR := STRING(EXPR("CAS(" + CHAR(34) + "string(" + bt_S + ")" + CHAR(34) + ")"));
+  THEN
+    cR := "";
+  END;
+  // The answer is a PPL string, and STRING() of it adds one pair of quotes
+  // (CASProbe beta 1b T12, emulator): drop that pair.
+  IF DIM(cR) >= 2 THEN
+    IF LEFT(cR, 1) == CHAR(34) AND MID(cR, DIM(cR), 1) == CHAR(34) THEN
+      cR := MID(cR, 2, DIM(cR) - 2);
+    END;
+  END;
+  // undef, an error, or an infinity (CHAR(8734) is the infinity sign; it
+  // also catches the Prime's plus-minus infinity, 1/0): no usable answer
+  IF INSTRING(cR, "undef") > 0 OR INSTRING(cR, "rror") > 0 OR INSTRING(cR, CHAR(8734)) > 0 THEN cR := ""; END;
+  RETURN cR;
+END;
+
+// ---- small helpers for the CAS texts (beta 8) ----
+
+// 1 if two lists hold the same numbers, 0 if not (the cache keys).
+// A plain loop with a flag -- no list comparison operator.
+bt_Same(smA, smB)
+BEGIN
+  LOCAL smI, smR;
+  IF SIZE(smA) <> SIZE(smB) THEN RETURN 0; END;
+  smR := 1;
+  FOR smI FROM 1 TO SIZE(smA) DO
+    IF smA(smI) <> smB(smI) THEN smR := 0; END;
+  END;
+  RETURN smR;
+END;
+
+// A value in (0, 1) as a ratio of WHOLE numbers, for CAS text
+// (no decimal point may go into CAS text).  Returns {num, den, kind}:
+//   kind 0  a decimal with at most 6 places: 0.95 -> {95, 100}
+//           (every value the slider, the ladder, the drags and the
+//           arrows make is one of these);
+//   kind 1  a ratio found by a continued fraction, denominator up to
+//           a million: a value from Enter counts, 920/950 = 0.96842...,
+//           comes back as {92, 95}, so the fractions are the student's;
+//   kind 2  neither: the value rounded to 6 places (the Exact page
+//           says so).
+// The CAS reduces the fractions itself, so {95, 100} is fine.
+bt_Rat(raV)
+BEGIN
+  LOCAL raD, raS, raX, raA, raH, raK;
+  LOCAL raH1, raK1, raT, raI, raF;
+  // 1. a decimal with at most 6 places
+  FOR raD FROM 0 TO 6 DO
+    raS := raV*10^raD;
+    IF ABS(raS - ROUND(raS,0)) < 0.000001 THEN RETURN {ROUND(raS,0), 10^raD, 0}; END;
+  END;
+  // 2. a ratio of whole numbers: the continued fraction of raV.
+  //    Convergents h/k: h(n) = a(n) h(n-1) + h(n-2), the same for k,
+  //    starting from h(-1) = 1, h(-2) = 0, k(-1) = 0, k(-2) = 1.
+  raX := raV; raH := 1; raH1 := 0; raK := 0; raK1 := 1;
+  raI := 0; raF := 0;
+  WHILE raF == 0 AND raI < 20 DO
+    raI := raI + 1;
+    raA := FLOOR(raX);
+    raT := raA*raH + raH1; raH1 := raH; raH := raT;
+    raT := raA*raK + raK1; raK1 := raK; raK := raT;
+    IF raK > 1000000 THEN raF := 2; END;                         // too big: give up
+    IF raF == 0 AND ABS(raV - raH/raK) < 0.0000000001 THEN raF := 1; END;   // found it
+    IF raF == 0 THEN
+      IF raX - raA < 0.000000000001 THEN raF := 2; ELSE raX := 1/(raX - raA); END;
+    END;
+  END;
+  IF raF == 1 THEN RETURN {raH, raK, 1}; END;
+  // 3. rounded to 6 places
+  RETURN {ROUND(raV*1000000,0), 1000000, 2};
+END;
+
+// A ratio's CAS text, "95/100" (bt_IStr only, so plain digits).
+bt_RT(rtL)
+BEGIN
+  RETURN bt_IStr(rtL(1)) + "/" + bt_IStr(rtL(2));
+END;
+
+// The COMPLEMENT of a ratio as CAS text: 1 - 95/100 -> "5/100".
+// Whole-number subtraction in PPL is exact at these sizes.
+bt_RC(rcL)
+BEGIN
+  RETURN bt_IStr(rcL(2) - rcL(1)) + "/" + bt_IStr(rcL(2));
+END;
+
+// Replace every rpA in rpS by rpB (for turning CAS names into the
+// names students know: btq -> p).  LEFT is never called with 0
+// characters (what it returns then is not confirmed).
+bt_Rep(rpS, rpA, rpB)
+BEGIN
+  LOCAL rpR, rpT, rpI;
+  rpR := ""; rpT := rpS;
+  rpI := INSTRING(rpT, rpA);
+  WHILE rpI > 0 DO
+    IF rpI > 1 THEN rpR := rpR + MID(rpT, 1, rpI - 1); END;
+    rpR := rpR + rpB;
+    rpT := MID(rpT, rpI + DIM(rpA), DIM(rpT));
+    rpI := INSTRING(rpT, rpA);
+  END;
+  RETURN rpR + rpT;
+END;
+
+// A CAS answer without its list wrapping: the Prime answers a solve
+// with braces, "{1/20}" (CASProbe beta 1b T18, emulator 17 Oct
+// 2026); desktop Giac writes "list[1/20]".  Brackets, braces and
+// spaces go; a leading "list" (desktop Giac only) goes too.
+bt_Strip(stS)
+BEGIN
+  LOCAL stR, stI, stC;
+  stR := "";
+  FOR stI FROM 1 TO DIM(stS) DO
+    stC := MID(stS, stI, 1);
+    IF INSTRING("[]{} ", stC) == 0 THEN stR := stR + stC; END;
+  END;
+  IF INSTRING(stR, "list") == 1 THEN stR := MID(stR, 5, DIM(stR)); END;
+  RETURN stR;
+END;
+
+// 1 if a CAS answer is an exact fraction or whole number (only the
+// characters 0-9 / -), 0 if not.  This also catches a CAS left in
+// approximate mode (it would answer "0.161016949153"), so it cannot
+// be shown as "exact".  (An infinity, which the Prime prints with
+// the sign CHAR(8734), is already refused by bt_Cas.)
+bt_IsFr(ifS)
+BEGIN
+  LOCAL ifI, ifR;
+  IF DIM(ifS) == 0 THEN RETURN 0; END;
+  ifR := 1;
+  FOR ifI FROM 1 TO DIM(ifS) DO
+    IF INSTRING("0123456789/-", MID(ifS, ifI, 1)) == 0 THEN ifR := 0; END;
+  END;
+  RETURN ifR;
+END;
+
+// The digits in a fraction (for "exact fraction has 41 digits").
+bt_Dig(dgS)
+BEGIN
+  LOCAL dgI, dgN;
+  dgN := 0;
+  FOR dgI FROM 1 TO DIM(dgS) DO
+    IF INSTRING("0123456789", MID(dgS, dgI, 1)) > 0 THEN dgN := dgN + 1; END;
+  END;
+  RETURN dgN;
+END;
+
+// A CAS formula for the screen: no list wrapping, the program's CAS
+// names turned into the names on the tree (btq p, bts se, btc sp,
+// btl LR1, btm LR2) and * shown as the verified times sign.
+bt_Disp(dsS)
+BEGIN
+  LOCAL dsT;
+  dsT := bt_Strip(dsS);
+  dsT := bt_Rep(dsT, "btq", "p");
+  dsT := bt_Rep(dsT, "bts", "se");
+  dsT := bt_Rep(dsT, "btc", "sp");
+  dsT := bt_Rep(dsT, "btl", "LR" + CHAR(8321));
+  dsT := bt_Rep(dsT, "btm", "LR" + CHAR(8322));
+  dsT := bt_Rep(dsT, "*", CHAR(215));
+  RETURN dsT;
+END;
+
+// A number for a DISPLAYED formula, as it was typed: 0.95 -> "0.95",
+// 0.014 -> "0.014", 1 -> "1" (at most 6 places).  Display only; the
+// CAS text never sees this.
+bt_NumS(nsV)
+BEGIN
+  LOCAL nsD, nsK;
+  nsK := 6;
+  FOR nsD FROM 0 TO 5 DO
+    IF nsK == 6 AND ABS(nsV*10^nsD - ROUND(nsV*10^nsD,0)) < 0.000001 THEN nsK := nsD; END;
+  END;
+  IF nsK == 0 THEN RETURN bt_IStr(nsV); END;
+  RETURN STRING(nsV,2,nsK);
+END;
+
+// A prior as a percentage with sensible decimals: 0.05 -> "5.0 %",
+// 0.00308 -> "0.31 %", 0.25 -> "25 %".
+bt_Pct(pcV)
+BEGIN
+  LOCAL pcP, pcD;
+  pcP := 100*pcV;
+  pcD := 3;
+  IF pcP >= 0.1 THEN pcD := 2; END;
+  IF pcP >= 1 THEN pcD := 1; END;
+  IF pcP >= 10 THEN pcD := 0; END;
+  IF pcD == 0 THEN RETURN bt_IStr(pcP) + " %"; END;
+  RETURN STRING(pcP,2,pcD) + " %";
+END;
+
+// Long text in lines of at most wrW characters, broken at a space in
+// the second half of the line when there is one (else after + x or /);
+// continuation lines are indented two spaces.  Returns a list.
+bt_Wrap(wrS, wrW)
+BEGIN
+  LOCAL wrL, wrT, wrI, wrC, wrB;
+  wrL := {}; wrT := wrS;
+  WHILE DIM(wrT) > wrW DO
+    // the last space in the second half of the line; failing that, the
+    // last + , times sign or / (a CAS formula has no spaces)
+    wrC := 0; wrB := 0;
+    FOR wrI FROM IP(wrW/2) TO wrW DO
+      IF INSTRING(MID(wrT, wrI, 1), " ") > 0 THEN wrC := wrI; END;
+      IF INSTRING("+/" + CHAR(215), MID(wrT, wrI, 1)) > 0 THEN wrB := wrI; END;
+    END;
+    IF wrC == 0 THEN wrC := wrB; END;
+    IF wrC == 0 THEN wrC := wrW; END;
+    wrL := CONCAT(wrL, {MID(wrT, 1, wrC)});
+    wrT := "  " + MID(wrT, wrC + 1, DIM(wrT));
+  END;
+  RETURN CONCAT(wrL, {wrT});
+END;
+
+// count formatter: whole people (rounded)
+bt_fmtc(v)
+BEGIN
+  RETURN STRING(ROUND(v,0),1,0);
+END;
+
+// probability formatter with a floor.  BayesTree already used mode 2
+// (STRING(x,2,3) keeps trailing zeros), so widths were correct -- but at 3
+// decimals anything below 0.001 prints "0.000", and that is precisely the
+// lesson this program exists to teach: at 1-in-10,000 prevalence the PPV of a
+// good test really is a fraction of a percent.  Printing it as 0.000 says the
+// disease is impossible.  Now reports "< 0.001".
+// Sign-aware because kappa and MCC are genuinely negative on a bad test.
+// Params pv/dg -- short parameter names are where builtin collisions bite.
+bt_fmtp(pv, dg)
+BEGIN
+  LOCAL thr;
+  thr := 10^(-dg);
+  IF pv != 0 AND ABS(pv) < thr THEN
+    IF pv > 0 THEN RETURN "< " + STRING(thr,2,dg); END;
+    RETURN "> -" + STRING(thr,2,dg);
+  END;
+  RETURN STRING(pv,2,dg);
+END;
+
+// Breadcrumb formatter (beta 7): two decimals in the middle of the
+// range, three near the ends, and never a false 1.000 or 0.000.
+bt_fmtB(bfV)
+BEGIN
+  IF bfV > 0.999 THEN RETURN ">.999"; END;
+  IF bfV < 0.001 THEN RETURN "<.001"; END;
+  IF bfV < 0.01 OR bfV > 0.99 THEN RETURN STRING(bfV,2,3); END;
+  RETURN STRING(bfV,2,2);
+END;
+
+// Wait for the finger to lift -- but never for more than a second.
+// MOUSE(1) is -1 while nothing touches the screen.  Without the
+// time limit a stuck or phantom touch would hold the program here
+// for ever, and the only way out would be a reset.  (ChiTable's
+// csDrain, device-verified; beta 6.)
+bt_Drain()
+BEGIN
+  LOCAL drT;
+  drT := TICKS;                                  // milliseconds
+  REPEAT UNTIL MOUSE(1) == -1 OR TICKS - drT > 1000;
+END;
+
+// Wait for any key OR any tap (drain, wait, drain).  A GETKEY drain
+// does not drain touch: the finger lift from the tap that opened a
+// page is itself a touch event, so the finger is drained too (with
+// the one-second cap) before the wait, and again after it, so
+// nothing left over reaches the main loop.  Polls GETKEY and MOUSE
+// together.  (ChiTable's csWaitAny, device-verified; beta 6.)
+// beta 7: returns the key code, or -1 for a tap (the tap's x, y are
+// left in btTX, btTY) -- the house kit's xxWaitAny shape -- so the
+// help pages can tell Esc from "next page".
+bt_WaitAny()
+BEGIN
+  LOCAL waK, waM, waM1;
+  REPEAT waK := GETKEY; UNTIL waK == -1;
+  bt_Drain();
+  REPEAT
+    waK := GETKEY;
+    waM := MOUSE;
+    waM1 := waM(1);
+  UNTIL waK > -1 OR SIZE(waM1) > 0;
+  btTX := -1; btTY := -1;
+  IF SIZE(waM1) > 0 THEN btTX := waM1(1); btTY := waM1(2); waK := -1; END;
+  // beta 8b: if this tap's click also reaches the tree's WAIT(-1) (not
+  // seen on the emulator, not ruled out), the tree must not take it for
+  // a soft key: its spot goes on the tree's list of expected clicks
+  IF waK == -1 THEN btTLX := CONCAT(btTLX, {btTX}); btTLY := CONCAT(btTLY, {btTY}); END;
+  bt_Drain();
+  REPEAT UNTIL GETKEY == -1;
+  RETURN waK;
+END;
+
+// Round a prior set by a finger (the slider, the nomogram) to two
+// significant figures, counted from whichever end is nearer, and
+// never finer than 0.001:  0.0137 -> 0.014,  0.9863 -> 0.986.
+// The knob still moves smoothly; the readouts stay readable.
+bt_Sig2(sgP)
+BEGIN
+  LOCAL sgQ, sgD;
+  sgQ := MIN(sgP, 1 - sgP);
+  IF sgQ < 0.001 THEN sgQ := 0.001; END;
+  sgD := MIN(3, 1 - FLOOR(LOG(sgQ)));
+  sgQ := ROUND(sgQ, sgD);
+  IF sgP > 0.5 THEN RETURN 1 - sgQ; END;
+  RETURN sgQ;
+END;
+
+// The slider is on a LOG-ODDS scale: position = ln(p/(1-p)),
+// from ln(0.001/0.999) at the left end to ln(0.999/0.001) at the
+// right.  On a plain 0..1 scale everything below 0.05 -- the base
+// rates this program is about -- would share the first 7 pixels.
+// bt_SlX: the knob's x for a prior.
+bt_SlX(sxP)
+BEGIN
+  LOCAL sxQ, sxU;
+  sxQ := MIN(0.999, MAX(0.001, sxP));
+  sxU := (LN(sxQ/(1-sxQ)) - btLGL)/(btLGH - btLGL);
+  RETURN btSX1 + ROUND(sxU*(btSX2 - btSX1), 0);
+END;
+
+// bt_SlP: the prior for a finger at x on the slider (the inverse).
+bt_SlP(spX)
+BEGIN
+  LOCAL spU, spL;
+  spU := (spX - btSX1)/(btSX2 - btSX1);
+  spU := MIN(1, MAX(0, spU));
+  spL := btLGL + spU*(btLGH - btLGL);
+  RETURN bt_Sig2(1/(1 + EXP(-spL)));
+END;
+
+// The next rung of the teaching ladder above (lsD = 1) or below
+// (lsD = -1) the value lsV.  The prior can now sit between rungs
+// (after a drag), so +/- go to the NEXT rung, not "index + 1".
+// With nothing above (or below) the value stays where it is.
+bt_LadStep(lsV, lsD)
+BEGIN
+  LOCAL lsI, lsR, lsF;
+  lsR := lsV; lsF := 0;
+  FOR lsI FROM 1 TO SIZE(btLad) DO
+    IF lsD > 0 THEN
+      IF lsF == 0 AND btLad(lsI) > lsV + 0.0000001 THEN lsR := btLad(lsI); lsF := 1; END;
+    ELSE
+      IF btLad(lsI) < lsV - 0.0000001 THEN lsR := btLad(lsI); END;
+    END;
+  END;
+  RETURN lsR;
+END;
+
+// Which tappable thing on the tree contains (hX, hY); 0 if none.
+// The boxes are set once in BayesTree() from the SAME layout
+// variables the drawing uses, so the two cannot disagree.  The
+// first match wins, so the list order decides overlaps.
+bt_Hit(hX, hY)
+BEGIN
+  LOCAL hI;
+  FOR hI FROM 1 TO SIZE(btHId) DO
+    IF hX >= btHX1(hI) AND hX <= btHX2(hI) AND hY >= btHY1(hI) AND hY <= btHY2(hI) THEN
+      RETURN btHId(hI);
+    END;
+  END;
+  RETURN 0;
+END;
+
+// A MOSAIC of the four leaves on G1, inside (moX1,moY1)-(moX2,moY2):
+// the rectangle is split left/right at the prior (D+ | D-), then
+// each column top/bottom by the test (T+ on top in both columns):
+//   TP green (top left)     FP orange (top right)
+//   FN red (bottom left)    TN light grey (bottom right)
+// AREA = share of the people.  PPV is green / (green + orange) in
+// the top row.  Every block keeps at least one pixel, so at 1 %
+// the green TP sliver is still there beside the orange FP block.
+bt_Mosaic(moX1, moY1, moX2, moY2, moP, moSe, moSp)
+BEGIN
+  LOCAL moW, moH, moXs, moHt, moHf;
+  moW := moX2 - moX1 + 1;
+  moH := moY2 - moY1 + 1;
+  moXs := moX1 + MAX(1, MIN(moW - 1, ROUND(moP*moW, 0)));
+  moHt := MAX(1, MIN(moH - 1, ROUND(moSe*moH, 0)));
+  moHf := MAX(1, MIN(moH - 1, ROUND((1 - moSp)*moH, 0)));
+  RECT_P(G1, moX1-1, moY1-1, moX2+1, moY2+1, RGB(0,0,0), RGB(0,0,0));        // black frame
+  RECT_P(G1, moX1, moY1, moXs-1, moY1+moHt-1, RGB(0,140,60), RGB(0,140,60));   // TP
+  RECT_P(G1, moX1, moY1+moHt, moXs-1, moY2, RGB(255,0,0), RGB(255,0,0));       // FN
+  RECT_P(G1, moXs, moY1, moX2, moY1+moHf-1, RGB(255,69,0), RGB(255,69,0));     // FP
+  RECT_P(G1, moXs, moY1+moHf, moX2, moY2, RGB(220,220,220), RGB(220,220,220)); // TN
+END;
+
+// The share of N in one leaf, as a 2-px bar along the bottom of its
+// box (beta 7).  92 px wide: linear from 1 % (at 8 px) to 100 %
+// (at 92 px); below 1 % a LOG stub, 0.1 % ... 1 % over the first
+// 8 px, so a leaf of 0.9 % is still visible instead of 0.8 px.
+// A grey tick marks the 1 % point where the scale changes.
+bt_LeafBar(lbX, lbY, lbF, lbCol)
+BEGIN
+  LOCAL lbW, lbL, lbN;
+  lbW := 92; lbL := 8; lbN := 0;
+  IF lbF >= 0.01 THEN lbN := lbL + ROUND((lbW - lbL)*(lbF - 0.01)/0.99, 0); END;
+  IF lbF < 0.01 AND lbF >= 0.001 THEN lbN := MAX(1, ROUND(lbL*(LOG(lbF) + 3), 0)); END;
+  IF lbF < 0.001 AND lbF > 0 THEN lbN := 1; END;
+  LINE_P(G1, lbX + lbL, lbY - 1, lbX + lbL, lbY + 2, RGB(90,90,90));
+  IF lbN > 0 THEN RECT_P(G1, lbX, lbY, lbX + lbN - 1, lbY + 1, lbCol, lbCol); END;
+END;
+
+// The natural-frequency bookkeeping for the stage on screen
+// (beta 7).  With one test: N and the prior as given.  With a
+// second test, the tree starts from the people who tested POSITIVE
+// on test 1, and their share with the condition (test 1's PPV) is
+// test 2's prior.  (This assumes the tests err independently once
+// D is known.)  Returns {prior, N, D+, D-, TP, FN, FP, TN} of the
+// stage on screen.
+bt_Book(bkP, bkN, bkSe, bkSp)
+BEGIN
+  LOCAL bkPE, bkNE, bkJ, bkT, bkD, bkH;
+  LOCAL bkTP, bkFN, bkFP, bkTN;
+  bkPE := bkP; bkNE := bkN;
+  IF btNS > 1 THEN
+    FOR bkJ FROM 1 TO btNS - 1 DO
+      bkT := bkPE*btSSe(bkJ) + (1 - bkPE)*(1 - btSSp(bkJ));   // share testing +
+      bkNE := bkNE*bkT;                                      // they go on
+      bkPE := bkPE*btSSe(bkJ)/bkT;                           // that test's PPV
+    END;
+  END;
+  bkD := bkNE*bkPE;      bkH := bkNE - bkD;
+  bkTP := bkD*bkSe;      bkFN := bkD - bkTP;
+  bkFP := bkH*(1-bkSp);  bkTN := bkH - bkFP;
+  RETURN {bkPE, bkNE, bkD, bkH, bkTP, bkFN, bkFP, bkTN};
+END;
+
+// beta 8b: the COUNTS on the tree, rounded so that every pair adds up.
+// The boxes show whole people, and rounding each box by itself can
+// break a pair: D+ = 100 at sens 0.835 gives T+ = 83.5 -> 84 and
+// T- = 16.5 -> 17, which make 101 (the emulator showed exactly this,
+// 17 Oct 2026).  So only ONE of each pair is rounded, and the other
+// is its parent minus that one:
+//     D- = N - D+     T- (in the D+ row) = D+ - T+
+//                     T- (in the D- row) = D- - T+ (in the D- row)
+// Every count is still within one person of its exact value, and the
+// tree adds up the way a student checks it.  rcL is bt_Book's list
+// {prior, N, D+, D-, TP, FN, FP, TN}; the answer is the list
+// {N, D+, D-, TP, FN, FP, TN} in whole people.  (MIN keeps a rounded
+// child from passing its parent; that could only happen when N itself
+// is not whole -- test 1's positives, with two tests.)
+bt_RCnt(rcL)
+BEGIN
+  LOCAL ruN, ruD, ruH, ruTP, ruFP;
+  ruN := ROUND(rcL(2), 0);
+  ruD := MIN(ruN, ROUND(rcL(3), 0));
+  ruH := ruN - ruD;
+  ruTP := MIN(ruD, ROUND(rcL(5), 0));
+  ruFP := MIN(ruH, ROUND(rcL(7), 0));
+  RETURN {ruN, ruD, ruH, ruTP, ruD - ruTP, ruFP, ruH - ruFP};
+END;
+
+// beta 8b: the same rule for the PROBABILITIES the Leaves toggle shows
+// (each box's share of N, at three decimals): D+ rounded, D- = 1 - D+,
+// T+ rounded, T- = D+ - T+, and so on.  The answer is the list
+// {D+, D-, TP, FN, FP, TN}, every one a multiple of 0.001.
+bt_RPrb(rsL)
+BEGIN
+  LOCAL rqD, rqH, rqTP, rqFP;
+  rqD := ROUND(rsL(1), 3);
+  rqH := 1 - rqD;
+  rqTP := MIN(rqD, ROUND(rsL(5)/rsL(2), 3));
+  rqFP := MIN(rqH, ROUND(rsL(7)/rsL(2), 3));
+  RETURN {rqD, rqH, rqTP, rqD - rqTP, rqFP, rqH - rqFP};
+END;
+
+// beta 8b: print a probability that is ALREADY rounded to three
+// decimals (fqV), with bt_fmtp's floor: when the rounded value is 0 but
+// the exact value fqR is not, the box says "< 0.001", not "0.000" -- at
+// a prevalence of 1 in 10,000 a share really is that small, and 0.000
+// would say it is impossible.  (The floor is tested on the ROUNDED
+// value, so the numbers on screen are the ones that add up: an exact
+// 0.000999 shows as 0.001.)
+bt_fmtq(fqV, fqR)
+BEGIN
+  LOCAL fqS;
+  IF fqV <= 0 AND fqR > 0 THEN RETURN "< 0.001"; END;
+  fqS := MAX(0, fqV);              // never "-0.000"
+  RETURN STRING(fqS, 2, 3);
+END;
+
+// The BREAK-EVEN PRIOR, by the program's own arithmetic (beta 8):
+// the prior at which PPV = 1/2, i.e. a positive result is as likely
+// right as wrong.  PPV = 1/2 when  p*se = (1 - p)*(1 - sp), so
+//    p = (1 - sp)/(se + 1 - sp) = 1/(1 + LR+),   LR+ = se/(1 - sp).
+// With a second test the slider still sets the prior BEFORE test 1,
+// and a person positive on both tests has posterior odds
+// prior odds x LR1+ x LR2+, so the break-even prior is
+// 1/(1 + LR1+ x LR2+).  This number places the mark on the slider
+// (numbers the program DRAWS with come from PPL; the CAS's exact
+// answer, btBE, is text).  spec <= 0.999, so 1 - spec > 0.
+bt_BEp(bpSe, bpSp)
+BEGIN
+  LOCAL bpL, bpJ;
+  bpL := bpSe/(1 - bpSp);                     // LR+ of the test on screen
+  IF btNS > 1 THEN
+    FOR bpJ FROM 1 TO btNS - 1 DO
+      bpL := bpL*btSSe(bpJ)/(1 - btSSp(bpJ));  // times the earlier tests' LR+
+    END;
+  END;
+  RETURN 1/(1 + bpL);
+END;
+
+// What the exact texts depend on (beta 8): the number of tests, the
+// prior, sens and spec on screen, test 1 (when there are two) and
+// the forensic flag (1 - PPV is asked for only then).
+bt_XKey(xkP, xkSe, xkSp)
+BEGIN
+  IF btNS > 1 THEN RETURN {2, xkP, xkSe, xkSp, btSSe(1), btSSp(1), btFor}; END;
+  RETURN {1, xkP, xkSe, xkSp, 0, 0, btFor};
+END;
+
+// Ask the CAS for the exact PPV, NPV (and 1 - PPV when forensic)
+// and the break-even prior -- but ONLY if the inputs changed since
+// the last time (the cache key btXK; the break-even has its own key
+// btBK, because it does not depend on the prior: a slider drag never
+// asks for it again).  The callers make sure no finger is dragging.
+// Returns 1 if the CAS was asked, 0 if the cache was still good.
+//
+// The CAS text is Bayes' theorem with the student's values as ratios
+// of whole numbers.  For the stage on screen,
+//   D = prior x (sens of the earlier tests)        -- has it, all +
+//   H = (1 - prior) x (1 - spec of earlier tests)   -- has not, all +
+//   PPV = D*sens / (D*sens + H*(1 - spec))
+//   NPV = H*spec / (H*spec + D*(1 - sens))
+// e.g. 1 % prior, 95 % / 95 %:
+//   (1/100*95/100)/(1/100*95/100+99/100*5/100)   -> 19/118
+// and the break-even, a solve for the CAS name btq (a tagged name, so
+// a student's own p in the CAS view cannot get in):
+//   solve((btq*95/100)/(btq*95/100+(1-btq)*5/100)=1/2,btq)  -> 1/20
+// Each answer is checked to be a fraction (bt_IsFr); anything else
+// is dropped and the decimal is shown instead.
+bt_ExactUpd(euP, euSe, euSp)
+BEGIN
+  LOCAL euK, euB, euT0, euOK, euD, euH;
+  LOCAL euDB, euHB, euTS, euTC;
+  LOCAL euQ;
+  euK := bt_XKey(euP, euSe, euSp);
+  IF bt_Same(btXK, euK) == 1 THEN RETURN 0; END;     // cached: no CAS call
+  euT0 := TICKS; euOK := 1;
+
+  // the two branches of the stage, and (euDB, euHB) the same products
+  // WITHOUT the prior, for the break-even solve
+  euD := bt_RT(bt_Rat(euP));
+  euH := bt_RC(bt_Rat(euP));
+  euDB := ""; euHB := "";
+  IF btNS > 1 THEN
+    euDB := bt_RT(bt_Rat(btSSe(1))) + "*";
+    euHB := bt_RC(bt_Rat(btSSp(1))) + "*";
+    euD := euD + "*" + bt_RT(bt_Rat(btSSe(1)));
+    euH := euH + "*" + bt_RC(bt_Rat(btSSp(1)));
+  END;
+  euTS := bt_Rat(euSe);             // sens as {num, den, kind}
+  euTC := bt_Rat(euSp);             // spec
+
+  // PPV, and 1 - PPV with forensic labels
+  euQ := "(" + euD + "*" + bt_RT(euTS) + ")/(" + euD + "*" + bt_RT(euTS) + "+" + euH + "*" + bt_RC(euTC) + ")";
+  btXP := bt_Strip(bt_Cas(euQ));
+  IF bt_IsFr(btXP) == 0 THEN btXP := ""; euOK := 0; END;
+  btXC := "";
+  IF btFor == 1 THEN
+    btXC := bt_Strip(bt_Cas("1-" + euQ));
+    IF bt_IsFr(btXC) == 0 THEN btXC := ""; euOK := 0; END;
+  END;
+  // NPV
+  euQ := "(" + euH + "*" + bt_RT(euTC) + ")/(" + euH + "*" + bt_RT(euTC) + "+" + euD + "*" + bt_RC(euTS) + ")";
+  btXN := bt_Strip(bt_Cas(euQ));
+  IF bt_IsFr(btXN) == 0 THEN btXN := ""; euOK := 0; END;
+
+  // the break-even prior: only when the TESTS changed
+  euB := {btNS, euSe, euSp, euK(5), euK(6)};
+  IF bt_Same(btBK, euB) == 0 THEN
+    euQ := "solve((btq*" + euDB + bt_RT(euTS) + ")/(btq*" + euDB + bt_RT(euTS) + "+(1-btq)*" + euHB + bt_RC(euTC) + ")=1/2,btq)";
+    btBE := bt_Strip(bt_Cas(euQ));
+    IF bt_IsFr(btBE) == 0 THEN btBE := ""; END;
+    btBK := euB;
+  END;
+  IF DIM(btBE) == 0 THEN euOK := 0; END;
+
+  btXK := euK; btCasOK := euOK;
+  btCasMs := TICKS - euT0;
+  // the G1's CAS speed is unknown: if one update took more than 1.5 s,
+  // stop asking from the tree (a key would wait that long each time);
+  // the Exact page still asks, and the tree then says "tap for exact"
+  IF btCasMs > 1500 THEN btCasAu := 0; END;
+  RETURN 1;
+END;
+
+// Explain one node or branch of the tree.  niId: 1 root, 2 D+,
+// 3 D-, 4 TP, 5 FN, 6 FP, 7 TN; beta 7 adds the BRANCHES: 8 prior,
+// 9 1-prior, 10 sens, 11 1-sens, 12 1-spec, 13 spec.  niL carries
+// everything the text needs, so this takes only two arguments:
+//   {N, nD, nH, tp, fn, btFP, tn, ppv, npv, prior, sens, spec}
+// (N and prior are those of the stage on screen.)
+//
+// Every number in the tree is a formula a student should be
+// able to name.  Tapping asks the question; this answers it.
+// Uses bt_fmtp for the probabilities so a tiny PPV reads
+// "< 0.001" rather than "0.000" -- same reasoning as the
+// main display.  beta 7: the text is a list of short lines (at
+// most 50 characters, small font) so nothing runs off the panel;
+// forensic wording when btFor == 1.
+bt_NodeInfo(niId, niL)
+BEGIN
+  LOCAL niT, niV, niTx, niN, niI, niNN;
+  LOCAL niPr, niSe, niSp, niPv, niNv;
+
+  niNN := niL(1); niPr := niL(10); niSe := niL(11); niSp := niL(12);
+  niPv := niL(8); niNv := niL(9);
+  niT := ""; niV := ""; niTx := {}; niN := 0;
+
+  IF niId == 1 THEN
+    niN := niNN;
+    IF btNS > 1 THEN
+      niT := "T+ on test 1 — carried forward";
+      IF btFor == 1 THEN niT := "Matched on test 1 — carried on"; END;
+      niTx := {"The " + bt_fmtc(niNN) + " people who tested positive on test 1.",
+               "The share of them who have it, " + bt_fmtp(niPr,3) + " (test 1's",
+               "PPV), is the prior for test 2.  This assumes",
+               "the two tests err independently, given D."};
+    ELSE
+      IF btFor == 1 THEN
+        niT := "N — the suspects";
+        niTx := {"Picture " + bt_fmtc(niNN) + " suspects, each picked from a",
+                 "pool in which 1 in " + bt_fmtc(1/niPr) + " is the source.",
+                 "Below: who is the source, then who matches."};
+      ELSE
+        niT := "N — the whole population";
+        niTx := {"A hypothetical " + bt_fmtc(niNN) + " people.",
+                 "Everything below splits this group: first",
+                 "by the prior, then by the test."};
+      END;
+    END;
+  END;
+  IF niId == 2 THEN
+    niN := niL(2);
+    IF btFor == 1 THEN
+      niT := "Source";
+      niTx := {"source = N × prior = " + bt_fmtc(niNN) + " × " + bt_fmtp(niPr,3),
+               "The suspects who really are the source,",
+               "before the evidence is examined."};
+    ELSE
+      niT := "D+ — really have it";
+      niTx := {"D+ = N × prior = " + bt_fmtc(niNN) + " × " + bt_fmtp(niPr,3),
+               "Before any test is run.  The prior is the",
+               "prevalence."};
+    END;
+  END;
+  IF niId == 3 THEN
+    niN := niL(3);
+    IF btFor == 1 THEN
+      niT := "Not the source";
+      niTx := {"not source = N × (1 − prior) = " + bt_fmtc(niNN) + " × " + bt_fmtp(1-niPr,3),
+               "Everyone else.  A large group, so even a",
+               "rare random match turns up in it."};
+    ELSE
+      niT := "D− — really do not";
+      niTx := {"D− = N × (1 − prior) = " + bt_fmtc(niNN) + " × " + bt_fmtp(1-niPr,3),
+               "Usually the large group, which is what",
+               "drives false positives."};
+    END;
+  END;
+  IF niId == 4 THEN
+    niN := niL(4);
+    IF btFor == 1 THEN
+      niT := "Source, and a match";
+      niTx := {"TP = source × sens = " + bt_fmtc(niL(2)) + " × " + bt_fmtp(niSe,3),
+               "The source, and the evidence matches.",
+               "PPV = TP / (TP + FP) = " + bt_fmtp(niPv,3),
+               "    = P(source | match)."};
+    ELSE
+      niT := "True positives";
+      niTx := {"TP = D+ × sens = " + bt_fmtc(niL(2)) + " × " + bt_fmtp(niSe,3),
+               "Has it, test found it.  With FP below:",
+               "PPV = TP / (TP + FP) = " + bt_fmtp(niPv,3)};
+    END;
+  END;
+  IF niId == 5 THEN
+    niN := niL(5);
+    IF btFor == 1 THEN
+      niT := "Source, but no match";
+      niTx := {"FN = source × (1 − sens) = " + bt_fmtc(niL(2)) + " × " + bt_fmtp(1-niSe,3),
+               "The source, but the evidence does not",
+               "match: a false exclusion."};
+    ELSE
+      niT := "False negatives";
+      niTx := {"FN = D+ × (1 − sens) = " + bt_fmtc(niL(2)) + " × " + bt_fmtp(1-niSe,3),
+               "Has it, test missed it: the cost of",
+               "imperfect sensitivity."};
+    END;
+  END;
+  IF niId == 6 THEN
+    niN := niL(6);
+    IF btFor == 1 THEN
+      niT := "Not the source, but a match";
+      niTx := {"FP = not source × (1 − spec)",
+               "   = " + bt_fmtc(niL(3)) + " × " + bt_fmtp(1-niSp,3),
+               "1 − spec is the random-match probability.",
+               "1 − PPV = " + bt_fmtp(1-niPv,3) + " is the probability the",
+               "matching person is NOT the source —",
+               "what the court needs."};
+    ELSE
+      niT := "False positives";
+      niTx := {"FP = D− × (1 − spec) = " + bt_fmtc(niL(3)) + " × " + bt_fmtp(1-niSp,3),
+               "Does not have it, test says yes.  Few per",
+               "person, but many people."};
+    END;
+  END;
+  IF niId == 7 THEN
+    niN := niL(7);
+    IF btFor == 1 THEN
+      niT := "Not the source, no match";
+      niTx := {"TN = not source × spec = " + bt_fmtc(niL(3)) + " × " + bt_fmtp(niSp,3),
+               "Correctly excluded.  NPV = " + bt_fmtp(niNv,3) + "."};
+    ELSE
+      niT := "True negatives";
+      niTx := {"TN = D− × spec = " + bt_fmtc(niL(3)) + " × " + bt_fmtp(niSp,3),
+               "With FN above:",
+               "NPV = TN / (TN + FN) = " + bt_fmtp(niNv,3)};
+    END;
+  END;
+
+  // ---- the branches (beta 7): a probability, not a count ----
+  IF niId == 8 THEN
+    IF btFor == 1 THEN
+      niT := "Branch: P(source) = prior";
+      niV := "prior = " + bt_fmtp(niPr,3) + " (1 in " + bt_fmtc(1/niPr) + ")";
+      niTx := {"The prior: 1 in " + bt_fmtc(1/niPr) + " of the suspect pool is",
+               "the source, before the evidence.  Move it",
+               "with the slider at the top or with + and -."};
+    ELSE
+      niT := "Branch: P(D+) = prior";
+      niV := "prior = " + bt_fmtp(niPr,3);
+      niTx := {"Of the N people, the share who really have",
+               "it, before any test.  Move it with the",
+               "slider at the top or with + and -."};
+    END;
+    IF btNS > 1 THEN
+      niTx := CONCAT(niTx, {"On test 2 this is test 1's PPV; the slider",
+                            "sets the prior before test 1."});
+    END;
+  END;
+  IF niId == 9 THEN
+    niV := "1 − prior = " + bt_fmtp(1-niPr,3);
+    IF btFor == 1 THEN
+      niT := "Branch: P(not source)";
+      niTx := {"Everyone in the pool who is not the source.",
+               "Every random match comes out of this branch."};
+    ELSE
+      niT := "Branch: P(D−) = 1 − prior";
+      niTx := {"The share who do not have it.  Every false",
+               "positive comes out of this branch."};
+    END;
+  END;
+  IF niId == 10 THEN
+    niV := "sens = " + bt_fmtp(niSe,3);
+    IF btFor == 1 THEN
+      niT := "Branch: P(match | source)";
+      niTx := {"P(match | source) = sens — read along the",
+               "ROW (the source row), not the column.",
+               "Drag this pair up or down to change it."};
+    ELSE
+      niT := "Branch: P(T+ | D+) = sens";
+      niTx := {"P(T+ | D+) = sens — read along the ROW, not",
+               "the column: of the D+ people, the share who",
+               "test positive.  It is NOT P(D+ | T+), which",
+               "is the PPV = " + bt_fmtp(niPv,3) + ".",
+               "Drag this pair up or down to change it."};
+    END;
+  END;
+  IF niId == 11 THEN
+    niV := "1 − sens = " + bt_fmtp(1-niSe,3);
+    IF btFor == 1 THEN
+      niT := "Branch: P(no match | source)";
+      niTx := {"The false-exclusion rate, read along the",
+               "source ROW.  Drag this pair up or down to",
+               "change sens."};
+    ELSE
+      niT := "Branch: P(T− | D+) = 1 − sens";
+      niTx := {"The miss rate, read along the D+ ROW.",
+               "Drag this pair up or down to change sens."};
+    END;
+  END;
+  IF niId == 12 THEN
+    niV := "1 − spec = " + bt_fmtp(1-niSp,3);
+    IF btFor == 1 THEN
+      niT := "Branch: P(match | not source)";
+      niTx := {"1 − spec is the random-match probability",
+               "(RMP): P(match | not source), a ROW.",
+               "1 − PPV = " + bt_fmtp(1-niPv,3) + " is P(not source | match),",
+               "a COLUMN — what the court needs.  Taking",
+               "one for the other is the prosecutor's fallacy."};
+    ELSE
+      niT := "Branch: P(T+ | D−) = 1 − spec";
+      niTx := {"The false-positive rate — read along the D−",
+               "ROW, not the column.  It is NOT P(D− | T+),",
+               "which is 1 − PPV = " + bt_fmtp(1-niPv,3) + ".",
+               "Drag this pair up or down to change spec."};
+    END;
+  END;
+  IF niId == 13 THEN
+    niV := "spec = " + bt_fmtp(niSp,3);
+    IF btFor == 1 THEN
+      niT := "Branch: P(no match | not source)";
+      niTx := {"spec — read along the not-source ROW.",
+               "1 − spec = " + bt_fmtp(1-niSp,3) + " is the random-match",
+               "probability.  Drag this pair up or down."};
+    ELSE
+      niT := "Branch: P(T− | D−) = spec";
+      niTx := {"P(T− | D−) = spec — read along the D− ROW,",
+               "not the column.",
+               "Drag this pair up or down to change it."};
+    END;
+  END;
+  // counts get their count and their share of N on the big line
+  IF niId == 1 THEN niV := "count = " + bt_fmtc(niN); END;
+  IF niId >= 2 AND niId <= 7 THEN
+    niV := "count = " + bt_fmtc(niN) + "  (" + bt_fmtp(niN/niNN,3) + " of N)";
+  END;
+
+  // composed on G1 (cleared to white), shown with one blit (beta 6)
+  DIMGROB_P(G1,320,240,#FFFFFFh);
+  RECT_P(G1, 8, 26, 312, 212, RGB(255,69,0), RGB(255,240,220));
+  TEXTOUT_P(niT, G1, 18, 34, 2, RGB(0,0,0));
+  LINE_P(G1, 18, 54, 302, 54, RGB(90,90,90));
+  TEXTOUT_P(niV, G1, 18, 62, 2, RGB(200,0,200));
+  FOR niI FROM 1 TO SIZE(niTx) DO
+    TEXTOUT_P(niTx(niI), G1, 18, 74 + 14*niI, 1, RGB(0,0,0));
+  END;
+  TEXTOUT_P("any key or tap = back", G1, 18, 194, 1, RGB(30,144,255));
+  BLIT_P(G0,0,0,G1);
+
+  // drain keys AND the finger that opened this page (capped), wait
+  // for a key or a new tap, drain again (beta 6).
+  bt_WaitAny();
+  RETURN 0;
+END;
+
+// 2x2 contingency table populated with the current counts
+bt_Tbl2View(ctp, cfn, cfp, ctn, se, sp, pv, nv)
+BEGIN
+  // beta 6: composed on G1 (cleared to white), shown with one blit
+  DIMGROB_P(G1,320,240,#FFFFFFh);
+  TEXTOUT_P("2 × 2 Table", G1, 110, 3, 2, RGB(0,0,0));
+
+  // frame + internal grid  (cols: label|T+|T−|Total, rows: hdr|D+|D−|Total)
+  RECT_P(G1, 8, 28, 312, 148, RGB(0,0,0), RGB(255,255,255));
+  LINE_P(G1, 68, 28, 68, 148, RGB(0,0,0));
+  LINE_P(G1, 150, 28, 150, 148, RGB(0,0,0));
+  LINE_P(G1, 232, 28, 232, 148, RGB(0,0,0));
+  LINE_P(G1, 8, 52, 312, 52, RGB(0,0,0));
+  LINE_P(G1, 8, 84, 312, 84, RGB(0,0,0));
+  LINE_P(G1, 8, 116, 312, 116, RGB(0,0,0));
+
+  // headers (tree colors: T+ green, T− red, D blue, totals orange)
+  IF btFor == 1 THEN
+    // beta 7: forensic labels
+    TEXTOUT_P("match", G1, 90, 33, 2, RGB(0,140,60));
+    TEXTOUT_P("no match", G1, 160, 33, 2, RGB(255,0,0));
+    TEXTOUT_P("source", G1, 12, 63, 1, RGB(0,60,200));
+    TEXTOUT_P("not source", G1, 11, 95, 1, RGB(0,60,200));
+  ELSE
+    TEXTOUT_P("T+", G1, 100, 33, 2, RGB(0,140,60));
+    TEXTOUT_P("T−", G1, 182, 33, 2, RGB(255,0,0));
+    TEXTOUT_P("D+", G1, 24, 60, 2, RGB(0,60,200));
+    TEXTOUT_P("D−", G1, 24, 92, 2, RGB(0,60,200));
+  END;
+  TEXTOUT_P("Total", G1, 244, 33, 2, RGB(255,69,0));
+  TEXTOUT_P("Total", G1, 12, 124, 2, RGB(255,69,0));
+
+  // cells (counts; colors match the tree leaves)
+  TEXTOUT_P(bt_fmtc(ctp), G1, 78, 60, 2, RGB(0,140,60));
+  TEXTOUT_P(bt_fmtc(cfn), G1, 160, 60, 2, RGB(255,0,0));
+  TEXTOUT_P(bt_fmtc(ctp+cfn), G1, 242, 60, 2, RGB(0,60,200));
+  TEXTOUT_P(bt_fmtc(cfp), G1, 78, 92, 2, RGB(0,140,60));
+  TEXTOUT_P(bt_fmtc(ctn), G1, 160, 92, 2, RGB(255,0,0));
+  TEXTOUT_P(bt_fmtc(cfp+ctn), G1, 242, 92, 2, RGB(0,60,200));
+  TEXTOUT_P(bt_fmtc(ctp+cfp), G1, 78, 124, 2, RGB(0,140,60));
+  TEXTOUT_P(bt_fmtc(cfn+ctn), G1, 160, 124, 2, RGB(255,0,0));
+  TEXTOUT_P(bt_fmtc(ctp+cfn+cfp+ctn), G1, 242, 124, 2, RGB(255,69,0));
+
+  // the row/column lesson: sens & spec live in ROWS, PPV & NPV in COLUMNS
+  IF btFor == 1 THEN
+    // beta 7: in forensic words the row-versus-column confusion has a
+    // name -- the prosecutor's fallacy.
+    TEXTOUT_P("rows:  P(match | not source) = RMP = " + bt_fmtp(1-sp,3), G1, 14, 158, 1, RGB(0,60,200));
+    TEXTOUT_P("cols:  P(not source | match) = 1 − PPV = " + bt_fmtp(1-pv,3), G1, 14, 172, 1, RGB(200,0,200));
+    TEXTOUT_P("Prosecutor's fallacy: swapping row and column,", G1, 14, 188, 1, RGB(255,0,0));
+    TEXTOUT_P("i.e. taking the RMP for P(not source | match).", G1, 14, 200, 1, RGB(255,0,0));
+  ELSE
+    TEXTOUT_P("rows:  sens = " + bt_fmtp(se,3) + ",  spec = " + bt_fmtp(sp,3), G1, 14, 162, 1, RGB(0,60,200));
+    TEXTOUT_P("cols:  PPV = " + bt_fmtp(pv,3) + ",  NPV = " + bt_fmtp(nv,3), G1, 14, 178, 1, RGB(200,0,200));
+  END;
+  TEXTOUT_P("any key or tap = back", G1, 100, 226, 1, RGB(30,144,255));
+  BLIT_P(G0,0,0,G1);
+
+  bt_WaitAny();                  // beta 6: drain, wait (key or tap), drain
+END;
+
+// Diagnostics: measures valid for BOTH forward (expected) and
+// backwards (observed) tables — pure functions of the four cells.
+bt_DiagView(ctp, cfn, cfp, ctn)
+BEGIN
+  LOCAL nn,se,sp,acc,bacc,jj;
+  LOCAL dor,f1,mcc,po,pe,kap;
+  LOCAL yy,sNND,sKap,sDOR;
+
+  nn := ctp+cfn+cfp+ctn;
+  se := ctp/(ctp+cfn);  sp := ctn/(cfp+ctn);
+  acc := (ctp+ctn)/nn;  bacc := (se+sp)/2;
+  jj := se+sp-1;
+  // Diagnostic odds ratio = (TP x TN) / (FN x FP) = LR+ / LR-.  With
+  // no false negatives or no false positives (possible after "Enter
+  // counts" with fn = 0 or fp = 0) the DOR is infinite: say so rather
+  // than divide (beta 6).  The sens/spec clamps at 0.001/0.999 make
+  // the expected cell a tiny fraction of a person, never exactly 0,
+  // so the test is "fewer than half a person" -- the cell the tree
+  // itself prints as 0 -- not "equal to 0".
+  IF cfn < 0.5 OR cfp < 0.5 THEN
+    sDOR := CHAR(8734) + "   (no false negatives/positives)";
+  ELSE
+    dor := (ctp*ctn)/(cfn*cfp);
+    sDOR := bt_fmtp(dor,3) + "   (LR+/LR−)";
+  END;
+  f1  := 2*ctp/(2*ctp+cfp+cfn);
+  mcc := (ctp*ctn-cfp*cfn)/√((ctp+cfp)*(ctp+cfn)*(ctn+cfp)*(ctn+cfn));
+  po := acc;
+  pe := ((ctp+cfp)*(ctp+cfn)+(cfn+ctn)*(cfp+ctn))/(nn*nn);
+  IF ABS(1-pe) < 0.000001 THEN sKap := "undef"; ELSE kap := (po-pe)/(1-pe); sKap := bt_fmtp(kap,3); END;
+  IF jj > 0.0005 THEN sNND := bt_fmtp(1/jj,3); ELSE sNND := "undef (J ≤ 0)"; END;
+
+  // beta 6: composed on G1 (cleared to white), shown with one blit
+  DIMGROB_P(G1,320,240,#FFFFFFh);
+  TEXTOUT_P("2×2 Diagnostics", G1, 92, 3, 2, RGB(0,0,0));
+  yy := 26;
+  TEXTOUT_P("prevalence = " + bt_fmtp((ctp+cfn)/nn,3), G1, 14, yy, 1, RGB(90,90,90)); yy := yy+16;
+  TEXTOUT_P("accuracy = " + bt_fmtp(acc,3) + "   (can mislead at low prev!)", G1, 14, yy, 1, RGB(0,0,0)); yy := yy+16;
+  TEXTOUT_P("balanced accuracy = " + bt_fmtp(bacc,3), G1, 14, yy, 1, RGB(0,0,0)); yy := yy+16;
+  TEXTOUT_P("Youden J = " + bt_fmtp(jj,3) + "   (se+sp−1; ROC height above chance)", G1, 14, yy, 1, RGB(0,140,60)); yy := yy+16;
+  TEXTOUT_P("NND = " + sNND + "   (1/J)", G1, 14, yy, 1, RGB(0,140,60)); yy := yy+16;
+  TEXTOUT_P("diagnostic OR = " + sDOR, G1, 14, yy, 1, RGB(30,144,255)); yy := yy+16;
+  TEXTOUT_P("F1 = " + bt_fmtp(f1,3), G1, 14, yy, 1, RGB(200,0,200)); yy := yy+16;
+  TEXTOUT_P("MCC = " + bt_fmtp(mcc,3), G1, 14, yy, 1, RGB(200,0,200)); yy := yy+16;
+  TEXTOUT_P("Cohen κ = " + sKap, G1, 14, yy, 1, RGB(200,0,200)); yy := yy+16;
+  TEXTOUT_P("All are cell-proportion functions: valid for", G1, 14, yy+6, 1, RGB(90,90,90));
+  TEXTOUT_P("expected (forward) AND observed (counts) tables.", G1, 14, yy+20, 1, RGB(90,90,90));
+  TEXTOUT_P("For p-values / CIs on real data: use ConTable2.", G1, 14, yy+34, 1, RGB(90,90,90));
+  TEXTOUT_P("any key or tap = back", G1, 100, 226, 1, RGB(30,144,255));
+  BLIT_P(G0,0,0,G1);
+
+  bt_WaitAny();                  // beta 6: drain, wait (key or tap), drain
+END;
+
+// PPV & NPV as functions of prevalence, for the current sens/spec.
+// beta 7: LIVE.  Tap or drag inside the plot and the prior follows
+// the finger (pvLive = 1); Left/Right step it along the ladder.  The
+// new prior is handed back in btPr.  With a second test on the tree
+// the prior is test 1's PPV, so the view only shows it (pvLive = 0).
+// Touch is read with WAIT(-1), like the tree, so no left-over drag
+// can reach the tree after the view closes: type 0 = a new press,
+// type 1 = a move (WAIT(-1)'s own type table), x and y read only
+// after SIZE >= 3.
+bt_PrevView(pr, se, sp, pvLive)
+BEGIN
+  // beta 6: W, H, i, p, v tagged (prvW, prvH, prvI, prvP, prvV);
+  // no LOCAL line carries more than six names.  beta 7: px, py,
+  // lastpy, lastny gone (the curves are drawn from the cache).
+  LOCAL LFT,RGT,TOPy,BOT,prvW,prvH;
+  LOCAL prvP,prvV;
+  LOCAL ny,prvI,tickx,ticky,x0p;
+  LOCAL pvYP,pvYN,pvN,pvEv,pvT,pvGo;
+  LOCAL pvDrag,pvDirty,pvPr,pvOld;
+  LOCAL pvBE,pvBX,pvBY;
+
+  // beta 8: BOT 195 -> 183, so one line under the tick labels (y 199)
+  // can say what the break-even point means
+  LFT:=40; RGT:=290; TOPy:=30; BOT:=183;
+  prvW:=RGT-LFT; prvH:=BOT-TOPy;
+  pvBE := bt_BEp(se, sp);      // the break-even prior (PPL; it is drawn)
+
+  // beta 7: both curves depend only on sens and spec, which do not
+  // change in this view, so their pixel rows are worked out ONCE
+  // (every second column) and each frame of a drag reads them.
+  pvN := IP(prvW/2);
+  pvYP := MAKELIST(0, K, 1, pvN+1, 1);
+  pvYN := MAKELIST(0, K, 1, pvN+1, 1);
+  FOR prvI FROM 0 TO pvN DO
+    prvP := 2*prvI/prvW;
+    IF prvP < 0.0005 THEN prvP := 0.0005; END;
+    IF prvP > 0.9995 THEN prvP := 0.9995; END;
+    prvV := prvP*se/(prvP*se+(1-prvP)*(1-sp));
+    ny := (1-prvP)*sp/((1-prvP)*sp+prvP*(1-se));
+    pvYP(prvI+1) := BOT - IP(prvV*prvH);
+    pvYN(prvI+1) := BOT - IP(ny*prvH);
+  END;
+
+  pvPr := pr; pvGo := 1; pvDirty := 1; pvDrag := 0;
+  REPEAT pvEv := GETKEY; UNTIL pvEv == -1;   // drain the key that chose this view
+  WHILE pvGo == 1 DO
+    IF pvDirty == 1 THEN
+      // composed on G1 (cleared to white), shown with one blit
+      DIMGROB_P(G1,320,240,#FFFFFFh);
+      TEXTOUT_P("PPV & NPV vs prevalence", G1, 62, 3, 2, RGB(0,0,0));
+      TEXTOUT_P("x = prior;  sens = " + bt_fmtp(se,3) + ",  spec = " + bt_fmtp(sp,3), G1, 64, 19, 1, RGB(90,90,90));
+
+      // grid + ticks at 0, 0.2, ..., 1 on both axes (STRING mode 2 keeps the decimal)
+      FOR prvI FROM 0 TO 5 DO
+        tickx := LFT + IP(prvI/5*prvW);
+        ticky := BOT - IP(prvI/5*prvH);
+        IF prvI > 0 AND prvI < 5 THEN
+          LINE_P(G1, tickx, TOPy, tickx, BOT-1, RGB(225,228,235));
+          LINE_P(G1, LFT+1, ticky, RGT, ticky, RGB(225,228,235));
+        END;
+        TEXTOUT_P(STRING(prvI/5,2,1), G1, tickx-8, BOT+6, 1, RGB(90,90,90));
+        TEXTOUT_P(STRING(prvI/5,2,1), G1, LFT-24, ticky-4, 1, RGB(90,90,90));
+      END;
+      LINE_P(G1, LFT, BOT, RGT, BOT, RGB(0,0,0));
+      LINE_P(G1, LFT, TOPy, LFT, BOT, RGB(0,0,0));
+
+      // PPV curve (magenta) and NPV curve (dodger blue), from the cache
+      FOR prvI FROM 1 TO pvN DO
+        LINE_P(G1, LFT+2*(prvI-1), pvYP(prvI), LFT+2*prvI, pvYP(prvI+1), RGB(200,0,200));
+        LINE_P(G1, LFT+2*(prvI-1), pvYN(prvI), LFT+2*prvI, pvYN(prvI+1), RGB(30,144,255));
+      END;
+      TEXTOUT_P("PPV", G1, RGT-26, TOPy+6, 1, RGB(200,0,200));
+      TEXTOUT_P("NPV", G1, RGT-26, BOT-14, 1, RGB(30,144,255));
+
+      // beta 8: the BREAK-EVEN point, where the PPV curve crosses 1/2:
+      // a dotted magenta line across from PPV = 1/2 and down to the
+      // prior axis, a square where they meet, and the sentence under
+      // the plot.  With two tests this axis is test 2's own prior (test
+      // 1's PPV), not the slider's prior, so the point is left out and
+      // the line says where to find it.
+      IF pvLive == 1 THEN
+        pvBX := LFT + IP(pvBE*prvW);
+        pvBY := BOT - IP(0.5*prvH);
+        FOR prvI FROM LFT+1 TO pvBX STEP 3 DO PIXON_P(G1, prvI, pvBY, RGB(200,0,200)); END;
+        FOR prvI FROM pvBY TO BOT-1 STEP 3 DO PIXON_P(G1, pvBX, prvI, RGB(200,0,200)); END;
+        RECT_P(G1, pvBX-2, pvBY-2, pvBX+2, pvBY+2, RGB(200,0,200), RGB(200,0,200));
+        IF btFor == 1 THEN
+          TEXTOUT_P("Below 1 in " + bt_fmtc(1/pvBE) + ", most matches are not the source.", G1, 8, 199, 1, RGB(200,0,200));
+        ELSE
+          TEXTOUT_P("Below " + bt_Pct(pvBE) + ", most positives are false (PPV < 1/2).", G1, 8, 199, 1, RGB(200,0,200));
+        END;
+      ELSE
+        TEXTOUT_P("Two tests: the break-even is on the Exact page.", G1, 8, 199, 1, RGB(90,90,90));
+      END;
+
+      // dotted vertical at the current prior + dots on both curves
+      x0p := LFT + IP(pvPr*prvW);
+      FOR prvI FROM TOPy TO BOT STEP 4 DO
+        PIXON_P(G1, x0p, prvI, RGB(255,0,0));
+      END;
+      prvV := pvPr*se/(pvPr*se+(1-pvPr)*(1-sp));
+      ny := (1-pvPr)*sp/((1-pvPr)*sp+pvPr*(1-se));
+      ticky := BOT - IP(prvV*prvH);
+      RECT_P(G1, x0p-3, ticky-3, x0p+3, ticky+3, RGB(255,0,0), RGB(255,0,0));
+      ticky := BOT - IP(ny*prvH);
+      RECT_P(G1, x0p-3, ticky-3, x0p+3, ticky+3, RGB(255,0,0), RGB(255,0,0));
+
+      // point readout (beta 7: on its own line, above the footer)
+      TEXTOUT_P("prior = " + bt_fmtp(pvPr,3) + ":", G1, 8, 212, 1, RGB(0,0,0));
+      TEXTOUT_P("PPV = " + bt_fmtp(prvV,3), G1, 100, 212, 1, RGB(200,0,200));
+      TEXTOUT_P("NPV = " + bt_fmtp(ny,3), G1, 190, 212, 1, RGB(30,144,255));
+      IF pvLive == 1 THEN
+        TEXTOUT_P("tap/drag = prior, " + CHAR(8592) + CHAR(8594) + " = prior, Esc = back", G1, 8, 226, 1, RGB(30,144,255));
+      ELSE
+        TEXTOUT_P("test 2: its prior is test 1's PPV, Esc = back", G1, 8, 226, 1, RGB(30,144,255));
+      END;
+      BLIT_P(G0,0,0,G1);
+      pvDirty := 0;
+    END;
+
+    pvEv := WAIT(-1);
+    IF TYPE(pvEv) == 6 THEN
+      pvT := -1;
+      IF SIZE(pvEv) >= 3 THEN pvT := pvEv(1); END;
+      IF pvT == 0 THEN
+        // a new press: inside the plot it grabs the prior, outside = back
+        pvDrag := 0;
+        IF pvLive == 1 AND pvEv(2) >= LFT-6 AND pvEv(2) <= RGT+6 AND pvEv(3) >= TOPy-6 AND pvEv(3) <= BOT+6 THEN
+          pvDrag := 1;
+        ELSE
+          pvGo := 0;
+          // beta 8b: this closing tap's {2} and {3, x, y} are still to
+          // come, and the TREE will read them; if the tap was on the
+          // footer (y >= 218) the tree must not take its click for a soft
+          // key.  So its spot goes on the tree's list of expected clicks.
+          btTLX := CONCAT(btTLX, {pvEv(2)}); btTLY := CONCAT(btTLY, {pvEv(3)});
+        END;
+      END;
+      IF pvT == 0 OR pvT == 1 THEN
+        IF pvDrag == 1 THEN
+          pvOld := pvPr;
+          pvPr := ROUND(MIN(0.999, MAX(0.001, (pvEv(2)-LFT)/prvW)), 3);
+          IF pvPr <> pvOld THEN pvDirty := 1; END;
+        END;
+      ELSE
+        pvDrag := 0;                     // the finger lifted
+      END;
+    ELSE
+      IF pvEv == 4 OR pvEv == 30 THEN pvGo := 0; END;      // Esc / Enter
+      IF pvLive == 1 THEN
+        IF pvEv == 7 THEN pvPr := bt_LadStep(pvPr, -1); pvDirty := 1; END;
+        IF pvEv == 8 THEN pvPr := bt_LadStep(pvPr, 1); pvDirty := 1; END;
+      ELSE
+        IF pvEv >= 0 THEN pvGo := 0; END;                   // any key = back
+      END;
+    END;
+  END;
+  btPr := pvPr;                       // hand the prior back (file-level)
+END;
+
+// ROC view (equal-variance binormal model through the current point).
+// beta 7: LIVE.  d' = z(sens) + z(spec) is fixed; tap or drag in the
+// plot and the operating point slides ALONG the curve to the
+// finger's false-positive rate, so sens and spec change together
+// (the threshold trade-off).  Left/Right do the same in steps of
+// 0.01.  New sens and spec are handed back in btSe, btSp; the PPV at
+// the prior pr updates live.  Touch is read with WAIT(-1) (type 0
+// press, type 1 move, after SIZE >= 3), like the tree.
+bt_RocView(se, sp, pr)
+BEGIN
+  // beta 6: W, H, i tagged (rocW, rocH, rocI)
+  LOCAL LFT,RGT,TOPy,BOT,rocW,rocH;
+  LOCAL fpr,tpr,dp;
+  LOCAL rocI,tickx,ticky,auc,fpr0;
+  LOCAL rcY,rcN,rcEv,rcT,rcGo,rcDrag;
+  LOCAL rcDirty,rcSe,rcSp,rcOld,rcPv;
+
+  LFT:=40; RGT:=290; TOPy:=30; BOT:=195;
+  rocW:=RGT-LFT; rocH:=BOT-TOPy;
+
+  dp  := NORMALD_ICDF(0,1,se) + NORMALD_ICDF(0,1,sp);
+  auc := NORMALD_CDF(0,1, dp/√2);
+
+  // beta 7: the curve depends only on d', which stays fixed while the
+  // point moves, so its pixel rows are worked out ONCE (every second
+  // column: 126 NORMALD pairs instead of 249 per frame).
+  rcN := IP(rocW/2);
+  rcY := MAKELIST(0, K, 1, rcN+1, 1);
+  FOR rocI FROM 0 TO rcN DO
+    fpr := 2*rocI/rocW;
+    IF fpr < 0.0005 THEN fpr := 0.0005; END;
+    IF fpr > 0.9995 THEN fpr := 0.9995; END;
+    tpr := NORMALD_CDF(0,1, dp - NORMALD_ICDF(0,1,1-fpr));
+    rcY(rocI+1) := BOT - IP(tpr*rocH);
+  END;
+
+  rcSe := se; rcSp := sp; rcGo := 1; rcDirty := 1; rcDrag := 0;
+  REPEAT rcEv := GETKEY; UNTIL rcEv == -1;   // drain the key that chose this view
+  WHILE rcGo == 1 DO
+    IF rcDirty == 1 THEN
+      // composed on G1 (cleared to white), shown with one blit
+      DIMGROB_P(G1,320,240,#FFFFFFh);
+      TEXTOUT_P("ROC curve (binormal)", G1, 84, 3, 2, RGB(0,0,0));
+      TEXTOUT_P("d' = " + bt_fmtp(dp,3) + ",  AUC = " + bt_fmtp(auc,3), G1, 84, 19, 1, RGB(200,0,200));
+
+      // grid + ticks at 0, 0.2, ..., 1 on both axes (STRING mode 2 keeps the decimal)
+      FOR rocI FROM 0 TO 5 DO
+        tickx := LFT + IP(rocI/5*rocW);
+        ticky := BOT - IP(rocI/5*rocH);
+        IF rocI > 0 AND rocI < 5 THEN
+          LINE_P(G1, tickx, TOPy, tickx, BOT-1, RGB(225,228,235));
+          LINE_P(G1, LFT+1, ticky, RGT, ticky, RGB(225,228,235));
+        END;
+        TEXTOUT_P(STRING(rocI/5,2,1), G1, tickx-8, BOT+6, 1, RGB(90,90,90));
+        TEXTOUT_P(STRING(rocI/5,2,1), G1, LFT-24, ticky-4, 1, RGB(90,90,90));
+      END;
+      LINE_P(G1, LFT, BOT, RGT, BOT, RGB(0,0,0));
+      LINE_P(G1, LFT, TOPy, LFT, BOT, RGB(0,0,0));
+
+      // chance diagonal (dotted)
+      FOR rocI FROM 0 TO rocW STEP 4 DO
+        PIXON_P(G1, LFT+rocI, BOT - IP(rocI/rocW*rocH), RGB(150,150,150));
+      END;
+
+      // ROC curve, from the cache
+      FOR rocI FROM 1 TO rcN DO
+        LINE_P(G1, LFT+2*(rocI-1), rcY(rocI), LFT+2*rocI, rcY(rocI+1), RGB(0,60,200));
+      END;
+
+      // operating point (red)
+      fpr0 := 1-rcSp;
+      tickx := LFT + IP(fpr0*rocW);
+      ticky := BOT - IP(rcSe*rocH);
+      RECT_P(G1, tickx-3, ticky-3, tickx+3, ticky+3, RGB(255,0,0), RGB(255,0,0));
+
+      // live readout, in the empty corner below the diagonal
+      rcPv := pr*rcSe/(pr*rcSe + (1-pr)*(1-rcSp));
+      TEXTOUT_P("sens = " + bt_fmtp(rcSe,3), G1, 170, 140, 1, RGB(0,140,60));
+      TEXTOUT_P("spec = " + bt_fmtp(rcSp,3), G1, 170, 152, 1, RGB(255,0,0));
+      TEXTOUT_P("PPV = " + bt_fmtp(rcPv,3), G1, 170, 165, 2, RGB(200,0,200));
+      TEXTOUT_P("at prior " + bt_fmtp(pr,3), G1, 170, 181, 1, RGB(90,90,90));
+
+      // axis labels (house red for the false-positive axis, house green
+      // for the detected axis; beta 6)
+      TEXTOUT_P("FPR (1-spec)", G1, 140, 212, 1, RGB(255,0,0));
+      TEXTOUT_P("TPR", G1, 8, 108, 1, RGB(0,140,60));
+      TEXTOUT_P("tap/drag curve or " + CHAR(8592) + CHAR(8594) + " = threshold, Esc = back", G1, 40, 226, 1, RGB(30,144,255));
+      BLIT_P(G0,0,0,G1);
+      rcDirty := 0;
+    END;
+
+    rcEv := WAIT(-1);
+    IF TYPE(rcEv) == 6 THEN
+      rcT := -1;
+      IF SIZE(rcEv) >= 3 THEN rcT := rcEv(1); END;
+      IF rcT == 0 THEN
+        // a new press: inside the plot it grabs the point, outside = back
+        rcDrag := 0;
+        IF rcEv(2) >= LFT-6 AND rcEv(2) <= RGT+6 AND rcEv(3) >= TOPy-6 AND rcEv(3) <= BOT+6 THEN
+          rcDrag := 1;
+        ELSE
+          rcGo := 0;
+          // beta 8b: its click is still to come (see bt_PrevView)
+          btTLX := CONCAT(btTLX, {rcEv(2)}); btTLY := CONCAT(btTLY, {rcEv(3)});
+        END;
+      END;
+      IF rcT == 0 OR rcT == 1 THEN
+        IF rcDrag == 1 THEN
+          // the finger's x is the false-positive rate; the curve gives sens
+          rcOld := rcSp;
+          rcSp := ROUND(1 - MIN(0.99, MAX(0.001, (rcEv(2)-LFT)/rocW)), 3);
+          rcSp := MIN(0.999, MAX(0.01, rcSp));
+          rcSe := ROUND(NORMALD_CDF(0,1, dp - NORMALD_ICDF(0,1,rcSp)), 3);
+          rcSe := MIN(0.999, MAX(0.01, rcSe));
+          IF rcSp <> rcOld THEN rcDirty := 1; END;
+        END;
+      ELSE
+        rcDrag := 0;                     // the finger lifted
+      END;
+    ELSE
+      IF rcEv == 4 OR rcEv == 30 THEN rcGo := 0; END;      // Esc / Enter
+      IF rcEv == 7 OR rcEv == 8 THEN
+        // Left moves the point left (fewer false positives: spec up)
+        IF rcEv == 7 THEN rcSp := MIN(0.99, rcSp + 0.01); ELSE rcSp := MAX(0.01, rcSp - 0.01); END;
+        rcSp := ROUND(rcSp, 3);
+        rcSe := ROUND(NORMALD_CDF(0,1, dp - NORMALD_ICDF(0,1,rcSp)), 3);
+        rcSe := MIN(0.999, MAX(0.01, rcSe));
+        rcDirty := 1;
+      END;
+    END;
+  END;
+  btSe := rcSe; btSp := rcSp;         // hand them back (file-level)
+END;
+
+// LINE_P on G1 from a start point inside the nomogram's box to an
+// end point that may lie above or below it: the end is pulled back
+// along the line to y 24 or y 206.  (beta 7)
+bt_LnClip(lcX1, lcY1, lcX2, lcY2, lcCol)
+BEGIN
+  LOCAL lcX, lcY;
+  lcX := lcX2; lcY := lcY2;
+  IF lcY < 24 THEN lcX := lcX1 + (lcX2-lcX1)*(24-lcY1)/(lcY2-lcY1); lcY := 24; END;
+  IF lcY > 206 THEN lcX := lcX1 + (lcX2-lcX1)*(206-lcY1)/(lcY2-lcY1); lcY := 206; END;
+  LINE_P(G1, lcX1, lcY1, ROUND(lcX,0), lcY, lcCol);
+END;
+
+// FAGAN NOMOGRAM (beta 7).  Three equally spaced vertical axes:
+//   left   the prior, on a log-odds scale, y = yC + s*log10(odds)
+//          (0.001 at the TOP, as in Fagan's 1975 original)
+//   centre the likelihood ratio, y = yC - (s/2)*log10(LR),
+//          1000 at the top, 0.001 at the bottom (half the scale)
+//   right  the posterior, y = yC - s*log10(odds) (0.999 at the top)
+// Why a ruler works: with the axes equally spaced, a straight line
+// meets the right axis at  yR = 2*yM - yL, which is
+//   yC - s*(log10(prior odds) + log10(LR)) = yC - s*log10(post odds),
+// so the ruler ADDS the logs: prior odds x LR = posterior odds.
+// Magenta: prior -> LR+ -> PPV.  Dodger blue: prior -> LR- -> 1-NPV.
+// With a second test the first test's line is grey, a dotted grey
+// line carries its posterior back to the prior axis, and test 2's
+// lines start there (the chain).  Dragging the left axis moves the
+// BASE prior (before test 1); everything downstream follows.  The
+// new prior is handed back in btPr.
+bt_FaganView(fgP0, fgSe, fgSp)
+BEGIN
+  LOCAL fgXL, fgXM, fgXR, fgYC, fgS, fgI;
+  LOCAL fgTk, fgLb, fgLs, fgRs, fgY, fgV;
+  LOCAL fgP, fgPE, fgJ, fgSeJ, fgSpJ, fgLR;
+  LOCAL fgYL, fgYM, fgYR, fgPost, fgYN, fgYT;
+  LOCAL fgYB, fgEv, fgT, fgGo, fgDrag, fgDirty;
+  LOCAL fgOld, fgYLi, fgPv, fgNv, fgBc;
+
+  fgXL := 60; fgXM := 160; fgXR := 260;   // equally spaced: that is what makes the line add
+  fgYC := 112; fgS := 27;                  // 27 px per factor of 10 in the odds
+  fgYT := fgYC - 3*fgS; fgYB := fgYC + 3*fgS;   // 31 ... 193: odds 1:999 ... 999:1
+  fgTk := {0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.3,0.5,0.7,0.8,0.9,0.95,0.98,0.99,0.995,0.998,0.999};
+  fgLb := {0.001,0.01,0.1,0.5,0.9,0.99,0.999};
+  fgLs := {"0.001","0.01","0.1","0.5","0.9","0.99","0.999"};
+  fgRs := {"0.001","0.01","0.1","1","10","100","1000"};
+
+  fgP := fgP0; fgGo := 1; fgDirty := 1; fgDrag := 0;
+  REPEAT fgEv := GETKEY; UNTIL fgEv == -1;   // drain the key that chose this view
+  WHILE fgGo == 1 DO
+    IF fgDirty == 1 THEN
+      DIMGROB_P(G1,320,240,#FFFFFFh);
+      TEXTOUT_P("Fagan nomogram", G1, 104, 2, 2, RGB(0,0,0));
+      TEXTOUT_P("prior", G1, fgXL-12, 16, 1, RGB(0,60,200));
+      TEXTOUT_P("posterior", G1, fgXR-24, 16, 1, RGB(200,0,200));
+      TEXTOUT_P("LR", G1, fgXM-5, 56, 1, RGB(90,90,90));
+
+      // the three axes
+      LINE_P(G1, fgXL, fgYT, fgXL, fgYB, RGB(0,0,0));
+      LINE_P(G1, fgXR, fgYT, fgXR, fgYB, RGB(0,0,0));
+      LINE_P(G1, fgXM, ROUND(fgYC - 1.5*fgS,0), fgXM, ROUND(fgYC + 1.5*fgS,0), RGB(0,0,0));
+      // probability ticks: outward on the prior and posterior axes
+      FOR fgI FROM 1 TO SIZE(fgTk) DO
+        fgV := LOG(fgTk(fgI)/(1-fgTk(fgI)));
+        fgY := ROUND(fgYC + fgS*fgV, 0);
+        LINE_P(G1, fgXL-4, fgY, fgXL, fgY, RGB(90,90,90));
+        fgY := ROUND(fgYC - fgS*fgV, 0);
+        LINE_P(G1, fgXR, fgY, fgXR+4, fgY, RGB(90,90,90));
+      END;
+      FOR fgI FROM 1 TO SIZE(fgLb) DO
+        fgV := LOG(fgLb(fgI)/(1-fgLb(fgI)));
+        TEXTOUT_P(fgLs(fgI), G1, fgXL-34, ROUND(fgYC + fgS*fgV, 0)-4, 1, RGB(90,90,90));
+        TEXTOUT_P(fgLs(fgI), G1, fgXR+7, ROUND(fgYC - fgS*fgV, 0)-4, 1, RGB(90,90,90));
+      END;
+      // LR ticks: labelled decades, short ticks at 2 and 5
+      FOR fgI FROM -3 TO 3 DO
+        fgY := ROUND(fgYC - fgS/2*fgI, 0);
+        LINE_P(G1, fgXM, fgY, fgXM+4, fgY, RGB(90,90,90));
+        TEXTOUT_P(fgRs(fgI+4), G1, fgXM+6, fgY-4, 1, RGB(90,90,90));
+        IF fgI < 3 THEN
+          fgY := ROUND(fgYC - fgS/2*(fgI + LOG(2)), 0);
+          LINE_P(G1, fgXM, fgY, fgXM+2, fgY, RGB(90,90,90));
+          fgY := ROUND(fgYC - fgS/2*(fgI + LOG(5)), 0);
+          LINE_P(G1, fgXM, fgY, fgXM+2, fgY, RGB(90,90,90));
+        END;
+      END;
+
+      // the lines: one stage per test, the current test last
+      fgPE := fgP;
+      FOR fgJ FROM 1 TO btNS DO
+        IF fgJ < btNS THEN
+          fgSeJ := btSSe(fgJ); fgSpJ := btSSp(fgJ);
+        ELSE
+          fgSeJ := fgSe; fgSpJ := fgSp;
+        END;
+        fgYL := fgYC + fgS*LOG(fgPE/(1-fgPE));               // the prior, left axis
+        fgYLi := MIN(fgYB, MAX(fgYT, ROUND(fgYL, 0)));       // (a typed 0.0001 sits at the end)
+        fgLR := fgSeJ/(1-fgSpJ);                             // LR+
+        fgYM := fgYC - fgS/2*LOG(fgLR);                      // LR+ on the centre axis
+        fgYR := 2*fgYM - fgYL;                               // straight on to the right axis
+        fgPost := fgPE*fgSeJ/(fgPE*fgSeJ + (1-fgPE)*(1-fgSpJ));
+        IF fgJ < btNS THEN
+          // an earlier test: its line greyed, then carried back to the left axis
+          bt_LnClip(fgXL, fgYLi, fgXR, ROUND(fgYR,0), RGB(160,160,160));
+          fgYN := fgYC + fgS*LOG(fgPost/(1-fgPost));         // that posterior on the PRIOR axis
+          IF fgYR >= fgYT AND fgYR <= fgYB AND fgYN >= fgYT AND fgYN <= fgYB THEN
+            FOR fgI FROM 0 TO 200 STEP 4 DO
+              PIXON_P(G1, fgXR - fgI, ROUND(fgYR + (fgYN - fgYR)*fgI/200, 0), RGB(120,120,120));
+            END;
+          END;
+          RECT_P(G1, fgXL-2, fgYLi-2, fgXL+2, fgYLi+2, RGB(160,160,160), RGB(160,160,160));
+          fgPE := fgPost;
+        ELSE
+          fgPv := fgPost;
+          bt_LnClip(fgXL, fgYLi, fgXR, ROUND(fgYR,0), RGB(200,0,200));
+          bt_LnClip(fgXL, fgYLi+1, fgXR, ROUND(fgYR,0)+1, RGB(200,0,200));
+          RECT_P(G1, fgXM-2, ROUND(fgYM,0)-2, fgXM+2, ROUND(fgYM,0)+2, RGB(200,0,200), RGB(200,0,200));
+          IF fgYR >= fgYT AND fgYR <= fgYB THEN
+            RECT_P(G1, fgXR-3, ROUND(fgYR,0)-3, fgXR+3, ROUND(fgYR,0)+3, RGB(200,0,200), RGB(200,0,200));
+          END;
+          // LR- : the same ruler, prior -> LR- -> P(D+ | T-) = 1 - NPV
+          fgLR := (1-fgSeJ)/fgSpJ;
+          fgYM := fgYC - fgS/2*LOG(fgLR);
+          fgYR := 2*fgYM - fgYL;
+          fgNv := 1 - (1-fgPE)*fgSpJ/((1-fgPE)*fgSpJ + fgPE*(1-fgSeJ));
+          bt_LnClip(fgXL, fgYLi, fgXR, ROUND(fgYR,0), RGB(30,144,255));
+          bt_LnClip(fgXL, fgYLi+1, fgXR, ROUND(fgYR,0)+1, RGB(30,144,255));
+          RECT_P(G1, fgXM-2, ROUND(fgYM,0)-2, fgXM+2, ROUND(fgYM,0)+2, RGB(30,144,255), RGB(30,144,255));
+          IF fgYR >= fgYT AND fgYR <= fgYB THEN
+            RECT_P(G1, fgXR-3, ROUND(fgYR,0)-3, fgXR+3, ROUND(fgYR,0)+3, RGB(30,144,255), RGB(30,144,255));
+          END;
+        END;
+      END;
+      // the knob: the BASE prior, red ("you are here"), drawn last
+      fgY := MIN(fgYB, MAX(fgYT, ROUND(fgYC + fgS*LOG(fgP/(1-fgP)), 0)));
+      RECT_P(G1, fgXL-3, fgY-3, fgXL+3, fgY+3, RGB(255,0,0), RGB(255,0,0));
+
+      // readouts: the stage on screen, then the footer
+      IF btNS > 1 THEN
+        fgBc := bt_fmtB(fgP) + " " + CHAR(8594) + " " + bt_fmtB(fgPE) + " " + CHAR(8594) + " " + bt_fmtB(fgPv);
+        TEXTOUT_P(fgBc, G1, 112, 16, 1, RGB(120,120,120));
+      END;
+      TEXTOUT_P("LR+ = " + bt_fmtp(fgSe/(1-fgSp),3) + ":  " + bt_fmtp(fgPE,3) + " " + CHAR(8594) + " PPV = " + bt_fmtp(fgPv,3), G1, 8, 199, 1, RGB(200,0,200));
+      TEXTOUT_P("LR− = " + bt_fmtp((1-fgSe)/fgSp,3) + ":  " + bt_fmtp(fgPE,3) + " " + CHAR(8594) + " 1 − NPV = " + bt_fmtp(fgNv,3), G1, 8, 211, 1, RGB(30,144,255));
+      TEXTOUT_P("drag left axis, +/- = prior, Esc = back", G1, 8, 226, 1, RGB(30,144,255));
+      BLIT_P(G0,0,0,G1);
+      fgDirty := 0;
+    END;
+
+    fgEv := WAIT(-1);
+    IF TYPE(fgEv) == 6 THEN
+      fgT := -1;
+      IF SIZE(fgEv) >= 3 THEN fgT := fgEv(1); END;
+      IF fgT == 0 THEN
+        // a new press: on the left axis it grabs the prior, elsewhere = back
+        fgDrag := 0;
+        IF fgEv(2) >= fgXL-30 AND fgEv(2) <= fgXL+30 AND fgEv(3) >= fgYT-8 AND fgEv(3) <= fgYB+8 THEN
+          fgDrag := 1;
+        ELSE
+          fgGo := 0;
+          // beta 8b: its click is still to come (see bt_PrevView)
+          btTLX := CONCAT(btTLX, {fgEv(2)}); btTLY := CONCAT(btTLY, {fgEv(3)});
+        END;
+      END;
+      IF fgT == 0 OR fgT == 1 THEN
+        IF fgDrag == 1 THEN
+          // invert the left axis: log10(odds) = (y - yC)/s
+          fgOld := fgP;
+          fgV := 10^((MIN(fgYB, MAX(fgYT, fgEv(3))) - fgYC)/fgS);
+          fgP := bt_Sig2(fgV/(1+fgV));
+          IF fgP <> fgOld THEN fgDirty := 1; END;
+        END;
+      ELSE
+        fgDrag := 0;                     // the finger lifted
+      END;
+    ELSE
+      IF fgEv == 4 OR fgEv == 30 THEN fgGo := 0; END;      // Esc / Enter
+      IF fgEv == 50 OR fgEv == 12 THEN fgP := bt_LadStep(fgP, 1); fgDirty := 1; END;   // + or Down: knob down
+      IF fgEv == 45 OR fgEv == 2 THEN fgP := bt_LadStep(fgP, -1); fgDirty := 1; END;   // - or Up: knob up
+    END;
+  END;
+  btPr := fgP;                        // hand the prior back (file-level)
+END;
+
+// ICON ARRAY (beta 7): Gigerenzer's "1000 people".  A 40 x 25 grid
+// of 6-px squares, one per person, coloured as in the mosaic: TP
+// green, FP orange, FN red, TN light grey.  The T+ people come first
+// (TP, then FP) so they form ONE band across the top: PPV is the
+// green share of that band.  Counts are whole people, rounded so
+// they add to exactly 1000 (largest remainder).  To keep this fast
+// each colour run in a row is ONE rectangle, and the white gaps
+// between people are drawn afterwards as 63 lines.
+bt_IconView(icP, icSe, icSp)
+BEGIN
+  LOCAL icE, icF, icR, icI, icJ, icB;
+  LOCAL icRow, icA, icZ, icCol, icCum, icPos;
+  LOCAL icX0, icY0, icLb, icX;
+
+  icE := {1000*icP*icSe, 1000*(1-icP)*(1-icSp), 1000*icP*(1-icSe), 1000*(1-icP)*icSp};
+  icF := {IP(icE(1)), IP(icE(2)), IP(icE(3)), IP(icE(4))};
+  icR := 1000 - (icF(1) + icF(2) + icF(3) + icF(4));
+  // largest remainder: hand the missing people to the largest fractions
+  FOR icI FROM 1 TO icR DO
+    icB := 1;
+    FOR icJ FROM 2 TO 4 DO
+      IF icE(icJ) - IP(icE(icJ)) > icE(icB) - IP(icE(icB)) THEN icB := icJ; END;
+    END;
+    icF(icB) := icF(icB) + 1;
+    icE(icB) := IP(icE(icB));          // its fraction is used up
+  END;
+  icCum := {0, icF(1), icF(1)+icF(2), icF(1)+icF(2)+icF(3), 1000};
+  icCol := {RGB(0,140,60), RGB(255,69,0), RGB(255,0,0), RGB(220,220,220)};
+  icPos := icF(1) + icF(2);
+
+  icX0 := 40; icY0 := 26;
+  DIMGROB_P(G1,320,240,#FFFFFFh);
+  TEXTOUT_P("1000 people (icon array)", G1, 82, 4, 2, RGB(0,0,0));
+  FOR icRow FROM 0 TO 24 DO
+    FOR icI FROM 1 TO 4 DO
+      icA := MAX(icCum(icI), 40*icRow);
+      icZ := MIN(icCum(icI+1), 40*icRow + 40);
+      IF icZ > icA THEN
+        RECT_P(G1, icX0 + 6*(icA - 40*icRow), icY0 + 6*icRow, icX0 + 6*(icZ - 40*icRow) - 1, icY0 + 6*icRow + 5, icCol(icI), icCol(icI));
+      END;
+    END;
+  END;
+  FOR icI FROM 1 TO 39 DO
+    LINE_P(G1, icX0 + 6*icI - 1, icY0, icX0 + 6*icI - 1, icY0 + 149, RGB(255,255,255));
+  END;
+  FOR icI FROM 1 TO 24 DO
+    LINE_P(G1, icX0, icY0 + 6*icI - 1, icX0 + 239, icY0 + 6*icI - 1, RGB(255,255,255));
+  END;
+
+  // legend: a swatch and a count per leaf
+  icLb := {"TP ", "FP ", "FN ", "TN "};
+  FOR icI FROM 1 TO 4 DO
+    icX := 20 + 75*(icI-1);
+    RECT_P(G1, icX, 181, icX+7, 188, icCol(icI), icCol(icI));
+    TEXTOUT_P(icLb(icI) + bt_fmtc(icF(icI)), G1, icX+11, 180, 1, RGB(0,0,0));
+  END;
+  IF icPos > 0 THEN
+    IF btFor == 1 THEN
+      TEXTOUT_P("Of the " + bt_fmtc(icPos) + " who match, " + bt_fmtc(icF(2)) + " are not the source:", G1, 20, 194, 1, RGB(0,0,0));
+      TEXTOUT_P("1 − PPV = " + bt_fmtc(icF(2)) + " / " + bt_fmtc(icPos) + " = " + bt_fmtp(icF(2)/icPos,3), G1, 20, 207, 1, RGB(200,0,200));
+    ELSE
+      TEXTOUT_P("Of the " + bt_fmtc(icPos) + " who test +, " + bt_fmtc(icF(1)) + " have it:", G1, 20, 194, 1, RGB(0,0,0));
+      TEXTOUT_P("PPV = " + bt_fmtc(icF(1)) + " / " + bt_fmtc(icPos) + " = " + bt_fmtp(icF(1)/icPos,3), G1, 20, 207, 1, RGB(200,0,200));
+    END;
+  END;
+  TEXTOUT_P("any key or tap = back", G1, 100, 226, 1, RGB(30,144,255));
+  BLIT_P(G0,0,0,G1);
+  bt_WaitAny();
+END;
+
+// SAME TEST, THREE PREVALENCES (beta 7): three mosaics side by side
+// at a prior of 1/1000, 1/100 and 1/10, the test unchanged.  The
+// green TP block keeps its height; only the prior moves the split,
+// and the PPV under each mosaic falls with it.
+bt_ThreeView(thSe, thSp)
+BEGIN
+  LOCAL thP, thL, thI, thX, thV, thW;
+  thP := {0.001, 0.01, 0.1};
+  thL := {"1 in 1000", "1 in 100", "1 in 10"};
+  DIMGROB_P(G1,320,240,#FFFFFFh);
+  TEXTOUT_P("Same test, three prevalences", G1, 64, 3, 2, RGB(0,0,0));
+  TEXTOUT_P("sens = " + bt_fmtp(thSe,3) + ",  spec = " + bt_fmtp(thSp,3) + "  in all three", G1, 60, 20, 1, RGB(90,90,90));
+  FOR thI FROM 1 TO 3 DO
+    thX := 12 + 104*(thI-1);
+    bt_Mosaic(thX, 36, thX+91, 151, thP(thI), thSe, thSp);
+    thV := thP(thI)*thSe/(thP(thI)*thSe + (1-thP(thI))*(1-thSp));
+    thW := "prior ";
+    IF btFor == 1 THEN thW := "pool "; END;
+    TEXTOUT_P(thW + thL(thI), G1, thX, 158, 1, RGB(0,0,0));
+    TEXTOUT_P("PPV = " + bt_fmtp(thV,3), G1, thX, 171, 2, RGB(200,0,200));
+  END;
+  IF btFor == 1 THEN
+    TEXTOUT_P("green = source, match;  orange = not source, match", G1, 12, 191, 1, RGB(90,90,90));
+  ELSE
+    TEXTOUT_P("green = has it and T+;  orange = no, but T+", G1, 12, 191, 1, RGB(90,90,90));
+  END;
+  TEXTOUT_P("Only the prior differs.  PPV = green/(green+orange)", G1, 12, 204, 1, RGB(90,90,90));
+  TEXTOUT_P("any key or tap = back", G1, 100, 226, 1, RGB(30,144,255));
+  BLIT_P(G0,0,0,G1);
+  bt_WaitAny();
+END;
+
+// ---- the Exact page (beta 8) ----
+
+// One line "    = 19/118 = 0.161": the lead, the CAS's exact fraction
+// and the decimal.  A fraction too long for the line is never cut:
+// the line says how many digits it has and shows the decimal
+// (BRIEF_CAS rule 7).  No fraction ("" -- the CAS could not answer):
+// the decimal alone, marked as such.
+bt_FrLn(flA, flF, flD)
+BEGIN
+  IF DIM(flF) == 0 THEN RETURN flA + flD + "  (decimal)"; END;
+  IF DIM(flA) + DIM(flF) + DIM(flD) + 3 <= 50 THEN RETURN flA + flF + " = " + flD; END;
+  RETURN flA + "exact fraction has " + STRING(bt_Dig(flF),1,0) + " digits; " + flD;
+END;
+
+// The short form for the tree's panel (at most 18 characters, about
+// 100 px): "PPV = 19/118", or "PPV: 14 digits" when it will not fit.
+bt_FrS(fsL, fsF)
+BEGIN
+  IF DIM(fsL) + 3 + DIM(fsF) <= 18 THEN RETURN fsL + " = " + fsF; END;
+  RETURN fsL + ": " + STRING(bt_Dig(fsF),1,0) + " digits";
+END;
+
+// A list of n copies of one value (the colours of wrapped lines).
+// A plain FOR loop: MAKELIST would write Home's K.
+bt_Rpt(rtV, rtN)
+BEGIN
+  LOCAL rtL, rtI;
+  rtL := {};
+  FOR rtI FROM 1 TO rtN DO rtL := CONCAT(rtL, {rtV}); END;
+  RETURN rtL;
+END;
+
+// Draw a text page on G1: a title, the badge ("exact (CAS)" or
+// "decimal", dodger blue), up to 15 lines of the small font at 13 px
+// (y 24 ... 206), each in its own colour, and a footer.  Then hold it
+// with bt_WaitAny (drain keys AND finger, wait, drain) and return the
+// key (-1 for a tap).
+bt_PageL(plT, plL, plC, plF)
+BEGIN
+  LOCAL plI, plB;
+  DIMGROB_P(G1,320,240,#FFFFFFh);
+  TEXTOUT_P(plT, G1, 8, 4, 2, RGB(0,0,0));
+  plB := "decimal";
+  IF btCasOK == 1 THEN plB := "exact (CAS)"; END;
+  TEXTOUT_P(plB, G1, 250, 8, 1, RGB(30,144,255));
+  LINE_P(G1, 8, 21, 312, 21, RGB(255,69,0));
+  FOR plI FROM 1 TO MIN(15, SIZE(plL)) DO
+    TEXTOUT_P(plL(plI), G1, 8, 11 + 13*plI, 1, plC(plI));
+  END;
+  TEXTOUT_P(plF, G1, 8, 226, 1, RGB(30,144,255));
+  BLIT_P(G0,0,0,G1);
+  RETURN bt_WaitAny();
+END;
+
+// EXACT ANSWERS (beta 8): two drawn pages.
+//   Page 1: the natural frequencies -- the smallest population
+//     N = 1000, 10000, ... at which every leaf is a whole number --
+//     then PPV and NPV as counts, as the CAS's reduced fraction and
+//     as a decimal ("PPV = 95/590 = 19/118 = 0.161"), and the
+//     break-even prior with its sentence.
+//   Page 2: Bayes' formula in symbols, the same with the student's
+//     numbers put in, the exact result, and the CAS's symbolic solve
+//     of PPV = 1/2 for the prior.
+// Opening the page is an event, so the CAS may be asked here (only
+// if the values changed since the last time; bt_ExactUpd caches).
+// Any key or tap = next page; Esc = back to the tree.
+bt_ExactView(evP, evSe, evSp, evNP)
+BEGIN
+  LOCAL evL, evC, evK, evN, evB, evJ;
+  LOCAL evOK, evKy, evPv, evNv, evBE, evR;
+  LOCAL evS1, evS2, evS3, evS4, evLR, evT;
+  LOCAL cGy, cBk, cMg, cRd, cBl;
+
+  cGy := RGB(90,90,90); cBk := RGB(0,0,0); cMg := RGB(200,0,200);
+  cRd := RGB(255,0,0); cBl := RGB(0,60,200);
+  bt_ExactUpd(evP, evSe, evSp);              // cached unless the values changed
+  evB := bt_Book(evP, evNP, evSe, evSp);
+  evPv := evB(5)/(evB(5) + evB(7));          // the decimals, from PPL
+  evNv := evB(8)/(evB(8) + evB(6));
+  evBE := bt_BEp(evSe, evSp);
+
+  // ---- page 1: natural frequencies, the fractions, the break-even ----
+  // the smallest N = evNP x 10^k (k = 0 ... 6, N <= 10^9) at which all
+  // four leaves of the stage on screen are whole numbers
+  evN := 0; evR := {};
+  FOR evK FROM 0 TO 6 DO
+    IF evN == 0 AND evNP*10^evK <= 1000000000 THEN
+      evT := bt_Book(evP, evNP*10^evK, evSe, evSp);
+      evOK := 1;
+      FOR evJ FROM 5 TO 8 DO
+        IF ABS(evT(evJ) - ROUND(evT(evJ),0)) > 0.00001 + evT(evJ)*0.0000000001 THEN evOK := 0; END;
+      END;
+      IF evOK == 1 THEN evN := evNP*10^evK; evR := evT; END;
+    END;
+  END;
+  evL := {}; evC := {};
+  IF evN > 0 THEN
+    evS1 := bt_fmtc(evR(5)); evS2 := bt_fmtc(evR(7));       // TP, FP
+    evS3 := bt_fmtc(evR(6)); evS4 := bt_fmtc(evR(8));       // FN, TN
+    IF btNS > 1 THEN
+      evL := {"Picture N = " + bt_fmtc(evN) + ": " + bt_fmtc(evR(2)) + " test + on test 1,",
+              "then test 2: TP = " + evS1 + ", FP = " + evS2 + ", FN = " + evS3 + ", TN = " + evS4};
+    ELSE
+      evL := {"Picture N = " + bt_fmtc(evN) + " people (natural frequencies):",
+              "TP = " + evS1 + ", FP = " + evS2 + ", FN = " + evS3 + ", TN = " + evS4};
+    END;
+    evC := {cGy, cBk};
+    evL := CONCAT(evL, {"PPV = TP/(TP+FP) = " + evS1 + "/" + bt_fmtc(evR(5) + evR(7))});
+  ELSE
+    evL := {"(No N up to 10^9 makes every leaf whole.)"};
+    evC := {cGy};
+    evL := CONCAT(evL, {"PPV = TP/(TP+FP)"});
+  END;
+  evC := CONCAT(evC, {cMg});
+  evL := CONCAT(evL, {bt_FrLn("    = ", btXP, bt_fmtp(evPv,3))});
+  evC := CONCAT(evC, {cMg});
+  IF btFor == 1 THEN
+    // forensic: 1 - PPV is what the court needs
+    IF evN > 0 THEN
+      evL := CONCAT(evL, {"1 − PPV = FP/(TP+FP) = " + evS2 + "/" + bt_fmtc(evR(5) + evR(7))});
+    ELSE
+      evL := CONCAT(evL, {"1 − PPV = FP/(TP+FP)"});
+    END;
+    evL := CONCAT(evL, {bt_FrLn("    = ", btXC, bt_fmtp(1-evPv,3)) + ": not the source"});
+    evC := CONCAT(evC, {cRd, cRd});
+  END;
+  IF evN > 0 THEN
+    evL := CONCAT(evL, {"NPV = TN/(TN+FN) = " + evS4 + "/" + bt_fmtc(evR(8) + evR(6))});
+  ELSE
+    evL := CONCAT(evL, {"NPV = TN/(TN+FN)"});
+  END;
+  evL := CONCAT(evL, {bt_FrLn("    = ", btXN, bt_fmtp(evNv,3))});
+  evC := CONCAT(evC, {cBl, cBl});
+
+  // the break-even prior: the CAS's solve, the decimal, the sentence
+  IF btNS > 1 THEN
+    evL := CONCAT(evL, {"Break-even: the prior where 2 positives give 1/2:"});
+  ELSE
+    IF DIM(btBE) > 0 THEN
+      evL := CONCAT(evL, {"Break-even: the prior where PPV = 1/2 (CAS solve):"});
+    ELSE
+      evL := CONCAT(evL, {"Break-even: the prior where PPV = 1/2:"});
+    END;
+  END;
+  evL := CONCAT(evL, {bt_FrLn("    prior = ", btBE, bt_fmtp(evBE,4) + " = " + bt_Pct(evBE))});
+  evC := CONCAT(evC, {cGy, cMg});
+  IF btFor == 1 THEN
+    IF btNS > 1 THEN
+      evL := CONCAT(evL, {"Below 1 in " + bt_fmtc(1/evBE) + ", a person matching on BOTH tests",
+                          "is more likely NOT the source than the source."});
+    ELSE
+      evL := CONCAT(evL, {"Below 1 in " + bt_fmtc(1/evBE) + ", a match more likely points to",
+                          "someone who is NOT the source than to the source."});
+    END;
+  ELSE
+    IF btNS > 1 THEN
+      evL := CONCAT(evL, {"Below a prior of " + bt_Pct(evBE) + ", a person positive on BOTH",
+                          "tests is more likely free of it than not."});
+    ELSE
+      evL := CONCAT(evL, {"Below a prior of " + bt_Pct(evBE) + ", a positive result is more",
+                          "likely wrong than right: most T+ are false."});
+    END;
+  END;
+  evC := CONCAT(evC, {cRd, cRd});
+  IF btNS > 1 THEN
+    evL := CONCAT(evL, {"(The prior BEFORE test 1; the tests err independently.)"});
+    evC := CONCAT(evC, {cGy});
+  END;
+  // a value that was not a decimal of <= 6 places nor a ratio of whole
+  // numbers was rounded for the CAS: say so
+  evOK := 0;
+  evT := {evP, evSe, evSp};
+  IF btNS > 1 THEN evT := CONCAT(evT, {btSSe(1), btSSp(1)}); END;
+  FOR evJ FROM 1 TO SIZE(evT) DO
+    evR := bt_Rat(evT(evJ));
+    IF evR(3) == 2 THEN evOK := 1; END;
+  END;
+  IF evOK == 1 THEN
+    evL := CONCAT(evL, {"(A value with more than 6 decimals was rounded.)"});
+    evC := CONCAT(evC, {cGy});
+  END;
+  evT := "CAS: the last update took " + bt_IStr(btCasMs) + " ms";
+  IF btCasAu == 0 THEN evT := evT + "; the tree asks on a tap"; END;
+  evL := CONCAT(evL, {evT});
+  evC := CONCAT(evC, {cGy});
+  evKy := bt_PageL("Exact answers", evL, evC, "any key or tap = Bayes' formula, Esc = back");
+  IF evKy == 4 THEN RETURN 0; END;
+
+  // ---- page 2: Bayes' formula, the student's numbers, the solve ----
+  // the CAS's symbolic solve of PPV = 1/2, once per number of tests
+  IF btBSK <> btNS THEN
+    IF btNS > 1 THEN
+      btBS := bt_Strip(bt_Cas("solve(btq*btl*btm/(btq*btl*btm+1-btq)=1/2,btq)"));
+    ELSE
+      btBS := bt_Strip(bt_Cas("solve(btq*bts/(btq*bts+(1-btq)*(1-btc))=1/2,btq)"));
+    END;
+    btBSK := btNS;
+  END;
+  IF btNS > 1 THEN
+    // the display numbers: p, se1, se2 and the complements
+    evS1 := bt_NumS(evP) + "×" + bt_NumS(btSSe(1)) + "×" + bt_NumS(evSe);
+    evS2 := bt_NumS(1-evP) + "×" + bt_NumS(1-btSSp(1)) + "×" + bt_NumS(1-evSp);
+    evS3 := bt_NumS(1-evP) + "×" + bt_NumS(1-btSSp(1)) + "×" + bt_NumS(evSp);
+    evS4 := bt_NumS(evP) + "×" + bt_NumS(btSSe(1)) + "×" + bt_NumS(1-evSe);
+    evL := {"Two tests, independent once D is known:"};
+    evC := {cGy};
+    evT := bt_Wrap("PPV = p×se₁×se₂ / (p×se₁×se₂ + (1−p)(1−sp₁)(1−sp₂))", 50);
+    evL := CONCAT(evL, evT); evC := CONCAT(evC, bt_Rpt(cBl, SIZE(evT)));
+  ELSE
+    evS1 := bt_NumS(evP) + "×" + bt_NumS(evSe);
+    evS2 := bt_NumS(1-evP) + "×" + bt_NumS(1-evSp);
+    evS3 := bt_NumS(1-evP) + "×" + bt_NumS(evSp);
+    evS4 := bt_NumS(evP) + "×" + bt_NumS(1-evSe);
+    evL := {"Bayes' theorem, in counts and in symbols:",
+            "PPV = TP/(TP+FP) = p×se / (p×se + (1−p)×(1−sp))"};
+    evC := {cGy, cBl};
+  END;
+  evT := bt_Wrap("    = " + evS1 + " / (" + evS1 + " + " + evS2 + ")", 50);
+  evL := CONCAT(evL, evT); evC := CONCAT(evC, bt_Rpt(cBk, SIZE(evT)));
+  evL := CONCAT(evL, {bt_FrLn("    = ", btXP, bt_fmtp(evPv,3))});
+  evC := CONCAT(evC, {cMg});
+  IF btNS > 1 THEN
+    evT := bt_Wrap("NPV = (1−p)(1−sp₁)sp₂ / ((1−p)(1−sp₁)sp₂ + p se₁(1−se₂))", 50);
+  ELSE
+    evT := {"NPV = (1−p)×sp / ((1−p)×sp + p×(1−se))"};
+  END;
+  evL := CONCAT(evL, evT); evC := CONCAT(evC, bt_Rpt(cBl, SIZE(evT)));
+  evT := bt_Wrap("    = " + evS3 + " / (" + evS3 + " + " + evS4 + ")", 50);
+  evL := CONCAT(evL, evT); evC := CONCAT(evC, bt_Rpt(cBk, SIZE(evT)));
+  evL := CONCAT(evL, {bt_FrLn("    = ", btXN, bt_fmtp(evNv,3))});
+  evC := CONCAT(evC, {cMg});
+  // the break-even: the CAS solves PPV = 1/2 for the prior symbolically
+  IF DIM(btBS) > 0 THEN
+    evL := CONCAT(evL, {"Break-even: set PPV = 1/2, solve for p (CAS):"});
+  ELSE
+    evL := CONCAT(evL, {"Break-even: set PPV = 1/2, solve for p:"});
+  END;
+  evC := CONCAT(evC, {cGy});
+  IF DIM(btBS) > 0 THEN
+    evL := CONCAT(evL, {"    p = " + bt_Disp(btBS)});
+  ELSE
+    // no CAS: the result as a textbook prints it, and the badge says decimal
+    IF btNS > 1 THEN
+      evL := CONCAT(evL, {"    p = 1/(1 + LR₁ × LR₂)   (no CAS: by hand)"});
+    ELSE
+      evL := CONCAT(evL, {"    p = (1 − sp)/(se + 1 − sp)   (no CAS: by hand)"});
+    END;
+  END;
+  evC := CONCAT(evC, {cMg});
+  evLR := evSe/(1 - evSp);
+  IF btNS > 1 THEN
+    evL := CONCAT(evL, {"      LR₁ = " + bt_fmtp(btSSe(1)/(1 - btSSp(1)),3) + ", LR₂ = " + bt_fmtp(evLR,3) + " (each se/(1−sp))"});
+  ELSE
+    evL := CONCAT(evL, {"      = 1/(1 + LR+), LR+ = se/(1−sp) = " + bt_fmtp(evLR,3)});
+  END;
+  evC := CONCAT(evC, {cBk});
+  evL := CONCAT(evL, {bt_FrLn("    your numbers: p = ", btBE, bt_fmtp(evBE,4))});
+  evC := CONCAT(evC, {cMg});
+  IF btCasOK == 1 AND DIM(btBS) > 0 THEN
+    evL := CONCAT(evL, {"Every step is exact; only the last decimal rounds."});
+  ELSE
+    evL := CONCAT(evL, {"(No CAS answer: the decimals are the program's.)"});
+  END;
+  evC := CONCAT(evC, {cGy});
+  bt_PageL("Bayes, with your numbers", evL, evC, "any key or tap = back");
+  RETURN 0;
+END;
+
+// HELP (beta 7): three drawn pages; any key or tap = next page,
+// Esc = done.  beta 8: a fourth page, the exact answers.
+bt_HelpView()
+BEGIN
+  LOCAL hpPg, hpT, hpTx, hpI, hpK;
+  hpPg := 1;
+  WHILE hpPg >= 1 AND hpPg <= 4 DO
+    IF hpPg == 1 THEN
+      hpT := "Help 1/4: the tree";
+      hpTx := {"Slide the red knob in the top strip: the prior",
+               "  (a log-odds scale, so 0.001 and 0.01 get room).",
+               "Drag a branch pair up or down (the grip marks):",
+               "  the D+ pair sets sens, the D− pair sets spec.",
+               "Tap a box: what that count is, and its formula.",
+               "Tap a branch number: what that probability is.",
+               "Tap the mosaic: the same test at three priors.",
+               "Mosaic: green TP, red FN, orange FP, grey TN.",
+               "Leaf bars: share of N (a log stub below 1 %).",
+               "Soft keys: More (slot 6) turns to the next page:",
+               "  Values Counts ROC PPV 2×2 | Diag Fagan Icons",
+               "  3 prev Help | Test2 Reset Forensic Leaves Exact.",
+               "⇆ = spec, ⇅ = sens, +/- = prior, Ent = menu,",
+               "Esc = quit."};
+    END;
+    IF hpPg == 2 THEN
+      hpT := "Help 2/4: the views";
+      hpTx := {"ROC: tap or drag the curve; sens and spec move",
+               "  together (the threshold trade-off); ⇆ too.",
+               "PPV vs prevalence: tap or drag = the prior.",
+               "Fagan nomogram: prior (left) and LR (centre)",
+               "  line up with the posterior (right).  Drag the",
+               "  left axis.  Magenta LR+ → PPV, blue LR− → 1−NPV.",
+               "Second test: test 1's PPV is test 2's prior;",
+               "  the root is the T+ people of test 1 (grey).",
+               "  (Assumes the tests err independently.)",
+               "Reset to one test: back to test 1 alone.",
+               "Icon array: 1000 people, the T+ band first.",
+               "Leaves: counts or probabilities (menu)."};
+    END;
+    IF hpPg == 3 THEN
+      hpT := "Help 3/4: reading it forensically";
+      hpTx := {"Forensic labels (menu): D+ = source,",
+               "  D− = not source, T+ = match,",
+               "  prior = 1 in N of the suspect pool.",
+               "1 − spec is the random-match probability (RMP):",
+               "  P(match | not source), a ROW of the 2×2.",
+               "1 − PPV is the probability the matching person",
+               "  is NOT the source: a COLUMN, and what the",
+               "  court needs.",
+               "Prosecutor's fallacy: taking the RMP for 1 − PPV.",
+               "A rare match in a big pool still leaves many",
+               "  innocent matches: tap the FP leaf."};
+    END;
+    IF hpPg == 4 THEN
+      // beta 8: what the CAS adds, in teaching terms
+      hpT := "Help 4/4: exact answers (CAS)";
+      hpTx := {"Between the leaves: PPV and NPV as exact",
+               "  fractions from the CAS (1 − PPV if forensic).",
+               "  'exact (CAS)': the CAS answered.  'decimal':",
+               "  it could not, so the decimal is shown.",
+               "The CAS is asked only when you stop -- after a",
+               "  key, a lift or a view, never during a drag.",
+               "Magenta mark on the slider: the break-even prior,",
+               "  where PPV = 1/2.  Left of it (the red track)",
+               "  most positive results are false.",
+               "Two tests: the mark is the prior BEFORE test 1 at",
+               "  which two positives give 1/2: 1/(1 + LR₁ × LR₂).",
+               "Tap the fractions or soft key Exact (page 3):",
+               "  natural frequencies, Bayes with your numbers,",
+               "  and the CAS solving PPV = 1/2 for the prior."};
+    END;
+    DIMGROB_P(G1,320,240,#FFFFFFh);
+    TEXTOUT_P(hpT, G1, 8, 4, 2, RGB(0,0,0));
+    LINE_P(G1, 8, 22, 312, 22, RGB(255,69,0));
+    FOR hpI FROM 1 TO SIZE(hpTx) DO
+      TEXTOUT_P(hpTx(hpI), G1, 8, 15 + 14*hpI, 1, RGB(0,0,0));   // 14 lines end at y 211
+    END;
+    IF hpPg < 4 THEN
+      TEXTOUT_P("any key or tap = next page, Esc = done", G1, 8, 226, 1, RGB(30,144,255));
+    ELSE
+      TEXTOUT_P("any key or tap = done", G1, 8, 226, 1, RGB(30,144,255));
+    END;
+    BLIT_P(G0,0,0,G1);
+    hpK := bt_WaitAny();
+    IF hpK == 4 THEN hpPg := 0; ELSE hpPg := hpPg + 1; END;
+  END;
+END;
+
+EXPORT BayesTree()
+BEGIN
+  // beta 6: at most six names per LOCAL line; the false-positive
+  // count is btFP (FP is the built-in fractional-part function, and
+  // names are matched ignoring case).
+  LOCAL prior, sens, spec;
+  LOCAL cAx,cTx,cX0,cPos,cNeg,cPnl;
+  LOCAL cDb,cOrg,cGry,kd;
+  LOCAL kk,menuIdx,NP,pr2,se2,sp2;
+  LOCAL np2,prEf,NEf,bkL,kx,slTk;
+  LOCAL nD,nH,tp,fn,btFP,tn;
+  LOCAL ppv,npv,lrp,lrm,podd,posto;
+  LOCAL x1,x2,x3,y0,yD,yH;
+  LOCAL yTP,yFN,yFP,yTN,bcI,bcX;
+  LOCAL btMX,btMY,btNode,btEvT,btGest,btG0;
+  LOCAL btGV,btGMv,btGLab,btSoft,btDirty,btOld;
+  LOCAL lbTp,lbTm,lbDp,lbDm,bcL,bcS;
+  LOCAL beP,beX,beC,xkOK,xS,xT1;
+  LOCAL xT2;
+  LOCAL lvL,lqL;          // beta 8b: the rounded counts and shares on the tree
+  LOCAL btStale;          // beta 8b: 1 = this click ends a tap already handled
+
+  // defaults (change via the menu: Enter values)
+  prior := 0.1; sens := 0.90; spec := 0.95;
+
+  // colors (Roger palette)
+  cAx:=RGB(0,0,0); cTx:=RGB(200,0,200); cX0:=RGB(255,0,0);
+  cPos:=RGB(0,140,60); cNeg:=RGB(90,90,90); cPnl:=RGB(255,69,0);
+  cDb:=RGB(0,60,200); cOrg:=RGB(255,69,0); cGry:=RGB(150,150,150);
+
+  // prior teaching ladder (file-level since beta 7: the views use it)
+  btLad := {0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.95,0.99};
+
+  // beta 7 state: one test, plain labels, counts on the leaves
+  btFor := 0; btPrb := 0; btNS := 1;
+  btSSe := {sens}; btSSp := {spec};
+  btPr := prior; btSe := sens; btSp := spec;
+  btTX := -1; btTY := -1;
+  btTLX := {}; btTLY := {}; btTLi := 1;     // beta 8b: no click expected yet
+
+  // beta 8: nothing asked of the CAS yet; the tree asks by itself
+  // (btCasAu = 1) until an update proves slow
+  btCasOK := 0; btXK := {0}; btXP := ""; btXN := ""; btXC := "";
+  btBK := {0}; btBE := ""; btBS := ""; btBSK := 0;
+  btCasMs := 0; btCasAu := 1;
+
+  // the slider: track ends and its log-odds range
+  btSX1 := 174; btSX2 := 310;
+  btLGL := LN(0.001/0.999); btLGH := -btLGL;
+  slTk := {0.01, 0.1, 0.5, 0.9, 0.99};          // tick marks on the track
+
+  // soft keys in pages; slot 6 is always "More" (house convention,
+  // 16 Oct 2026).  btSKA holds the menu item each slot runs, page by
+  // page (0 = nothing); the most-used views are on page 1, and Reset
+  // never sits under slot 6, where the finger is after a page turn.
+  btSKP := 1;
+  btSK := {{"Values","Counts","ROC","PPV","2×2","More"},
+           {"Diag","Fagan","Icons","3 prev","Help","More"},
+           {"Test 2","Reset","Forensic","Leaves","Exact","More"}};
+  // beta 8: page 3 slot 5 (it was empty) runs menu item 15, Exact
+  btSKA := {1,2,3,4,5,0, 6,7,10,11,14,0, 8,9,12,13,15,0};
+
+  NP := 1000;
+
+  // tree layout (left → right)
+  x1 := 8;  x2 := 118; x3 := 216;
+  y0 := 112; yD := 52; yH := 170;
+  yTP := 32; yFN := 84; yFP := 148; yTN := 200;
+
+  // hit boxes for every tappable thing, from the SAME layout values
+  // the drawing below uses.  First match wins, so the order matters:
+  //   21 slider, 1 root, 2 D+, 3 D-, 4 TP, 5 FN, 6 FP, 7 TN,
+  //   8/9 the first-level branch numbers (prior, 1 - prior),
+  //   10-13 the second-level branch numbers (sens, 1-sens, 1-spec,
+  //   spec), 22/23 the D+ and D- branch pairs (drag zones), 20 the
+  //   mosaic inset; beta 8: 24 the exact panel (the gap between the
+  //   FN and FP leaves) and the break-even lines (between FP and TN).
+  //   (Soft keys, y >= 218, are read before these.)
+  btHId := {21, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 22, 23, 20, 24, 24};
+  // beta 8b: boxes 8 and 9 (the first-level numbers) moved right with
+  // the numbers, off the branch lines: x 92-140, y 74-92 and 132-150
+  btHX1 := {168, x1-4, x2-16, x2-16, x3-4, x3-4, x3-4, x3-4, 92, 92, 160, 160, 160, 160, 159, 159, 2, x3-4, x3-4};
+  btHY1 := {0, y0-12, yD-4, yH-4, yTP-4, yFN-4, yFP-4, yTN-4, 74, 132, 30, 70, 148, 188, 27, 132, 22, yFN+17, yFP+17};
+  btHX2 := {316, x1+74, x2+40, x2+40, 312, 312, 312, 312, 140, 140, 200, 200, 200, 200, 211, 211, 82, 312, 312};
+  btHY2 := {25, y0+10, yD+16, yH+16, yTP+16, yFN+16, yFP+16, yTN+16, 92, 150, 46, 86, 164, 204, 106, 216, 97, yFP-5, yTN-5};
+
+  btDirty := 1; btSoft := 0; btGest := 0; btGMv := 0; btGLab := 0;
+  btG0 := 0; btGV := 0;
+  kk := 30;   // seed Enter so the options menu pops up first
+
+  REPEAT
+    // ---- act on the key (menu handled here, BEFORE drawing) ----
+    IF kk == 7  THEN spec := MAX(0.01, spec-0.01); END;                     // Left  : spec down
+    IF kk == 8  THEN spec := MIN(0.999, spec+0.01); END;                     // Right : spec up
+    IF kk == 2  THEN sens := MIN(0.999, sens+0.01); END;                     // Up    : sens up
+    IF kk == 12 THEN sens := MAX(0.01, sens-0.01); END;                      // Down  : sens down
+    IF kk == 50 THEN prior := bt_LadStep(prior, 1); END;                     // (+)   : next rung up
+    IF kk == 45 THEN prior := bt_LadStep(prior, -1); END;                    // (-)   : next rung down
+    menuIdx := 0;
+    IF kk == 30 THEN                                                          // Enter
+      menuIdx := 0;
+      CHOOSE(menuIdx, "BayesTree Options", {
+        "Enter values",
+        "Enter counts",
+        "ROC curve view",
+        "PPV vs prevalence",
+        "2×2 table view",
+        "Diagnostics",
+        "Fagan nomogram",
+        "Second test",
+        "Reset to one test",
+        "Icon array: 1000 people",
+        "Same test, three prevalences",
+        "Forensic labels on/off",
+        "Leaves: counts/probabilities",
+        "Help",
+        "Exact answers (CAS)",
+        "Close"});
+    END;
+    // a soft key (beta 7) runs the menu item it stands for
+    IF btSoft > 0 THEN menuIdx := btSoft; btSoft := 0; END;
+    IF menuIdx > 0 THEN
+      // this stage's numbers, for the views below
+      bkL := bt_Book(prior, NP, sens, spec);
+      IF menuIdx == 1 THEN
+        pr2 := prior; se2 := sens; sp2 := spec; np2 := NP;
+        IF INPUT({pr2, se2, sp2, np2}, "Exact Values",
+          {"prior:", "sens:", "spec:", "N:"},
+          {"P(D+), in (0,1)", "P(T+|D+)", "P(T−|D−)", "People at the tree root"}) == 1 THEN
+          prior := MIN(0.999, MAX(0.0001, pr2));
+          sens  := MIN(0.999, MAX(0.01, se2));
+          spec  := MIN(0.999, MAX(0.01, sp2));
+          NP    := MAX(10, IP(np2));
+        END;
+      END;
+      IF menuIdx == 3 THEN
+        btSe := sens; btSp := spec;
+        bt_RocView(sens, spec, bkL(1));
+        sens := btSe; spec := btSp;
+      END;
+      IF menuIdx == 4 THEN
+        btPr := prior;
+        IF btNS == 1 THEN
+          bt_PrevView(prior, sens, spec, 1);
+          prior := btPr;
+        ELSE
+          bt_PrevView(bkL(1), sens, spec, 0);
+        END;
+      END;
+      IF menuIdx == 5 THEN
+        // beta 8b: the cells are the tree's rounded counts, so every row
+        // and column total adds up (PPV and NPV stay exact)
+        lvL := bt_RCnt(bkL);
+        bt_Tbl2View(lvL(4), lvL(5), lvL(6), lvL(7), sens, spec,
+                    bkL(5)/(bkL(5)+bkL(7)), bkL(8)/(bkL(8)+bkL(6)));
+      END;
+      IF menuIdx == 6 THEN
+        bt_DiagView(bkL(5), bkL(6), bkL(7), bkL(8));
+      END;
+      IF menuIdx == 2 THEN
+        // backwards: enter the four leaf counts, recover the parameters
+        IF INPUT({tp, fn, btFP, tn}, "Leaf Counts (2x2)",
+          {"T+ D+:", "T− D+:", "T+ D−:", "T− D−:"},
+          {"true positives", "false negatives", "false positives", "true negatives"}) == 1 THEN
+          tp := MAX(0,tp); fn := MAX(0,fn); btFP := MAX(0,btFP); tn := MAX(0,tn);
+          IF tp+fn <= 0 OR btFP+tn <= 0 THEN
+            MSGBOX("Need D+ row and D− row each > 0");
+          ELSE
+            NP := tp+fn+btFP+tn;
+            prior := (tp+fn)/NP;
+            sens  := MIN(0.999, MAX(0.001, tp/(tp+fn)));
+            spec  := MIN(0.999, MAX(0.001, tn/(btFP+tn)));
+            prior := MIN(0.999, MAX(0.0001, prior));
+            btNS := 1;          // beta 7: four counts describe ONE test
+          END;
+        END;
+      END;
+      IF menuIdx == 7 THEN
+        btPr := prior;
+        bt_FaganView(prior, sens, spec);
+        prior := btPr;
+      END;
+      IF menuIdx == 8 THEN
+        // beta 7: a second test.  Its prior is test 1's PPV; the tree
+        // starts from test 1's positives.  Choosing it again edits
+        // test 2.  Prefilled with the test now on screen.
+        se2 := sens; sp2 := spec;
+        IF INPUT({se2, sp2}, "Second test",
+          {"sens 2:", "spec 2:"},
+          {"P(T+|D+) of test 2", "P(T−|D−) of test 2"}) == 1 THEN
+          IF btNS == 1 THEN
+            btSSe := {sens}; btSSp := {spec}; btNS := 2;
+          END;
+          sens := MIN(0.999, MAX(0.01, se2));
+          spec := MIN(0.999, MAX(0.01, sp2));
+        END;
+      END;
+      IF menuIdx == 9 THEN
+        // back to one test: test 1's sens and spec return
+        IF btNS > 1 THEN sens := btSSe(1); spec := btSSp(1); btNS := 1; END;
+      END;
+      IF menuIdx == 10 THEN bt_IconView(bkL(1), sens, spec); END;
+      IF menuIdx == 11 THEN bt_ThreeView(sens, spec); END;
+      IF menuIdx == 12 THEN btFor := 1 - btFor; END;
+      IF menuIdx == 13 THEN btPrb := 1 - btPrb; END;
+      IF menuIdx == 14 THEN bt_HelpView(); END;
+      // beta 8: the exact answers, the natural frequencies, Bayes'
+      // formula with the student's numbers, the CAS's solve (16 = Close)
+      IF menuIdx == 15 THEN bt_ExactView(prior, sens, spec, NP); END;
+    END;
+    IF kk == 30 OR menuIdx > 0 THEN
+      // a dialog or a page covered the tree: redraw it, and drain the
+      // key that closed the dialog
+      btDirty := 1;
+      REPEAT kd := GETKEY; UNTIL kd == -1;
+    END;
+
+    // ---- Bayes bookkeeping for the stage on screen ----
+    bkL := bt_Book(prior, NP, sens, spec);
+    prEf := bkL(1); NEf := bkL(2); nD := bkL(3); nH := bkL(4);
+    tp := bkL(5); fn := bkL(6); btFP := bkL(7); tn := bkL(8);
+    ppv := tp/(tp+btFP);     npv := tn/(tn+fn);
+    lrp := sens/(1-spec);    lrm := (1-sens)/spec;
+    podd := prEf/(1-prEf);   posto := podd*lrp;
+    // beta 8b: what the boxes SHOW, rounded so every pair adds up:
+    // lvL = {N, D+, D-, TP, FN, FP, TN} in whole people (bt_RCnt),
+    // lqL = {D+, D-, TP, FN, FP, TN} as shares of N, 3 decimals (bt_RPrb)
+    lvL := bt_RCnt(bkL);
+    lqL := bt_RPrb(bkL);
+
+    IF btDirty == 1 THEN
+    // ---- beta 8: the exact answers, from the CAS ----
+    // The CAS answers EVENTS, never frames: bt_ExactUpd asks it only if
+    // the values changed since the last time (its cache key), and it is
+    // called here only when no finger is dragging (btGest == 0) -- so a
+    // slider or branch drag never waits for the CAS; the lift does.
+    // With btCasAu = 0 (the CAS proved slow) the tree never asks; a
+    // tap on the panel opens the Exact page, which does.
+    IF btGest == 0 AND btCasAu == 1 THEN bt_ExactUpd(prior, sens, spec); END;
+    // the break-even prior, the program's own number (it is drawn)
+    beP := bt_BEp(sens, spec);
+
+    // ---- compose the whole frame on G1, show it with one blit ----
+    // beta 6: every call below used to go straight to the screen.
+    // beta 7: drawn only when something changed.
+    IF btFor == 1 THEN
+      lbTp := "match "; lbTm := "no match "; lbDp := ""; lbDm := "";
+    ELSE
+      lbTp := "T+ "; lbTm := "T− "; lbDp := "D+ "; lbDm := "D− ";
+    END;
+    DIMGROB_P(G1,320,240,#FFFFFFh);   // clear G1 to white
+
+    // ---- top left: the title, or (two tests) the breadcrumb ----
+    IF btNS > 1 THEN
+      // prior before test 1 -> after test 1 -> after test 2; the
+      // earlier stages grey, the current posterior magenta
+      bcL := {prior, prEf, ppv};
+      FOR bcI FROM 1 TO 3 DO
+        bcX := 2 + 36*(bcI-1);
+        IF bcI < 3 THEN
+          TEXTOUT_P(bt_fmtB(bcL(bcI)), G1, bcX, 6, 1, cGry);
+          TEXTOUT_P(CHAR(8594), G1, bcX+29, 6, 1, cGry);
+        ELSE
+          TEXTOUT_P(bt_fmtB(bcL(bcI)), G1, bcX, 6, 1, cTx);
+        END;
+      END;
+    ELSE
+      TEXTOUT_P("Bayes Tree", G1, 6, 2, 2, cAx);
+    END;
+
+    // ---- the prevalence slider (beta 7) ----
+    RECT_P(G1, 104, 1, 315, 21, cPnl, RGB(255,255,255));
+    IF btFor == 1 THEN
+      TEXTOUT_P("1 in " + bt_fmtc(1/prior), G1, 107, 6, 1, cAx);
+    ELSE
+      TEXTOUT_P("prior " + bt_fmtp(prior,3), G1, 107, 6, 1, cAx);
+    END;
+    RECT_P(G1, btSX1, 9, btSX2, 12, cNeg, RGB(170,205,255));      // the track
+    // beta 8: the BREAK-EVEN mark.  Left of it a positive result is
+    // more likely wrong than right (PPV < 1/2), so that part of the
+    // track is tinted light red; the mark itself is magenta, above the
+    // track.  Off the track's range (0.001 ... 0.999): no mark.
+    IF beP >= 0.001 AND beP <= 0.999 THEN
+      beX := bt_SlX(beP);
+      IF beX > btSX1 + 1 THEN
+        RECT_P(G1, btSX1+1, 10, beX, 11, RGB(255,150,150), RGB(255,150,150));
+      END;
+      LINE_P(G1, beX, 2, beX, 8, cTx);
+      LINE_P(G1, beX+1, 2, beX+1, 8, cTx);
+    END;
+    FOR bcI FROM 1 TO 5 DO                                         // 0.01 0.1 0.5 0.9 0.99
+      kx := bt_SlX(slTk(bcI));
+      LINE_P(G1, kx, 14, kx, 17, cNeg);
+    END;
+    kx := bt_SlX(prior);
+    RECT_P(G1, kx-2, 3, kx+2, 19, cX0, cX0);                       // the knob
+
+    // ---- the mosaic inset (beta 7): the stage on screen ----
+    bt_Mosaic(4, 24, 80, 96, prEf, sens, spec);
+
+    // ---- root (boxed); with two tests it is test 1's positives, grey ----
+    IF btNS > 1 THEN
+      RECT_P(G1, x1-4, y0-12, x1+74, y0+10, cGry, RGB(240,240,240));
+      TEXTOUT_P(lbTp + bt_fmtc(NEf), G1, x1, y0-8, 2, RGB(120,120,120));
+    ELSE
+      RECT_P(G1, x1-4, y0-12, x1+74, y0+10, cPnl, RGB(255,240,220));
+      TEXTOUT_P("N = " + STRING(NP,1,0), G1, x1, y0-8, 2, cPnl);
+    END;
+
+    // ---- level-1 branches: prior split ----
+    LINE_P(G1, x1+76, y0, x2-18, yD+6, cAx);
+    LINE_P(G1, x1+76, y0, x2-18, yH+6, cAx);
+    // beta 8b: right of the branch lines (they sat on them at x 84),
+    // and the pair adds up: 1 - prior is 1 minus the ROUNDED prior
+    TEXTOUT_P(bt_fmtq(lqL(1), prEf), G1, 98, 78, 1, cNeg);
+    TEXTOUT_P(bt_fmtq(lqL(2), 1-prEf), G1, 98, 136, 1, cNeg);
+
+    // ---- D nodes (boxed) ----
+    RECT_P(G1, x2-16, yD-4, x2+40, yD+16, cDb, RGB(235,242,255));
+    RECT_P(G1, x2-16, yH-4, x2+40, yH+16, cDb, RGB(235,242,255));
+    // beta 8b: D- is N - D+ (counts) or 1 - D+ (shares), so they add up
+    IF btPrb == 1 THEN
+      TEXTOUT_P(lbDp + bt_fmtq(lqL(1), prEf), G1, x2-12, yD+2, 1, cDb);
+      TEXTOUT_P(lbDm + bt_fmtq(lqL(2), 1-prEf), G1, x2-12, yH+2, 1, cDb);
+    ELSE
+      TEXTOUT_P(lbDp + bt_fmtc(lvL(2)), G1, x2-12, yD, 2, cDb);
+      TEXTOUT_P(lbDm + bt_fmtc(lvL(3)), G1, x2-12, yH, 2, cDb);
+    END;
+    IF btFor == 1 THEN
+      TEXTOUT_P("source", G1, 106, 36, 1, cDb);
+      TEXTOUT_P("not source", G1, 104, 154, 1, cDb);
+    END;
+
+    // ---- level-2 branches: test split ----
+    LINE_P(G1, x2+44, yD+6, x3-8, yTP+6, cAx);
+    LINE_P(G1, x2+44, yD+6, x3-8, yFN+6, cAx);
+    LINE_P(G1, x2+44, yH+6, x3-8, yFP+6, cAx);
+    LINE_P(G1, x2+44, yH+6, x3-8, yTN+6, cAx);
+    // beta 8b: each pair adds up to 1: the complement is 1 minus the
+    // ROUNDED value (a typed 0.8345 would otherwise show 0.835 + 0.166)
+    TEXTOUT_P(bt_fmtq(ROUND(sens,3), sens), G1, 168, 34, 1, cNeg);
+    TEXTOUT_P(bt_fmtq(1-ROUND(sens,3), 1-sens), G1, 168, 74, 1, cNeg);
+    TEXTOUT_P(bt_fmtq(1-ROUND(spec,3), 1-spec), G1, 168, 152, 1, cNeg);
+    TEXTOUT_P(bt_fmtq(ROUND(spec,3), spec), G1, 168, 192, 1, cNeg);
+    // grip marks (beta 7): three short lines left of each number say
+    // "this pair can be dragged up or down"
+    FOR bcI FROM 0 TO 2 DO
+      LINE_P(G1, 161, 36+3*bcI, 165, 36+3*bcI, cDb);
+      LINE_P(G1, 161, 76+3*bcI, 165, 76+3*bcI, cDb);
+      LINE_P(G1, 161, 154+3*bcI, 165, 154+3*bcI, cDb);
+      LINE_P(G1, 161, 194+3*bcI, 165, 194+3*bcI, cDb);
+    END;
+
+    // ---- leaves (all boxed): T+ highlighted (they feed PPV) ----
+    // beta 7: counts or probabilities, and a bar = share of N in the
+    // mosaic's colours (TP green, FN red, FP orange, TN grey)
+    RECT_P(G1, x3-4, yTP-4, 312, yTP+16, cPos, RGB(232,246,235));
+    RECT_P(G1, x3-4, yFN-4, 312, yFN+16, cX0, RGB(255,235,235));
+    RECT_P(G1, x3-4, yFP-4, 312, yFP+16, cPos, RGB(232,246,235));
+    RECT_P(G1, x3-4, yTN-4, 312, yTN+16, cX0, RGB(255,235,235));
+    // beta 8b: each T- leaf is its D box minus the rounded T+ leaf
+    // (bt_RCnt, bt_RPrb), so TP + FN = D+ and FP + TN = D- on screen
+    IF btPrb == 1 THEN
+      TEXTOUT_P(lbTp + bt_fmtq(lqL(3), tp/NEf), G1, x3, yTP, 2, cPos);
+      TEXTOUT_P(lbTm + bt_fmtq(lqL(4), fn/NEf), G1, x3, yFN, 2, cX0);
+      TEXTOUT_P(lbTp + bt_fmtq(lqL(5), btFP/NEf), G1, x3, yFP, 2, cPos);
+      TEXTOUT_P(lbTm + bt_fmtq(lqL(6), tn/NEf), G1, x3, yTN, 2, cX0);
+    ELSE
+      TEXTOUT_P(lbTp + bt_fmtc(lvL(4)), G1, x3, yTP, 2, cPos);
+      TEXTOUT_P(lbTm + bt_fmtc(lvL(5)), G1, x3, yFN, 2, cX0);
+      TEXTOUT_P(lbTp + bt_fmtc(lvL(6)), G1, x3, yFP, 2, cPos);
+      TEXTOUT_P(lbTm + bt_fmtc(lvL(7)), G1, x3, yTN, 2, cX0);
+    END;
+    bt_LeafBar(x3, yTP+13, tp/NEf, cPos);
+    bt_LeafBar(x3, yFN+13, fn/NEf, cX0);
+    bt_LeafBar(x3, yFP+13, btFP/NEf, cOrg);
+    bt_LeafBar(x3, yTN+13, tn/NEf, cGry);
+
+    // ---- beta 8: the EXACT PANEL, between the FN and FP leaves ----
+    // PPV and NPV (forensic: PPV and 1 - PPV) as the CAS's fractions,
+    // and the badge.  Shown only when the cached texts are for the
+    // values on screen; during a drag they are not (the CAS is asked on
+    // the lift), and the panel says so instead of showing old numbers.
+    // A fraction too long for the panel says how many digits it has
+    // (bt_FrS); the Exact page shows it.  The panel is tappable (24).
+    xkOK := bt_Same(btXK, bt_XKey(prior, sens, spec));
+    IF xkOK == 1 THEN
+      xT1 := "PPV = " + bt_fmtp(ppv,3);
+      IF DIM(btXP) > 0 THEN xT1 := bt_FrS("PPV", btXP); END;
+      IF btFor == 1 THEN
+        xT2 := "1−PPV = " + bt_fmtp(1-ppv,3);
+        IF DIM(btXC) > 0 THEN xT2 := bt_FrS("1−PPV", btXC); END;
+      ELSE
+        xT2 := "NPV = " + bt_fmtp(npv,3);
+        IF DIM(btXN) > 0 THEN xT2 := bt_FrS("NPV", btXN); END;
+      END;
+      TEXTOUT_P(xT1, G1, x3-2, yFN+19, 1, cTx);
+      TEXTOUT_P(xT2, G1, x3-2, yFN+31, 1, cTx);
+      // the badge: exact only if both fractions on the panel came back
+      xS := "decimal, tap";
+      IF DIM(btXP) > 0 AND (DIM(btXN) > 0 OR btFor == 1) AND (DIM(btXC) > 0 OR btFor == 0) THEN
+        xS := "exact (CAS), tap";
+      END;
+      TEXTOUT_P(xS, G1, x3-2, yFN+43, 1, RGB(30,144,255));
+    ELSE
+      IF btCasAu == 1 THEN
+        TEXTOUT_P("exact: on lift", G1, x3-2, yFN+19, 1, cGry);
+      ELSE
+        TEXTOUT_P("tap for exact", G1, x3-2, yFN+19, 1, cGry);
+      END;
+    END;
+    // ---- beta 8: the BREAK-EVEN lines, between the FP and TN leaves ----
+    // Red when the prior on the slider is below it (it applies now),
+    // magenta otherwise.  From the program's own number, so they follow
+    // a sens/spec drag live.  With two tests: positive on both.
+    beC := cTx;
+    IF prior < beP THEN beC := cX0; END;
+    IF btFor == 1 THEN
+      TEXTOUT_P("Most matches false", G1, x3-2, yFP+19, 1, beC);
+      TEXTOUT_P("below 1 in " + bt_fmtc(1/beP), G1, x3-2, yFP+31, 1, beC);
+    ELSE
+      IF btNS > 1 THEN
+        TEXTOUT_P("Most T+T+ false", G1, x3-2, yFP+19, 1, beC);
+      ELSE
+        TEXTOUT_P("Most T+ are false", G1, x3-2, yFP+19, 1, beC);
+      END;
+      TEXTOUT_P("if prior < " + bt_Pct(beP), G1, x3-2, yFP+31, 1, beC);
+    END;
+
+    // ---- readouts (beta 7: a short column under the root, x <= 82) ----
+    IF btFor == 1 THEN
+      TEXTOUT_P("PPV = " + bt_fmtp(ppv,3), G1, 4, 126, 1, cTx);
+      TEXTOUT_P("1−PPV = " + bt_fmtp(1-ppv,3), G1, 4, 138, 1, cTx);
+      TEXTOUT_P("RMP = " + bt_fmtp(1-spec,3), G1, 4, 150, 1, RGB(30,144,255));
+      TEXTOUT_P("LR+ = " + bt_fmtp(lrp,3), G1, 4, 162, 1, RGB(30,144,255));
+      TEXTOUT_P("LR− = " + bt_fmtp(lrm,3), G1, 4, 174, 1, RGB(30,144,255));
+    ELSE
+      TEXTOUT_P("PPV = " + bt_fmtp(ppv,3), G1, 4, 126, 1, cTx);
+      TEXTOUT_P("NPV = " + bt_fmtp(npv,3), G1, 4, 138, 1, cTx);
+      TEXTOUT_P("LR+ = " + bt_fmtp(lrp,3), G1, 4, 150, 1, RGB(30,144,255));
+      TEXTOUT_P("LR− = " + bt_fmtp(lrm,3), G1, 4, 162, 1, RGB(30,144,255));
+      IF btNS > 1 THEN TEXTOUT_P("(test 2)", G1, 4, 174, 1, cGry); END;
+    END;
+    TEXTOUT_P("odds " + bt_fmtp(podd,3) + " × LR+ = " + bt_fmtp(posto,3), G1, 4, 192, 1, cTx);
+    // key legend: house form, dodger blue; it ends above y 218, where
+    // the soft keys are (beta 7)
+    TEXTOUT_P("⇆ = spec, ⇅ = sens, +/- = prior", G1, 4, 204, 1, RGB(30,144,255));
+
+    BLIT_P(G0,0,0,G1);                // the one blit per frame
+    // the soft keys paint the SCREEN, so they go after the blit,
+    // every frame (ChiTable, device-verified)
+    DRAWMENU(btSK(btSKP));
+    btDirty := 0;
+    END;
+
+    // ---- wait for a key OR a screen event ----
+    // WAIT(-1) returns a key code, or {type, x, y} for a touch, in
+    // WAIT(-1)'s OWN type table: 0 = a new press, 1 = a move, 2 = the
+    // lift (a one-element list, beta 5), 3 = a click (MOUSE numbers
+    // its types differently).  x, y are read only when the list has
+    // them.  WAIT(-1) also returns -1 by itself after about a minute:
+    // nothing to do.
+    // beta 8b, measured on the emulator (MenuTapProbe beta 1, 17 Oct
+    // 2026) with the soft keys on the screen:
+    //   a tap on a SOFT KEY (y >= 218) -> only {3, x, y}
+    //   a tap ANYWHERE ELSE            -> {0, x, y}, then {2}, then {3, x, y}
+    //   a drag                         -> {0, x, y}, {1, x, y} ..., {2}
+    // So a soft key is read from type 3 (below), the tree's taps and
+    // drags from types 0 and 1, and a type 3 above the strip is the
+    // end of a tap already handled -- ignored, or it would run twice.
+    kk := WAIT(-1);
+    IF TYPE(kk) == 6 THEN
+      btEvT := -1; btMX := -1; btMY := -1;
+      IF SIZE(kk) >= 3 THEN
+        btEvT := kk(1); btMX := kk(2); btMY := kk(3);
+      END;
+      // beta 8b: STALE CLICKS.  A click (type 3) may end a tap that was
+      // already handled: this tree's own press, a tap that closed a
+      // view, a tap on a page.  Their spots are on the list btTLX, btTLY
+      // (btTLi = the next one due), and they arrive first and in order,
+      // so a click matching the next spot is skipped; the first event
+      // that does not match means none are left, and the list is
+      // forgotten.  (ABS, not ==: WAIT(-1) hands back integers.)
+      btStale := 0;
+      IF btEvT == 3 THEN
+        IF btTLi <= SIZE(btTLX) THEN
+          IF ABS(btMX - btTLX(btTLi)) <= 2 AND ABS(btMY - btTLY(btTLi)) <= 2 THEN
+            btStale := 1; btTLi := btTLi + 1;
+          END;
+        END;
+      END;
+      IF btEvT == 0 OR btEvT == 1 OR (btEvT == 3 AND btStale == 0) THEN
+        btTLX := {}; btTLY := {}; btTLi := 1;
+      END;
+      // a new press on the tree: ITS click comes after its lift, so it is
+      // the first expected click (a drag sends none; the next press resets
+      // this).  Not a press on the strip: that one does nothing (below),
+      // so its click, if one came, would be the soft key itself.
+      IF btEvT == 0 AND btMY < 218 THEN btTLX := {btMX}; btTLY := {btMY}; END;
+      IF btEvT == 0 THEN
+        // ---- a NEW PRESS: what is under the finger? ----
+        btGest := 0; btGMv := 0; btGLab := 0; btNode := 0;
+        IF btMY >= 218 THEN
+          // beta 8b: NEUTRALISED.  With the soft keys on the screen a tap
+          // on them never arrives as a press (type 0), only as a click
+          // (type 3, read below).  Should a press ever come here (other
+          // firmware, or no strip drawn), it does nothing, so a tap could
+          // never run its soft key twice.
+          btNode := 0;
+        ELSE
+          btNode := bt_Hit(btMX, btMY);
+        END;
+        IF btNode == 21 THEN
+          // the slider: the knob jumps to the finger and follows it
+          btGest := 21;
+          btOld := prior; prior := bt_SlP(btMX);
+          IF prior <> btOld THEN btDirty := 1; END;
+        END;
+        // a second-level branch number: a TAP (explain it) or the start
+        // of a DRAG of its pair -- decided by whether the finger moves
+        IF btNode >= 10 AND btNode <= 13 THEN btGLab := btNode; END;
+        IF btNode == 10 OR btNode == 11 OR btNode == 22 THEN
+          btGest := 22; btG0 := btMY; btGV := sens;
+        END;
+        IF btNode == 12 OR btNode == 13 OR btNode == 23 THEN
+          btGest := 23; btG0 := btMY; btGV := spec;
+        END;
+        // a box or a first-level number: explain it at once
+        IF btNode >= 1 AND btNode <= 9 THEN
+          // beta 8b: the rounded counts the boxes show (lvL), so the page
+          // agrees with the box that was tapped
+          bt_NodeInfo(btNode, {lvL(1),lvL(2),lvL(3),lvL(4),lvL(5),lvL(6),lvL(7),ppv,npv,prEf,sens,spec});
+          btDirty := 1;
+        END;
+        IF btNode == 20 THEN
+          bt_ThreeView(sens, spec);
+          btDirty := 1;
+        END;
+        // beta 8: the exact panel or the break-even lines: the Exact page
+        IF btNode == 24 THEN
+          bt_ExactView(prior, sens, spec, NP);
+          btDirty := 1;
+        END;
+      ELSE
+        IF btEvT == 1 THEN
+          // ---- the finger MOVED ----
+          IF btGest == 21 THEN
+            btOld := prior; prior := bt_SlP(btMX);
+            IF prior <> btOld THEN btDirty := 1; END;
+          END;
+          IF btGest == 22 OR btGest == 23 THEN
+            // a drag only once it has moved more than 8 px; it then
+            // measures from where it crossed, so the value does not jump
+            IF btGMv == 0 THEN
+              IF ABS(btMY - btG0) > 8 THEN btGMv := 1; btG0 := btMY; END;
+            END;
+            IF btGMv == 1 THEN
+              // up = more: 0.005 per pixel
+              btOld := ROUND(MIN(0.999, MAX(0.01, btGV + (btG0 - btMY)*0.005)), 3);
+              IF btGest == 22 THEN
+                IF btOld <> sens THEN sens := btOld; btDirty := 1; END;
+              ELSE
+                IF btOld <> spec THEN spec := btOld; btDirty := 1; END;
+              END;
+            END;
+          END;
+        ELSE
+          IF btEvT == 3 AND btMY >= 218 THEN
+          // ---- beta 8b: a SOFT KEY.  A tap on the strip is a click
+          // (type 3) and nothing else.  Slot 6 is "More" (the next page of
+          // keys); any other slot runs its menu item at the top of the
+          // loop -- unless the click is a stale one (above), the end of a
+          // tap that closed a page on its footer. ----
+            IF btStale == 0 THEN
+              btNode := MIN(6, IP(btMX/53.4) + 1);
+              IF btNode == 6 THEN
+                btSKP := btSKP + 1;
+                IF btSKP > SIZE(btSK) THEN btSKP := 1; END;
+                btDirty := 1;
+              ELSE
+                btSoft := btSKA(6*(btSKP-1) + btNode);
+              END;
+              btNode := 0;
+            END;
+          ELSE
+          // ---- any other screen event (a finger lift arrives as a
+          // one-element list; a click above the strip ends a tap that
+          // the press already handled): the gesture is over.  A branch
+          // number pressed and released without moving was a TAP. ----
+          IF btGLab > 0 AND btGMv == 0 THEN
+            bt_NodeInfo(btGLab, {lvL(1),lvL(2),lvL(3),lvL(4),lvL(5),lvL(6),lvL(7),ppv,npv,prEf,sens,spec});
+            btDirty := 1;
+          END;
+          // beta 8: a drag has ended.  If it changed the values, redraw
+          // once more: that frame (no finger now) asks the CAS for the
+          // exact texts the drag frames went without.
+          IF btGest > 0 AND bt_Same(btXK, bt_XKey(prior, sens, spec)) == 0 THEN btDirty := 1; END;
+          btGest := 0; btGLab := 0; btGMv := 0;
+          END;
+        END;
+      END;
+      kk := 0;                       // a touch is not a key
+    ELSE
+      // a key ends any gesture and redraws; -1 (the timeout) does nothing
+      IF kk >= 0 THEN btDirty := 1; btGest := 0; btGLab := 0; btGMv := 0; END;
+      // beta 8b: a key comes after any click still queued: none is left
+      IF kk >= 0 THEN btTLX := {}; btTLY := {}; btTLi := 1; END;
+    END;
+  UNTIL kk == 4;                                     // Esc
+
+  // beta 6: a summary for Home instead of falling off END, so the
+  // last PPV and NPV stay in the history and nothing is left open.
+  // beta 7: with two tests, says so and gives the prior before test 1.
+  bcS := "";
+  IF btNS > 1 THEN bcS := ", after 2 tests from prior " + bt_fmtp(prior,3); END;
+  // beta 8: the exact PPV too, if the CAS gave one for these values
+  xS := "";
+  IF bt_Same(btXK, bt_XKey(prior, sens, spec)) == 1 AND DIM(btXP) > 0 AND DIM(btXP) <= 15 THEN
+    xS := " = " + btXP;
+  END;
+  RETURN "BayesTree: PPV = " + bt_fmtp(ppv,3) + xS + ", NPV = " + bt_fmtp(npv,3) +
+    " (prior " + bt_fmtp(prEf,3) + ", sens " + bt_fmtp(sens,3) + ", spec " + bt_fmtp(spec,3) + ")" + bcS;
+END;

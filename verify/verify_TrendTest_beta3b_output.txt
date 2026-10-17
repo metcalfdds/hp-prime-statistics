@@ -1,0 +1,55 @@
+==== Part A: the CAS templates in desktop Giac, against fractions, SymPy and statsmodels ====
+PASS snoring, as entered                          SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 95339/4757909, a = 80277/4757909
+PASS snoring, 1,2,3                               SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 53492/1511327, a = -51775/3022654
+PASS snoring, midranks                            SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 109323/2069801372, a = -33598615/1574215128
+PASS sleep U (made up), as entered                SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 1/120, a = 59/720
+PASS sleep U (made up), 1,2,3                     SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 1/120, a = 83/720
+PASS sleep U (made up), midranks                  SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 17/729600, a = 540589/4377600
+PASS convictions (made up), as entered            SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 373/4380, a = 199/1095
+PASS convictions (made up), 1,2,3                 SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 373/4380, a = 141/1460
+PASS convictions (made up), midranks              SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 2639/7342500, a = 4480753/44055000
+PASS scores with decimals 0.5, 1.25, 2.125, 4     SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 14173/119130, a = 24295/190608
+PASS negative scores -2 .. 2                      SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 163/1921, a = 919/3842
+PASS two levels with the same p (ties)            SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 1/20, a = 1/30
+PASS a zero cell                                  SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 1/4, a = -1/4
+PASS two levels                                   SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 9/50, a = -3/50
+PASS six levels, large prime totals               SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 608752/21894613, a = 1627669/21894613
+PASS a score of 1/3 (more than six decimals): no CAS text at all
+PASS the longest call (solve: the SSE twice) fits trCasMx = 4000   SSE text up to 167 characters
+PASS 3a: in the Prime's printing every solve answer is {[a,b]} (CASProbe T36), the SSE and its derivatives are unchanged   ['{[80277/4757909,95339/4757909]}']
+
+==== Part B: the PPL program in the harness (ppl_run_v3b) ====
+PASS trCxMake builds exactly this SSE text, 15 tables
+PASS the PPL reads solve's answer: a and b = the exact fractions, every table   []
+PASS the program's trB, trA0 = the exact fractions to 1e-12 (the decimals beside them)
+PASS page 4 (Giac), snoring: badge, SSE, both derivatives, both fractions beside the decimals   ['Least squares as calculus', 'exact (CAS)', 'The plotted line makes this SSE smallest:', 'SSE = sum n(p - a - bx)^2; p = cases/n, x = score', 'SSE = 2484×a^2+6796×a×b-220×a+12310×b^2-608×b', '+63080529409/7933174634', 'Smallest where both slopes are 0 (CAS diff):', 'dSSE/da = 4968×a+6796×b-220 = 0', 'dSSE/db = 6796×a+24620×b-608 = 0', 'Solved exactly (CAS solve), beside the decimals:', 'b = 95339/4757909   (program 0.02003800)', 'a = 80277/4757909   (program 0.01687233)', "= least squares on all N people's 0/1 outcomes;", 'the trend χ² asks whether this b is 0.', '4/4, ⇆ or tap = page, Esc = menu']
+PASS page 4: four CAS calls, all answered
+PASS 3a: every text asks for string(...), every answer quoted, the solve in braces; no CAS variable assigned, no CAS call of a variable   "{[80277/4757909,95339/4757909]}"
+PASS no text below y 206 on page 4 (the soft keys are at 218)
+PASS page 4 twice: 4 CAS calls, not 8 (the answers are kept)   4
+PASS Scores key on page 4 (twice, to midranks): asked again, exact midrank line, the note   ['b = 109323/2069801372   (program 0.0000528181)', 'a = -33598615/1574215128   (program -0.02134309)', "= least squares on all N people's 0/1 outcomes;", 'the trend χ² asks whether this b is 0.', 'Exact: score 1698.5 = 16985/10; nothing rounded.', '4/4, ⇆ or tap = page, Esc = menu']
+PASS cas=fail: decimal badge, the normal equations with the program's sums, no error   ['Least squares as calculus', 'decimal', 'The plotted line makes this SSE smallest:', 'SSE = sum n(p - a - bx)^2; p = cases/n, x = score', 'The CAS did not answer: no exact fractions.', 'Both slopes of the SSE = 0, the normal equations:', 'N a + (sum n x) b = A', '  2484 a + 3398 b = 110', '(sum n x) a + (sum n x^2) b = sum x a', '  3398 a + 12310 b = 304', "Solving them (the program's decimals):", '  b = 0.02003800,  a = 0.01687233', "= least squares on all N people's 0/1 outcomes;", 'the trend χ² asks whether this b is 0.', '4/4, ⇆ or tap = page, Esc = menu']
+PASS a drag on plot 1 (level 3 down): counts changed, NO CAS call during it   cases [24, 35, 9, 30], 4 calls
+PASS page 4 after the drag: the dragged table's exact line   ['b = 5825/365993   (program 0.01591560)']
+PASS Restore on page 4: the first table's line again
+PASS a score of 1/3: "needs over 6 decimals", the decimal page, no CAS call
+PASS stale-key run: menu, example, pages 1-4, Enter on page 4 = menu, quit; nothing skipped   result 'TrendTest: X2 trend = 72.6588 (1 df), p < 0.0001; Pearson X2 = 72.7821 (3 df)', skips []
+PASS 3a: beta 3 in v3b: page 4 says "decimal" and gives no fractions -- the emulator's finding
+
+G. beta 3b against beta 3a
+PASS beta 3b: routines that differ from beta 3a: ['trDot', 'trExamples'] (want trDot, trExamples)
+PASS beta 3b: outside those routines only comments differ
+PASS beta 3b: the #PYTHON blocks are unchanged
+  routines that differ from beta 3a: trDot, trExamples; everything else differs only in comments
+
+W. 3b: the Examples lines fit; solid dots
+PASS 3b: every CHOOSE line shown is 30 characters or fewer (51 seen, longest 30)
+PASS 3b: the shortened Examples lines are shown
+PASS 3b: the three examples still load the same data and labels: [(4, [24, 35, 21, 30], 'Example: snoring and heart disease'), (5, [38, 40, 36, 44, 44], 'ILLUSTRATIVE (made-up counts): sleep, illness'), (4, [72, 66, 51, 88], 'ILLUSTRATIVE (made up): convictions, re-arrest')]
+PASS 3b: every CHOOSE line in the source is 30 characters or fewer (longest 30)
+PASS 3b: trDot = three RECT_P covering exactly a radius-3 disc (37 px)
+PASS 3b: the only ARC_P left are the reference circle (r 3) and the selection ring (r 6, 7): [3.0]
+PASS 3b: at most one small ARC_P (the hollow reference) per frame (1 in 2 frames)
+  Examples lines seen: ['Snoring and heart disease', 'Sleep: a U shape (made up)', 'Prior convictions (made up)']
+
+0 failure(s)

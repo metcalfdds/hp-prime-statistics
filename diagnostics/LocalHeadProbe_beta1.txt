@@ -1,0 +1,24 @@
+#pragma mode( separator(.,;) integer(h32) )
+// ============================================================================
+//  LocalHeadProbe beta 1 -- does a routine head written as `LOCAL lhAdd(a, b)`
+//  paste and run?
+//  Roger Metcalf, 2026.  Written with AI assistance (Anthropic Claude).
+//  Free for educational and personal use; keep the header; not for sale.
+//  Firmware tested on: none yet.
+//
+//  PowerViz declares every helper as `LOCAL pv_Name()`.  Nothing else in the
+//  fleet does, and Lessons Learned has no entry for the form.  This ten-line
+//  probe settles it: if the paste is rejected, the editor's cursor lands on
+//  the LOCAL line and the answer is "no"; if it runs, Home shows 2 + 3 = 5
+//  and the form goes into the confirmed list.
+// ============================================================================
+
+LOCAL lhAdd(lhA, lhB)
+BEGIN
+  RETURN lhA + lhB;
+END;
+
+EXPORT LocalHeadProbe()
+BEGIN
+  RETURN "LocalHeadProbe: LOCAL routine head works, 2 + 3 = " + STRING(lhAdd(2, 3), 1, 0);
+END;
