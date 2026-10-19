@@ -1,0 +1,510 @@
+verify_StatDist_v2.7e.py, 19 Oct 2026, harness ppl_run_v3e.  Run as two processes side by side (the machine was shared):
+  python3 verify_StatDist_v2.7e.py 1 2 3 4 5 6 7     (parts 1-7, below first)
+  python3 verify_StatDist_v2.7e.py 8                 (part 8, after it)
+Totals: parts 1-7 134 [ok], 0 [FAIL]; part 8 62 [ok], 0 [FAIL].
+
+==================== parts 1-7 ====================
+== Part 1: the Formula page, cas = giac, 77 parameter sets ==
+  Normal             [0.0, 1.0, 0.0]            tail 1  badge exact (CAS)   1094 ms  mean ok; e2 ok; var ok
+  Uniform            [0.0, 1.0, 0.0]            tail 1  badge exact (CAS)    952 ms  mean ok; e2 ok; var ok
+  Exponential        [1.0, 0.0, 0.0]            tail 1  badge exact (CAS)   1403 ms  mean ok; e2 ok; var ok; cdf ok
+  Weibull            [2.0, 1.0, 0.0]            tail 1  badge exact (CAS)   1652 ms  mean ok; e2 ok; var ok; cdf ok
+  LogNormal          [0.0, 1.0, 0.0]            tail 1  badge exact (CAS)   1024 ms  mean ok; e2 ok; var ok
+  Laplace            [0.0, 1.0, 0.0]            tail 1  badge exact (CAS)    794 ms  mean ok; e2 ok; var ok
+  Student t          [10.0, 0.0, 0.0]           tail 1  badge exact (CAS)   1365 ms  mean ok; e2 ok; var ok
+  Chi-square         [10.0, 0.0, 0.0]           tail 1  badge exact (CAS)    930 ms  mean ok; e2 ok; var ok
+  Fisher F           [10.0, 15.0, 0.0]          tail 1  badge exact (CAS)   1361 ms  mean ok; e2 ok; var ok
+  Burr XII           [2.0, 2.0, 1.0]            tail 1  badge exact (CAS)    841 ms  mean ok; e2 ok; var ok
+  Gumbel (max)       [0.0, 1.0, 0.0]            tail 1  badge decimal        690 ms  mean not shown: left undone; e2 not shown: left undone
+  Pareto             [1.0, 3.0, 0.0]            tail 1  badge exact (CAS)   1685 ms  mean ok; e2 ok; var ok; cdf ok
+  Rayleigh           [1.5, 0.0, 0.0]            tail 1  badge exact (CAS)   1206 ms  mean ok; e2 ok; var ok
+  Logistic           [0.0, 1.0, 0.0]            tail 1  badge exact (CAS)    934 ms  mean ok; e2 not shown: disagreed with the program (-pi^2/3)
+  Binomial           [20.0, 0.5, 0.0]           tail 1  badge exact (CAS)   1107 ms  prob ok; pmf ok; mean ok
+  Poisson            [5.0, 0.0, 0.0]            tail 1  badge exact (CAS)    773 ms  prob ok; pmf ok
+  Geometric          [0.3, 0.0, 0.0]            tail 1  badge exact (CAS)    783 ms  prob ok; pmf ok
+  Triangular         [2.0, 5.0, 12.0]           tail 1  badge exact (CAS)   1277 ms  mean ok; e2 ok; var ok
+  Cauchy             [0.0, 1.0, 0.0]            tail 1  badge exact (CAS)    363 ms  mean infinite; e2 infinite
+  Frechet            [3.0, 1.0, 0.0]            tail 1  badge decimal        533 ms  mean not shown: left undone; e2 not shown: left undone
+  Gompertz           [0.01, 0.085, 0.0]         tail 1  badge decimal       1317 ms  mean not shown: left undone; e2 not shown: left undone
+  Maxwell-Boltzmann  [1.0, 0.0, 0.0]            tail 1  badge exact (CAS)   1507 ms  mean ok; e2 ok; var ok
+  Erlang             [3.0, 1.0, 0.0]            tail 1  badge exact (CAS)   1203 ms  mean ok; e2 ok; var ok
+  Gamma              [2.5, 2.0, 0.0]            tail 1  badge exact (CAS)   1857 ms  mean ok; e2 ok; var ok
+  Beta               [2.0, 5.0, 0.0]            tail 1  badge exact (CAS)   1286 ms  mean ok; e2 ok; var ok
+  Negative binomial  [3.0, 0.4, 0.0]            tail 1  badge exact (CAS)    905 ms  prob ok; pmf ok
+  Hypergeometric     [50.0, 40.0, 6.0]          tail 1  badge exact (CAS)   1194 ms  prob ok; pmf ok; mean ok
+  Exponential        [0.5, 0.0, 0.0]            tail 1  badge exact (CAS)   1705 ms  mean ok; e2 ok; var ok; cdf ok
+  Normal             [100.0, 15.0, 0.0]         tail 1  badge exact (CAS)   1508 ms  mean ok; e2 ok; var ok
+  Weibull            [2.5, 3.0, 0.0]            tail 1  badge exact (CAS)   3496 ms  mean ok; e2 ok; var ok; cdf ok
+  LogNormal          [0.5, 0.25, 0.0]           tail 1  badge exact (CAS)   1381 ms  mean ok; e2 ok; var ok
+  Laplace            [1.0, 2.0, 0.0]            tail 1  badge exact (CAS)   1186 ms  mean ok; e2 ok; var ok
+  Student t          [1.0, 0.0, 0.0]            tail 1  badge exact (CAS)    408 ms  mean infinite; e2 infinite
+  Student t          [2.0, 0.0, 0.0]            tail 1  badge exact (CAS)   1021 ms  mean ok; e2 infinite
+  Student t          [5.0, 0.0, 0.0]            tail 1  badge exact (CAS)   1298 ms  mean ok; e2 ok; var ok
+  Chi-square         [3.0, 0.0, 0.0]            tail 1  badge exact (CAS)   1556 ms  mean ok; e2 ok; var ok
+  Chi-square         [2.5, 0.0, 0.0]            tail 1  badge exact (CAS)   1611 ms  mean ok; e2 ok; var ok
+  Fisher F           [4.0, 6.0, 0.0]            tail 1  badge exact (CAS)   1624 ms  mean ok; e2 ok; var ok
+  Fisher F           [4.0, 2.0, 0.0]            tail 1  badge exact (CAS)    533 ms  mean infinite; e2 infinite
+  Burr XII           [3.0, 2.5, 2.0]            tail 1  badge decimal       1157 ms  mean not shown: left undone; e2 not shown: left undone
+  Burr XII           [1.0, 1.0, 1.0]            tail 1  badge exact (CAS)    442 ms  mean infinite; e2 infinite
+  Pareto             [5.0, 1.5, 0.0]            tail 1  badge exact (CAS)    987 ms  mean ok; e2 infinite; cdf ok
+  Pareto             [1.0, 1.0, 0.0]            tail 1  badge exact (CAS)    821 ms  mean infinite; e2 infinite; cdf ok
+  Pareto             [2.0, 2.5, 0.0]            tail 1  badge exact (CAS)   1763 ms  mean ok; e2 ok; var ok; cdf ok
+  Rayleigh           [2.0, 0.0, 0.0]            tail 1  badge exact (CAS)   1481 ms  mean ok; e2 ok; var ok
+  Logistic           [1.0, 2.0, 0.0]            tail 1  badge exact (CAS)   1120 ms  mean ok; e2 not shown: left undone
+  Triangular         [2.0, 2.0, 12.0]           tail 1  badge exact (CAS)   1363 ms  mean ok; e2 ok; var ok
+  Triangular         [0.0, 10.0, 10.0]          tail 1  badge exact (CAS)   1210 ms  mean ok; e2 ok; var ok
+  Cauchy             [3.0, 0.5, 0.0]            tail 1  badge exact (CAS)    418 ms  mean infinite; e2 infinite
+  Frechet            [1.5, 2.0, 1.0]            tail 1  badge decimal        995 ms  mean not shown: left undone; e2 not shown: left undone
+  Maxwell-Boltzmann  [2.0, 0.0, 0.0]            tail 1  badge exact (CAS)   1178 ms  mean ok; e2 ok; var ok
+  Erlang             [2.0, 0.5, 0.0]            tail 1  badge exact (CAS)   1296 ms  mean ok; e2 ok; var ok
+  Gamma              [0.5, 1.0, 0.0]            tail 1  badge exact (CAS)   1402 ms  mean ok; e2 ok; var ok
+  Gamma              [3.0, 2.0, 0.0]            tail 1  badge exact (CAS)   1151 ms  mean ok; e2 ok; var ok
+  Beta               [0.5, 0.5, 0.0]            tail 1  badge exact (CAS)   1457 ms  mean ok; e2 ok; var ok
+  Beta               [0.3, 4.0, 0.0]            tail 1  badge exact (CAS)   1628 ms  mean ok; e2 ok; var ok
+  Uniform            [-1.5, 4.0, 0.0]           tail 1  badge exact (CAS)   1155 ms  mean ok; e2 ok; var ok
+  Gumbel (max)       [2.0, 3.0, 0.0]            tail 1  badge decimal       2510 ms  mean not shown: left undone; e2 not shown: left undone
+  Exponential        [0.3333, 0.0, 0.0]         tail 1  badge exact (CAS)   1654 ms  mean ok; e2 ok; var ok; cdf ok
+  Normal             [2.0, 0.3333, 0.0]         tail 1  badge exact (CAS)   1206 ms  mean ok; e2 ok; var ok
+  Weibull            [2.0, 0.3333, 0.0]         tail 1  badge exact (CAS)   2195 ms  mean ok; e2 ok; var ok; cdf ok
+  Pareto             [1.0, 0.3333, 0.0]         tail 1  badge exact (CAS)    942 ms  mean not shown: left undone; e2 not shown: left undone; cdf ok
+  Rayleigh           [3.1416, 0.0, 0.0]         tail 1  badge exact (CAS)   1326 ms  mean ok; e2 ok; var ok
+  Gamma              [2.0, 0.3333, 0.0]         tail 1  badge exact (CAS)   1349 ms  mean ok; e2 ok; var ok
+  Binomial           [20.0, 0.5, 0.0]           tail 2  badge exact (CAS)   1204 ms  prob ok; pmf ok; mean ok
+  Binomial           [20.0, 0.37, 0.0]          tail 3  badge exact (CAS)    835 ms  prob ok; mean ok
+  Binomial           [5.0, 0.3333, 0.0]         tail 1  badge exact (CAS)   1275 ms  prob ok; pmf ok; mean ok
+  Poisson            [5.0, 0.0, 0.0]            tail 2  badge exact (CAS)    913 ms  prob ok; pmf ok
+  Poisson            [2.5, 0.0, 0.0]            tail 3  badge exact (CAS)    545 ms  prob ok
+  Poisson            [0.3333, 0.0, 0.0]         tail 1  badge exact (CAS)    818 ms  prob ok; pmf ok
+  Geometric          [0.3, 0.0, 0.0]            tail 2  badge exact (CAS)    813 ms  prob ok; pmf ok
+  Negative binomial  [3.0, 0.4, 0.0]            tail 3  badge exact (CAS)    440 ms  prob ok
+  Hypergeometric     [50.0, 40.0, 6.0]          tail 2  badge exact (CAS)   1253 ms  prob ok; pmf ok; mean ok
+  Hypergeometric     [1000.0, 400.0, 50.0]      tail 1  badge exact (CAS)   1537 ms  prob ok; pmf ok; mean ok
+  Binomial           [500.0, 0.5, 0.0]          tail 1  badge decimal          0 ms  (no CAS: These numbers are too large for an exact sum)
+  Exponential        [0.5, 0.0, 0.0]            tail 3  badge exact (CAS)   1524 ms  mean ok; e2 ok; var ok; cdf ok
+  Pareto             [1.0, 3.0, 0.0]            tail 2  badge exact (CAS)   1730 ms  mean ok; e2 ok; var ok; cdf ok
+
+  [ok] every CAS answer the page shows agrees with SciPy (no wrong formula) -- 197 shown and correct, 16 rejected, 0 wrong
+  [ok] exact comparisons (fractions / SymPy integrals) agree -- 97 of 97
+  Giac time over all 77 pages: 92.5 s; slowest page 3496 ms (Weibull [2.5, 3.0, 0.0])
+
+== Part 2: cas = fail, all 27 families at their defaults ==
+  [ok] all 27: "decimal" badge, the program's decimals, no runtime error -- []
+
+== Part 3: the touch and key paths ==
+  [ok] More, More: page 3 is {Formula, Help, , , Menu, More}
+  [ok] page 2 still {Edit, Numbers, CDF, Refit, Menu, More}
+  [ok] page 3, Formula: the Formula page opens (1 screens) and asks the CAS
+  [ok] page 3, Help: the help pages open (2.7e: the title says v2.7e)
+  [ok] page 3, Menu: leaves the plot
+  [ok] More three times comes back to page 1 -- ['P<=x', 'P>x', 'a<X<b', 'Zoom−', 'Zoom+', 'More']
+  [ok] Enter -> "Plot options" item 2 is "Formula page (CAS)" -- ['Numbers page', 'Formula page (CAS)', 'CDF curve on/off']
+  [ok] opened twice from the options: built once (8 CAS calls), shown twice
+  [ok] a drag on the plot (6 frames) calls the CAS 0 times
+  [ok] new parameters: the page is rebuilt (8 CAS calls), mean 4 shown
+  [ok] the plot frame (texts, shapes, soft keys) is identical to v2.6 for 5 distributions
+  [ok] st_Cas drops one surrounding pair of quotes: '"1/2"' -> '1/2'; "undef" -> ''; 2.7a: the infinity signs -> '', ''
+
+== Part 4 (2.7a): v2.7 in harness v3d; the infinity probe; the glyph refusals ==
+  [ok] 2.7a: v2.7 in v3b shows no closed form (badge ['decimal']) -- the emulator's finding
+  [ok] 2.7a: Exponential(0.5): exact page, every CAS text asks for string(...), every answer quoted, no CAS variable assigned, no CAS call of a variable
+  [ok] 2.7a: Cauchy [0.0, 1.0, 0.0]: the probe exp(-(...)) answered ['0', '0']; "NO mean" 1 (want 1), "NO variance" 1 (want 1)
+  [ok] 2.7a: Student t [1.0, 0.0, 0.0]: the probe exp(-(...)) answered ['0', '0']; "NO mean" 1 (want 1), "NO variance" 1 (want 1)
+  [ok] 2.7a: Student t [2.0, 0.0, 0.0]: the probe exp(-(...)) answered ['0']; "NO mean" 0 (want 0), "NO variance" 1 (want 1)
+  [ok] 2.7a: Fisher F [4.0, 2.0, 0.0]: the probe exp(-(...)) answered ['0', '0']; "NO mean" 1 (want 1), "NO variance" 1 (want 1)
+  [ok] 2.7a: Burr XII [1.0, 1.0, 1.0]: the probe exp(-(...)) answered ['0', '0']; "NO mean" 1 (want 1), "NO variance" 1 (want 1)
+  [ok] 2.7a: Pareto [1.0, 1.0, 0.0]: the probe exp(-(...)) answered ['0', '0']; "NO mean" 1 (want 1), "NO variance" 1 (want 1)
+  [ok] 2.7a: Pareto [5.0, 1.5, 0.0]: the probe exp(-(...)) answered ['0']; "NO mean" 0 (want 0), "NO variance" 1 (want 1)
+  [ok] 2.7a: Cauchy [3.0, 0.5, 0.0]: the probe exp(-(...)) answered ['0', '0']; "NO mean" 1 (want 1), "NO variance" 1 (want 1)
+  [ok] 2.7a: exp(-(simplify(int(stqx*exp(-stqx),stqx,0,inf)))) = 1/e^(1) -> 0.0
+  [ok] 2.7a: exp(-(simplify(int(-stqx/(pi*(1+stqx^2)),stqx,0,in)) = ∞ -> refused by st_Cas
+  [ok] 2.7a: exp(-(simplify(int(stqx/(pi*(1+stqx^2)),stqx,0,inf)) = 0 -> 1.0
+  [ok] 2.7a: exp(-(simplify(int(stqx/(pi*(1+stqx^2)),stqx,0,1)))) = e^(-ln(2)/(2*pi)) -> 0.0
+  [ok] 2.7a: st_FmGood refuses '∫(stqx^2,stqx,0,1)'
+  [ok] 2.7a: st_FmGood refuses '∑(stqk,stqk,0,5)'
+  [ok] 2.7a: st_FmGood refuses 'Σ(stqk,stqk,0,5)'
+  [ok] 2.7a: st_FmGood still takes an ordinary closed form
+
+== Part 5 (2.7b): a fractional df for the chi-square and F; the INPUT labels ==
+  [ok] 5a v2.7a in v3d: ChiSquare df 2.5 stops with "Invalid input" (the emulator's finding) -- CHISQUARE_CDF: Invalid input (df = 2.5 is not a whole number; the calculator's chi-square and F CDF and ICDF take whole-
+  [ok] 5a v2.7b: ChiSquare df 2.5, P(X <= 5) = 0.876911 (SciPy 0.876911), no error -- StatDist: P(X <= 5) = 0.876911 None
+  [ok] 5a v2.7b: the plot is drawn (the shaded tail and the P readout) -- 1
+  [ok] 5a v2.7b: ChiSquare df 2.5, P(X > 5) = 0.123089 -- StatDist: P(X > 5) = 0.123089 None
+  [ok] 5a v2.7a in v3d: F(2.5, 7.5) stops with "Invalid input" too -- FISHER_CDF: Invalid input (df = 2.5 is not a whole number; the calculator's chi-square and F CDF and ICDF take whole-num
+  [ok] 5a v2.7b: F(2.5, 7.5), P(X <= 2) = 0.800427 (SciPy; the emulator table: 0.80043) -- StatDist: P(X <= 2) = 0.800427 None
+  [ok] 5a v2.7b: F(4, 2.5) Between at its default bounds (one df whole, one not) = SciPy: StatDist: P(0.5 < X < 2) = 0.421381 -- None
+  [ok] 5a v2.7b: a whole df still uses CHISQUARE_CDF (the emulator's Chi-square(4): 0.712703) -- StatDist: P(X <= 5) = 0.712703 ['CHISQUARE', 'CHISQUARE_CDF', 'CHISQUARE_ICDF']
+  [ok] 5b chi-square, 7 fractional df x 8 x: CDF = SciPy chi2.cdf within 1E-9 (3.1e-12)
+  [ok] 5b chi-square, fractional df: the density (the built-in, which takes any df) = SciPy (rel 0.0e+00)
+  [ok] 5b chi-square, fractional df: the quantile (bisection on the new CDF; it fits the window) = chi2.ppf, |error| / (1 + x) 1.0e-10
+  [ok] 5b F, 7 df pairs (one or both fractional) x 7 x: CDF = SciPy f.cdf within 1E-9 (1.1e-11)
+  [ok] 5b F, fractional df: the density by the formula = SciPy f.pdf, rel 2.1e-11
+  [ok] 5b F, fractional df: the quantile (bisection, as before) = f.ppf, |error| / (1 + x) 3.9e-11
+  worst: chi cdf 3.1e-12, F cdf 1.1e-11, F pdf 2.1e-11, chi q 1.0e-10, F q 3.9e-11, chi pdf 0.0e+00
+  [ok] 5c no CHISQUARE_CDF/_ICDF, FISHER_CDF/_ICDF or FISHER density call with a fractional df (56 calls checked) -- []
+  [ok] 5c no warning about an unmeasured fractional-df F density
+  [ok] 5c the plot (fit, cache, all three tails) for 5 fractional-df cases: no error -- []
+  [ok] 5c Erlang(3, 1.5): CHISQUARE_CDF(6, ...) = SciPy erlang.cdf (0.576810)
+  [ok] 5c Poisson(4) Between 0 and 5: 0.785130 = SciPy, no POISSON_CDF(4, -1) (v3c would raise)
+  [ok] 5d no INPUT label is longer than 14 characters (133 labels; the longest: "k (successes):", 14)
+  [ok] 5d "Degrees of freedom:", "Denominator df:", "K (positives in N):" are gone
+  [ok] 5d the chi-square form reads "df:" and "X value:" -- ['df:', 'X value:']
+  [ok] 5d the F form reads "df1:", "df2:" with "Numerator df > 0", "Denominator df > 0" under them -- ['df1:', 'df2:', 'X value:']
+  [ok] 5e routines that differ from v2.7a: ['st_ask_cauchy', 'st_ask_chisquare', 'st_ask_fisher', 'st_ask_hypergeom', 'st_ask_student', 'st_cdf', 'st_pdf', 'st_show_help'] -- want ['st_ask_cauchy', 'st_ask_chisquare', 'st_ask_fisher', 'st_ask_hypergeom', 'st_ask_student', 'st_cdf', 'st_pdf', 'st_show_help']
+  [ok] 5e outside those routines only comments differ
+  [ok] 5e the #PYTHON blocks (if any) are unchanged
+  [ok] 5e st_Cas (the CAS call form) is byte-identical to v2.7a
+
+== Part 6 (2.7c): the round-2 string rules, v2.7c against v2.7b, both in harness v3d ==
+  [ok] 6a st_Cas (cas=giac): 1/2+1/3 -> '5/6'; 1/0, 0/0 and a syntax error -> ['', '', '']
+  [ok] 6a st_Cas with the CAS failing returns "" and no error -- '' None
+  [ok] 6a v2.7b's st_Cas with the CAS failing stops: INSTRING: Invalid input (the first argument is an empty stri
+  [ok] 6b Pareto [1, 1, 0], CAS failing: v2.7c shows the Formula page with "decimal" and "no closed form shown", no error -- None ['decimal']
+  [ok] 6b Pareto [1, 1, 0], CAS failing: v2.7b stops: INSTRING: Invalid input (the first argument is an empty string -- emulator, 17 Oct 2026) [
+  [ok] 6b Exponential [0.5, 0, 0], CAS failing: v2.7c shows the Formula page with "decimal" and "no closed form shown", no error -- None ['decimal']
+  [ok] 6b Exponential [0.5, 0, 0], CAS failing: v2.7b stops: INSTRING: Invalid input (the first argument is an empty string -- emulator, 17 Oct 2026) [
+  [ok] 6b Binomial [20, 0.5, 0], CAS failing: v2.7c shows the Formula page with "decimal" and "no closed form shown", no error -- None ['decimal']
+  [ok] 6b Binomial [20, 0.5, 0], CAS failing: v2.7b stops: INSTRING: Invalid input (the first argument is an empty string -- emulator, 17 Oct 2026) [
+  [ok] 6c Pareto(1, 1), CAS answering: the CDF comes back as ['"(stqx-1)/stqx"'] (it ends in stqx); v2.7c shows "  F(x) = (x-1)/x" with "exact (CAS)", no error -- None ['CDF: F(x) = integral of f(t) dt, t = 1 to x:', '  F(x) = (x-1)/x']
+  [ok] 6c the same page in v2.7b stops in st_Repl: INSTRING: Invalid input (the first argument is an empty string -- emulator, 17 Oct 2026) [st_Plot > 
+  [ok] 6c every CAS answer of Part 1 (251) through st_FmShow: v2.7c reads them all; the 5 that END in a name it replaces stopped v2.7b, the others read as in v2.7b -- []
+  [ok] 6d st_Repl, at the end: ('(stqx-1)/stqx', 'stqx', 'x') -> '(x-1)/x' (v2.7b: stops: INSTRING: Invalid input (the first argum)
+  [ok] 6d st_Repl, at the start: ('stqx^2+1', 'stqx', 'x') -> 'x^2+1' (v2.7b: 'x^2+1')
+  [ok] 6d st_Repl, the whole text: ('stqa', 'stqa', 'a') -> 'a' (v2.7b: stops: INSTRING: Invalid input (the first argum)
+  [ok] 6d st_Repl, an empty pattern: ('abc', '', 'z') -> 'abc' (v2.7b: (not run: v2.7b loops for ever))
+  [ok] 6d st_Repl, an empty text: ('', 'stqx', 'x') -> '' (v2.7b: stops: INSTRING: Invalid input (the first argum)
+  [ok] 6d st_Repl, no match: ('abc', 'z', 'y') -> 'abc' (v2.7b: 'abc')
+  [ok] 6d st_Repl, two in a row: ('**', '*', '×') -> '××' (v2.7b: stops: INSTRING: Invalid input (the first argum)
+  [ok] 6d st_Repl, the pattern in the new text: ('a*b', '*', '**') -> 'a**b' (v2.7b: 'a**b')
+  [ok] 6e st_fmtx(1e-17) = '0' (v2.7b: '1ᴇ-17')
+  [ok] 6e st_fmtx(-1e-17) = '0' (v2.7b: '-1ᴇ-17')
+  [ok] 6e st_fmtx(1e-11) = '0' (v2.7b: '1ᴇ-11')
+  [ok] 6e st_fmtx(2.0) = '2' (v2.7b: '2')
+  [ok] 6e st_fmtx(1.96) = '1.96' (v2.7b: '1.96')
+  [ok] 6e st_fmtx(0.3333333333333333) = '0.3333' (v2.7b: '0.3333')
+  [ok] 6e st_fmtx(0.0004) = '0.0004' (v2.7b: '0.0004')
+  [ok] 6e st_fmtx(-2.5) = '-2.5' (v2.7b: '-2.5')
+  [ok] 6e st_fmtx(123.0) = '123' (v2.7b: '123')
+  [ok] 6e st_fmtx(0.3) = '0.3' (v2.7b: '0.3')
+  [ok] 6e v2.7b printed 1E-17 as '1ᴇ-17', scientific
+  18 STRING(x, 2, d) calls in v2.7c:
+    st_Draw      100*stCut(1)     d = 1    the "% beyond" note: drawn only when the cut is 0.15 % or more
+    st_Draw      100*stCut(2)     d = 1    the "% beyond" note: drawn only when the cut is 0.15 % or more
+    st_Draw      dwV              d = dwD  an axis label: a multiple of a 1-2-5 step, d = -FLOOR(LOG(step)), -0 set to 0
+    st_FmBuild   stPar(fbI)       d = 12   12 decimals: only a parameter below 1E-12 (the one form that can show it)
+    st_Int       IP(rdV)          d = 0    a whole number (IP)
+    st_Numbers   stAv             d = 0    k, a or b of a discrete family: whole
+    st_Numbers   stAv - 1         d = 0    k, a or b of a discrete family: whole
+    st_Numbers   stBv             d = 0    k, a or b of a discrete family: whole
+    st_Numbers   stXv             d = 0    k, a or b of a discrete family: whole
+    st_Numbers   stXv + 1         d = 0    k, a or b of a discrete family: whole
+    st_XStr      xsR              d = xsD  2.7e: st_XStr, rounded to xsD decimals first (twice)
+    st_fmtp      pv               d = dg   st_fmtp: a value below 10^-dg has already become "< 0.000001"
+    st_fmtp      thr              d = dg   st_fmtp: thr = 10^-dg itself
+    st_fmtx      fxR              d = fxD  st_fmtx: rounded to fxD decimals first (2.7c)
+  [ok] 6f every STRING(x, 2, d) is rounded first or cannot print scientific (18 calls; unlisted none, stale none)
+  INSTRING in v2.7c (code lines):
+      977 st_Cas         IF INSTRING(cR, "undef") > 0 OR INSTRING(cR, "rror") > 0 OR INSTRING(cR, CHAR(8734)) > 0 THEN cR
+      992 st_IVal        ivD := INSTRING("0123456789", ivC);
+     1022 st_Repl        rpP := 0; IF DIM(rpT) > 0 THEN rpP := INSTRING(rpT, rpO); END;
+     1031 st_Repl        rpP := 0; IF DIM(rpT) > 0 THEN rpP := INSTRING(rpT, rpO); END;
+     1120 st_Digits      IF INSTRING("0123456789", MID(dgS, dgI, 1)) > 0 THEN dgN := dgN + 1; END;
+     3933 st_FmGood      IF INSTRING(fgT, "integrate") > 0 OR INSTRING(fgT, "int(") > 0 OR INSTRING(fgT, "sum(") > 0 THEN
+     3934 st_FmGood      IF INSTRING(fgT, "seq(") > 0 OR INSTRING(fgT, "limit") > 0 OR INSTRING(fgT, "?") > 0 THEN RETURN
+     3935 st_FmGood      IF INSTRING(fgT, "when") > 0 OR INSTRING(fgT, "piecewise") > 0 OR INSTRING(fgT, "infinity") > 0 
+     3936 st_FmGood      IF INSTRING(fgT, CHAR(8734)) > 0 THEN RETURN 0; END;
+     3940 st_FmGood      IF INSTRING(fgT, CHAR(8747)) > 0 OR INSTRING(fgT, CHAR(8721)) > 0 OR INSTRING(fgT, CHAR(931)) > 
+     3953 st_FmSub       IF INSTRING(fsS, "stqx") > 0 THEN fsS := "subst(" + fsS + ",stqx," + stFmXR + ")"; END;
+     4049 st_FmRes       IF INSTRING("0123456789/-", MID(frS, frI, 1)) == 0 THEN frF := 0; END;
+  [ok] 6f INSTRING's first argument is a fixed digit string, or a text tested non-empty just before it: ['"0123456789"', '"0123456789/-"', 'cR', 'fgT', 'fsS', 'rpT']
+  [ok] 6f st_Repl looks only while text is left (2 lines), st_Cas only inside IF DIM(cR) > 0
+  LEFT / MID / RIGHT in v2.7c: st_Eq LEFT(eqS, 1); st_Eq LEFT(eqS, 1); st_XStr LEFT(xsS, 1); st_XStr LEFT(xsS, 1); st_Page LEFT(pgS, 2); st_Cas LEFT(cR, 1); st_Cas MID(cR, DIM(cR), 1); st_Cas MID(cR, 2, DIM(cR) - 2); st_IVal MID(ivS, ivI, 1); st_Repl LEFT(rpT, rpP - 1); st_Repl MID(rpT, rpP + rpLn, DIM(rpT) - rpP - rpLn + 1); st_Wrap MID(wrR, wrI, 1); st_Wrap LEFT(wrR, wrB); st_Wrap MID(wrR, wrB + 1, DIM(wrR) - wrB); st_Digits MID(dgS, dgI, 1); st_FmRes MID(frS, frI, 1)
+  [ok] 6f no RIGHT; every LEFT count is 1, 2 or guarded (rpP - 1 under IF rpP > 1; wrB >= 1); every MID start is 1 or more
+  [ok] 6g routines that differ from v2.7b: ['st_Cas', 'st_Repl', 'st_fmtx', 'st_show_help']
+  [ok] 6g outside those routines only comments differ
+  [ok] 6g st_Cas keeps the IFERR line and the quote strip byte-identical
+  [ok] 6g the version reads v2.7c in the banner and the help title; no code line says v2.7b
+  v2.7c: 30 harness runs in this script, 0 scientific STRING results: none
+  v2.7b (part 6, for comparison): 8 runs, scientific in [('st_fmtx', '-1ᴇ-17'), ('st_fmtx', '1ᴇ-11'), ('st_fmtx', '1ᴇ-17')]
+  [ok] 6h no scientific STRING result in any of the 30 harness runs of v2.7c
+
+== Part 7 (2.7d): no "=" before a relation; the normal approximation's right tail ==
+  Normal(0, 1), left tail at -6
+    v2.7c panel ['f(x) = < 0.0001: a density, not a probability', 'P(X <= -6) = < 0.000001'] numbers ['  PDF: < 0.000001 (a density)', '  CDF: < 0.000001', 'P(X <= -6.0000) = < 0.000001']
+    v2.7d panel ['f(x) < 0.0001: a density, not a probability', 'P(X <= -6) < 0.000001'] numbers ['  PDF: < 0.000001 (a density)', '  CDF: < 0.000001', 'P(X <= -6.0000) < 0.000001']
+  [ok] 7a Normal(0, 1), left tail at -6: the panel and the Numbers page read f(x) < 0.0001: a density, not a probability; P(X <= -6) < 0.000001; P(X <= -6.0000) < 0.000001
+  [ok] 7a Normal(0, 1), left tail at -6: the summary returned to Home (stLast) reads "P(X <= -6) < 0.000001"
+  Normal(0, 1), right tail at 6
+    v2.7c panel ['f(x) = < 0.0001: a density, not a probability', 'P(X > 6) = < 0.000001'] numbers ['  PDF: < 0.000001 (a density)', 'P(X > 6.0000) = < 0.000001']
+    v2.7d panel ['f(x) < 0.0001: a density, not a probability', 'P(X > 6) < 0.000001'] numbers ['  PDF: < 0.000001 (a density)', 'P(X > 6.0000) < 0.000001']
+  [ok] 7a Normal(0, 1), right tail at 6: the panel and the Numbers page read P(X > 6) < 0.000001; P(X > 6.0000) < 0.000001
+  Normal(0, 1), between -7 and -6
+    v2.7c panel ['f(a) = < 0.0001, f(b) = < 0.0001: densities', 'P(-7 < X < -6) = < 0.000001'] numbers ['CDF(b) = < 0.000001 at b = -6.0000', 'CDF(a) = < 0.000001 at a = -7.0000', 'P(-7.0000 < X < -6.0000) = < 0.000001']
+    v2.7d panel ['f(a) < 0.0001, f(b) < 0.0001: densities', 'P(-7 < X < -6) < 0.000001'] numbers ['CDF(b) < 0.000001 at b = -6.0000', 'CDF(a) < 0.000001 at a = -7.0000', 'P(-7.0000 < X < -6.0000) < 0.000001']
+  [ok] 7a Normal(0, 1), between -7 and -6: the panel and the Numbers page read f(a) < 0.0001, f(b) < 0.0001: densities; P(-7 < X < -6) < 0.000001; CDF(b) < 0.000001 at b = -6.0000; CDF(a) < 0.000001 at a = -7.0000; P(-7.0000 < X < -6.0000) < 0.000001
+  Normal(0, 0.001)
+    v2.7c panel [] numbers ['variance = < 0.0001']
+    v2.7d panel [] numbers ['variance < 0.0001']
+  [ok] 7a Normal(0, 0.001): the panel and the Numbers page read variance < 0.0001
+  Normal(0.00002, 0.00005)
+    v2.7c panel ['μ = < 0.0001, σ = < 0.0001', 'mean = < 0.0001, sd = < 0.0001'] numbers ['μ = < 0.0001, σ = < 0.0001', 'mean = < 0.0001,  sd = < 0.0001', 'variance = < 0.0001']
+    v2.7d panel ['μ < 0.0001, σ < 0.0001', 'mean < 0.0001, sd < 0.0001'] numbers ['μ < 0.0001, σ < 0.0001', 'mean < 0.0001,  sd < 0.0001', 'variance < 0.0001']
+  [ok] 7a Normal(0.00002, 0.00005): the panel and the Numbers page read μ < 0.0001, σ < 0.0001; mean < 0.0001, sd < 0.0001; μ < 0.0001, σ < 0.0001; mean < 0.0001,  sd < 0.0001
+  Binomial(100, 0.5), right tail at 95, normal approx. on
+    v2.7c panel ['P(X = 95) = < 0.000001: the red bar', 'P(X > 95) = P(X >= 96) = < 0.000001'] numbers ['  PMF: < 0.000001', 'P(X > 95) = P(X >= 96) = < 0.000001']
+    v2.7d panel ['P(X = 95) < 0.000001: the red bar', 'P(X > 95) = P(X >= 96) < 0.000001', 'normal approx. < 0.0001 (continuity corr.)'] numbers ['  PMF: < 0.000001', 'P(X > 95) = P(X >= 96) < 0.000001']
+  [ok] 7a Binomial(100, 0.5), right tail at 95, normal approx. on: the panel and the Numbers page read P(X = 95) < 0.000001: the red bar; P(X > 95) = P(X >= 96) < 0.000001; normal approx. < 0.0001 (continuity corr.); P(X > 95) = P(X >= 96) < 0.000001
+  Binomial(100, 0.5), left tail at 3, normal approx. on
+    v2.7c panel ['P(X = 3) = < 0.000001: the red bar', 'P(X <= 3) = < 0.000001', 'normal approx. = < 0.0001 (continuity corr.)'] numbers ['  PMF: < 0.000001', '  CDF: < 0.000001', 'P(X <= 3) = < 0.000001']
+    v2.7d panel ['P(X = 3) < 0.000001: the red bar', 'P(X <= 3) < 0.000001', 'normal approx. < 0.0001 (continuity corr.)'] numbers ['  PMF: < 0.000001', '  CDF: < 0.000001', 'P(X <= 3) < 0.000001']
+  [ok] 7a Binomial(100, 0.5), left tail at 3, normal approx. on: the panel and the Numbers page read P(X <= 3) < 0.000001; normal approx. < 0.0001 (continuity corr.); P(X <= 3) < 0.000001
+  Binomial(100, 0.5), between 0 and 3
+    v2.7c panel ['P(X = 0) = < 0.0001, P(X = 3) = < 0.0001', 'P(0 <= X <= 3) = < 0.000001'] numbers ['CDF(b) = P(X <= 3) = < 0.000001', 'P(0 <= X <= 3) = < 0.000001']
+    v2.7d panel ['P(X = 0) < 0.0001, P(X = 3) < 0.0001', 'P(0 <= X <= 3) < 0.000001'] numbers ['CDF(b) = P(X <= 3) < 0.000001', 'P(0 <= X <= 3) < 0.000001']
+  [ok] 7a Binomial(100, 0.5), between 0 and 3: the panel and the Numbers page read P(X = 0) < 0.0001, P(X = 3) < 0.0001; P(0 <= X <= 3) < 0.000001; CDF(b) = P(X <= 3) < 0.000001; P(0 <= X <= 3) < 0.000001
+  Poisson(4), right tail at 30
+    v2.7c panel ['P(X = 30) = < 0.000001: the red bar', 'P(X > 30) = P(X >= 31) = < 0.000001'] numbers ['  PMF: < 0.000001', 'P(X > 30) = P(X >= 31) = < 0.000001']
+    v2.7d panel ['P(X = 30) < 0.000001: the red bar', 'P(X > 30) = P(X >= 31) < 0.000001'] numbers ['  PMF: < 0.000001', 'P(X > 30) = P(X >= 31) < 0.000001']
+  [ok] 7a Poisson(4), right tail at 30: the panel and the Numbers page read P(X > 30) = P(X >= 31) < 0.000001; P(X > 30) = P(X >= 31) < 0.000001
+  Normal(0, 1), x = 0.00005
+    v2.7c panel ['P(X <= < 0.0001) = 0.500020'] numbers ['At x = < 0.0001:', 'P(X <= < 0.0001) = 0.500020']
+    v2.7d panel ['P(X <= < 0.0001) = 0.500020'] numbers ['At x < 0.0001:', 'P(X <= < 0.0001) = 0.500020']
+  [ok] 7a Normal(0, 1), x = 0.00005: the panel and the Numbers page read At x < 0.0001:
+  doubles:
+    Bin(100, 0.5), x 80: SciPy 5.3e-10;  v2.7c ['normal approx. = < 0.0001 (continuity corr.)'];  v2.7d ['normal approx. < 0.0001 (continuity corr.)']
+    Bin(100, 0.5), x 85: SciPy 6.24e-13;  v2.7c ['normal approx. = < 0.0001 (continuity corr.)'];  v2.7d ['normal approx. < 0.0001 (continuity corr.)']
+    Bin(100, 0.5), x 95: SciPy 4.52e-20;  v2.7c ['normal approx. = 0.0000 (continuity corr.)'];  v2.7d ['normal approx. < 0.0001 (continuity corr.)']
+    Bin(400, 0.3), x 200: SciPy 7.94e-19;  v2.7c ['normal approx. = 0.0000 (continuity corr.)'];  v2.7d ['normal approx. < 0.0001 (continuity corr.)']
+    Bin(50, 0.4), x 45: SciPy 9.11e-14;  v2.7c ['normal approx. = < 0.0001 (continuity corr.)'];  v2.7d ['normal approx. < 0.0001 (continuity corr.)']
+  [ok] 7b (doubles) the right tail is never shown as 0: v2.7d prints the floor exactly where SciPy's tail is below 0.0001 -- []
+    v2.7c printed "= 0.0000" for 2 of the 5
+  [ok] 7b (doubles) v2.7c read "normal approx. = 0.0000" (1 - CDF exactly 0) at Bin(100, 0.5) x 95 and Bin(400, 0.3) x 200; v2.7d "< 0.0001" there
+  the Prime's 12 digits:
+    Bin(100, 0.5), x 80: SciPy 5.3e-10;  v2.7c ['normal approx. = < 0.0001 (continuity corr.)'];  v2.7d ['normal approx. < 0.0001 (continuity corr.)']
+    Bin(100, 0.5), x 85: SciPy 6.24e-13;  v2.7c ['normal approx. = < 0.0001 (continuity corr.)'];  v2.7d ['normal approx. < 0.0001 (continuity corr.)']
+    Bin(100, 0.5), x 95: SciPy 4.52e-20;  v2.7c ['normal approx. = 0.0000 (continuity corr.)'];  v2.7d ['normal approx. < 0.0001 (continuity corr.)']
+    Bin(400, 0.3), x 200: SciPy 7.94e-19;  v2.7c ['normal approx. = 0.0000 (continuity corr.)'];  v2.7d ['normal approx. < 0.0001 (continuity corr.)']
+    Bin(50, 0.4), x 45: SciPy 9.11e-14;  v2.7c ['normal approx. = 0.0000 (continuity corr.)'];  v2.7d ['normal approx. < 0.0001 (continuity corr.)']
+  [ok] 7b (12 digits) the right tail is never shown as 0: v2.7d prints the floor exactly where SciPy's tail is below 0.0001 -- []
+    v2.7c printed "= 0.0000" for 3 of the 5
+  [ok] 7b (12 digits) v2.7c read "normal approx. = 0.0000" (1 - CDF exactly 0) at Bin(100, 0.5) x 95, Bin(400, 0.3) x 200 and Bin(50, 0.4) x 45; v2.7d "< 0.0001" there
+  [ok] 7b NORMALD_CDF(m, s, 2m - x) is the upper tail P(Z > x) (4 cases, against SciPy)
+  27 families x 3 tails x 3 settings: 194 identical, 49 differ only by the rewrite, 0 otherwise
+    "P(X <= -50) = < 0.000001"  ->  "P(X <= -50) < 0.000001"
+    "P(X <= -50.0000) = < 0.000001"  ->  "P(X <= -50.0000) < 0.000001"
+    "P(X <= 0) = < 0.000001"  ->  "P(X <= 0) < 0.000001"
+    "P(X = 0) = < 0.000001: the red bar"  ->  "P(X = 0) < 0.000001: the red bar"
+    "P(X = 0) = < 0.0001, P(X = 4) = 0.2588"  ->  "P(X = 0) < 0.0001, P(X = 4) = 0.2588"
+    "P(X = 20) = < 0.000001: the red bar"  ->  "P(X = 20) < 0.000001: the red bar"
+    "P(X = 63) = < 0.000001: the red bar"  ->  "P(X = 63) < 0.000001: the red bar"
+    "P(X = 64) = < 0.000001: the red bar"  ->  "P(X = 64) < 0.000001: the red bar"
+    "P(X > 60) = < 0.000001"  ->  "P(X > 60) < 0.000001"
+    "P(X > 60.0000) = < 0.000001"  ->  "P(X > 60.0000) < 0.000001"
+    (19 distinct rewritten lines)
+  [ok] 7c every family and tail (243 states): v2.7d's panel and Numbers page are v2.7c's with "= <" written "<", and nothing else -- []
+  [ok] 7c every rewritten line differs only by "= <" -> "<" or "= >" -> ">", and none in v2.7d reads "= <"
+  [ok] 7c st_ParStr, 27 families, defaults and tiny parameters: v2.7c's text written without "= <" -- []
+  [ok] 7d st_Eq("0.158655") = " = 0.158655"
+  [ok] 7d st_Eq("< 0.000001") = " < 0.000001"
+  [ok] 7d st_Eq("> -0.000001") = " > -0.000001"
+  [ok] 7d st_Eq("") = " = "
+  [ok] 7d st_Eq("-1.5") = " = -1.5"
+  [ok] 7d st_Eq("undef (no mean)") = " = undef (no mean)"
+  7e Normal(0, 0.0005), variance 2.5E-7: v2.7d ["  < 0.000001, the program's value: agree"]
+       v2.7c ["  = < 0.000001, the program's value: agree"]
+  [ok] 7e Normal(0, 0.0005), variance 2.5E-7: the Formula page reads "< 0.000001, the program's value: agree", and is v2.7c's written without "= <"
+  7e Exponential(1), x = 0.00005: v2.7d ["  at x < 0.0001: 0.000050, the program's: agree"]
+       v2.7c ["  = 1.000000, the program's value: agree", "  = 2.000000, the program's value: agree"]
+  [ok] 7e Exponential(1), x = 0.00005: the Formula page reads "at x < 0.0001:", and is v2.7c's written without "= <"
+  7e Normal(0, 1): v2.7d ["  = 1.000000, the program's value: agree", "  = 1.000000, the program's value: agree"]
+       v2.7c ["  = 0.000000, the program's value: agree", "  = 1.000000, the program's value: agree"]
+  [ok] 7e Normal(0, 1): the Formula page reads "= 1.000000, the program's value: agree", and is v2.7c's written without "= <"
+  [ok] 7f the code lines removed (55) and added (62) are exactly the sites above, through st_Eq, the lower tail, the help title, and st_Eq itself -- []
+  [ok] 7f the new names st_Eq and eqS are not built-ins (ignoring case); st_Eq carries the st_ tag and is defined once, after st_fmtp and before its first use
+  [ok] 7f the version reads v2.7d in the banner and the help title, a "WHAT CHANGED in v2.7d" paragraph is there, and no code line says v2.7c
+  [ok] 7f no // comment inside an open bracket -- []
+  [ok] 7f INSTRING appears in as many code lines as in v2.7c; every LOCAL line holds at most 6 names
+  7g seen, not changed: Normal(0, 1), P(X > 10): v2.7c ['P(X > 10) = 0.000000'], v2.7d ['P(X > 10) = 0.000000'] (1 - CDF, st_Prob; SciPy 7.6e-24)
+  7g seen, not changed: a typed x of 0.00005 reads ['P(X <= < 0.0001) = 0.500020'] (no "=" before the relation)
+  [ok] 7h no scientific STRING result in any of the 577 harness runs of v2.7d in this script -- []
+
+RESULT: ALL PASS
+
+==================== part 8 ====================
+
+== Part 8 (2.7e): the right tail family by family (D9); B1, B2, B5, B7; the review's checks ==
+  8a st_sf against SciPy sf, doubles: worst relative error per family (against SciPy / against the best reference):
+     Normal 1.1e-14/1.1e-14; Uniform 3.7e-10/1.2e-16; Exponentia 1.0e-15/1.0e-15; Weibull 1.5e-16/1.5e-16; LogNormal 1.5e-14/1.5e-14; Laplace 0.0e+00/0.0e+00; Student t 0.0e+00/0.0e+00; Chi-square 2.7e-11/2.7e-11; Fisher F 2.3e-12/2.3e-12; Burr XII 2.3e-15/2.3e-15; Gumbel 2.2e-15/2.2e-15; Pareto 2.6e-16/2.6e-16; Rayleigh 3.6e-15/3.6e-15; Logistic 0.0e+00/0.0e+00; Binomial 1.1e-14/1.1e-14; Poisson 7.5e-11/7.5e-11; Geometric 6.8e-15/6.8e-15; Triangular 1.1e-09/2.2e-16; Cauchy 8.3e-16/8.3e-16; Frechet 6.8e-16/6.8e-16; Gompertz 4.3e-14/4.3e-14; Maxwell 4.0e-15/4.0e-15; Erlang 3.1e-13/3.1e-13; Gamma 1.3e-11/1.3e-11; Beta 1.0e-12/1.0e-12; Neg. binom 0.0e+00/0.0e+00; Hypergeome 1.1e-15/1.1e-15
+     worst against SciPy: Triangular 1.11e-09 at ((2, 5, 12), 11.997354248689632, 9.999999994733723e-08, 1.0000000005838672e-07)
+     worst against the best reference: Poisson 7.49e-11 at ((40, 0, 0), 63.0, 0.0002865662746438894, 0.0002865662746653552)
+  [ok] 8a every family's st_sf = SciPy sf on findings_B's grid, doubles: worst relative error 1.1e-09 against SciPy (Triangular), 7.5e-11 against the best reference (Poisson) -- under 1e-09
+  8a st_sf against SciPy sf, twelve_digits(): worst relative error per family (against SciPy / against the best reference):
+     Normal 3.7e-13/3.7e-13; Uniform 3.7e-10/1.2e-16; Exponentia 1.0e-15/1.0e-15; Weibull 1.5e-16/1.5e-16; LogNormal 3.7e-13/3.7e-13; Laplace 0.0e+00/0.0e+00; Student t 3.7e-13/3.7e-13; Chi-square 2.7e-11/2.7e-11; Fisher F 2.3e-12/2.3e-12; Burr XII 2.3e-15/2.3e-15; Gumbel 2.2e-15/2.2e-15; Pareto 2.6e-16/2.6e-16; Rayleigh 3.6e-15/3.6e-15; Logistic 0.0e+00/0.0e+00; Binomial 3.8e-12/3.8e-12; Poisson 7.5e-11/7.5e-11; Geometric 6.8e-15/6.8e-15; Triangular 1.1e-09/2.2e-16; Cauchy 8.3e-16/8.3e-16; Frechet 6.8e-16/6.8e-16; Gompertz 4.3e-14/4.3e-14; Maxwell 9.5e-13/9.5e-13; Erlang 3.1e-13/3.1e-13; Gamma 1.3e-11/1.3e-11; Beta 1.0e-12/1.0e-12; Neg. binom 2.1e-12/2.1e-12; Hypergeome 2.0e-12/2.0e-12
+     worst against SciPy: Triangular 1.11e-09 at ((2, 5, 12), 11.997354248689632, 9.999999994733723e-08, 1.0000000005838672e-07)
+     worst against the best reference: Poisson 7.49e-11 at ((40, 0, 0), 63.0, 0.0002865662746438894, 0.0002865662746653552)
+  [ok] 8a every family's st_sf = SciPy sf on findings_B's grid, twelve_digits(): worst relative error 1.1e-09 against SciPy (Triangular), 7.5e-11 against the best reference (Poisson) -- under 1e-09
+  8a st_sf against SciPy sf, prime12 (all arithmetic): worst relative error per family (against SciPy / against the best reference):
+     Normal 6.0e-11/6.0e-11; Uniform 3.7e-10/4.4e-12; Exponentia 1.6e-11/1.6e-11; Weibull 2.0e-10/2.0e-10; LogNormal 1.5e-10/1.5e-10; Laplace 4.0e-11/4.0e-11; Student t 3.7e-13/3.7e-13; Chi-square 6.6e-10/6.6e-10; Fisher F 8.1e-09/8.1e-09; Burr XII 1.0e-11/1.0e-11; Gumbel 5.0e-11/5.0e-11; Pareto 9.6e-12/9.6e-12; Rayleigh 1.0e-10/1.0e-10; Logistic 1.4e-11/1.4e-11; Binomial 3.8e-12/3.8e-12; Poisson 1.3e-09/1.3e-09; Geometric 2.4e-12/2.4e-12; Triangular 1.1e-09/6.9e-12; Cauchy 4.0e-12/4.0e-12; Frechet 1.0e-11/1.0e-11; Gompertz 8.0e-10/8.0e-10; Maxwell 8.0e-11/8.0e-11; Erlang 1.6e-10/1.6e-10; Gamma 1.1e-10/1.1e-10; Beta 4.8e-10/4.8e-10; Neg. binom 2.1e-12/2.1e-12; Hypergeome 5.4e-12/5.4e-12
+     worst against SciPy: Fisher F 8.13e-09 at ((1, 1, 0), 2.4674011408594612e-08, 0.999900008128, 0.9998999999997882)
+     worst against the best reference: Fisher F 8.13e-09 at ((1, 1, 0), 2.4674011408594612e-08, 0.999900008128, 0.9998999999997882)
+  [ok] 8a every family's st_sf = SciPy sf on findings_B's grid, prime12 (all arithmetic): worst relative error 8.1e-09 against SciPy (Fisher F), 8.1e-09 against the best reference (Fisher F) -- under 1e-07
+  [ok] 8a the Triangular below its mode, mode at or next to the maximum, x up to 1E-9 from the mode, all arithmetic in 12 digits: worst relative error 1.9e-12 (the v2.7d-style 1 - (x-a)^2/... would lose up to half its digits there)
+  [ok] 8a st_sf(x) = 1 - st_cdf(x) wherever the tail is between 0.01 and 0.99 (714 points, worst 2.3e-11): the two routines describe the same distribution
+    Poisson      (2000, 0, 0)           worst rel 1.9e-10   built-ins: -
+    Poisson      (4990, 0, 0)           worst rel 1.9e-10   built-ins: ['CHISQUARE_CDF']
+    Poisson      (6000, 0, 0)           worst rel 7.0e-13   built-ins: ['CHISQUARE_CDF']
+    Poisson      (100000, 0, 0)         worst rel 6.8e-13   built-ins: ['CHISQUARE_CDF']
+    Erlang       (5000, 1, 0)           worst rel 2.0e-10   built-ins: -
+    Erlang       (5001, 1, 0)           worst rel 1.2e-12   built-ins: ['POISSON_CDF']
+    Erlang       (20000, 0.5, 0)        worst rel 1.2e-12   built-ins: ['POISSON_CDF']
+    Gamma        (5000, 1, 0)           worst rel 2.0e-10   built-ins: -
+    Gamma        (4999.5, 3, 0)         worst rel 2.0e-10   built-ins: -
+    Chi-square   (5000, 0, 0)           worst rel 1.9e-10   built-ins: -
+    Chi-square   (4999.7, 0, 0)         worst rel 1.9e-10   built-ins: -
+    Fisher F     (3000, 3000, 0)        worst rel 1.8e-10   built-ins: -
+    Fisher F     (10, 10000, 0)         worst rel 2.9e-12   built-ins: -
+    Fisher F     (10000, 10000, 0)      worst rel 1.8e-10   built-ins: -
+    Fisher F     (100000, 100000, 0)    worst rel 8.1e-14   built-ins: ['FISHER_CDF']
+    Fisher F     (150000, 200000, 0)    worst rel 1.3e-13   built-ins: ['FISHER_CDF']
+    Fisher F     (10, 1000000000.0, 0)  worst rel 3.6e-10   built-ins: ['FISHER_CDF']
+    Fisher F     (1000000000.0, 10, 0)  worst rel 4.7e-13   built-ins: ['FISHER_CDF']
+    Fisher F     (100000, 1000000000.0, 0) worst rel 5.7e-14   built-ins: ['FISHER_CDF']
+  [ok] 8b Poisson lambda 2000 .. 100000, Erlang k 5000 .. 20000, Gamma k 5000, chi-square df 5000, F up to df 1e9: st_sf = SciPy sf within 1E-6 relative at the 0.1 %% .. 1 - 1E-9 points (12 digits; the F with a df above 10000 keeps v2.7d's 1 - F(x), checked up to its 99.9 %% point) -- []
+  [ok] 8b the switch-overs: Poisson(6000) and Poisson(100000) use CHISQUARE_CDF (whole df 2k + 2), Erlang(5001) and Erlang(20000) POISSON_CDF; Poisson(2000) and Erlang(5000) the program's own routines
+  [ok] 8b no CHISQUARE_CDF with a fractional df in any of it (57 statistics calls)
+    (seen, the documented compromise) F(150000, 200000), the 1 - F(x) fallback in its far tail: relative error ['2e-13 at q = 1 - 1e-06', '7e-13 at q = 1 - 1e-09'] under 12 digits
+    prime12, the 1 %% .. 99.9 %% points: Fisher F(10, 15) 1.6e-11; Fisher F(100, 100) 1.1e-09; Fisher F(1000, 1000) 6.1e-09; Fisher F(3000, 3000) 9.1e-08; Fisher F(10, 10000) 7.7e-08; Fisher F(10000, 10000) 8.2e-08; Fisher F(10, 100000) 2.3e-12; Fisher F(100000, 100000) 1.2e-13; Gamma(1000, 1) 1.3e-08; Gamma(5000, 1) 6.6e-08; Chi-squa(5000, 0) 6.5e-08; Erlang(5000, 1) 6.6e-08; Poisson(4000, 0) 1.2e-07; Beta(1000, 1000) 6.5e-08; Beta(5000, 5000) 7.5e-08
+  [ok] 8b2 with all arithmetic in 12 digits (prime12), st_sf at the sizes the program trusts its own incomplete gamma and beta with (F df up to 10000, Gamma k and chi-square df 5000, Erlang k 5000, Poisson 4000, Beta 5000) is within 2E-7 of SciPy (worst 1.2e-07); the F above df 10000 is 1 - F(x)
+  [ok] 8c st_gammaQ(a, x) = gammaincc, a from 0.001 to 5000, x to 40 SD beyond the mean: worst relative error 1.9e-10 (at (2500, 2500.0, 0.49734037898822336, 0.4973403788923451)); st_gammaP + st_gammaQ = 1 within 0.0e+00
+  review part H on v2.7d: 3 checks, failed: ['H panel lines estimated over 314 px (6 + 5.5/7 px per character): 3']
+  review part H on v2.7e: 3 checks, failed: none
+  [ok] 8d the review's failing check (part H, B2: a panel line over 314 px) FAILS on v2.7d and passes on v2.7e
+/usr/local/lib/python3.13/dist-packages/scipy/stats/_continuous_distns.py:2781: RuntimeWarning: divide by zero encountered in power
+  return c*pow(x, c-1)*np.exp(-pow(x, c))
+/usr/local/lib/python3.13/dist-packages/scipy/stats/_discrete_distns.py:692: RuntimeWarning: divide by zero encountered in divide
+  g2 /= n * N * (M - N) * m * (M - 2.) * (M - 3.)
+    ok   I Normal          survival formula rel err 3.7e-13 (worst at ((0, 1, 0), 6.361340889697422, 1.00000008274e-10, 1.0000000827403688e-10))
+    ok   I Uniform         survival formula rel err 3.7e-10 (worst at ((-2, 7, 0), 6.9999991, 9.999999998437185e-08, 9.999999994736442e-08))
+    ok   I Exponential     survival formula rel err 1.0e-15 (worst at ((12, 0, 0), 0.3837641821656742, 0.010000000000000014, 0.010000000000000004))
+    ok   I Weibull         survival formula rel err 1.5e-16 (worst at ((2, 1, 0), 0.5363600213026516, 0.7500000000000001, 0.75))
+    ok   I LogNormal       survival formula rel err 3.7e-13 (worst at ((0, 1, 0), 579.0222410472031, 1.00000008274e-10, 1.0000000827403688e-10))
+    ok   I Laplace         survival formula rel err 0.0e+00 (worst at None)
+    ok   I Student t       survival formula rel err 3.7e-13 (worst at ((10, 0, 0), 25.466007808016013, 1.00000008274e-10, 1.0000000827403723e-10))
+    ok   I Chi-square      survival formula rel err 2.7e-11 (worst at ((60, 0, 0), 99.60723306984946, 0.0009999999999727302, 0.0010000000000000002))
+    ok   I Fisher F        survival formula rel err 2.3e-12 (worst at ((40, 3, 0), 5830067.622927682, 1.0000000827426415e-10, 1.0000000827403707e-10))
+    ok   I Burr XII        survival formula rel err 2.3e-15 (worst at ((0.8, 1.5, 3), 646330188.3853133, 1.0000000827403692e-10, 1.0000000827403669e-10))
+    ok   I Gumbel          survival formula rel err 2.2e-15 (worst at ((10, 3, 0), 37.63087110967851, 9.999999999998899e-05, 9.999999999998877e-05))
+    ok   I Pareto          survival formula rel err 2.6e-16 (worst at ((1, 3, 0), 215.44346904098828, 9.99999999473645e-08, 9.999999994736452e-08))
+    ok   I Rayleigh        survival formula rel err 3.6e-15 (worst at ((1.5, 0, 0), 10.17921061833384, 1.0000000827403705e-10, 1.0000000827403669e-10))
+    ok   I Logistic        survival formula rel err 0.0e+00 (worst at None)
+    ok   I Binomial        survival formula rel err 3.8e-12 (worst at ((20, 0.5, 0), 16.0, 0.00128841400146, 0.0012884140014648438))
+    ok   I Poisson         survival formula rel err 7.5e-11 (worst at ((40, 0, 0), 63.0, 0.0002865662746438894, 0.0002865662746653552))
+    ok   I Geometric       survival formula rel err 6.8e-15 (worst at ((0.05, 0, 0), 145.0, 0.0005887389471696016, 0.0005887389471696057))
+    ok   I Triangular      survival formula rel err 1.1e-09 (worst at ((2, 5, 12), 11.997354248689632, 9.999999994733723e-08, 1.0000000005838672e-07))
+    ok   I Cauchy          survival formula rel err 2.2e-16 (worst at ((0, 1, 0), 318.30883898555015, 0.0010000000000000009, 0.001000000000000001))
+    ok   I Frechet         survival formula rel err 6.8e-16 (worst at ((3, 1, 0), 21.543987815901538, 9.999999999998899e-05, 9.999999999998905e-05))
+    ok   I Gompertz        survival formula rel err 4.3e-14 (worst at ((0.001, 0.2, 0), 50.22208121068043, 1.0000000827403243e-10, 1.0000000827403669e-10)
+    ok   I Maxwell         survival formula rel err 9.5e-13 (worst at ((1, 0, 0), 0.07221379597437028, 0.9998999999990499, 0.9999))
+    ok   I Erlang          survival formula rel err 3.1e-13 (worst at ((8, 2, 0), 3.834624721250402, 0.5000000000001544, 0.4999999999999999))
+    ok   I Gamma           survival formula rel err 1.3e-11 (worst at ((0.1, 5, 0), 7.9423890896475005, 0.009999999999874913, 0.010000000000000052))
+    ok   I Beta            survival formula rel err 1.0e-12 (worst at ((0.5, 0.5, 0), 0.4999999999999999, 0.5000000000005052, 0.5000000000000001))
+    ok   I Neg. binomial   survival formula rel err 2.1e-12 (worst at ((1, 0.2, 0), 28.0, 0.00154742504911, 0.0015474250491067246))
+    ok   I Hypergeometric  survival formula rel err 9.5e-16 (worst at ((1000, 500, 500), 256.0, 0.2054902219218458, 0.2054902219218456))
+  [ok] 8d the review's parts A, B, E (menu labels as B5 spells them), F, G and I on v2.7e: 85 checks, 0 failed []
+  C(i), twelve_digits(): v2.7d reads "= 0.000000" for a positive right tail in 9 of 20 cases [('Normal', 7.5), ('Normal', 210), ('Student t', 12), ('Poisson', 40), ('Binomial', 39), ('Chi-square', 70), ('Maxwell', 9), ('Gompertz', 120), ('LogNormal', 2000)]; v2.7e in 0
+  [ok] 8d C(i) twelve_digits(): v2.7d shows "= 0.000000" for a positive far right tail (9 of 20); v2.7e never (0 of 20), and its summary for Home reads the same as its panel
+  C(i), prime12: v2.7d reads "= 0.000000" for a positive right tail in 16 of 20 cases [('Normal', 7.5), ('Normal', 210), ('Student t', 12), ('Exponential', 30), ('Weibull', 6), ('Pareto', 20000), ('Binomial', 39), ('Neg. binomial', 70), ('Chi-square', 70), ('Gamma', 80), ('Maxwell', 9), ('Gompertz', 120), ('Cauchy', 10000000000000.0), ('Logistic', 30), ('Gumbel', 30), ('LogNormal', 2000)]; v2.7e in 0
+  [ok] 8d C(i) prime12: v2.7d shows "= 0.000000" for a positive far right tail (16 of 20); v2.7e never (0 of 20), and its summary for Home reads the same as its panel
+  [ok] 8d C(ii) 12 tails between 1E-6 and 1E-11, 12 digits: v2.7d's 1 - F(x) is off by more than 1E-6 relative in 8 (the Formula page's tolerance); v2.7e's st_Prob in 0 (worst 1.8e-11)
+    NegBin(40, 0.5), P(Y <= 0) = 9.095e-13: v2.7d CDF: < 0.000001 (1.000e-12), v2.7e CDF: < 0.000001 (9.095e-13)
+    NegBin(30, 0.3), P(Y <= 0) = 2.059e-16: v2.7d CDF: 0.000000 (0.000e+00), v2.7e CDF: < 0.000001 (2.059e-16)
+    NegBin(20, 0.2), P(Y <= 1) = 1.783e-13: v2.7d CDF: 0.000000 (0.000e+00), v2.7e CDF: < 0.000001 (1.783e-13)
+    NegBin(50, 0.5), P(Y <= 5) = 1.068e-10: v2.7d CDF: < 0.000001 (1.070e-10), v2.7e CDF: < 0.000001 (1.068e-10)
+    NegBin(3, 0.4), P(Y <= 0) = 6.400e-02: v2.7d CDF: 0.064000 (6.400e-02), v2.7e CDF: 0.064000 (6.400e-02)
+  [ok] 8d C(iii) the Negative binomial lower tail: v2.7d's Numbers page reads "CDF: 0.000000" for a positive tail; v2.7e's never, and its st_cdf = SciPy within 1E-9 relative (12 digits)
+    Binomial(20, 0.5, 0) P(X > 19) = 9.537e-07: v2.7d ['  no closed form shown', '  = 5/262144'] ['exact (CAS)']; v2.7e ['  = 1/1048576', '  = 5/262144'] ['exact (CAS)'] (the CAS: 1/1048576; exact: 1/1048576)
+    Binomial(30, 0.5, 0) P(X > 27) = 4.340e-07: v2.7d ['  = 233/536870912', '  = 1015/268435456'] ['exact (CAS)']; v2.7e ['  = 233/536870912', '  = 1015/268435456'] ['exact (CAS)'] (the CAS: 233/536870912; exact: 233/536870912)
+    Binomial(20, 0.1, 0) P(X > 11) = 5.815e-08: v2.7d ['  no closed form shown', '  = 1626778633311/2500000000000000000'] ['exact (CAS)']; v2.7e ['  = 2907458992391/50000000000000000000', '  = 1626778633311/2500000000000000000'] ['exact (CAS)'] (the CAS: 2907458992391/50000000000000000000; exact: 2907458992391/50000000000000000000)
+    Poisson(5, 0, 0) P(X > 20) = 8.109e-08: v2.7d ['  = (556091887583232×e^(5)-82531347094868167)/', '  = 152587890625/(3892643213082624×e^(5))'] ['exact (CAS)']; v2.7e ['  = (556091887583232×e^(5)-82531347094868167)/', '  = 152587890625/(3892643213082624×e^(5))'] ['exact (CAS)'] (the CAS: (556091887583232*e^(5)-82531347094868167; exact: 1 - 82531347094868167*exp(-5)/5560918875)
+    Neg. binomial(3, 0.4, 0) P(X > 40) = 1.244e-07: v2.7d ['  = an exact fraction of 55 digits', '  = an exact fraction of 54 digits'] ['exact (CAS)']; v2.7e ['  = an exact fraction of 55 digits', '  = an exact fraction of 54 digits'] ['exact (CAS)'] (the CAS: 141478752947045480457237/113686837721616; exact: 141478752947045480457237/113686837721616)
+  [ok] 8d D the Formula page, 12 digits, CAS answering: v2.7d throws away 2 of 5 correct exact upper tails ("no closed form shown"); v2.7e shows all 5 (0 lost), each equal to the exact fraction, badge "exact (CAS)" -- [True, True, True, True, True]
+  [ok] 8e v2.7d: Gamma(20000, 1), P(X <= 20000) is accepted and reads StatDist: P(X <= 20000) = 0.500729 (SciPy 0.500940): the 500-pass cap (B1)
+  [ok] 8e v2.7e: Gamma {'gaK': 20000, 'gaT': 1, 'x_val': 20000} is refused with "['Error: k must be <= 5000 here / (the incomplete gamma stops after 500 steps)']" and nothing is plotted -- None
+  [ok] 8e v2.7e: Gamma {'gaK': 5000.5, 'gaT': 1, 'x_val': 5000} is refused with "['Error: k must be <= 5000 here / (the incomplete gamma stops after 500 steps)']" and nothing is plotted -- None
+  [ok] 8e v2.7e: Chi-square {'df': 5001, 'x_val': 5000} is refused with "['Error: df must be <= 5000 here / (the incomplete gamma stops after 500 steps)']" and nothing is plotted -- None
+  [ok] 8e v2.7e: Chi-square {'df': 20000.5, 'x_val': 20000} is refused with "['Error: df must be <= 5000 here / (the incomplete gamma stops after 500 steps)']" and nothing is plotted -- None
+  [ok] 8e v2.7e: Gamma {'gaK': 5000, 'gaT': 1, 'x_val': 5000} is accepted: StatDist: P(X <= 5000) = 0.501881 (SciPy 0.501881) -- None
+  [ok] 8e v2.7e: Chi-square {'df': 5000, 'x_val': 5000} is accepted: StatDist: P(X <= 5000) = 0.502660 (SciPy 0.502660) -- None
+  [ok] 8e v2.7e: Chi-square {'df': 4999.5, 'x_val': 5000} is accepted: StatDist: P(X <= 5000) = 0.504654 (SciPy 0.504654) -- None
+  [ok] 8e v2.7e: Gamma(5000, 1), P(X > 5100) through st_gammaQ: StatDist: P(X > 5100) = 0.079329 (SciPy 0.079329)
+  [ok] 8e the help lines say the bound: ['0 < k <= 5000 (any, not just whole)']
+    StatDist_v2.7d.txt: 'approx. 0.7602: approximation poor here, np or n(1-p) < 10' (58 characters, about 325 px from x = 6 at font 1)
+    StatDist_v2.7e.txt: 'approx. = 0.7602: poor here, np or n(1-p) < 10' (46 characters, about 259 px from x = 6 at font 1)
+  [ok] 8f B2: v2.7e's note reads "approx. = 0.7602: poor here, np or n(1-p) < 10" (46 characters, ~259 px; v2.7d's was 58, ~325 px)
+  [ok] 8f B2: the Poisson's: ['approx. = 0.5987: poor here, λ < 10']
+  [ok] 8g B5: the Advanced menu reads "Chi-square" and "Maxwell-Boltzmann" (as st_Name); every item at most 30 characters: ['Student t', 'Chi-square', 'Fisher F', 'Gamma', 'Beta', 'Burr Type XII', 'Weibull', 'Gumbel', 'Frechet', 'Pareto', 'Rayleigh', 'Gompertz', 'Erlang', 'Maxwell-Boltzmann', 'Logistic', 'Back']
+  [ok] 8g B5: Maxwell-Boltzmann by its new label, end to end: StatDist: P(X > 2) = 0.261464 (SciPy 0.261464) -- None
+  [ok] 8h st_XStr(5e-05, '< 0.0001') = '0.00005'
+  [ok] 8h st_XStr(-3e-05, '> -0.0001') = '-0.00003'
+  [ok] 8h st_XStr(3.3333333333333335e-05, '< 0.0001') = '0.00003333'
+  [ok] 8h st_XStr(1.234567e-05, '< 0.0001') = '0.00001234567'
+  [ok] 8h st_XStr(1.2345678e-05, '< 0.0001') = '0.00001235'
+  [ok] 8h st_XStr(1e-15, '< 0.0001') = '0.00000000000'
+  [ok] 8h st_XStr(1.96, '1.96') = '1.96'
+  [ok] 8h st_XStr(2.0, '2') = '2'
+  [ok] 8h st_XStr(5e-05, '0.0001') = '0.0001'
+    v2.7d panel ['P(X <= < 0.0001) = 0.500020']; v2.7e panel ['P(X <= 0.00005) = 0.500020']; Numbers ['At x = 0.00005:']
+  [ok] 8h B7: a typed x = 0.00005 reads "P(X <= 0.00005) = 0.500020" on the panel (v2.7d "P(X <= < 0.0001)"), "At x = 0.00005:" and "P(X <= 0.00005) = 0.500020" on the Numbers page
+  [ok] 8h B7: Between 0.00002 and 0.00005 reads "P(0.00002 < X < 0.00005) = 0.000012" (panel and Numbers, "at a = 0.00002"), and P(X > -0.00003) on the panel: ['P(X > -0.00003) = 0.500012']
+  [ok] 8h B7: the Formula page's CDF line reads ["  at x = 0.00005: 0.000050, the program's: agree"] ("at x = 0.00005", v2.7d "at x < 0.0001")
+  [ok] 8h B7: parameters keep v2.7d's form (by choice): 'μ < 0.0001, σ < 0.0001'
+    twelve_digits(): v2.7d P(8 < X < 9) ['P(8 < X < 9) = 0.000000'], P(-9 < X < -8) ['P(-9 < X < -8) < 0.000001']; v2.7e ['P(8 < X < 9) < 0.000001'], ['P(-9 < X < -8) < 0.000001']
+  [ok] 8i twelve_digits(): Normal(0, 1) P(8 < X < 9) (6.2E-16) reads "< 0.000001" in v2.7e, as P(-9 < X < -8) does (v2.7d: ['P(8 < X < 9) = 0.000000'])
+    prime12: v2.7d P(8 < X < 9) ['P(8 < X < 9) = 0.000000'], P(-9 < X < -8) ['P(-9 < X < -8) < 0.000001']; v2.7e ['P(8 < X < 9) < 0.000001'], ['P(-9 < X < -8) < 0.000001']
+  [ok] 8i prime12: Normal(0, 1) P(8 < X < 9) (6.2E-16) reads "< 0.000001" in v2.7e, as P(-9 < X < -8) does (v2.7d: ['P(8 < X < 9) = 0.000000'])
+  [ok] 8i Betweens below and above the middle (Normal, Gamma, Binomial, Poisson, Hypergeometric) = SciPy, worst relative error 2.2e-12
+  [ok] 8j the right-tail cache stSv: every bar (from the right) and every 17th column = st_sf, and the drag readout = the lifted one (12 distributions, incl. a one-bar Hypergeometric) -- []
+  8k doubles: 27 families x 3 tails x 3 settings: 237 identical, 6 differ only as allowed, 0 otherwise
+     Exponential tail 2 far right: "P(X > 60) = 0.000000" -> "P(X > 60) < 0.000001"
+     Exponential tail 2 far right: "P(X > 60.0000) = 0.000000" -> "P(X > 60.0000) < 0.000001"
+     Laplace tail 2 far right: "P(X > 60) = 0.000000" -> "P(X > 60) < 0.000001"
+     Laplace tail 2 far right: "P(X > 60.0000) = 0.000000" -> "P(X > 60.0000) < 0.000001"
+     Gumbel tail 2 far right: "P(X > 60) = 0.000000" -> "P(X > 60) < 0.000001"
+     Gumbel tail 2 far right: "P(X > 60.0000) = 0.000000" -> "P(X > 60.0000) < 0.000001"
+     Logistic tail 2 far right: "P(X > 60) = 0.000000" -> "P(X > 60) < 0.000001"
+     Logistic tail 2 far right: "P(X > 60.0000) = 0.000000" -> "P(X > 60.0000) < 0.000001"
+     Gompertz tail 2 far right: "P(X > 110) = 0.000000" -> "P(X > 110) < 0.000001"
+     Gompertz tail 2 far right: "P(X > 110.0000) = 0.000000" -> "P(X > 110.0000) < 0.000001"
+     Erlang tail 2 far right: "P(X > 62) = 0.000000" -> "P(X > 62) < 0.000001"
+     Erlang tail 2 far right: "P(X > 62.0000) = 0.000000" -> "P(X > 62.0000) < 0.000001"
+  [ok] 8k doubles: v2.7e's panel and Numbers page are v2.7d's except the B2 note and a right tail (or upper Between) that read "= 0.000000" or moved by its last digit -- []
+  8k twelve_digits(): 27 families x 3 tails x 3 settings: 235 identical, 8 differ only as allowed, 0 otherwise
+     Exponential tail 2 far right: "P(X > 60) = 0.000000" -> "P(X > 60) < 0.000001"
+     Exponential tail 2 far right: "P(X > 60.0000) = 0.000000" -> "P(X > 60.0000) < 0.000001"
+     Laplace tail 2 far right: "P(X > 60) = 0.000000" -> "P(X > 60) < 0.000001"
+     Laplace tail 2 far right: "P(X > 60.0000) = 0.000000" -> "P(X > 60.0000) < 0.000001"
+     Student t tail 2 far right: "P(X > 60) = 0.000000" -> "P(X > 60) < 0.000001"
+     Student t tail 2 far right: "P(X > 60.0000) = 0.000000" -> "P(X > 60.0000) < 0.000001"
+     Gumbel tail 2 far right: "P(X > 60) = 0.000000" -> "P(X > 60) < 0.000001"
+     Gumbel tail 2 far right: "P(X > 60.0000) = 0.000000" -> "P(X > 60.0000) < 0.000001"
+     Logistic tail 2 far right: "P(X > 60) = 0.000000" -> "P(X > 60) < 0.000001"
+     Logistic tail 2 far right: "P(X > 60.0000) = 0.000000" -> "P(X > 60.0000) < 0.000001"
+     Poisson tail 2 far right: "P(X > 63) = P(X >= 64) = 0.000000" -> "P(X > 63) = P(X >= 64) < 0.000001"
+     Poisson tail 2 far right: "P(X > 63) = P(X >= 64) = 0.000000" -> "P(X > 63) = P(X >= 64) < 0.000001"
+  [ok] 8k twelve_digits(): v2.7e's panel and Numbers page are v2.7d's except the B2 note and a right tail (or upper Between) that read "= 0.000000" or moved by its last digit -- []
+  8l changed: ['st_Cache', 'st_CutCalc', 'st_FmCont', 'st_Numbers', 'st_Panel', 'st_Prob', 'st_advanced_continuous', 'st_ask_chisquare', 'st_ask_gamma', 'st_cdf', 'st_show_help']; added: ['st_SfAt', 'st_XStr', 'st_gammaQ', 'st_sf']; removed: none
+  [ok] 8l the routine diff v2.7d -> v2.7e: changed exactly ['st_Cache', 'st_CutCalc', 'st_FmCont', 'st_Numbers', 'st_Panel', 'st_Prob', 'st_advanced_continuous', 'st_ask_chisquare', 'st_ask_gamma', 'st_cdf', 'st_show_help']; added st_gammaQ, st_sf, st_SfAt, st_XStr; none removed; the other 128 routines byte-identical (comments aside)
+  [ok] 8l outside those routines only comments and the new file-level "LOCAL stSv;" differ
+  [ok] 8l st_cdf: only the Negative binomial lower tail changed: ['- RETURN 1 - BINOMIAL_CDF(dX + pr1, pr2, pr1 - 1);', '+ RETURN BINOMIAL_CDF(dX + pr1, 1 - pr2, dX);']
+  [ok] 8l st_gammaP, st_betaI, st_betacf, st_pdf, st_icdf, st_Mom, st_fmtx, st_fmtp, st_Eq are byte-identical
+  [ok] 8m the version reads v2.7e in the banner and the help title, a "WHAT CHANGED in v2.7e" paragraph is there, the status line says the PC harness only, and no code line says v2.7d
+  [ok] 8m no // comment inside an open bracket -- []
+  [ok] 8m every LOCAL line holds at most 6 names (139 lines)
+  [ok] 8m the new names are not built-ins, ignoring case: []
+  [ok] 8m the new MAKELIST counts with a LOCAL (caJ), not Home's K: ['stSv := MAKELIST(0, caJ, 1, caN, 1);']
+  [ok] 8m st_sf subtracts from 1 only where nothing near 1 is lost: ['IF MAX(pr1, pr2) > 10000 THEN RETURN 1 - st_cdf(9, dPl, dX); END;', 'RETURN 1 - EXP(-sfU);', 'RETURN BINOMIAL_CDF(pr1, 1 - pr2, pr1 - dX - 1);', 'RETURN (1 - pr1)^dX;', 'RETURN 1 - EXP(-sfU);', 'IF dId == 25 THEN RETURN st_betaI(pr2, pr1, 1 - dX); END;']
+    (1 - EXP(-u) only for u >= 1E-4; 1 - p and 1 - x are a parameter or x, not a probability near 1; the F above df 10000 is the one fallback, v2.7d's own number)
+  [ok] 8m INSTRING appears in as many code lines as in v2.7d (12): none added
+  8n v2.7e: 208 harness runs in this script, scientific STRING results: [('st_fmtx', '1ᴇ13')]; v2.7d (114 runs): [('st_fmtx', '1ᴇ13')]
+  [ok] 8n no scientific STRING result in any of the 208 harness runs of v2.7e but the typed x = 1E13 of the review's Cauchy case, which v2.7d prints the same way: [('st_fmtx', '1ᴇ13')] -- [('st_fmtx', '1ᴇ13')]
+
+RESULT: ALL PASS

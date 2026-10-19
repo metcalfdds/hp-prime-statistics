@@ -1,0 +1,3706 @@
+// ============================================================
+// NORM EXPLORER - beta 42a
+// Normal distribution workbench for the HP Prime
+// ============================================================
+// Author: Roger Metcalf, 2026.  Written with AI assistance
+//   (Anthropic Claude); concept, direction and all hardware
+//   testing by the author.
+//
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Share it, teach with
+//   it, adapt it for your own classroom.  Please keep this
+//   header with the file and credit the author if you pass it
+//   on or build on it.  Not for sale or commercial
+//   redistribution.  Provided as is, with no warranty: check
+//   any result you intend to rely on.
+//
+// DISCLAIMER: a teaching and demonstration aid. Not validated for
+//   forensic, clinical or legal use; do not rely on its results for
+//   legal purposes.
+//
+// Tested on an HP Prime G2 and G1, both running the 2026-09-09
+//   firmware, plus the desktop Virtual Calculator (through
+//   beta 39).  Beta 42 ran on the Virtual Calculator (the same
+//   firmware, 16-17 Oct 2026; most of its checklist passed).
+//   Beta 42a has run on the PC harness only (ppl_run_v3e), not
+//   yet on the Virtual Calculator.  Beta 40, 41, 42 and 42a have
+//   NOT yet been run on hardware.
+//
+// Delivered as .txt on purpose: paste into the Connectivity Kit
+//   editor.  .hpprgm is binary and imports badly.
+//
+// The companion user's guide is normexplorer-guide_beta42.md
+//   (written for beta 42; beta 42a's display changes are listed in
+//   NormExplorer_beta42a_CHANGES.md).
+// Run NormExp() from the Program Catalog.
+// ============================================================
+// MAP OF THE FILE  (3706 lines; this is where things live)
+//
+//   Constants, session globals ............ top, after this block
+//   File-level state: curve caches, touch records, palette (beta 42)
+//   ne_NiceNum .......... nice 1/2/5 tick steps, Heckbert
+//   ne_Fx / ne_PStr / ne_Eq  numbers as text that never turn
+//                      scientific; "< 0.0001" for a tiny area
+//   ne_Btw .............. the area between two x's, digits kept
+//   ne_AutoWin .......... plot window: mu +/- 4 sigma, widened to
+//                      include shading and the second curve
+//   ne_SampBins ......... normal sampler, PPL, Marsaglia polar
+//   #PYTHON SAMPBINSPY  the same sampler in MicroPython
+//   ne_Drain / ne_WaitAny  the house touch kit: capped finger-lift
+//                      drain; wait for a key OR a tap
+//   ne_ZPanel ........... full-screen result panel
+//   ne_DrawFrame / ne_ShowCurve .. draw from session state; the
+//                      live result view (tap = explore / read a bar)
+//   ne_Sweep ............ the shading grows into place
+//   ne_BarHit ........... which histogram bar a tap is on
+//   ne_Explorer ......... live keys, soft keys, drags and grabs
+//   ne_SetDist .......... menu 1
+//   ne_SetWin ........... menu 9: window, display toggles, reset
+//   ne_ProbCalc ......... menu 3: four area types
+//   ne_InvCalc .......... menu 4: percentile, three critical
+//                      values (right, left, two-tailed), central
+//   ne_ZSStore / ne_ZSolve . menu 5: solve z=(x-mu)/sigma, any 3 of 4
+//   ne_Compare2 ......... menu 7: second curve, Cohen's d, power
+//   ne_Histo ............ menu 6 dispatcher
+//   ne_BinData .......... shared: fit and bin any list
+//   ne_DataLoad ......... read D1 (Statistics 1Var)
+//   ne_TwoGroups ........ read C1/C2, pooled s, Cohen's d
+//   ne_ResidLoad ........ least-squares residuals from C1/C2
+//   ne_ZtoD2 ............ write z-scores back into D2
+//   ne_NormPlot ......... hand off to Statistics 1Var
+//   ne_AnimStd .......... menu 8: standardize animation
+//   ne_DiagPage ......... which sampler actually ran
+//   ne_HelpPages / ne_ResetAll
+//   NormExp .......... the menu loop
+//   ne_InShade / ne_RTxt / ne_Tag .. small drawing helpers
+//   ne_NormDraw ......... all the drawing, at the end of the file
+//
+// IF YOU ARE READING FOR THE TECHNIQUES, the parts worth your
+// time are: the PPL/Python bridge and its guard in ne_Histo (why
+// IFERR alone is not enough); the off-screen compose-and-blit
+// in ne_NormDraw; ne_AutoWin's two-axis fit test for the reference
+// curve; the drain-wait-drain idiom in ne_WaitAny; and the
+// Explorer's press / drag / lift handling, which reads hit
+// positions that the drawing itself recorded.
+// ============================================================
+
+// =====================================================
+// NORM EXPLORER — beta 42a
+// NORMAL DISTRIBUTION WORKBENCH
+// HP Prime (PPL + optional MicroPython sampler)
+// =====================================================
+// beta 42a (19 Oct 2026): fixes from the fleet review of 19 Oct 2026
+//   (D-NE-1 to D-NE-5, fleet review 19 Oct; findings_D.md).  Run on
+//   the PC harness only (ppl_run_v3e).  Line numbers are beta 42's.
+//   (1) NO SCIENTIFIC NUMBERS ON SCREEN (D-NE-1).  On the Prime
+//       STRING(x, 2, d) prints the scientific form whenever
+//       0 < |x| < 10^-d (Lessons Learned v7i section 3), and the
+//       17 Oct sweep never reached this program: the right tail at
+//       x = 180 on N(100,15) read P(X > x) = 4.8213E-8 (with a small
+//       capital E), the Explorer's area 1.2934E-9 at the window edge
+//       (3269), a histogram bar 1.1E-2 expected (3372).  All 134
+//       STRING(x, 2, d) calls (on 111 lines) now go through three
+//       new helpers, after ne_NiceNum:
+//         ne_Fx(v, d)   rounds BEFORE STRING, so the value is 0 or
+//                       at least 10^-d and the form stays fixed; a
+//                       negative value that rounds to 0 prints
+//                       0.0000, never -0.0000;
+//         ne_PStr(v, d) for what cannot be negative (an area, a
+//                       density, sigma, s, an expected count, a
+//                       width): "< 0.0001" (d = 4; "< 0.01" for
+//                       d = 2) when the value is positive but would
+//                       round to zero -- never 0.0000 for an area
+//                       that is not zero;
+//         ne_Eq(s)      " = " before a number, a space before
+//                       "< ...": "P(X > x) < 0.0001", never
+//                       "= <" (Norm3 v2.4a's n3_Eq, BayesTree 8d).
+//       The readout labels lost their trailing " = " (3265-3302)
+//       because ne_Eq now supplies it.  Signed values (x, z, mu,
+//       d, x-bar, the bounds) round as usual: 0.0000 is their
+//       correctly rounded value.
+//   (2) RIGHT TAILS AS LOWER TAILS (D-NE-2).  1 - NORMALD_CDF is
+//       exactly 0 on the Prime once a tail is below about 5E-13:
+//       its reals hold 12 significant digits, so the CDF there is
+//       exactly 1.  NE_P in Home read 0 past z = 7 or so.  Every
+//       right tail is now the mirror-image LOWER tail,
+//       P(X > x) = P(X < 2 mu - x): the right-tail panel and NE_P
+//       (1556), both complements (1554, 1561), the outside area
+//       (1585, 1587, 1592: left tail plus mirrored right tail),
+//       power and beta (1945, 1955), the readouts (3254, 3295,
+//       3324) and the riding tags (3342, 3351).
+//   (3) CHOOSE (D-NE-3): the seven menus that kept CHOOSE's return
+//       value and tested it (1453, 1531, 1614, 1809, 1921, 1971,
+//       1988) use the house idiom: the index starts at 0 and only
+//       the index is tested.  swSel, pcSel, icSel, zsSel, c2Sel
+//       and hsSel are gone.
+//   (4) CENTRAL C (D-NE-4, 1725): a typed 1 now means 1%, as the
+//       help line's ".95 or 95 both work" implies; it was refused
+//       as a proportion.  100 is still refused.
+//   (5) EXPLORER STEPS (D-NE-5, 1235): after a sigma drag the arrow
+//       steps refit to the new sigma, as Centre does.  A drag from
+//       15 to 2 left the arrows moving mu by 5; now 0.5.
+//   (6) The DISCLAIMER under the distribution terms at the top of
+//       the file (Roger, 19 Oct 2026).  No page of the program
+//       states the terms, so no page changed with it.
+//   (7) BETWEEN, MIRRORED (found while checking (2)).  An area
+//       between two x's above the mean is a difference of two
+//       CDFs that are both 0.99999...; past about 7 sigma both are
+//       exactly 1 on the Prime, and the area printed 0.0000.  New
+//       ne_Btw (after ne_Eq) reads it from the mirror image below
+//       the mean, F(2 mu - a) - F(2 mu - b): the panel (1575), the
+//       readout (3294), the riding tag (3346-3347) and a histogram
+//       bar's p (3365-3366), which met it when the curve had been
+//       moved far to the left of the bars.
+//   (8) RIGHT-TAIL QUANTILES WITHOUT 1 - ALPHA.  Phi^-1(1 - p) is
+//       exactly -Phi^-1(p), and for a typed alpha below about
+//       5E-13, 1 - alpha is 1 on the Prime: NORMALD_ICDF(0, 1, 1)
+//       is not a number.  The right tail (1654), the two tails
+//       (1705), the central C (1730: (1 + C)/2 is 1 for
+//       C = 0.999999999999) and the power picture's x* (1944) now
+//       take minus the quantile of the SMALL area.  The percentile
+//       (1631) and the left tail (1679) already took the area the
+//       student typed, which each form keeps strictly inside 0..1.
+//   Not changed, still pending: the five square-root signs, K as
+//   the MAKELIST counter, the program's own hex palette, the bound
+//   step (fitted at entry; Centre does not refit it either).
+// beta 42 (16 Oct 2026): the touch and graphics version, built on
+//   beta 41 with every one of its fixes kept.  Not yet run on
+//   hardware.  Line numbers are beta 41's.
+//   (1) TWO-BOUND DRAG.  In the Explorer a finger on between or
+//       outside shading moves the NEARER bound and the mode is
+//       kept; beta 41 turned every tap into a left tail (750).
+//       Dragging one bound past the other swaps them.  The area
+//       now RIDES the shaded region: printed in a small box
+//       centred on the shaded pixel span, half-way up it (each
+//       tail its own, for outside), whenever the span is 40 px or
+//       more -- so during a drag the number travels with the area.
+//   (2) SOFT KEYS in the Explorer, two pages in the house "More"
+//       convention (More in slot 6 turns the page): Bands, Ref,
+//       Centre, Shade, Hist / Bnd A, Bnd B, mu, sigma, Menu; drawn
+//       with DRAWMENU after every blit and read as a tap at y >=
+//       218.  + − 0 Esc Enter stay as shortcuts.  Page 2 chooses
+//       what ← → move (a bound, mu or sigma; the chosen handle is
+//       drawn thick, "arrows move: ..." under the title) -- the
+//       keyboard route to the bounds; tapping it again restores
+//       the default, ← → mu and ↑ ↓ sigma.  Shade
+//       cycles left, right, between, outside, none from the current
+//       x0 (between starts at mu -/+ |x0 - mu|).  The Explorer's
+//       footer (2232-2235) is gone; the plot box bottom NPBOT moved
+//       from 210 to 188 (312) so every label ends above y = 218.
+//   (3) GRAB mu AND sigma.  A press within 8 px of the mean line
+//       drags mu; a press on a shoulder (mu -/+ sigma, marked by
+//       small squares) drags sigma, outward = wider.  The held
+//       line is drawn thick; both snap to the arrow keys' round
+//       step on lift; the x-window stays frozen; the y-scale
+//       refits on sigma only.  The nearest handle within 8 px wins.
+//   (4) LIVE RESULT VIEWS.  ne_ShowCurve (659-667) polls keys and
+//       touch: a tap in the plot goes straight into the Explorer
+//       with the shading kept; a tap on a histogram bar shows its
+//       numbers; a key still returns.  The result panel and the
+//       help pages take a tap as well as a key (ne_WaitAny).
+//   (5) HISTOGRAM BARS are filled (RECT_P, one per bar, instead of
+//       three LINE_P outlines, 2041-2043), under the curves; a bar
+//       inside the shaded region is filled deep orange and split
+//       where a bound crosses it.  A tapped bar shows "bin 12: 148
+//       observed, 151.3 expected (n×p)" in a small panel.
+//   (6) SHADING SWEEP.  After every probability panel the bound
+//       grows from the window edge (from the mean, for between) to
+//       x0 over nine frames plus the final view, with the running
+//       area printed; any key or tap skips it.
+//   (7) CDF OVERLAY.  The reference setting is three-way: N(0,1)
+//       reference, the CDF S-curve in magenta on a right-hand
+//       0..1 axis, or neither -- the Ref soft key and − cycle it,
+//       and menu 9 has an item for each.  Dotted drop lines run
+//       from where each bound meets the S-curve to that axis.  The
+//       S-curve is built once per curve from the cached pdf.
+//   (8) Z-RULER: a second row of grey labels under the x labels,
+//       z = -3..3 at x = mu + k sigma.  The x labels moved up 2 px.
+//   (9) "HEIGHT IS NOT PROBABILITY".  In the Explorer the readout
+//       says "area to the left = 0.8413" and, beside it, "height
+//       0.242 (density, not a probability)".
+//   (10) CRITICAL VALUES: left-tail and two-tailed alpha join the
+//       right-tail item in menu 4 (1040-1060); the two-tailed
+//       picture shades both tails, alpha/2 in each.  The central
+//       interval is now item 5 (was 3).
+//   (11) POWER PICTURE.  With the second curve on and a right-tail
+//       cut x*, curve 2 beyond x* is shaded light green and the
+//       plot prints "power = ...".  Compare curves has a new item
+//       that sets it up from an alpha in one step.
+//   (12) Help is three pages (soft keys and touch each get one),
+//       composed on G1; the menu reads "Compare curves (d, power)".
+//   Also: the main and second pdf lists are now cached ACROSS
+//   frames (1932-1949), so a drag of x0 or a sweep frame evaluates
+//   no NORMALD per column at all; the standardize animation's
+//   second caption moved from y = 200 to 172 to stay inside the
+//   smaller plot box; footers are in the house form and colour.
+//   Not changed, still pending: the seven CHOOSE calls that keep
+//   the return value; the √ signs; K as the MAKELIST counter; the
+//   program's own hex palette (except the new elements, which use
+//   the house colours).
+// beta 41 (16 Oct 2026): fixes from the fleet review of 16 Oct 2026.
+//   Not yet run on hardware.  Line numbers are beta 40's.
+//   (1) The main-menu strings no longer carry their own numbers
+//       (1706-1715): the Prime numbers CHOOSE items itself, 1-9 and
+//       then A, B, C, so every line carried two numbers.  Help is
+//       item 10 (shown A) and Quit item 11 (shown B).  The help
+//       pages name the modules rather than numbering them, so no
+//       on-screen text needed to change.
+//   (2) The MicroPython sampler imports random() from urandom,
+//       which this firmware has, instead of from random, which it
+//       does not (470).  Until now the ImportError fired on EVERY
+//       run and the xorshift fallback — three bridge crossings to
+//       seed — was the only generator that ever ran.  The xorshift
+//       fallback stays, for a firmware without urandom.
+//   (3) NE_Z, NE_X and NE_P survive Quit.  The help page promised
+//       them in Home, but ne_ResetAll (1687) zeroed them on the way
+//       out.  They are now cleared once at launch, kept by every
+//       reset, and NormExp returns "NormExp: z = ..., x = ...,
+//       p = ..." so Home shows the last result as well.
+//   (4) The N(0,1) reference curve is cached per pixel column in a
+//       file-level list and rebuilt only when the plot window
+//       changes, instead of 273 NORMALD calls every frame (1931-
+//       1938) while the ne_Explorer's window is frozen.
+//   (5) The standardize animation's captions are composed on G1
+//       with the rest of the frame (a twelfth ne_NormDraw argument)
+//       instead of being painted on G0 after the blit (1525, 1529,
+//       1535, 1538), where the next frame wiped them and they
+//       flashed.
+//   (6) Comments: NE_SRC documents its third value (set at 1289,
+//       read at 1562); the file map gives the right line count; the
+//       dead EXPORT NPPTYPE (268), which nothing read, is gone.
+//   (7) A custom plot window is no longer lost silently.  The
+//       ne_Explorer (627-628, 698-699) and the animation (1516-1519,
+//       1542-1543) save the custom range on entry and put it back
+//       on exit; if the ne_Explorer changed mu or sigma, so the old
+//       range no longer fits, it falls back to auto and SAYS so,
+//       the way menu 1 already did.
+//   (8) The ne_Explorer redraws only when something changed: a key
+//       it handles, or a tap that actually moved x0.  A finger
+//       resting anywhere on the screen used to redraw every poll
+//       (643-660).
+//   Pending, deliberately NOT changed in this build: the seven
+//   CHOOSE calls that capture the return value (754, 824, 902,
+//   1040, 1141, 1167, 1184) and test it for cancel.  They have run
+//   on hardware in this form; the index-only idiom is for a later
+//   build.
+// beta 40 (10 Oct 2026): every helper routine now carries the program
+//   tag "ne_" (NiceNum -> ne_NiceNum, ne_NormDraw, ...).
+//   The Prime keeps the routines of ALL programs in one shared
+//   pool, so two programs that define the same helper name
+//   (NiceNum, fmtp and lngamma were each shared by up to eight
+//   programs) can run each other's code.  That is what sent
+//   StudRange into a Burr3 screen and forced a reset.
+//   Rule: every non-EXPORT routine gets the program's tag.
+//   Also: the finger-lift drain before the explorer loop gives up
+//   after one second, so a phantom touch cannot freeze the program.
+// v2.1: plot window auto-scales; any μ and any σ > 0 work.
+// beta 30: the 68-95-99.7 readout is suppressed while the second
+//       curve is on — its text block and the mu2 label occupied
+//       the same corner, and those ranges describe ONE curve
+//       anyway.  The bands themselves still shade.
+// beta 37: the Normal-probability hand-off no longer sets H1Type
+//       or calls SetSample.  Those are Statistics 1Var app
+//       variables: HP's example sets them from inside a
+//       Statistics-derived app, where they are in scope, but a
+//       standalone program cannot see them and the paste fails
+//       with a syntax error.  D1 is global, so simply launching
+//       the app shows the data; the student picks the plot type,
+//       which is the step Technology Corner 6 asks for anyway.
+// beta 36: menu 6 becomes a DATA module that links to the built-in
+//       statistics apps: load D1, compare two groups from C1/C2
+//       with a pooled-s Cohen's d, run regression residuals through
+//       the normality view, write z-scores back to D2, and hand off
+//       to the Statistics 1Var app for the Normal probability
+//       plot (see beta 37 for what that hand-off can and cannot
+//       do from a standalone program).
+// beta 39: performance and clarity, from an external code review.
+//       (a) The SECOND curve's pdf is cached per pixel column, as
+//       the main one already was.  It was being recomputed with
+//       NORMALD once per pixel in BOTH the overlap shading and the
+//       trace — 544 calls a frame, the only per-frame cost likely
+//       to be felt on a G1 during an ne_Explorer drag.
+//       (b) Histogram bar heights are computed once, not twice.
+//       (c) The ne_Explorer refits NE_YMX when sigma changes, so a big
+//       sigma change no longer clips the peak or leaves it floating
+//       low.  The x-window stays frozen, which is the whole point.
+//       (d) ne_NiceNum's CASE semantics are spelled out.
+//       (e) ne_ResidLoad separates "every x identical" from "nearly
+//       collinear".
+//       (f) Clearing a custom window now says so.
+// beta 39a (30 Sep 2026): the banner at the top of the file said
+//       beta 37; it now names the build, and the file map gives
+//       the right line count.  No code change from beta 39.
+// beta 37a: the "reference does not fit" notice moves out of the
+//       plot box to just under the title.  At y=195 it sat on top
+//       of the distribution it was describing.
+// beta 35: (a) YOUR OWN DATA — menu 6 can read list D1 from the
+//       Statistics 1Var app, fit N(x-bar, s) to it and draw it
+//       against the curve.  Same workflow as Technology Corner 6,
+//       so it pairs with the Normal probability plot students
+//       already make.  (b) TOUCH — tapping the plot in the
+//       ne_Explorer sets the cut point directly; drag and the
+//       probability sweeps live.  Plot geometry is now in named
+//       constants so touch and drawing agree on where the box is.
+// beta 34: review fixes.  (a) The bin count is one named constant,
+//       NBINS, instead of 32 scattered through five routines and
+//       the Python.  (b) The bridge result is validated by TRYING
+//       to read it rather than by testing TYPE, one less firmware
+//       assumption.  (c) A suppressed N(0,1) reference now says so
+//       on screen instead of looking like a dead key.  (d) A new
+//       diagnostic page reports sampler status.
+// beta 32c: d moves onto its own line under mu2, and the whole
+//       left-hand readout column is now laid out by a running y
+//       cursor (ndRY) instead of fixed pixel rows — so lines that
+//       appear and disappear no longer collide with what follows.
+// beta 32b: x-bar and s are stacked on separate lines, mirroring
+//       the mu / sigma pair above them — so the sample statistic
+//       sits directly under the population parameter it estimates.
+// beta 32: the Python sampler's hand-off no longer uses str.join
+//       or repr().  On the G2, join raised "expects a list of
+//       str/bytes objects consistent with self object" every run,
+//       so the Python path had NEVER executed — the guard caught
+//       it and the slow PPL sampler drew every histogram.  The
+//       string is now built by concatenation, and the two floats
+//       are formatted fixed-point so no scientific notation can
+//       reach PPL's parser.
+// beta 31: sigma-squared dropped from the plot.  Variance is worth
+//       discussing but it is derivable from the sigma right above
+//       it, and the corner is better spent on the numbers that
+//       cannot be worked out by eye.
+// beta 29: changing mu or sigma now also clears the comparison
+//       curve, for the same reason it clears the shading — a mu2
+//       set against the old distribution is meaningless against
+//       the new one.  The second curve still persists into the
+//       ne_Explorer, where moving mu against a fixed mu2 is the
+//       point.
+// beta 28: the comparison curve gets its own green line at mu2,
+//       marked with a subscript 2.  The GAP between the two lines
+//       is what Cohen's d measures, so the picture now shows the
+//       quantity the readout reports.
+// beta 27: x-bar is CHAR(57344) — HP put x-bar (U+E000) and p-hat
+//       (U+E001) in the font's private-use area as single glyphs.
+//       That replaces the hand-drawn bar of beta 23-26, which is
+//       still in the history if this ever fails to render.
+// beta 26: the ne_Explorer steps mu and sigma in ROUND numbers.  The
+//       old rule (mu by sigma/4, sigma by x1.1) gave 3.75 and
+//       16.5 on N(100,15); values now snap to a ne_NiceNum grid, so
+//       the readouts stay legible from the back of a room.
+// beta 22/23: the histogram readout shows a proper x-bar.  The
+//       combining macron U+0304 does NOT compose in the plot font —
+//       it lands to the RIGHT of the x instead of above it — so the
+//       label prints a plain x and the bar is drawn as a short line.
+//       Two constants position it; see the comment at the readout.
+// beta 21: menu 9 becomes "Plot window & display" — the band and
+//       reference-curve toggles are reachable there instead of only
+//       from inside the ne_Explorer, and a reset returns everything to
+//       N(0,1) without quitting.
+// beta 20: the sample histogram now reports the sample's own
+//       x-bar and s beside the population μ and σ that generated
+//       it — the statistics differ on every draw, which is the
+//       whole point of showing them.
+// v2.2: NO single-letter lowercase variable names anywhere.
+//       They collide with the CAS globals — x is the CAS's
+//       default symbolic variable and i is the imaginary
+//       unit — which let a stale CAS value leak into INPUT
+//       prefills.  Every local now carries a routine prefix.
+//
+// MAIN MENU  (the Prime numbers the items itself: 1-9, then A, B)
+//   1  Set μ and σ           the session distribution
+//   2  Explore the curve     drag x₀ or either bound, grab μ
+//                            and σ; soft keys Bands, Ref,
+//                            Centre, Shade, Hist, More (page 2:
+//                            Bnd A, Bnd B, mu, sigma = what the
+//                            arrows move; Menu); keys
+//                            ←→ μ, ↑↓ σ, + bands, − ref/CDF,
+//                            0 recentre
+//   3  Probability from x    P(X<x), P(X>x), between, outside
+//   4  x from probability    percentile; critical value for a
+//                            right, left or two-tailed α;
+//                            central C% interval
+//   5  Z-formula solver      enter any 3 of z,x,μ,σ → 4th
+//   6  Data & histogram      D1 / C1 / C2 data, or a simulated
+//                            n = 200 / 1000 / 5000 overlay, with
+//                            the sample's own x-bar and s
+//   7  Compare curves        second curve + Cohen's d; the
+//                            power picture for a right-tail α
+//   8  Standardize animation morph N(μ,σ) → N(0,1)
+//   9  Plot window & display  auto ±4σ, wide ±6σ or custom;
+//                            bands, N(0,1) reference or CDF
+//                            overlay; reset
+//   A  Help                  (item 10)
+//   B  Quit                  (item 11)
+//
+// Every calculation panel ends with one keypress (or tap) that
+// shows the result SHADED ON THE CURVE, the area growing into
+// place.  On that view a tap on the plot explores it, a tap on a
+// histogram bar reads it, and any key returns to the menu.
+//
+// HOME EXPORTS (usable after any calculation, and still there
+// after Quit — NormExp also returns them as its result line):
+//   NE_Z  last z-score      NE_X  last raw score
+//   NE_P  last probability
+// =====================================================
+
+// ---- forward declarations (private subs called before definition) ----
+ne_NormDraw();
+ne_AutoWin();
+ne_DrawFrame();
+ne_ShowCurve();
+ne_Explorer();
+ne_SetDist();
+ne_SetWin();
+ne_ProbCalc();
+ne_InvCalc();
+ne_ZSolve();
+ne_Compare2();
+ne_Histo();
+ne_DataLoad();
+ne_BinData();
+ne_TwoGroups();
+ne_ResidLoad();
+ne_ZtoD2();
+ne_NormPlot();
+ne_AnimStd();
+ne_HelpPages();
+ne_ZPanel();
+ne_SampBins();
+ne_DiagPage();
+ne_ResetAll();
+ne_ZSStore();
+ne_Drain();
+ne_WaitAny();
+ne_Sweep();
+ne_BarHit();
+ne_InShade();
+ne_RTxt();
+ne_Tag();
+ne_Fx();
+ne_PStr();
+ne_Eq();
+ne_Btw();
+
+// ---- session state: the distribution ----
+EXPORT NE_MU, NE_SG;             // the distribution N(μ,σ)
+EXPORT NE_XM, NE_XO, NE_XB;      // shading: mode, bound a, bound b
+EXPORT NE_CFG;                   // {bands, overlay, μ₂, curve2 on}
+                                 // overlay (beta 42): 0 none,
+                                 // 1 N(0,1) reference, 2 CDF S-curve
+
+// ---- session state: the plot window ----
+// NE_WA = 4  auto, μ ± 4σ        NE_WA = 6  wide, μ ± 6σ
+// NE_WA = 0  custom, NE_WLO/NE_WHI are left exactly as set
+EXPORT NE_WA, NE_WLO, NE_WHI, NE_YMX;
+
+// ---- histogram geometry ----
+// One place to change the bin count.  The bridge list is NBINS
+// counts followed by the sum and the sum of squares, so it always
+// has NBINS + 2 elements.
+EXPORT NBINS := 32;
+
+// ---- plot box, in screen pixels ----
+// Shared so that touch handling and drawing cannot disagree about
+// where the plot actually is.
+// beta 42: the bottom moved up from 210 to 188 to make room for the
+// z-ruler (a second row of labels, in z units, under the x labels)
+// and for the Explorer's soft-key strip, which DRAWMENU paints over
+// y = 218..239.  Below the box now: ticks 188-192, x labels from
+// y = 193, z labels from y = 205; both rows end above 218.
+EXPORT NPLFT := 38;
+EXPORT NPRGT := 310;
+EXPORT NPTOP := 40;
+EXPORT NPBOT := 188;
+
+// (beta 41: the unused EXPORT NPPTYPE := 3, the Statistics 1Var
+// "Normal probability" plot-type code, is gone.  H1Type cannot be
+// set from a standalone program, so nothing ever read it; see
+// ne_NormPlot for what the hand-off can and cannot do.)
+
+// ---- session state: the histogram ----
+// Bins are NBINS intervals of width NE_HW starting at NE_HLO,
+// chosen to match the distribution, NOT the plot window — so
+// the bars stay put if the window is later widened or zoomed.
+EXPORT NE_BINS, NE_HN, NE_HLO, NE_HW;
+
+// ---- the drawn sample's own statistics ----
+// x-bar and s computed from EVERY value drawn, including any that
+// fell outside the binned range, so they are the sample's exact
+// statistics and not an approximation recovered from the bars.
+EXPORT NE_HXB, NE_HS;
+
+// ---- which sampler actually ran last ----
+// 0 = none yet, 1 = MicroPython, 2 = PPL fallback, 3 = no sampler:
+// the histogram is the user's own data, binned by ne_BinData (D1,
+// a group from C1, or regression residuals).  Recorded so the
+// diagnostics page can report it: for eleven builds the Python path
+// failed silently and the PPL fallback drew every histogram, with
+// nothing on screen to say so.
+EXPORT NE_SRC;
+
+// ---- is the histogram the user's own data? ----
+// 0 = a simulated sample, 1 = values read from list D1.  Only the
+// labelling differs; the bars and statistics are computed the same
+// way either way.
+EXPORT NE_HREAL;
+
+// ---- session state: the z-formula solver ----
+// {x, mu, sigma, z} — the solver's own four values, kept
+// across visits so a student can solve for one unknown and
+// then switch the unknown without retyping the other three.
+// Deliberately separate from NE_MU / NE_SG: the solver is an
+// algebra tool and does not disturb the plotted distribution.
+EXPORT NE_ZS;
+
+// ---- Home-visible results of the last calculation ----
+EXPORT NE_Z, NE_X, NE_P;
+
+// ---- bridge variables for the MicroPython sampler ----
+EXPORT NEpmu, NEpsg, NEpn, NEplo, NEpw, NEpout;
+
+EXPORT NBLACK := #000000h;
+EXPORT NWHITE := #FFFFFFh;
+EXPORT NBLUE  := #0060C0h;
+EXPORT NGRAY  := #909090h;
+EXPORT NGRID  := #E0E0E0h;   // light grid lines
+EXPORT NB1    := #9EC9F0h;   // ±1σ band (darkest)
+EXPORT NB2    := #C4DFF6h;   // ±2σ band
+EXPORT NB3    := #E2EFFAh;   // ±3σ band (lightest)
+EXPORT NTAIL  := #F4B183h;   // tail shading (orange)
+EXPORT NRED   := #C00000h;   // marker lines / solved values
+EXPORT NGRN   := #208020h;   // second curve / histogram
+EXPORT NOVL   := #C8E6C8h;   // overlap shading (light green)
+// ---- which key-help footer the next frame should carry ----
+// 0 = a result view: a tap on the plot explores it, a tap on a
+//     histogram bar reads it, any key returns (beta 42)
+// 1 = the ne_Explorer: no footer -- the soft-key strip takes the
+//     bottom of the screen (beta 42)
+// 2 = the animation: no keys at all, so no footer
+// 3 = the shading sweep: any key or tap skips it (beta 42)
+EXPORT NE_KH;
+
+EXPORT NMEAN  := #003D7Ah;   // solid vertical line at the mean
+EXPORT NPANL  := #F4F8FCh;   // result-panel fill
+
+// ---- cache of the N(0,1) reference curve (beta 41) ----
+// neRefPdf holds NORMALD(0, 1, x) for every pixel column of the
+// plot box, the same way ne_NormDraw caches the main curve in
+// ndPdf.  The standard normal never changes, so the only thing the
+// cache depends on is the x-window it was built for: neRefLo and
+// neRefHi remember that window, and neRefOK = 1 says the list is
+// valid.  ne_NormDraw rebuilds it only when the window has moved,
+// which it never does during an ne_Explorer drag or the
+// standardize animation — the two places that draw many frames.
+// File-level LOCALs are shared by every routine below but stay out
+// of the Program Catalog and Home (ChiTable uses the same form);
+// ne_ResetAll invalidates the cache at launch.
+LOCAL neRefPdf, neRefLo, neRefHi, neRefOK;
+
+// ---- beta 42: the main and second curves cached ACROSS frames ----
+// Through beta 41 ne_NormDraw rebuilt both pdf lists on every frame.
+// A drag of the cut point x0 does not change the curve at all, so
+// the lists are now kept here with the four numbers they were built
+// for -- {mu, sigma, xmin, xmax} -- and rebuilt only when one of
+// those changes.  neCdf is the CDF S-curve, built from nePdf by
+// adding up trapezoids (no NORMALD_CDF per column), and rebuilt
+// whenever nePdf is.  The OK flags start at 0 (ne_ResetAll).
+LOCAL nePdf, nePdfK, nePdfOK, nePdf2, nePdf2K, nePdf2OK;
+LOCAL neCdf, neCdfOK;
+
+// ---- beta 42: touch state shared by the drawing and the handlers ----
+// The drawing RECORDS where every tappable thing landed, and the
+// touch handlers read those records, so the two cannot disagree
+// about where a line or a bar is (the house hit-box rule, ChiTable).
+//   neTX, neTY ......... the last tap seen by ne_WaitAny (-1 = a key)
+//   neMuPX ............. pixel column of the mean line
+//   neSgL, neSgR ....... pixel columns of the shoulders, mu -/+ sigma
+//   neAPX, neBPX ....... pixel columns of the shading bounds a and b
+//                        (-999 for anything not on screen)
+//   neHX1, neHX2, neHY1  each histogram bar's left, right and top
+//   neBarsOK ........... 1 when the lists above describe this frame
+//   neSelBin ........... the bar whose numbers are showing (0 none)
+//   neGrab ............. what a finger holds: 1 bound a, 2 bound b,
+//                        3 the mean, 4 sigma (drawn thicker)
+//   neHint ............. one line under the title (Explorer)
+//   neSweep ............ 1 = animate the shading on the next view
+LOCAL neTX, neTY, neMuPX, neSgL, neSgR, neAPX;
+LOCAL neBPX, neHX1, neHX2, neHY1, neBarsOK, neSelBin;
+LOCAL neGrab, neHint, neSweep;
+
+// ---- beta 42: the house palette for the new elements ----
+// (Lessons Learned section 13.)  Set in ne_ResetAll, which runs at
+// launch: magenta for derived curves (the CDF), dodger blue for the
+// footers, house grey for the z-ruler and hints, a light green for
+// the power region, the bar fills (unshaded and inside a shaded
+// region) and the orange-framed panel for a histogram bar.
+LOCAL neMAG, neFOOT, neZG, nePOWC, neBARF, neBARS;
+LOCAL neORNG, nePANF;
+
+
+// =====================================================
+//  "Nice" number for axis ticks (internal helper).
+//
+//  On the CASE below: the FIRST matching IF wins and nothing
+//  after it runs.  PPL's CASE does not fall through the way a
+//  C switch does, so the tests can be written as plain upper
+//  bounds in increasing order.  DEFAULT is the else branch.
+// =====================================================
+ne_NiceNum(nnval, nnround)
+BEGIN
+  LOCAL nnexp, nnf, nnnf;
+  IF nnval <= 0 THEN RETURN 1; END;
+  nnexp := FLOOR(LOG(nnval));
+  nnf := nnval / 10^nnexp;
+  IF nnround THEN
+    CASE
+      IF nnf < 1.5 THEN nnnf := 1; END;
+      IF nnf < 3 THEN nnnf := 2; END;
+      IF nnf < 7 THEN nnnf := 5; END;
+      DEFAULT nnnf := 10;
+    END;
+  ELSE
+    CASE
+      IF nnf <= 1 THEN nnnf := 1; END;
+      IF nnf <= 2 THEN nnnf := 2; END;
+      IF nnf <= 5 THEN nnnf := 5; END;
+      DEFAULT nnnf := 10;
+    END;
+  END;
+  RETURN nnnf * 10^nnexp;
+END;
+
+
+// =====================================================
+//  NUMBERS AS TEXT (beta 42a) -- fixed decimals that STAY fixed.
+//
+//  On the Prime, STRING(x, 2, d) prints the SCIENTIFIC form
+//  whenever 0 < |x| < 10^-d: STRING(0.096, 2, 1) is "9.6E-2" with
+//  a small-capital E, so a right tail of 4.8E-8 read "4.8213E-8"
+//  (Lessons Learned v7i section 3; emulator, 17 Oct 2026).
+//  Rounding FIRST fixes it: the rounded value is either 0 or at
+//  least 10^-d, and STRING keeps the fixed form for both.
+//  ROUND leaves a negative value that rounds to zero as -0, so
+//  that case is set to a plain 0: the Prime prints 0.00 there
+//  anyway, and the PC harness would print -0.00.
+// =====================================================
+ne_Fx(fxV, fxD)
+BEGIN
+  LOCAL fxR;
+  fxR := ROUND(fxV, fxD);
+  IF fxR == 0 THEN fxR := 0; END;          // never "-0.0000"
+  RETURN STRING(fxR, 2, fxD);
+END;
+
+// A quantity that cannot be negative -- an area (probability), a
+// density, sigma, s, an expected count, a width.  When it is
+// positive but would round to zero at d decimals, "0.0000" would
+// say "impossible" about something that is merely small, so it
+// prints "< 0.0001" instead (d = 4; "< 0.01" for d = 2).  The
+// "0.0001" is itself built by ne_Fx: 10^-d is not below 10^-d,
+// so it prints fixed.  Anything else goes to ne_Fx as usual.
+ne_PStr(psV, psD)
+BEGIN
+  IF psV > 0 AND ROUND(psV, psD) == 0 THEN
+    RETURN "< " + ne_Fx(10^(-psD), psD);
+  END;
+  RETURN ne_Fx(psV, psD);
+END;
+
+// " = 0.8413" in front of a number, but only a space in front of
+// "< 0.0001": "P(X > x) < 0.0001" says the one thing that is true,
+// where "P(X > x) = < 0.0001" said two (Norm3 v2.4a's n3_Eq and
+// BayesTree beta 8d's bt_Eq do the same).  The first character is
+// read only when there is one: DIM first.
+ne_Eq(eqS)
+BEGIN
+  IF DIM(eqS) > 0 THEN
+    IF LEFT(eqS, 1) == "<" THEN RETURN " " + eqS; END;
+  END;
+  RETURN " = " + eqS;
+END;
+
+// The area between btA and btB under N(btM, btS), computed on the
+// side of the mean where the CDF keeps its digits (beta 42a).
+// Above the mean both CDFs are 0.99999...: the Prime holds 12
+// significant digits, so once both bounds are past about 7 sigma
+// both CDFs are exactly 1, and F(b) - F(a) is 0 for an area that
+// is not.  The normal curve is symmetric about its mean, so the
+// same area is F(2 mu - a) - F(2 mu - b): a difference of two
+// small LOWER tails, which keep all their digits.  At or below the
+// mean the plain difference is already the accurate one (it holds
+// at least one small CDF, or covers half the curve or more).
+ne_Btw(btM, btS, btA, btB)
+BEGIN
+  IF btA > btM THEN
+    RETURN NORMALD_CDF(btM, btS, 2*btM - btA) - NORMALD_CDF(btM, btS, 2*btM - btB);
+  END;
+  RETURN NORMALD_CDF(btM, btS, btB) - NORMALD_CDF(btM, btS, btA);
+END;
+
+
+// =====================================================
+//  AUTOWIN — recompute the plot window from session state.
+//
+//  Called before every draw.  In auto mode the window is
+//  μ ± 4σ (or ± 6σ in wide mode), then widened as needed to
+//  include the second curve and any shading bounds, so a
+//  critical value out at z = 3.5 is never off the edge.
+//  In custom mode (NE_WA = 0) the x-range is left alone and
+//  only the height is refreshed.
+// =====================================================
+ne_AutoWin()
+BEGIN
+  LOCAL awlo, awhi, awsp, awpad;
+
+  NE_YMX := NORMALD(NE_MU, NE_SG, NE_MU) * 1.15;
+
+  IF NE_WA == 0 THEN RETURN; END;          // custom: keep x-range
+
+  awsp := NE_WA;
+  awlo := NE_MU - awsp * NE_SG;
+  awhi := NE_MU + awsp * NE_SG;
+  awpad := 0.6 * NE_SG;
+
+  // include the comparison curve
+  IF NE_CFG(4) == 1 THEN
+    awlo := MIN(awlo, NE_CFG(3) - awsp * NE_SG);
+    awhi := MAX(awhi, NE_CFG(3) + awsp * NE_SG);
+  END;
+
+  // include whatever is being shaded
+  IF NE_XM > 0 THEN
+    awlo := MIN(awlo, NE_XO - awpad);
+    awhi := MAX(awhi, NE_XO + awpad);
+    IF NE_XM >= 3 THEN
+      awlo := MIN(awlo, NE_XB - awpad);
+      awhi := MAX(awhi, NE_XB + awpad);
+    END;
+  END;
+
+  NE_WLO := awlo;
+  NE_WHI := awhi;
+END;
+
+
+// =====================================================
+//  SAMPLER (PPL) — Marsaglia polar method, no trig, so it
+//  works in any angle mode.  Returns NBINS BIN COUNTS over the
+//  interval starting at sbLO with bin width sbW.
+// =====================================================
+ne_SampBins(sbMU, sbSG, sbN, sbLO, sbW)
+BEGIN
+  LOCAL sbMade, sbV1, sbV2, sbS, sbF;
+  LOCAL sbB, sbCnt, sbVal;
+  LOCAL sbSum, sbSq;
+  sbCnt := MAKELIST(0, K, 1, NBINS+2, 1);   // counts, then sum and sum sq
+  sbSum := 0; sbSq := 0;
+  sbMade := 0;
+  WHILE sbMade < sbN DO
+    REPEAT
+      sbV1 := 2*RANDOM - 1;
+      sbV2 := 2*RANDOM - 1;
+      sbS := sbV1*sbV1 + sbV2*sbV2;
+    UNTIL sbS > 0 AND sbS < 1;
+    sbF := √(-2*LN(sbS)/sbS);
+    // first of the pair
+    sbVal := sbMU + sbSG*sbV1*sbF;
+    sbSum := sbSum + sbVal; sbSq := sbSq + sbVal*sbVal;
+    sbB := FLOOR((sbVal - sbLO) / sbW) + 1;
+    IF sbB >= 1 AND sbB <= NBINS THEN sbCnt(sbB) := sbCnt(sbB) + 1; END;
+    sbMade := sbMade + 1;
+    // second of the pair, only if we still need it (handles odd n)
+    IF sbMade < sbN THEN
+      sbVal := sbMU + sbSG*sbV2*sbF;
+      sbSum := sbSum + sbVal; sbSq := sbSq + sbVal*sbVal;
+      sbB := FLOOR((sbVal - sbLO) / sbW) + 1;
+      IF sbB >= 1 AND sbB <= NBINS THEN sbCnt(sbB) := sbCnt(sbB) + 1; END;
+      sbMade := sbMade + 1;
+    END;
+  END;
+  sbCnt(NBINS+1) := sbSum; sbCnt(NBINS+2) := sbSq;
+  RETURN sbCnt;
+END;
+
+
+// =====================================================
+//  SAMPLER (MicroPython) — same algorithm, same bins.
+//  Substantially faster than the PPL loop, which is what
+//  makes n = 5000 usable.  Only NBINS integers cross back into
+//  PPL, so the bridge cost does not grow with n.
+//
+//  Bridge: PPL writes NEpmu / NEpsg / NEpn / NEplo / NEpw,
+//  Python reads them with hpprime.eval and writes NEpout
+//  back the same way.  The caller wraps this in IFERR and
+//  falls back to ne_SampBins, so the app still runs on firmware
+//  without Python.
+// =====================================================
+#PYTHON SAMPBINSPY
+import math
+from hpprime import eval as ppl
+
+# The Prime's MicroPython (1.9.4, 2026-09-09 firmware) has NO
+# 'random' module: it ships 'urandom' instead (PyProbe, 1 Oct 2026).
+# Through beta 40 this line said "from random import random", so the
+# ImportError fired on EVERY run and the xorshift fallback below was
+# the only generator that ever ran — three bridge crossings to seed
+# it, every histogram.  urandom's random() is the real thing: a
+# float in [0, 1), no seeding needed, no bridge crossing.
+# The xorshift32 fallback stays for a firmware without urandom: it is
+# seeded from PPL's own RANDOM so successive samples differ, and it
+# is plenty of quality for a classroom histogram.
+try:
+    from urandom import random as _rand
+except ImportError:
+    _state = [0]
+
+    def _seed():
+        sd = 0
+        for _ in range(3):
+            sd = (sd * 65536 + int(float(ppl("RANDOM")) * 65536)) & 0xFFFFFFFF
+        if sd == 0:
+            sd = 2463534242
+        _state[0] = sd
+
+    def _rand():
+        st = _state[0]
+        st ^= (st << 13) & 0xFFFFFFFF
+        st ^= st >> 17
+        st ^= (st << 5) & 0xFFFFFFFF
+        _state[0] = st
+        return st / 4294967296.0
+
+    _seed()
+
+def main():
+    mu  = float(ppl("NEpmu"))
+    sg  = float(ppl("NEpsg"))
+    n   = int(ppl("NEpn"))
+    nb  = int(ppl("NBINS"))
+    blo = float(ppl("NEplo"))
+    bw  = float(ppl("NEpw"))
+
+    cnt = [0] * nb
+    tot = 0.0      # running sum, for x-bar
+    tot2 = 0.0     # running sum of squares, for s
+    made = 0
+    while made < n:
+        # Marsaglia polar: reject until the point lands in the unit disc
+        while True:
+            v1 = 2.0 * _rand() - 1.0
+            v2 = 2.0 * _rand() - 1.0
+            s = v1 * v1 + v2 * v2
+            if 0.0 < s < 1.0:
+                break
+        f = math.sqrt(-2.0 * math.log(s) / s)
+        for v in (v1, v2):
+            if made >= n:
+                break
+            val = mu + sg * v * f
+            tot += val
+            tot2 += val * val
+            b = int(math.floor((val - blo) / bw))
+            if 0 <= b < nb:
+                cnt[b] += 1
+            made += 1
+
+    # Hand back nb + 2 values: the bin counts, then the sum and the
+    # sum of squares, so PPL can form x-bar and s exactly.
+    #
+    # Built by concatenation rather than ",".join(): on the G2 that
+    # join raises "expects a list of str/bytes objects consistent
+    # with self object", which killed this script silently on every
+    # run.  Concatenation is universally supported.
+    #
+    # The floats are written fixed-point, not with repr(), because
+    # repr can produce exponent notation that PPL's parser may not
+    # accept on the way back in.
+    out = ""
+    for c in cnt:
+        out += str(c) + ","
+    out += "%.6f" % tot
+    out += ","
+    out += "%.6f" % tot2
+    ppl("NEpout:={" + out + "}")
+
+main()
+#END
+
+
+// =====================================================
+//  THE HOUSE TOUCH KIT (beta 42) -- the shapes ChiTable runs
+//  on the G2 and G1, with this program's tag.
+//
+//  ne_Drain waits for the finger to lift, but never for more
+//  than a second: MOUSE(1) is -1 while nothing touches the
+//  screen, and without the TICKS limit a stuck or phantom touch
+//  would hold the program here for ever.
+// =====================================================
+ne_Drain()
+BEGIN
+  LOCAL drT;
+  drT := TICKS;                                  // milliseconds
+  REPEAT UNTIL MOUSE(1) == -1 OR TICKS - drT > 1000;
+END;
+
+// Drain, wait for a key OR a tap, drain.  Returns the key code, or
+// -1 for a tap, whose x and y are left in neTX and neTY.  A GETKEY
+// drain alone does not drain touch, which is why ne_Drain runs on
+// both sides of the wait (Lessons Learned section 7).
+ne_WaitAny()
+BEGIN
+  LOCAL waK, waM, waM1;
+  REPEAT waK := GETKEY; UNTIL waK == -1;         // stale key presses
+  ne_Drain();                                    // a finger still down
+  REPEAT
+    waK := GETKEY;
+    waM := MOUSE;
+    waM1 := waM(1);                              // first finger: {} when up
+  UNTIL waK > -1 OR SIZE(waM1) > 0;
+  neTX := -1; neTY := -1;
+  IF SIZE(waM1) > 0 THEN neTX := waM1(1); neTY := waM1(2); waK := -1; END;
+  ne_Drain();                                    // wait for the lift
+  REPEAT waM := GETKEY; UNTIL waM == -1;         // and any key left over
+  RETURN waK;
+END;
+
+
+// =====================================================
+//  RESULT PANEL
+//  zpSh = 1: footer promises the shaded-curve view next
+//  zpSh = 0: footer returns straight to the menu
+// =====================================================
+ne_ZPanel(zpTtl, zpA, zpB, zpC, zpD, zpSh)
+BEGIN
+  LOCAL zpK;
+  RECT_P(0, 0, 319, 239, NWHITE);
+  RECT_P(14, 28, 306, 202, NBLACK, NPANL);
+  TEXTOUT_P(zpTtl, 26, 38, 2, NBLUE);
+  LINE_P(26, 60, 294, 60, NGRAY);
+  TEXTOUT_P(zpA, 30, 72,  2, NBLACK);
+  TEXTOUT_P(zpB, 30, 96,  2, NBLACK);
+  TEXTOUT_P(zpC, 30, 120, 2, NRED);
+  TEXTOUT_P(zpD, 30, 150, 1, NGRAY);
+  IF zpSh == 1 THEN
+    TEXTOUT_P("Any key or tap: see it on the curve", 30, 180, 1, NGRAY);
+  ELSE
+    TEXTOUT_P("Any key or tap: back to the menu", 30, 180, 1, NGRAY);
+  END;
+  // Hold the panel until the user actually presses something.
+  // FREEZE alone does NOT do this: it only suppresses the screen
+  // refresh when the PROGRAM ends, so mid-program the panel was
+  // being repainted by the next CHOOSE before it could be read.
+  // beta 42: ne_WaitAny is the same drain-wait-drain, but a tap
+  // counts too, now that the plots after this panel are touchable.
+  zpK := ne_WaitAny();
+END;
+
+
+// =====================================================
+//  DRAW ONE FRAME from the session state (window refreshed
+//  first), then optionally wait for a keypress.
+// =====================================================
+ne_DrawFrame()
+BEGIN
+  ne_AutoWin();
+  ne_NormDraw(NE_MU, NE_SG, NE_CFG(1), NE_CFG(2), NE_XM, NE_XO, NE_XB,
+           NE_CFG(3), NE_CFG(4), NE_BINS, NE_HN, 0);   // 0 = no caption
+END;
+
+// The result view after every calculation.  beta 42 makes it LIVE:
+//   a key ............... back to the menu, as before
+//   a tap on a bar ...... that bar's observed and expected counts
+//                         in a small panel; the view stays up
+//   a tap in the plot ... straight into the Explorer with this
+//                         picture and its shading kept
+//   any other tap ....... back to the menu, like a key
+// When a probability module has set neSweep, the shading first
+// grows into place (ne_Sweep); a key or tap skips that.
+ne_ShowCurve()
+BEGIN
+  LOCAL scK, scGo, scB;
+  REPEAT scK := GETKEY; UNTIL scK == -1;   // drain any leftover press first
+  NE_KH := 0;                              // the result-view footer
+  neSelBin := 0; neGrab := 0; neHint := "";
+  IF neSweep == 1 THEN
+    neSweep := 0;
+    ne_Sweep();                            // the shading grows into place
+  END;
+  scGo := 1;
+  WHILE scGo == 1 DO
+    ne_DrawFrame();
+    scK := ne_WaitAny();                   // a key, or -1 for a tap
+    scGo := 0;                             // most answers leave the view
+    IF scK == -1 THEN
+      // the bars were recorded by the frame just drawn, so this
+      // test and the picture cannot disagree
+      scB := ne_BarHit(neTX, neTY, 0);
+      IF scB > 0 THEN
+        neSelBin := scB;                   // read this bar, stay here
+        scGo := 1;
+      ELSE
+        IF neTX >= NPLFT AND neTX <= NPRGT
+           AND neTY >= NPTOP AND neTY <= NPBOT THEN
+          neSelBin := 0;
+          ne_Explorer();                   // explore it, shading kept
+        END;
+      END;
+    END;
+  END;
+  neSelBin := 0;
+END;
+
+
+// =====================================================
+//  SHADING SWEEP (beta 42) -- after a probability panel the
+//  shaded region GROWS into place over about ten frames, with
+//  the running area printed on every one, so the number is seen
+//  to be an accumulation of area:
+//    left tail ..... the bound starts at the left edge
+//    right tail .... the bound starts at the right edge
+//    between ....... both bounds start at the mean (or at the
+//                    middle of a..b when the mean is outside it)
+//    outside ....... each tail grows in from its own edge
+//  The window is fixed first, for the FINAL picture, so nothing
+//  but the shading moves.  Nine frames are drawn here; the tenth
+//  is the result view itself, which lands exactly on x0.  Any key
+//  or a touch skips straight to it.
+// =====================================================
+ne_Sweep()
+BEGIN
+  LOCAL swF, swA, swB, swC, swGo, swK;
+  LOCAL swM, swM1, swT;
+  IF NE_XM == 0 THEN RETURN; END;
+  ne_AutoWin();                            // the final window, held
+  NE_KH := 3;                              // footer: any key or tap = skip
+  swC := NE_MU;                            // where "between" starts
+  IF NE_MU < NE_XO OR NE_MU > NE_XB THEN swC := (NE_XO + NE_XB) / 2; END;
+  swA := NE_XO; swB := NE_XB;
+  swGo := 1;
+  swF := 1;
+  WHILE swGo == 1 AND swF <= 9 DO
+    IF NE_XM == 1 THEN swA := NE_WLO + (NE_XO - NE_WLO) * swF / 10; END;
+    IF NE_XM == 2 THEN swA := NE_WHI + (NE_XO - NE_WHI) * swF / 10; END;
+    IF NE_XM == 3 THEN
+      swA := swC + (NE_XO - swC) * swF / 10;
+      swB := swC + (NE_XB - swC) * swF / 10;
+    END;
+    IF NE_XM == 4 THEN
+      swA := NE_WLO + (NE_XO - NE_WLO) * swF / 10;
+      swB := NE_WHI + (NE_XB - NE_WHI) * swF / 10;
+    END;
+    // the curve is the same on every frame, so ne_NormDraw finds
+    // it in its cache: only the shading and the numbers change
+    ne_NormDraw(NE_MU, NE_SG, NE_CFG(1), NE_CFG(2), NE_XM, swA, swB,
+             NE_CFG(3), NE_CFG(4), NE_BINS, NE_HN, 0);
+    // About 70 ms before the next frame -- but listening the whole
+    // time, so a key or a touch ends the sweep at once.  (A plain
+    // WAIT would not listen; whether keys survive WAIT is GfxProbe
+    // test T15, still open.)
+    swT := TICKS;
+    REPEAT
+      swK := GETKEY;
+      swM := MOUSE;
+      swM1 := swM(1);
+      IF swK > -1 OR SIZE(swM1) > 0 THEN swGo := 0; END;
+    UNTIL swGo == 0 OR TICKS - swT > 70;
+    swF := swF + 1;
+  END;
+  NE_KH := 0;                              // the result view's footer again
+END;
+
+
+// =====================================================
+//  BAR HIT TEST (beta 42) -- which histogram bar is under the
+//  point (bhX, bhY)?  Reads the boxes ne_NormDraw recorded for
+//  the frame on screen.  bhAny = 1 takes the bar under that
+//  column at any height (the Explorer's Hist mode); bhAny = 0
+//  needs the tap on the bar itself, or just above its top, so a
+//  tap on empty plot can mean "explore" instead.  0 = no bar.
+// =====================================================
+ne_BarHit(bhX, bhY, bhAny)
+BEGIN
+  LOCAL bhB, bhHit;
+  bhHit := 0;
+  IF neBarsOK == 1 THEN
+    FOR bhB FROM 1 TO NBINS DO
+      IF neHX1(bhB) >= 0 THEN
+        IF bhX >= neHX1(bhB) AND bhX <= neHX2(bhB) THEN
+          IF bhAny == 1 THEN bhHit := bhB; END;
+          IF bhY >= neHY1(bhB) - 6 AND bhY <= NPBOT THEN bhHit := bhB; END;
+        END;
+      END;
+    END;
+  END;
+  RETURN bhHit;
+END;
+
+
+// =====================================================
+//  MODULE 2 — EXPLORER
+//
+//  The window is FROZEN on entry at μ ± 6σ of the starting
+//  distribution.  That is deliberate: if the window tracked μ
+//  the bell would sit dead centre forever and sliding the mean
+//  would look like nothing was happening.  With the window
+//  held, μ visibly slides and σ visibly reshapes.
+//
+//  Step sizes scale with σ, so the arrows feel the same on
+//  N(0,1) and on N(500,100).  Press 0 to re-centre.
+//
+//  beta 42 -- the touch version.  What a finger does depends on
+//  where it first lands (the press); while it stays down, every
+//  new reading drags that same thing; lifting it ends the drag.
+//    on a shading bound (within 8 px) ... drags that bound
+//    on the mean line (within 8 px) ..... drags mu sideways;
+//                                         snaps to the step on lift
+//    on a shoulder, mu -/+ sigma ........ drags sigma: outward
+//      (the small squares on the curve)   widens; snaps on lift
+//    anywhere else in the plot .......... the NEARER bound jumps
+//                                         to the finger and drags
+//    on the soft-key strip (y >= 218) ... two pages of soft keys
+//                                         (the house "More" key):
+//      page 1  Bands  Ref  Centre  Shade  Hist   More
+//      page 2  Bnd A  Bnd B  mu  sigma   Menu   More
+//      More (slot 6 on both pages) turns the page.
+//  The nearest handle wins when two are within 8 px.  With two
+//  bounds (between or outside) the mode is KEPT: beta 41 turned
+//  every tap into a left tail.  The x-window never moves during
+//  a drag; the y-scale refits only when sigma changes.
+//  The keys stay as shortcuts: arrows = mu and sigma, + Bands,
+//  − Ref, 0 Centre, Esc or Enter = Menu.
+//  WHAT THE ARROWS MOVE (page 2): all nine verified key codes are
+//  taken, so instead of new keys, page 2 chooses what ← and →
+//  move -- Bnd A (the lower bound, or x0), Bnd B (the upper
+//  bound), mu or sigma -- in round steps.  The chosen handle is
+//  drawn thick and the line under the title says "arrows move:
+//  ...".  Tap the same key again for the default, which is the
+//  beta 42 behaviour: ← → mu, ↑ ↓ sigma.  ↑ ↓ always move sigma.
+//  This is the keyboard (and touch-free) route to every drag.
+// =====================================================
+ne_Explorer()
+BEGIN
+  LOCAL exK, exDone, exS0, exStep, exSav, exSStep;
+  LOCAL exM, exM1, exLo, exHi, exMU0, exSG0;
+  LOCAL exRedo, exNew, exDown, exG, exPX, exPY;
+  LOCAL exCmd, exHB, exMsg, exPX0, exMUp, exSGp;
+  LOCAL exSide, exD, exXV, exB, exSpan, exBStp;
+  LOCAL exPage, exSK, exArw;
+  exDone := 0;
+  exS0 := NE_SG;
+  // Remember the window mode AND the range, and the distribution
+  // we started from.  A custom window (NE_WA = 0) is the user's own
+  // choice; the ne_Explorer overwrites NE_WLO / NE_WHI with its
+  // frozen ±6σ range, so without these copies the custom range was
+  // lost in silence when NE_WA went back to 0 on exit (beta 41).
+  exSav := NE_WA;
+  exLo := NE_WLO; exHi := NE_WHI;
+  exMU0 := NE_MU; exSG0 := NE_SG;
+  // Round step sizes, scaled to the distribution: sigma/4 and
+  // sigma/10 pushed to the nearest 1, 2 or 5.  On N(100,15) that
+  // is 5 and 2, so mu runs 100, 105, 110 and sigma 15, 16, 18 —
+  // instead of the old 3.75 and 16.5.
+  exStep := ne_NiceNum(exS0/4, 1);
+  exSStep := ne_NiceNum(exS0/10, 1);
+
+  // freeze a wide window around the starting distribution
+  NE_WA := 6; ne_AutoWin();
+  NE_WA := 0;                            // custom: ne_AutoWin now leaves x alone
+  NE_YMX := NORMALD(NE_MU, NE_SG, NE_MU) / 0.62;   // headroom for a taller peak
+
+  NE_KH := 1;                              // soft keys, no footer
+  neGrab := 0; neSelBin := 0; neHint := "";
+  exDown := 0;                             // 1 while a finger is down
+  exG := 0;                                // what that finger holds
+  exHB := 0;                               // 1 = Hist mode: taps read bars
+  exMsg := "";                             // a one-off note for the hint line
+  // The two pages of soft keys (house "More" convention): More is
+  // slot 6 on every page and turns the page.
+  exSK := {{"Bands", "Ref", "Centre", "Shade", "Hist", "More"},
+           {"Bnd A", "Bnd B", "mu", "sigma", "Menu", "More"}};
+  exPage := 1;                             // page 1 on entry
+  exArw := 0;                              // what ← → move: 0 = the default
+                                           // (mu; ↑ ↓ sigma), 1 bound a,
+                                           // 2 bound b, 3 mu, 4 sigma
+  exBStp := ne_NiceNum(exS0/10, 1);        // a bound's arrow step
+  exSide := 1;
+  REPEAT exK := GETKEY; UNTIL exK == -1;   // drain the menu's Enter press
+  ne_Drain();                              // and any touch still on the
+                                           // screen, for at most a second
+  // exRedo = 1 means the frame on screen is stale.  Only a handled
+  // key, or a touch that actually changed something, sets it; a
+  // finger resting still redraws nothing (beta 41).
+  exRedo := 1;                             // the first frame always draws
+  REPEAT
+    IF exRedo == 1 THEN
+      // the line under the title says what the finger is doing
+      neHint := exMsg;
+      IF exArw == 1 THEN neHint := "arrows move: lower bound"; END;
+      IF exArw == 2 THEN neHint := "arrows move: upper bound"; END;
+      IF exArw == 3 THEN neHint := "arrows move: " + CHAR(956); END;
+      IF exArw == 4 THEN
+        neHint := "arrows move: " + CHAR(963) + " (" + CHAR(8592)
+          + " narrower, " + CHAR(8594) + " wider)";
+      END;
+      IF exArw == 1 AND NE_XM == 0 THEN neHint := ""; END;
+      IF exHB == 1 THEN
+        neHint := "Hist: tap a bar for its counts, Hist again = done";
+      END;
+      IF exG == 3 THEN
+        neHint := "Dragging " + CHAR(956) + ": lift to snap to a round value";
+      END;
+      IF exG == 4 THEN
+        neHint := "Dragging " + CHAR(963) + ": outward widens, lift to snap";
+      END;
+      neGrab := exG;                       // the held line is drawn thicker
+      // with no finger down, the arrows' target is the thick one
+      IF exG == 0 AND exArw >= 1 AND exArw <= 4 THEN neGrab := exArw; END;
+      ne_NormDraw(NE_MU, NE_SG, NE_CFG(1), NE_CFG(2), NE_XM, NE_XO, NE_XB,
+               NE_CFG(3), NE_CFG(4), NE_BINS, NE_HN, 0);   // 0 = no caption
+      // the soft keys: painted on the screen AFTER the blit, every
+      // frame (ChiTable's verified order).  They never produce a key
+      // code; a tap on the strip is read below.
+      DRAWMENU(exSK(exPage));
+      exRedo := 0;
+    END;
+    // Wait for a key, a touch -- or, while a finger is down, for
+    // the next reading, which is how the lift is noticed.
+    exK := -1;
+    REPEAT
+      exK := GETKEY;
+      exM := MOUSE;
+      exM1 := exM(1);                      // first finger: {} when up
+    UNTIL exK > -1 OR SIZE(exM1) > 0 OR exDown == 1;
+
+    exCmd := 0;                            // 1 Bands 2 Ref 3 Centre
+                                           // 4 Shade 5 Hist 6 Menu
+    IF SIZE(exM1) > 0 THEN
+      exPX := exM1(1); exPY := exM1(2);
+      exSpan := NE_WHI - NE_WLO;
+      IF exDown == 0 THEN
+        // ---------------- a new press ----------------
+        exMsg := "";
+        IF exPY >= 218 THEN
+          // the soft-key strip: six 53-px slots, left to right;
+          // act once, after the finger lifts
+          ne_Drain();
+          exCmd := MIN(6, IP(exPX / 53.4) + 1);
+          // page 1: slots 1-5 are actions 1-5 (Bands .. Hist);
+          // page 2: slots 1-4 choose the arrows' target (actions
+          // 7-10), slot 5 is Menu (action 6); slot 6 turns the page
+          IF exCmd == 6 THEN
+            exCmd := 11;                   // More
+          ELSE
+            IF exPage == 2 THEN
+              IF exCmd == 5 THEN exCmd := 6; ELSE exCmd := exCmd + 6; END;
+            END;
+          END;
+        ELSE
+          IF exPX >= NPLFT AND exPX <= NPRGT
+             AND exPY >= NPTOP AND exPY <= NPBOT THEN
+            exDown := 1;
+            exPX0 := exPX; exMUp := NE_MU; exSGp := NE_SG;
+            exG := 0;
+            IF exHB == 1 THEN
+              exG := 6;                    // Hist mode: read the bars
+            ELSE
+              // The nearest handle within 8 px wins; the positions
+              // were recorded by the frame on screen.  Anything not
+              // drawn is at -999, so it can never be nearest.
+              exD := 9;
+              IF NE_XM > 0 AND ABS(exPX - neAPX) < exD THEN
+                exG := 1; exD := ABS(exPX - neAPX);
+              END;
+              IF NE_XM >= 3 AND ABS(exPX - neBPX) < exD THEN
+                exG := 2; exD := ABS(exPX - neBPX);
+              END;
+              IF ABS(exPX - neMuPX) < exD THEN
+                exG := 3; exD := ABS(exPX - neMuPX);
+              END;
+              IF ABS(exPX - neSgL) < exD THEN
+                exG := 4; exSide := -1; exD := ABS(exPX - neSgL);
+              END;
+              IF ABS(exPX - neSgR) < exD THEN
+                exG := 4; exSide := 1; exD := ABS(exPX - neSgR);
+              END;
+              IF exG == 0 THEN
+                // Nothing grabbed: the NEARER bound jumps to the
+                // finger and is dragged from there.  With one bound
+                // that is x0; with no shading yet, a left tail starts.
+                exG := 1;
+                IF NE_XM >= 3 AND ABS(exPX - neBPX) < ABS(exPX - neAPX) THEN
+                  exG := 2;
+                END;
+                IF NE_XM == 0 THEN NE_XM := 1; END;
+              END;
+            END;
+            exRedo := 1;                   // show what was grabbed
+          END;
+        END;
+      END;
+
+      IF exDown == 1 THEN
+        // ------------- the press, and every drag reading -------------
+        // A finger that wanders off the plot keeps dragging, pinned
+        // to the edge.  Same transform as the drawing, inverted.
+        exPX := MAX(NPLFT, MIN(NPRGT, exPX));
+        exXV := NE_WLO + (exPX - NPLFT) / (NPRGT - NPLFT) * exSpan;
+        IF exG == 1 OR exG == 2 THEN
+          // a bound follows the finger exactly
+          IF exG == 1 THEN exNew := NE_XO; ELSE exNew := NE_XB; END;
+          IF exXV <> exNew THEN
+            IF exG == 1 THEN NE_XO := exXV; ELSE NE_XB := exXV; END;
+            // Two bounds keep a <= b.  Dragging one past the other
+            // swaps them, and the finger carries on holding the one
+            // it is now on.
+            IF NE_XM >= 3 AND NE_XO > NE_XB THEN
+              exNew := NE_XO; NE_XO := NE_XB; NE_XB := exNew;
+              exG := 3 - exG;
+            END;
+            exRedo := 1;
+          END;
+        END;
+        IF exG == 3 THEN
+          // the mean moves by as much as the finger has moved since
+          // the press (no jump at the first reading), kept on screen
+          exNew := exMUp + (exPX - exPX0) / (NPRGT - NPLFT) * exSpan;
+          exNew := MAX(NE_WLO, MIN(NE_WHI, exNew));
+          IF exNew <> NE_MU THEN NE_MU := exNew; exRedo := 1; END;
+        END;
+        IF exG == 4 THEN
+          // sigma grows as the shoulder is pulled AWAY from the mean
+          exNew := exSGp + exSide * (exPX - exPX0) / (NPRGT - NPLFT) * exSpan;
+          exNew := MAX(exSStep, MIN(exSpan, exNew));
+          IF exNew <> NE_SG THEN
+            NE_SG := exNew;
+            // sigma changes the peak height: the y-scale follows,
+            // the x-window does not (Lessons Learned section 6)
+            NE_YMX := NORMALD(NE_MU, NE_SG, NE_MU) / 0.62;
+            exRedo := 1;
+          END;
+        END;
+        IF exG == 6 THEN
+          exB := ne_BarHit(exPX, exPY, 1);   // the bar under this column
+          IF exB <> neSelBin THEN neSelBin := exB; exRedo := 1; END;
+        END;
+      END;
+      exK := -1;                           // a touch is not a keypress
+    ELSE
+      IF exDown == 1 THEN
+        // ---------------- the finger lifted ----------------
+        // mu and sigma snap to the same round grid the arrows use
+        exDown := 0;
+        IF exG == 3 THEN
+          NE_MU := ROUND(ROUND(NE_MU / exStep, 0) * exStep, 6);
+        END;
+        IF exG == 4 THEN
+          NE_SG := MAX(exSStep, ROUND(ROUND(NE_SG / exSStep, 0) * exSStep, 6));
+          NE_YMX := NORMALD(NE_MU, NE_SG, NE_MU) / 0.62;
+          // beta 42a (D-NE-5): the arrows' steps follow the new
+          // sigma, exactly as Centre refits them: sigma/4 and
+          // sigma/10 pushed to 1, 2 or 5.  After a drag from 15 to 2
+          // the arrows moved mu by 5, the step that suited 15; now
+          // they move it by 0.5.
+          exS0 := NE_SG;
+          exStep := ne_NiceNum(exS0/4, 1);
+          exSStep := ne_NiceNum(exS0/10, 1);
+        END;
+        exG := 0;
+        exRedo := 1;
+      END;
+    END;
+
+    // ---- the hardware keys: shortcuts for the soft keys ----
+    IF exK > -1 THEN exMsg := ""; END;
+    IF exK == 4 OR exK == 30 THEN exCmd := 6; END;           // Esc / Enter = Menu
+    IF exK == 50 THEN exCmd := 1; END;                       // +  = Bands
+    IF exK == 45 THEN exCmd := 2; END;                       // −  = Ref
+    IF exK == 42 THEN exCmd := 3; END;                       // 0  = Centre
+    // Each press moves to the next multiple of the step rather than
+    // adding to whatever is there, so an odd starting value (847)
+    // snaps onto the grid (850) and stays round from then on.
+    // ← → move whatever page 2 chose; by default (0) and for "mu"
+    // that is the mean, as it always was.
+    IF (exK == 7 OR exK == 8) AND (exArw == 0 OR exArw == 3) THEN
+      IF exK == 7 THEN                                       // Left
+        NE_MU := ROUND((CEILING(NE_MU/exStep - 0.000001) - 1) * exStep, 6);
+      ELSE                                                   // Right
+        NE_MU := ROUND((FLOOR(NE_MU/exStep + 0.000001) + 1) * exStep, 6);
+      END;
+      exRedo := 1;
+    END;
+    // a bound moves to the next multiple of its step (sigma/10,
+    // pushed to 1, 2 or 5), so it lands on round values too
+    IF (exK == 7 OR exK == 8) AND (exArw == 1 OR exArw == 2) THEN
+      IF NE_XM == 0 THEN NE_XM := 1; END;      // a bound needs shading
+      IF exArw == 1 THEN exNew := NE_XO; ELSE exNew := NE_XB; END;
+      IF exK == 7 THEN
+        exNew := ROUND((CEILING(exNew/exBStp - 0.000001) - 1) * exBStp, 6);
+      ELSE
+        exNew := ROUND((FLOOR(exNew/exBStp + 0.000001) + 1) * exBStp, 6);
+      END;
+      IF exArw == 1 THEN NE_XO := exNew; ELSE NE_XB := exNew; END;
+      // two bounds keep a <= b: stepping one past the other swaps
+      // them, and the arrows carry on with the one they now hold
+      IF NE_XM >= 3 AND NE_XO > NE_XB THEN
+        exNew := NE_XO; NE_XO := NE_XB; NE_XB := exNew;
+        exArw := 3 - exArw;
+      END;
+      exRedo := 1;
+    END;
+    // "sigma" chosen: ← narrower, → wider (↑ ↓ still work too)
+    IF exArw == 4 AND exK == 7 THEN exK := 12; END;
+    IF exArw == 4 AND exK == 8 THEN exK := 2; END;
+    // Sigma changes the PEAK HEIGHT, so the y-scale has to follow
+    // or a grown curve clips and a shrunk one floats low in the
+    // box.  The x-window stays frozen either way -- that is what
+    // makes moving mu look like motion.  Mu needs no refit: a
+    // normal's peak height does not depend on it.
+    IF exK == 2 THEN                                         // Up
+      NE_SG := ROUND((FLOOR(NE_SG/exSStep + 0.000001) + 1) * exSStep, 6);
+      NE_YMX := NORMALD(NE_MU, NE_SG, NE_MU) / 0.62;
+      exRedo := 1;
+    END;
+    IF exK == 12 THEN                                        // Down
+      NE_SG := MAX(exSStep,
+        ROUND((CEILING(NE_SG/exSStep - 0.000001) - 1) * exSStep, 6));
+      NE_YMX := NORMALD(NE_MU, NE_SG, NE_MU) / 0.62;
+      exRedo := 1;
+    END;
+
+    // ---- the six actions, from a soft key or its hardware key ----
+    IF exCmd == 1 THEN                                       // Bands
+      NE_CFG(1) := 1 - NE_CFG(1);
+      exRedo := 1;
+    END;
+    IF exCmd == 2 THEN                                       // Ref
+      // cycles: N(0,1) reference -> CDF S-curve -> neither
+      NE_CFG(2) := NE_CFG(2) + 1;
+      IF NE_CFG(2) > 2 THEN NE_CFG(2) := 0; END;
+      exRedo := 1;
+    END;
+    IF exCmd == 3 THEN                                       // Centre
+      NE_WA := 6; ne_AutoWin(); NE_WA := 0;
+      NE_YMX := NORMALD(NE_MU, NE_SG, NE_MU) / 0.62;
+      exS0 := NE_SG;                    // re-fit the steps to the
+      exStep := ne_NiceNum(exS0/4, 1);     // distribution as it stands
+      exSStep := ne_NiceNum(exS0/10, 1);   // now, not as it started
+      exRedo := 1;
+    END;
+    IF exCmd == 4 THEN                                       // Shade
+      // left -> right -> between -> outside -> none -> left, all
+      // built on the current x0.  A cut that is off screen comes
+      // back to mu + sigma so the first shading can be seen.
+      IF NE_XM == 0 AND (NE_XO < NE_WLO OR NE_XO > NE_WHI) THEN
+        NE_XO := NE_MU + NE_SG;
+      END;
+      CASE
+        IF NE_XM == 0 THEN NE_XM := 1; END;
+        IF NE_XM == 1 THEN NE_XM := 2; END;
+        IF NE_XM == 2 THEN
+          // between starts symmetric about the mean: mu -/+ |x0 - mu|
+          // (one sigma if x0 sits on the mean)
+          exD := ABS(NE_XO - NE_MU);
+          IF exD < (NE_WHI - NE_WLO) / 100 THEN exD := NE_SG; END;
+          NE_XO := NE_MU - exD; NE_XB := NE_MU + exD;
+          NE_XM := 3;
+        END;
+        IF NE_XM == 3 THEN NE_XM := 4; END;
+        DEFAULT NE_XM := 0;
+      END;
+      exRedo := 1;
+    END;
+    IF exCmd == 5 THEN                                       // Hist
+      IF NE_HN > 0 THEN
+        exHB := 1 - exHB;
+        IF exHB == 0 THEN neSelBin := 0; END;
+      ELSE
+        exMsg := "No histogram yet: Data & histogram, in the menu";
+      END;
+      exRedo := 1;
+    END;
+    IF exCmd == 6 THEN exDone := 1; END;                     // Menu
+    IF exCmd == 11 THEN                                      // More
+      exPage := exPage + 1;
+      IF exPage > SIZE(exSK) THEN exPage := 1; END;
+      exRedo := 1;
+    END;
+    IF exCmd >= 7 AND exCmd <= 10 THEN                       // page 2
+      // choose what the arrows move; the same key again = default
+      IF exArw == exCmd - 6 THEN exArw := 0; ELSE exArw := exCmd - 6; END;
+      IF exArw == 1 AND NE_XM == 0 THEN
+        // a bound needs shading: start a left tail at x0, brought
+        // on screen if it is off (as Shade does)
+        IF NE_XO < NE_WLO OR NE_XO > NE_WHI THEN NE_XO := NE_MU + NE_SG; END;
+        NE_XM := 1;
+      END;
+      IF exArw == 2 AND NE_XM < 3 THEN
+        exArw := 0;
+        exMsg := "Bnd B needs two bounds: Shade to between or outside";
+      END;
+      exRedo := 1;
+    END;
+    // Shade may have left one bound only: then "Bnd B" falls back
+    // to the bound that is there
+    IF exArw == 2 AND NE_XM < 3 THEN exArw := 1; END;
+  UNTIL exDone == 1;
+
+  NE_KH := 0;                              // back to result-view help
+  neGrab := 0; neSelBin := 0; neHint := "";
+  NE_WA := exSav;                          // restore the menu's window mode
+  // A custom window gets its range back — unless mu or sigma moved
+  // in here, in which case a range fitted to the OLD distribution
+  // is wrong for the new one.  Then fall back to auto and say so,
+  // exactly as menu 1 does when the distribution is retyped.
+  IF exSav == 0 THEN
+    IF NE_MU == exMU0 AND NE_SG == exSG0 THEN
+      NE_WLO := exLo; NE_WHI := exHi;
+    ELSE
+      NE_WA := 4;
+      MSGBOX("Custom window cleared — μ or σ changed in the Explorer, so it no longer fits. Now using auto, μ ± 4σ.");
+    END;
+  END;
+  ne_AutoWin();
+END;
+
+
+// =====================================================
+//  MODULE 1 — SET THE SESSION DISTRIBUTION
+//  Any μ, any σ > 0.  The window follows automatically.
+// =====================================================
+ne_SetDist()
+BEGIN
+  LOCAL sdMU, sdSG;
+  sdMU := NE_MU; sdSG := NE_SG;
+  IF INPUT({sdMU, sdSG}, "Session Distribution", {"μ:", "σ:"},
+    {"Mean — any value, e.g. 100 for IQ",
+     "Std dev, must be > 0, e.g. 15"}) == 1 THEN
+    IF sdSG <= 0 THEN
+      MSGBOX("σ must be positive.");
+      RETURN;
+    END;
+    NE_MU := sdMU; NE_SG := sdSG;
+    // Shading, sample and comparison curve all belonged to the old
+    // distribution: mu2 = 1 is a sensible partner for N(0,1) and
+    // nonsense beside N(100,15).  Clear all three together.
+    NE_XM := 0;
+    NE_HN := 0; NE_BINS := MAKELIST(0, K, 1, NBINS+2, 1);
+    NE_HXB := 0; NE_HS := 0;
+    NE_CFG(4) := 0; NE_CFG(3) := sdMU + sdSG;
+    // A custom window was fitted to the OLD distribution, so it is
+    // wrong for the new one and we fall back to auto.  Say so:
+    // silently discarding a window the user set is surprising.
+    IF NE_WA == 0 THEN
+      NE_WA := 4;
+      MSGBOX("Custom window cleared — it was fitted to the previous distribution. Now using auto, μ ± 4σ.");
+    END;
+    ne_AutoWin();
+  END;
+END;
+
+
+// =====================================================
+//  MODULE 9 — PLOT WINDOW
+// =====================================================
+ne_SetWin()
+BEGIN
+  LOCAL swT, swLO, swHI;
+  LOCAL swB, swR, swC;
+
+  // The toggles report their own state in the menu text, so the
+  // current setting is visible before choosing rather than after.
+  // The reference curve and the CDF overlay share one setting,
+  // NE_CFG(2) (0 none, 1 reference, 2 CDF), so turning one on turns
+  // the other off -- the same cycle as the Explorer's Ref soft key.
+  swB := "Bands 68-95-99.7:  off";
+  IF NE_CFG(1) == 1 THEN swB := "Bands 68-95-99.7:  ON"; END;
+  swR := "N(0,1) reference curve:  off";
+  IF NE_CFG(2) == 1 THEN swR := "N(0,1) reference curve:  ON"; END;
+  swC := "CDF overlay (S-curve):  off";
+  IF NE_CFG(2) == 2 THEN swC := "CDF overlay (S-curve):  ON"; END;
+
+  // beta 42a (D-NE-3): the house CHOOSE idiom.  The index starts
+  // at 0, CHOOSE writes the pick into it (Esc leaves it 0), and
+  // only the index is tested; CHOOSE's return value is not used.
+  swT := 0;
+  CHOOSE(swT, "Plot Window & Display", {
+    "Auto:  μ ± 4σ  (default)",
+    "Wide:  μ ± 6σ",
+    "Custom: enter xmin, xmax",
+    swB,
+    swR,
+    swC,
+    "Show current window",
+    "Diagnostics",
+    "Reset everything to N(0,1)"});
+  IF swT == 0 THEN RETURN; END;
+
+  IF swT == 1 THEN NE_WA := 4; ne_AutoWin(); ne_ShowCurve(); END;
+  IF swT == 2 THEN NE_WA := 6; ne_AutoWin(); ne_ShowCurve(); END;
+
+  IF swT == 3 THEN
+    swLO := NE_WLO; swHI := NE_WHI;
+    IF INPUT({swLO, swHI}, "Custom Window", {"xmin:", "xmax:"},
+      {"Left edge of the plot", "Right edge, must exceed xmin"}) == 1 THEN
+      IF swHI <= swLO THEN
+        MSGBOX("xmax must be greater than xmin.");
+        RETURN;
+      END;
+      NE_WLO := swLO; NE_WHI := swHI; NE_WA := 0;
+      ne_AutoWin();                          // refreshes the height only
+      ne_ShowCurve();
+    END;
+  END;
+
+  // the same switches the ne_Explorer's Bands and Ref soft keys
+  // (and its + and - keys) drive
+  IF swT == 4 THEN
+    NE_CFG(1) := 1 - NE_CFG(1);
+    ne_ShowCurve();
+  END;
+
+  IF swT == 5 THEN
+    IF NE_CFG(2) == 1 THEN NE_CFG(2) := 0; ELSE NE_CFG(2) := 1; END;
+    ne_ShowCurve();
+  END;
+
+  // beta 42: the CDF S-curve on a right-hand 0..1 axis
+  IF swT == 6 THEN
+    IF NE_CFG(2) == 2 THEN NE_CFG(2) := 0; ELSE NE_CFG(2) := 2; END;
+    ne_ShowCurve();
+  END;
+
+  IF swT == 7 THEN
+    ne_AutoWin();
+    // beta 42a (D-NE-1): rounded before STRING (ne_Fx); the width
+    // and the heights cannot be negative, so below their last digit
+    // they print "< 0.001" style (ne_PStr), without "= <" (ne_Eq)
+    ne_ZPanel("Current plot window",
+      "x from " + ne_Fx(NE_WLO, 3),
+      "x to   " + ne_Fx(NE_WHI, 3),
+      "width" + ne_Eq(ne_PStr(NE_WHI-NE_WLO, 3))
+        + " " + ne_Eq(ne_PStr((NE_WHI-NE_WLO)/NE_SG, 2)) + " σ",
+      "y top" + ne_Eq(ne_PStr(NE_YMX, 4)) + "   peak"
+        + ne_Eq(ne_PStr(NORMALD(NE_MU,NE_SG,NE_MU), 4)), 0);
+  END;
+
+  IF swT == 8 THEN
+    ne_DiagPage();
+  END;
+
+  // Start the next example clean without leaving the program: the
+  // same reset that runs at launch and on the way out.
+  IF swT == 9 THEN
+    ne_ResetAll();
+    ne_ShowCurve();
+  END;
+END;
+
+
+// =====================================================
+//  MODULE 3 — PROBABILITY FROM x
+// =====================================================
+ne_ProbCalc()
+BEGIN
+  LOCAL pcT, pcA, pcB, pcP, pcTmp, pcO;
+  // beta 42a (D-NE-3): the house CHOOSE idiom.  The index starts
+  // at 0, CHOOSE writes the pick into it (Esc leaves it 0), and
+  // only the index is tested; CHOOSE's return value is not used.
+  pcT := 0;
+  CHOOSE(pcT, "Probability from x", {
+    "P(X < x)    left tail",
+    "P(X > x)    right tail",
+    "P(a < X < b)    between",
+    "P(outside a,b)  two tails"});
+  IF pcT == 0 THEN RETURN; END;
+
+  // ---- one boundary: left or right tail ----
+  IF pcT == 1 OR pcT == 2 THEN
+    // A numeric field always shows a value — PPL reals cannot be
+    // blank, and a string field displays its quotation marks as
+    // editable text, so 0 is the cleanest neutral starting point.
+    pcA := 0;
+    IF INPUT({pcA}, "Boundary", {"x:"},
+      {"The cut point on the x-axis"}) == 0 THEN RETURN; END;
+    NE_X := pcA;
+    NE_Z := (pcA - NE_MU) / NE_SG;
+    // beta 42a (D-NE-1, D-NE-2).  The numbers print through ne_Fx,
+    // which rounds BEFORE STRING: STRING(x, 2, 4) alone turns
+    // scientific on the Prime for 0 < |x| < 0.0001, and at x = 180
+    // on N(100,15) this panel read P(X > x) = 4.8213E-8.  An area
+    // that is positive but would round to 0.0000 prints "< 0.0001"
+    // (ne_PStr), with no "=" in front of it (ne_Eq).
+    // Each tail is computed as a LOWER tail, never as 1 - CDF.  The
+    // Prime holds 12 significant digits, so once a right tail is
+    // below about 5E-13 the CDF is exactly 1 and 1 - CDF exactly 0
+    // (past z = 7 or so) -- and NE_P in Home read 0.  The normal
+    // curve is symmetric about mu, so P(X > x) = P(X < 2 mu - x):
+    // the same area, read from the far LEFT tail, where the CDF
+    // keeps all of its digits.  Each complement is the other tail,
+    // read the same way.
+    IF pcT == 1 THEN
+      NE_P := NORMALD_CDF(NE_MU, NE_SG, pcA);
+      ne_ZPanel("Left-tail probability",
+        "x = " + ne_Fx(pcA, 4),
+        "z = " + ne_Fx(NE_Z, 4),
+        "P(X < x)" + ne_Eq(ne_PStr(NE_P, 4)),
+        "Complement: P(X > x)"
+          + ne_Eq(ne_PStr(NORMALD_CDF(NE_MU, NE_SG, 2*NE_MU - pcA), 4)), 1);
+    ELSE
+      NE_P := NORMALD_CDF(NE_MU, NE_SG, 2*NE_MU - pcA);   // = P(X > x)
+      ne_ZPanel("Right-tail probability",
+        "x = " + ne_Fx(pcA, 4),
+        "z = " + ne_Fx(NE_Z, 4),
+        "P(X > x)" + ne_Eq(ne_PStr(NE_P, 4)),
+        "Complement: P(X < x)"
+          + ne_Eq(ne_PStr(NORMALD_CDF(NE_MU, NE_SG, pcA), 4)), 1);
+    END;
+    NE_XM := pcT; NE_XO := pcA;
+    neSweep := 1;                        // beta 42: the area grows into place
+    ne_ShowCurve();
+    RETURN;
+  END;
+
+  // ---- two boundaries: between or outside ----
+  IF pcT == 3 OR pcT == 4 THEN
+    pcA := 0; pcB := 0;                  // plain 0, not mu -/+ sigma
+    IF INPUT({pcA, pcB}, "Two Boundaries", {"a:", "b:"},
+      {"Lower bound", "Upper bound"}) == 0 THEN RETURN; END;
+    IF pcB < pcA THEN pcTmp := pcA; pcA := pcB; pcB := pcTmp; END;
+    // beta 42a: between a and b by ne_Btw, from the side of the mean
+    // that keeps the digits (F(b) - F(a) was 0 on the Prime with both
+    // bounds far above the mean)
+    pcP := ne_Btw(NE_MU, NE_SG, pcA, pcB);
+    // beta 42a (D-NE-2): the area OUTSIDE a..b is the left tail below
+    // a plus the right tail above b, each read as a lower tail (the
+    // right one mirrored about mu, as for P(X > x) above).  1 - pcP
+    // lost the right tail's digits, and was exactly 0 on the Prime
+    // once both tails were far out.  The panels print as above.
+    pcO := NORMALD_CDF(NE_MU, NE_SG, pcA) + NORMALD_CDF(NE_MU, NE_SG, 2*NE_MU - pcB);
+    NE_X := pcA;
+    NE_Z := (pcA - NE_MU) / NE_SG;
+    IF pcT == 3 THEN
+      NE_P := pcP;
+      ne_ZPanel("Probability between",
+        "a = " + ne_Fx(pcA, 4) + "   b = " + ne_Fx(pcB, 4),
+        "z_a = " + ne_Fx((pcA-NE_MU)/NE_SG, 3)
+          + "   z_b = " + ne_Fx((pcB-NE_MU)/NE_SG, 3),
+        "P(a < X < b)" + ne_Eq(ne_PStr(pcP, 4)),
+        "Outside area" + ne_Eq(ne_PStr(pcO, 4)), 1);
+    ELSE
+      NE_P := pcO;
+      ne_ZPanel("Probability outside",
+        "a = " + ne_Fx(pcA, 4) + "   b = " + ne_Fx(pcB, 4),
+        "z_a = " + ne_Fx((pcA-NE_MU)/NE_SG, 3)
+          + "   z_b = " + ne_Fx((pcB-NE_MU)/NE_SG, 3),
+        "P(outside)" + ne_Eq(ne_PStr(pcO, 4)),
+        "Between area" + ne_Eq(ne_PStr(pcP, 4)), 1);
+    END;
+    NE_XM := pcT; NE_XO := pcA; NE_XB := pcB;
+    neSweep := 1;                        // beta 42: the area grows into place
+    ne_ShowCurve();
+    RETURN;
+  END;
+END;
+
+
+// =====================================================
+//  MODULE 4 — x FROM PROBABILITY (inverse direction)
+// =====================================================
+ne_InvCalc()
+BEGIN
+  LOCAL icT, icP, icC, icZ, icX;
+  LOCAL icLO, icHI;
+  // beta 42: left-tail and two-tailed critical values join the
+  // right-tail one, and the three sit together; the central
+  // interval moves from item 3 to item 5.
+  // beta 42a (D-NE-3): the house CHOOSE idiom.  The index starts
+  // at 0, CHOOSE writes the pick into it (Esc leaves it 0), and
+  // only the index is tested; CHOOSE's return value is not used.
+  icT := 0;
+  CHOOSE(icT, "x from probability", {
+    "x at a percentile (area left)",
+    "Critical value: right tail (α)",
+    "Critical value: left tail (α)",
+    "Critical values: two tails (α)",
+    "Central C% interval"});
+  IF icT == 0 THEN RETURN; END;
+
+  // ---- percentile ----
+  IF icT == 1 THEN
+    icP := 0.90;
+    IF INPUT({icP}, "Percentile → x", {"area:"},
+      {"Area to the LEFT, strictly between 0 and 1"}) == 0 THEN RETURN; END;
+    IF icP <= 0 OR icP >= 1 THEN
+      MSGBOX("Area must be strictly between 0 and 1.");
+      RETURN;
+    END;
+    icX := NORMALD_ICDF(NE_MU, NE_SG, icP);
+    icZ := (icX - NE_MU) / NE_SG;
+    NE_X := icX; NE_Z := icZ; NE_P := icP;
+    // beta 42a (D-NE-1): rounded before STRING (ne_Fx).  An area of
+    // 1E-9 printed "1.0000E-9" and "1.0E-7%"; it now prints
+    // "< 0.0001" and "< 0.1%" (ne_PStr), with no "= <" (ne_Eq).
+    // The four panels below print the same way.
+    ne_ZPanel("Score at a percentile",
+      "area left" + ne_Eq(ne_PStr(icP, 4)),
+      "z* = " + ne_Fx(icZ, 4),
+      "x = " + ne_Fx(icX, 4),
+      ne_PStr(100*icP, 1) + "% of the distribution falls below x", 1);
+    NE_XM := 1; NE_XO := icX;
+    neSweep := 1;                        // beta 42: the area grows into place
+    ne_ShowCurve();
+    RETURN;
+  END;
+
+  // ---- right-tail critical value ----
+  IF icT == 2 THEN
+    icP := 0.05;
+    IF INPUT({icP}, "Critical Value", {"α:"},
+      {"Area in the RIGHT tail, e.g. .05 or .01"}) == 0 THEN RETURN; END;
+    IF icP <= 0 OR icP >= 1 THEN
+      MSGBOX("Alpha must be strictly between 0 and 1.");
+      RETURN;
+    END;
+    // beta 42a: Phi^-1(1 - p) is exactly -Phi^-1(p) (the normal curve
+    // is symmetric).  For a typed alpha below about 5E-13, 1 - alpha
+    // is 1 on the Prime's 12-digit reals and NORMALD_ICDF(0, 1, 1) is
+    // not a number; the small area itself always is.  (A minus
+    // before a built-in, as in -FLOOR(LOG(...)) in ne_NormDraw.)
+    icZ := -NORMALD_ICDF(0, 1, icP);
+    icX := NE_MU + icZ * NE_SG;
+    NE_X := icX; NE_Z := icZ; NE_P := icP;
+    ne_ZPanel("Right-tail critical value",
+      "α" + ne_Eq(ne_PStr(icP, 4)),
+      "z* = " + ne_Fx(icZ, 4),
+      "x* = " + ne_Fx(icX, 4),
+      "One-tailed reject region is x > x*", 1);
+    NE_XM := 2; NE_XO := icX;
+    neSweep := 1;
+    ne_ShowCurve();
+    RETURN;
+  END;
+
+  // ---- left-tail critical value (beta 42) ----
+  // The mirror image: alpha sits in the LEFT tail, so z* is the
+  // alpha quantile itself and comes out negative.
+  IF icT == 3 THEN
+    icP := 0.05;
+    IF INPUT({icP}, "Critical Value", {"α:"},
+      {"Area in the LEFT tail, e.g. .05 or .01"}) == 0 THEN RETURN; END;
+    IF icP <= 0 OR icP >= 1 THEN
+      MSGBOX("Alpha must be strictly between 0 and 1.");
+      RETURN;
+    END;
+    icZ := NORMALD_ICDF(0, 1, icP);
+    icX := NE_MU + icZ * NE_SG;
+    NE_X := icX; NE_Z := icZ; NE_P := icP;
+    ne_ZPanel("Left-tail critical value",
+      "α" + ne_Eq(ne_PStr(icP, 4)),
+      "z* = " + ne_Fx(icZ, 4),
+      "x* = " + ne_Fx(icX, 4),
+      "One-tailed reject region is x < x*", 1);
+    NE_XM := 1; NE_XO := icX;
+    neSweep := 1;
+    ne_ShowCurve();
+    RETURN;
+  END;
+
+  // ---- two-tailed critical values (beta 42) ----
+  // alpha is split, alpha/2 in each tail, so z* is the 1 - alpha/2
+  // quantile and the reject region is BOTH tails: the picture shades
+  // outside (mode 4), and each tail carries its own alpha/2.
+  IF icT == 4 THEN
+    icP := 0.05;
+    IF INPUT({icP}, "Two-tailed Critical Values", {"α:"},
+      {"Total area in BOTH tails, e.g. .05 or .01"}) == 0 THEN RETURN; END;
+    IF icP <= 0 OR icP >= 1 THEN
+      MSGBOX("Alpha must be strictly between 0 and 1.");
+      RETURN;
+    END;
+    // beta 42a: -Phi^-1(alpha/2) rather than Phi^-1(1 - alpha/2), the
+    // same number by symmetry, so 1 - alpha/2 is never formed (see
+    // the right-tail item above)
+    icZ  := -NORMALD_ICDF(0, 1, icP / 2);
+    icLO := NE_MU - icZ * NE_SG;
+    icHI := NE_MU + icZ * NE_SG;
+    NE_X := icHI; NE_Z := icZ; NE_P := icP;
+    ne_ZPanel("Two-tailed critical values",
+      "α" + ne_Eq(ne_PStr(icP, 4)) + "  (" + ne_PStr(icP/2, 4) + " per tail)",
+      "z* = ± " + ne_Fx(icZ, 4),
+      "x* = " + ne_Fx(icLO, 4) + " and " + ne_Fx(icHI, 4),
+      "Reject region: x < lower or x > upper", 1);
+    NE_XM := 4; NE_XO := icLO; NE_XB := icHI;
+    neSweep := 1;
+    ne_ShowCurve();
+    RETURN;
+  END;
+
+  // ---- central interval ----
+  IF icT == 5 THEN
+    icC := 0.95;
+    IF INPUT({icC}, "Central Interval", {"C:"},
+      {"Central proportion: .95 or 95 both work"}) == 0 THEN RETURN; END;
+    // beta 42a (D-NE-4): 1 and above is read as a percent, so a typed
+    // 1 is a 1% interval, as "95 both work" implies -- through beta 42
+    // it fell through ">" and was refused as a proportion of 1.  A
+    // typed 100 becomes 1 and is still refused below.
+    IF icC >= 1 THEN icC := icC / 100; END;
+    IF icC <= 0 OR icC >= 1 THEN
+      MSGBOX("Central proportion must be between 0 and 1.");
+      RETURN;
+    END;
+    // beta 42a: -Phi^-1((1 - C)/2) rather than Phi^-1((1 + C)/2): the
+    // same z*, but for C = 0.999999999999 the old argument rounded to
+    // exactly 1 on the Prime (1 + C needs 13 digits), and
+    // NORMALD_ICDF(0, 1, 1) is not a number; (1 - C)/2 is the small
+    // tail area itself and stays strictly between 0 and 0.5
+    icZ  := -NORMALD_ICDF(0, 1, (1 - icC) / 2);
+    icLO := NE_MU - icZ * NE_SG;
+    icHI := NE_MU + icZ * NE_SG;
+    NE_X := icHI; NE_Z := icZ; NE_P := icC;
+    ne_ZPanel("Central " + ne_PStr(100*icC, 1) + "% interval",
+      "z* = ± " + ne_Fx(icZ, 4),
+      "lower = " + ne_Fx(icLO, 4) + "   upper = " + ne_Fx(icHI, 4),
+      "interval: (" + ne_Fx(icLO, 3) + ", " + ne_Fx(icHI, 3) + ")",
+      "Middle " + ne_PStr(100*icC, 1) + "% of the distribution; each tail "
+        + ne_PStr(100*(1-icC)/2, 2) + "%", 1);
+    NE_XM := 3; NE_XO := icLO; NE_XB := icHI;
+    neSweep := 1;
+    ne_ShowCurve();
+    RETURN;
+  END;
+END;
+
+
+// =====================================================
+//  ZSSTORE — remember the solver's four values, and push its
+//  mu and sigma out to the session distribution so the plot and
+//  every other menu item follow along.
+//
+//  A changed distribution invalidates any shading or sample
+//  drawn against the old one, so those are cleared, exactly as
+//  when mu and sigma are changed from menu 2.
+// =====================================================
+ne_ZSStore(stX, stM, stS, stZ)
+BEGIN
+  LOCAL stChg;
+  NE_ZS := {stX, stM, stS, stZ};
+  NE_Z := stZ; NE_X := stX;
+
+  stChg := 0;
+  IF ABS(stM - NE_MU) > 0 THEN stChg := 1; END;
+  IF ABS(stS - NE_SG) > 0 THEN stChg := 1; END;
+
+  IF stChg == 1 AND stS > 0 THEN
+    NE_MU := stM; NE_SG := stS;
+    // Same clean-up as menu 1: this is the other route to a changed
+    // distribution, and the two must leave the session in the same
+    // state or the app behaves differently depending on how you got
+    // there.
+    NE_XM := 0;
+    NE_HN := 0; NE_BINS := MAKELIST(0, K, 1, NBINS+2, 1);
+    NE_HXB := 0; NE_HS := 0;
+    NE_CFG(4) := 0; NE_CFG(3) := stM + stS;
+    IF NE_WA == 0 THEN NE_WA := 4; END;    // a custom window would be wrong
+    ne_AutoWin();
+  END;
+END;
+
+
+// =====================================================
+//  MODULE 5 — Z-FORMULA SOLVER:  z = (x − μ)/σ
+//  Pick the unknown, enter the other three, solve.
+//
+//  The locals are zsX / zsM / zsS / zsZ, NOT x / m / s / z.
+//  A bare lowercase x is the CAS's own symbolic variable, so
+//  a value left in the CAS could surface in this INPUT's
+//  prefill instead of the default set below.
+//
+//  At launch the four boxes hold x = 0, μ = 0, σ = 1, z = 0,
+//  which satisfy z = (x − μ)/σ exactly.  After that the solver
+//  is TIED TO THE SESSION: μ and σ arrive from menu 2 (or from
+//  the last solve), and anything entered or solved for here is
+//  pushed back out, so the plotted curve and every other menu
+//  item stay in step with it.
+// =====================================================
+ne_ZSolve()
+BEGIN
+  LOCAL zsT, zsZ, zsX, zsM, zsS;
+  // mu and sigma come from the SESSION distribution, so whatever
+  // was set in menu 2 (or solved for here last time) is already in
+  // the boxes.  x and z are the solver's own, carried across visits.
+  zsM := NE_MU; zsS := NE_SG;
+  zsX := NE_ZS(1); zsZ := NE_ZS(4);
+
+  // beta 42a (D-NE-3): the house CHOOSE idiom.  The index starts
+  // at 0, CHOOSE writes the pick into it (Esc leaves it 0), and
+  // only the index is tested; CHOOSE's return value is not used.
+  zsT := 0;
+  CHOOSE(zsT, "Solve  z = (x − μ)/σ   for:", {
+    "z   (standard score)",
+    "x   (raw score)",
+    "μ   (mean)",
+    "σ   (std dev)"});
+  IF zsT == 0 THEN RETURN; END;
+
+  // ---- solve for z ----
+  IF zsT == 1 THEN
+    IF INPUT({zsX, zsM, zsS}, "Enter the three knowns",
+      {"x:", "μ:", "σ:"},
+      {"Raw score", "Mean", "Std dev (must be > 0)"}) == 0 THEN RETURN; END;
+    IF zsS <= 0 THEN
+      MSGBOX("σ must be positive.");
+      RETURN;
+    END;
+    zsZ := (zsX - zsM) / zsS;
+    ne_ZSStore(zsX, zsM, zsS, zsZ);
+    // beta 42a (D-NE-1): rounded before STRING (ne_Fx), here and in
+    // the three panels below; sigma cannot be negative, so a sigma
+    // below the last digit prints "< 0.0001" (ne_PStr, ne_Eq)
+    ne_ZPanel("Solve for z",
+      "x = " + ne_Fx(zsX, 4) + "   μ = " + ne_Fx(zsM, 4),
+      "σ" + ne_Eq(ne_PStr(zsS, 4)),
+      "z = " + ne_Fx(zsZ, 4),
+      "z = (x − μ)/σ = (" + ne_Fx(zsX, 2) + " − " + ne_Fx(zsM, 2)
+        + ")/" + ne_PStr(zsS, 2), 0);
+    RETURN;
+  END;
+
+  // ---- solve for x ----
+  IF zsT == 2 THEN
+    IF INPUT({zsZ, zsM, zsS}, "Enter the three knowns",
+      {"z:", "μ:", "σ:"},
+      {"Standard score", "Mean", "Std dev (must be > 0)"}) == 0 THEN RETURN; END;
+    IF zsS <= 0 THEN
+      MSGBOX("σ must be positive.");
+      RETURN;
+    END;
+    zsX := zsM + zsZ * zsS;
+    ne_ZSStore(zsX, zsM, zsS, zsZ);
+    ne_ZPanel("Solve for x",
+      "z = " + ne_Fx(zsZ, 4) + "   μ = " + ne_Fx(zsM, 4),
+      "σ" + ne_Eq(ne_PStr(zsS, 4)),
+      "x = " + ne_Fx(zsX, 4),
+      "x = μ + zσ = " + ne_Fx(zsM, 2) + " + (" + ne_Fx(zsZ, 2)
+        + ")(" + ne_PStr(zsS, 2) + ")", 0);
+    RETURN;
+  END;
+
+  // ---- solve for μ ----
+  IF zsT == 3 THEN
+    IF INPUT({zsX, zsZ, zsS}, "Enter the three knowns",
+      {"x:", "z:", "σ:"},
+      {"Raw score", "Standard score", "Std dev (must be > 0)"}) == 0 THEN RETURN; END;
+    IF zsS <= 0 THEN
+      MSGBOX("σ must be positive.");
+      RETURN;
+    END;
+    zsM := zsX - zsZ * zsS;
+    ne_ZSStore(zsX, zsM, zsS, zsZ);
+    ne_ZPanel("Solve for μ",
+      "x = " + ne_Fx(zsX, 4) + "   z = " + ne_Fx(zsZ, 4),
+      "σ" + ne_Eq(ne_PStr(zsS, 4)),
+      "μ = " + ne_Fx(zsM, 4),
+      "μ = x − zσ = " + ne_Fx(zsX, 2) + " − (" + ne_Fx(zsZ, 2)
+        + ")(" + ne_PStr(zsS, 2) + ")", 0);
+    RETURN;
+  END;
+
+  // ---- solve for σ ----
+  IF zsT == 4 THEN
+    IF INPUT({zsX, zsM, zsZ}, "Enter the three knowns",
+      {"x:", "μ:", "z:"},
+      {"Raw score", "Mean", "Standard score (must be nonzero)"}) == 0 THEN RETURN; END;
+    IF zsZ == 0 THEN
+      MSGBOX("z cannot be 0 when solving for σ.");
+      RETURN;
+    END;
+    zsS := (zsX - zsM) / zsZ;
+    // (sigma here is zero or negative, a signed value: ne_Fx)
+    IF zsS <= 0 THEN
+      MSGBOX("These values give σ = " + ne_Fx(zsS, 4) +
+        ", which is not positive. Check the sign of z: it must match the sign of x − μ.");
+      RETURN;
+    END;
+    ne_ZSStore(zsX, zsM, zsS, zsZ);
+    ne_ZPanel("Solve for σ",
+      "x = " + ne_Fx(zsX, 4) + "   μ = " + ne_Fx(zsM, 4),
+      "z = " + ne_Fx(zsZ, 4),
+      "σ" + ne_Eq(ne_PStr(zsS, 4)),
+      "σ = (x − μ)/z = (" + ne_Fx(zsX, 2) + " − " + ne_Fx(zsM, 2)
+        + ")/" + ne_Fx(zsZ, 2), 0);
+    RETURN;
+  END;
+END;
+
+
+// =====================================================
+//  MODULE 7 — COMPARE CURVES (Cohen's d, and power)
+//
+//  beta 42: the POWER PICTURE.  Whenever the second curve is on
+//  and the shading is a right-tail cut x*, the plot also shades
+//  the second curve beyond x* in light green and prints
+//  "power = ...": curve 1 is the null hypothesis, curve 2 the
+//  alternative, alpha is the orange area under curve 1 past x*
+//  and the power is the area under curve 2 past the same line.
+//  Item 3 sets that up in one step from an alpha; dragging x*
+//  or mu in the Explorer then trades alpha against power live.
+//      x* = mu + z(1 - alpha) sigma
+//      power = P(X2 > x*) = 1 - Phi((x* - mu2) / sigma)
+// =====================================================
+ne_Compare2()
+BEGIN
+  LOCAL c2T, c2M2, c2A, c2X, c2Pw;
+  // beta 42a (D-NE-3): the house CHOOSE idiom.  The index starts
+  // at 0, CHOOSE writes the pick into it (Esc leaves it 0), and
+  // only the index is tested; CHOOSE's return value is not used.
+  c2T := 0;
+  CHOOSE(c2T, "Compare curves", {
+    "Set μ₂ and show (same σ)",
+    "Turn second curve off",
+    "Power picture: right-tail α"});
+  IF c2T == 0 THEN RETURN; END;
+  IF c2T == 1 THEN
+    c2M2 := NE_CFG(3);
+    IF INPUT({c2M2}, "Second Curve", {"μ₂:"},
+      {"Mean of comparison curve; d = (μ₂−μ)/σ"}) == 1 THEN
+      NE_CFG(3) := c2M2; NE_CFG(4) := 1;
+      ne_AutoWin();
+      ne_ShowCurve();
+    END;
+  END;
+  IF c2T == 2 THEN NE_CFG(4) := 0; ne_AutoWin(); END;
+  IF c2T == 3 THEN
+    c2A := 0.05;
+    IF INPUT({c2A}, "Power Picture", {"α:"},
+      {"Right-tail area under curve 1, e.g. .05"}) == 0 THEN RETURN; END;
+    IF c2A <= 0 OR c2A >= 1 THEN
+      MSGBOX("α must be strictly between 0 and 1.");
+      RETURN;
+    END;
+    // beta 42a: x* = mu - Phi^-1(alpha) sigma, the same cut as
+    // mu + Phi^-1(1 - alpha) sigma by symmetry, without forming
+    // 1 - alpha (it is 1 on the Prime for alpha below about 5E-13)
+    c2X := NE_MU - NORMALD_ICDF(0, 1, c2A) * NE_SG;          // the cut x*
+    // beta 42a (D-NE-2): the power is curve 2's RIGHT tail past x*,
+    // read as the mirror-image lower tail about mu2; 1 - CDF is
+    // exactly 0 on the Prime once that tail is below about 5E-13
+    c2Pw := NORMALD_CDF(NE_CFG(3), NE_SG, 2*NE_CFG(3) - c2X);   // power
+    NE_CFG(4) := 1;                    // curve 2 (at μ₂) is the alternative
+    NE_XM := 2; NE_XO := c2X;          // shade the right tail beyond x*
+    NE_X := c2X; NE_Z := (c2X - NE_MU) / NE_SG; NE_P := c2Pw;
+    ne_AutoWin();
+    // beta 42a (D-NE-1): rounded before STRING (ne_Fx); alpha, the
+    // power and beta print "< 0.0001" below the last digit (ne_PStr,
+    // ne_Eq).  Beta is curve 2's left tail at x*, read directly
+    // rather than as 1 - power, which would lose its digits.
+    ne_ZPanel("Power picture",
+      "α" + ne_Eq(ne_PStr(c2A, 4)) + "   x* = " + ne_Fx(c2X, 4),
+      "μ₂ = " + ne_Fx(NE_CFG(3), 4) + "   d = "
+        + ne_Fx((NE_CFG(3) - NE_MU) / NE_SG, 3),
+      "power" + ne_Eq(ne_PStr(c2Pw, 4)),
+      "β" + ne_Eq(ne_PStr(NORMALD_CDF(NE_CFG(3), NE_SG, c2X), 4))
+        + ": curve 2 left of x*", 1);
+    neSweep := 1;
+    ne_ShowCurve();
+  END;
+END;
+
+
+// =====================================================
+//  MODULE 6 — SAMPLE HISTOGRAM
+//  Bins: NBINS intervals spanning μ ± 4σ, so the bar widths
+//  scale with the distribution instead of being fixed at 0.5.
+// =====================================================
+ne_Histo()
+BEGIN
+  LOCAL hsT, hsN, hsOK, hsChk;
+  // beta 42a (D-NE-3): the house CHOOSE idiom.  The index starts
+  // at 0, CHOOSE writes the pick into it (Esc leaves it 0), and
+  // only the index is tested; CHOOSE's return value is not used.
+  hsT := 0;
+  CHOOSE(hsT, "Data & Histogram", {
+    "My data from D1  (Statistics 1Var)",
+    "Two groups from C1, C2  (2Var)",
+    "Regression residuals from C1, C2",
+    "Write z-scores of D1 into D2",
+    "Normal probability plot of D1",
+    "Simulate a sample",
+    "Clear histogram"});
+  IF hsT == 0 THEN RETURN; END;
+  IF hsT == 1 THEN ne_DataLoad();  RETURN; END;
+  IF hsT == 2 THEN ne_TwoGroups(); RETURN; END;
+  IF hsT == 3 THEN ne_ResidLoad(); RETURN; END;
+  IF hsT == 4 THEN ne_ZtoD2();     RETURN; END;
+  IF hsT == 5 THEN ne_NormPlot();  RETURN; END;
+
+  hsN := 0;
+  IF hsT == 6 THEN
+    // the same idiom: hsN is 0 (set just above) until a pick
+    CHOOSE(hsN, "Simulate a sample", {
+      "n = 200", "n = 1000", "n = 5000"});
+    IF hsN == 0 THEN RETURN; END;
+    IF hsN == 1 THEN hsN := 200;  END;
+    IF hsN == 2 THEN hsN := 1000; END;
+    IF hsN == 3 THEN hsN := 5000; END;
+    NE_HREAL := 0;                         // this one is simulated
+  END;
+  IF hsN > 0 THEN
+    NE_HLO := NE_MU - 4 * NE_SG;
+    NE_HW  := 8 * NE_SG / NBINS;
+    // A Python script that dies inside Python does NOT raise a PPL
+    // error — the traceback goes to the Terminal and execution
+    // carries on — so IFERR alone is not enough.  Clear the result
+    // first, then CHECK it before using it.
+    NEpout := 0;
+    IFERR
+      NEpmu := NE_MU; NEpsg := NE_SG; NEpn := hsN;
+      NEplo := NE_HLO; NEpw := NE_HW;
+      PYTHON(SAMPBINSPY);
+    THEN
+      NEpout := 0;
+    END;
+    // Validate by USING it, not by asking what type it is.  If the
+    // last element reads back as a number, NEpout is a list of the
+    // right length and the bridge worked; anything else raises and
+    // we fall back.  One less firmware assumption than TYPE codes,
+    // and it cannot silently mis-detect a good result.
+    hsOK := 0;
+    IFERR
+      hsChk := NEpout(NBINS+2) + 0;
+      hsOK := 1;
+    THEN
+      hsOK := 0;
+    END;
+    IF hsOK == 1 THEN
+      NE_BINS := NEpout;
+      NE_SRC := 1;                         // MicroPython did the work
+    ELSE
+      NE_BINS := ne_SampBins(NE_MU, NE_SG, hsN, NE_HLO, NE_HW);
+      NE_SRC := 2;                         // PPL fallback did the work
+    END;
+    NE_HN := hsN;
+    // The two elements after the bins are the sum and the sum of
+    // squares of every value drawn.  s uses the n-1 divisor: these
+    // are a SAMPLE's statistics, estimating the mu and sigma that
+    // produced them.
+    NE_HXB := NE_BINS(NBINS+1) / hsN;
+    IF hsN > 1 THEN
+      NE_HS := √(MAX(0, (NE_BINS(NBINS+2) - hsN*NE_HXB*NE_HXB) / (hsN - 1)));
+    ELSE
+      NE_HS := 0;
+    END;
+    ne_ShowCurve();
+  END;
+  IF hsT == 7 THEN
+    NE_HN := 0; NE_BINS := MAKELIST(0, K, 1, NBINS+2, 1);
+    NE_HXB := 0; NE_HS := 0; NE_HREAL := 0;
+  END;
+END;
+
+
+// =====================================================
+//  BINDATA — take any list and make it the displayed sample
+//
+//  Shared by every data route: D1, regression residuals, a group
+//  from C1.  Fits N(x-bar, s) to the list, bins it and stores the
+//  statistics.  Returns 1 on success, 0 if the list is unusable.
+//
+//  s is computed here with an explicit n-1 divisor rather than by
+//  calling stddev(), because which divisor that command uses is
+//  exactly the distinction this readout exists to teach.
+// =====================================================
+ne_BinData(bdL)
+BEGIN
+  LOCAL bdN, bdI, bdV, bdSum, bdSq, bdB;
+  LOCAL bdXB, bdS, bdCnt;
+
+  bdN := SIZE(bdL);
+  IF bdN < 2 THEN RETURN 0; END;
+
+  bdSum := 0; bdSq := 0;
+  FOR bdI FROM 1 TO bdN DO
+    bdV := bdL(bdI);
+    bdSum := bdSum + bdV;
+    bdSq := bdSq + bdV*bdV;
+  END;
+  bdXB := bdSum / bdN;
+  bdS := √(MAX(0, (bdSq - bdN*bdXB*bdXB) / (bdN - 1)));
+  IF bdS <= 0 THEN RETURN 0; END;
+
+  NE_MU := bdXB; NE_SG := bdS;
+  NE_XM := 0;
+  NE_HLO := NE_MU - 4 * NE_SG;
+  NE_HW  := 8 * NE_SG / NBINS;
+
+  bdCnt := MAKELIST(0, K, 1, NBINS+2, 1);
+  FOR bdI FROM 1 TO bdN DO
+    bdB := FLOOR((bdL(bdI) - NE_HLO) / NE_HW) + 1;
+    IF bdB >= 1 AND bdB <= NBINS THEN bdCnt(bdB) := bdCnt(bdB) + 1; END;
+  END;
+  bdCnt(NBINS+1) := bdSum; bdCnt(NBINS+2) := bdSq;
+
+  NE_BINS := bdCnt; NE_HN := bdN;
+  NE_HXB := bdXB; NE_HS := bdS;
+  NE_HREAL := 1; NE_SRC := 3;
+  IF NE_WA == 0 THEN NE_WA := 4; END;
+  ne_AutoWin();
+  RETURN 1;
+END;
+
+
+// =====================================================
+//  YOUR OWN DATA — list D1 of the Statistics 1Var app
+//
+//  The same list the Technology Corner activities use, so data
+//  already entered to make a Normal probability plot can be seen
+//  against a fitted curve without retyping anything.
+// =====================================================
+ne_DataLoad()
+BEGIN
+  LOCAL dlN;
+  dlN := 0;
+  IFERR dlN := SIZE(D1); THEN dlN := 0; END;
+  IF dlN < 2 THEN
+    MSGBOX("Put your data in list D1 of the Statistics 1Var app first — at least two values.");
+    RETURN;
+  END;
+  NE_CFG(4) := 0;                          // a single group: no 2nd curve
+  IF ne_BinData(D1) == 0 THEN
+    MSGBOX("Every value in D1 is the same, so s = 0 and no curve can be fitted.");
+    RETURN;
+  END;
+  ne_ShowCurve();
+END;
+
+
+// =====================================================
+//  TWO GROUPS — C1 and C2 of the Statistics 2Var app
+//
+//  Fits a curve to each group and reports Cohen's d.  Both curves
+//  are drawn with the POOLED standard deviation, which is both
+//  what the program can draw (one sigma for both) and the standard
+//  denominator for d when two groups are compared:
+//      sp = sqrt( ((n1-1)s1^2 + (n2-1)s2^2) / (n1+n2-2) )
+//  The histogram is cleared, because a single set of bars beneath
+//  two curves would be read as belonging to both.
+// =====================================================
+ne_TwoGroups()
+BEGIN
+  LOCAL tgN1, tgN2, tgI, tgV, tgS1, tgS2;
+  LOCAL tgM1, tgM2, tgQ1, tgQ2, tgSP;
+
+  tgN1 := 0; tgN2 := 0;
+  IFERR tgN1 := SIZE(C1); THEN tgN1 := 0; END;
+  IFERR tgN2 := SIZE(C2); THEN tgN2 := 0; END;
+  IF tgN1 < 2 OR tgN2 < 2 THEN
+    MSGBOX("Put group 1 in C1 and group 2 in C2 of the Statistics 2Var app — at least two values each.");
+    RETURN;
+  END;
+
+  tgM1 := 0; tgQ1 := 0;
+  FOR tgI FROM 1 TO tgN1 DO
+    tgV := C1(tgI); tgM1 := tgM1 + tgV; tgQ1 := tgQ1 + tgV*tgV;
+  END;
+  tgM1 := tgM1 / tgN1;
+  tgS1 := MAX(0, (tgQ1 - tgN1*tgM1*tgM1) / (tgN1 - 1));
+
+  tgM2 := 0; tgQ2 := 0;
+  FOR tgI FROM 1 TO tgN2 DO
+    tgV := C2(tgI); tgM2 := tgM2 + tgV; tgQ2 := tgQ2 + tgV*tgV;
+  END;
+  tgM2 := tgM2 / tgN2;
+  tgS2 := MAX(0, (tgQ2 - tgN2*tgM2*tgM2) / (tgN2 - 1));
+
+  tgSP := √(((tgN1-1)*tgS1 + (tgN2-1)*tgS2) / (tgN1 + tgN2 - 2));
+  IF tgSP <= 0 THEN
+    MSGBOX("Both groups have zero spread, so no curves can be fitted.");
+    RETURN;
+  END;
+
+  NE_MU := tgM1; NE_SG := tgSP;
+  NE_CFG(3) := tgM2; NE_CFG(4) := 1;
+  NE_XM := 0;
+  NE_HN := 0; NE_BINS := MAKELIST(0, K, 1, NBINS+2, 1);
+  NE_HXB := 0; NE_HS := 0; NE_HREAL := 0;
+  IF NE_WA == 0 THEN NE_WA := 4; END;
+  ne_AutoWin();
+  ne_ShowCurve();
+END;
+
+
+// =====================================================
+//  REGRESSION RESIDUALS — C1 (x) and C2 (y)
+//
+//  Least-squares line by hand, then the residuals through the
+//  normality view.  Inference about a slope assumes the residuals
+//  are roughly normal, and this is the assumption students are
+//  usually told about rather than shown.
+// =====================================================
+ne_ResidLoad()
+BEGIN
+  LOCAL rlN, rlI, rlXB, rlYB, rlSXY, rlSXX;
+  LOCAL rlB, rlA, rlR, rlXMx, rlScl;
+
+  rlN := 0;
+  IFERR rlN := MIN(SIZE(C1), SIZE(C2)); THEN rlN := 0; END;
+  IF rlN < 3 THEN
+    MSGBOX("Put x in C1 and y in C2 of the Statistics 2Var app — at least three pairs.");
+    RETURN;
+  END;
+
+  rlXB := 0; rlYB := 0;
+  FOR rlI FROM 1 TO rlN DO
+    rlXB := rlXB + C1(rlI); rlYB := rlYB + C2(rlI);
+  END;
+  rlXB := rlXB / rlN; rlYB := rlYB / rlN;
+
+  rlSXY := 0; rlSXX := 0; rlXMx := 0;
+  FOR rlI FROM 1 TO rlN DO
+    rlSXY := rlSXY + (C1(rlI) - rlXB) * (C2(rlI) - rlYB);
+    rlSXX := rlSXX + (C1(rlI) - rlXB) * (C1(rlI) - rlXB);
+    IF ABS(C1(rlI)) > rlXMx THEN rlXMx := ABS(C1(rlI)); END;
+  END;
+
+  // Two different problems, two different messages.  No spread at
+  // all means no line exists.  Almost no spread means a line can
+  // be computed but the slope is at the mercy of rounding -- the
+  // student should know that before reading the residuals.
+  // Scaled by the size of the x values, since "tiny" depends on
+  // whether x is in millimetres or millions.
+  IF rlSXX <= 0 THEN
+    MSGBOX("Every x value in C1 is the same, so no line can be fitted.");
+    RETURN;
+  END;
+  rlScl := MAX(1, rlXMx);
+  IF rlSXX < 0.000000001 * rlScl * rlScl THEN
+    MSGBOX("The x values in C1 barely vary, so the fitted slope is unstable. Showing the residuals anyway — treat them with caution.");
+  END;
+  rlB := rlSXY / rlSXX;
+  rlA := rlYB - rlB * rlXB;
+
+  rlR := MAKELIST(C2(K) - (rlA + rlB * C1(K)), K, 1, rlN, 1);
+  NE_CFG(4) := 0;
+  IF ne_BinData(rlR) == 0 THEN
+    MSGBOX("The residuals have no spread — the points lie exactly on a line.");
+    RETURN;
+  END;
+  ne_ShowCurve();
+END;
+
+
+// =====================================================
+//  STANDARDIZE — write z-scores of D1 into D2
+//
+//  Puts the transformed values where every other app can reach
+//  them, so the next step (a plot, a summary) is done with the
+//  calculator's own tools rather than here.
+// =====================================================
+ne_ZtoD2()
+BEGIN
+  LOCAL zdN, zdI, zdV, zdSum, zdSq, zdXB;
+  LOCAL zdS;
+
+  zdN := 0;
+  IFERR zdN := SIZE(D1); THEN zdN := 0; END;
+  IF zdN < 2 THEN
+    MSGBOX("Put your data in list D1 of the Statistics 1Var app first.");
+    RETURN;
+  END;
+
+  zdSum := 0; zdSq := 0;
+  FOR zdI FROM 1 TO zdN DO
+    zdV := D1(zdI); zdSum := zdSum + zdV; zdSq := zdSq + zdV*zdV;
+  END;
+  zdXB := zdSum / zdN;
+  zdS := √(MAX(0, (zdSq - zdN*zdXB*zdXB) / (zdN - 1)));
+  IF zdS <= 0 THEN
+    MSGBOX("Every value in D1 is the same, so s = 0 and z is undefined.");
+    RETURN;
+  END;
+
+  D2 := MAKELIST((D1(K) - zdXB) / zdS, K, 1, zdN, 1);
+  // beta 42a (D-NE-1): rounded before STRING (ne_Fx); s cannot be
+  // negative, so below the last digit it prints "< 0.0001" (ne_PStr)
+  MSGBOX("Wrote " + ne_Fx(zdN, 0) + " z-scores into D2.  x-bar = "
+    + ne_Fx(zdXB, 4) + ", s" + ne_Eq(ne_PStr(zdS, 4)));
+END;
+
+
+// =====================================================
+//  NORMAL PROBABILITY PLOT — hand off to Statistics 1Var
+//
+//  This LEAVES the program: control passes to the Statistics app.
+//  The User Guide's DiceSimulation example binds the plot with
+//  SetSample and sets H1Type, but it is itself a Statistics-
+//  derived app; from outside, those names do not resolve.
+// =====================================================
+ne_NormPlot()
+BEGIN
+  LOCAL npN;
+  npN := 0;
+  IFERR npN := SIZE(D1); THEN npN := 0; END;
+  IF npN < 2 THEN
+    MSGBOX("Put your data in list D1 of the Statistics 1Var app first.");
+    RETURN;
+  END;
+  // Only STARTAPP here.  SetSample(H1,...) and H1Type are app
+  // variables of Statistics 1Var and are NOT visible to a
+  // standalone program — referencing them is a syntax error at
+  // paste time, not something IFERR can catch at run time.
+  // D1 is global, so the app opens with the data already in it.
+  MSGBOX("Opening Statistics 1Var. In Symbolic view set Plot1 to Normal Probability, then press Plot and choose Autoscale.");
+  STARTAPP("Statistics 1Var");
+END;
+
+
+//  MODULE 8 — STANDARDIZE ANIMATION: morph N(μ,σ) → N(0,1)
+//  Works on local copies; the session μ and σ are untouched.
+//  The window is set once to cover BOTH the starting curve
+//  and N(0,1), then held, so the motion is visible.
+// =====================================================
+ne_AnimStd(asMU, asSG, asBand, asRef)
+BEGIN
+  LOCAL asF, asM, asS, asZero, asSav, asWt;
+  LOCAL asLo, asHi, asC1, asC2;
+  // One knob for the whole animation.  0.06 ran the twenty frames
+  // in about a second — too fast to read the mu and sigma readouts
+  // that change on every frame, which is the point of watching it.
+  asWt := 0.3;
+  asZero := MAKELIST(0, K, 1, NBINS+2, 1);
+  // Remember the window mode AND its range: a custom range would
+  // otherwise be overwritten below and lost on the way out (beta 41).
+  asSav := NE_WA;
+  asLo := NE_WLO; asHi := NE_WHI;
+  NE_KH := 2;                              // no footer: nothing is interactive
+
+  // The captions travel INTO ne_NormDraw as its last argument, a list
+  // of {text, x, y, font} groups, so they are composed on G1 with the
+  // rest of the frame and reach the screen in the same single blit.
+  // Through beta 40 they were painted on G0 after the blit, so every
+  // next frame wiped them and they flickered for the whole run.
+  asC1 := {"Standardizing: shift  x − μ", 80, 24, 2};
+  asC2 := {"Standardizing: rescale  (x − μ)/σ", 60, 24, 2};
+
+  // a window wide enough for the whole journey
+  NE_WLO := MIN(asMU - 4*asSG, -4);
+  NE_WHI := MAX(asMU + 4*asSG,  4);
+  NE_YMX := NORMALD(0, MIN(asSG, 1), 0) * 1.15;
+  NE_WA := 0;
+
+  // phase 1: slide the mean to 0
+  FOR asF FROM 1 TO 10 DO
+    asM := asMU * (1 - asF/10);
+    ne_NormDraw(asM, asSG, asBand, asRef, 0, 0, 0, 0, 0, asZero, 0, asC1);
+    WAIT(asWt);
+  END;
+  // let the eye settle on mu = 0 before the shape starts changing:
+  // the last frame again (asM is exactly 0 now), with a second
+  // caption under the curve (beta 42: at y = 172, inside the box,
+  // since the box now ends at 188 and the labels sit below it)
+  ne_NormDraw(0, asSG, asBand, asRef, 0, 0, 0, 0, 0, asZero, 0,
+    {"Standardizing: shift  x − μ", 80, 24, 2,
+     "μ is now 0 — the spread has not changed", 44, 172, 1});
+  WAIT(1.8);
+  // phase 2: rescale sd to 1
+  FOR asF FROM 1 TO 10 DO
+    asS := asSG + (1 - asSG) * asF/10;
+    ne_NormDraw(0, asS, asBand, asRef, 0, 0, 0, 0, 0, asZero, 0, asC2);
+    WAIT(asWt);
+  END;
+  // the finished picture: N(0,1), with the formula over it
+  ne_NormDraw(0, 1, asBand, asRef, 0, 0, 0, 0, 0, asZero, 0,
+    {"Standardizing: rescale  (x − μ)/σ", 60, 24, 2,
+     "z = (x − μ)/σ  →  N(0,1)", 84, 110, 2});
+  WAIT(3);
+
+  NE_KH := 0;
+  NE_WA := asSav;
+  // The animation never touches the session mu and sigma, so a
+  // custom range is still right for them: put it back.
+  IF asSav == 0 THEN NE_WLO := asLo; NE_WHI := asHi; END;
+  ne_AutoWin();
+END;
+
+
+// =====================================================
+//  DIAGNOSTICS — what actually happened, not what should have
+//
+//  Exists because a MicroPython failure is invisible: the guard
+//  falls back to PPL, the histogram draws correctly, and the only
+//  symptom is that it took longer.  This page names the sampler
+//  that really ran.
+// =====================================================
+ne_DiagPage()
+BEGIN
+  LOCAL dgK, dgSrc, dgPy;
+
+  dgSrc := "no sample drawn yet";
+  IF NE_SRC == 1 THEN dgSrc := "MicroPython  (fast path)"; END;
+  IF NE_SRC == 2 THEN dgSrc := "PPL fallback  (slow path)"; END;
+  IF NE_SRC == 3 THEN dgSrc := "your own data, read from D1"; END;
+
+  // Probe the bridge without drawing anything: ask Python for a
+  // trivial result and see whether it comes back.
+  dgPy := "not available on this firmware";
+  NEpout := 0;
+  IFERR
+    NEpmu := 0; NEpsg := 1; NEpn := 2;
+    NEplo := -4; NEpw := 8/NBINS;
+    PYTHON(SAMPBINSPY);
+  THEN
+    NEpout := 0;
+  END;
+  IFERR
+    dgK := NEpout(NBINS+2) + 0;
+    dgPy := "available and answering";
+  THEN
+    dgPy := "not available on this firmware";
+  END;
+
+  REPEAT dgK := GETKEY; UNTIL dgK == -1;
+  RECT_P(0, 0, 319, 239, NWHITE);
+  RECT_P(10, 6, 310, 234, NBLACK, NPANL);
+  TEXTOUT_P("Diagnostics", 20, 12, 2, NBLUE);
+  LINE_P(20, 34, 300, 34, NGRAY);
+
+  TEXTOUT_P("Python bridge:", 20, 44, 1, NBLUE);
+  TEXTOUT_P("  " + dgPy, 20, 58, 1, NBLACK);
+  TEXTOUT_P("Last histogram drawn by:", 20, 78, 1, NBLUE);
+  TEXTOUT_P("  " + dgSrc, 20, 92, 1, NBLACK);
+
+  TEXTOUT_P("Session:", 20, 112, 1, NBLUE);
+  // beta 42a (D-NE-1): rounded before STRING (ne_Fx); a sigma below
+  // 0.005 prints "< 0.01" (ne_PStr), not 0.00
+  TEXTOUT_P("  N(" + ne_Fx(NE_MU, 2) + ", " + ne_PStr(NE_SG, 2) + ")"
+    + "   window " + ne_Fx(NE_WLO, 1) + " to " + ne_Fx(NE_WHI, 1),
+    20, 126, 1, NBLACK);
+  TEXTOUT_P("  bins " + ne_Fx(NBINS, 0)
+    + "   sample n " + ne_Fx(NE_HN, 0), 20, 140, 1, NBLACK);
+
+  TEXTOUT_P("If the fast path is not being used, check", 20, 162, 1, NGRAY);
+  TEXTOUT_P("the Terminal (Shift-View) for a Python", 20, 175, 1, NGRAY);
+  TEXTOUT_P("traceback after drawing a histogram.", 20, 188, 1, NGRAY);
+
+  TEXTOUT_P("Any key: back to the menu", 20, 214, 1, NGRAY);
+  REPEAT dgK := GETKEY; UNTIL dgK > -1;
+  REPEAT dgK := GETKEY; UNTIL dgK == -1;
+END;
+
+
+// =====================================================
+//  MODULE 10 — HELP (three pages; any key or tap advances)
+//  Item 10 of the main menu, which the Prime labels "A".
+//  beta 42: three pages instead of two (the soft keys and the
+//  touch gestures need one each), each composed on G1 and blitted
+//  once like every plot, and held by ne_WaitAny so a tap turns
+//  the page as well as a key.
+// =====================================================
+ne_HelpPages()
+BEGIN
+  LOCAL hpK;
+
+  // ---- page 1: the modules ----
+  DIMGROB_P(G1, 320, 240, NWHITE);
+  RECT_P(G1, 10, 6, 310, 234, NBLACK, NPANL);
+  TEXTOUT_P("NormExp Help  (1 of 3)", G1, 20, 12, 2, NBLUE);
+  LINE_P(G1, 20, 34, 300, 34, NGRAY);
+  TEXTOUT_P("Set μ,σ once — every module uses them.", G1, 20, 42, 1, NBLACK);
+  TEXTOUT_P("Any μ and any σ > 0 work: N(100,15),", G1, 20, 55, 1, NBLACK);
+  TEXTOUT_P("  N(2.4,0.6), N(847,220) all plot.", G1, 20, 68, 1, NBLACK);
+  TEXTOUT_P("Probability from x: shades the area", G1, 20, 81, 1, NBLACK);
+  TEXTOUT_P("  left, right, between, or outside.", G1, 20, 94, 1, NBLACK);
+  TEXTOUT_P("x from probability: percentile; critical", G1, 20, 107, 1, NBLACK);
+  TEXTOUT_P("  values (right, left, two tails); central C%.", G1, 20, 120, 1, NBLACK);
+  TEXTOUT_P("Z-solver: any 3 of z,x,μ,σ → the 4th.", G1, 20, 133, 1, NBLACK);
+  TEXTOUT_P("Compare curves: a second curve, Cohen's d", G1, 20, 146, 1, NBLACK);
+  TEXTOUT_P("  and the power picture.", G1, 20, 159, 1, NBLACK);
+  TEXTOUT_P("Plot window & display: auto, wide or custom;", G1, 20, 172, 1, NBLACK);
+  TEXTOUT_P("  bands; N(0,1) reference or CDF overlay.", G1, 20, 185, 1, NBLACK);
+  TEXTOUT_P("Every result: one key or tap shows it on the", G1, 20, 198, 1, NGRAY);
+  TEXTOUT_P("curve, the shaded area growing into place.", G1, 20, 209, 1, NGRAY);
+  TEXTOUT_P("any key or tap = next page", G1, 20, 221, 1, neFOOT);
+  BLIT_P(G0, 0, 0, G1);
+  hpK := ne_WaitAny();
+
+  // ---- page 2: the Explorer's soft keys and keys ----
+  // Key names and their meanings are drawn as two columns (x = 20
+  // and x = 72) rather than lined up with spaces: the font is
+  // proportional, so spaces do not make columns.
+  DIMGROB_P(G1, 320, 240, NWHITE);
+  RECT_P(G1, 10, 6, 310, 234, NBLACK, NPANL);
+  TEXTOUT_P("NormExp Help  (2 of 3)", G1, 20, 12, 2, NBLUE);
+  LINE_P(G1, 20, 34, 300, 34, NGRAY);
+  TEXTOUT_P("EXPLORER SOFT KEYS  (More turns the page)", G1, 20, 42, 1, NBLUE);
+  TEXTOUT_P("Bands", G1, 20, 55, 1, NBLACK);
+  TEXTOUT_P("68-95-99.7 bands on or off  (+)", G1, 72, 55, 1, NBLACK);
+  TEXTOUT_P("Ref", G1, 20, 68, 1, NBLACK);
+  TEXTOUT_P("N(0,1) → CDF S-curve → none  (−)", G1, 72, 68, 1, NBLACK);
+  TEXTOUT_P("Centre", G1, 20, 81, 1, NBLACK);
+  TEXTOUT_P("re-centre the window  (0)", G1, 72, 81, 1, NBLACK);
+  TEXTOUT_P("Shade", G1, 20, 94, 1, NBLACK);
+  TEXTOUT_P("left, right, between, outside, none", G1, 72, 94, 1, NBLACK);
+  TEXTOUT_P("Hist", G1, 20, 107, 1, NBLACK);
+  TEXTOUT_P("then tap a bar for its counts", G1, 72, 107, 1, NBLACK);
+  TEXTOUT_P("PAGE 2: WHAT " + CHAR(8592) + " " + CHAR(8594) + " MOVE", G1, 20, 123, 1, NBLUE);
+  TEXTOUT_P("Bnd A, B", G1, 20, 136, 1, NBLACK);
+  TEXTOUT_P("the lower bound (or x₀), the upper", G1, 80, 136, 1, NBLACK);
+  TEXTOUT_P("mu, sigma", G1, 20, 149, 1, NBLACK);
+  TEXTOUT_P("μ; or σ, ← narrower → wider", G1, 80, 149, 1, NBLACK);
+  TEXTOUT_P("Menu", G1, 20, 162, 1, NBLACK);
+  TEXTOUT_P("back to the menu  (Esc, Enter)", G1, 80, 162, 1, NBLACK);
+  TEXTOUT_P("Tap the chosen key again for the usual:", G1, 20, 178, 1, NGRAY);
+  TEXTOUT_P("← → move μ, ↑ ↓ change σ, in round steps.", G1, 20, 191, 1, NGRAY);
+  TEXTOUT_P("The window is held while you explore.", G1, 20, 204, 1, NGRAY);
+  TEXTOUT_P("any key or tap = next page", G1, 20, 221, 1, neFOOT);
+  BLIT_P(G0, 0, 0, G1);
+  hpK := ne_WaitAny();
+
+  // ---- page 3: touch ----
+  DIMGROB_P(G1, 320, 240, NWHITE);
+  RECT_P(G1, 10, 6, 310, 234, NBLACK, NPANL);
+  TEXTOUT_P("NormExp Help  (3 of 3)", G1, 20, 12, 2, NBLUE);
+  LINE_P(G1, 20, 34, 300, 34, NGRAY);
+  TEXTOUT_P("TOUCH IN THE EXPLORER", G1, 20, 42, 1, NBLUE);
+  TEXTOUT_P("Tap or drag in the plot: the cut x₀ moves;", G1, 20, 55, 1, NBLACK);
+  TEXTOUT_P("  with two bounds, the nearer one moves.", G1, 20, 68, 1, NBLACK);
+  TEXTOUT_P("Press on the μ line and drag sideways: μ.", G1, 20, 81, 1, NBLACK);
+  TEXTOUT_P("Press a small square (μ ± σ), drag outward:", G1, 20, 94, 1, NBLACK);
+  TEXTOUT_P("  σ widens.  Lifting snaps μ and σ.", G1, 20, 107, 1, NBLACK);
+  TEXTOUT_P("The area rides the shaded region; the", G1, 20, 120, 1, NBLACK);
+  TEXTOUT_P("  height at x₀ is a density, not an area.", G1, 20, 133, 1, NBLACK);
+  TEXTOUT_P("RESULT VIEWS", G1, 20, 151, 1, NBLUE);
+  TEXTOUT_P("Tap the plot: explore it, shading kept.", G1, 20, 164, 1, NBLACK);
+  TEXTOUT_P("Tap a histogram bar: its counts.", G1, 20, 177, 1, NBLACK);
+  TEXTOUT_P("HOME: NE_Z, NE_X, NE_P keep the last result.", G1, 20, 195, 1, NBLUE);
+  TEXTOUT_P("any key or tap = back to the menu", G1, 20, 221, 1, neFOOT);
+  BLIT_P(G0, 0, 0, G1);
+  hpK := ne_WaitAny();
+END;
+
+
+// =====================================================
+//  RESET — the standard-normal starting state.
+//
+//  Run at launch AND on the way out, so the next person to
+//  open the program never inherits the last session's
+//  distribution, shading, sample or solver entries.
+//
+//  It does NOT touch NE_Z / NE_X / NE_P.  Those are the Home
+//  exports the help page promises, and through beta 40 this
+//  routine zeroed them on the way out, so "type NE_P in Home"
+//  always gave 0.  NormExp clears them once at launch instead.
+//
+//  These globals are declared by the program itself, so they
+//  cannot be removed from the catalogue while it exists;
+//  assigning the defaults back is the reset.
+// =====================================================
+ne_ResetAll()
+BEGIN
+  NE_MU := 0; NE_SG := 1;                 // standard normal
+  NE_XM := 0; NE_XO := 1; NE_XB := 2;     // no shading
+  NE_CFG := {1, 1, 1, 0};                 // bands on, ref on, no 2nd curve
+                                          // (overlay 1 = N(0,1) reference)
+  NE_BINS := MAKELIST(0, K, 1, NBINS+2, 1);
+  NE_HN := 0; NE_HLO := -4; NE_HW := 0.25;
+  NE_HXB := 0; NE_HS := 0;
+  NE_SRC := 0;                            // no sample drawn yet
+  NE_HREAL := 0;                          // ...and none is real data
+  NE_WA := 4;                             // auto window
+  NE_ZS := {0, 0, 1, 0};                  // solver: x, mu, sigma, z
+  NE_KH := 0;                             // result-view key help
+  neRefOK := 0;                           // N(0,1) cache: rebuild on next draw
+  neRefLo := 0; neRefHi := 0;
+  // beta 42: the curve caches start empty.  Their keys are lists
+  // from the start, so reading nePdfK(1) is never an index into a
+  // plain number.
+  nePdfOK := 0; nePdfK := {0, 0, 0, 0};
+  nePdf2OK := 0; nePdf2K := {0, 0, 0, 0};
+  neCdfOK := 0;
+  // beta 42: touch state -- nothing held, nothing selected
+  neTX := -1; neTY := -1;
+  neMuPX := -999; neSgL := -999; neSgR := -999;
+  neAPX := -999; neBPX := -999;
+  neBarsOK := 0; neSelBin := 0; neGrab := 0;
+  neHint := ""; neSweep := 0;
+  // beta 42: house colours for the new elements (section 13)
+  neMAG := #C800C8h;                      // magenta: the CDF, derived
+  neFOOT := #1E90FFh;                     // dodger blue: footers
+  neZG := #5A5A5Ah;                       // house grey: z-ruler, hints
+  nePOWC := #B4E0A8h;                     // light green: power region
+  neBARF := #E8F6EBh;                     // light green: a histogram bar
+  neBARS := #E8904Fh;                     // deep orange: a bar inside
+                                          // the shaded region
+  neORNG := #FF4500h;                     // orange: the bar panel frame
+  nePANF := #FFF0DCh;                     // light orange: its fill
+  ne_AutoWin();
+END;
+
+
+// =====================================================
+//  MAIN — the menu loop.  Esc or Quit leaves the program.
+// =====================================================
+EXPORT NormExp()
+BEGIN
+  LOCAL mnPick, mnRun;
+
+  ne_ResetAll();                             // start from N(0,1)
+  NE_Z := 0; NE_X := 0; NE_P := 0;           // the Home exports start at 0
+                                             // and are NOT reset again
+
+  // The Prime numbers the menu itself: 1 to 9, then A for item 10
+  // (Help) and B for item 11 (Quit).  The strings must not carry
+  // their own numbers or each line shows two (beta 41).
+  mnRun := 1;
+  WHILE mnRun == 1 DO
+    mnPick := 0;
+    // beta 42a (D-NE-1): the title's mu and sigma through ne_Fx and
+    // ne_PStr, so neither can print in scientific form
+    CHOOSE(mnPick,
+      "NormExp — N(" + ne_Fx(NE_MU, 2) + ", " + ne_PStr(NE_SG, 2) + ")", {
+      "Set μ and σ",
+      "Explore the curve",
+      "Probability from x",
+      "x from probability",
+      "Z-formula solver",
+      "Data & histogram",
+      "Compare curves (d, power)",
+      "Standardize animation",
+      "Plot window & display",
+      "Help",
+      "Quit"});
+    CASE
+      IF mnPick == 0 OR mnPick == 11 THEN mnRun := 0; END;   // Esc or Quit (B)
+      IF mnPick == 1 THEN ne_SetDist(); END;
+      IF mnPick == 2 THEN ne_Explorer(); END;
+      IF mnPick == 3 THEN ne_ProbCalc(); END;
+      IF mnPick == 4 THEN ne_InvCalc(); END;
+      IF mnPick == 5 THEN ne_ZSolve(); END;
+      IF mnPick == 6 THEN ne_Histo(); END;
+      IF mnPick == 7 THEN ne_Compare2(); END;
+      IF mnPick == 8 THEN ne_AnimStd(NE_MU, NE_SG, NE_CFG(1), NE_CFG(2)); END;
+      IF mnPick == 9 THEN ne_SetWin(); END;
+      IF mnPick == 10 THEN ne_HelpPages(); END;                // Help (A)
+    END;
+  END;
+  ne_ResetAll();                             // leave a clean N(0,1) behind
+  // ...but hand the last result to Home: it appears in the history
+  // and NE_Z / NE_X / NE_P stay readable, as the help page says.
+  // beta 42a (D-NE-1): "p < 0.0001" for a positive p below the last
+  // digit; NE_P itself keeps every digit for Home
+  RETURN "NormExp: z = " + ne_Fx(NE_Z, 4) + ", x = " + ne_Fx(NE_X, 4)
+    + ", p" + ne_Eq(ne_PStr(NE_P, 4));
+END;
+
+
+// =====================================================
+//  SMALL DRAWING HELPERS (beta 42), used by ne_NormDraw
+// =====================================================
+
+// Is the value isX inside the shaded region?  The same rule the
+// shading pass in ne_NormDraw applies column by column: mode 1 left
+// of a, 2 right of a, 3 between a and b, 4 outside them.  Used to
+// fill the histogram bars that stand inside the shading.
+ne_InShade(isX, isM, isA, isB)
+BEGIN
+  IF isM == 1 AND isX <= isA THEN RETURN 1; END;
+  IF isM == 2 AND isX >= isA THEN RETURN 1; END;
+  IF isM == 3 AND isX >= isA AND isX <= isB THEN RETURN 1; END;
+  IF isM == 4 AND (isX <= isA OR isX >= isB) THEN RETURN 1; END;
+  RETURN 0;
+END;
+
+// One line of the right-hand readout column, on G1.  A short line
+// starts at x = 186 as it always has; a longer one starts further
+// left so that it still ends inside the screen (about 6 px a
+// character in the small font).
+ne_RTxt(rtS, rtY, rtC)
+BEGIN
+  TEXTOUT_P(rtS, G1, MIN(186, 314 - 6 * DIM(rtS)), rtY, 1, rtC);
+END;
+
+// The probability that RIDES the shaded region: the value in a
+// small white box, centred over the shaded pixel span tgL..tgR and
+// half-way up the region's tallest column (the one nearest the
+// mean, column tgMP), so during a drag the number travels with the
+// area.  A span narrower than 40 px gets no box -- the corner
+// readout carries the number alone.  Returns 1 if it drew.
+ne_Tag(tgL, tgR, tgP, tgMP, tgYmx)
+BEGIN
+  LOCAL tgS, tgW, tgX, tgY, tgF, tgC;
+  IF tgR - tgL < 40 THEN RETURN 0; END;
+  tgC := MAX(tgL, MIN(tgR, tgMP));               // the tallest column
+  tgY := NPBOT - IP(MIN(nePdf(tgC - NPLFT + 1) / tgYmx, 1) * (NPBOT - NPTOP));
+  tgY := IP((NPBOT + tgY) / 2) - 8;              // half-way up it
+  // beta 42a (D-NE-1): a sliver of area prints "< 0.0001", never in
+  // scientific form (the box is sized from the text below)
+  tgS := ne_PStr(tgP, 4);
+  tgF := 2; tgW := IP(7.6 * DIM(tgS)) + 8;       // the larger font ...
+  IF tgR - tgL < 60 THEN                         // ... unless it is tight
+    tgF := 1; tgW := 6 * DIM(tgS) + 8;
+  END;
+  tgX := IP((tgL + tgR - tgW) / 2);
+  tgX := MAX(NPLFT + 2, MIN(NPRGT - tgW - 2, tgX));
+  tgY := MAX(NPTOP + 2, MIN(NPBOT - 20, tgY));
+  RECT_P(G1, tgX, tgY, tgX + tgW, tgY + 16, NRED, NWHITE);
+  TEXTOUT_P(tgS, G1, tgX + 4, tgY + 2, tgF, NRED);
+  RETURN 1;
+END;
+
+
+// =====================================================
+//  DRAW ONE FRAME
+//
+//  The window comes from the globals NE_WLO / NE_WHI / NE_YMX,
+//  set by ne_AutoWin (or held fixed by the ne_Explorer and the
+//  animation).  Nothing about the geometry is hardcoded, so
+//  any μ and σ render correctly.
+//
+//  Locals are ndXW / ndYW / ndIdx rather than x / y / i:
+//  a bare i is the CAS imaginary unit and a bare x is the CAS
+//  symbolic variable.
+//
+//  ndMode: 0 none, 1 left of ndLoB, 2 right of ndLoB,
+//          3 between ndLoB and ndHiB, 4 outside them
+//  ndRef:  0 nothing, 1 the N(0,1) reference curve, 2 the CDF
+//          S-curve on a right-hand 0..1 axis (beta 42)
+//  ndBins is NBINS bin counts of width NE_HW starting at NE_HLO;
+//  ndN is the sample size, 0 for none.
+//  ndCap: 0 for no caption, or a list of {text, x, y, font}
+//          groups (4 elements each) drawn in red over the frame.
+//          The standardize animation uses it; see ne_AnimStd.
+//
+//  beta 42 also reads (file-level, see the top of the file):
+//  neGrab (draw the held line thick), neSelBin (the bar being
+//  read), neHint (a line under the title), NE_KH (which footer);
+//  and RECORDS where the mean line, the shoulders, the bounds and
+//  every bar landed, for the touch handlers.
+// =====================================================
+ne_NormDraw(ndMU, ndSG, ndBand, ndRef, ndMode, ndLoB, ndHiB, ndMU2, ndC2, ndBins, ndN, ndCap)
+BEGIN
+  LOCAL LFT, RGT, TOP, BOT, PW, PH;
+  LOCAL ndMin, ndMax, ndYmx, ndSpan, ndRY;
+  LOCAL ndPX, ndPY, ndXW, ndYW, ndLast, ndFlag;
+  LOCAL ndIdx, ndCol, ndTX, ndTY, ndXV, ndYV;
+  LOCAL ndStp, ndYStp, ndDec, ndYDec, ndPV, ndLbl;
+  LOCAL ndB, ndBL, ndBR, ndBH, ndBarH, ndPy2;
+  LOCAL ndPA, ndPB, ndMP, ndK, ndSp, ndQ;
+  LOCAL ndC1, ndCut, ndCH, ndExp, ndW, ndHD;
+
+  LFT := NPLFT; RGT := NPRGT; TOP := NPTOP; BOT := NPBOT;
+  PW := RGT - LFT; PH := BOT - TOP;
+  ndMin := NE_WLO; ndMax := NE_WHI; ndSpan := ndMax - ndMin;
+  ndYmx := NE_YMX;
+
+  // ---- histogram bar heights, computed ONCE ----
+  // ndBarH holds each bar's density (count / (n * bin width)), or
+  // -1 for an empty bin.  The same numbers are needed twice -- to
+  // widen ndYmx so a tall bar is not clipped, and again to draw --
+  // and they used to be computed in both places.
+  ndBarH := MAKELIST(-1, K, 1, NBINS, 1);
+  IF ndN > 0 THEN
+    FOR ndB FROM 1 TO NBINS DO
+      IF ndBins(ndB) > 0 THEN
+        ndYW := ndBins(ndB) / (ndN * NE_HW);
+        ndBarH(ndB) := ndYW;
+        IF ndYW > ndYmx THEN ndYmx := ndYW * 1.05; END;
+      END;
+    END;
+  END;
+
+  // off-screen buffer, cleared to white
+  DIMGROB_P(G1, 320, 240, NWHITE);
+
+  // ---- the main pdf, one value per pixel column ----
+  // beta 42: kept ACROSS frames in nePdf, with the four numbers it
+  // was built for in nePdfK.  A frame that changes only the shading
+  // -- a drag of x0, every frame of the sweep -- finds it ready; a
+  // new mu, sigma or window rebuilds it, 273 NORMALD calls as before.
+  IF nePdfOK == 0 OR nePdfK(1) <> ndMU OR nePdfK(2) <> ndSG
+     OR nePdfK(3) <> ndMin OR nePdfK(4) <> ndMax THEN
+    nePdf := MAKELIST(0, K, 0, PW, 1);
+    FOR ndIdx FROM 0 TO PW DO
+      nePdf(ndIdx+1) := NORMALD(ndMU, ndSG, ndMin + ndIdx/PW*ndSpan);
+    END;
+    nePdfK := {ndMU, ndSG, ndMin, ndMax};
+    nePdfOK := 1;
+    neCdfOK := 0;                    // the S-curve is built from this list
+  END;
+
+  // ---- cache the SECOND curve's pdf the same way ----
+  // Built only when that curve is on.  It is read twice per frame
+  // -- once by the overlap shading, once by the trace -- and both
+  // used to call NORMALD per pixel, which is 544 evaluations a
+  // frame on top of the main curve's 273.  On a G1 that is the one
+  // cost an ne_Explorer drag can actually feel.  beta 42: kept
+  // across frames, like nePdf.
+  IF ndC2 == 1 THEN
+    IF nePdf2OK == 0 OR nePdf2K(1) <> ndMU2 OR nePdf2K(2) <> ndSG
+       OR nePdf2K(3) <> ndMin OR nePdf2K(4) <> ndMax THEN
+      nePdf2 := MAKELIST(0, K, 0, PW, 1);
+      FOR ndIdx FROM 0 TO PW DO
+        nePdf2(ndIdx+1) := NORMALD(ndMU2, ndSG, ndMin + ndIdx/PW*ndSpan);
+      END;
+      nePdf2K := {ndMU2, ndSG, ndMin, ndMax};
+      nePdf2OK := 1;
+    END;
+  END;
+
+  // ---- the CDF S-curve (beta 42), only when it is shown ----
+  // Built from nePdf by adding up trapezoids, column by column:
+  //     F(x + dx) = F(x) + (f(x) + f(x + dx)) / 2 * dx
+  // from the exact F at the left edge.  One NORMALD_CDF instead of
+  // 273; against SciPy it is within 0.0001 of the exact curve at the
+  // usual windows, and still under a pixel when sigma is a sixtieth
+  // of the window.  The numbers PRINTED on screen come from
+  // NORMALD_CDF itself, never from this list.
+  IF ndRef == 2 AND neCdfOK == 0 THEN
+    neCdf := MAKELIST(0, K, 0, PW, 1);
+    neCdf(1) := NORMALD_CDF(ndMU, ndSG, ndMin);
+    ndW := ndSpan / PW;                          // one column, in x units
+    FOR ndIdx FROM 1 TO PW DO
+      neCdf(ndIdx+1) := neCdf(ndIdx) + (nePdf(ndIdx) + nePdf(ndIdx+1)) / 2 * ndW;
+    END;
+    neCdfOK := 1;
+  END;
+
+  // ---- grid at "nice" positions ----
+  ndStp := ne_NiceNum(ndSpan / 8, 1);
+  ndDec := MAX(0, -FLOOR(LOG(ndStp)));
+  ndXV := CEILING(ndMin / ndStp) * ndStp;
+  WHILE ndXV <= ndMax + ndStp/1000 DO
+    ndTX := LFT + IP((ndXV - ndMin) / ndSpan * PW);
+    IF ndTX > LFT AND ndTX <= RGT THEN
+      LINE_P(G1, ndTX, TOP, ndTX, BOT-1, NGRID);
+    END;
+    ndXV := ndXV + ndStp;
+  END;
+  ndYStp := ne_NiceNum(ndYmx / 4, 1);
+  ndYDec := MAX(0, -FLOOR(LOG(ndYStp)));
+  ndYV := ndYStp;
+  WHILE ndYV < ndYmx DO
+    ndTY := BOT - IP(ndYV / ndYmx * PH);
+    LINE_P(G1, LFT+1, ndTY, RGT, ndTY, NGRID);
+    TEXTOUT_P(ne_Fx(ndYV, ndYDec), G1, 2, ndTY-4, 1, NGRAY);   // beta 42a: rounded first
+    ndYV := ndYV + ndYStp;
+  END;
+
+  // ---- empirical-rule bands ----
+  IF ndBand == 1 THEN
+    FOR ndPX FROM LFT+1 TO RGT DO
+      ndXW := ndMin + (ndPX - LFT) / PW * ndSpan;
+      ndFlag := ABS(ndXW - ndMU);
+      IF ndFlag <= 3*ndSG THEN
+        ndPY := BOT - IP(MIN(nePdf(ndPX-LFT+1)/ndYmx, 1) * PH);
+        IF ndPY < TOP THEN ndPY := TOP; END;
+        ndCol := NB3;
+        IF ndFlag <= 2*ndSG THEN ndCol := NB2; END;
+        IF ndFlag <= ndSG THEN ndCol := NB1; END;
+        LINE_P(G1, ndPX, BOT-1, ndPX, ndPY, ndCol);
+      END;
+    END;
+  END;
+
+  // ---- tail / between / outside shading (over the bands) ----
+  IF ndMode > 0 THEN
+    FOR ndPX FROM LFT+1 TO RGT DO
+      ndXW := ndMin + (ndPX - LFT) / PW * ndSpan;
+      ndFlag := 0;
+      IF ndMode == 1 AND ndXW <= ndLoB THEN ndFlag := 1; END;
+      IF ndMode == 2 AND ndXW >= ndLoB THEN ndFlag := 1; END;
+      IF ndMode == 3 AND ndXW >= ndLoB AND ndXW <= ndHiB THEN ndFlag := 1; END;
+      IF ndMode == 4 AND (ndXW <= ndLoB OR ndXW >= ndHiB) THEN ndFlag := 1; END;
+      IF ndFlag == 1 THEN
+        ndPY := BOT - IP(MIN(nePdf(ndPX-LFT+1)/ndYmx, 1) * PH);
+        IF ndPY < TOP THEN ndPY := TOP; END;
+        LINE_P(G1, ndPX, BOT-1, ndPX, ndPY, NTAIL);
+      END;
+    END;
+  END;
+
+  // ---- overlap of the two curves (min of the pdfs) ----
+  // beta 42: with the power picture on (second curve, right-tail
+  // cut), the columns past x* belong to alpha and power, below.
+  IF ndC2 == 1 THEN
+    FOR ndPX FROM LFT+1 TO RGT DO
+      ndXW := ndMin + (ndPX - LFT) / PW * ndSpan;
+      IF ndMode <> 2 OR ndXW < ndLoB THEN
+        ndYW := MIN(nePdf(ndPX-LFT+1), nePdf2(ndPX-LFT+1));
+        ndPY := BOT - IP(MIN(ndYW/ndYmx, 1) * PH);
+        IF ndPY < TOP THEN ndPY := TOP; END;
+        IF ndPY < BOT-1 THEN LINE_P(G1, ndPX, BOT-1, ndPX, ndPY, NOVL); END;
+      END;
+    END;
+  END;
+
+  // ---- the power picture (beta 42) ----
+  // Second curve on and a right-tail cut x*: curve 1 is the null
+  // hypothesis, and its orange tail past x* is alpha; curve 2 is
+  // the alternative, and ALL of its area past x* is the power.  The
+  // orange already fills up to curve 1, so the light green fills
+  // the rest of curve 2's area -- from curve 1 up to curve 2,
+  // wherever curve 2 is the higher -- read from the cached nePdf2.
+  IF ndC2 == 1 AND ndMode == 2 THEN
+    FOR ndPX FROM LFT+1 TO RGT DO
+      ndXW := ndMin + (ndPX - LFT) / PW * ndSpan;
+      IF ndXW >= ndLoB THEN
+        ndPY := BOT - IP(MIN(nePdf(ndPX-LFT+1)/ndYmx, 1) * PH);
+        ndPy2 := BOT - IP(MIN(nePdf2(ndPX-LFT+1)/ndYmx, 1) * PH);
+        IF ndPy2 < TOP THEN ndPy2 := TOP; END;
+        IF ndPy2 < ndPY - 1 THEN
+          LINE_P(G1, ndPX, ndPY - 1, ndPX, ndPy2, nePOWC);
+        END;
+      END;
+    END;
+  END;
+
+  // ---- axes + ticks ----
+  LINE_P(G1, LFT, BOT, RGT, BOT, NBLACK);
+  LINE_P(G1, LFT, TOP, LFT, BOT, NBLACK);
+  ndXV := CEILING(ndMin / ndStp) * ndStp;
+  WHILE ndXV <= ndMax + ndStp/1000 DO
+    ndTX := LFT + IP((ndXV - ndMin) / ndSpan * PW);
+    LINE_P(G1, ndTX, BOT, ndTX, BOT+4, NBLACK);
+    // beta 42a: rounded first (ne_Fx), so a tick that should read 0
+    // can never print a last-digit remainder in scientific form
+    ndLbl := ne_Fx(ndXV, ndDec);
+    // centre the label under its tick: labels run 3 or 4 digits
+    // wide for distributions like N(500,100).  beta 42: one row
+    // higher (BOT+5, was BOT+7) to leave room for the z-ruler.
+    TEXTOUT_P(ndLbl, G1, ndTX - 3*SIZE(ndLbl), BOT+5, 1, NBLACK);
+    ndXV := ndXV + ndStp;
+  END;
+
+  // ---- the z-ruler (beta 42) ----
+  // A second row of labels, in grey, under the x labels: the z-score
+  // of each point mu + k sigma, k = -3..3, printed at exactly that
+  // point.  Reading down from an x label to the z label beneath it
+  // IS z = (x - mu) / sigma.  Every other label when one sigma is
+  // narrower than 14 px; none below 7 px.  Ends at y = 216, above
+  // the soft-key strip.
+  ndSp := ndSG / ndSpan * PW;                    // one sigma, in pixels
+  IF ndSp >= 7 THEN
+    TEXTOUT_P("z", G1, 4, BOT+17, 1, neZG);
+    FOR ndK FROM -3 TO 3 DO
+      IF ndSp >= 14 OR FP(ndK / 2) == 0 THEN
+        ndXV := ndMU + ndK * ndSG;
+        IF ndXV >= ndMin AND ndXV <= ndMax THEN
+          ndTX := LFT + IP((ndXV - ndMin) / ndSpan * PW);
+          ndLbl := ne_Fx(ndK, 0);
+          TEXTOUT_P(ndLbl, G1, ndTX - 3*DIM(ndLbl), BOT+17, 1, neZG);
+        END;
+      END;
+    END;
+  END;
+
+  // ---- sample histogram (NBINS bins, density scale) ----
+  // beta 42: FILLED bars -- one RECT_P with a green edge instead of
+  // three LINE_P outlines -- over the shading and under the curves.
+  // A bar standing inside the shaded region is filled deep orange,
+  // so the shading still reads as one region with the bars in it; a
+  // bar that a bound crosses is split there.  Every bar's box is
+  // recorded (neHX1, neHX2, neHY1) for the touch handlers.
+  neBarsOK := 0;
+  IF ndN > 0 THEN
+    neHX1 := MAKELIST(-1, K, 1, NBINS, 1);
+    neHX2 := MAKELIST(-1, K, 1, NBINS, 1);
+    neHY1 := MAKELIST(-1, K, 1, NBINS, 1);
+    neBarsOK := 1;
+    ndPA := LFT + IP((ndLoB - ndMin) / ndSpan * PW);   // the bound columns
+    ndPB := LFT + IP((ndHiB - ndMin) / ndSpan * PW);
+    FOR ndB FROM 1 TO NBINS DO
+      IF ndBarH(ndB) >= 0 THEN                 // -1 marks an empty bin
+        ndBH := BOT - IP(MIN(ndBarH(ndB)/ndYmx, 1) * PH);
+        IF ndBH < TOP THEN ndBH := TOP; END;
+        ndBL := LFT + IP((NE_HLO + (ndB-1)*NE_HW - ndMin) / ndSpan * PW);
+        ndBR := LFT + IP((NE_HLO + ndB*NE_HW - ndMin) / ndSpan * PW);
+        // clip to the plot box: bins can fall outside a custom window
+        IF ndBR > LFT AND ndBL < RGT THEN
+          IF ndBL < LFT THEN ndBL := LFT; END;
+          IF ndBR > RGT THEN ndBR := RGT; END;
+          neHX1(ndB) := ndBL; neHX2(ndB) := ndBR; neHY1(ndB) := ndBH;
+          // where a bound crosses this bar: first ndC1, then ndCut
+          // (ndBR in either means "no cut")
+          ndC1 := ndBR; ndCut := ndBR;
+          IF ndMode > 0 AND ndPA > ndBL AND ndPA < ndBR THEN ndC1 := ndPA; END;
+          IF ndMode >= 3 AND ndPB > ndBL AND ndPB < ndBR THEN
+            IF ndC1 == ndBR THEN ndC1 := ndPB; ELSE ndCut := ndPB; END;
+          END;
+          // up to three pieces, each filled by whether its middle
+          // lies in the shading
+          ndQ := ndBL;
+          FOR ndK FROM 1 TO 3 DO
+            ndCH := ndBR;
+            IF ndK == 1 THEN ndCH := ndC1; END;
+            IF ndK == 2 THEN ndCH := ndCut; END;
+            IF ndCH > ndQ THEN
+              ndXW := ndMin + ((ndQ + ndCH) / 2 - LFT) / PW * ndSpan;
+              ndCol := neBARF;
+              IF ne_InShade(ndXW, ndMode, ndLoB, ndHiB) == 1 THEN
+                ndCol := neBARS;
+              END;
+              RECT_P(G1, ndQ, ndBH, ndCH, BOT-1, NGRN, ndCol);
+              ndQ := ndCH;
+            END;
+          END;
+        END;
+      END;
+    END;
+    // the bar being read is outlined in red
+    IF neSelBin > 0 THEN
+      IF neHX1(neSelBin) >= 0 THEN
+        ndBL := neHX1(neSelBin); ndBR := neHX2(neSelBin);
+        ndBH := neHY1(neSelBin);
+        LINE_P(G1, ndBL, ndBH, ndBR, ndBH, NRED);
+        LINE_P(G1, ndBL, ndBH, ndBL, BOT-1, NRED);
+        LINE_P(G1, ndBR, ndBH, ndBR, BOT-1, NRED);
+      END;
+    END;
+  END;
+
+  // ---- reference curve N(0,1) ----
+  // Only meaningful when the standard normal actually FITS, in
+  // both directions.  Horizontally: on N(500,100) it would be a
+  // spike off at the far left.  Vertically: its peak is 0.3989,
+  // so against a wide sigma (sigma = 7 peaks at 0.057) it is
+  // seven times too tall and clips into a flat-topped grey box
+  // that reads as a leftover artefact.  Fails either test, skip
+  // it — a comparison curve nobody can interpret is worse than
+  // no comparison curve.
+  // When the reference is switched ON but cannot be drawn, say so.
+  // Otherwise the +/- toggle and the menu 9 entry both look dead:
+  // the setting flips, nothing changes on screen, and the user
+  // reasonably concludes the key is broken.
+  IF ndRef == 1 THEN
+    IF ndMin < 4 AND ndMax > -4 AND NORMALD(0, 1, 0) <= ndYmx THEN
+    ELSE
+      // y=24 is the gap between the title (y=4, font 2, ~16 px
+      // tall) and the top of the plot box at NPTOP=40.  The old
+      // position, y=195, was inside the box and overlaid the
+      // curve it was talking about.  beta 42: the Explorer's hint
+      // line uses the same row and wins it.
+      IF DIM(neHint) == 0 THEN
+        TEXTOUT_P("N(0,1) reference does not fit at this scale",
+          G1, 40, 24, 1, NGRAY);
+      END;
+    END;
+  END;
+  IF ndRef == 1 AND ndMin < 4 AND ndMax > -4
+     AND NORMALD(0, 1, 0) <= ndYmx THEN
+    // The standard normal's heights are cached per pixel column in
+    // the file-level list neRefPdf, like nePdf above, because N(0,1)
+    // never changes.  The list is rebuilt only when the x-window
+    // differs from the one it was built for.  In the ne_Explorer and
+    // the animation the window is frozen, so this used to be 273
+    // NORMALD calls a frame for a curve that was identical every
+    // frame.
+    IF neRefOK == 0 OR neRefLo <> ndMin OR neRefHi <> ndMax THEN
+      neRefPdf := MAKELIST(0, K, 0, PW, 1);
+      FOR ndIdx FROM 0 TO PW DO
+        neRefPdf(ndIdx+1) := NORMALD(0, 1, ndMin + ndIdx/PW*ndSpan);
+      END;
+      neRefLo := ndMin; neRefHi := ndMax; neRefOK := 1;
+    END;
+    ndLast := -1;
+    FOR ndPX FROM LFT TO RGT DO
+      ndPY := BOT - IP(MIN(neRefPdf(ndPX-LFT+1)/ndYmx, 1) * PH);
+      IF ndPY < TOP THEN ndPY := TOP; END;
+      IF ndLast >= 0 THEN LINE_P(G1, ndPX-1, ndLast, ndPX, ndPY, NGRAY); END;
+      ndLast := ndPY;
+    END;
+  END;
+
+  // ---- the CDF overlay (beta 42) ----
+  // The cumulative curve F(x) = P(X < x), in magenta, on its own
+  // 0..1 scale up the RIGHT-hand edge: 0 at the x-axis, 1 six pixels
+  // below the top of the box (marked "1" just outside it, with a
+  // tick at 0.5).  Where the density is tallest the S-curve is
+  // steepest -- the two curves are the same distribution, one as a
+  // rate and one as an accumulation.
+  IF ndRef == 2 THEN
+    LINE_P(G1, RGT, TOP+6, RGT, BOT, neMAG);
+    LINE_P(G1, RGT-4, TOP+6, RGT, TOP+6, neMAG);
+    ndPY := BOT - IP(0.5 * (PH - 6));
+    LINE_P(G1, RGT-4, ndPY, RGT, ndPY, neMAG);
+    TEXTOUT_P("1", G1, 313, TOP+1, 1, neMAG);
+    ndLast := -1;
+    FOR ndPX FROM LFT TO RGT DO
+      ndPY := BOT - IP(MIN(MAX(neCdf(ndPX-LFT+1), 0), 1) * (PH - 6));
+      IF ndLast >= 0 THEN LINE_P(G1, ndPX-1, ndLast, ndPX, ndPY, neMAG); END;
+      ndLast := ndPY;
+    END;
+  END;
+
+  // ---- second curve N(μ₂, σ) ----
+  IF ndC2 == 1 THEN
+    ndLast := -1;
+    FOR ndPX FROM LFT TO RGT DO
+      ndPY := BOT - IP(MIN(nePdf2(ndPX-LFT+1)/ndYmx, 1) * PH);
+      IF ndPY < TOP THEN ndPY := TOP; END;
+      IF ndLast >= 0 THEN LINE_P(G1, ndPX-1, ndLast, ndPX, ndPY, NGRN); END;
+      ndLast := ndPY;
+    END;
+  END;
+
+  // ---- main curve N(μ, σ) ----
+  ndLast := -1;
+  FOR ndPX FROM LFT TO RGT DO
+    ndPY := BOT - IP(MIN(nePdf(ndPX-LFT+1)/ndYmx, 1) * PH);
+    IF ndPY < TOP THEN ndPY := TOP; END;
+    IF ndLast >= 0 THEN LINE_P(G1, ndPX-1, ndLast, ndPX, ndPY, NBLUE); END;
+    ndLast := ndPY;
+  END;
+
+  // ---- solid vertical line at the mean ----
+  // Runs from the baseline up to the curve, not the full frame
+  // height: stopping at the peak shows that mu is the centre AND
+  // the mode, and keeps the plot from looking like it has been
+  // cut in half.  beta 42: its column is recorded for the touch
+  // handler, and it is drawn three pixels wide while a finger
+  // holds it.
+  neMuPX := -999;
+  IF ndMU >= ndMin AND ndMU <= ndMax THEN
+    ndTX := LFT + IP((ndMU - ndMin) / ndSpan * PW);
+    ndPY := BOT - IP(MIN(NORMALD(ndMU, ndSG, ndMU)/ndYmx, 1) * PH);
+    IF ndPY < TOP THEN ndPY := TOP; END;
+    LINE_P(G1, ndTX, BOT-1, ndTX, ndPY, NMEAN);
+    IF neGrab == 3 THEN
+      LINE_P(G1, ndTX-1, BOT-1, ndTX-1, ndPY, NMEAN);
+      LINE_P(G1, ndTX+1, BOT-1, ndTX+1, ndPY, NMEAN);
+    END;
+    TEXTOUT_P(CHAR(956), G1, ndTX-3, ndPY-14, 1, NMEAN);
+    neMuPX := ndTX;
+  END;
+
+  // ---- the shoulders, mu - sigma and mu + sigma (beta 42) ----
+  // Where the curve turns from bending down to bending up (the
+  // inflection points), exactly one sigma either side of the mean.
+  // In the Explorer each carries a small square handle: press one
+  // and drag outward to widen sigma.  Their columns are recorded;
+  // while held they are drawn as thick lines.
+  neSgL := -999; neSgR := -999;
+  FOR ndK FROM -1 TO 1 STEP 2 DO
+    ndXV := ndMU + ndK * ndSG;
+    IF ndXV >= ndMin AND ndXV <= ndMax THEN
+      ndTX := LFT + IP((ndXV - ndMin) / ndSpan * PW);
+      ndPY := BOT - IP(MIN(nePdf(ndTX-LFT+1)/ndYmx, 1) * PH);
+      IF ndPY < TOP THEN ndPY := TOP; END;
+      IF ndK < 0 THEN neSgL := ndTX; ELSE neSgR := ndTX; END;
+      IF neGrab == 4 THEN
+        LINE_P(G1, ndTX-1, BOT-1, ndTX-1, ndPY, NMEAN);
+        LINE_P(G1, ndTX, BOT-1, ndTX, ndPY, NMEAN);
+        LINE_P(G1, ndTX+1, BOT-1, ndTX+1, ndPY, NMEAN);
+      END;
+      IF NE_KH == 1 THEN
+        RECT_P(G1, ndTX-2, ndPY-2, ndTX+2, ndPY+2, NMEAN);
+      END;
+    END;
+  END;
+
+  // ---- the comparison curve's own mean line ----
+  // Same construction in green.  Cohen's d IS the distance between
+  // these two lines measured in standard deviations, so drawing
+  // both makes the readout's number visible on the plot.
+  IF ndC2 == 1 AND ndMU2 >= ndMin AND ndMU2 <= ndMax THEN
+    ndTX := LFT + IP((ndMU2 - ndMin) / ndSpan * PW);
+    ndPY := BOT - IP(MIN(NORMALD(ndMU2, ndSG, ndMU2)/ndYmx, 1) * PH);
+    IF ndPY < TOP THEN ndPY := TOP; END;
+    LINE_P(G1, ndTX, BOT-1, ndTX, ndPY, NGRN);
+    TEXTOUT_P(CHAR(956) + CHAR(8322), G1, ndTX-3, ndPY-14, 1, NGRN);
+  END;
+
+  // ---- marker lines at the shading bounds ----
+  // beta 42: columns recorded; three pixels wide while held.
+  neAPX := -999; neBPX := -999;
+  IF ndMode > 0 AND ndLoB >= ndMin AND ndLoB <= ndMax THEN
+    ndTX := LFT + IP((ndLoB - ndMin) / ndSpan * PW);
+    LINE_P(G1, ndTX, TOP, ndTX, BOT, NRED);
+    IF neGrab == 1 THEN
+      LINE_P(G1, ndTX-1, TOP, ndTX-1, BOT, NRED);
+      LINE_P(G1, ndTX+1, TOP, ndTX+1, BOT, NRED);
+    END;
+    neAPX := ndTX;
+  END;
+  IF ndMode >= 3 AND ndHiB >= ndMin AND ndHiB <= ndMax THEN
+    ndTX := LFT + IP((ndHiB - ndMin) / ndSpan * PW);
+    LINE_P(G1, ndTX, TOP, ndTX, BOT, NRED);
+    IF neGrab == 2 THEN
+      LINE_P(G1, ndTX-1, TOP, ndTX-1, BOT, NRED);
+      LINE_P(G1, ndTX+1, TOP, ndTX+1, BOT, NRED);
+    END;
+    neBPX := ndTX;
+  END;
+
+  // ---- the CDF's drop lines (beta 42) ----
+  // From the point where a bound meets the S-curve, a dotted magenta
+  // line runs across to the right-hand axis: the height it meets
+  // there IS the area to the left of that bound.  With two bounds
+  // the gap between the two dotted lines is the area between them.
+  // Dotted by hand, every fourth pixel: LINE_P has no dash style.
+  IF ndRef == 2 AND ndMode > 0 THEN
+    FOR ndK FROM 1 TO 2 DO
+      ndXV := ndLoB; ndTX := neAPX;
+      IF ndK == 2 THEN ndXV := ndHiB; ndTX := neBPX; END;
+      IF ndTX > -999 THEN
+        ndPY := BOT - IP(NORMALD_CDF(ndMU, ndSG, ndXV) * (PH - 6));
+        FOR ndPX FROM ndTX TO RGT STEP 4 DO
+          PIXON_P(G1, ndPX, ndPY, neMAG);
+        END;
+        RECT_P(G1, ndTX-1, ndPY-1, ndTX+1, ndPY+1, neMAG);
+      END;
+    END;
+  END;
+
+  // ---- title + readouts ----
+  TEXTOUT_P("Normal PDF Explorer", G1, 90, 4, 2, NBLUE);
+  // beta 42a (D-NE-1): every number below prints through ne_Fx
+  // (rounded before STRING, so never scientific); what cannot be
+  // negative -- sigma, s, an area, a density, an expected count --
+  // through ne_PStr, which prints "< 0.0001" style below the last
+  // digit, with ne_Eq so no "= <" appears.  The labels that ne_Eq
+  // completes have lost their trailing " = ".
+  TEXTOUT_P("μ = " + ne_Fx(ndMU, 2), G1, 42, 44, 2, NBLACK);
+  TEXTOUT_P("σ" + ne_Eq(ne_PStr(ndSG, 2)), G1, 42, 60, 2, NBLACK);
+  // Everything below sigma is optional, so the column is laid out
+  // by a running cursor: each line that prints advances it.  Fixed
+  // rows meant the sample block collided with the comparison block
+  // whenever both were showing.
+  ndRY := 76;
+  IF ndC2 == 1 THEN
+    TEXTOUT_P("μ₂ = " + ne_Fx(ndMU2, 2), G1, 42, ndRY, 1, NGRN);
+    ndRY := ndRY + 13;
+    // d on its own line under mu2, not trailing it
+    TEXTOUT_P("d = " + ne_Fx((ndMU2-ndMU)/ndSG, 2), G1, 42, ndRY, 1, NGRN);
+    ndRY := ndRY + 13;
+  END;
+  IF ndN > 0 THEN
+    IF NE_HREAL == 1 THEN
+      TEXTOUT_P("your data n = " + ne_Fx(ndN, 0), G1, 42, ndRY, 1, NGRN);
+    ELSE
+      TEXTOUT_P("sample n = " + ne_Fx(ndN, 0), G1, 42, ndRY, 1, NGRN);
+    END;
+    ndRY := ndRY + 13;
+    // The sample's own statistics, beside the population parameters
+    // above them.  They land somewhere near mu and sigma and differ
+    // on every draw — which is the lesson.
+    // CHAR(57344) is x-bar as a single glyph: HP's font carries it
+    // at U+E000, with p-hat alongside at U+E001.  No drawn bar and
+    // no combining macron, both of which misplace the stroke.
+    // Stacked, not side by side: x-bar sits under mu and s under
+    // sigma, so each sample statistic lines up with the population
+    // parameter it is estimating.
+    TEXTOUT_P(CHAR(57344) + " = " + ne_Fx(NE_HXB, 2),
+      G1, 42, ndRY, 1, NGRN);
+    ndRY := ndRY + 13;
+    TEXTOUT_P("s" + ne_Eq(ne_PStr(NE_HS, 2)), G1, 42, ndRY, 1, NGRN);
+  END;
+  // Only with a single curve: with two, this block collides with the
+  // mu2 label in the same corner, and the ranges describe one
+  // distribution anyway.  The shaded bands themselves stay on.
+  // beta 42: not in the Explorer while something is shaded either --
+  // there the corner belongs to the area and the height at x0, and
+  // this block would push them down onto the curve.
+  ndFlag := 0;                                   // 1 = the block is drawn
+  IF ndBand == 1 AND ndC2 == 0 AND (NE_KH <> 1 OR ndMode == 0) THEN
+    ndFlag := 1;
+    // exact areas, not the rounded 68–95–99.7 headline
+    TEXTOUT_P("68.27%: " + ne_Fx(ndMU-ndSG, 2) + "…"
+      + ne_Fx(ndMU+ndSG, 2), G1, 186, 44, 1, NBLUE);
+    TEXTOUT_P("95.45%: " + ne_Fx(ndMU-2*ndSG, 2) + "…"
+      + ne_Fx(ndMU+2*ndSG, 2), G1, 186, 57, 1, NBLUE);
+    TEXTOUT_P("99.73%: " + ne_Fx(ndMU-3*ndSG, 2) + "…"
+      + ne_Fx(ndMU+3*ndSG, 2), G1, 186, 70, 1, NBLUE);
+  END;
+
+  // The right-hand column under the bands, by a running cursor too
+  // (beta 42: more lines can appear here now).  ne_RTxt pulls a long
+  // line left so it still fits on the screen.  In the Explorer, with
+  // no bands block above it, the column starts at the top of the box
+  // instead, clear of the curves and the mu labels on their peaks.
+  ndRY := 86;
+  IF ndFlag == 0 AND NE_KH == 1 THEN ndRY := 44; END;
+  IF ndMode == 1 OR ndMode == 2 THEN
+    ndPV := NORMALD_CDF(ndMU, ndSG, ndLoB);
+    // beta 42a (D-NE-2): a right tail as the mirror-image LOWER tail,
+    // P(X > x0) = P(X < 2 mu - x0).  1 - CDF is exactly 0 on the
+    // Prime once the tail is below about 5E-13 (12-digit reals).
+    IF ndMode == 2 THEN ndPV := NORMALD_CDF(ndMU, ndSG, 2*ndMU - ndLoB); END;
+    ne_RTxt("x₀ = " + ne_Fx(ndLoB, 2) + "  z = "
+      + ne_Fx((ndLoB-ndMU)/ndSG, 2), ndRY, NRED);
+    ndRY := ndRY + 13;
+    IF NE_KH == 1 THEN
+      // In the Explorer: in words, and with the HEIGHT of the curve
+      // at x0 printed beside the AREA, because students read the
+      // one as the other.  The height is a density -- probability
+      // per unit of x.  It is not the probability of anything, and
+      // when sigma is below 0.4 it is bigger than 1.
+      IF ndMode == 1 THEN
+        ndLbl := "area to the left";
+      ELSE
+        ndLbl := "area to the right";
+      END;
+      ne_RTxt(ndLbl + ne_Eq(ne_PStr(ndPV, 4)), ndRY, NRED);
+      ndRY := ndRY + 13;
+      // (one curve only: with two, the corner belongs to the power)
+      IF ndC2 == 0 THEN
+        ndYW := NORMALD(ndMU, ndSG, ndLoB);
+        ndHD := 6;                               // digits enough to show it
+        IF ndYW > 0.000001 THEN
+          ndHD := MIN(6, MAX(3, 2 - FLOOR(LOG(ndYW))));
+        END;
+        ne_RTxt("height " + ne_PStr(ndYW, ndHD) + " (density,", ndRY, NBLUE);
+        ndRY := ndRY + 13;
+        ne_RTxt("not a probability)", ndRY, NBLUE);
+        ndRY := ndRY + 13;
+      END;
+    ELSE
+      IF ndMode == 1 THEN
+        ndLbl := "P(X < x₀)";
+      ELSE
+        ndLbl := "P(X > x₀)";
+      END;
+      ne_RTxt(ndLbl + ne_Eq(ne_PStr(ndPV, 4)), ndRY, NRED);
+      ndRY := ndRY + 13;
+    END;
+  END;
+  IF ndMode >= 3 THEN
+    // beta 42a: between by ne_Btw (both CDFs are exactly 1 on the
+    // Prime when both bounds are far above the mean)
+    ndPV := ne_Btw(ndMU, ndSG, ndLoB, ndHiB);
+    // beta 42a (D-NE-2): outside = the left tail below a plus the
+    // right tail above b, each read as a lower tail (the right one
+    // mirrored about mu); 1 - (between) lost the right tail's digits
+    IF ndMode == 4 THEN
+      ndPV := NORMALD_CDF(ndMU, ndSG, ndLoB) + NORMALD_CDF(ndMU, ndSG, 2*ndMU - ndHiB);
+    END;
+    ne_RTxt("a = " + ne_Fx(ndLoB, 2) + "  b = " + ne_Fx(ndHiB, 2),
+      ndRY, NRED);
+    ndRY := ndRY + 13;
+    IF NE_KH == 1 THEN
+      IF ndMode == 3 THEN ndLbl := "area between"; ELSE ndLbl := "area outside"; END;
+    ELSE
+      IF ndMode == 3 THEN ndLbl := "P(a < X < b)"; ELSE ndLbl := "P(outside)"; END;
+    END;
+    ne_RTxt(ndLbl + ne_Eq(ne_PStr(ndPV, 4)), ndRY, NRED);
+    ndRY := ndRY + 13;
+  END;
+  // with the S-curve on: its height at each bound, which IS the
+  // area to the left of that bound
+  IF ndRef == 2 AND ndMode > 0 THEN
+    ndPV := NORMALD_CDF(ndMU, ndSG, ndLoB);
+    IF ndMode <= 2 THEN
+      ne_RTxt("CDF(x₀)" + ne_Eq(ne_PStr(ndPV, 4)), ndRY, neMAG);
+      ndRY := ndRY + 13;
+    ELSE
+      ne_RTxt("CDF(a)" + ne_Eq(ne_PStr(ndPV, 4)), ndRY, neMAG);
+      ndRY := ndRY + 13;
+      ndPV := NORMALD_CDF(ndMU, ndSG, ndHiB);
+      ne_RTxt("CDF(b)" + ne_Eq(ne_PStr(ndPV, 4)), ndRY, neMAG);
+      ndRY := ndRY + 13;
+    END;
+  END;
+  // the power picture's number: the whole area under curve 2 past x*
+  IF ndC2 == 1 AND ndMode == 2 THEN
+    // beta 42a (D-NE-2): curve 2's right tail as its mirror-image
+    // lower tail about mu2, never 1 - CDF
+    ndQ := NORMALD_CDF(ndMU2, ndSG, 2*ndMU2 - ndLoB);
+    ne_RTxt("power" + ne_Eq(ne_PStr(ndQ, 4)), ndRY, NGRN);
+    ndRY := ndRY + 13;
+  END;
+
+  // ---- the probability rides the shaded region (beta 42) ----
+  // Printed in a small box centred on the shaded pixel span, so
+  // that during a drag (and during the sweep) the number travels
+  // with the area it measures.  Outside: each tail carries its own
+  // area -- they add up to the total in the corner.
+  IF ndMode > 0 THEN
+    ndPA := MAX(LFT, MIN(RGT, LFT + IP((ndLoB - ndMin) / ndSpan * PW)));
+    ndPB := MAX(LFT, MIN(RGT, LFT + IP((ndHiB - ndMin) / ndSpan * PW)));
+    ndMP := LFT + IP((ndMU - ndMin) / ndSpan * PW);    // the mean's column
+    IF ndMode == 1 THEN
+      ne_Tag(LFT+1, ndPA, NORMALD_CDF(ndMU, ndSG, ndLoB), ndMP, ndYmx);
+    END;
+    // beta 42a (D-NE-2): each right tail below is the mirror-image
+    // lower tail, NORMALD_CDF(mu, sigma, 2 mu - bound), not 1 - CDF;
+    // the area between comes from ne_Btw, for the same reason
+    IF ndMode == 2 THEN
+      ne_Tag(MAX(ndPA, LFT+1), RGT, NORMALD_CDF(ndMU, ndSG, 2*ndMU - ndLoB),
+        ndMP, ndYmx);
+    END;
+    IF ndMode == 3 THEN
+      ne_Tag(MAX(ndPA, LFT+1), ndPB, ne_Btw(ndMU, ndSG, ndLoB, ndHiB),
+        ndMP, ndYmx);
+    END;
+    IF ndMode == 4 THEN
+      ne_Tag(LFT+1, ndPA, NORMALD_CDF(ndMU, ndSG, ndLoB), ndMP, ndYmx);
+      ne_Tag(MAX(ndPB, LFT+1), RGT, NORMALD_CDF(ndMU, ndSG, 2*ndMU - ndHiB),
+        ndMP, ndYmx);
+    END;
+  END;
+
+  // ---- the numbers of the bar being read (beta 42) ----
+  // Observed is the bar's count.  Expected is n times the curve's
+  // probability for that bin, p = F(right edge) - F(left edge),
+  // under the curve drawn NOW -- so moving mu in the Explorer moves
+  // the expected counts, and a poor fit shows bar by bar.
+  IF neSelBin > 0 AND neBarsOK == 1 THEN
+    IF neHX1(neSelBin) >= 0 THEN
+      ndB := neSelBin;
+      ndXV := NE_HLO + (ndB - 1) * NE_HW;          // the bin's left edge
+      // beta 42a: by ne_Btw, so a bin far above the curve's mean (the
+      // curve moved left in the Explorer) keeps its digits: its two
+      // CDFs were both exactly 1 on the Prime and p read 0.0000
+      ndQ := ne_Btw(ndMU, ndSG, ndXV, ndXV + NE_HW);
+      ndExp := ndN * ndQ;
+      // just above the bar, kept inside the plot box
+      ndTY := MAX(TOP + 2, MIN(BOT - 32, neHY1(ndB) - 34));
+      // beta 42a (D-NE-1): an outer bar's numbers printed "1.1E-2
+      // expected" and "p = 5.6746E-5"; counts and edges now go
+      // through ne_Fx, the expected count and p through ne_PStr
+      // ("< 0.1 expected" below the last digit)
+      RECT_P(G1, 42, ndTY, 306, ndTY + 28, neORNG, nePANF);
+      TEXTOUT_P("bin " + ne_Fx(ndB, 0) + ": " + ne_Fx(ndBins(ndB), 0)
+        + " observed, " + ne_PStr(ndExp, 1) + " expected (n"
+        + CHAR(215) + "p)", G1, 46, ndTY + 3, 1, NBLACK);
+      TEXTOUT_P("x from " + ne_Fx(ndXV, 2) + " to "
+        + ne_Fx(ndXV + NE_HW, 2) + ",  p" + ne_Eq(ne_PStr(ndQ, 4)),
+        G1, 46, ndTY + 15, 1, neZG);
+    END;
+  END;
+
+  // ---- the hint line under the title (the Explorer, beta 42) ----
+  IF DIM(neHint) > 0 THEN
+    TEXTOUT_P(neHint, G1, 6, 24, 1, neZG);
+  END;
+
+  // ---- key help ----
+  // The live keys only exist inside the ne_Explorer, which has no
+  // footer at all now: its soft-key strip, painted after the blit,
+  // takes y = 218..239.  On a result view a key returns and a tap
+  // explores (or reads a bar); during the sweep anything skips.
+  // House form: comma-separated, spaces round "=", dodger blue.
+  IF NE_KH == 0 THEN
+    IF neBarsOK == 1 THEN
+      TEXTOUT_P("tap bar = counts, tap plot = explore, any key = menu",
+        G1, 4, 226, 1, neFOOT);
+    ELSE
+      TEXTOUT_P("tap plot = explore, any key = menu",
+        G1, 58, 226, 1, neFOOT);
+    END;
+  END;
+  IF NE_KH == 3 THEN
+    TEXTOUT_P("any key or tap = skip", G1, 97, 226, 1, neFOOT);
+  END;
+
+  // ---- captions (the standardize animation), onto G1 too ----
+  // ndCap is 0 for none, or a list of {text, x, y, font} groups.
+  // Drawing them here, before the blit, is what stops them
+  // flickering: anything painted on G0 after the blit is wiped by
+  // the next frame.  TYPE 6 is a list.
+  IF TYPE(ndCap) == 6 THEN
+    FOR ndIdx FROM 1 TO SIZE(ndCap) STEP 4 DO
+      TEXTOUT_P(ndCap(ndIdx), G1, ndCap(ndIdx+1), ndCap(ndIdx+2),
+        ndCap(ndIdx+3), NRED);
+    END;
+  END;
+
+  // ---- one blit to the screen: no tearing ----
+  BLIT_P(G0, 0, 0, G1);
+END;

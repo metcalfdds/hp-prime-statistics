@@ -1,0 +1,100 @@
+==== Part A: the CAS templates in desktop Giac, against fractions, SymPy and statsmodels ====
+PASS SYNTHETIC example (16 points, 1 decimal)   SSE ok, d/da d/db ok, solve ok, OLS = polyfit = exact ok   b = 2441/2394, a = 3186173/191520
+PASS integers, tied x                           SSE ok, d/da d/db ok, solve ok, OLS = polyfit = exact ok   b = 73/52, a = 14/13
+PASS two decimals                               SSE ok, d/da d/db ok, solve ok, OLS = polyfit = exact ok   b = 165503/209298, a = 17541923/3488300
+PASS negative values                            SSE ok, d/da d/db ok, solve ok, OLS = polyfit = exact ok   b = 26353/11890, a = -3283/11890
+PASS years against crime-sized counts           SSE ok, d/da d/db ok, solve ok, OLS = polyfit = exact ok   b = 6701/650, a = -5243866/325
+PASS n = 3                                      SSE ok, d/da d/db ok, solve ok, OLS = polyfit = exact ok   b = 12/7, a = 0
+PASS forty points, one decimal                  SSE ok, d/da d/db ok, solve ok, OLS = polyfit = exact ok   b = 9683220/11837191, a = -72190339/118371910
+PASS a perfect line y = 2x + 1 (SSE 0)          SSE ok, d/da d/db ok, solve ok, OLS = polyfit = exact ok   b = 2, a = 1
+PASS flat: every y equal                        SSE ok, d/da d/db ok, solve ok, OLS = polyfit = exact ok   b = 0, a = 5
+PASS three decimals                             SSE ok, d/da d/db ok, solve ok, OLS = polyfit = exact ok   b = 9661/6625, a = 5446/6625
+PASS mixed precision                            SSE ok, d/da d/db ok, solve ok, OLS = polyfit = exact ok   b = -541/444, a = 14045/1184
+PASS a point at y = 1/3 (more than six decimals): no CAS text at all
+PASS the longest call (solve: the SSE twice) fits slCasMx = 4000   SSE text up to 1104 characters (forty points)
+PASS 2a: in the Prime's printing every solve answer is {[a,b]} (CASProbe T36), the SSE and its derivatives are unchanged   ['{[3186173/191520,2441/2394]}']
+
+==== Part B: the PPL program in the harness (ppl_run_v3d) ====
+PASS slCxMake builds exactly this SSE text, 11 data sets
+PASS the PPL reads solve's answer: a and b = the exact fractions, every set   []
+PASS the program's slB1, slB0 = the exact fractions to 1e-12
+PASS panel tap -> the page (Giac): badge, SSE, derivatives, fractions beside the decimals, the note   ['Least squares as calculus', 'exact (CAS)', 'The magenta line makes this SSE smallest:', 'SSE = sum (y - a - bx)^2 over all n = 16 points', 'SSE = 16×a^2+2608/5×a×b-5321/5×a+119443/25×b^2', '-36841/2×b+373319/20', 'Smallest where both slopes are 0 (CAS diff):', 'dSSE/da = 32×a+2608/5×b-5321/5 = 0', 'dSSE/db = 2608/5×a+238886/25×b-36841/2 = 0', 'Solved exactly (CAS solve), beside the decimals:', 'b = 2441/2394   (program 1.019632)', 'a = 3186173/191520   (program 16.63624)', 'No line has a smaller SSE (try Guess), and the', 'first equation puts it through the green cross:', 'a = y-bar - b \ue000.', 'Exact: x = 10.4 is 104/10, so nothing is rounded.', 'any key or tap = back to the plot']
+PASS the page: four CAS calls, all answered; the run ends normally   'ScatterLab: n = 16, y-hat = 16.64 + 1.020 x, r = 0.7512, SSE = 422.7'
+PASS 2a: every text asks for string(...), every answer quoted, the solve in braces; no CAS variable assigned, no CAS call of a variable   "{[3186173/191520,2441/2394]}"
+PASS cas=fail: decimal badge, the normal equations with the program's sums, no error   ['Least squares as calculus', 'decimal', 'The magenta line makes this SSE smallest:', 'SSE = sum (y - a - bx)^2 over all n = 16 points', 'The CAS did not answer: no exact fractions.', 'Both slopes of the SSE = 0, the normal equations:', 'n a + (sum x) b = sum y', '  16 a + 260.8 b = 532.1', '(sum x) a + (sum x^2) b = sum x y', '  260.8 a + 4777.72 b = 9210.25', "Solving them (the program's decimals):", '  b = 1.019632,  a = 16.63624', 'No line has a smaller SSE (try Guess), and the', 'first equation puts it through the green cross:', 'a = y-bar - b \ue000.', 'any key or tap = back to the plot']
+PASS Menu > Least squares as calculus, twice: 4 CAS calls, not 8   4
+PASS the menu has ten items, the new one fifth
+PASS a drag of point 1 (down 30 px): it moved; 8 CAS calls in all = 4 per page, none in the drag   point 1 now (10.4, 27.7), 8 calls
+PASS the page after the drag: the moved points' exact line   ['b = 57655/52668   (program 1.094687)'] want b = 57655/52668
+PASS slCas drops one surrounding pair of quotes: the quoted answers still give the exact page   16*sla^2+2608/5*sla*slb-5321/5*sla+119443/25*slb^2-36841/2*slb+373319/20
+PASS two points: no page, the note says why, no CAS call
+PASS a point at y = 1/3: "needs over 6 decimals", the decimal page, no CAS call
+PASS stale-key run: menu, Data, example, the page, quit (item A); nothing skipped   result 'ScatterLab: n = 16, y-hat = 16.64 + 1.020 x, r = 0.7512, SSE = 422.7', skips []
+PASS 2a: beta 2 in v3b: the page says "decimal" and gives no fractions -- the emulator's finding
+
+G. beta 2a: beta 2 in harness v3b, and beta 2a against beta 2
+PASS beta 2a: routines that differ from beta 2: ['slCas'] (want slCas)
+PASS beta 2a: outside those routines only comments differ
+PASS beta 2a: the #PYTHON blocks are unchanged
+  routines that differ from beta 2: slCas; everything else differs only in comments
+
+R. 2b: the second emulator round (harness v3d)
+PASS R1 slRepl('{[1,2]}', '}', '') = '{[1,2]': the pattern at the END (solve's closing brace)
+PASS R1 slRepl('{[1,2]}', '{', '') = '[1,2]}': the pattern at the START
+PASS R1 slRepl('abc', 'abc', '') = '': the pattern is the WHOLE text
+PASS R1 slRepl('abc', 'abc', 'xyz') = 'xyz': the whole text, replaced
+PASS R1 slRepl('abc', '', 'X') = 'abc': an EMPTY pattern: the text unchanged (no endless loop)
+PASS R1 slRepl('', 'a', 'b') = '': an EMPTY text
+PASS R1 slRepl('sla*slb*sla', 'sla', 'a') = 'a*slb*a': twice, at both ends
+PASS R1 slRepl('2*a*b', '*', '×') = '2×a×b': in the middle, twice
+PASS R1 slRepl('}}}', '}', '') = '': only the pattern, three times
+PASS R1 beta 2a in v3d: its slRepl stops with the INSTRING error whenever the text runs out -- the pattern at the end, the whole text, an empty text, only the pattern ([('{[1,2]}', '}'), ('abc', 'abc'), ('', 'a'), ('}}}', '}')]); a pattern at the start works -- the emulator's crash
+PASS R2 slCas with the CAS failing: "" and no error (got '')
+PASS R2 slCxClean("") = "" (no INSTRING on the empty text)
+PASS R2 slCxSol on 10 answers (empty, {}, [], "sla=" with nothing after it, two solutions, the Prime's and Giac's forms): the right halves, no error []
+PASS R2 beta 2a in v3d: slCas with the CAS failing stops (PPLError: INSTRING: Invalid input (the first argument is an empty string -- emulator, 17 Oct 2026)) -- every fallback was broken
+PASS R3 tap on the equation, cas=giac: the page opens, b = 2441/2394, a = 3186173/191520, "exact (CAS)", no error; quit returns the summary (None)
+PASS R3 beta 2a, the same run in v3d: the CAS answers all 4 calls, then "PPLError: INSTRING: Invalid input (the first argument is a" -- the emulator's finding
+PASS R3 Menu > Least squares as calculus, cas=giac: the page opens, b = 2441/2394, a = 3186173/191520, "exact (CAS)", no error; quit returns the summary (None)
+PASS R3 beta 2a, the same run in v3d: the CAS answers all 4 calls, then "PPLError: INSTRING: Invalid input (the first argument is a" -- the emulator's finding
+PASS R4 tap on the equation, cas=fail: the page opens, "decimal" and the normal equations, no error; quit returns the summary (None)
+PASS R4 beta 2a, the same run in v3d: "PPLError: INSTRING: Invalid input (the first argument is a" -- the emulator's finding
+PASS R4 Menu > Least squares as calculus, cas=fail: the page opens, "decimal" and the normal equations, no error; quit returns the summary (None)
+PASS R4 beta 2a, the same run in v3d: "PPLError: INSTRING: Invalid input (the first argument is a" -- the emulator's finding
+PASS R5 canned, solve gives {} (no solution): beta 2b the decimal page, no error; beta 2a: PPLError: INSTRING: Invalid input (the first argum
+PASS R5 canned, solve gives {[sla=,slb=1/2]}: beta 2b the decimal page, no error; beta 2a: PPLError: INSTRING: Invalid input (the first argum
+PASS R5 canned, every answer an empty string: beta 2b the decimal page, no error; beta 2a: PPLError: INSTRING: Invalid input (the first argum
+PASS R5 canned, the Prime's own answers (control): beta 2b the exact page, no error; beta 2a: PPLError: INSTRING: Invalid input (the first argum
+PASS R6 Poverty vs crime (the emulator's data): every point's note, Resid, the page (CAS and cas=fail), Guess, Fit, a far point, Quit -- no error, no small number in scientific form (54 frames)
+PASS R6 r near 0 (r = 0.0002, r-squared 5E-8): every point's note, Resid, the page (CAS and cas=fail), Guess, Fit, a far point, Quit -- no error, no small number in scientific form (34 frames)
+PASS R6 a loaded value finer than the grid (0.004 on a step of 10): every point's note, Resid, the page (CAS and cas=fail), Guess, Fit, a far point, Quit -- no error, no small number in scientific form (32 frames)
+PASS R6 x = -2/3, 1/3, 1/3 (sum x is -1E-12 on the Prime, 0 here): every point's note, Resid, the page (CAS and cas=fail), Guess, Fit, a far point, Quit -- no error, no small number in scientific form (28 frames)
+PASS R6 x = -2/3, -1/3, 1/3, 2/3 (sum x is -1.1E-16 here): every point's note, Resid, the page (CAS and cas=fail), Guess, Fit, a far point, Quit -- no error, no small number in scientific form (30 frames)
+PASS R6 an axis crossing 0 in steps of 0.1: every point's note, Resid, the page (CAS and cas=fail), Guess, Fit, a far point, Quit -- no error, no small number in scientific form (30 frames)
+PASS R6 populations of a million (sum x^2 = 8.7E12): every point's note, Resid, the page (CAS and cas=fail), Guess, Fit, a far point, Quit -- no error, no small number in scientific form (30 frames); from 1E12 up: ['8.69000ᴇ12']
+  R6 beta 2a, the same run (its page skipped: it stops there): Poverty vs crime (the emulator's data) -> none
+  R6 beta 2a, the same run (its page skipped: it stops there): r near 0 (r = 0.0002, r-squared 5E-8) -> ['1.627ᴇ-8', '8.924ᴇ-8', '1.276ᴇ-4', '2.987ᴇ-4']
+  R6 beta 2a, the same run (its page skipped: it stops there): a loaded value finer than the grid (0.004 on a step of 10) -> ['3.0ᴇ-3', '4ᴇ-3']
+  R6 beta 2a, the same run: x = -2/3, 1/3, 1/3 (sum x is -1E-12 on the Prime, 0 here) -> none
+  R6 beta 2a, the same run: x = -2/3, -1/3, 1/3, 2/3 (sum x is -1.1E-16 here) -> ['-1.110223ᴇ-16']
+  R6 beta 2a, the same run (its page skipped: it stops there): an axis crossing 0 in steps of 0.1 -> none
+  R6 beta 2a, the same run (its page skipped: it stops there): populations of a million (sum x^2 = 8.7E12) -> none
+PASS R6 beta 2a prints scientific forms for r near 0 (r, r-squared), the loaded value (x, y) and the cancelling x (sum x on the decimal page): the sets reach the case.  The axis set and the populations are checks on beta 2b only (the axis remainder does not arise in the harness either; the decimal page needs a failed CAS, which stops beta 2a)
+PASS R6 the loaded point (0.004, 0.003) on a 10-by-1 grid reads "Pt 1 (0, 0.0): resid +0.08828, h = 0.42"
+PASS R7 every STRING(x, 2, d) left with d > 0 (7) is a justified site; the rest go through slFx (13 calls): extra [], missing []
+PASS R7 every STRING(x, 2, 0) prints a whole number (n, counts, page numbers; nmV in its FP = 0 branch; slSig's literal 0): ['DIM(clT)', 'cfN', 'hgN', 'hgP', 'lcN', 'lcU', 'nmV', 'slN', 'slSel']
+PASS R7 INSTRING first arguments: ['"0123456789"', 'cR', 'ccR', 'cxX', 'cxY', 'rnR', 'rpS', 'slCxSa', 'slCxSb', 'soS']
+PASS R7 the guards are in place: cR (slCas), rpS and rpO (slRepl), ccR (slCxClean), soS and the halves (slCxSol); cxX, cxY are never empty (slCxMake returns first), rnR always holds a "/" (slCxMake calls slRatNote only then), slCxSb is non-empty (soK < DIM(soS)) []
+  LEFT / MID / RIGHT calls in the code (counts and starts reviewed by hand, see the CHANGES): 6 / 15 / 0
+PASS G 2b: routines that differ from beta 2a (comments included): ['ScatterLab', 'slAxes', 'slCas', 'slCxClean', 'slCxSol', 'slDec', 'slFx', 'slNotes', 'slNum', 'slPanel', 'slRepl']
+PASS G 2b: beta 2a has 64 routines; the other 54 are byte-identical in beta 2b, comments included; one new (slFx), none removed
+PASS G 2b: outside those routines only comments differ (the header)
+PASS G 2b: slCas = beta 2a's with only the brief's DIM guard (the IFERR line and the quote strip byte-identical)
+PASS G 2b: slRepl is the brief's replace loop, line for line
+PASS G 2b: no #PYTHON block, as before
+PASS G 2b: the file is still pure ASCII (glyphs through CHAR())
+PASS R10 h.sci_strings over all 44 beta 2b runs: 0 small (must be 0); from 1E12 up only slNum's six significant digits on the decimal page: ['8.69000ᴇ12']
+  beta 2b sci_strings (every run): ['8.69000ᴇ12']
+  the older versions' sci_strings in this script (7 distinct): ['-1.110223ᴇ-16', '1.276ᴇ-4', '1.627ᴇ-8', '2.987ᴇ-4', '3.0ᴇ-3', '4ᴇ-3', '8.924ᴇ-8']
+
+0 failure(s)

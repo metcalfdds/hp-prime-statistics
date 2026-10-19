@@ -1,0 +1,630 @@
+== A. every template the probe sends, as the Prime prints it (harness v3e: desktop Giac 1.9
+      with the Prime's printing) -- printed after run C1, from h.cas_calls ==
+
+== B. the #PYTHON blocks under CPython (stub hpprime, stub cas = desktop Giac) ==
+PASS  two blocks found: ['cxPyBig', 'cxPyCas']
+PASS  cxPyBig: no comment line that looks like #END
+PASS  cxPyBig: the only top-level import is hpprime (Lessons Learned s9)
+PASS  cxPyBig: spaces only, no tabs
+PASS  cxPyCas: no comment line that looks like #END
+PASS  cxPyCas: the only top-level import is hpprime (Lessons Learned s9)
+PASS  cxPyCas: spaces only, no tabs
+PASS  cxPyBig: CX_PYS = '1267650600228229401496703205376;100891344545564193334812497256;same'
+PASS  cxPyBig: last mark 'T33 done'
+PASS  cxPyBig: a quoted CX_CS still reads as the same integer
+PASS  cxPyBig: a wrong CX_CS gives "differ"
+PASS  cxPyBig without big ints: 'ERR small int overflow;ERR small int overflow;differ'
+PASS  cxPyCas (desktop Giac): "<class 'str'>;100891344545564193334812497256;32;<class 'str'>;35/128;30"
+PASS  1c: cxPyCas with the emulator's caseval (a decimal for C(100,50), emulator T34): "<class 'str'>;1.00891344546e+29;32;<class 'str'>;35/128;27"
+PASS  cxPyCas, caseval crashing: CX_PYS empty, mark 'T34 import ok, calling caseval'
+PASS  cxPyCas, no cas module: 'noimport;import of cas halted; None in sys.modules'
+
+== C0. the emulator's runs (Run every test, + at the warning, a key, Esc), harness v3e ==
+   beta 1b: CASProbe: form 2, CAS yes, slowest 1 ms, 42 pass, 8 fail; pass 42, fail 8, value 19, error 0; FAIL ['T01', 'T04', 'T05', 'T06', 'T07', 'T10', 'T32', 'T34a']
+PASS  beta 1b in v3e gives the emulator's 42 pass, 8 fail, 19 values, 0 errors, FAIL ['T01', 'T04', 'T05', 'T06', 'T07', 'T10', 'T32', 'T34a']
+   beta 1c: CASProbe: form 2, CAS yes, slowest 1 ms, 44 pass, 9 fail; pass 44, fail 9, value 19, error 0; FAIL ['T01', 'T04', 'T05', 'T06', 'T07', 'T10', 'T32', 'T43b', 'T34a']
+PASS  1d: beta 1c in v3e gives the emulator's beta 1c run: 44 pass, 9 fail, 19 values, 0 errors, the extra FAIL T43b with "codes 57 46 54 7431 8722 50", and "STRING(0.096, 2, 1): NOT scientific"
+   T43b FAIL STRING(0.096, 2, 1) is not 9.6E-2
+     = 9.6ᴇ−2, codes 57 46 54 7431 8722 50 
+PASS  1d: in harness v3d beta 1c gave 45 pass, 8 fail, T43b PASS with codes ... 7431 45 50 -- v3d printed an ASCII hyphen in the exponent, so it could not show the emulator's FAIL; v3e prints U+2212 there
+   beta 1d: CASProbe: form 2, CAS yes, slowest 1 ms, 45 pass, 8 fail; pass 45, fail 8, value 19, error 0; FAIL ['T01', 'T04', 'T05', 'T06', 'T07', 'T10', 'T32', 'T34a']
+PASS  1d: beta 1d gives beta 1b's emulator run plus T43a, T43b, T43c PASS: 45 pass, 8 fail, 19 values, 0 errors, FAIL ['T01', 'T04', 'T05', 'T06', 'T07', 'T10', 'T32', 'T34a']
+PASS  1c: the log is beta 1b's line for line (timings aside), except the version line, the T43 block (8 lines), two new summary lines and the tally
+   -- T43 (added in beta 1c) --
+   T43a PASS INSTRING of an empty string is an
+     error
+   T43b PASS STRING(0.096, 2, 1) is scientific
+     = 9.6ᴇ−2, codes 57 46 54 7431 8722 50 
+     exponent minus: CHAR(8722), Home's minus
+   T43c PASS STRING(ROUND(0.096, 1), 2, 1) = 0.1
+     = 0.1
+PASS  1d: the log is beta 1c's line for line (timings aside), except the version line, T43b's record (FAIL -> PASS), one new note line "exponent minus: CHAR(8722), Home's minus", the summary line "NOT scientific" -> "scientific" and the tally (44 pass, 9 fail -> 45 pass, 8 fail)
+
+== C1. end to end: cas=giac, Python in CPython (emulator caseval), Run every test ==
+RETURN: CASProbe: form 2, CAS yes, slowest 1 ms, 45 pass, 8 fail
+PASS  CX_LAST = "done"
+--- CX_LOG, as the pager shows it ---
+   CASProbe beta 1d, 17 Oct 2026 build
+   menu: Run every test
+   T01 FAIL STRING(real) is not plain ASCII
+     STRING(123456789012) = 123456789012
+     codes over 126: none
+     STRING(-2.5) = −2.5, codes 8722 50 46 53 
+     "" + 123456789012 = 123456789012
+     codes over 126: none
+   T02 PASS cxIStr gives plain digits
+     123456789012 -> 123456789012, -25 -> -25
+     0 -> 0, COMB(30,15) -> 155117520
+     codes over 126: none
+   T03 VALUE HSeparator = 0, decimal dot
+     HFormat = 0 (0 = Standard, -1 = unread)
+     (left unchanged; a comma decimal would turn
+     a decimal point in CAS text into trouble)
+   T04 FAIL CAS literal comb(100,50): became a
+     12-digit real (1 ms)
+     = 1.00891344546E29
+   T05 FAIL the LOCAL lost the exact digits
+     (1 ms)
+     TYPE = 0 (0 real, 2 string, 8 CAS?)
+     STRING(v) = 1.00891344546E29
+     "" + v = 1.00891344546E29
+     TYPE of CAS(comb(8,4)/2^8) = 8
+   T06 FAIL CAS(s), s a LOCAL string: text came
+     back unevaluated (1 ms)
+     = "string(comb(100,50))"
+     (the text came back inside quotes)
+   T07 FAIL xxCas as written: text came back
+     unevaluated (1 ms)
+     = "string(comb(100,50))"
+     (the text came back inside quotes)
+   T08 PASS EXPR CAS(q s q) form: 30 digits
+     (1 ms)
+     = "100891344545564193334812497256"
+     (the text came back inside quotes)
+   T09 PASS EXPR CAS.eval(q s q) form: 30 digits
+     (1 ms)
+     = "100891344545564193334812497256"
+     (the text came back inside quotes)
+   T10 FAIL EXPR CAS.comb(100,50): became a
+     12-digit real (1 ms)
+     = 1.00891344546E29
+   -- call form chosen after T04-T10 --
+   form 2: in xxCas use (q = CHAR(34)):
+     cR := STRING(EXPR("CAS(" + CHAR(34)
+       + "string(" + xxS + ")" + CHAR(34) +
+     ")"));
+     the text comes in quotes: drop them
+     (cxStrip)
+   T11 PASS comb(8,4)/2^8 = 35/128 (1 ms)
+     = "35/128"
+   T12 PASS string(...) is a PPL string (1 ms)
+     TYPE = 2 (2 = a PPL string)
+     STRING(it) = "35/128", DIM 8
+     "" + it = 35/128, DIM 6
+   T13 PASS exact(0.4857142857142857) = 17/35
+     (1 ms)
+     = "17/35"
+   T14a VALUE 1/3 stays 1/3: CAS exact (1 ms)
+     = "1/3"
+   T14b VALUE sqrt(2) as text (1 ms)
+     = "√2"
+     codes over 126: 8730
+   T14c PASS evalf(17/35) = 0.485714... (1 ms)
+     = "0.485714285714"
+   T14d VALUE cas_setup(), item 1: 1 = approx
+     (1 ms)
+     = "[0,0,0,1,0,[1e-12,1e-15],12,[2,100,0,25],
+     0,1,0,1]"
+   T15a PASS comb(cxIStr(100),cxIStr(50)) (1 ms)
+     = "100891344545564193334812497256"
+   T15b PASS cxIStr(123456789012)+1 (1 ms)
+     = "123456789013"
+   T16 PASS limit = ln(20) (1 ms)
+     = "ln(20)"
+   T17 PASS limit = exp(cxt^2/2) (1 ms)
+     = "e^(cxt^2/2)"
+   T18 PASS solve gives 1/20 (1 ms)
+     = "{1/20}"
+   T19 PASS fsolve = 0.0950339 (1 ms)
+     = "[0.0950338528553]"
+   T20a VALUE diff(ln(p/(1-p)),p) (1 ms)
+     = "1/cxp+1/(1-cxp)"
+   T20b VALUE simplify of it (1 ms)
+     = "-1/(cxp^2-cxp)"
+   T20c PASS its value at p = 1/4 is 16/3 (1 ms)
+     = "16/3"
+   T21a VALUE int, exact form (1 ms)
+     = "erf(49*√2/50)/2+1/2"
+     codes over 126: 8730
+   T21b PASS evalf of it = 0.975002 (1 ms)
+     = "0.975002104852"
+   T22 PASS comb(1000,500): all 300 digits (1 ms)
+     300 characters: 270288 ... 216320
+   T23 PASS degree 36, middle term 58*q^18 (1 ms)
+     335 characters: "cxq^36+cxq^35+2*cxq^34+3*cx
+     q^33+5*cxq^32+7*cx ... ^2+cxq+1"
+   T24 PASS 37 numbers, sum 924, middle 58 (1 ms)
+     CAS text: "[1,1,2,3,5,7,11,13,18,22,28,32,39
+     ,4 ... 3,2,1,1]"
+     text to PPL list (EXPR): 1 ms
+   T25a VALUE CAS variables persist
+   T25b PASS purge(cxq) clears it again
+     cxq:=7 gives 7, then cxq+1 = 8
+     purge(cxq) gives 7, then cxq+1
+   T25c VALUE student names now (read only):
+     x = x, n = n, p = p, k = k, t = t
+   T26 PASS syntax error caught by IFERR (1 ms)
+   T27 VALUE 1/0 as text (1 ms)
+     = "±∞"
+     codes over 126: 177 8734
+   T28 PASS 0/0 contains undef (1 ms)
+     = "undef"
+   T29 VALUE cxnosuch(3), unknown name (1 ms)
+     = "cxnosuch(3)"
+   T30 VALUE fsolve(p^2+1=0, p=0..1) (1 ms)
+     = "[]"
+   T31a PASS STRING(123456789012)+1 (1 ms)
+     = "123456789013"
+   T31b VALUE STRING(-2.5)+1/2 (1 ms)
+     = "-2.0"
+   T32 FAIL xxCas let undef or an error through
+     0/0 -> ""0/0"", comb(100, -> ""comb(100,""
+     cxnosuch(3) -> ""cxnosuch(3)"" (a typo
+     passes)
+     (xxCas uses form 1, which failed in T07)
+   T32b PASS CAS settings as they were at T14
+     (1 ms)
+   -- T35-T42 (added in beta 1a) --
+     1/2+1/6+1/12+... = N/(N+1), sent whole
+   T35a PASS 1002 chars, N = 143: 143/144 (1 ms)
+   T35b PASS 2002 chars, N = 268: 268/269 (1 ms)
+   T35c PASS 3008 chars, N = 385: 385/386 (1 ms)
+   T35d PASS 6005 chars, N = 718: 718/719 (1 ms)
+     no break up to 6005 characters
+   T36a PASS a+b = 3, a-b = 1: a = 2, b = 1
+     (1 ms)
+     = "{[2,1]}"
+     shape: {[]}, commas
+     solve([4*cxa+6*cxb=14,6*cxa+14*cxb=25],[cxa,
+     cxb])
+   T36b PASS normal equations: 23/10 and 4/5
+     (1 ms)
+     = "{[23/10,4/5]}"
+     shape: {[]}, commas
+   T37a VALUE normal of a rational expression
+     (1 ms)
+     = "(12*cxt^2+7*cxt+1)/(2*cxp*cxt-2*cxp-2*cxt
+     )"
+   T37b PASS its value at t = 1, p = 3 is -10
+     (1 ms)
+     = "-10"
+   T37c PASS factor(6t^2+7t+2) = (2t+1)(3t+2)
+     (1 ms)
+     = "(2*cxt+1)*(3*cxt+2)"
+   T38a PASS products print with * (1 ms)
+     = "cxp*cxt+2*cxp+3*cxt+6"
+   T38b VALUE seq(j^2, j, 1, 4): a list (1 ms)
+     = "[1,4,9,16]"
+     shape: [], commas
+   T38c VALUE solve(t^2 = 4): two roots (1 ms)
+     = "{-2,2}"
+     shape: {}, commas
+   T38d VALUE a 2 x 2 matrix times 2 (1 ms)
+     = "[[2,4],[6,8]]"
+     shape: [[][]], commas
+   T39a VALUE series(1-exp(-t), t=0, 3) (1 ms)
+     = "cxt-1/2*cxt^2+1/6*cxt^3+cxt^4*order_size(
+     cxt)"
+     (the remainder is written order_size)
+   T39b PASS convert(polynom) drops the remainder
+     (1 ms)
+     = "cxt-1/2*cxt^2+1/6*cxt^3"
+   T40a PASS comb(n,2) form -> l^2 e^(-l)/2
+     (1 ms)
+     = "1/2*cxl^2*e^(-cxl)"
+   T40b PASS n(n-1)/2 form -> l^2 e^(-l)/2 (1 ms)
+     = "1/2*cxl^2*e^(-cxl)"
+   T40c PASS factor(limit(k <= 2 sum)) (1 ms)
+     = "(cxl^2+2*cxl+2)*e^(-cxl)/2"
+   T41a VALUE limit(n^2, n, inf) prints as the
+     glyph (8734) (1 ms)
+     = "∞"
+     codes over 126: 8734
+   T41b PASS limit 1-(1-l/n)^n = 1-exp(-l) (1 ms)
+     = "-e^(-cxl)+1"
+   T42 PASS BINOMIAL_CDF takes (n, p, k)
+     = 0.044179 (SciPy 0.044179)
+   -- T43 (added in beta 1c) --
+   T43a PASS INSTRING of an empty string is an
+     error
+   T43b PASS STRING(0.096, 2, 1) is scientific
+     = 9.6ᴇ−2, codes 57 46 54 7431 8722 50 
+     exponent minus: CHAR(8722), Home's minus
+   T43c PASS STRING(ROUND(0.096, 1), 2, 1) = 0.1
+     = 0.1
+   T33a PASS 2**100 exact, 31 digits (1 ms)
+     2**100 = 1267650600228229401496703205376
+   T33b PASS Python's comb(100,50) exact
+   T33c PASS CAS text read by Python: same
+     last mark: T33 done
+   T34a FAIL caseval comb(100,50): not 30 digits
+     (1 ms)
+     type <class 'str'>, 28 ms in Python
+     = 1.00891344546e+29
+   T34b PASS caseval comb(8,4)/2^8 = 35/128
+     type <class 'str'>, = 35/128, 30 ms
+     last mark: T34 done
+   -- summary --
+   CAS available: yes
+   call form: EXPR("CAS("+q+s+q+")"), drop quotes
+   slowest call: 1 ms, T04 CAS literal
+     comb(100,50)
+   Python ints: exact (2**100 ok)
+   caseval: str, wrong text
+   long CAS text: works to 6005 characters
+   an infinite limit prints: the glyph (8734)
+   BINOMIAL_CDF order (n, p, k): yes
+   INSTRING of an empty string: an error
+   STRING(0.096, 2, 1): scientific
+   form 2, CAS yes, slowest 1 ms, 45 pass, 8 fail
+PASS  every check that the emulator passed PASSes (45; beta 1a's list of 50 less the emulator's 8 FAILs, plus T43a-c); not: []
+PASS  1d: T43b PASS, "= 9.6E-2, codes 57 46 54 7431 8722 50" (the E and the minus as the emulator printed them), and the note "exponent minus: CHAR(8722), Home's minus"
+PASS  T03 VALUE HSeparator = 0, decimal dot
+PASS  emulator: T01 FAIL, STRING(-2.5) begins with U+2212 (code 8722)
+PASS  emulator: T04 FAIL CAS literal comb(100,50): became a 12-digit real (1 ms)
+PASS  emulator: T05 FAIL the LOCAL lost the exact digits (1 ms)
+PASS  emulator: T06 FAIL CAS(s), s a LOCAL string: text came back unevaluated (1 ms)
+PASS  emulator: T07 FAIL xxCas as written: text came back unevaluated (1 ms)
+PASS  emulator: T10 FAIL EXPR CAS.comb(100,50): became a 12-digit real (1 ms)
+PASS  1a/1c: T35-T42 run after T32, T43 after T42, all before the Python tests
+PASS  1a: T35 no break up to 6005 characters
+PASS  1a (emulator): T36a shape "{[]}, commas" -- the Prime prints {[2,1]}
+PASS  1a (emulator): T41a VALUE limit(n^2, n, inf) prints as the glyph (8734) (1 ms)
+PASS  1a: T42 shows 0.044179
+PASS  1a/1c: summary line "long CAS text: works to 6005 characters"
+PASS  1a/1c: summary line "an infinite limit prints: the glyph (8734)"
+PASS  1a/1c: summary line "BINOMIAL_CDF order (n, p, k): yes"
+PASS  1a/1c: summary line "INSTRING of an empty string: an error"
+PASS  1a/1c: summary line "STRING(0.096, 2, 1): scientific"
+PASS  emulator: T25a VALUE CAS variables persist
+PASS  emulator: CX_SUM = 'form 2, CAS yes, slowest 1 ms, 45 pass, 8 fail'
+PASS  emulator: the log says form 2, and drop the quotes
+PASS  no test stopped with a run-time error
+PASS  every CX_LOG line <= 46 characters (longest 46)
+PASS  one summary page, titled beta 1d
+--- the summary page ---
+   y=  2 x=  4 f2.0 #FFFFFF  CASProbe beta 1d: summary
+   y= 24 x=  8 f2.0 #008C3C  CAS available: yes
+   y= 42 x=  8 f2.0 #000000  Call form to use:
+   y= 60 x= 16 f2.0 #C800C8  EXPR("CAS("+q+s+q+")"), drop quotes
+   y= 80 x=  8 f2.0 #FF4500  slowest call: 1 ms
+   y= 98 x= 16 f1.0 #5A5A5A  in T04 CAS literal comb(100,50)
+   y=114 x=  8 f1.0 #003CC8  pass 45, fail 8, value 19, error 0, skip 0
+   y=130 x=  8 f2.0 #FF0000  Home STRING(real): NOT plain
+   y=148 x=  8 f2.0 #000000  CAS variables persist: yes
+   y=166 x=  8 f2.0 #000000  Python ints: exact (2**100 ok)
+   y=184 x=  8 f2.0 #000000  caseval: str, wrong text
+   y=209 x=  4 f1.0 #5A5A5A  Photograph this page.  CX_SUM, CX_LOG in Home.
+   y=224 x=  4 f1.0 #1E90FF  any key or tap = the log pages
+PASS  the warning page names the menu item exactly
+PASS  the menu "CASProbe beta 1d" has "Skip Python CAS": ['Run every test', 'Skip Python CAS', 'Skip all Python', 'Show last log']
+PASS  1d: every progress page is titled "CASProbe beta 1d: running" (44 pages)
+PASS  no script left over: ([], [], [])
+PASS  emulator T25: cxq was purged again (h.cas_vars empty)
+--- warnings ---
+   CAS text assigns cxq: it persists into later calls and into the student's CAS until purge(cxq) (CASProbe T25)
+   CAS(a variable) has a non-literal argument: on the calculator the text comes back UNEVALUATED (CASProbe beta 1a T06/T07). Use EXPR("CAS(" + CHAR(34) + "string(" + s + ")" + CHAR(34) + ")")
+   STRING(0.096, 2, 1) printed 9.6ᴇ-2: on the Prime fixed decimals turn scientific below 10^-1 (see h.sci_strings)
+--- every CAS call: expression -> the answer as the Prime prints it (ms on the PC) ---
+   comb(100,50)                                               -> 100891344545564193334812497256  (30 ms)
+   comb(100,50)                                               -> 100891344545564193334812497256  (29 ms)
+   comb(8,4)/2^8                                              -> 35/128  (36 ms)
+   string(comb(100,50))                                       -> (unevaluated: CAS of a non-literal)  (0 ms)
+   string(comb(100,50))                                       -> (unevaluated: CAS of a non-literal)  (0 ms)
+   string(comb(100,50))                                       -> "100891344545564193334812497256"  (38 ms)
+   string(comb(100,50))                                       -> "100891344545564193334812497256"  (30 ms)
+   comb(100,50)                                               -> 100891344545564193334812497256  (29 ms)
+   string(comb(8,4)/2^8)                                      -> "35/128"  (41 ms)
+   string(comb(8,4)/2^8)                                      -> "35/128"  (29 ms)
+   string(exact(0.4857142857142857))                          -> "17/35"  (27 ms)
+   string(1/3)                                                -> "1/3"  (29 ms)
+   string(sqrt(2))                                            -> "√2"  (30 ms)
+   string(evalf(17/35))                                       -> "0.485714285714"  (29 ms)
+   string(cas_setup())                                        -> "[0,0,0,1,0,[1e-12,1e-15],12,[2,100,0,25],0,1,0,1]"  (30 ms)
+   string(comb(100,50))                                       -> "100891344545564193334812497256"  (38 ms)
+   string(123456789012+1)                                     -> "123456789013"  (31 ms)
+   string(limit(cxn*(1-(1/20)^(1/cxn)),cxn,inf))              -> "ln(20)"  (32 ms)
+   string(limit(cosh(cxt/sqrt(cxn))^cxn,cxn,inf))             -> "e^(cxt^2/2)"  (42 ms)
+   string(solve((95/100)*cxp/((95/100)*cxp+(5/100)*(1-cxp)... -> "{1/20}"  (30 ms)
+   string(fsolve((1-cxp)^30=5/100,cxp=0..1))                  -> "[0.0950338528553]"  (31 ms)
+   string(diff(ln(cxp/(1-cxp)),cxp))                          -> "1/cxp+1/(1-cxp)"  (40 ms)
+   string(simplify(diff(ln(cxp/(1-cxp)),cxp)))                -> "-1/(cxp^2-cxp)"  (38 ms)
+   string(subst(diff(ln(cxp/(1-cxp)),cxp),cxp=1/4))           -> "16/3"  (34 ms)
+   string(int(exp(-cxz^2/2)/sqrt(2*pi),cxz,-inf,196/100))     -> "erf(49*√2/50)/2+1/2"  (34 ms)
+   string(evalf(int(exp(-cxz^2/2)/sqrt(2*pi),cxz,-inf,196/... -> "0.975002104852"  (44 ms)
+   string(comb(1000,500))                                     -> "27028824094543656951561469362597527549615200844654828700739... [302 chars]  (29 ms)
+   string(expand(normal((1-cxq^7)*(1-cxq^8)*(1-cxq^9)*(1-c... -> "cxq^36+cxq^35+2*cxq^34+3*cxq^33+5*cxq^32+7*cxq^31+11*cxq^30... [335 chars]  (38 ms)
+   string(seq(coeff(normal((1-cxq^7)*(1-cxq^8)*(1-cxq^9)*(... -> "[1,1,2,3,5,7,11,13,18,22,28,32,39,42,48,51,55,55,58,55,55,5... [102 chars]  (50 ms)
+   string(cxq+1)                                              -> "cxq+1"  (46 ms)
+   string(cxq:=7)                                             -> "7"  (45 ms)
+   string(cxq+1)                                              -> "8"  (46 ms)
+   string(purge(cxq))                                         -> "7"  (47 ms)
+   string(cxq+1)                                              -> "cxq+1"  (44 ms)
+   string(x)                                                  -> "x"  (42 ms)
+   string(n)                                                  -> "n"  (41 ms)
+   string(p)                                                  -> "p"  (30 ms)
+   string(k)                                                  -> "k"  (30 ms)
+   string(t)                                                  -> "t"  (30 ms)
+   string(comb(100,)                                          -> Error: :1: syntax error  line 1 col 17 at ) in 	��!V  (29 ms)
+   string(1/0)                                                -> "±∞"  (30 ms)
+   string(0/0)                                                -> "undef"  (28 ms)
+   string(cxnosuch(3))                                        -> "cxnosuch(3)"  (34 ms)
+   string(fsolve(cxp^2+1=0,cxp=0..1))                         -> "[]"  (28 ms)
+   string(123456789012+1)                                     -> "123456789013"  (28 ms)
+   string(-2.5+1/2)                                           -> "-2.0"  (33 ms)
+   0/0                                                        -> (unevaluated: CAS of a non-literal)  (0 ms)
+   comb(100,                                                  -> (unevaluated: CAS of a non-literal)  (0 ms)
+   cxnosuch(3)                                                -> (unevaluated: CAS of a non-literal)  (0 ms)
+   string(cas_setup())                                        -> "[0,0,0,1,0,[1e-12,1e-15],12,[2,100,0,25],0,1,0,1]"  (37 ms)
+   string(1/2+1/6+1/12+1/20+1/30+1/42+1/56+1/72+1/90+1/110... -> "143/144"  (30 ms)
+   string(1/2+1/6+1/12+1/20+1/30+1/42+1/56+1/72+1/90+1/110... -> "268/269"  (31 ms)
+   string(1/2+1/6+1/12+1/20+1/30+1/42+1/56+1/72+1/90+1/110... -> "385/386"  (33 ms)
+   string(1/2+1/6+1/12+1/20+1/30+1/42+1/56+1/72+1/90+1/110... -> "718/719"  (36 ms)
+   string(solve([cxa+cxb=3,cxa-cxb=1],[cxa,cxb]))             -> "{[2,1]}"  (33 ms)
+   string(solve([4*cxa+6*cxb=14,6*cxa+14*cxb=25],[cxa,cxb]))  -> "{[23/10,4/5]}"  (32 ms)
+   string(normal((3*cxt+1)*(4*cxt+1)/(2*(cxt*cxp-cxt-cxp))))  -> "(12*cxt^2+7*cxt+1)/(2*cxp*cxt-2*cxp-2*cxt)"  (31 ms)
+   string(subst(subst(normal((3*cxt+1)*(4*cxt+1)/(2*(cxt*c... -> "-10"  (32 ms)
+   string(factor(6*cxt^2+7*cxt+2))                            -> "(2*cxt+1)*(3*cxt+2)"  (34 ms)
+   string(expand((cxt+2)*(cxp+3)))                            -> "cxp*cxt+2*cxp+3*cxt+6"  (28 ms)
+   string(seq(cxj^2,cxj,1,4))                                 -> "[1,4,9,16]"  (30 ms)
+   string(solve(cxt^2=4,cxt))                                 -> "{-2,2}"  (30 ms)
+   string([[1,2],[3,4]]*2)                                    -> "[[2,4],[6,8]]"  (31 ms)
+   string(series(1-exp(-cxt),cxt=0,3))                        -> "cxt-1/2*cxt^2+1/6*cxt^3+cxt^4*order_size(cxt)"  (37 ms)
+   string(convert(series(1-exp(-cxt),cxt=0,3),polynom))       -> "cxt-1/2*cxt^2+1/6*cxt^3"  (33 ms)
+   string(limit(comb(cxn,2)*(cxl/cxn)^2*(1-cxl/cxn)^(cxn-2... -> "1/2*cxl^2*e^(-cxl)"  (36 ms)
+   string(limit(cxn*(cxn-1)/2*(cxl/cxn)^2*(1-cxl/cxn)^(cxn... -> "1/2*cxl^2*e^(-cxl)"  (30 ms)
+   string(factor(limit((1-cxl/cxn)^cxn+cxn/1*(cxl/cxn)^1*(... -> "(cxl^2+2*cxl+2)*e^(-cxl)/2"  (39 ms)
+   string(limit(cxn^2,cxn,inf))                               -> "∞"  (32 ms)
+   string(limit(1-(1-cxl/cxn)^cxn,cxn,inf))                   -> "-e^(-cxl)+1"  (30 ms)
+   70 CAS calls in all
+
+== C2. CAS variables persist from call to call (emulator T25), and purge clears them ==
+PASS  T25a: T25a VALUE CAS variables persist
+PASS  T25b: T25b PASS purge(cxq) clears it again
+PASS  CX_SUM = 'form 2, CAS yes, slowest 1 ms, 45 pass, 8 fail'
+
+== C3. cas=fail: every CAS call fails ==
+RETURN: CASProbe: form 0, CAS no, slowest 1 ms, 8 pass, 9 fail
+PASS  T04 FAIL CAS literal comb(100,50): run-time
+PASS  T05 FAIL CAS literal: run-time error (1 ms)
+PASS  T06 FAIL CAS(s), s a LOCAL string: text came
+PASS  T07 FAIL xxCas as written: text came back
+PASS  T08 FAIL EXPR CAS(q s q) form: run-time error
+PASS  T09 FAIL EXPR CAS.eval(q s q) form: run-time
+PASS  T10 FAIL EXPR CAS.comb(100,50): run-time error
+PASS  T11 SKIP T11-T32, T35-T41: no call form works -- T35-T42 (added in beta 1a) --
+PASS  T12-T32 and T35-T41 not run
+PASS  1a: T42 (no CAS) still runs: T42 PASS BINOMIAL_CDF takes (n, p, k)
+PASS  1c: T43 (no CAS) still runs, a-c PASS
+PASS  1a: summary "long CAS text: not tested"
+PASS  T33 runs on the constant: T33a PASS 2**100 exact, 31 digits (1 ms)
+PASS  T34 FAIL caseval gave no answer (1 ms)
+PASS  T34 names the last mark
+PASS  CX_SUM = 'form 0, CAS no, slowest 1 ms, 8 pass, 9 fail'
+PASS  no test stopped with a run-time error
+PASS  summary: CAS available: no / none: the CAS gave no 30 digits
+PASS  summary: caseval: no answer (crash?)
+
+== C4. Python absent (PYTHON() does nothing) ==
+PASS  T33 FAIL Python gave no answer (1 ms)
+PASS  T34 FAIL caseval gave no answer (1 ms)
+PASS  the empty mark is shown as " none"
+
+== C5. the menu ==
+PASS  Skip Python CAS: T33a PASS 2**100 exact, 31 digits (1 ms) / T34 SKIP cas.caseval skipped at the menu
+PASS  no warning page when skipped at the menu
+PASS  Skip all Python: T33 SKIP Python skipped at the menu / T34 SKIP cas.caseval skipped at the menu
+PASS  Show last log: 'CASProbe: 213 lines in CX_LOG', the log kept
+PASS  Show last log: only the pager (['cxView', 'cxView', 'cxView'])
+PASS  1c: Show last log with an empty line in CX_LOG: the pager draws it (CASProbe: 3 lines in CX_LOG)
+PASS  Cancel returns "CASProbe: cancelled"
+
+== C6. the T34 warning: a tap on "Skip it", the - key, a tap on "Run it" ==
+PASS  tap Skip it: T34 SKIP cas.caseval skipped at the warning
+PASS  - key: T34 SKIP cas.caseval skipped at the warning
+PASS  tap Run it, tap the summary, tap the pager: T34 runs (emulator: T34a FAIL, a decimal; T34b PASS)
+PASS  a tap on the lower half pages on: lines 14-26 of 223
+
+== C7. the crash marker from a previous run ==
+PASS  the log names it
+PASS  a MSGBOX of 3 lines tells Roger
+
+== C8. stale-key mode: the dialog's own Enter left in the key buffer ==
+PASS  no page skipped by a left-over key: []
+
+== C9 (1c). the CAS answers the call-form tests, then every later call fails ==
+   beta 1b: {'FAIL': 30, 'PASS': 10, 'VALUE': 9, 'ERROR': 21}; 21 tests stopped, e.g. ['T11 ERROR fraction comb(8,4)/2^8: test stopped', 'T13 ERROR exact(0.4857...) = 17/35: test', 'T14 ERROR exact or approximate mode: test']
+   beta 1d: {'FAIL': 39, 'PASS': 13, 'VALUE': 15}
+PASS  1c: beta 1b stops 21 tests with ERROR (cxShow -> cxFlat -> INSTRING of the failed call's "")
+PASS  1c: beta 1d stops none; form 2 is still chosen
+PASS  1c: every later test logs its failed call ("CAS error") and goes on to its next call: {'T11': 'FAIL', 'T16': 'FAIL', 'T21a': 'VALUE', 'T21b': 'FAIL', 'T27': 'VALUE', 'T28': 'FAIL', 'T29': 'VALUE', 'T30': 'VALUE', 'T40a': 'FAIL', 'T40b': 'FAIL', 'T40c': 'FAIL', 'T41a': 'FAIL', 'T41b': 'FAIL'}
+PASS  1c: T39 (an empty cxVal answer) and T25 (cxq+1 failing) log and go on
+
+== D1. device: CAS(variable) hands the string back unevaluated (the emulator; harness v3e's model) ==
+PASS  T06, T07 FAIL; T08, T09 PASS
+PASS  T06 says how it failed: T06 FAIL CAS(s), s a LOCAL string: text came back unevaluated (1 ms)
+PASS  form 2 chosen and logged
+PASS  T11-T31 run through the EXPR form
+PASS  T32: the as-written xxCas (form 1) guard fails here: T32 FAIL xxCas let undef or an error through
+PASS  CX_SUM = 'form 2, CAS yes, slowest 1 ms, 45 pass, 8 fail'
+
+== D2. device variant: string(...) does not help -- every 13+ digit answer is a 12-digit real ==
+PASS  T08 FAIL EXPR CAS(q s q) form: became a 12-digit real (1 ms)
+PASS  no form works: T11-T32 skipped
+
+== D3. device variant: Home STRING() with U+FE50 grouping and a U+2212 minus ==
+PASS  T01 FAIL STRING(real) is not plain ASCII
+PASS  T31a: T31a FAIL STRING(123456789012)+1 (1 ms)
+PASS  cxIStr text still works (T02, T15)
+PASS  summary: Home STRING(real): NOT plain
+
+== D4. device variant: a CAS syntax error comes back as text, not an error ==
+PASS  T26 VALUE syntax error came back as text
+PASS  T32 stays FAIL here: its form 1 hands the text back unevaluated (emulator), so the guard never sees the error text: T32 FAIL xxCas let undef or an error through
+
+== D5. device variants on the Python side ==
+PASS  no big ints: T33a FAIL 2**100 is not exact (1 ms)
+PASS  and comb fails too: T33b FAIL Python's comb(100,50) wrong
+PASS  summary: Python ints: not exact
+PASS  T34 FAIL import cas failed (1 ms)
+
+== D6. CAS answers are PPL strings, so STRING() adds quotes (the emulator, T12; harness v3e) ==
+PASS  the 30 digits are found inside the quotes
+PASS  and the log says the text was quoted
+PASS  the summary shows the form 2 line with ", drop quotes"
+PASS  T11 (35/128) and T12 pass on quoted text
+
+== D7 (1a). device variant: CAS text over 2,500 characters fails ==
+PASS  T35a, T35b pass
+PASS  T35c FAIL 3008 chars: CAS error (1 ms) works to 2002 characters; the FAIL is the
+PASS  T35d not tried after the break
+PASS  the log names the last length that worked
+PASS  and the summary line says 2002
+
+== D8 (1a). an infinite limit prints as the glyph (the emulator; harness v3e) ==
+PASS  T41a VALUE limit(n^2, n, inf) prints as the glyph (8734) (1 ms)
+PASS  the summary line names the glyph
+
+== D9 (1a). device variant: BINOMIAL_CDF reads (n, k, p) ==
+PASS  T42 FAIL BINOMIAL_CDF(30,0.2,2): run-time error
+PASS  the summary line says NO
+PASS  a wrong value: T42 FAIL BINOMIAL_CDF(30,0.2,2) is not
+
+== D10 (1c). device variants for T43: the rules not as the emulator showed them ==
+PASS  1c: INSTRING("") = 0 and STRING(0.096, 2, 1) = 0.1 give T43a, T43b FAIL and "NO" / "NOT" summary lines
+PASS  1d: the FAIL line reads "T43b FAIL STRING(0.096, 2, 1) is not scientific", the codes line follows, and no exponent-minus note (no exponent)
+
+== D11 (1d). device variants for T43b: the exponent's minus a hyphen, no sign, an ASCII E ==
+PASS  1d: STRING(0.096, 2, 1) = '9.6ᴇ-2', a hyphen (what harness v3d printed, and what beta 1c expected): T43b PASS, note "exponent minus: ASCII 45, a hyphen", summary "scientific", 45 pass, 8 fail
+PASS  1d: STRING(0.096, 2, 1) = '9.6ᴇ2', no sign at all (not seen; the "none" branch): T43b PASS, note "exponent minus: none", summary "scientific", 45 pass, 8 fail
+PASS  1d: STRING(0.096, 2, 1) = '9.6E-2', an ASCII E (not the Prime's E: not scientific by T43b's test): T43b FAIL, no note, summary "NOT scientific", 44 pass, 9 fail
+
+== E. layout: every text inside the screen (gate widths: f1 6, f2 7.6, f3 8.6 px) ==
+PASS  no TEXTOUT_P estimated past x = 320 (0 over)
+
+== F. the text helpers on edge inputs the full run does not reach ==
+PASS  cxShort('abcdefghijklmnopqrstuvwxyz', 12.0) -> 'abcdefghi...'
+PASS  cxShort('abc', 12.0) -> 'abc'
+PASS  cxShort('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxTAIL56789', 40.0) -> 'xxxxxxxxxxxxxxxxxxxxxxxxxx ... TAIL56789'
+PASS  cxRest('abc', 4.0) -> ''
+PASS  cxRest('abc', 2.0) -> 'bc'
+PASS  cxSplit('noimport;', ';') -> ['noimport', '']
+PASS  cxSplit('a;b;c', ';') -> ['a', 'b', 'c']
+PASS  cxSplit('', ';') -> ['']
+PASS  cxPyType("<class 'str'>",) -> 'str'
+PASS  cxPyType("odd'",) -> ''
+PASS  cxPyType('plain',) -> 'plain'
+PASS  cxToList('poly1[1,1,2]',) -> [1.0, 1.0, 2.0]
+PASS  cxToList('list[1/20]',) -> [0.05]
+PASS  cxToList('[]',) -> []
+PASS  cxToList('no list',) -> []
+PASS  cxStrip('"35/128"',) -> '35/128'
+PASS  cxStrip('"',) -> '"'
+PASS  cxFlat('a\n',) -> 'a / '
+PASS  cxIStr(-25.0,) -> '-25'
+PASS  cxIStr(0.0,) -> '0'
+PASS  cxIStr(123456789012.0,) -> '123456789012'
+PASS  cxCodes('a−b﹐',) -> ' 8722 65104'
+PASS  cxAllCodes('',) -> '(empty)'
+PASS  cxShape('list[[2,1]]',) -> 'prefix list, [[]], commas'
+PASS  cxShape('[1,4,9,16]',) -> '[], commas'
+PASS  cxShape('{1;2}',) -> '{}, semicolons'
+PASS  cxShape('cxt+1',) -> 'no brackets'
+PASS  cxShape('poly1[1,1]',) -> 'prefix poly1, [], commas'
+PASS  cxShape('',) -> 'no brackets'
+PASS  cxMulSign('cxp*cxt+6',) -> '*'
+PASS  cxMulSign('cxp·cxt',) -> 'middle dot (183)'
+PASS  cxMulSign('cxp⋅cxt',) -> 'dot operator (8901)'
+PASS  cxMulSign('cxp cxt',) -> 'none found'
+PASS  cxFlat('',) -> ''
+PASS  cxFlat('\na',) -> ' / a'
+PASS  cxFlat('\n',) -> ' / '
+PASS  cxFlat('a\n\nb',) -> 'a /  / b'
+PASS  cxFlat('plain',) -> 'plain'
+PASS  cxSplit(';a', ';') -> ['', 'a']
+PASS  cxSplit(';', ';') -> ['', '']
+PASS  cxSplit('a;;b', ';') -> ['a', '', 'b']
+PASS  cxSplit('a;b', '') -> ['a;b']
+PASS  cxPyType('',) -> ''
+PASS  cxPyType("'",) -> ''
+PASS  cxPyType("''",) -> ''
+PASS  cxPyType("a'b'c",) -> 'b'
+   beta 1b, for comparison: cxFlat('',) stops: INSTRING: Invalid input (the; cxSplit('', ';') stops: INSTRING: Invalid input (the; cxSplit('noimport;', ';') stops: INSTRING: Invalid input (the; cxPyType("'",) stops: INSTRING: Invalid input (the; cxSplit(';a', ';') -> [';a', 'a']; cxPyType("''",) -> "'"; cxFlat(chr(10) + 'a') not run: LEFT(s, 0) is the whole string, so beta 1b's loop never ends
+PASS  1c: beta 1b stops on 4 of them (INSTRING of "") and gets two wrong (LEFT(s, 0) = the whole string)
+   T08 PASS EXPR CAS(q s q) form: 30 digits |   (1234 ms) | DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD |   DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD |   DDDDDDDDDD | T09 PASS EXPR CAS.eval(q s q) form: 30 digits |   (1 ms)
+PASS  a time moves to the next line whole
+PASS  digits are cut at 46
+PASS  no line over 46
+PASS  1c: cxLineCol("") is black, no error; a PASS line is green
+
+== G (1d). beta 1d against beta 1c (the version the emulator ran), and against beta 1b as before ==
+   routines that differ from beta 1c: ['CASProbe', 'cxBegin', 'cxSummary', 'cxT43']
+PASS  1d: the routines that differ from beta 1c are exactly CASProbe, cxBegin, cxSummary, cxT43
+PASS  1d: in CASProbe, cxBegin and cxSummary the only change is the version string "CASProbe beta 1c" -> "CASProbe beta 1d" (menu title, log line, progress and summary titles); "-- T43 (added in beta 1c) --" stays
+   cxT43, code lines (comments left out), beta 1c -> beta 1d:
+     -  LOCAL sxA, sxB, sxC, sxE;
+     +  LOCAL sxA, sxB, sxC, sxE, sxM;
+     -  IF sxB == "9.6" + CHAR(7431) + "-2" THEN cxSci := 1; END;
+     +  IF DIM(sxB) > 0 THEN
+     +    IF INSTRING(sxB, CHAR(7431)) > 0 THEN cxSci := 1; END;
+     +  END;
+     -    cxRec("T43b", "FAIL", "STRING(0.096, 2, 1) is not 9.6E-2", -1);
+     +    cxRec("T43b", "FAIL", "STRING(0.096, 2, 1) is not scientific", -1);
+     +  IF cxSci == 1 THEN
+     +    sxM := "none";
+     +    IF INSTRING(sxB, CHAR(7431) + "-") > 0 THEN sxM := "ASCII 45, a hyphen"; END;
+     +    IF INSTRING(sxB, CHAR(7431) + CHAR(8722)) > 0 THEN sxM := "CHAR(8722), Home's minus"; END;
+     +    cxNote("  exponent minus: " + sxM);
+     +  END;
+PASS  1d: in cxT43 only T43b changed: one LOCAL (sxM), the test (CHAR(7431) anywhere, DIM first), the FAIL text, and the exponent-minus note
+PASS  1d: outside those four routines only comments differ (no new file-level LOCAL)
+PASS  1d: the two #PYTHON blocks are byte-identical to beta 1c's and beta 1b's
+PASS  1c/1d: cxCall, cxObj and cxPickForm (the probe's own call forms) are unchanged
+   routines that differ from beta 1b: ['CASProbe', 'cxBegin', 'cxCas', 'cxFlat', 'cxInit', 'cxLineCol', 'cxPyType', 'cxRun', 'cxSplit', 'cxSummary', 'cxT25', 'cxT34', 'cxT39', 'cxT43']
+PASS  1c/1d: the routines that differ from beta 1b are still exactly beta 1c's 14: CASProbe, cxBegin, cxCas, cxFlat, cxInit, cxLineCol, cxPyType, cxRun, cxSplit, cxSummary, cxT25, cxT34, cxT39, cxT43
+PASS  1c/1d: outside them only comments differ from beta 1b, and one new file-level LOCAL line (cxIns0, cxSci)
+PASS  1d: every on-screen and log version string, and the banner, reads beta 1d; the only code line that says beta 1c is the log marker "-- T43 (added in beta 1c) --" (history, as "added in beta 1a"); the #PYTHON comments keep beta 1b
+
+== H (1c/1d). the scientific STRING results, and every INSTRING, LEFT, MID ==
+   beta 1d: 24 harness runs, scientific STRING results: [('cxT43', '9.6ᴇ-2')]
+PASS  1d: the only scientific STRING result in every beta 1d run is T43b's own STRING(0.096, 2, 1) = 9.6E-2 (h.sci_strings keeps the hyphen form in v3e; the program got U+2212 there, C0/C1)
+   STRING(x, 2, d) in beta 1d: [(1650, ['bV', '2', '6']), (1686, ['0.096', '2', '1']), (1706, ['ROUND(0.096, 1)', '2', '1'])]
+PASS  1c: three fixed-decimal STRINGs: T42's value (0.044179 unless BINOMIAL_CDF is itself wrong, and then the scientific form is the honest record), and T43's two, on purpose
+   INSTRING first arguments (44 calls): {'fT': 5, 'pT': 2, 'cR': 2, 'hR': 1, 'qA': 2, 'vA': 1, 'vD': 1, 'rA': 1, 'kS': 2, 'mS': 5, 'jR': 2, 'sA': 5, 'iA': 3, '""': 1, 'sxB': 3, 'yS': 1, 'yR': 1, 'pL(5)': 1, 'lS': 5}
+PASS  1c/1d: every INSTRING's first argument is guarded or cannot be "" (44 calls, beta 1c's 41 and T43b's 3; unlisted: none)
+     ""     T43a: on purpose, inside IFERR
+     cR     cxCas: inside IF DIM(cR) > 0 (1c)
+     fT     cxFlat: only when DIM(fT) > 0 (1c)
+     hR     cxHas: only when cxErr = 0, and then the answer is STRING() of something, never ""
+     iA     T41a: only when cxErr = 0
+     jR     cxHas2: only when cxErr = 0
+     kS     cxShape: an empty text has no bracket and has returned "no brackets" before
+     lS     cxLineCol: after IF DIM(lS) == 0 THEN RETURN (1c)
+     mS     cxMulSign: T38a calls it only when cxErr = 0
+     pL(5)  T34b: only when DIM(pL(5)) > 0 (1c)
+     pT     cxSplit: only when DIM(pT) > 0 (1c)
+     qA     T23, T36a: only when cxErr = 0 (STRING() of the answer)
+     rA     T26: only when cxErr = 0
+     sA     T39: inside IF DIM(sA) > 0 (1c), and T39b only when cxErr = 0
+     sxB    T43b: STRING() of 0.096, never ""; inside IF DIM(sxB) > 0, then only when cxSci = 1 (1d)
+     vA     T25: only when DIM(vA) > 0 (1c)
+     vD     T25: only when DIM(vD) > 0 (1c)
+     yR     cxPyType: after IF DIM(yR) == 0 THEN RETURN (1c)
+     yS     cxPyType: after IF DIM(yS) == 0 THEN RETURN (1c)
+     fT     cxFlat (guarded, 1c) and cxVerdict50 (only in the ELSE of IF fT == "")
+   LEFT counts: ['nL', 'nB - 1', 'fPos - 1', 'sN - 3', 'sN - 14', '1', 'pP - 1', '6', 'kP - 1', 'yA - 1', '1']
+   MID starts: ['rK', 'nB', 'nB + 1', 'sD - 8', 'tD', '2', 'tI', 'tA + 1', 'gD - 5', 'kI']
+PASS  1c: every LEFT count is 1 or more: nL = 46; nB - 1 >= 24; fPos - 1, pP - 1, kP - 1 and yA - 1 only past 1; sN - 3 >= 9; sN - 14 >= 10; 6 when DIM >= 6
+PASS  1c: every MID start is 1 or more: rK > 1 from every caller; nB >= 25; sD - 8 >= 16; gD - 5 >= 1 (gD >= 6); tA + 1, tI, kI >= 1
+
+ALL CHECKS PASS: 199 checks

@@ -1,0 +1,353 @@
+== A. statistics: the program's routines against SciPy / statsmodels ==
+PASS erlBound = beta.ppf(1-a, k+1, n-k) = statsmodels beta upper (alpha = 2a), 276 cases, worst |diff| 1.4e-14
+PASS PCAST examples: 0 errors in 10 -> 0.2589 (PCAST: 26 percent)
+PASS PCAST examples: 0 errors in 25 -> 0.1129 (PCAST: roughly 1 in 9)
+PASS PCAST examples: 0 errors in 100 -> 0.0295 (PCAST: 3.0 percent)
+PASS k = 0: bisection on the binomial CDF gives 1 - 0.05^(1/30) too
+PASS erlTail = binom.cdf (k = 0 written as (1-p)^n), worst 3.1e-16
+PASS erlTail edges: p = 0 -> 1, p = 1 -> 0 (no BINOMIAL_CDF at the ends)
+PASS erlRuleC: P(Poisson(mu) <= k) = alpha at mu = chi2.ppf(1-a, 2k+2)/2 (k = 0: -ln a)
+   Poisson rules at alpha 0.05: k=0 2.9957, k=1 4.7439, k=2 6.2958, k=3 7.7537, k=4 9.1535, k=5 10.5130
+PASS erlLnGam (Lanczos) = gammaln, worst relative 3.8e-13
+PASS erlBetaCdf = beta.cdf via FISHER_CDF(2a, 2b, b x/(a(1-x))), worst 0.0e+00
+PASS erlBetaQ = beta.ppf (50 halvings), worst 3.1e-16
+PASS uniform prior, 0 of 30: mean 1/32 = 0.03125, 95 % credible bound 0.09211 (SciPy 0.09211); CAS fraction '1/32'
+PASS    posterior density at column 41 = beta.pdf (11.950570)
+PASS Jeffreys prior, 0 of 30: mean 1/62 = 0.01613, 95 % credible bound 0.06152 (SciPy 0.06152); CAS fraction '1/62'
+PASS    posterior density at column 41 = beta.pdf (6.872726)
+PASS uniform prior, 0 of 30: P(rate > 5 %) = 0.95^31 = 0.2039 (the Bayes page line)
+PASS uniform-prior bound for 0 of n = Clopper-Pearson bound for 0 of n + 1 (1 - 0.05^(1/31))
+PASS erlTrP = -expm1(N log1p(-RMP)) for RMP 1E-3..1E-9, N 1..1E8, worst relative 2.4e-13
+   RMP 1E-6: N = 1E6 -> P = 0.632121 (1 - 1/e = 0.632121); half-way N = 693147
+PASS window for 0 errors in 30: 0 to 20 % (step 5 %)
+PASS window for 0 errors in 10: 0 to 100 % (step 20 %)
+PASS window for 0 errors in 100: 0 to 10 % (step 2 %)
+PASS window for 0 errors in 1000: 0 to 1 % (step 0.2 %)
+PASS window for 2 errors in 30: 0 to 50 % (step 10 %)
+PASS window for 0 errors in 5: 0 to 100 % (step 20 %)
+PASS window for 0 errors in 300: 0 to 2 % (step 0.5 %)
+== B. every number the help pages and comments quote ==
+PASS quoted "0.95^30 = 21.5 %"
+PASS quoted "1 - 0.05^(1/30) = 9.50 %"
+PASS quoted "2.59 at n = 10"
+PASS quoted "2.85 at 30, 2.95 at 100, 2.99 at 1000"
+PASS quoted "1 error 4.74/n"
+PASS quoted "2 errors 6.30/n, 3 errors 7.75/n"
+PASS quoted "of 1/32 and a 95 % upper bound of 9.21 %"
+PASS quoted "mean 1/62"
+PASS quoted "bound 6.15 %"
+PASS quoted "Clopper-Pearson 3.0 %"
+PASS quoted "Wilson 2.6 %, Agresti-Coull 3.2 %"
+PASS quoted "Jeffreys 1.9 %"
+PASS quoted "about 2,150 of the 10,000"
+PASS quoted "that is 1, P is 63.2 %"
+   SciPy: 0.95^30 = 0.21464, 1-0.05^(1/30) = 0.09503, ln 20 = 2.99573, Jeffreys 0/30 = 0.06152
+   statsmodels 0 of 100, one-sided 95 % (alpha = 0.10 two-sided), beta           upper 0.0295
+   statsmodels 0 of 100, one-sided 95 % (alpha = 0.10 two-sided), wilson         upper 0.0263
+   statsmodels 0 of 100, one-sided 95 % (alpha = 0.10 two-sided), agresti_coull  upper 0.0317
+   statsmodels 0 of 100, one-sided 95 % (alpha = 0.10 two-sided), jeffreys       upper 0.0190
+== C. every CAS template through desktop Giac, compared with SymPy ==
+PASS k = 0, n =     1, alpha = 1/20: 1/20 | 19/20 | ln(20)
+PASS k = 0, n =     5, alpha = 1/20: 1/20 | 1-(1/20)^(1/5) | ln(20)
+PASS k = 0, n =    30, alpha = 1/20: 1/20 | 1-(1/20)^(1/30) | ln(20)
+PASS k = 0, n =  1000, alpha = 1/20: 1/20 | 1-(1/20)^(1/1000) | ln(20)
+PASS k = 0, n = 10000, alpha = 1/20: 1/20 | 1-(1/20)^(1/10000) | ln(20)
+PASS k = 0, n =     1, alpha = 1/100: 1/100 | 99/100 | ln(100)
+PASS k = 0, n =     5, alpha = 1/100: 1/100 | 1-(1/100)^(1/5) | ln(100)
+PASS k = 0, n =    30, alpha = 1/100: 1/100 | 1-(1/100)^(1/30) | ln(100)
+PASS k = 0, n =  1000, alpha = 1/100: 1/100 | 1-(1/100)^(1/1000) | ln(100)
+PASS k = 0, n = 10000, alpha = 1/100: 1/100 | 1-(1/100)^(1/10000) | ln(100)
+PASS k = 0, n =     1, alpha = 1/1000: 1/1000 | 999/1000 | ln(1000)
+PASS k = 0, n =     5, alpha = 1/1000: 1/1000 | 1-(1/1000)^(1/5) | ln(1000)
+PASS k = 0, n =    30, alpha = 1/1000: 1/1000 | 1-(1/1000)^(1/30) | ln(1000)
+PASS k = 0, n =  1000, alpha = 1/1000: 1/1000 | 1-(1/1000)^(1/1000) | ln(1000)
+PASS k = 0, n = 10000, alpha = 1/1000: 1/1000 | 1-(1/1000)^(1/10000) | ln(1000)
+PASS k = 0, n =     1, alpha = 1/2: 1/2 | 1/2 | ln(2)
+PASS k = 0, n =     5, alpha = 1/2: 1/2 | 1-(1/2)^(1/5) | ln(2)
+PASS k = 0, n =    30, alpha = 1/2: 1/2 | 1-(1/2)^(1/30) | ln(2)
+PASS k = 0, n =  1000, alpha = 1/2: 1/2 | 1-(1/2)^(1/1000) | ln(2)
+PASS k = 0, n = 10000, alpha = 1/2: 1/2 | 1-(1/2)^(1/10000) | ln(2)
+PASS k = 0, n =     1, alpha = 1/40: 1/40 | 39/40 | ln(40)
+PASS k = 0, n =     5, alpha = 1/40: 1/40 | 1-(1/40)^(1/5) | ln(40)
+PASS k = 0, n =    30, alpha = 1/40: 1/40 | 1-(1/40)^(1/30) | ln(40)
+PASS k = 0, n =  1000, alpha = 1/40: 1/40 | 1-(1/40)^(1/1000) | ln(40)
+PASS k = 0, n = 10000, alpha = 1/40: 1/40 | 1-(1/40)^(1/10000) | ln(40)
+   (CAS calls made in that loop: 75)
+PASS k = 1, n =    30: normal -> 29*erlq+1 (9 chars, shown '29×p+1') ; Poisson limit -> e^(-erll)*(erll+1)
+PASS    badge "exact (CAS)" for k = 1, n = 30
+PASS k = 2, n =    30: normal -> 406*erlq^2+28*erlq+1 (20 chars, shown '406×p^2+28×p+1') ; Poisson limit -> (erll^2+2*erll+2)*e^(-erll)/2
+PASS    badge "exact (CAS)" for k = 2, n = 30
+PASS k = 6, n =    30: normal -> 475020*erlq^6+98280*erlq^5+17550*erlq^4+2600*erlq^3+300*erlq (72 chars, shown '475020×p^6+98280×p^5+17550×p^4+2600×p^3+300×p^2+24') ; Poisson limit -> (erll^6+6*erll^5+30*erll^4+120*erll^3+360*erll^2+720*erll+720)*e^(-erll)/720
+PASS    badge "exact (CAS)" for k = 6, n = 30
+PASS k = 1, n =     2: normal -> erlq+1 (6 chars, shown 'p+1') ; Poisson limit -> e^(-erll)*(erll+1)
+PASS    badge "exact (CAS)" for k = 1, n = 2
+PASS k = 6, n =     7: normal -> erlq^6+erlq^5+erlq^4+erlq^3+erlq^2+erlq+1 (41 chars, shown 'p^6+p^5+p^4+p^3+p^2+p+1') ; Poisson limit -> (erll^6+6*erll^5+30*erll^4+120*erll^3+360*erll^2+720*erll+720)*e^(-erll)/720
+PASS    badge "exact (CAS)" for k = 6, n = 7
+PASS k = 5, n =   100: normal -> 71523144*erlq^5+3612280*erlq^4+147440*erlq^3+4560*erlq^2+95* (66 chars, shown '71523144×p^5+3612280×p^4+147440×p^3+4560×p^2+95×p+') ; Poisson limit -> (erll^5+5*erll^4+20*erll^3+60*erll^2+120*erll+120)*e^(-erll)/120
+PASS    badge "exact (CAS)" for k = 5, n = 100
+PASS k = 3, n =  1000: normal -> 165668499*erlq^3+497503*erlq^2+997*erlq+1 (41 chars, shown '165668499×p^3+497503×p^2+997×p+1') ; Poisson limit -> (erll^3+3*erll^2+6*erll+6)*e^(-erll)/6
+PASS    badge "exact (CAS)" for k = 3, n = 1000
+PASS k = 2, n = 10000: normal -> 49985001*erlq^2+9998*erlq+1 (27 chars, shown '49985001×p^2+9998×p+1') ; Poisson limit -> (erll^2+2*erll+2)*e^(-erll)/2
+PASS    badge "exact (CAS)" for k = 2, n = 10000
+PASS k = 7 > 6: only alpha goes to the CAS; no badge
+PASS k = n: no CAS call (the bound is 100 %)
+PASS erlCas: the quoted answer is unwrapped once, undef -> "", 1a: the infinity sign -> ""
+PASS erlCas: a failing CAS call (IFERR) -> ""
+PASS erlShow '406*erlq^2+28*erlq+1' -> '406×p^2+28×p+1'
+PASS erlShow '(erlq-1)^28*(406*erlq^2+28*erlq+1)' -> '(1-p)^28×(406×p^2+28×p+1)'
+PASS erlShow '-(erlq-1)^29*(29*erlq+1)' -> '(1-p)^29×(29×p+1)'
+PASS erlShow '(erll^2+2*erll+2)*exp(-erll)/2' -> '(μ^2+2×μ+2)×e^(-μ)/2'
+PASS erlShow '1-(999999/1000000)^erlq' -> '1-(999999/1000000)^N'
+PASS erlShow '-exp(-erll)+1' -> '-e^(-μ)+1'
+PASS erlShow '(erll^2+2*erll+2)*e^(-erll)/2' -> '(μ^2+2×μ+2)×e^(-μ)/2'
+PASS erlShow '-e^(-erll)+1' -> '-e^(-μ)+1'
+PASS Bayes mean for prior (1.0, 1.0), 0 of 30: CAS 1/32 = 1/32
+PASS Bayes mean for prior (0.5, 0.5), 0 of 30: CAS 1/62 = 1/62
+PASS Bayes mean for prior (0.5, 0.5), 3 of 100: CAS 7/202 = 7/202
+PASS Bayes mean for prior (1.0, 19.0), 1 of 50: CAS 1/35 = 1/35
+PASS Bayes mean for prior (99.5, 1.5), 7 of 10000: CAS 71/6734 = 71/6734
+PASS trawl RMP 1E-3: 1-(999/1000)^erlq | -e^(-erll)+1 | erll-1/2*erll^2+1/6*erll^3
+PASS trawl RMP 1E-6: 1-(999999/1000000)^erlq | -e^(-erll)+1 | erll-1/2*erll^2+1/6*erll^3
+PASS trawl RMP 1E-9: 1-(999999999/1000000000)^erlq | -e^(-erll)+1 | erll-1/2*erll^2+1/6*erll^3
+   Giac timings on the PC (ms): 329, 338, 358, 308, 296, 268, 389, 800, 4400
+== D. the #PYTHON block under CPython (stub hpprime and urandom) ==
+PASS the block imports urandom (MicroPython 1.9.4 has no random, no time)
+PASS no f-strings, no format(), no join: concatenation only (Lessons Learned s9)
+PASS n=30 p=0.050 k=0 w=1: 44 writes in order, marks 1-2-3, bins fit Binomial (chi-square p = 0.189), 0 errors 2190 (exact 2146.4), <= k 2190 (exact 2146.4)
+PASS n=30 p=0.200 k=2 w=1: 44 writes in order, marks 1-2-3, bins fit Binomial (chi-square p = 0.764), 0 errors 10 (exact 12.4), <= k 451 (exact 441.8)
+PASS n=1000 p=0.003 k=0 w=1: 44 writes in order, marks 1-2-3, bins fit Binomial (chi-square p = 0.539), 0 errors 508 (exact 495.6), <= k 508 (exact 495.6)
+PASS n=200 p=0.300 k=4 w=3: 44 writes in order, marks 1-2-3, bins fit Binomial (chi-square p = 0.293), 0 errors 0 (exact 0.0), <= k 0 (exact 0.0)
+PASS n=10 p=0.500 k=0 w=1: 44 writes in order, marks 1-2-3, bins fit Binomial (chi-square p = 0.832), 0 errors 0 (exact 0.0), <= k 0 (exact 0.0)
+PASS edge p = 0: 1000 clean records, 0 errors in all
+PASS edge p = 1: 0 clean records, 30000 errors in all
+== E. the program end to end in the harness ==
+PASS E1 (CAS on, Python on): returns 'ErrorRate: 0 errors in 30 tests -> 95 % upper bound 9.50 % (3/n = 10.0 %); see ER_UPPER'
+PASS E1: the whole script was used (([], [], []))
+PASS E1: the opening frame says 9.50 %, 21.5 % at a 5.0 % rate, 3/n = 10.0 %, n x bound 2.85
+PASS E1: soft keys page 1 ['n, k', 'Rate', 'Why 3', 'Bayes', 'Sim', 'More']
+PASS E1: More -> page 2 ['Trawl', 'Log y', 'Help', 'Eng', 'Quit', 'More']
+PASS E1: Log y turns into Lin y
+PASS E1: soft keys ('Unif', 'Jeff', 'a, b', '', 'Back', '') shown
+PASS E1: soft keys ('Again', 'Rate-', 'Rate+', '', 'Back', '') shown
+PASS E1: soft keys ('RMP', 'N', 'Exact', '', 'Back', '') shown
+PASS E1: the rate drag redrew live (11 different rates shown)
+PASS E1: the n slider and keys showed 8 different records
+PASS E1: the simulation ran in (patched) MicroPython: ['engine: MicroPython, 10,000 in 1 ms']
+PASS E1: '0 errors: 1,206 of 10,000 = 12.1 %' at rate 0.070, n 30 (exact 1133.7 of 10000)
+PASS E1: 'exact chance (1 - p)^30 = 11.3 %'
+PASS E1: Why 3 pages carry "exact (CAS)"
+PASS E1: Why 3 shows p = 1-(1/20)^(1/30) and the limit ln(20)
+PASS E1: Jeffreys mean 1/62 = 1.61 % from the CAS
+PASS E1: uniform mean 1/32 = 3.13 %, credible bound 9.21 % beside CP 9.50 %
+PASS E1: the a, b form gives Beta(1, 19)
+PASS E1: trawl at RMP 1E-6, N = 1E6: 63.2 %
+PASS E1: trawl Exact page badge "exact (CAS)"
+   trawl Exact page:
+     Each of N profiles is compared with the
+     crime-scene profile.  If the source is not
+     in the database, each one matches by chance
+     with probability RMP = 1/100,000, so
+       P(1 or more) = 1-(99999/100000)^N
+     As N grows with N × RMP = μ fixed:
+       P → -e^(-μ)+1
+     and for small μ (series):
+       P = μ-1/2×μ^2+1/6×μ^3 - ...
+     so P is close to μ only while μ is small.
+     At N = 1,000,000: P = 99.9955 % exactly,
+     1-e^(-μ) = 99.9955 %, μ = 10.000.
+     Half-way (P = 50 %): N = about 69,314
+     RMP values are illustrative, not casework.
+     any key or tap = back
+PASS E1: nine help pages reached
+PASS E1: Engines page: CAS live check 5/6, Python live check answers
+PASS E1: Home exports ER_UPPER 0.095034, ER_N 30, ER_RULE 0.100, ER_SIM 0.1014, ER_TRAWL 1.0000, ER_BMEAN 0.03125
+PASS E1: no text reaches the soft keys (y + 11 <= 218) on any soft-key page []
+PASS E1: every text-page line is 46 characters or fewer []
+PASS E1: no MSGBOX over five lines
+   CAS calls in the session: 17, slowest 400 ms on the PC
+PASS E1: every limit template uses erlInf = "inf"
+PASS E1 1a: every CAS text asks for string(...), every answer quoted; no CAS variable assigned, no CAS call of a variable
+PASS E1 1a: no "exp(" or "sqrt" on any page (the Prime's printing)
+PASS E2 (CAS off, Python off): returns 'ErrorRate: 0 errors in 30 tests -> 95 % upper bound 9.50 % (3/n = 10.0 %); see ER_UPPER'
+PASS E2: Why 3 pages say "decimal"
+PASS E2: the decimal fallback shows the formula and 0.09503 = 9.50 %
+PASS E2: Bayes mean as a decimal, badge "decimal"
+PASS E2: simulation fell back to PPL: ['engine: PPL fallback, 1,000 in 1 ms']
+PASS E2 (PPL fallback): '0 errors: 105 of 1,000 = 10.5 %' at rate 0.070, n 30 (exact 113.4 of 1000)
+PASS E2 (PPL fallback): 'exact chance (1 - p)^30 = 11.3 %'
+PASS E2: trawl Exact page says "decimal"
+PASS E2: Engines page reports both failures
+PASS E2: no runtime error anywhere
+PASS E2: no text reaches the soft keys (y + 11 <= 218) on any soft-key page []
+PASS E2: every text-page line is 46 characters or fewer []
+PASS E2: no MSGBOX over five lines
+PASS E3: a Python run that stops part-way -> PPL fallback (validation works)
+PASS E3: a payload whose bins do not add to 10,000 -> PPL fallback
+PASS E4 (k = 2, alpha typed as 1): n = 750, bound 0.01116 = beta.ppf(0.99, 3, n-2); returns 'ErrorRate: 2 errors in 750 tests -> 99 % upper bound 1.12 % (8.41/n = 1.12 %); see ER_UPPER'
+PASS E4: after the n drag the curve was rebuilt at full resolution (stride 1)
+PASS E4: the k = 2 CAS page shows (1-p)^(n-k) x the exact polynomial
+PASS E4: log axis at alpha 0.01 runs 1 to .001 (alpha two-thirds down): ['.001', '.01', '.1', '1']
+PASS E4: the k = 2 simulation counts "at most 2 errors"
+PASS E4: no text reaches the soft keys (y + 11 <= 218) on any soft-key page []
+PASS E4: every text-page line is 46 characters or fewer []
+PASS E4: no MSGBOX over five lines
+PASS E5: stale-key mode: no page skipped by a dialog's left-over key ([])
+PASS E6 (k = 0): no CAS call during 20 drag samples (the fence: events, never frames)
+   k = 0: 23 frames for 20 drag samples, 0 BINOMIAL_CDF calls in all (0 a frame)
+PASS E6 (k = 2): no CAS call during 20 drag samples (the fence: events, never frames)
+   k = 2: 23 frames for 20 drag samples, 1589 BINOMIAL_CDF calls in all (69 a frame)
+== G. 1a: beta 1 in harness v3b, and beta 1a against beta 1 ==
+PASS 1a: beta 1 in v3b: erlCas hands back its own text ("50/1000", "limit(...)"), and the page would show it under "exact (CAS)" -- the emulator's finding
+PASS 1a: beta 1a: alpha = 1/20 and the limit ln(20)
+
+G. beta 1a: beta 1 in harness v3b, and beta 1a against beta 1
+PASS beta 1a: routines that differ from beta 1: ['erlCas', 'erlEngPage'] (want erlCas, erlEngPage)
+PASS beta 1a: outside those routines only comments differ
+PASS beta 1a: the #PYTHON blocks are unchanged
+  routines that differ from beta 1: erlCas, erlEngPage; everything else differs only in comments
+
+== R. 1b: the round-2 string fixes (harness v3d) ==
+PASS R1 1b: a failed CAS call -> erlCas returns "" with no error
+PASS R1 beta 1a in v3d: the same call stops the program: INSTRING: Invalid input (the first argument is an empty stri
+PASS R1 1b: an empty CAS string -> "" (no INSTRING on it), undef -> "", 7/2 kept
+PASS R2 1b cas=fail, page why3  : opens, shows 'decimal', no error
+PASS R2 beta 1a in v3d, cas=fail, page why3  : stops (INSTRING: Invalid input (the first argum)
+PASS R2 1b cas=fail, page why3k2: opens, shows 'decimal', no error
+PASS R2 beta 1a in v3d, cas=fail, page why3k2: stops (INSTRING: Invalid input (the first argum)
+PASS R2 1b cas=fail, page bayes : opens, shows 'decimal', no error
+PASS R2 beta 1a in v3d, cas=fail, page bayes : stops (INSTRING: Invalid input (the first argum)
+PASS R2 1b cas=fail, page exact : opens, shows 'decimal', no error
+PASS R2 beta 1a in v3d, cas=fail, page exact : stops (INSTRING: Invalid input (the first argum)
+PASS R2 1b cas=fail, page eng   : opens, shows 'no answer (the CAS call failed)', no error
+PASS R2 beta 1a in v3d, cas=fail, page eng   : stops (INSTRING: Invalid input (the first argum)
+PASS R2 1b cas=fail: the whole E session runs to Quit
+PASS R2 beta 1a in v3d, cas=fail: the same session stops (INSTRING: Invalid input (the first argum), after 21 main frames
+PASS R3 erlRepl('a*b', '*', 'x') = 'axb'
+PASS R3 erlRepl('ab*', '*', 'x') = 'abx'
+PASS R3 erlRepl('*ab', '*', 'x') = 'xab'
+PASS R3 erlRepl('*', '*', 'x') = 'x'
+PASS R3 erlRepl('erlq', 'erlq', 'p') = 'p'
+PASS R3 erlRepl('abc', '', 'x') = 'abc'
+PASS R3 erlRepl('', '*', 'x') = ''
+PASS R3 erlRepl('', '', 'x') = ''
+PASS R3 erlRepl('abc', 'z', 'x') = 'abc'
+PASS R3 erlRepl('2*erlq*erlq', 'erlq', 'p') = '2*p*p'
+PASS R3 erlRepl('**', '*', '') = ''
+PASS R3 erlShow at the end and the start of the text: p×p
+PASS R4 erlFix rounds first: 1E-9 -> 0.000, 0.0004 -> 0.000, 0.0996 -> 0.100, 2.9957 -> 2.9957
+PASS R4 beta 1a in v3d: erlFix(1E-9, 3) = '1.000ᴇ-9' (the finding)
+PASS R4 1b trawl, N = 1, RMP 1 in a billion: "N × RMP = 0.000", "μ = 0.000", no scientific
+PASS R4 beta 1a in v3d, the same trawl: ['expected chance matches N × RMP = 1.000ᴇ-9']
+PASS R4 1b erlRateS at 1 decimal: 0.0002 -> '0.0200 %' (erlPctS), 0.05 -> '5.0 %', 0 -> '0.0 %'
+PASS R4 beta 1a in v3d: erlRateS(0.0002) = '2.0ᴇ-2 %' (the finding)
+PASS R4 1b, 0 of 50, typed rate 0.02 %, Bayes drag to 0.05 %: no scientific text; ['An examiner whose true rate is 0', 'An examiner whose true rate is 5', 'Drag along the plot = true rate;', 'P(true rate > 0.0200 %) = 99.0 %']
+PASS R4 beta 1a in v3d, the same session: ['An examiner whose true rate is 2.0', 'An examiner whose true rate is 5.0', 'P(true rate > 2.0ᴇ-2 %) = 99.0 %  ']
+PASS R5 1b (and 1c: + erlBayesDraw, erlCasDraw, erlEq, erlSimDraw, erlTrDraw, erlTrExact; 1d: + ErrorRate, erlDrawText, erlEngPage, erlPoiTerms, erlRuleEq, erlWelcome): routines that differ from beta 1a: ['ErrorRate', 'erlBayesDraw', 'erlCas', 'erlCasDraw', 'erlDrawText', 'erlEngPage', 'erlEq', 'erlFix', 'erlPoiTerms', 'erlRateS', 'erlRepl', 'erlRuleEq', 'erlSimDraw', 'erlTrDraw', 'erlTrExact', 'erlWelcome']
+PASS R5 1b: outside those routines only comments differ
+PASS R5 1b: the #PYTHON block is byte-identical
+PASS R5 1b: every other routine is identical to beta 1a (comments stripped)
+PASS R5 1b: 74 untouched routines are byte-identical, comments included
+  INSTRING sites in beta 1b: 528, 538, 628
+  harness runs: 31 of beta 1c, 12 of beta 1 / 1a
+  h.sci_strings, beta 1c: []
+  h.sci_strings, beta 1 / 1a (for comparison): [(1e-09, 3, '1.000ᴇ-9'), (0.02, 1, '2.0ᴇ-2'), (0.05, 1, '5.0ᴇ-2')]
+PASS R6 1b: no scientific STRING(x, 2, d) result in any of the 31 beta 1c runs
+
+== T. 1c: no "=" before a relation; the Bayes tail; "1 profile" (harness v3e) ==
+PASS T1 Bayes page n, k, rate = (30, 0, 0.5): beta 1b 'P(true rate > 50.0 %) = < 0.0001 %  (drag)' -> 1c 'P(true rate > 50.0 %) < 0.0001 %  (drag)'
+PASS T1 Bayes page n, k, rate = (1000, 0, 0.3): beta 1b 'P(true rate > 30.0 %) = 0 %  (drag)' -> 1c 'P(true rate > 30.0 %) < 0.0001 %  (drag)'
+PASS T1 Bayes page n, k, rate = (30, 0, 1e-09): beta 1b 'P(true rate > < 0.0001 %) = > 99.9999 %  (drag)' -> 1c 'P(true rate > < 0.0001 %) > 99.9999 %  (drag)'
+PASS T1 Bayes page n, k, rate = (30, 0, 0.0): beta 1b 'P(true rate > 0.0 %) = 100.0 %  (drag)' -> 1c 'P(true rate > 0.0 %) = 100.0 %  (drag)'
+PASS T1 Bayes page (30, 0, 0.05): an ordinary value is unchanged: 'P(true rate > 5.0 %) = 20.4 %  (drag)'
+PASS T1 Bayes page (50, 2, 0.04): an ordinary value is unchanged: 'P(true rate > 4.0 %) = 66.6 %  (drag)'
+PASS T1 simulation n, k, rate = (30, 0, 0.5): beta 1b 'exact chance (1 - p)^30 = < 0.0001 %' -> 1c 'exact chance (1 - p)^30 < 0.0001 %'
+PASS T1 simulation n, k, rate = (30, 2, 0.6): beta 1b 'exact chance (BINOMIAL_CDF) = < 0.0001 %' -> 1c 'exact chance (BINOMIAL_CDF) < 0.0001 %'
+PASS T1 simulation n, k, rate = (1, 0, 1e-09): beta 1b 'exact chance (1 - p)^1 = > 99.9999 %' -> 1c 'exact chance (1 - p)^1 > 99.9999 %'
+PASS T1 simulation n, k, rate = (5, 1, 1e-07): beta 1b 'exact chance (BINOMIAL_CDF) = > 99.9999 %' -> 1c 'exact chance (BINOMIAL_CDF) > 99.9999 %'
+PASS T1 simulation n, k, rate = (30, 0, 0.05): beta 1b 'exact chance (1 - p)^30 = 21.5 %' -> 1c 'exact chance (1 - p)^30 = 21.5 %'
+PASS T1 simulation (30, 2, 0.05): an ordinary value is unchanged: 'exact chance (BINOMIAL_CDF) = 81.2 %'
+PASS T1 trawl RMP 1E-9, N = 1: beta 1b ('N = 1 profiles searched', 'P(at least one chance match) = < 0.0001 %', 'At N = 1: P = < 0.0001 % exactly,', '1-e^(-μ) = < 0.0001 %, μ = 0.000.') -> 1c ('N = 1 profile searched', 'P(at least one chance match) < 0.0001 %', 'At N = 1: P < 0.0001 % exactly,', '1-e^(-μ) < 0.0001 %, μ = 0.000.')
+PASS T1 trawl RMP 1E-9, N = 2: beta 1b ('N = 2 profiles searched', 'P(at least one chance match) = < 0.0001 %', 'At N = 2: P = < 0.0001 % exactly,', '1-e^(-μ) = < 0.0001 %, μ = 0.000.') -> 1c ('N = 2 profiles searched', 'P(at least one chance match) < 0.0001 %', 'At N = 2: P < 0.0001 % exactly,', '1-e^(-μ) < 0.0001 %, μ = 0.000.')
+PASS T1 trawl RMP 1E-3, N = 20000: beta 1b ('N = 20,000 profiles searched', 'P(at least one chance match) = > 99.9999 %', 'At N = 20,000: P = > 99.9999 % exactly,', '1-e^(-μ) = > 99.9999 %, μ = 20.000.') -> 1c ('N = 20,000 profiles searched', 'P(at least one chance match) > 99.9999 %', 'At N = 20,000: P > 99.9999 % exactly,', '1-e^(-μ) > 99.9999 %, μ = 20.000.')
+PASS T1 trawl RMP 1E-6, N = 1000000: an ordinary panel is unchanged: ('N = 1,000,000 profiles searched', 'P(at least one chance match) = 63.2 %', 'At N = 1,000,000: P = 63.2 % exactly,', '1-e^(-μ) = 63.2 %, μ = 1.000.')
+PASS T1 "No closed form" page, 9999 errors in 10000 tests, alpha 0.001: beta 1b ['   p = 1.00000 = > 99.9999 %'] -> 1c ['   p = 1.00000 > 99.9999 %']
+PASS T1 "No closed form" page (30, 2, 50): ordinary, unchanged: ['   p = 0.19533 = 19.5 %']
+PASS T1 "No closed form" page (100, 5, 10): ordinary, unchanged: ['   p = 0.12585 = 12.6 %']
+PASS T1 "No closed form" page (10000, 9998, 500): ordinary, unchanged: ['   p = 0.99983 = 99.983 %']
+PASS T1 "Where the 3 comes from" (k = 0), the smallest bound n 10000, alpha 0.5: unchanged ['   p = 1-(1/2)^(1/10000)', '     = 0.00007 = 0.0069 %', '     = 0.6931']
+PASS T2 P(Beta(a, b) > x) as erlBetaCdf(2b, 2a, 1 - x) = 1 - erlBetaCdf(2a, 2b, x) = SciPy beta.sf, 42 cases (worst 9.5e-15)
+PASS T2 0 of 1000, x = 30 %: the mirrored tail is 8.773e-156 (SciPy 8.773e-156); 1 - erlBetaCdf is exactly 0 even in doubles
+PASS T2 the ends: P(rate > 0) = 1 and P(rate > 1) = 0, as before
+PASS T3 erlEq: "< 0.0001 %" -> " < 0.0001 %", "> 99.9999 %" -> " > 99.9999 %", "2.15 %" -> " = 2.15 %", "" -> " = " (no error), "0 %", "100.0 %" -> " = ...": [' < 0.0001 %', ' > 99.9999 %', ' = 2.15 %', ' = ', ' = 0 %', ' = 100.0 %']
+PASS T4 k = 0: the rule n / bound (6.9e-05 to 0.986822, or past 1) and the bound (6.9e-05 to 0.999000) stay inside erlPctS's ends, so "Rule: ... = ", "     = ... = " and the summary keep their "="
+PASS T4 the Bayes mean (a+k)/(a+b+n) runs 5e-05 to 0.999950: never past the ends
+PASS T4 a simulated share is 0, 1 or a multiple of 1/10000: never past the ends ("0 errors: ... = " keeps its "=")
+PASS T5 the E session (seed 3): 1379 texts, identical to beta 1b's once 1 "= <" / "= >" are written the 1c way
+PASS T5 the E session (seed 11): 1379 texts, identical to beta 1b's once 1 "= <" / "= >" are written the 1c way
+PASS T6 routines that differ from beta 1b: ['erlBayesDraw', 'erlCasDraw', 'erlEq', 'erlSimDraw', 'erlTrDraw', 'erlTrExact'] (erlEq new)
+PASS T6 outside them only comments differ
+PASS T6 the #PYTHON block is byte-identical
+PASS T6 the code lines that changed are exactly the 9 listed (and erlEq's 7): -[] +[]
+PASS T7 the new names erlEq and eqS are not built-ins (case ignored); erlEq carries the erl tag
+PASS T7 INSTRING: the same 3 guarded lines as beta 1b (erlRepl 2, erlCas 1); erlEq reads LEFT(eqS, 1) inside IF DIM(eqS) > 0
+PASS T7 version strings (1d: beta 1d's): the banner, the tested-on line, the harness and verify names, the companion files, the beta 1d paragraph
+PASS T7 no // comment inside an open bracket (the Prime rejects it; 1d: beta 1d): []
+PASS T8 no scientific STRING(x, 2, d) result in any of the 56 beta 1c runs (section T included)
+
+== U. 1d: fleet review E1, E2, E4, E5; the disclaimer (harness v3e) ==
+PASS U1 the RMP menu offers 7 values, erlTm = 3 .. 9 (1 in 1,000 ... 1 in 1 billion)
+PASS U1 beta 1c, CAS answering: at RMP 1 in a billion (any N) the answer wraps and "RMP values are illustrative, not casework." is dropped (the review's E1): [(9, 1.0, 14.0, ['  P(at least one) = 1-(999999999/1000000000)'])]
+PASS U1 beta 1c, CAS failing: 7 RMPs x N 1 / 1E6 / 1E8: 14 lines, the answer on ONE line, the closing line present, every line 46 characters or fewer []
+PASS U1 beta 1d, CAS answering: 7 RMPs x N 1 / 1E6 / 1E8: 14 lines, the answer on ONE line, the closing line present, every line 46 characters or fewer []
+   1d, CAS giac:   P(1 or more) = 1-(999999999/1000000000)^N
+PASS U1 beta 1d, CAS failing: 7 RMPs x N 1 / 1E6 / 1E8: 14 lines, the answer on ONE line, the closing line present, every line 46 characters or fewer []
+   1d, CAS fail:   P(1 or more) = 1-(1-RMP)^N
+PASS U1 the prefix leaves 27 characters: a 27-character answer "-(999999999/1000000000)^N+1" still takes one line
+PASS U2 panel, 29 errors in 30: beta 1c '39.54/n = 131.8 %, n × bound = 29.95 → 39.54' -> 1d '39.54/n is 100 % or more: no use at this k, n'
+PASS U2 panel, 0 errors in 1: beta 1c '3/n = 300.0 %, n × bound = 0.95 → 3.00' -> 1d '3/n is 100 % or more: no use at this k, n'
+PASS U2 panel, 0 errors in 2: beta 1c '3/n = 150.0 %, n × bound = 1.55 → 3.00' -> 1d '3/n is 100 % or more: no use at this k, n'
+PASS U2 panel, 0 errors in 3: beta 1c '3/n = 100.0 %, n × bound = 1.89 → 3.00' -> 1d '3/n is 100 % or more: no use at this k, n'
+PASS U2 panel, 1 errors in 4: beta 1c '4.74/n = 118.6 %, n × bound = 3.01 → 4.74' -> 1d '4.74/n is 100 % or more: no use at this k, n'
+PASS U2 panel, 0 errors in 4, alpha 0.050: ordinary, unchanged: '3/n = 75.0 %, n × bound = 2.11 → 3.00'
+PASS U2 panel, 0 errors in 30, alpha 0.050: ordinary, unchanged: '3/n = 10.0 %, n × bound = 2.85 → 3.00'
+PASS U2 panel, 2 errors in 750, alpha 0.010: ordinary, unchanged: '8.41/n = 1.12 %, n × bound = 8.37 → 8.41'
+PASS U2 "Why 3" page, 0 errors in 1: beta 1c 'Rule: 3/n = 300.0 %.  n × bound = 0.950.' -> 1d 'Rule: 3/n is 100 % or more: no use here.'
+PASS U2 "Why 3" page, 0 errors in 3: beta 1c 'Rule: 3/n = 100.0 %.  n × bound = 1.895.' -> 1d 'Rule: 3/n is 100 % or more: no use here.'
+PASS U2 "Why 3" page, 0 errors in 4: beta 1c 'Rule: 3/n = 75.0 %.  n × bound = 2.109.' -> 1d 'Rule: 3/n = 75.0 %.  n × bound = 2.109.'
+PASS U2 alpha 0.001, n = 6: 'Rule: 6.91/n is 100 % or more: no use here.'
+PASS U2 the summary to Home at 29 errors in 30: beta 1c 'ErrorRate: 29 errors in 30 tests -> 95 % upper bound 99.8 % (39.54/n = 131.8 %); see ER_UPPER' -> 1d 'ErrorRate: 29 errors in 30 tests -> 95 % upper bound 99.8 % (39.54/n is 100 % or more); see ER_UPPER'
+PASS U2 sweep of 1848 records (6 alphas, n 1..60 and 100..10000): the 401 whose rule is 100 % or more say so, the rest print a rate below 100 % with "=" or ">" alone []
+PASS U2 a rule just under 100 % reads " > 99.9999 %" (beta 1c's form would be ' = > 99.9999 %')
+PASS U2 the widest rule line (9999 of 10000, alpha 0.001): '10311.88/n is 100 % or more: no use at this k, n', 48 characters
+PASS U3 Engines page after nothing opened: beta 1c 'CAS (exact text): not called yet' -> 1d 'CAS (exact text): not called yet'
+PASS U3 Engines page after nothing opened, CAS failing: beta 1c 'CAS (exact text): not called yet' -> 1d 'CAS (exact text): not called yet'
+PASS U3 Engines page after "Why 3" at k = 7 (asks for alpha, shows no CAS lines): beta 1c 'CAS (exact text): not called yet' -> 1d 'CAS (exact text): called, no Why 3 CAS lines'
+PASS U3 Engines page after the Bayes page only: beta 1c 'CAS (exact text): not called yet' -> 1d 'CAS (exact text): called, no Why 3 CAS lines'
+PASS U3 Engines page after the trawl's Exact page only, CAS failing: beta 1c 'CAS (exact text): not called yet' -> 1d 'CAS (exact text): called, no Why 3 CAS lines'
+PASS U3 Engines page after "Why 3" at k = 0: beta 1c 'CAS (exact text): exact on the last page' -> 1d 'CAS (exact text): exact on the last page'
+PASS U3 Engines page after "Why 3" at k = 0, CAS failing: beta 1c 'CAS (exact text): FAILED on the last page' -> 1d 'CAS (exact text): FAILED on the last page'
+PASS U4 erlPoiTerms: beta 1d's text = beta 1c's for k = 1..6 (k = 1: '(1-erll/erlq)^erlq+erlq/1*(erll/erlq)^1*(1-erll/erlq)^(erlq-1)')
+PASS U4 beta 1c with a FOR that runs once: the k = 1 text gains a false factor: '(1-erll/erlq)^erlq+erlq*(erlq-1)/1*(erll/erlq)^1*(1-erll/erlq)^(erlq-1)'
+PASS U4 beta 1d with the same FOR: every k = 1..6 text unchanged; the k = 1 page still exact, 'e^(-erll)*(erll+1)' (beta 1c's copy: erlCa3 = '', badge ['decimal'])
+PASS U5 the header carries the disclaimer, word for word, beside the distribution terms (beta 1c: no)
+PASS U5 the opening page shows "Teaching aid; not for casework or legal use." (font 1, red, y 29, 44 characters: within the 296-px width at 6.5 px a character); beta 1c does not
+PASS U5 the rest of the opening page is unchanged; the line sits between the title (y 10, font 4) and y 44
+PASS U5 ErrorRate() shows it on its first screen
+PASS U5 the trawl page keeps "RMP values are illustrative, not casework."
+PASS U6 routines that differ from beta 1c: ['ErrorRate', 'erlCasDraw', 'erlDrawText', 'erlEngPage', 'erlPoiTerms', 'erlRuleEq', 'erlTrExact', 'erlWelcome'] (erlRuleEq new)
+PASS U6 outside them only comments differ
+PASS U6 the #PYTHON block is byte-identical
+PASS U6 the code lines that changed are exactly the 4 removed and the 23 added listed here: -[] +[]
+PASS U6 erlRuleEq is defined after erlPctS and erlEq and before its first use
+PASS U7 the new names erlRuleEq and egN0 are not built-ins (case ignored); erlRuleEq carries the erl tag
+PASS U7 no LOCAL line declares more than 6 names: []
+PASS U7 no // comment inside an open bracket
+PASS U7 the file is still pure ASCII (glyphs are built with CHAR())
+PASS U7 INSTRING: the same guarded lines as beta 1c
+PASS U7 no new MAKELIST uses Home's K
+   review check_ErrorRate.py: beta 1c 1 failed ['FAIL trawl Exact page (cas=giac): the closing "RMP values are illustrative" line is on the page for RMP 1E-3..1E-9 [(9, 14.0, [\'  P(at least one) = 1-(999999999/1000000000)\', \'                    ^N\'])]']; beta 1d 0 failed []
+PASS U8 the review's check_ErrorRate.py: beta 1c fails its E1 check (1 failure), beta 1d passes all of it
+   h.sci_strings over the 124 beta 1d runs: []
+PASS U9 no scientific STRING(x, 2, d) result in any beta 1d run of this script (sections A-U)
+
+300 checks, ALL PASS

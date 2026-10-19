@@ -1,0 +1,150 @@
+A. harness_Norm3_v24.py on v2.4b (ppl_run_v1)
+first frame rows: Normal  μ = 0.000, σ = 1.000 / x₀ = 1.00, z = 1.00, pdf = 0.2420 (a height) / P(X ≤ x₀) = 0.8413 | P(X > x₀) = 0.1587
+PASS 1a title
+PASS 1b readout
+PASS 1c P(X<=x0)   P(X ≤ x₀) = 0.8413 | P(X > x₀) = 0.1587
+PASS 1d P(X>x0)
+PASS 1e soft keys after the blit   [['μ−', 'μ+', 'σ−', 'σ+', 'View', 'Quit']]
+PASS 1f nothing below 216   lowest text y = 204.0
+PASS 1g z-ruler -3..3   [(52.0, '-3'), (87.0, '-2'), (122.0, '-1'), (160.0, '0'), (194.0, '1'), (229.0, '2'), (264.0, '3')]
+PASS 1h result string   Norm3: N(0.000, 1.000), P(X ≤ 1.00) = 0.8413; values in EP_NORM_*
+PASS 1i no re-centre hint
+   NORMALD calls for one frame + exit: 281  NORMALD_CDF: 281
+   x0 per frame: [1.0, 0.98, 1.35, 1.93, 1.9]  expected last drag sample 1.9281
+PASS 2a drag frames follow the finger   [1.0, 0.98, 1.35, 1.93, 1.9]
+PASS 2b snapped on lift to 0.1 grid   1.9
+PASS 2c areas after snap
+   NORMALD calls in whole run (1 fill + 2 per frame expected): 285  frames: 5
+   S-curve frame rows: p = 0.900 → x₀ = 1.28, z = 1.28
+PASS 3a p = 0.900 -> x0 = 1.28   p = 0.900 → x₀ = 1.28, z = 1.28
+PASS 3b P(X<=x0) = 0.9000
+PASS 3c drag up the curve: p = 0.950 -> 1.64   p = 0.950 → x₀ = 1.64, z = 1.64
+   ICDF calls: [('NORMALD_ICDF', (0.0, 1.0, 0.9), np.float64(1.2815515655446004)), ('NORMALD_ICDF', (0.0, 1.0, 0.95), np.float64(1.6448536269514722))]
+PASS 3d tap the 0-1 axis at y=113 -> p = 0.500 → x₀ = 0.00   p = 0.500 → x₀ = 0.00, z = 0.00
+PASS 3d tap the 0-1 axis at y=114 -> p = 0.500 → x₀ = 0.00   p = 0.500 → x₀ = 0.00, z = 0.00
+PASS 3d tap the 0-1 axis at y=41 -> p = 0.975 → x₀ = 1.96   p = 0.975 → x₀ = 1.96, z = 1.96
+PASS 3d tap the 0-1 axis at y=186 -> p = 0.025 → x₀ = -1.96   p = 0.025 → x₀ = -1.96, z = -1.96
+   mu per frame: [0.0, 0.0, 0.432, 0.863, 0.9]  expected [0, 0.432, 0.863]
+PASS 4a mu slides by whole columns   [0.0, 0.0, 0.432, 0.863, 0.9]
+PASS 4b mu snaps on lift (0.1 grid)   0.9
+PASS 4c areas while held use the slid mean   P(X ≤ x₀) = 0.5544 | P(X > x₀) = 0.4456
+PASS 4d grabbed marker drawn 3 px wide   40 side pixels
+   sigma per frame: [1.0, 1.063, 1.125, 1.188, 1.25, 1.25]
+PASS 5a sigma 1 -> 1.25 over four frames   [1.0, 1.063, 1.125, 1.188, 1.25, 1.25]  (STRING here rounds 1.0625 half-even; the device rounds half-up)
+PASS 5b a fifth frame (y refit), then the wait   6 pages
+   y labels frame 4 vs 5: ['0.1', '0.2', '0.3', '0.4', '0.5'] ['0.1', '0.2', '0.3', '0.4']
+PASS 5c y-scale held during the animation, refit after
+PASS 5d x-window frozen through a sigma change
+PASS 5e re-centre hint after sigma grew
+PASS 6a mu- soft key   Normal  μ = -0.250, σ = 1.000
+   magenta LINE_P per frame: [281, 281, 0]
+PASS 6b View soft key: CDF gone in view 1
+PASS 6c Quit soft key ends the program   Norm3: N(-0.250, 1.000), P(X ≤ 1.00) = 0.8944; values in EP_NORM_*
+PASS 7a help page drawn
+PASS 7b help lines fit (est.)   []
+   CHOOSE: [('Norm3', ['Help: touch and keys', 'Next view', 'Re-centre the window', 'Quit'])]
+PASS 7c Next view from the menu
+   x0 after 20 + : 5.09  after 20 - : 0.53  hint at 20/40/after 0: False True False
+PASS 8a no hint while x0 is still outside (0 would change nothing)
+PASS 8b hint once x0 is back inside a pushed window
+PASS 8c 0 re-centres: window back to -4..4, hint gone   ['-4', '-3', '-2', '-1', '0', '1', '2', '3', '4']
+PASS 9a help page held despite the left-over OK (stale-key mode)   []
+PASS 10 Norm3(-12.5,4,-10): P(X ≤ x₀) = 0.7340   P(X ≤ x₀) = 0.7340 | P(X > x₀) = 0.2660
+PASS 10 Norm3(-12.5,4,-10): rows fit at 6 px/char   []
+PASS 10 Norm3(500,100,600): P(X ≤ x₀) = 0.8413   P(X ≤ x₀) = 0.8413 | P(X > x₀) = 0.1587
+PASS 10 Norm3(500,100,600): rows fit at 6 px/char   []
+PASS 11a tie goes to x0   x₀ = 0.58, z = 0.58, pdf = 0.3381 (a height)
+PASS 12a a press outside the plot changes nothing
+   NORMALD 592, NORMALD_CDF 595 over 4 frames (fills 278 + 278 at start, 278 + 278 after the lift)
+PASS 13a the held-mean frame computes ~30 + 30 fresh columns, not 556
+
+C. v2.4a: no "=" before a relation; P(X > x0) as the lower tail (harness v3e)
+PASS C1 Norm3(0,1,-5), v2.4: ['x₀ = -5.00, z = -5.00, pdf = < 0.0001 (a height)', 'P(X ≤ x₀) = < 0.0001', 'P(X > x₀) = 1.0000'] | Norm3: N(0.000, 1.000), P(X ≤ -5.00) = < 0.0001; values in EP_NORM_*   (['x₀ = -5.00, z = -5.00, pdf = < 0.0001 (a height)', 'P(X ≤ x₀) = < 0.0001', 'P(X > x₀) = 1.0000'], 'Norm3: N(0.000, 1.000), P(X ≤ -5.00) = < 0.0001; values in EP_NORM_*')
+PASS C1 Norm3(0,1,-5), v2.4a: ['x₀ = -5.00, z = -5.00, pdf < 0.0001 (a height)', 'P(X ≤ x₀) < 0.0001', 'P(X > x₀) = 1.0000'] | Norm3: N(0.000, 1.000), P(X ≤ -5.00) < 0.0001; values in EP_NORM_*   (['x₀ = -5.00, z = -5.00, pdf < 0.0001 (a height)', 'P(X ≤ x₀) < 0.0001', 'P(X > x₀) = 1.0000'], 'Norm3: N(0.000, 1.000), P(X ≤ -5.00) < 0.0001; values in EP_NORM_*')
+PASS C1 Norm3(0,1,5), v2.4: ['x₀ = 5.00, z = 5.00, pdf = < 0.0001 (a height)', 'P(X ≤ x₀) = 1.0000', 'P(X > x₀) = < 0.0001'] | Norm3: N(0.000, 1.000), P(X ≤ 5.00) = 1.0000; values in EP_NORM_*   (['x₀ = 5.00, z = 5.00, pdf = < 0.0001 (a height)', 'P(X ≤ x₀) = 1.0000', 'P(X > x₀) = < 0.0001'], 'Norm3: N(0.000, 1.000), P(X ≤ 5.00) = 1.0000; values in EP_NORM_*')
+PASS C1 Norm3(0,1,5), v2.4a: ['x₀ = 5.00, z = 5.00, pdf < 0.0001 (a height)', 'P(X ≤ x₀) = 1.0000', 'P(X > x₀) < 0.0001'] | Norm3: N(0.000, 1.000), P(X ≤ 5.00) = 1.0000; values in EP_NORM_*   (['x₀ = 5.00, z = 5.00, pdf < 0.0001 (a height)', 'P(X ≤ x₀) = 1.0000', 'P(X > x₀) < 0.0001'], 'Norm3: N(0.000, 1.000), P(X ≤ 5.00) = 1.0000; values in EP_NORM_*')
+PASS C1 Norm3(0,1,10), v2.4: ['x₀ = 10.00, z = 10.00, pdf = < 0.0001 (a height)', 'P(X ≤ x₀) = 1.0000', 'P(X > x₀) = 0.0000'] | Norm3: N(0.000, 1.000), P(X ≤ 10.00) = 1.0000; values in EP_NORM_*   (['x₀ = 10.00, z = 10.00, pdf = < 0.0001 (a height)', 'P(X ≤ x₀) = 1.0000', 'P(X > x₀) = 0.0000'], 'Norm3: N(0.000, 1.000), P(X ≤ 10.00) = 1.0000; values in EP_NORM_*')
+PASS C1 Norm3(0,1,10), v2.4a: ['x₀ = 10.00, z = 10.00, pdf < 0.0001 (a height)', 'P(X ≤ x₀) = 1.0000', 'P(X > x₀) < 0.0001'] | Norm3: N(0.000, 1.000), P(X ≤ 10.00) = 1.0000; values in EP_NORM_*   (['x₀ = 10.00, z = 10.00, pdf < 0.0001 (a height)', 'P(X ≤ x₀) = 1.0000', 'P(X > x₀) < 0.0001'], 'Norm3: N(0.000, 1.000), P(X ≤ 10.00) = 1.0000; values in EP_NORM_*')
+PASS C1 Norm3(0,20000,0), v2.4: ['x₀ = 0.00, z = 0.00, pdf = < 0.0001 (a height)', 'P(X ≤ x₀) = 0.5000', 'P(X > x₀) = 0.5000'] | Norm3: N(0.000, 20000.000), P(X ≤ 0.00) = 0.5000; values in EP_NORM_*   (['x₀ = 0.00, z = 0.00, pdf = < 0.0001 (a height)', 'P(X ≤ x₀) = 0.5000', 'P(X > x₀) = 0.5000'], 'Norm3: N(0.000, 20000.000), P(X ≤ 0.00) = 0.5000; values in EP_NORM_*')
+PASS C1 Norm3(0,20000,0), v2.4a: ['x₀ = 0.00, z = 0.00, pdf < 0.0001 (a height)', 'P(X ≤ x₀) = 0.5000', 'P(X > x₀) = 0.5000'] | Norm3: N(0.000, 20000.000), P(X ≤ 0.00) = 0.5000; values in EP_NORM_*   (['x₀ = 0.00, z = 0.00, pdf < 0.0001 (a height)', 'P(X ≤ x₀) = 0.5000', 'P(X > x₀) = 0.5000'], 'Norm3: N(0.000, 20000.000), P(X ≤ 0.00) = 0.5000; values in EP_NORM_*')
+PASS C2 v2.4 read "P(X > x₀) = 0.0000" ten σ to the right but "P(X ≤ x₀) = < 0.0001" ten σ to the left; v2.4a reads "< 0.0001" for both
+PASS C2 NORMALD_CDF(μ, σ, 2μ - x₀) = norm.sf(x₀) at μ 0, σ 1, x₀ 10: 7.61985e-24 (SciPy 7.61985e-24)
+PASS C2 NORMALD_CDF(μ, σ, 2μ - x₀) = norm.sf(x₀) at μ 100, σ 15, x₀ 250: 7.61985e-24 (SciPy 7.61985e-24)
+PASS C2 NORMALD_CDF(μ, σ, 2μ - x₀) = norm.sf(x₀) at μ 0, σ 1, x₀ 3: 0.0013499 (SciPy 0.0013499)
+PASS C2 NORMALD_CDF(μ, σ, 2μ - x₀) = norm.sf(x₀) at μ -2, σ 0.5, x₀ 1.7: 6.80922e-14 (SciPy 6.80922e-14)
+PASS C3 224 calls (μ, σ, z): every readout row and summary identical to v2.4 once its "= <" is written the v2.4a way (104 needed it)   []
+PASS C4 n3_Eq: "< 0.0001" -> " < 0.0001", "> -0.0001" -> " > -0.0001", "0.8413" -> " = 0.8413", "" -> " = ": [' < 0.0001', ' > -0.0001', ' = 0.8413', ' = ']
+PASS C5 the code lines that changed are exactly the 5 listed (and n3_Eq's 7): -[] +[]
+PASS C5 the new names n3_Eq and eqS are not built-ins (case ignored); n3_Eq carries the n3_ tag
+PASS C5 version strings: the banner, the help page title, the "What changed in v2.4a" paragraph
+PASS C5 no // comment inside an open bracket: []
+PASS C5 no INSTRING in v2.4a's code; n3_Eq reads LEFT(eqS, 1) only inside IF DIM(eqS) > 0
+   scientific fixed decimals in 230 v2.4a runs of part C: 11, e.g. [('Norm3(0,0.2,-0.2)', -0.0, 1, '-5.6ᴇ-17')]
+PASS C6 no NEW scientific fixed decimal: the 230 v2.4a runs print exactly those v2.4 prints for the same calls (11, all the axis tick at 0 for sigma 0.2, -5.6E-17 in binary doubles: -0.8 + 4 x 0.2; the Prime's BCD holds 0.2 exactly, so this is the harness's arithmetic, not v2.4a's)   [('Norm3(0,0.2,-0.2)', -0.0, 1, '-5.6ᴇ-17'), ('Norm3(0,0.2,-0.4)', -0.0, 1, '-5.6ᴇ-17')]
+B. verify_Norm3.py (v2.4's formula mirror, unchanged): ['276 checks passed, 0 failed']
+PASS B verify_Norm3.py passes: ['276 checks passed, 0 failed']
+
+D. v2.4b: N1 (ROUND before STRING, n3_Fx / n3_Nm), the LOCAL MAKELIST counter (harness v3e)
+   review check_Norm3.py on v2.4b: 172 checks, 0 failed []
+   the same on v2.4a: 172 checks, 7 failed:
+      FAIL  B4 the help page was shown once (0)
+      FAIL  C3 Norm3(0.0005, 1, 0.005) [] prints no scientific E (title/readout/summary)
+      FAIL  C3 Norm3(0, 1, 0.004) [] prints no scientific E (title/readout/summary)
+      FAIL  C3 a short drag at sigma 0.03 prints no scientific E in the x0 readout
+      FAIL  C3 the inverse at p = 0.51 with sigma 0.1 prints no scientific E (x0 = 0.0025)
+      FAIL  C6 no scientific E after 60 sigma- presses: ['Normal  μ = 0.000, σ = 1.000ᴇ-4', 'Normal  μ = 0.000, σ = 1.016ᴇ-4', 'Normal  μ = 0.000, σ = 1.032ᴇ-4']
+      FAIL  D2 version string on screen: ['v2.4a']
+PASS D1 the review's check_Norm3.py passes in full on v2.4b (172 checks, 0 failed)   []
+PASS D1 regression: on v2.4a the same script fails the 5 N1 checks (C3 x 4, C6) the review found, and only the two version expectations besides (help title, D2)   ['B4 the help page was shown once (0)', 'C3 Norm3(0.0005, 1, 0.005) [] prints no scientific E (title/readout/summary)', 'C3 Norm3(0, 1, 0.004) [] prints no scientific E (title/readout/summary)', 'C3 a short drag at sigma 0.03 prints no scientific E in the x0 readout', 'C3 the inverse at p = 0.51 with sigma 0.1 prints no scientific E (x0 = 0.0025)', "C6 no scientific E after 60 sigma- presses: ['Normal  μ = 0.000, σ = 1.000ᴇ-4', 'Normal  μ = 0.000, σ = 1.016ᴇ-4', 'Normal  μ = 0.000, σ = 1.032ᴇ-4']", "D2 version string on screen: ['v2.4a']"]
+   31 σ- presses from σ = 1 (title)
+      v2.4a: ['Normal  μ = 0.000, σ = 9.904ᴇ-4']
+      v2.4b: []
+PASS D2 31 σ- presses from σ = 1 (title): v2.4a printed the scientific form, v2.4b reads it rounded or as "< 0.01" / "< 0.001"   ['Normal  μ = 0.000, σ = 0.001', 'Normal  μ = 0.000, σ = 0.002', 'Normal  μ = 0.000, σ = 0.003']
+   60 σ- presses, σ at its 0.0001 floor (title)
+      v2.4a: ['Normal  μ = 0.000, σ = 1.000ᴇ-4', 'Normal  μ = 0.000, σ = 1.016ᴇ-4']
+      v2.4b: ['Normal  μ = 0.000, σ < 0.001']
+PASS D2 60 σ- presses, σ at its 0.0001 floor (title): v2.4a printed the scientific form, v2.4b reads it rounded or as "< 0.01" / "< 0.001"   ['Normal  μ = 0.000, σ < 0.001', 'Normal  μ = 0.000, σ = 0.001', 'Normal  μ = 0.000, σ = 0.002']
+   a press on the S-curve at p = 0.51, σ = 0.1 (inverse row)
+      v2.4a: ['p = 0.510 → x₀ = 2.51ᴇ-3, z = 0.03']
+      v2.4b: ['p = 0.510 → x₀ < 0.01, z = 0.03']
+PASS D2 a press on the S-curve at p = 0.51, σ = 0.1 (inverse row): v2.4a printed the scientific form, v2.4b reads it rounded or as "< 0.01" / "< 0.001"   ['Normal  μ = 0.000, σ = 0.100', 'p = 0.510 → x₀ < 0.01, z = 0.03', 'x₀ = 0.05, z = 0.50, pdf = 3.5207 (a height)']
+   a drag 8-9 px right of the mean, σ = 0.03 (row 2 while the finger is down)
+      v2.4a: ['x₀ = 6.91ᴇ-3, z = 0.23, pdf = 12.9503 (a height)', 'x₀ = 7.77ᴇ-3, z = 0.26, pdf = 12.8595 (a height)']
+      v2.4b: ['x₀ = 0.01, z = 0.23, pdf = 12.9503 (a height)', 'x₀ = 0.01, z = 0.26, pdf = 12.8595 (a height)', 'x₀ = 0.01, z = 0.27, pdf = 12.8336 (a height)']
+PASS D2 a drag 8-9 px right of the mean, σ = 0.03 (row 2 while the finger is down): v2.4a printed the scientific form, v2.4b reads it rounded or as "< 0.01" / "< 0.001"   ['Normal  μ = 0.000, σ = 0.030', 'x₀ = 0.01, z = 0.23, pdf = 12.9503 (a height)', 'x₀ = 0.01, z = 0.26, pdf = 12.8595 (a height)']
+   Norm3(0, 1, 0.004) (row 2)
+      v2.4a: ['x₀ = 4.00ᴇ-3, z = 4.00ᴇ-3, pdf = 0.3989 (a height)']
+      v2.4b: ['x₀ < 0.01, z < 0.01, pdf = 0.3989 (a height)']
+PASS D2 Norm3(0, 1, 0.004) (row 2): v2.4a printed the scientific form, v2.4b reads it rounded or as "< 0.01" / "< 0.001"   ['Normal  μ = 0.000, σ = 1.000', 'x₀ < 0.01, z < 0.01, pdf = 0.3989 (a height)']
+   Norm3(0.0005, 1, 0.005) (title, row 2)
+      v2.4a: ['Normal  μ = 5.000ᴇ-4, σ = 1.000', 'x₀ = 5.00ᴇ-3, z = 4.50ᴇ-3, pdf = 0.3989 (a height)']
+      v2.4b: ['Normal  μ = 0.001, σ = 1.000', 'x₀ = 0.01, z < 0.01, pdf = 0.3989 (a height)']
+PASS D2 Norm3(0.0005, 1, 0.005) (title, row 2): v2.4a printed the scientific form, v2.4b reads it rounded or as "< 0.01" / "< 0.001"   ['Normal  μ = 0.001, σ = 1.000', 'x₀ = 0.01, z < 0.01, pdf = 0.3989 (a height)']
+   Norm3(-0.0004, 1, -0.003) (negative values that round to 0)
+      v2.4a: ['Normal  μ = -4.000ᴇ-4, σ = 1.000', 'x₀ = -3.00ᴇ-3, z = -2.60ᴇ-3, pdf = 0.3989 (a height)']
+      v2.4b: ['Normal  μ > -0.001, σ = 1.000', 'x₀ > -0.01, z > -0.01, pdf = 0.3989 (a height)']
+PASS D2 Norm3(-0.0004, 1, -0.003) (negative values that round to 0): v2.4a printed the scientific form, v2.4b reads it rounded or as "< 0.01" / "< 0.001"   ['Normal  μ > -0.001, σ = 1.000', 'x₀ > -0.01, z > -0.01, pdf = 0.3989 (a height)']
+PASS D2 the summary to Home, Norm3(0, 1, 0.004) (row 2): v2.4a 'Norm3: N(0.000, 1.000), P(X ≤ 4.00ᴇ-3) = 0.5016; values in EP_NORM_*' -> v2.4b 'Norm3: N(0.000, 1.000), P(X ≤ x₀) = 0.5016 with x₀ < 0.01; values in EP_NORM_*'   ('Norm3: N(0.000, 1.000), P(X ≤ 4.00ᴇ-3) = 0.5016; values in EP_NORM_*', 'Norm3: N(0.000, 1.000), P(X ≤ x₀) = 0.5016 with x₀ < 0.01; values in EP_NORM_*')
+PASS D2 the summary to Home, 60 σ- presses, σ at its 0.0001 floor (title): v2.4a 'Norm3: N(0.000, 1.000ᴇ-4), P(X ≤ 0.00) = 0.5000; values in EP_NORM_*' -> v2.4b 'Norm3: N(0.000, σ < 0.001), P(X ≤ 0.00) = 0.5000; values in EP_NORM_*'   ('Norm3: N(0.000, 1.000ᴇ-4), P(X ≤ 0.00) = 0.5000; values in EP_NORM_*', 'Norm3: N(0.000, σ < 0.001), P(X ≤ 0.00) = 0.5000; values in EP_NORM_*')
+PASS D2 the summary to Home, Norm3(-0.0004, 1, -0.003) (negative values that round to 0): v2.4a 'Norm3: N(-4.000ᴇ-4, 1.000), P(X ≤ -3.00ᴇ-3) = 0.4990; values in EP_NORM_*' -> v2.4b 'Norm3: N(μ > -0.001, 1.000), P(X ≤ x₀) = 0.4990 with x₀ > -0.01; values in EP_NORM_*'   ('Norm3: N(-4.000ᴇ-4, 1.000), P(X ≤ -3.00ᴇ-3) = 0.4990; values in EP_NORM_*', 'Norm3: N(μ > -0.001, 1.000), P(X ≤ x₀) = 0.4990 with x₀ > -0.01; values in EP_NORM_*')
+PASS D2 EP_NORM_X0, EP_NORM_Z and EP_NORM_CDF keep the computed values (0.004, 0.004, Phi(0.004))
+PASS D3 n3_Fx: 0.0004 -> "< 0.001", -0.0004 -> "> -0.001", 0.0005 -> "0.001" (halves away from 0), 0 -> "0.000", 0.004 -> "< 0.01", 0.005 -> "0.01", 1E-9 -> "< 0.01" ...   [((0.0004, 3), '< 0.001'), ((-0.0004, 3), '> -0.001'), ((0.0005, 3), '0.001'), ((0.0, 3), '0.000'), ((1.0, 3), '1.000'), ((0.004, 2), '< 0.01'), ((-0.004, 2), '> -0.01'), ((0.005, 2), '0.01'), ((2.5, 2), '2.50'), ((-12.5, 3), '-12.500'), ((20000.0, 3), '20000.000'), ((1e-09, 2), '< 0.01')]
+PASS D3 n3_Nm: a plain number as it is; a value too small for its decimals with its name: ['σ < 0.001', '1.000', 'μ > -0.001', '0.000']
+PASS D4 224 ordinary calls (μ 0, 22, -12.5, 500; σ 1, 4, 0.2, 100; 14 values of z): every title, row 2, area key and summary of v2.4b is v2.4a's, character for character   []
+   MAKELIST caches: v2.4a [('n3Pdf', 'K'), ('n3Cdf', 'K')]; v2.4b [('n3Pdf', 'n3I'), ('n3Cdf', 'n3I')]
+PASS D5 v2.4b's two caches count with the LOCAL n3I (v2.4a: Home's K); in the harness both fill (one value per pixel column) and Home's K is 7 before and after
+   routines byte-identical to v2.4a: n3_Drain, n3_Eq, n3_NiceNum, n3_WaitAny, n3_fmtp
+   changed: ['Norm3', 'n3_Help']; added: ['n3_Fx', 'n3_Nm']; removed: []
+PASS D6 the routines that differ from v2.4a are Norm3 and n3_Help (changed) and n3_Fx, n3_Nm (new); the other 5 are byte-identical
+PASS D6 n3_Help differs from v2.4a only in its title line ("Norm3 v2.4b  -  touch and keys")
+PASS D6 inside Norm3 the code lines that changed are exactly the N1 sites (title, row 2 twice, summary), the two MAKELIST lines and the summary's x0 slot: -[] +[]
+PASS D7 the new names n3_Fx, n3_Nm, fxV, fxD, fxR, nmS, nmV, nmD, nmT, n3XS, n3XT are not built-ins (case ignored); the two helpers carry the n3_ tag and are defined once, after n3_fmtp and n3_Eq and before Norm3
+PASS D7 version strings: the banner, the help page title and a "What changed in v2.4b" paragraph; Roger's DISCLAIMER line beside the distribution terms; no code line names v2.4a
+PASS D7 no // comment inside an open bracket []
+PASS D7 every LOCAL line holds at most 6 names (largest 6); no INSTRING; no root sign; no MAKELIST counts with K or X
+   STRING(x, 2, d) without ROUND in v2.4b: thr (n3_fmtp: the floor itself, 10^-d, never below it), thr (n3_fmtp: the floor itself, 10^-d, never below it), pv (n3_fmtp: reached only when |pv| >= 10^-d), fxR (n3_Fx: ROUND(x, d) itself, so 0 or at least 10^-d), xv (an x tick label: a multiple of a 1-2-5 step with d = -FLOOR(LOG(step)), so 0 or at least 10^-d), yv (a y tick label: the same), n3P (p on the inverse row: clamped to 0.005 or more)
+PASS D7 every bare STRING(x, 2, d) left in v2.4b is one of ['fxR', 'n3P', 'pv', 'thr', 'xv', 'yv'], each unable to print the scientific form
+   v2.4b: 234 harness runs in part D, 2 distinct scientific STRING results: [(-0.0, 1, '-2.8ᴇ-17'), (-0.0, 1, '-5.6ᴇ-17')]
+PASS D8 the only scientific STRING results of v2.4b in its 234 runs are the axis tick at 0 for σ 0.2 (2), -5.6E-17 in binary doubles (-0.8 + 4 x 0.2): the Prime's BCD makes that tick exactly 0, so it is the harness's arithmetic, as v2.4a's C6 found   [(-0.0, 1, '-2.8ᴇ-17'), (-0.0, 1, '-5.6ᴇ-17')]
+
+ALL CHECKS PASSED

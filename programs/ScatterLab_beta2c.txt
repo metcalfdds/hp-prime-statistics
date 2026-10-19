@@ -1,0 +1,2126 @@
+#pragma mode( separator(.,;) integer(h32) )
+
+// ============================================================
+// SCATTERLAB - beta 2c
+// A scatterplot you build with your finger: the least-squares
+// line, r, r-squared and the residuals follow every point
+// ============================================================
+// Author: Roger Metcalf, 2026.  Written with AI assistance
+//   (Anthropic Claude); concept, direction and all hardware
+//   testing by the author.
+//
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
+//   the file and credit the author if you pass it on.  Not for
+//   sale or commercial redistribution.  Provided as is, with no
+//   warranty: check any result you intend to rely on.
+// DISCLAIMER: a teaching and demonstration aid. Not validated for
+//   forensic, clinical or legal use; do not rely on its results
+//   for legal purposes.
+//
+// Firmware: written for the 2026-09-09 firmware (2.4.2).  No version
+//   has been run on hardware.  On the HP Prime Virtual Calculator
+//   (build 2026-09-09): beta 1 passed round 1 (17 Oct 2026); beta 2a
+//   ran in round 2 (17 Oct 2026), where tapping the equation (the
+//   least-squares page) stopped the program with "Error: Invalid
+//   input" after the CAS had answered; beta 2b, which fixed it,
+//   passed the retest the same afternoon (the page exact, b =
+//   2441/2394).  Beta 2c (below) has run only in the PC harness.  The
+//   call form (beta 2a) is the one CASProbe beta 1b found on the HP
+//   Prime Virtual Calculator (build 2026-09-09, 17 Oct 2026).
+//
+// Run ScatterLab() from the Program Catalog.
+//
+// What changed in beta 2c (19 Oct 2026): one fix from the fleet review
+//   of 19 Oct 2026 (D-SL-1).  Line numbers are beta 2b's.
+//   - THE DECIMAL PAGE'S BIG SUMS (slNum 1608-1620).  slNum stripped
+//     trailing zeros from every number, decimal point or not.  The
+//     Prime's fixed form holds at most 12 significant digits, so from
+//     1E11 up STRING(x, 2, 1) has no decimal point: 1.4E11 prints
+//     "140000000000", and the strip (1617-1618) cut it to "14".  For
+//     x = 100000, 200000, 300000 the page's second normal equation read
+//     "600000 a + 14 b = 1400000", wrong by 10^10.  The strip now runs
+//     only when the text holds a "." (and never calls INSTRING on an
+//     empty text).  The decimal page appears only when the CAS fails, a
+//     value needs over 6 decimals, or the text is too long.
+//   - A DISCLAIMER line beside the terms of use at the top of this
+//     header (Roger, 19 Oct 2026): a teaching aid, not validated for
+//     forensic, clinical or legal use.  It is a comment; no page of
+//     the program states the terms, so no page changed.
+//   Nothing else changed; ScatterLab still refuses a line below 3
+//   points.
+//
+// What changed in beta 2b (17 Oct 2026): the second emulator round's
+//   findings (HP Prime Virtual Calculator 2.4.2, build 2026-09-09).
+//   Line numbers are beta 2a's.  Nothing else changed.
+//   - THE LEAST-SQUARES PAGE NO LONGER STOPS (slRepl, 385-398).  With
+//     Poverty vs crime loaded, tapping the equation gave "Error:
+//     Invalid input" and the program stopped.  INSTRING("", "a") is
+//     that error on the Prime (typed in Home).  slRepl looked for the
+//     pattern again in what was left of the text, and solve's answer
+//     {[a,b]} ends in the "}" it removes, so what was left was "".  It
+//     now looks only while text is left, and an empty pattern gives
+//     the text back unchanged.
+//   - NOR DOES THE CAS FALLBACK (slCas 347, slCxClean 1375-1379,
+//     slCxSol 1391-1407).  When the CAS fails, slCas sets its answer
+//     to "" and then tested INSTRING(answer, "undef"): the same error.
+//     The tests now run only on a non-empty answer (the kit's shape),
+//     slCxClean hands "" back as "", and slCxSol stops when nothing is
+//     left once the brackets are gone, or after "a=".  The other
+//     INSTRINGs never see an empty text: slCxMake (1432, 1433) has
+//     returned if slRat's text is empty, slRatNote (380) gets it only
+//     with a "/", slCxSol's tests on the halves follow a length check,
+//     and slCxFrac (1505) searches the literal "0123456789".
+//   - NO SCIENTIFIC NUMBERS.  On the Prime STRING(x, 2, d) prints
+//     scientific form when 0 < |x| < 10^-d (STRING(0.096, 2, 1) is
+//     "9.6E-2", the E a small capital).  A new helper, slFx(x, d),
+//     rounds first, so the value is 0 or at least 10^-d and the form
+//     stays fixed.  It now prints r and r-squared on the panel (762,
+//     763, 782, 783: r = 0.0004 was 4.000E-4), the selected point's x
+//     and y (845: a loaded value finer than the grid), the axis labels
+//     (707, 722: a tick at 0 that carries a last-digit remainder), the
+//     decimals beside the exact fractions and on the decimal page
+//     (slDec 1488-1492, slNum 1516-1525) and r in the summary
+//     returned to Home (1992).  On the decimal page a sum of 1E12 or
+//     more is scientific on the Prime whatever the decimals: slNum
+//     keeps six significant digits there.  slSig (the coefficients,
+//     SSE, the means, the residual) already printed "0.00" below
+//     0.00001 and at most five decimals above it, so it never reached
+//     the case; the leverage h is at least 1/n = 0.025.
+//
+// What changed in beta 2a (17 Oct 2026): the CAS call form only.  CASProbe beta 1b
+//   found that CAS(s) with s a variable hands the text back
+//   UNEVALUATED, so beta 2's slCas (306-327) returned its own input;
+//   the solve's echoed text kept "sla" in it, so slCxSol refused it,
+//   and the page fell back to the decimals with the "decimal" badge.
+//   Its IFERR line is now
+//     STRING(EXPR("CAS(" + CHAR(34) + "string(" + s + ")" + CHAR(34) + ")"))
+//   (BRIEF_CAS_v2), the quotes STRING() adds are dropped, and an
+//   answer holding the infinity sign is refused like undef.  No
+//   reader changed: slCxSol already drops braces, which is how the
+//   Prime prints the solve of a system ({[23/10,4/5]}, CASProbe beta
+//   1b T36), and the SSE and its derivatives are polynomials, which
+//   print alike; its comment says so.  Nothing else changed.
+//
+// What changed in beta 2 (16 Oct 2026; built on beta 1, every beta 1
+//   feature kept; line numbers are beta 1's):
+//   - LEAST SQUARES AS CALCULUS, a new page (Menu > Least squares as
+//     calculus, or a tap on the equation in the panel).  The magenta
+//     line makes SSE(a, b) = sum (y - a - b x)^2 as small as it can
+//     be.  The page has the CAS write that SSE out for the points on
+//     the plot, put it in order as a polynomial in a and b, take its
+//     two partial derivatives, set them to 0 (the normal equations)
+//     and solve them: the intercept a and slope b appear as exact
+//     fractions beside the program's own decimals (slB0, slB1).
+//   - Only whole numbers go into CAS text: a value with decimals is
+//     written as a whole number over a power of ten (10.4 = 104/10;
+//     the page says so), so nothing is rounded.  A value that needs
+//     more than six decimals (a typed 1/3, say) cannot be written
+//     exactly; the page then shows the normal equations with the
+//     program's decimal sums only.
+//   - One call routine, slCas (the house CAS kit, with slIStr writing
+//     whole numbers), so CASProbe's verdict is a one-line change
+//     (made in beta 2a).
+//     The CAS is asked when the page opens and the points have
+//     changed since it last answered -- never during a drag.  A badge
+//     says "exact (CAS)", or "decimal" when the CAS did not answer.
+//     slCas drops one pair of quotes round an answer (HP: answers in
+//     numerical mode come back as strings); an answer with a decimal
+//     point (approximate mode) counts as no answer.
+//   - The menu has ten items (Help is 9, Quit is A); help page 3
+//     points at the new page.  The kit's whole-number parameter is
+//     slIv (slN is already the number of points).  Every drag
+//     (slDragPt, slDragH) is unchanged.
+//
+// What changed in beta 1 (16 Oct 2026): first version.
+//   - Built from the fleet's device-verified touch kit, copied
+//     shape for shape from ChiTable beta 1k: the capped finger-lift
+//     drain (slDrain), drain-wait-drain on keys AND touch
+//     (slWaitAny), soft keys painted with DRAWMENU after the blit
+//     and read back as a tap at y >= 218 in 53.4-px slots, the
+//     house palette as constants in slInit, file-level LOCAL state
+//     and the house header (GaltonBoard beta 1b).
+//   - Tap to add a point (up to 40), press a point and drag to move
+//     it; the line, r, r-squared, SSE and the residuals are redrawn
+//     on every drag sample.  The window stays frozen during a drag.
+//   - Soft keys Add, Del, Resid, Guess, Data, Menu; every one is
+//     also reachable from the keys (Enter menu) for keyboard use.
+//   - Guess mode: two red handles make the student's own line; its
+//     SSE sits beside the least-squares SSE; Enter reveals the
+//     least-squares line.
+//   - A far-out point (Menu) makes leverage something you feel.
+//   - Data: a SYNTHETIC example, load from / save to C1 and C2 of
+//     the Statistics 2Var app, clear.
+//   - Six drawn help pages, ending with "correlation is not
+//     causation" and a criminal-justice example.
+//   - The arithmetic was checked against scipy.stats.linregress on
+//     random data sets with ties, n = 3, all-x-equal and all-y-equal
+//     cases (verify_ScatterLab.py), and this file's own slFit was
+//     run on the PC harness (ppl_run_v1) on the same data.
+// ============================================================
+//
+// WHAT YOU SEE
+//   Left: the plot box with a grid and "nice" ticks (1, 2 or 5
+//         times a power of ten).
+//         Blue squares ...... your points (the selected one has a
+//                             red frame, the far-out one orange)
+//         Magenta line ...... the least-squares line
+//         Green cross ....... the mean point (x-bar, y-bar); the
+//                             least-squares line always passes
+//                             through it
+//         Orange segments ... residuals, y - y-hat (Resid)
+//         Red line, handles . your own line (Guess)
+//   Right: the readout panel: n, r, r-squared, the equation
+//         y-hat = b0 + b1 x with its numbers, SSE, the means.
+//   Bottom: two lines of notes, then the soft keys.
+//
+// TOUCH
+//   Add mode ... tap empty plot = new point (40 at most);
+//                press a point (within 7 px) and drag = move it
+//   Del mode ... tap a point = delete it
+//   Guess ...... drag a red handle up or down; tap Reveal
+//   Soft keys .. Add | Del | Resid | Guess | Data | Menu
+// KEYS (every touch action has one)
+//   + / -        select the next / previous point
+//   arrows       move the selected point one tick
+//                (Guess: left/right pick a handle, up/down move it)
+//   0            fit the window to the data
+//   Enter        the menu (Guess: reveal / hide the LS line)
+//   Esc          leave Del or Guess; in Add mode, quit
+//   any key      ends a drag (a safety valve for a stuck touch)
+//
+// THE ARITHMETIC (slFit; two passes over the points, O(n))
+//   pass 1:  x-bar = sum x / n,  y-bar = sum y / n
+//   pass 2:  Sxx = sum (x - x-bar)^2,  Syy = sum (y - y-bar)^2,
+//            Sxy = sum (x - x-bar)(y - y-bar)
+//   b1 = Sxy / Sxx,  b0 = y-bar - b1 x-bar
+//   r = Sxy / sqrt(Sxx Syy),  r-squared = r^2
+//   pass 3:  SSE = sum (y - b0 - b1 x)^2, the squared residuals
+//   leverage of point i:  h = 1/n + (x_i - x-bar)^2 / Sxx
+//   Centring before squaring (rather than sum x^2 - n x-bar^2)
+//   keeps every digit when the data are large numbers such as
+//   crime counts.  Guards: fewer than 3 points or every x the
+//   same -> no line; every y the same -> r undefined.
+//
+// HOME EXPORTS (kept up to date while you work)
+//   SL_N   number of points      SL_B0  intercept b0
+//   SL_B1  slope b1              SL_R   correlation r
+//   SL_R2  r-squared             SL_SSE sum of squared residuals
+//   When there is no line (fewer than 3 points, or every x the
+//   same) all but SL_N are 0; when r is undefined (every y the
+//   same) SL_R and SL_R2 are 0.
+//
+// LAYOUT NOTE
+//   Font 1 is about 6.5 px per character.  The plot box is
+//   x 30-222, y 20-176; the panel x 226-317; the note lines sit
+//   at y 192 and 205; DRAWMENU paints y 218-239.  Every TEXTOUT_P
+//   of variable text passes a width, so nothing runs off the edge.
+//   The glyphs used are the verified ones: CHAR(57344) x-bar,
+//   CHAR(8320)/CHAR(8321) subscripts 0 and 1, CHAR(178) the
+//   superscript 2, CHAR(8646)/CHAR(8645) the arrow pairs.  y-hat
+//   and y-bar are spelled out (slYHAT, slYBAR in slInit) until a
+//   probe verifies a glyph for them.
+// ============================================================
+
+
+// ------------------------------------------------------------
+// RESULTS VISIBLE FROM HOME
+// ------------------------------------------------------------
+EXPORT SL_N, SL_B0, SL_B1;
+EXPORT SL_R, SL_R2, SL_SSE;
+
+// ------------------------------------------------------------
+// STATE SHARED BY EVERY ROUTINE (private to this program)
+// All of it is set in slInit at the start of every run.
+// ------------------------------------------------------------
+// ---- the points ----
+LOCAL slX, slY, slN, slSel, slLev, slMax;
+//  slX, slY  x and y of the points, two lists of 40 (only the
+//            first slN entries are points)
+//  slSel     the selected point (0 = none)
+//  slLev     the far-out point added from the menu (0 = none)
+//  slMax     the most points allowed (40)
+
+// ---- the window: frozen except on Fit, a data load or a far point ----
+LOCAL slXlo, slXhi, slYlo, slYhi, slXs, slYs;
+LOCAL slXe, slYe;
+//  slXs, slYs  tick steps;  slXe, slYe  a touched point snaps to
+//  a multiple of 10^slXe (x) and 10^slYe (y), one decade below
+//  the tick step, so tapped data come out as 12.3, not 12.2947
+
+// ---- the least-squares fit (set in slFit) ----
+LOCAL slOK, slRdef, slB0, slB1, slR, slR2;
+LOCAL slSSE, slXb, slYb, slSxx, slSyy, slSxy;
+//  slOK 1 when a line exists; slRdef 1 when r exists too
+
+// ---- Guess mode: two handles, the student's line ----
+LOCAL slH1X, slH1Y, slH2X, slH2Y, slGH, slShow;
+LOCAL slGA, slGB, slGSSE;
+//  handle 1 at (slH1X, slH1Y), handle 2 at (slH2X, slH2Y); slGH the
+//  handle the arrow keys move; slShow 1 once the LS line is
+//  revealed; the student's line is y = slGA + slGB x, its SSE slGSSE
+
+// ---- modes and messages ----
+LOCAL slMode, slRes, slLbl, slLblC, slTX, slTY;
+LOCAL slMsg1, slMsg2, slMc1, slMc2;
+//  slMode 1 Add, 2 Del, 3 Guess;  slRes 1 = residuals shown
+//  slLbl / slLblC the data label at the top and its colour
+//  slTX, slTY where the last slWaitAny tap landed
+//  slMsg1, slMsg2 the two note lines (empty = the mode's own hint)
+
+// ---- geometry, shared by the drawing and the touch code ----
+LOCAL slPL, slPR, slPT, slPB, slHit, slHitH;
+LOCAL slQX, slQW, slRvX1, slRvY1, slRvX2, slRvY2;
+//  plot box slPL..slPR x slPT..slPB; slHit = how near (px) a press
+//  must be to grab a point, slHitH the same for a handle; the
+//  panel's text starts at slQX and is slQW wide; slRv.. is the hit
+//  box of the Reveal button, recorded while the panel is drawn
+
+// ---- house colours (Lessons Learned s13) ----
+LOCAL slBLUE, slMAG, slRED, slGRN, slORNG, slGRAY;
+LOCAL slFOOT, slGRID, slLRED, slLORN, slLGRN, slLBLU;
+
+// ---- display glyphs, built with CHAR() so the code stays ASCII ----
+LOCAL slXBAR, slSUB0, slSUB1, slSQ, slYHAT, slYBAR;
+LOCAL slLR, slUD;
+
+// ---- beta 2: least squares as calculus (the CAS page) ----
+LOCAL slCasOK, slCasMx, slCxK, slCxSt, slCxNt, slCxE;
+LOCAL slCxA, slCxB, slCxSa, slCxSb;
+//  slCasOK 1 = the CAS answered ("exact (CAS)" badge), 0 = it did not
+//          ("decimal"); slCasMx the longest CAS text the program sends
+//  slCxK   the SSE text the CAS last answered for (when the points
+//          change, so does this text, and the CAS is asked again);
+//          slCxSt what happened: 1 exact answers, 2 the CAS did not
+//          answer, 3 a value cannot be written exactly, 4 too long to
+//          send, 0 not asked yet
+//  slCxNt  an example of a value written over a power of ten, for the
+//          page ("x = 10.4 is 104/10"), or ""
+//  slCxE   the SSE as the CAS put it in order; slCxA, slCxB its two
+//          partial derivatives; slCxSa, slCxSb the solution a and b
+
+
+// ------------------------------------------------------------
+// SMALL HELPERS
+// ------------------------------------------------------------
+
+// A number with about four significant digits, fixed decimals:
+// 16.636 -> "16.64", 1.0196 -> "1.020", 386.27 -> "386.3".
+// STRING mode 2 keeps the trailing zeros (mode 1 ignores digits).
+slSig(sgV)
+BEGIN
+  LOCAL sgA, sgD;
+  sgA := ABS(sgV);
+  IF sgA < 0.00001 THEN RETURN STRING(0, 2, 2); END;
+  sgD := 3 - FLOOR(LOG(sgA) + 0.000001);
+  sgD := MAX(0, MIN(5, sgD));
+  RETURN STRING(sgV, 2, sgD);
+END;
+
+// A number with its sign glued on: "+2.104" or "-0.873".
+slSgn(snV)
+BEGIN
+  IF snV >= 0 OR ABS(snV) < 0.00001 THEN RETURN "+" + slSig(snV); END;
+  RETURN "-" + slSig(ABS(snV));
+END;
+
+// The slope term of an equation: "+ 1.020 x" or "- 0.455 x".
+slSgnT(stV)
+BEGIN
+  IF stV >= 0 OR ABS(stV) < 0.00001 THEN RETURN "+ " + slSig(stV) + " x"; END;
+  RETURN "- " + slSig(ABS(stV)) + " x";
+END;
+
+// beta 2b: fixed decimals that stay fixed.  On the Prime STRING(x, 2, d)
+// prints SCIENTIFIC form when 0 < |x| < 10^-d: STRING(0.096, 2, 1) is
+// "9.6E-2" with a small-capital E (U+1D07; Home, emulator, 17 Oct 2026)
+// -- by the same rule, with d = 0, any x between 0 and 1.  ROUND first
+// makes the value
+// either 0 or at least 10^-d, so the fixed form always holds.  A value
+// that rounds to 0 prints 0.000, never -0.000.
+slFx(fxV, fxD)
+BEGIN
+  LOCAL fxR;
+  fxR := ROUND(fxV, fxD);
+  IF fxR == 0 THEN fxR := 0; END;
+  RETURN STRING(fxR, 2, fxD);
+END;
+
+// A "nice" step (1, 2 or 5 times a power of ten) at least as big
+// as the value handed in -- Heckbert's rule, for axis ticks.
+slNice(nnV)
+BEGIN
+  LOCAL nnE, nnF;
+  IF nnV <= 0 THEN RETURN 1; END;
+  nnE := FLOOR(LOG(nnV));
+  nnF := nnV / 10^nnE;
+  IF nnF <= 1 THEN RETURN 10^nnE; END;
+  IF nnF <= 2 THEN RETURN 2 * 10^nnE; END;
+  IF nnF <= 5 THEN RETURN 5 * 10^nnE; END;
+  RETURN 10^(nnE + 1);
+END;
+
+// Round a value to a multiple of 10^snE (snE may be negative):
+// slSnap(12.2947, -1) = 12.3.  The second ROUND removes the
+// binary dust that 123 * 0.1 can leave behind.
+slSnap(snV, snE)
+BEGIN
+  LOCAL snQ, snR;
+  snQ := 10^snE;
+  snR := ROUND(snV / snQ, 0) * snQ;
+  IF snE < 0 THEN snR := ROUND(snR, -snE); END;
+  RETURN snR;
+END;
+
+
+// ------------------------------------------------------------
+// THE CAS KIT (the house shapes, BRIEF_CAS 16 Oct 2026; beta 2)
+// beta 2a: slCas in the call form CASProbe beta 1b found on the
+// emulator (BRIEF_CAS_v2), not yet run on a calculator.  The
+// whole-number routine's
+// parameter is slIv here, because slN is the number of points.
+// ------------------------------------------------------------
+
+// A whole number as plain digits: no digit-grouping marks, no decimal point, no
+// exponent.  Home's STRING() follows the Home number format (PyProbe saw grouping
+// marks and a special minus sign), which the CAS cannot read, so CAS text is built
+// only from this routine.
+slIStr(slIv)
+BEGIN
+  LOCAL dS, dV, dD;
+  dV := ROUND(ABS(slIv), 0);
+  IF dV == 0 THEN RETURN "0"; END;
+  dS := "";
+  WHILE dV > 0 DO
+    dD := dV MOD 10;
+    dS := CHAR(48 + dD) + dS;
+    dV := (dV - dD) / 10;
+  END;
+  IF slIv < 0 THEN dS := "-" + dS; END;
+  RETURN dS;
+END;
+
+// The ONE place this program calls the CAS.  It returns the CAS answer as text,
+// or "" if the CAS failed, gave undef, an error or an infinity.
+// The call form is the one CASProbe beta 1b found on the HP Prime Virtual
+// Calculator (build 2026-09-09, 17 Oct 2026): CAS(s) with s a variable hands
+// the text back UNEVALUATED, so the text is built into a literal CAS("...")
+// that EXPR reads at run time, and the CAS is asked for string(...) of the
+// answer, so a big integer crosses into PPL whole, not as a 12-digit real.
+slCas(slS)
+BEGIN
+  LOCAL cR;
+  cR := "";
+  IFERR
+    cR := STRING(EXPR("CAS(" + CHAR(34) + "string(" + slS + ")" + CHAR(34) + ")"));
+  THEN
+    cR := "";
+  END;
+  // The answer is a PPL string, and STRING() of it adds one pair of quotes
+  // (CASProbe beta 1b T12, emulator): drop that pair.
+  IF DIM(cR) >= 2 THEN
+    IF LEFT(cR, 1) == CHAR(34) AND MID(cR, DIM(cR), 1) == CHAR(34) THEN
+      cR := MID(cR, 2, DIM(cR) - 2);
+    END;
+  END;
+  // undef, an error, or an infinity (CHAR(8734) is the infinity sign; it
+  // also catches the Prime's plus-minus infinity, 1/0): no usable answer
+  // an empty answer is already a failure; INSTRING("", ...) is "Invalid input" on
+  // the Prime (emulator, 17 Oct 2026), so the checks run only on a non-empty answer
+  IF DIM(cR) > 0 THEN
+    IF INSTRING(cR, "undef") > 0 OR INSTRING(cR, "rror") > 0 OR INSTRING(cR, CHAR(8734)) > 0 THEN cR := ""; END;
+  END;
+  RETURN cR;
+END;
+
+// A number as EXACT CAS text: a whole number ("34", "(-5)"), or a
+// whole number over a power of ten ("(104/10)" for 10.4) -- or ""
+// when it needs more than six decimals (1/3, say) or is too big to
+// write exactly.  Built with slIStr only, so no decimal point and no
+// Home number format ever reaches the CAS.
+slRat(rtV)
+BEGIN
+  LOCAL rtD, rtS, rtN;
+  FOR rtD FROM 0 TO 6 DO
+    rtS := rtV * 10^rtD;
+    rtN := ROUND(rtS, 0);
+    IF ABS(rtS - rtN) <= 0.000001 + ABS(rtS) * 0.000000000001 THEN
+      IF ABS(rtN) >= 100000000000 THEN RETURN ""; END;
+      IF rtD == 0 THEN
+        IF rtN < 0 THEN RETURN "(" + slIStr(rtN) + ")"; END;
+        RETURN slIStr(rtN);
+      END;
+      RETURN "(" + slIStr(rtN) + "/" + slIStr(10^rtD) + ")";
+    END;
+  END;
+  RETURN "";
+END;
+
+// For the page: "10.4 is 104/10" -- a value and the exact text slRat
+// wrote for it (rnR holds a "/"; its denominator's zeros give the
+// decimals to show).
+slRatNote(rnV, rnR)
+BEGIN
+  LOCAL rnP, rnD;
+  rnP := INSTRING(rnR, "/");
+  rnD := MID(rnR, rnP + 1, DIM(rnR) - rnP - 1);
+  RETURN STRING(rnV, 2, DIM(rnD) - 1) + " is " + MID(rnR, 2, DIM(rnR) - 2);
+END;
+
+// Every rpO in the text rpT replaced by rpN (INSTRING, LEFT, MID).
+// beta 2b: INSTRING("", s) is "Error: Invalid input" on the Prime
+// (emulator, 17 Oct 2026), and a pattern at the very end -- the "}"
+// of solve's {[a,b]} -- leaves rpS empty, which stopped the least-
+// squares page.  So the position is looked for only while text is
+// left; an empty pattern gives the text back unchanged (INSTRING(s,
+// "") is 1, which would loop for ever).
+slRepl(rpT, rpO, rpN)
+BEGIN
+  LOCAL rpR, rpS, rpI, rpK;
+  IF DIM(rpO) == 0 THEN RETURN rpT; END;
+  rpR := ""; rpS := rpT; rpK := DIM(rpO);
+  rpI := 0; IF DIM(rpS) > 0 THEN rpI := INSTRING(rpS, rpO); END;
+  WHILE rpI > 0 DO
+    IF rpI > 1 THEN rpR := rpR + LEFT(rpS, rpI - 1); END;
+    rpR := rpR + rpN;
+    IF rpI + rpK > DIM(rpS) THEN rpS := ""; ELSE rpS := MID(rpS, rpI + rpK); END;
+    rpI := 0; IF DIM(rpS) > 0 THEN rpI := INSTRING(rpS, rpO); END;
+  END;
+  RETURN rpR + rpS;
+END;
+
+// Cut a long formula into lines of at most wpW characters, at the
+// best place in the second half of each line: just after a closing
+// bracket or a times sign, just before a + or - that joins two
+// terms, or just after a / that is followed by a bracket -- and of
+// those, the one with the fewest brackets open.  A number or a
+// fraction such as 373319/20 is never split; only a formula with no
+// such place is cut at the width.  Returns the list of lines.
+slWrap(wpT, wpW)
+BEGIN
+  LOCAL wpL, wpS, wpI, wpB, wpC, wpD;
+  LOCAL wpBd, wpP, wpN, wpOk;
+  wpL := {}; wpS := wpT;
+  WHILE DIM(wpS) > wpW DO
+    wpB := 0; wpBd := 999; wpD := 0;
+    FOR wpI FROM 1 TO wpW DO
+      wpC := MID(wpS, wpI, 1);
+      wpP := ""; IF wpI > 1 THEN wpP := MID(wpS, wpI - 1, 1); END;
+      wpN := MID(wpS, wpI + 1, 1);
+      // a break BEFORE a + or - (one that joins terms, not a sign)
+      IF wpI > IP(wpW / 2) AND (wpC == "+" OR wpC == "-") THEN
+        IF wpP <> "(" AND wpP <> "^" AND wpP <> CHAR(215) AND wpP <> "/" AND wpD <= wpBd THEN
+          wpB := wpI - 1; wpBd := wpD;
+        END;
+      END;
+      IF wpC == "(" THEN wpD := wpD + 1; END;
+      IF wpC == ")" THEN wpD := wpD - 1; END;
+      // a break AFTER a ), a times sign, or a / followed by a bracket
+      wpOk := 0;
+      IF wpC == ")" OR wpC == CHAR(215) THEN wpOk := 1; END;
+      IF wpC == "/" AND wpN == "(" THEN wpOk := 1; END;
+      IF wpI > IP(wpW / 2) AND wpOk == 1 AND wpD <= wpBd THEN
+        wpB := wpI; wpBd := wpD;
+      END;
+    END;
+    IF wpB == 0 THEN wpB := wpW; END;
+    wpL := CONCAT(wpL, {LEFT(wpS, wpB)});
+    wpS := MID(wpS, wpB + 1);
+  END;
+  IF DIM(wpS) > 0 THEN wpL := CONCAT(wpL, {wpS}); END;
+  RETURN wpL;
+END;
+
+// Wait for the finger to lift -- but never for more than a second.
+// MOUSE(1) is -1 while nothing touches the screen.  Without the
+// time limit a stuck or phantom touch would hold the program here
+// for ever, and the only way out would be a reset.
+slDrain()
+BEGIN
+  LOCAL drT;
+  drT := TICKS;                                  // milliseconds
+  REPEAT UNTIL MOUSE(1) == -1 OR TICKS - drT > 1000;
+END;
+
+// Drain, wait for a key OR a tap, drain.  Returns the key code, or
+// -1 for a tap; the tap's x, y are left in slTX, slTY.
+slWaitAny()
+BEGIN
+  LOCAL wk, wm, wm1;
+  REPEAT wk := GETKEY; UNTIL wk == -1;
+  slDrain();
+  REPEAT
+    wk := GETKEY;
+    wm := MOUSE;
+    wm1 := wm(1);
+  UNTIL wk > -1 OR SIZE(wm1) > 0;
+  slTX := -1; slTY := -1;
+  IF SIZE(wm1) > 0 THEN slTX := wm1(1); slTY := wm1(2); wk := -1; END;
+  slDrain();
+  REPEAT UNTIL GETKEY == -1;
+  RETURN wk;
+END;
+
+
+// ------------------------------------------------------------
+// DATA <-> PIXELS
+// The drawing and the touch code both use these four, so a tap
+// always lands where the picture is.  y grows DOWN the screen,
+// so the y map is flipped.  Pixels are clamped to the plot box.
+// ------------------------------------------------------------
+slPx(pxV)
+BEGIN
+  LOCAL pxP;
+  pxP := slPL + (pxV - slXlo) / (slXhi - slXlo) * (slPR - slPL);
+  RETURN MAX(slPL, MIN(slPR, IP(pxP + 0.5)));
+END;
+
+slPy(pyV)
+BEGIN
+  LOCAL pyP;
+  pyP := slPB - (pyV - slYlo) / (slYhi - slYlo) * (slPB - slPT);
+  RETURN MAX(slPT, MIN(slPB, IP(pyP + 0.5)));
+END;
+
+// pixel column -> data x
+slDx(dxP)
+BEGIN
+  RETURN slXlo + (dxP - slPL) / (slPR - slPL) * (slXhi - slXlo);
+END;
+
+// pixel row -> data y
+slDy(dyP)
+BEGIN
+  RETURN slYlo + (slPB - dyP) / (slPB - slPT) * (slYhi - slYlo);
+END;
+
+
+// ------------------------------------------------------------
+// THE WINDOW
+// ------------------------------------------------------------
+
+// The snap exponents follow the tick steps: a step of 1, 2 or 5
+// snaps to 0.1; a step of 10 to 1; a step of 0.5 to 0.01.
+slSetRes()
+BEGIN
+  slXe := FLOOR(LOG(slXs) + 0.000001) - 1;
+  slYe := FLOOR(LOG(slYs) + 0.000001) - 1;
+END;
+
+// The default window, 0 to 10 both ways, ticks every 1.
+slWin0()
+BEGIN
+  slXlo := 0; slXhi := 10; slYlo := 0; slYhi := 10;
+  slXs := 1; slYs := 1;
+  slSetRes();
+END;
+
+// Fit the window to the points: 8% of room on each side, ends on
+// whole ticks, and never below 0 when every value is 0 or more
+// (a poverty rate of -2% would only confuse).  Called on a data
+// load, on Fit and for the far point -- never during a drag.
+slAutoWin()
+BEGIN
+  LOCAL awI, awX1, awX2, awY1, awY2, awP;
+  LOCAL awZX, awZY;
+  IF slN == 0 THEN slWin0(); RETURN; END;
+  awX1 := slX(1); awX2 := awX1; awY1 := slY(1); awY2 := awY1;
+  FOR awI FROM 2 TO slN DO
+    awX1 := MIN(awX1, slX(awI)); awX2 := MAX(awX2, slX(awI));
+    awY1 := MIN(awY1, slY(awI)); awY2 := MAX(awY2, slY(awI));
+  END;
+  awZX := 0; IF awX1 >= 0 THEN awZX := 1; END;
+  awZY := 0; IF awY1 >= 0 THEN awZY := 1; END;
+  // no spread at all: open up a little room around the value
+  IF awX2 - awX1 <= 0 THEN
+    awP := MAX(1, ABS(awX1) * 0.1);
+    awX1 := awX1 - awP; awX2 := awX2 + awP;
+  END;
+  IF awY2 - awY1 <= 0 THEN
+    awP := MAX(1, ABS(awY1) * 0.1);
+    awY1 := awY1 - awP; awY2 := awY2 + awP;
+  END;
+  awP := (awX2 - awX1) * 0.08;
+  awX1 := awX1 - awP; awX2 := awX2 + awP;
+  awP := (awY2 - awY1) * 0.08;
+  awY1 := awY1 - awP; awY2 := awY2 + awP;
+  IF awZX == 1 THEN awX1 := MAX(0, awX1); END;
+  IF awZY == 1 THEN awY1 := MAX(0, awY1); END;
+  // about eight ticks across, ends on whole ticks
+  slXs := slNice((awX2 - awX1) / 8);
+  slYs := slNice((awY2 - awY1) / 8);
+  slXlo := FLOOR(awX1 / slXs) * slXs; slXhi := CEILING(awX2 / slXs) * slXs;
+  slYlo := FLOOR(awY1 / slYs) * slYs; slYhi := CEILING(awY2 / slYs) * slYs;
+  IF slXhi <= slXlo THEN slXhi := slXlo + slXs; END;
+  IF slYhi <= slYlo THEN slYhi := slYlo + slYs; END;
+  slSetRes();
+END;
+
+
+// ------------------------------------------------------------
+// THE ARITHMETIC
+// ------------------------------------------------------------
+
+// The student's line in Guess mode: through the two handles.
+// Its SSE is the sum of the squared vertical misses, exactly as
+// for the least-squares line.  The handles never share an x.
+slGuessFit()
+BEGIN
+  LOCAL gfI, gfE;
+  slGB := (slH2Y - slH1Y) / (slH2X - slH1X);
+  slGA := slH1Y - slGB * slH1X;
+  slGSSE := 0;
+  FOR gfI FROM 1 TO slN DO
+    gfE := slY(gfI) - (slGA + slGB * slX(gfI));
+    slGSSE := slGSSE + gfE * gfE;
+  END;
+END;
+
+// The least-squares line and everything on the panel, from the
+// points as they stand.  O(n): three short passes, so it can run
+// on every sample of a drag.  Also keeps the Home exports current.
+slFit()
+BEGIN
+  LOCAL ftI, ftSx, ftSy, ftDx, ftDy, ftE;
+  LOCAL ftX1, ftX2, ftY1, ftY2;
+  slOK := 0; slRdef := 0;
+  slB0 := 0; slB1 := 0; slR := 0; slR2 := 0; slSSE := 0;
+  slXb := 0; slYb := 0; slSxx := 0; slSyy := 0; slSxy := 0;
+  IF slN > 0 THEN
+    // pass 1: the means, and the smallest and largest x and y
+    ftSx := 0; ftSy := 0;
+    ftX1 := slX(1); ftX2 := ftX1; ftY1 := slY(1); ftY2 := ftY1;
+    FOR ftI FROM 1 TO slN DO
+      ftSx := ftSx + slX(ftI);
+      ftSy := ftSy + slY(ftI);
+      ftX1 := MIN(ftX1, slX(ftI)); ftX2 := MAX(ftX2, slX(ftI));
+      ftY1 := MIN(ftY1, slY(ftI)); ftY2 := MAX(ftY2, slY(ftI));
+    END;
+    slXb := ftSx / slN;
+    slYb := ftSy / slN;
+    // pass 2: the centred sums of squares and cross-products
+    FOR ftI FROM 1 TO slN DO
+      ftDx := slX(ftI) - slXb;
+      ftDy := slY(ftI) - slYb;
+      slSxx := slSxx + ftDx * ftDx;
+      slSyy := slSyy + ftDy * ftDy;
+      slSxy := slSxy + ftDx * ftDy;
+    END;
+    // A line needs 3 points and two different x values.  The test
+    // is on the RANGE of x, not on Sxx: with every x equal, x-bar
+    // can still differ from x in the last digit and leave Sxx a
+    // hair above 0, which would give a slope made of rounding.
+    IF slN >= 3 AND ftX2 > ftX1 THEN
+      slOK := 1;
+      slB1 := slSxy / slSxx;
+      // every y the same: the line is flat and r is 0/0, undefined
+      IF ftY2 > ftY1 THEN
+        slRdef := 1;
+        slR := slSxy / (slSxx * slSyy)^0.5;
+        slR := MAX(-1, MIN(1, slR));
+        slR2 := slR * slR;
+      ELSE
+        slB1 := 0;
+      END;
+      slB0 := slYb - slB1 * slXb;
+      // pass 3: SSE, the sum of the squared residuals y - y-hat
+      FOR ftI FROM 1 TO slN DO
+        ftE := slY(ftI) - (slB0 + slB1 * slX(ftI));
+        slSSE := slSSE + ftE * ftE;
+      END;
+    END;
+  END;
+  IF slMode == 3 THEN slGuessFit(); END;
+  // Home exports
+  SL_N := slN; SL_B0 := slB0; SL_B1 := slB1;
+  SL_R := slR; SL_R2 := slR2; SL_SSE := slSSE;
+END;
+
+// Leverage of point lvI: h = 1/n + (x - x-bar)^2 / Sxx.  It runs
+// from 1/n (a point at x-bar) towards 1 (a point far out on its
+// own); above 4/n -- twice the average, 2/n -- counts as high.
+slLevH(lvI)
+BEGIN
+  IF slOK == 0 THEN RETURN 0; END;
+  RETURN 1 / slN + (slX(lvI) - slXb)^2 / slSxx;
+END;
+
+
+// ------------------------------------------------------------
+// DRAWING
+// ------------------------------------------------------------
+
+// The line y = lwA + lwB x across the plot box, 2 px thick, cut
+// off where it leaves the window (top, bottom or sides).
+slLineW(lwA, lwB, lwCol)
+BEGIN
+  LOCAL lwX1, lwX2, lwT1, lwT2, lwP1, lwP2;
+  LOCAL lwQ1, lwQ2;
+  lwX1 := slXlo; lwX2 := slXhi;
+  IF lwB == 0 THEN
+    IF lwA < slYlo OR lwA > slYhi THEN RETURN 0; END;
+  ELSE
+    // the x values where the line crosses the bottom and the top
+    lwT1 := (slYlo - lwA) / lwB;
+    lwT2 := (slYhi - lwA) / lwB;
+    lwX1 := MAX(lwX1, MIN(lwT1, lwT2));
+    lwX2 := MIN(lwX2, MAX(lwT1, lwT2));
+    IF lwX1 > lwX2 THEN RETURN 0; END;
+  END;
+  lwQ1 := slPx(lwX1); lwQ2 := slPx(lwX2);
+  lwP1 := slPy(lwA + lwB * lwX1);
+  lwP2 := slPy(lwA + lwB * lwX2);
+  LINE_P(G1, lwQ1, lwP1, lwQ2, lwP2, lwCol);
+  // the second pixel goes sideways on a steep line, up on a flat one
+  IF ABS(lwP2 - lwP1) > ABS(lwQ2 - lwQ1) THEN
+    LINE_P(G1, MIN(slPR, lwQ1 + 1), lwP1, MIN(slPR, lwQ2 + 1), lwP2, lwCol);
+  ELSE
+    LINE_P(G1, lwQ1, MAX(slPT, lwP1 - 1), lwQ2, MAX(slPT, lwP2 - 1), lwCol);
+  END;
+  RETURN 1;
+END;
+
+// The grid, the ticks and their labels, the frame.  Labels thin
+// to every other tick when they would crowd.
+slAxes()
+BEGIN
+  LOCAL axV, axN, axQ, axD, axS, axSk;
+  LOCAL axW;
+  // ---- x: vertical grid lines, labels under the box ----
+  axD := MAX(0, -FLOOR(LOG(slXs) + 0.000001));
+  axW := MAX(DIM(STRING(slXlo, 2, axD)), DIM(STRING(slXhi, 2, axD)));
+  axSk := 1;
+  IF slXs / (slXhi - slXlo) * (slPR - slPL) < 6 * axW + 6 THEN axSk := 2; END;
+  axN := 0; axV := slXlo;
+  WHILE axV <= slXhi + slXs / 1000 AND axN < 41 DO
+    axQ := slPx(axV);
+    LINE_P(G1, axQ, slPT, axQ, slPB, slGRID);
+    IF (axN MOD axSk) == 0 THEN
+      // beta 2b: slFx -- a tick that should be 0 but carries a last-digit
+      // remainder (lo + n x step) would print in scientific form
+      axS := slFx(axV, axD);
+      TEXTOUT_P(axS, G1, axQ - 3 * DIM(axS), slPB + 3, 1, slGRAY, 40);
+    END;
+    axN := axN + 1;
+    axV := slXlo + axN * slXs;          // no drift from repeated adding
+  END;
+  // ---- y: horizontal grid lines, labels right-aligned at the left ----
+  axD := MAX(0, -FLOOR(LOG(slYs) + 0.000001));
+  axSk := 1;
+  IF slYs / (slYhi - slYlo) * (slPB - slPT) < 12 THEN axSk := 2; END;
+  axN := 0; axV := slYlo;
+  WHILE axV <= slYhi + slYs / 1000 AND axN < 41 DO
+    axQ := slPy(axV);
+    LINE_P(G1, slPL, axQ, slPR, axQ, slGRID);
+    IF (axN MOD axSk) == 0 THEN
+      axS := slFx(axV, axD);
+      TEXTOUT_P(axS, G1, MAX(1, slPL - 3 - 6 * DIM(axS)), axQ - 5, 1, slGRAY, 28);
+    END;
+    axN := axN + 1;
+    axV := slYlo + axN * slYs;
+  END;
+  // ---- the frame ----
+  LINE_P(G1, slPL, slPT, slPR, slPT, #000000h);
+  LINE_P(G1, slPL, slPB, slPR, slPB, #000000h);
+  LINE_P(G1, slPL, slPT, slPL, slPB, #000000h);
+  LINE_P(G1, slPR, slPT, slPR, slPB, #000000h);
+END;
+
+// The readout panel on the right.  What it shows depends on the
+// mode: the full fit, the guard message, or (Guess) the student's
+// line beside the least-squares SSE, with the Reveal button.
+slPanel()
+BEGIN
+  LOCAL pnX, pnW, pnS;
+  pnX := slQX; pnW := slQW;
+  RECT_P(G1, 226, slPT, 317, slPB, slORNG, slLORN);
+  TEXTOUT_P("n = " + STRING(slN, 2, 0), G1, pnX, 23, 1, #000000h, pnW);
+  slRvX1 := -1; slRvY1 := -1; slRvX2 := -1; slRvY2 := -1;
+  IF slMode == 3 THEN
+    IF slShow == 0 THEN
+      // guessing: the student's own line, its SSE, the target
+      TEXTOUT_P("your line:", G1, pnX, 36, 1, slRED, pnW);
+      TEXTOUT_P(slYHAT + " = " + slSig(slGA), G1, pnX, 49, 1, slRED, pnW);
+      TEXTOUT_P("  " + slSgnT(slGB), G1, pnX, 62, 1, slRED, pnW);
+      TEXTOUT_P("your SSE =", G1, pnX, 78, 1, slRED, pnW);
+      TEXTOUT_P("  " + slSig(slGSSE), G1, pnX, 91, 1, slRED, pnW);
+      IF slOK == 1 THEN
+        TEXTOUT_P("least-sq SSE", G1, pnX, 107, 1, slMAG, pnW);
+        TEXTOUT_P("  " + slSig(slSSE), G1, pnX, 120, 1, slMAG, pnW);
+      END;
+      pnS := "Reveal LS";
+    ELSE
+      // revealed: the least-squares line beside the student's
+      IF slOK == 1 THEN
+        IF slRdef == 1 THEN
+          // beta 2b: slFx, so r = 0.0004 prints 0.000, not 4.000E-4
+          TEXTOUT_P("r = " + slFx(slR, 3), G1, pnX, 36, 1, slMAG, pnW);
+          TEXTOUT_P("r" + slSQ + " = " + slFx(slR2, 3), G1, pnX, 49, 1, slMAG, pnW);
+        END;
+        TEXTOUT_P(slYHAT + " = " + slSig(slB0), G1, pnX, 62, 1, slMAG, pnW);
+        TEXTOUT_P("  " + slSgnT(slB1), G1, pnX, 75, 1, slMAG, pnW);
+        TEXTOUT_P("least-sq SSE", G1, pnX, 88, 1, slMAG, pnW);
+        TEXTOUT_P("  " + slSig(slSSE), G1, pnX, 101, 1, slMAG, pnW);
+      END;
+      TEXTOUT_P("yours = " + slSig(slGSSE), G1, pnX, 116, 1, slRED, pnW);
+      pnS := "Hide LS";
+    END;
+    // the button: tap it, or press Enter
+    slRvX1 := 232; slRvY1 := 134; slRvX2 := 312; slRvY2 := 154;
+    RECT_P(G1, slRvX1, slRvY1, slRvX2, slRvY2, slRED, slLRED);
+    TEXTOUT_P(pnS, G1, slRvX1 + 10, slRvY1 + 5, 1, slRED, 66);
+    TEXTOUT_P("mode: Guess", G1, pnX, 162, 1, slRED, pnW);
+    RETURN;
+  END;
+  IF slOK == 1 THEN
+    IF slRdef == 1 THEN
+      TEXTOUT_P("r = " + slFx(slR, 3), G1, pnX, 36, 1, slMAG, pnW);
+      TEXTOUT_P("r" + slSQ + " = " + slFx(slR2, 3), G1, pnX, 49, 1, slMAG, pnW);
+    ELSE
+      TEXTOUT_P("r undefined:", G1, pnX, 36, 1, slMAG, pnW);
+      TEXTOUT_P("every y equal", G1, pnX, 49, 1, slMAG, pnW);
+    END;
+    TEXTOUT_P(slYHAT + " = " + slSig(slB0), G1, pnX, 65, 1, slMAG, pnW);
+    TEXTOUT_P("  " + slSgnT(slB1), G1, pnX, 78, 1, slMAG, pnW);
+    TEXTOUT_P("SSE = " + slSig(slSSE), G1, pnX, 94, 1, slORNG, pnW);
+  ELSE
+    // the guard: no r and no line until there is something to fit
+    TEXTOUT_P("need at least", G1, pnX, 40, 1, slRED, pnW);
+    TEXTOUT_P("3 points with", G1, pnX, 53, 1, slRED, pnW);
+    TEXTOUT_P("different x", G1, pnX, 66, 1, slRED, pnW);
+  END;
+  IF slN > 0 THEN
+    TEXTOUT_P(slXBAR + " = " + slSig(slXb), G1, pnX, 120, 1, slGRN, pnW);
+    TEXTOUT_P(slYBAR + " = " + slSig(slYb), G1, pnX, 133, 1, slGRN, pnW);
+  END;
+  IF slMode == 2 THEN
+    TEXTOUT_P("mode: Del", G1, pnX, 149, 1, slRED, pnW);
+  ELSE
+    TEXTOUT_P("mode: Add", G1, pnX, 149, 1, slBLUE, pnW);
+  END;
+  IF slRes == 1 THEN
+    TEXTOUT_P("resid: on", G1, pnX, 162, 1, slORNG, pnW);
+  ELSE
+    TEXTOUT_P("resid: off", G1, pnX, 162, 1, slGRAY, pnW);
+  END;
+END;
+
+// The two note lines under the plot.  A message set by the last
+// action wins; otherwise the line says what the screen is doing.
+slNotes()
+BEGIN
+  LOCAL ntS1, ntS2, ntC1, ntC2, ntH, ntD;
+  LOCAL ntDx, ntDy;
+  // decimals for a point's coordinates: those of the snap grid
+  ntDx := MAX(0, -slXe); ntDy := MAX(0, -slYe);
+  ntS1 := slMsg1; ntC1 := slMc1;
+  ntS2 := slMsg2; ntC2 := slMc2;
+  // ---- line 1 ----
+  IF DIM(ntS1) == 0 THEN
+    ntC1 := #000000h;
+    IF slMode == 3 THEN
+      IF slShow == 0 THEN
+        ntS1 := "Drag the red handles: make YOUR SSE small.";
+        ntC1 := slRED;
+      ELSE
+        ntS1 := "Least squares " + slSig(slSSE) + ", yours " + slSig(slGSSE);
+        ntC1 := slMAG;
+      END;
+    ELSE
+      IF slN == 0 THEN
+        ntS1 := "Tap the plot to add points, or Data = example.";
+        ntC1 := slGRN;
+      ELSE
+        IF slOK == 0 THEN
+          ntS1 := "Need at least 3 points with different x.";
+          ntC1 := slRED;
+        ELSE
+          IF slSel > 0 THEN
+            // the selected point: where it is, its residual, its leverage
+            // (beta 2b: slFx, so a loaded value finer than the grid -- 0.004
+            // on a 0.1 grid -- prints 0.0, not in scientific form)
+            ntS1 := "Pt " + STRING(slSel, 2, 0) + " (" + slFx(slX(slSel), ntDx) + ", " + slFx(slY(slSel), ntDy) + "): resid " + slSgn(slY(slSel) - slB0 - slB1 * slX(slSel)) + ", h = " + STRING(slLevH(slSel), 2, 2);
+          ELSE
+            IF slRes == 1 THEN
+              ntS1 := "Orange = residuals; SSE adds up their squares.";
+              ntC1 := slORNG;
+            ELSE
+              IF slMode == 2 THEN
+                ntS1 := "Del: tap a point to remove it.";
+                ntC1 := slRED;
+              ELSE
+                ntS1 := "Tap = new point; press a point, drag = move.";
+              END;
+            END;
+          END;
+        END;
+      END;
+    END;
+  END;
+  // ---- line 2 ----
+  IF DIM(ntS2) == 0 THEN
+    ntC2 := slFOOT;
+    IF slMode == 3 THEN
+      IF slShow == 0 THEN
+        ntS2 := slLR + " = handle, " + slUD + " = move, Ent = reveal, Esc = done";
+      ELSE
+        ntS2 := "No line has a smaller SSE than least squares.";
+        ntC2 := slMAG;
+      END;
+    ELSE
+      ntS2 := "+/- = pick, " + slLR + slUD + " = move, Ent = menu, Esc = quit";
+      IF slMode == 2 THEN ntS2 := "+/- = pick, Ent = menu, Esc = back to Add"; END;
+      // with a far-out point on the plot, say what the selected
+      // point can do to the line
+      IF slLev > 0 AND slSel > 0 AND slOK == 1 THEN
+        ntH := slLevH(slSel);
+        ntD := (slX(slSel) - slXb)^2;
+        ntC2 := slORNG;
+        IF ntH > 4 / slN THEN
+          ntS2 := "High leverage (h > 4/n): it swings the slope.";
+        ELSE
+          IF ntD <= 0.25 * slSxx / slN THEN
+            ntS2 := "Near " + slXBAR + ": the line barely moves (no tilt).";
+          ELSE
+            ntS2 := "Low leverage: little pull on the slope.";
+          END;
+        END;
+      END;
+    END;
+  END;
+  TEXTOUT_P(ntS1, G1, 4, 192, 1, ntC1, 312);
+  TEXTOUT_P(ntS2, G1, 4, 205, 1, ntC2, 312);
+END;
+
+// One whole frame, composed in G1 and shown with ONE blit, then
+// the soft keys painted on the screen (DRAWMENU paints G0, so it
+// goes after the blit, every frame).
+slDraw()
+BEGIN
+  LOCAL dwI, dwP, dwQ, dwA, dwB, dwY;
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  TEXTOUT_P(slLbl, G1, 4, 2, 1, slLblC, 312);
+  slAxes();
+  // ---- residuals: orange, from each point to the line it is
+  //      measured against (the student's line in Guess mode) ----
+  IF slRes == 1 AND slN > 0 AND (slOK == 1 OR slMode == 3) THEN
+    IF slMode == 3 THEN
+      dwA := slGA; dwB := slGB;
+    ELSE
+      dwA := slB0; dwB := slB1;
+    END;
+    FOR dwI FROM 1 TO slN DO
+      dwP := slPx(slX(dwI));
+      LINE_P(G1, dwP, slPy(slY(dwI)), dwP, slPy(dwA + dwB * slX(dwI)), slORNG);
+    END;
+  END;
+  // ---- the student's line (Guess) ----
+  IF slMode == 3 THEN slLineW(slGA, slGB, slRED); END;
+  // ---- the least-squares line (hidden while guessing) ----
+  IF slOK == 1 AND (slMode <> 3 OR slShow == 1) THEN
+    slLineW(slB0, slB1, slMAG);
+  END;
+  // ---- the mean point: a green cross, 2 px thick ----
+  IF slN > 0 THEN
+    dwP := slPx(slXb); dwQ := slPy(slYb);
+    LINE_P(G1, dwP - 6, dwQ, dwP + 6, dwQ, slGRN);
+    LINE_P(G1, dwP - 6, dwQ + 1, dwP + 6, dwQ + 1, slGRN);
+    LINE_P(G1, dwP, dwQ - 6, dwP, dwQ + 6, slGRN);
+    LINE_P(G1, dwP + 1, dwQ - 6, dwP + 1, dwQ + 6, slGRN);
+  END;
+  // ---- the points: 5 x 5 blue squares; an orange frame marks the
+  //      far-out point, a red frame the selected one ----
+  FOR dwI FROM 1 TO slN DO
+    dwP := slPx(slX(dwI)); dwQ := slPy(slY(dwI));
+    IF dwI == slLev THEN
+      RECT_P(G1, dwP - 5, dwQ - 5, dwP + 5, dwQ + 5, slORNG, slLORN);
+    END;
+    IF dwI == slSel THEN
+      RECT_P(G1, dwP - 4, dwQ - 4, dwP + 4, dwQ + 4, slRED, slLRED);
+    END;
+    RECT_P(G1, dwP - 2, dwQ - 2, dwP + 2, dwQ + 2, slBLUE, slBLUE);
+  END;
+  // ---- the handles (Guess): red squares, the active one solid ----
+  IF slMode == 3 THEN
+    dwP := slPx(slH1X); dwY := slPy(slH1Y);
+    IF slGH == 1 THEN
+      RECT_P(G1, dwP - 5, dwY - 5, dwP + 5, dwY + 5, slRED, slRED);
+    ELSE
+      RECT_P(G1, dwP - 4, dwY - 4, dwP + 4, dwY + 4, slRED, slLRED);
+    END;
+    dwP := slPx(slH2X); dwY := slPy(slH2Y);
+    IF slGH == 2 THEN
+      RECT_P(G1, dwP - 5, dwY - 5, dwP + 5, dwY + 5, slRED, slRED);
+    ELSE
+      RECT_P(G1, dwP - 4, dwY - 4, dwP + 4, dwY + 4, slRED, slLRED);
+    END;
+  END;
+  slPanel();
+  slNotes();
+  BLIT_P(G0, 0, 0, G1);
+  DRAWMENU({"Add", "Del", "Resid", "Guess", "Data", "Menu"});
+END;
+
+
+// ------------------------------------------------------------
+// EDITING THE POINTS
+// ------------------------------------------------------------
+
+// The point nearest the pixel (nrX, nrY), if it is within slHit
+// pixels; 0 if none is.
+slNear(nrX, nrY)
+BEGIN
+  LOCAL nrI, nrB, nrD, nrE, nrP, nrQ;
+  nrB := 0; nrD := slHit * slHit + 0.5;
+  FOR nrI FROM 1 TO slN DO
+    nrP := slPx(slX(nrI)) - nrX;
+    nrQ := slPy(slY(nrI)) - nrY;
+    nrE := nrP * nrP + nrQ * nrQ;
+    IF nrE < nrD THEN nrD := nrE; nrB := nrI; END;
+  END;
+  RETURN nrB;
+END;
+
+// The Guess handle under the pixel (1 or 2), or 0.
+slNearH(nhX, nhY)
+BEGIN
+  LOCAL nhA, nhB;
+  nhA := (slPx(slH1X) - nhX)^2 + (slPy(slH1Y) - nhY)^2;
+  nhB := (slPx(slH2X) - nhX)^2 + (slPy(slH2Y) - nhY)^2;
+  IF nhA <= slHitH * slHitH AND nhA <= nhB THEN RETURN 1; END;
+  IF nhB <= slHitH * slHitH THEN RETURN 2; END;
+  RETURN 0;
+END;
+
+// Add the point (apX, apY); returns its number, or 0 when full.
+slAddPt(apX, apY)
+BEGIN
+  IF slN >= slMax THEN RETURN 0; END;
+  slN := slN + 1;
+  slX(slN) := apX;
+  slY(slN) := apY;
+  RETURN slN;
+END;
+
+// Delete point dlI: everything after it moves down one place.
+slDelPt(dlI)
+BEGIN
+  LOCAL dlJ;
+  IF dlI < 1 OR dlI > slN THEN RETURN; END;
+  FOR dlJ FROM dlI TO slN - 1 DO
+    slX(dlJ) := slX(dlJ + 1);
+    slY(dlJ) := slY(dlJ + 1);
+  END;
+  slX(slN) := 0; slY(slN) := 0;
+  slN := slN - 1;
+  IF slSel == dlI THEN slSel := 0; END;
+  IF slSel > dlI THEN slSel := slSel - 1; END;
+  IF slLev == dlI THEN slLev := 0; END;
+  IF slLev > dlI THEN slLev := slLev - 1; END;
+END;
+
+// Drag point dpI.  The press was at (dpX0, dpY0).  The point moves
+// only once the finger has travelled more than dpThr pixels (8 for
+// an existing point, so a plain tap just selects it; 0 for a point
+// the same press created).  It moves BY the finger's displacement,
+// converted to data units, so it keeps its place relative to the
+// fingertip and a purely vertical drag leaves x exactly as it was
+// (an axis the finger has not moved along is not even re-snapped).
+// It stays inside the frozen window and snaps to the data grid.
+// The fit and the frame are redone on every sample that changes
+// the point -- O(n), no window refit.  The drag ends when the
+// finger lifts, or on ANY key (so a stuck touch can never trap the
+// program), or on an off-screen reading.
+// MOUSE list, its first finger: elements 1 and 2 are x and y.
+slDragPt(dpI, dpX0, dpY0, dpThr)
+BEGIN
+  LOCAL dpK, dpM, dpM1, dpGo, dpOn, dpOX;
+  LOCAL dpOY, dpTX, dpTY, dpNX, dpNY;
+  dpOX := slX(dpI); dpOY := slY(dpI);            // where the point started
+  dpOn := 0;
+  IF dpThr <= 0 THEN dpOn := 1; END;
+  dpGo := 1;
+  WHILE dpGo == 1 DO
+    dpK := GETKEY;
+    dpM := MOUSE;
+    dpM1 := dpM(1);
+    IF dpK > -1 OR SIZE(dpM1) == 0 THEN
+      dpGo := 0;                                 // lifted, or a key
+    ELSE
+      dpTX := dpM1(1); dpTY := dpM1(2);
+      IF dpTX < 0 OR dpTX > 319 OR dpTY < 0 OR dpTY > 239 THEN
+        dpGo := 0;                               // a phantom reading
+      ELSE
+        IF ABS(dpTX - dpX0) > dpThr OR ABS(dpTY - dpY0) > dpThr THEN dpOn := 1; END;
+        IF dpOn == 1 THEN
+          dpNX := dpOX;
+          IF dpTX <> dpX0 THEN
+            dpNX := dpOX + (dpTX - dpX0) * (slXhi - slXlo) / (slPR - slPL);
+            dpNX := slSnap(MAX(slXlo, MIN(slXhi, dpNX)), slXe);
+          END;
+          dpNY := dpOY;
+          IF dpTY <> dpY0 THEN
+            dpNY := dpOY - (dpTY - dpY0) * (slYhi - slYlo) / (slPB - slPT);
+            dpNY := slSnap(MAX(slYlo, MIN(slYhi, dpNY)), slYe);
+          END;
+          // redraw only when the point really moved: a finger held
+          // still keeps reporting the same place
+          IF dpNX <> slX(dpI) OR dpNY <> slY(dpI) THEN
+            slX(dpI) := dpNX;
+            slY(dpI) := dpNY;
+            slFit();
+            slDraw();
+          END;
+        END;
+      END;
+    END;
+  END;
+  slDrain();                                     // capped: 1 s at most
+  RETURN dpOn;
+END;
+
+// Drag Guess handle dhH up and down by the finger's displacement
+// (its x is fixed, so the two handles can never meet and the line
+// can never stand vertical).
+slDragH(dhH, dhX0, dhY0)
+BEGIN
+  LOCAL dhK, dhM, dhM1, dhGo, dhOY, dhTY;
+  LOCAL dhNY, dhTX;
+  slGH := dhH;
+  IF dhH == 1 THEN dhOY := slH1Y; ELSE dhOY := slH2Y; END;
+  slDraw();                                      // show it as the active handle
+  dhGo := 1;
+  WHILE dhGo == 1 DO
+    dhK := GETKEY;
+    dhM := MOUSE;
+    dhM1 := dhM(1);
+    IF dhK > -1 OR SIZE(dhM1) == 0 THEN
+      dhGo := 0;
+    ELSE
+      dhTX := dhM1(1); dhTY := dhM1(2);
+      IF dhTX < 0 OR dhTX > 319 OR dhTY < 0 OR dhTY > 239 THEN
+        dhGo := 0;
+      ELSE
+        IF dhTY <> dhY0 THEN
+          dhNY := dhOY - (dhTY - dhY0) * (slYhi - slYlo) / (slPB - slPT);
+          dhNY := slSnap(MAX(slYlo, MIN(slYhi, dhNY)), slYe);
+          IF dhH == 1 THEN
+            IF dhNY <> slH1Y THEN slH1Y := dhNY; slGuessFit(); slDraw(); END;
+          ELSE
+            IF dhNY <> slH2Y THEN slH2Y := dhNY; slGuessFit(); slDraw(); END;
+          END;
+        END;
+      END;
+    END;
+  END;
+  slDrain();
+END;
+
+// Guess mode on.  The handles start at 20% and 80% of the window's
+// width (x = 2 and x = 8 in the default 0-10 window) and level with
+// y-bar: a flat line at y-bar, the "no relationship" guess, whose
+// SSE is the TOTAL sum of squares.  The student's job is to bring
+// it down; the least-squares line is hidden until Reveal.
+slGuessOn()
+BEGIN
+  IF slOK == 0 THEN
+    slMsg1 := "Guess needs 3 points with different x first.";
+    slMc1 := slRED;
+    RETURN;
+  END;
+  slMode := 3; slShow := 0; slGH := 1; slSel := 0;
+  slH1X := slSnap(slXlo + 0.2 * (slXhi - slXlo), slXe);
+  slH2X := slSnap(slXlo + 0.8 * (slXhi - slXlo), slXe);
+  slH1Y := slYb; slH2Y := slYb;
+  slGuessFit();
+  slMsg1 := "Start: flat at " + slYBAR + ", so your SSE = total SS.";
+  slMc1 := slRED;
+END;
+
+// Move the selected point one tick with an arrow key (mvDX, mvDY
+// are -1, 0 or 1), inside the window.
+slNudge(mvDX, mvDY)
+BEGIN
+  IF slN == 0 THEN RETURN; END;
+  IF slSel < 1 OR slSel > slN THEN
+    slSel := 1;
+    slMsg1 := "Point 1 selected; +/- picks another.";
+    slMc1 := slFOOT;
+    RETURN;
+  END;
+  slX(slSel) := slSnap(MAX(slXlo, MIN(slXhi, slX(slSel) + mvDX * slXs)), slXe);
+  slY(slSel) := slSnap(MAX(slYlo, MIN(slYhi, slY(slSel) + mvDY * slYs)), slYe);
+  slFit();
+END;
+
+// Move the active Guess handle a fifth of a tick (fine enough to
+// home in on the least-squares SSE from the keys).
+slNudgeH(nuDY)
+BEGIN
+  LOCAL nuV;
+  IF slGH == 1 THEN nuV := slH1Y; ELSE nuV := slH2Y; END;
+  nuV := slSnap(MAX(slYlo, MIN(slYhi, nuV + nuDY * slYs / 5)), slYe);
+  IF slGH == 1 THEN slH1Y := nuV; ELSE slH2Y := nuV; END;
+  slGuessFit();
+END;
+
+
+// ------------------------------------------------------------
+// MENU ACTIONS
+// ------------------------------------------------------------
+
+// Refit the window to the data.  In Guess mode the student's line
+// is kept: the handles move to 20% / 80% of the new width, on the
+// same line.
+slFitWin()
+BEGIN
+  LOCAL fwA, fwB;
+  fwA := slGA; fwB := slGB;
+  slAutoWin();
+  IF slMode == 3 THEN
+    slH1X := slSnap(slXlo + 0.2 * (slXhi - slXlo), slXe);
+    slH2X := slSnap(slXlo + 0.8 * (slXhi - slXlo), slXe);
+    slH1Y := MAX(slYlo, MIN(slYhi, fwA + fwB * slH1X));
+    slH2Y := MAX(slYlo, MIN(slYhi, fwA + fwB * slH2X));
+  END;
+  slFit();
+  slMsg1 := "Window fitted to the data.";
+  slMc1 := slFOOT;
+END;
+
+// A far-out point, on the least-squares line, 3 SDs of x beyond
+// x-bar (at least one tick past the last point).  On the line it
+// changes nothing yet; dragged up or down it swings the slope,
+// because its leverage is high.  The window is widened when the
+// point would fall outside it.
+slFarPt()
+BEGIN
+  LOCAL fpX, fpY, fpI, fpM;
+  IF slN >= slMax THEN
+    slMsg1 := "40 points is the limit: delete one first.";
+    slMc1 := slRED;
+    RETURN;
+  END;
+  IF slOK == 1 THEN
+    fpM := slX(1);
+    FOR fpI FROM 2 TO slN DO fpM := MAX(fpM, slX(fpI)); END;
+    fpX := MAX(slXb + 3 * (slSxx / (slN - 1))^0.5, fpM + slXs);
+    fpY := slB0 + slB1 * fpX;
+  ELSE
+    fpX := slXhi - 0.05 * (slXhi - slXlo);
+    fpY := (slYlo + slYhi) / 2;
+  END;
+  fpX := slSnap(fpX, slXe);
+  fpY := slSnap(fpY, slYe);
+  fpI := slAddPt(fpX, fpY);
+  slLev := fpI; slSel := fpI;
+  IF slMode == 2 THEN slMode := 1; END;
+  IF fpX > slXhi OR fpY < slYlo OR fpY > slYhi THEN
+    slFitWin();
+  ELSE
+    slFit();
+  END;
+  slMsg1 := "Far-out point added (orange). Drag it up/down:";
+  slMsg2 := "the slope swings; one near " + slXBAR + " barely moves it.";
+  slMc1 := slORNG; slMc2 := slORNG;
+END;
+
+// The built-in example.  SYNTHETIC: made-up numbers for practice
+// (16 imaginary counties), generated so that r is about 0.75.  Not
+// real data -- the label at the top says so all the time.
+slExample()
+BEGIN
+  LOCAL exA, exB, exI;
+  exA := {10.4, 14.9, 7.1, 18.6, 23.0, 25.0, 12.5, 7.5, 14.2, 18.6, 10.8, 19.8, 25.8, 14.0, 16.0, 22.6};
+  exB := {34.4, 43.5, 22.3, 36.1, 45.2, 35.3, 31.5, 20.2, 26.8, 27.8, 26.2, 41.8, 43.1, 26.0, 30.6, 41.3};
+  FOR exI FROM 1 TO 16 DO
+    slX(exI) := exA(exI);
+    slY(exI) := exB(exI);
+  END;
+  slN := 16; slSel := 0; slLev := 0;
+  slMode := 1; slShow := 1;
+  slLbl := "SYNTHETIC: x poverty %, y property crime /1000";
+  slLblC := slORNG;
+  slAutoWin();
+  slFit();
+  slMsg1 := "County poverty % vs property crimes per 1,000:";
+  slMsg2 := "made-up numbers for practice, not real data.";
+  slMc1 := slORNG; slMc2 := slORNG;
+END;
+
+// Load x from C1 and y from C2 (Statistics 2Var).  The columns
+// exist only after the app has been opened once, so the first
+// read is inside IFERR (NormExplorer's shape).
+slLoadC()
+BEGIN
+  LOCAL lcN, lcI, lcU;
+  lcN := 0;
+  IFERR lcN := MIN(SIZE(C1), SIZE(C2)); THEN lcN := 0; END;
+  IF lcN < 1 THEN
+    MSGBOX("C1 and C2 hold no data yet." + CHAR(10) + "They exist once Statistics 2Var" + CHAR(10) + "has been opened: open it (Apps)," + CHAR(10) + "type x in C1 and y in C2, then" + CHAR(10) + "load again.");
+    RETURN;
+  END;
+  lcU := MIN(lcN, slMax);
+  FOR lcI FROM 1 TO lcU DO
+    slX(lcI) := C1(lcI);
+    slY(lcI) := C2(lcI);
+  END;
+  slN := lcU; slSel := 0; slLev := 0;
+  slMode := 1; slShow := 1;
+  slLbl := "From Statistics 2Var: x = C1, y = C2";
+  slLblC := slGRAY;
+  slAutoWin();
+  slFit();
+  slMsg1 := "Loaded " + STRING(lcU, 2, 0) + " pairs from C1 and C2.";
+  slMc1 := slFOOT;
+  IF lcN > slMax THEN
+    slMsg2 := "Only the first 40 of " + STRING(lcN, 2, 0) + " pairs fit here.";
+    slMc2 := slRED;
+  END;
+END;
+
+// Save the points to C1 (x) and C2 (y).  The program does not
+// open the app itself (STARTAPP is unverified for Statistics 2Var):
+// the student opens it, which is a step worth learning anyway.
+slSaveC()
+BEGIN
+  LOCAL scA, scB, scI, scOK;
+  IF slN == 0 THEN MSGBOX("No points to save yet."); RETURN; END;
+  scA := MAKELIST(0, K, 1, slN, 1);
+  scB := MAKELIST(0, K, 1, slN, 1);
+  FOR scI FROM 1 TO slN DO
+    scA(scI) := slX(scI);
+    scB(scI) := slY(scI);
+  END;
+  scOK := 0;
+  IFERR
+    C1 := scA;
+    C2 := scB;
+    scOK := 1;
+  THEN
+    scOK := 0;
+  END;
+  IF scOK == 1 THEN
+    MSGBOX("Saved " + STRING(slN, 2, 0) + " points: x C1, y C2." + CHAR(10) + "Open Statistics 2Var yourself" + CHAR(10) + "(Apps key): Symb picks the fit," + CHAR(10) + "Plot draws it, Stats shows r.");
+  ELSE
+    MSGBOX("Could not write C1 and C2." + CHAR(10) + "Open the Statistics 2Var app" + CHAR(10) + "once (Apps), then save again.");
+  END;
+END;
+
+// Forget every point; back to the empty 0-10 window.
+slClear()
+BEGIN
+  slN := 0; slSel := 0; slLev := 0;
+  slMode := 1; slShow := 1;
+  slLbl := "Your points"; slLblC := slGRAY;
+  slWin0();
+  slFit();
+END;
+
+// The Data chooser (soft key Data, or Enter > Data).
+slData()
+BEGIN
+  LOCAL daI;
+  daI := 0;
+  CHOOSE(daI, "Data", {
+    "Poverty vs crime (SYNTHETIC)",
+    "Load from C1, C2",
+    "Save to C1, C2",
+    "Clear all points"});
+  IF daI == 1 THEN slExample(); END;
+  IF daI == 2 THEN slLoadC(); END;
+  IF daI == 3 THEN slSaveC(); END;
+  IF daI == 4 THEN slClear(); END;
+END;
+
+// Type a point (the keyboard way to add one).  A typed point
+// outside the window refits the window, and the note says so.
+slTypePt()
+BEGIN
+  LOCAL tpX, tpY, tpI;
+  IF slN >= slMax THEN
+    MSGBOX("40 points is the limit: delete one first.");
+    RETURN;
+  END;
+  tpX := 0; tpY := 0;
+  IF INPUT({tpX, tpY}, "Type a point", {"x:", "y:"}, {"The point's x value", "The point's y value"}) == 1 THEN
+    tpI := slAddPt(tpX, tpY);
+    slSel := tpI;
+    IF tpX < slXlo OR tpX > slXhi OR tpY < slYlo OR tpY > slYhi THEN
+      slFitWin();
+      slMsg1 := "Window refitted to show the new point.";
+    ELSE
+      slFit();
+    END;
+  END;
+END;
+
+
+// ------------------------------------------------------------
+// LEAST SQUARES AS CALCULUS (beta 2): a page of its own
+// The magenta line is the one line y = a + b x that makes
+//     SSE(a, b) = sum over the points of (y - a - b x)^2
+// as small as it can be.  At the bottom of that bowl both partial
+// derivatives are 0 -- the two "normal equations" -- and solving
+// them gives slFit's b1 = Sxy / Sxx and b0 = y-bar - b1 x-bar.  The
+// CAS does the algebra on the points on the plot, exactly.
+// ------------------------------------------------------------
+
+// A CAS answer that is no use as an EXACT answer: one with a decimal
+// point (the CAS is in its approximate mode) counts as no answer, and
+// the page falls back to the decimals.
+// beta 2b: "" (the CAS did not answer) stays "" without INSTRING, which
+// stops the program on an empty text ("Invalid input", emulator).
+slCxClean(ccR)
+BEGIN
+  IF DIM(ccR) == 0 THEN RETURN ""; END;
+  IF INSTRING(ccR, ".") > 0 THEN RETURN ""; END;
+  RETURN ccR;
+END;
+
+// Read a and b out of solve's answer, whatever brackets the CAS puts
+// round them -- {[a,b]} on the Prime (CASProbe beta 1b T36, emulator
+// 17 Oct 2026), [[a,b]] or list[[a,b]] in desktop Giac, or
+// [a=...,b=...] -- into slCxSa and slCxSb; both stay "" if the
+// answer is not exactly two values.
+slCxSol(soR)
+BEGIN
+  LOCAL soS, soK;
+  slCxSa := ""; slCxSb := "";
+  IF DIM(soR) == 0 THEN RETURN; END;
+  soS := slRepl(soR, "list", "");
+  soS := slRepl(soS, "[", ""); soS := slRepl(soS, "]", "");
+  soS := slRepl(soS, "{", ""); soS := slRepl(soS, "}", "");
+  soS := slRepl(soS, " ", "");
+  // beta 2b: nothing left (solve gave {} or []): no answer.  INSTRING
+  // on an empty text stops the program on the Prime (emulator).
+  IF DIM(soS) == 0 THEN RETURN; END;
+  soK := INSTRING(soS, ",");
+  IF soK == 0 THEN soK := INSTRING(soS, ";"); END;
+  IF soK < 2 OR soK >= DIM(soS) THEN RETURN; END;
+  slCxSa := LEFT(soS, soK - 1);
+  slCxSb := MID(soS, soK + 1);
+  IF INSTRING(slCxSb, ",") > 0 OR INSTRING(slCxSb, ";") > 0 THEN
+    slCxSa := ""; slCxSb := "";                  // more than two values
+    RETURN;
+  END;
+  IF INSTRING(slCxSa, "=") > 0 THEN slCxSa := MID(slCxSa, INSTRING(slCxSa, "=") + 1); END;
+  IF INSTRING(slCxSb, "=") > 0 THEN slCxSb := MID(slCxSb, INSTRING(slCxSb, "=") + 1); END;
+  // beta 2b: "a=" with nothing after it leaves an empty text: no answer
+  IF DIM(slCxSa) == 0 OR DIM(slCxSb) == 0 THEN slCxSa := ""; slCxSb := ""; RETURN; END;
+  // a symbol left in it means no single solution: not usable
+  IF INSTRING(slCxSa, "sl") > 0 OR INSTRING(slCxSb, "sl") > 0 THEN slCxSa := ""; slCxSb := ""; END;
+END;
+
+// Ask the CAS for the page, if the points changed since it last
+// answered.  The SSE is written out for the points on the plot,
+//   (y1-sla-slb*x1)^2 + (y2-sla-slb*x2)^2 + ...
+// in the symbols sla (a) and slb (b), every number exact (slRat).
+// Then four calls, through slCas only:
+//   normal(SSE)                     the SSE in order, a polynomial
+//   normal(diff(SSE,sla))           its slope along a
+//   normal(diff(SSE,slb))           its slope along b
+//   solve([d/da = 0, d/db = 0], [sla, slb])   the normal equations
+slCxMake()
+BEGIN
+  LOCAL cxE, cxI, cxX, cxY, cxR;
+  cxE := ""; slCxNt := "";
+  FOR cxI FROM 1 TO slN DO
+    cxX := slRat(slX(cxI));
+    cxY := slRat(slY(cxI));
+    IF DIM(cxX) == 0 OR DIM(cxY) == 0 THEN
+      // a value with more than six decimals: no exact text
+      slCxSt := 3; slCxK := ""; slCasOK := 0;
+      RETURN;
+    END;
+    // one example of a value written over a power of ten, for the page
+    IF DIM(slCxNt) == 0 AND INSTRING(cxX, "/") > 0 THEN slCxNt := "x = " + slRatNote(slX(cxI), cxX); END;
+    IF DIM(slCxNt) == 0 AND INSTRING(cxY, "/") > 0 THEN slCxNt := "y = " + slRatNote(slY(cxI), cxY); END;
+    IF cxI > 1 THEN cxE := cxE + "+"; END;
+    cxE := cxE + "(" + cxY + "-sla-slb*" + cxX + ")^2";
+  END;
+  IF cxE == slCxK THEN RETURN; END;              // answered already
+  slCxK := cxE;
+  slCxE := ""; slCxA := ""; slCxB := ""; slCxSa := ""; slCxSb := "";
+  slCasOK := 0;
+  // the longest call (solve) holds the SSE twice
+  IF 2 * DIM(cxE) + 60 > slCasMx THEN slCxSt := 4; RETURN; END;
+  // the G1's CAS speed is not known: say what is happening
+  RECT_P(G0, 60, 90, 260, 114, slFOOT, #FFFFFFh);
+  TEXTOUT_P("asking the CAS ...", G0, 106, 97, 1, slFOOT);
+  slCxE := slCxClean(slCas("normal(" + cxE + ")"));
+  slCxA := slCxClean(slCas("normal(diff(" + cxE + ",sla))"));
+  slCxB := slCxClean(slCas("normal(diff(" + cxE + ",slb))"));
+  cxR := slCxClean(slCas("solve([diff(" + cxE + ",sla)=0,diff(" + cxE + ",slb)=0],[sla,slb])"));
+  slCxSol(cxR);
+  slCxSt := 2;
+  IF DIM(slCxE) > 0 AND DIM(slCxA) > 0 AND DIM(slCxB) > 0 AND DIM(slCxSa) > 0 THEN
+    slCxSt := 1; slCasOK := 1;
+  END;
+END;
+
+// A CAS answer written for people: sla -> a, slb -> b, * -> times.
+slCxShow(csT)
+BEGIN
+  LOCAL csS;
+  csS := slRepl(csT, "sla", "a");
+  csS := slRepl(csS, "slb", "b");
+  csS := slRepl(csS, "*", CHAR(215));
+  RETURN csS;
+END;
+
+// Draw clT wrapped at 49 characters from y clY, in colour clC, in at
+// most clMx lines; if it needs more, say how long it is instead (an
+// exact answer is never cut silently).  Returns the next free y.
+slCxLines(clT, clY, clMx, clC, clNm)
+BEGIN
+  LOCAL clL, clI, clYy;
+  clL := slWrap(clT, 49);
+  clYy := clY;
+  IF SIZE(clL) > clMx THEN
+    TEXTOUT_P(clNm + ": " + STRING(DIM(clT), 2, 0) + " characters, too long to show", G1, 12, clYy, 1, slGRAY, 300);
+    RETURN clYy + 11;
+  END;
+  FOR clI FROM 1 TO SIZE(clL) DO
+    TEXTOUT_P(clL(clI), G1, 12, clYy, 1, clC, 300);
+    clYy := clYy + 11;
+  END;
+  RETURN clYy;
+END;
+
+// The program's own decimal beside an exact fraction: about seven
+// significant digits (1.019632, 16.63624, 0.0000528181).
+// beta 2b: rounded first (slFx), so a value below 1E-10 -- a slope that
+// is 0 but for the last digit -- prints "0", never in scientific form.
+slDec(deV)
+BEGIN
+  LOCAL deD;
+  IF deV == 0 THEN RETURN "0"; END;
+  deD := MAX(2, MIN(10, 6 - FLOOR(LOG(ABS(deV)))));
+  IF ROUND(deV, deD) == 0 THEN RETURN "0"; END;
+  RETURN slFx(deV, deD);
+END;
+
+// One line: the exact fraction beside the program's decimal,
+// "b = 2441/2394   (program 1.019632)" -- or, when the fraction is
+// too long for the line, how many digits it has (an exact answer is
+// never cut silently).  Returns the next free y.
+slCxFrac(cfNm, cfF, cfD, cfY)
+BEGIN
+  LOCAL cfI, cfN, cfS;
+  cfS := cfNm + " = " + cfF + "   (program " + slDec(cfD) + ")";
+  IF DIM(cfS) > 49 THEN
+    cfN := 0;
+    FOR cfI FROM 1 TO DIM(cfF) DO
+      IF INSTRING("0123456789", MID(cfF, cfI, 1)) > 0 THEN cfN := cfN + 1; END;
+    END;
+    cfS := cfNm + ": exact fraction, " + STRING(cfN, 2, 0) + " digits (program " + slDec(cfD) + ")";
+  END;
+  TEXTOUT_P(cfS, G1, 12, cfY, 1, slMAG, 300);
+  RETURN cfY + 11;
+END;
+
+// A number for the decimal page: whole numbers as they are, others
+// with about six significant digits and no trailing zeros (260.8,
+// not 260.800).  MID, not RIGHT: RIGHT is not in the verified list.
+// beta 2b: rounded first (slFx).  A sum below 1E-6 (x values such as
+// -2/3, 1/3, 1/3 leave -1E-11 on the Prime) printed in scientific form,
+// and the zero strip below then cut the exponent's last 0 (1E-10 ->
+// 1E-1).  From 1E12 up the Prime prints scientific form whatever the
+// decimals (it holds 12 digits): five decimals keep six significant
+// digits there, and the zero strip must not reach the exponent.
+slNum(nmV)
+BEGIN
+  LOCAL nmS, nmD;
+  IF FP(nmV) == 0 AND ABS(nmV) < 1000000000 THEN RETURN STRING(nmV, 2, 0); END;
+  IF nmV == 0 THEN RETURN "0"; END;
+  IF ABS(nmV) >= 1000000000000 THEN RETURN slFx(nmV, 5); END;
+  nmD := MAX(1, MIN(6, 5 - FLOOR(LOG(ABS(nmV)))));
+  IF ROUND(nmV, nmD) == 0 THEN RETURN "0"; END;
+  nmS := slFx(nmV, nmD);
+  // beta 2c: strip trailing zeros ONLY from a number that has a
+  // decimal point.  The Prime's fixed form holds at most 12
+  // significant digits, so from 1E11 up STRING(x, 2, 1) has no room
+  // for the decimal: 1.4E11 prints "140000000000", and beta 2b's strip
+  // ate its real zeros -- the decimal page showed sum x^2 as "14", 10^10
+  // times too small (fleet review 19 Oct 2026, D-SL-1).  The DIM test
+  // keeps INSTRING away from an empty string ("Invalid input" on the
+  // Prime); slFx always returns at least one character, so it is
+  // insurance.
+  IF DIM(nmS) > 0 THEN
+    IF INSTRING(nmS, ".") > 0 THEN
+      WHILE DIM(nmS) > 1 AND MID(nmS, DIM(nmS), 1) == "0" DO nmS := LEFT(nmS, DIM(nmS) - 1); END;
+      IF MID(nmS, DIM(nmS), 1) == "." THEN nmS := LEFT(nmS, DIM(nmS) - 1); END;
+    END;
+  END;
+  RETURN nmS;
+END;
+
+// Compose the page in G1 and show it.  Exact (the CAS's own lines)
+// when slCxSt = 1; otherwise the normal equations with the program's
+// decimal sums.  Composed like a help page: the whole screen, no
+// soft keys (any key or tap goes back to the plot).
+slCxDraw()
+BEGIN
+  LOCAL cdY, cdI, cdSx, cdSy, cdSxx, cdSxy;
+  LOCAL cdS;
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 4, 4, 315, 235, slMAG, slLBLU);
+  TEXTOUT_P("Least squares as calculus", G1, 12, 8, 2, slBLUE, 230);
+  IF slCasOK == 1 AND slCxSt == 1 THEN
+    TEXTOUT_P("exact (CAS)", G1, 244, 10, 1, slFOOT);
+  ELSE
+    TEXTOUT_P("decimal", G1, 268, 10, 1, slFOOT);
+  END;
+  TEXTOUT_P("The magenta line makes this SSE smallest:", G1, 12, 26, 1, #000000h, 300);
+  TEXTOUT_P("SSE = sum (y - a - bx)^2 over all n = " + STRING(slN, 2, 0) + " points", G1, 12, 37, 1, #000000h, 300);
+  cdY := 48;
+  IF slCxSt == 1 THEN
+    // ---- exact: the CAS's own lines ----
+    cdY := slCxLines("SSE = " + slCxShow(slCxE), cdY, 3, slORNG, "SSE");
+    TEXTOUT_P("Smallest where both slopes are 0 (CAS diff):", G1, 12, cdY, 1, #000000h, 300);
+    cdY := cdY + 11;
+    cdY := slCxLines("dSSE/da = " + slCxShow(slCxA) + " = 0", cdY, 2, slBLUE, "dSSE/da = 0");
+    cdY := slCxLines("dSSE/db = " + slCxShow(slCxB) + " = 0", cdY, 2, slBLUE, "dSSE/db = 0");
+    TEXTOUT_P("Solved exactly (CAS solve), beside the decimals:", G1, 12, cdY, 1, #000000h, 300);
+    cdY := cdY + 11;
+    cdY := slCxFrac("b", slCxShow(slCxSb), slB1, cdY);
+    cdY := slCxFrac("a", slCxShow(slCxSa), slB0, cdY);
+  ELSE
+    // ---- decimal: why, then the normal equations with the sums ----
+    cdS := "The CAS did not answer: no exact fractions.";
+    IF slCxSt == 3 THEN cdS := "A value needs over 6 decimals: no exact fractions."; END;
+    IF slCxSt == 4 THEN cdS := "Too long to send to the CAS here."; END;
+    TEXTOUT_P(cdS, G1, 12, cdY, 1, slRED, 300);
+    cdSx := 0; cdSy := 0; cdSxx := 0; cdSxy := 0;
+    FOR cdI FROM 1 TO slN DO
+      cdSx := cdSx + slX(cdI);
+      cdSy := cdSy + slY(cdI);
+      cdSxx := cdSxx + slX(cdI)^2;
+      cdSxy := cdSxy + slX(cdI) * slY(cdI);
+    END;
+    TEXTOUT_P("Both slopes of the SSE = 0, the normal equations:", G1, 12, cdY + 11, 1, #000000h, 300);
+    TEXTOUT_P("n a + (sum x) b = sum y", G1, 12, cdY + 22, 1, slBLUE, 300);
+    TEXTOUT_P("  " + slNum(slN) + " a + " + slNum(cdSx) + " b = " + slNum(cdSy), G1, 12, cdY + 33, 1, slBLUE, 300);
+    TEXTOUT_P("(sum x) a + (sum x^2) b = sum x y", G1, 12, cdY + 44, 1, slBLUE, 300);
+    TEXTOUT_P("  " + slNum(cdSx) + " a + " + slNum(cdSxx) + " b = " + slNum(cdSxy), G1, 12, cdY + 55, 1, slBLUE, 300);
+    TEXTOUT_P("Solving them (the program's decimals):", G1, 12, cdY + 66, 1, #000000h, 300);
+    TEXTOUT_P("  b = " + slDec(slB1) + ",  a = " + slDec(slB0), G1, 12, cdY + 77, 1, slMAG, 300);
+    cdY := cdY + 88;
+  END;
+  // ---- what it means (the footer is at y 218) ----
+  TEXTOUT_P("No line has a smaller SSE (try Guess), and the", G1, 12, cdY, 1, slGRAY, 300);
+  TEXTOUT_P("first equation puts it through the green cross:", G1, 12, cdY + 11, 1, slGRAY, 300);
+  TEXTOUT_P("a = " + slYBAR + " - b " + slXBAR + ".", G1, 12, cdY + 22, 1, slGRAY, 300);
+  IF slCxSt == 1 AND DIM(slCxNt) > 0 AND cdY + 33 <= 202 THEN
+    TEXTOUT_P("Exact: " + slCxNt + ", so nothing is rounded.", G1, 12, cdY + 33, 1, slGRAY, 300);
+  END;
+  TEXTOUT_P("any key or tap = back to the plot", G1, 12, 218, 1, slFOOT, 296);
+  BLIT_P(G0, 0, 0, G1);
+END;
+
+// The page as a page: needs a line (3 points, two different x);
+// asks the CAS if the points changed, draws, waits for any key or
+// tap (slWaitAny: drain, wait, capped drain), back to the plot.
+slCxPage()
+BEGIN
+  LOCAL cpK;
+  IF slOK == 0 THEN
+    slMsg1 := "Least squares needs 3 points with different x.";
+    slMc1 := slRED;
+    RETURN;
+  END;
+  slCxMake();
+  slCxDraw();
+  cpK := slWaitAny();
+END;
+
+
+// ------------------------------------------------------------
+// HELP: six drawn pages (a MSGBOX shows only about five lines)
+// ------------------------------------------------------------
+
+// One line of help text.
+slHT(htS, htY, htC)
+BEGIN
+  TEXTOUT_P(htS, G1, 12, htY, 1, htC, 296);
+END;
+
+slHelpPg(hgP, hgN)
+BEGIN
+  LOCAL hgC;
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  hgC := slBLUE;
+  IF hgP == 5 THEN hgC := slRED; END;
+  IF hgP == 4 THEN hgC := slORNG; END;
+  RECT_P(G1, 4, 4, 315, 235, hgC, slLBLU);
+  IF hgP == 1 THEN
+    TEXTOUT_P("What r measures", G1, 12, 8, 2, slBLUE, 296);
+    slHT("r, the correlation, says how closely the", 30, #000000h);
+    slHT("points follow a straight line, and which way.", 43, #000000h);
+    slHT("  r near +1: the points rise along a line", 59, slMAG);
+    slHT("  r near -1: they fall along a line", 72, slMAG);
+    slHT("  r near 0: no STRAIGHT-line pattern -- a", 85, slMAG);
+    slHT("  curve can still be there, so look first.", 98, slMAG);
+    slHT("r has no units: crimes per 1,000 or per", 114, #000000h);
+    slHT("100,000 give the same r.  One far-out point", 127, #000000h);
+    slHT("can change r a lot (Menu > far-out point).", 140, #000000h);
+    slHT("r = Sxy / sqrt(Sxx Syy), where", 156, slGRAY);
+    slHT("Sxx = sum (x - " + slXBAR + ")" + slSQ + ", Syy = sum (y - " + slYBAR + ")" + slSQ + ",", 169, slGRAY);
+    slHT("Sxy = sum (x - " + slXBAR + ")(y - " + slYBAR + ").", 182, slGRAY);
+  END;
+  IF hgP == 2 THEN
+    TEXTOUT_P("r" + slSQ + ": the share explained", G1, 12, 8, 2, slBLUE, 296);
+    slHT("All variation in y: SST = sum (y - " + slYBAR + ")" + slSQ + ",", 30, #000000h);
+    slHT("the squared misses of the flat line at " + slYBAR + ".", 43, #000000h);
+    slHT("What the line leaves: SSE = sum (y - " + slYHAT + ")" + slSQ + ".", 56, slORNG);
+    slHT("r" + slSQ + " = 1 - SSE / SST: the share of the variation", 72, slMAG);
+    slHT("in y that the line accounts for.  r" + slSQ + " = 0.64", 85, slMAG);
+    slHT("means 64% explained and 36% left over in", 98, slMAG);
+    slHT("the residuals.  (It is also r times r.)", 111, slMAG);
+    slHT("Try it: Guess starts flat, at " + slYBAR + ", so", 127, slRED);
+    slHT("'your SSE' starts at SST.  The best line", 140, slRED);
+    slHT("brings it down to SSE; the drop, as a share", 153, slRED);
+    slHT("of SST, is r" + slSQ + ".", 166, slRED);
+  END;
+  IF hgP == 3 THEN
+    TEXTOUT_P("Residuals and least squares", G1, 12, 8, 2, slBLUE, 296);
+    slHT("residual = observed y - predicted " + slYHAT + ": the", 30, slORNG);
+    slHT("orange segment from a point to the line", 43, slORNG);
+    slHT("(Resid).  Above the line it is positive.", 56, slORNG);
+    slHT("Least squares picks b" + slSUB0 + " and b" + slSUB1 + " to make SSE, the", 72, #000000h);
+    slHT("sum of squared residuals, as SMALL as it can:", 85, #000000h);
+    slHT("  b" + slSUB1 + " = Sxy / Sxx,   b" + slSUB0 + " = " + slYBAR + " - b" + slSUB1 + " " + slXBAR, 101, slMAG);
+    slHT("  " + slYHAT + " = b" + slSUB0 + " + b" + slSUB1 + " x", 114, slMAG);
+    slHT("So the line always passes through the mean", 130, slGRN);
+    slHT("point (" + slXBAR + ", " + slYBAR + "), the green cross.", 143, slGRN);
+    slHT("Guess: drag the red handles to fit your own", 159, slRED);
+    slHT("line, then Enter reveals least squares.  No", 172, slRED);
+    slHT("line can beat its SSE.", 185, slRED);
+    slHT("Menu > Least squares as calculus: the derivation.", 201, slMAG);
+  END;
+  IF hgP == 4 THEN
+    TEXTOUT_P("Leverage", G1, 12, 8, 2, slORNG, 296);
+    slHT("A point far from " + slXBAR + " has high LEVERAGE: like", 30, #000000h);
+    slHT("a long lever it can swing the whole line.", 43, #000000h);
+    slHT("h = 1/n + (x - " + slXBAR + ")" + slSQ + " / Sxx, from 1/n up to 1;", 59, slMAG);
+    slHT("above 4/n (twice the average) counts as high.", 72, slMAG);
+    slHT("Menu > far-out point puts one on the line,", 88, slORNG);
+    slHT("well to the right.  Drag it up and down: the", 101, slORNG);
+    slHT("slope swings.  Drag a point near " + slXBAR + ": the line", 114, slORNG);
+    slHT("lifts a little but barely tilts.", 127, slORNG);
+    slHT("One unusual county can make (or hide) the", 143, slRED);
+    slHT("whole relationship.  Plot the data and look", 156, slRED);
+    slHT("before you report r.", 169, slRED);
+  END;
+  IF hgP == 5 THEN
+    TEXTOUT_P("Correlation is not causation", G1, 12, 8, 2, slRED, 296);
+    slHT("r measures association, not cause.  In", 30, #000000h);
+    slHT("summer, ice-cream sales and assaults both", 43, #000000h);
+    slHT("rise -- not because ice cream causes assault,", 56, #000000h);
+    slHT("but because both follow the temperature: a", 69, #000000h);
+    slHT("lurking variable.", 82, #000000h);
+    slHT("Poverty and property crime by county: the", 98, slBLUE);
+    slHT("counties also differ in density, policing,", 111, slBLUE);
+    slHT("reporting and age mix, and any of these can", 124, slBLUE);
+    slHT("drive both.  County figures describe counties,", 137, slBLUE);
+    slHT("not people (the ecological fallacy).", 150, slBLUE);
+    slHT("The example data are SYNTHETIC: made-up", 166, slORNG);
+    slHT("numbers for practice, not real counties.", 179, slORNG);
+  END;
+  IF hgP == 6 THEN
+    TEXTOUT_P("Touch, keys and Statistics 2Var", G1, 12, 8, 2, slBLUE, 296);
+    slHT("Add: tap the plot = new point (40 at most);", 30, #000000h);
+    slHT("press a point and drag = move it.", 43, #000000h);
+    slHT("Del: tap a point.  Resid: residuals.", 56, #000000h);
+    slHT("Guess: your line.  Any key ends a drag.", 69, #000000h);
+    slHT("+/- pick a point, arrows move it one tick,", 85, slFOOT);
+    slHT("0 = fit window, Ent = menu, Esc = quit.", 98, slFOOT);
+    slHT("Data > Save puts x in C1 and y in C2.  Then", 114, slGRN);
+    slHT("open Statistics 2Var yourself (Apps key).", 127, slGRN);
+    slHT("Loading needs C1 and C2 to exist: they appear", 140, slGRN);
+    slHT("once Statistics 2Var has been opened.", 153, slGRN);
+    slHT("Home after Quit: SL_N, SL_B0, SL_B1,", 169, slGRAY);
+    slHT("SL_R, SL_R2, SL_SSE (kept up to date).", 182, slGRAY);
+    slHT("Tap the equation: least squares as calculus.", 198, slMAG);
+  END;
+  TEXTOUT_P(STRING(hgP, 2, 0) + "/" + STRING(hgN, 2, 0) + "  " + CHAR(8592) + CHAR(8594) + " or tap = page, Esc = plot", G1, 12, 218, 1, slFOOT, 296);
+  BLIT_P(G0, 0, 0, G1);
+END;
+
+// The pager: a tap on the right half, Right or Enter = next page;
+// a tap on the left half or Left = back; Esc (or past the last
+// page) = back to the plot.
+slHelp()
+BEGIN
+  LOCAL hpP, hpK, hpN;
+  hpN := 6; hpP := 1;
+  WHILE hpP >= 1 AND hpP <= hpN DO
+    slHelpPg(hpP, hpN);
+    hpK := slWaitAny();
+    IF hpK == 4 THEN
+      hpP := 0;
+    ELSE
+      IF hpK == 7 OR (hpK == -1 AND slTX >= 0 AND slTX < 160) THEN
+        hpP := MAX(1, hpP - 1);
+      ELSE
+        hpP := hpP + 1;
+      END;
+    END;
+  END;
+END;
+
+// The menu (Enter, or the Menu soft key).  Every soft key has an
+// item here too, so the program works from the keys alone.
+// Returns 0 to quit, 1 to go on.
+slMenu()
+BEGIN
+  LOCAL muI;
+  muI := 0;
+  CHOOSE(muI, "ScatterLab", {
+    "Add a far-out point (leverage)",
+    "Fit window to the data",
+    "Residuals on / off",
+    "Guess the line on / off",
+    "Least squares as calculus",
+    "Data: example, C1/C2, clear",
+    "Type a point (x, y)",
+    "Delete the selected point",
+    "Help",
+    "Quit"});
+  IF muI == 1 THEN slFarPt(); END;
+  IF muI == 2 THEN slFitWin(); END;
+  IF muI == 3 THEN slRes := 1 - slRes; END;
+  IF muI == 4 THEN
+    IF slMode == 3 THEN slMode := 1; ELSE slGuessOn(); END;
+  END;
+  IF muI == 5 THEN slCxPage(); END;              // beta 2: the CAS page
+  IF muI == 6 THEN slData(); END;
+  IF muI == 7 THEN slTypePt(); END;
+  IF muI == 8 THEN
+    IF slSel > 0 THEN
+      slDelPt(slSel);
+      slFit();
+    ELSE
+      slMsg1 := "No point selected: +/- picks one.";
+      slMc1 := slRED;
+    END;
+  END;
+  IF muI == 9 THEN slHelp(); END;
+  IF muI == 10 THEN RETURN 0; END;               // Quit (the Prime shows it as A)
+  RETURN 1;
+END;
+
+// A soft key, slot 1 to 6.  Returns 0 to quit, 1 to go on.
+slSoft(sfS)
+BEGIN
+  IF sfS == 1 THEN slMode := 1; END;
+  IF sfS == 2 THEN slMode := 2; END;
+  IF sfS == 3 THEN slRes := 1 - slRes; END;
+  IF sfS == 4 THEN
+    IF slMode == 3 THEN slMode := 1; ELSE slGuessOn(); END;
+  END;
+  IF sfS == 5 THEN slData(); END;
+  IF sfS == 6 THEN RETURN slMenu(); END;
+  RETURN 1;
+END;
+
+
+// ------------------------------------------------------------
+// TOUCH AND KEYS
+// ------------------------------------------------------------
+
+// A press at (tcX, tcY): the first MOUSE sample of a touch.
+// Returns 0 to quit, 1 to go on.
+slTouch(tcX, tcY)
+BEGIN
+  LOCAL tcI, tcNX, tcNY;
+  // a reading off the screen is a phantom: ignore it
+  IF tcX < 0 OR tcX > 319 OR tcY < 0 OR tcY > 239 THEN slDrain(); RETURN 1; END;
+  // the soft-key strip: six 53.4-px slots, left to right
+  IF tcY >= 218 THEN
+    slDrain();
+    RETURN slSoft(MIN(6, IP(tcX / 53.4) + 1));
+  END;
+  // the Reveal button in the panel (Guess mode only)
+  IF slMode == 3 AND tcX >= slRvX1 AND tcX <= slRvX2 AND tcY >= slRvY1 AND tcY <= slRvY2 THEN
+    slDrain();
+    slShow := 1 - slShow;
+    RETURN 1;
+  END;
+  // beta 2: a tap on the equation in the panel (outside Guess, where
+  // the panel shows the student's own line) opens "least squares as
+  // calculus" -- the same page as the menu item
+  IF slMode <> 3 AND slOK == 1 AND tcX >= 226 AND tcY >= 60 AND tcY <= 92 THEN
+    slDrain();
+    slCxPage();
+    RETURN 1;
+  END;
+  // anywhere outside the plot box (3 px of slack) does nothing
+  IF tcX < slPL - 3 OR tcX > slPR + 3 OR tcY < slPT - 3 OR tcY > slPB + 3 THEN
+    slDrain();
+    RETURN 1;
+  END;
+  // ---- Guess: a handle first, then a point ----
+  IF slMode == 3 THEN
+    tcI := slNearH(tcX, tcY);
+    IF tcI > 0 THEN slDragH(tcI, tcX, tcY); RETURN 1; END;
+    tcI := slNear(tcX, tcY);
+    IF tcI > 0 THEN
+      slSel := tcI;
+      slDragPt(tcI, tcX, tcY, 8);
+      RETURN 1;
+    END;
+    slDrain();
+    slMsg1 := "Press ON a red handle and drag it up or down.";
+    slMc1 := slRED;
+    RETURN 1;
+  END;
+  tcI := slNear(tcX, tcY);
+  // ---- Del: a tap on a point removes it ----
+  IF slMode == 2 THEN
+    slDrain();
+    IF tcI > 0 THEN
+      slDelPt(tcI);
+      slFit();
+      slMsg1 := "Point deleted: n = " + STRING(slN, 2, 0) + ".  Add = back to adding.";
+      slMc1 := slRED;
+    ELSE
+      slMsg1 := "No point there: tap ON a point to delete it.";
+      slMc1 := slRED;
+    END;
+    RETURN 1;
+  END;
+  // ---- Add: press a point = select it, and drag it if the finger moves ----
+  IF tcI > 0 THEN
+    slSel := tcI;
+    slDraw();                    // the red frame shows at once
+    slDragPt(tcI, tcX, tcY, 8);
+    RETURN 1;
+  END;
+  // ---- Add: empty plot = a new point, which the same press can drag ----
+  IF slN >= slMax THEN
+    slDrain();
+    slMsg1 := "40 points is the limit: Del removes one.";
+    slMc1 := slRED;
+    RETURN 1;
+  END;
+  tcNX := slSnap(slDx(MAX(slPL, MIN(slPR, tcX))), slXe);
+  tcNY := slSnap(slDy(MAX(slPT, MIN(slPB, tcY))), slYe);
+  tcI := slAddPt(tcNX, tcNY);
+  slSel := tcI;
+  slFit();
+  slDraw();
+  slDragPt(tcI, tcX, tcY, 0);
+  RETURN 1;
+END;
+
+// A key.  Returns 0 to quit, 1 to go on.
+slKey(kyK)
+BEGIN
+  IF kyK == 4 THEN                               // Esc
+    IF slMode <> 1 THEN slMode := 1; RETURN 1; END;
+    RETURN 0;
+  END;
+  IF kyK == 30 THEN                              // Enter
+    IF slMode == 3 THEN slShow := 1 - slShow; RETURN 1; END;
+    RETURN slMenu();
+  END;
+  IF kyK == 42 THEN slFitWin(); RETURN 1; END;   // 0 = fit window
+  IF slMode == 3 THEN
+    IF kyK == 7 THEN slGH := 1; END;             // Left: handle 1
+    IF kyK == 8 THEN slGH := 2; END;             // Right: handle 2
+    IF kyK == 2 THEN slNudgeH(1); END;           // Up
+    IF kyK == 12 THEN slNudgeH(-1); END;         // Down
+    RETURN 1;
+  END;
+  IF slN > 0 THEN
+    IF kyK == 50 THEN slSel := (slSel MOD slN) + 1; END;           // +
+    IF kyK == 45 THEN                                              // -
+      slSel := slSel - 1;
+      IF slSel < 1 THEN slSel := slN; END;
+    END;
+  END;
+  IF kyK == 7 THEN slNudge(-1, 0); END;          // Left
+  IF kyK == 8 THEN slNudge(1, 0); END;           // Right
+  IF kyK == 2 THEN slNudge(0, 1); END;           // Up
+  IF kyK == 12 THEN slNudge(0, -1); END;         // Down
+  RETURN 1;
+END;
+
+
+// ------------------------------------------------------------
+// START-UP AND MAIN
+// ------------------------------------------------------------
+slInit()
+BEGIN
+  // house palette (Lessons Learned s13)
+  slBLUE := #003CC8h; slMAG := #C800C8h; slRED := #FF0000h;
+  slGRN := #008C3Ch; slORNG := #FF4500h; slGRAY := #5A5A5Ah;
+  slFOOT := #1E90FFh; slGRID := #E1E4EBh; slLRED := #FFEBEBh;
+  slLORN := #FFF0DCh; slLGRN := #E8F6EBh; slLBLU := #EBF2FFh;
+  // plot box and panel; the touch code reads the same numbers
+  slPL := 30; slPR := 222; slPT := 20; slPB := 176;
+  slQX := 230; slQW := 86;
+  slHit := 7; slHitH := 10;
+  slRvX1 := -1; slRvY1 := -1; slRvX2 := -1; slRvY2 := -1;
+  // glyphs: x-bar (U+E000), subscripts 0 and 1 (U+2080, U+2081),
+  // superscript 2 (U+00B2), the arrow pairs (U+21C6, U+21C5) --
+  // all verified.  y-hat and y-bar have no verified glyph yet.
+  slXBAR := CHAR(57344);
+  slSUB0 := CHAR(8320); slSUB1 := CHAR(8321);
+  slSQ := CHAR(178);
+  slLR := CHAR(8646); slUD := CHAR(8645);
+  slYHAT := "y-hat"; slYBAR := "y-bar";
+  // the points: two lists of 40, the first slN in use
+  slMax := 40;
+  slX := MAKELIST(0, K, 1, slMax, 1);
+  slY := MAKELIST(0, K, 1, slMax, 1);
+  slN := 0; slSel := 0; slLev := 0;
+  slMode := 1; slRes := 0; slShow := 1;
+  slH1X := 2; slH1Y := 5; slH2X := 8; slH2Y := 5; slGH := 1;
+  slGA := 5; slGB := 0; slGSSE := 0;
+  slTX := -1; slTY := -1;
+  slMsg1 := ""; slMsg2 := ""; slMc1 := #000000h; slMc2 := slFOOT;
+  slLbl := "Your points"; slLblC := slGRAY;
+  // beta 2: least squares as calculus (nothing asked of the CAS yet)
+  slCasOK := 0; slCasMx := 4000; slCxK := ""; slCxSt := 0; slCxNt := "";
+  slCxE := ""; slCxA := ""; slCxB := ""; slCxSa := ""; slCxSb := "";
+  slWin0();
+  slFit();
+END;
+
+EXPORT ScatterLab()
+BEGIN
+  LOCAL mnK, mnM, mnM1, mnGo;
+  slInit();
+  mnGo := 1;
+  REPEAT mnK := GETKEY; UNTIL mnK == -1;
+  slDrain();
+  WHILE mnGo == 1 DO
+    slDraw();
+    // wait for a key OR a touch; a key always wins, so Esc works
+    // even if the touch screen misbehaves
+    REPEAT
+      mnK := GETKEY;
+      mnM := MOUSE;
+      mnM1 := mnM(1);
+    UNTIL mnK > -1 OR SIZE(mnM1) > 0;
+    // a note lasts until the next key or touch
+    slMsg1 := ""; slMsg2 := "";
+    IF mnK > -1 THEN
+      mnGo := slKey(mnK);
+    ELSE
+      mnGo := slTouch(mnM1(1), mnM1(2));
+    END;
+    // the key or tap that closed a dialog can arrive again here,
+    // so drain both before the next frame
+    REPEAT mnK := GETKEY; UNTIL mnK == -1;
+    slDrain();
+  END;
+  // Hand the summary back as the program's value: Home shows it in
+  // the history, and no Terminal screen opens on the way out.
+  IF slOK == 1 THEN
+    RETURN "ScatterLab: n = " + STRING(slN, 2, 0) + ", " + slYHAT + " = " + slSig(slB0) + " " + slSgnT(slB1) + ", r = " + slFx(slR, 4) + ", SSE = " + slSig(slSSE);
+  END;
+  RETURN "ScatterLab: n = " + STRING(slN, 2, 0) + ", no line (need at least 3 points with different x)";
+END;

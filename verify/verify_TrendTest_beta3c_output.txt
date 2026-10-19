@@ -1,0 +1,114 @@
+==== Part A: the CAS templates in desktop Giac, against fractions, SymPy and statsmodels ====
+PASS snoring, as entered                          SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 95339/4757909, a = 80277/4757909
+PASS snoring, 1,2,3                               SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 53492/1511327, a = -51775/3022654
+PASS snoring, midranks                            SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 109323/2069801372, a = -33598615/1574215128
+PASS sleep U (made up), as entered                SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 1/120, a = 59/720
+PASS sleep U (made up), 1,2,3                     SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 1/120, a = 83/720
+PASS sleep U (made up), midranks                  SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 17/729600, a = 540589/4377600
+PASS convictions (made up), as entered            SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 373/4380, a = 199/1095
+PASS convictions (made up), 1,2,3                 SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 373/4380, a = 141/1460
+PASS convictions (made up), midranks              SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 2639/7342500, a = 4480753/44055000
+PASS scores with decimals 0.5, 1.25, 2.125, 4     SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 14173/119130, a = 24295/190608
+PASS negative scores -2 .. 2                      SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 163/1921, a = 919/3842
+PASS two levels with the same p (ties)            SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 1/20, a = 1/30
+PASS a zero cell                                  SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 1/4, a = -1/4
+PASS two levels                                   SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 9/50, a = -3/50
+PASS six levels, large prime totals               SSE ok, d/da d/db ok, solve ok, WLS = OLS(0/1) = exact ok   b = 608752/21894613, a = 1627669/21894613
+PASS a score of 1/3 (more than six decimals): no CAS text at all
+PASS the longest call (solve: the SSE twice) fits trCasMx = 4000   SSE text up to 167 characters
+PASS 3a: in the Prime's printing every solve answer is {[a,b]} (CASProbe T36), the SSE and its derivatives are unchanged   ['{[80277/4757909,95339/4757909]}']
+
+==== Part B: the PPL program in the harness (ppl_run_v3d) ====
+PASS trCxMake builds exactly this SSE text, 15 tables
+PASS the PPL reads solve's answer: a and b = the exact fractions, every table   []
+PASS the program's trB, trA0 = the exact fractions to 1e-12 (the decimals beside them)
+PASS page 4 (Giac), snoring: badge, SSE, both derivatives, both fractions beside the decimals   ['Least squares as calculus', 'exact (CAS)', 'The plotted line makes this SSE smallest:', 'SSE = sum n(p - a - bx)^2; p = cases/n, x = score', 'SSE = 2484×a^2+6796×a×b-220×a+12310×b^2-608×b', '+63080529409/7933174634', 'Smallest where both slopes are 0 (CAS diff):', 'dSSE/da = 4968×a+6796×b-220 = 0', 'dSSE/db = 6796×a+24620×b-608 = 0', 'Solved exactly (CAS solve), beside the decimals:', 'b = 95339/4757909   (program 0.02003800)', 'a = 80277/4757909   (program 0.01687233)', "= least squares on all N people's 0/1 outcomes;", 'the trend χ² asks whether this b is 0.', '4/4, ⇆ or tap = page, Esc = menu']
+PASS page 4: four CAS calls, all answered
+PASS 3a: every text asks for string(...), every answer quoted, the solve in braces; no CAS variable assigned, no CAS call of a variable   "{[80277/4757909,95339/4757909]}"
+PASS no text below y 206 on page 4 (the soft keys are at 218)
+PASS page 4 twice: 4 CAS calls, not 8 (the answers are kept)   4
+PASS Scores key on page 4 (twice, to midranks): asked again, exact midrank line, the note   ['b = 109323/2069801372   (program 0.0000528181)', 'a = -33598615/1574215128   (program -0.02134309)', "= least squares on all N people's 0/1 outcomes;", 'the trend χ² asks whether this b is 0.', 'Exact: score 1698.5 = 16985/10; nothing rounded.', '4/4, ⇆ or tap = page, Esc = menu']
+PASS cas=fail: decimal badge, the normal equations with the program's sums, no error   ['Least squares as calculus', 'decimal', 'The plotted line makes this SSE smallest:', 'SSE = sum n(p - a - bx)^2; p = cases/n, x = score', 'The CAS did not answer: no exact fractions.', 'Both slopes of the SSE = 0, the normal equations:', 'N a + (sum n x) b = A', '  2484 a + 3398 b = 110', '(sum n x) a + (sum n x^2) b = sum x a', '  3398 a + 12310 b = 304', "Solving them (the program's decimals):", '  b = 0.02003800,  a = 0.01687233', "= least squares on all N people's 0/1 outcomes;", 'the trend χ² asks whether this b is 0.', '4/4, ⇆ or tap = page, Esc = menu']
+PASS a drag on plot 1 (level 3 down): counts changed, NO CAS call during it   cases [24, 35, 9, 30], 4 calls
+PASS page 4 after the drag: the dragged table's exact line   ['b = 5825/365993   (program 0.01591560)']
+PASS Restore on page 4: the first table's line again
+PASS a score of 1/3: "needs over 6 decimals", the decimal page, no CAS call
+PASS stale-key run: menu, example, pages 1-4, Enter on page 4 = menu, quit; nothing skipped   result 'TrendTest: X2 trend = 72.6588 (1 df), p < 0.0001; Pearson X2 = 72.7821 (3 df)', skips []
+PASS 3a: beta 3 in v3b: page 4 says "decimal" and gives no fractions -- the emulator's finding
+
+G. beta 3b against beta 3a
+PASS beta 3b: routines that differ from beta 3a: ['trDot', 'trExamples'] (want trDot, trExamples)
+PASS beta 3b: outside those routines only comments differ
+PASS beta 3b: the #PYTHON blocks are unchanged
+  routines that differ from beta 3a: trDot, trExamples; everything else differs only in comments
+
+W. 3b: the Examples lines fit; solid dots
+PASS 3b: every CHOOSE line shown is 30 characters or fewer (51 seen, longest 30)
+PASS 3b: the shortened Examples lines are shown
+PASS 3b: the three examples still load the same data and labels: [(4, [24, 35, 21, 30], 'Example: snoring and heart disease'), (5, [38, 40, 36, 44, 44], 'ILLUSTRATIVE (made-up counts): sleep, illness'), (4, [72, 66, 51, 88], 'ILLUSTRATIVE (made up): convictions, re-arrest')]
+PASS 3b: every CHOOSE line in the source is 30 characters or fewer (longest 30)
+PASS 3b: trDot = three RECT_P covering exactly a radius-3 disc (37 px)
+PASS 3b: the only ARC_P left are the reference circle (r 3) and the selection ring (r 6, 7): [3.0]
+PASS 3b: at most one small ARC_P (the hollow reference) per frame (1 in 2 frames)
+  Examples lines seen: ['Snoring and heart disease', 'Sleep: a U shape (made up)', 'Prior convictions (made up)']
+
+R. 3c: the second emulator round (harness v3d)
+PASS R1 trRepl('{[1,2]}', '}', '') = '{[1,2]': the pattern at the END (solve's closing brace)
+PASS R1 trRepl('{[1,2]}', '{', '') = '[1,2]}': the pattern at the START
+PASS R1 trRepl('abc', 'abc', '') = '': the pattern is the WHOLE text
+PASS R1 trRepl('abc', 'abc', 'xyz') = 'xyz': the whole text, replaced
+PASS R1 trRepl('abc', '', 'X') = 'abc': an EMPTY pattern: the text unchanged (no endless loop)
+PASS R1 trRepl('', 'a', 'b') = '': an EMPTY text
+PASS R1 trRepl('tra*trb*tra', 'tra', 'a') = 'a*trb*a': twice, at both ends
+PASS R1 trRepl('2*a*b', '*', '×') = '2×a×b': in the middle, twice
+PASS R1 trRepl('}}}', '}', '') = '': only the pattern, three times
+PASS R1 beta 3b in v3d: its trRepl stops with the INSTRING error whenever the text runs out -- the pattern at the end, the whole text, an empty text, only the pattern ([('{[1,2]}', '}'), ('abc', 'abc'), ('', 'a'), ('}}}', '}')]); a pattern at the start works -- the emulator's page-4 crash
+PASS R2 trCas with the CAS failing: "" and no error (got '')
+PASS R2 trCxClean("") = "" (no INSTRING on the empty text)
+PASS R2 trCxSol on 10 answers (empty, {}, [], "tra=" with nothing after it, two solutions, the Prime's and Giac's forms): the right halves, no error []
+PASS R2 beta 3b in v3d: trCas with the CAS failing stops (PPLError: INSTRING: Invalid input (the first argument is an empty string -- emulator, 17 Oct 2026)) -- every fallback was broken
+PASS R3 Snoring, results page 4 with the CAS: opens, "exact (CAS)", b = 95339/4757909, a = 80277/4757909, quit returns the summary (None)
+PASS R3 beta 3b, the same run in v3d: the CAS answers all 4 calls, then "PPLError: INSTRING: Invalid input (the first argument is an " -- the emulator's finding
+PASS R4 cas=fail: page 4 shows "decimal" and the normal equations, no error (None)
+PASS R4 beta 3b, the same cas=fail run in v3d: stops (PPLError: INSTRING: Invalid input (the first argument is an )
+PASS R5 canned, solve gives {} (no solution): beta 3c the decimal page, no error; beta 3b: PPLError: INSTRING: Invalid input (the first argum
+PASS R5 canned, solve gives {[tra=,trb=1/2]}: beta 3c the decimal page, no error; beta 3b: PPLError: INSTRING: Invalid input (the first argum
+PASS R5 canned, every answer an empty string: beta 3c the decimal page, no error; beta 3b: PPLError: INSTRING: Invalid input (the first argum
+PASS R5 canned, the Prime's own answers (control): beta 3c the exact page, no error; beta 3b: PPLError: INSTRING: Invalid input (the first argum
+PASS R6 the proportions plot, snoring level 1: 'L1: x = 0, 24/1379 = 0.017, line 0.017 (+0.1 SE)', no scientific form
+PASS R6 beta 3b, the same run: 'L1: x = 0, 24/1379 = 0.017, line 0.017 (+9.6ᴇ-2 SE)' -- the emulator's line, character for character
+PASS R7 Help, Esc on page 1: back to the menu (pages seen [1])
+PASS R7 Help, a key then Esc on page 2: back to the menu (pages seen [1, 2])
+PASS R7 Help, any keys: pages 1, 2, 3, then the menu ([1, 2, 3])
+PASS R7 the help footers say it: [['any key = page 2, Esc = menu'], ['any key = page 3, Esc = menu'], ['any key = menu']]
+PASS R7 beta 3b: Esc on help page 1 turned the page (pages seen [1, 2, 3], the idle Esc then turns the rest) -- the emulator's finding
+PASS R8 snoring (the emulator's table): every page, both plots at every level, Scores, page 4 (CAS and cas=fail), Quit -- no error, no small number in scientific form (98 frames)
+PASS R8 small doses 0, 0.001, 0.005, 0.01: every page, both plots at every level, Scores, page 4 (CAS and cas=fail), Quit -- no error, no small number in scientific form (98 frames)
+PASS R8 a dragged extreme: 50/50, 0/50, 0/50 (OR 0.0001): every page, both plots at every level, Scores, page 4 (CAS and cas=fail), Quit -- no error, no small number in scientific form (94 frames)
+PASS R8 a rare outcome: 1, 2, 3 of 20000 each: every page, both plots at every level, Scores, page 4 (CAS and cas=fail), Quit -- no error, no small number in scientific form (94 frames); from 1E12 up: ['7.00018ᴇ13']
+PASS R8 almost flat: 100, 101, 100 of 1000: every page, both plots at every level, Scores, page 4 (CAS and cas=fail), Quit -- no error, no small number in scientific form (94 frames)
+PASS R8 midranks on a million people: every page, both plots at every level, Scores, page 4 (CAS and cas=fail), Quit -- no error, no small number in scientific form (94 frames); from 1E12 up: ['3.20000ᴇ17']
+PASS R8 scores -2/3, 1/3, 4/3 (sum n x cancels): every page, both plots at every level, Scores, page 4 (CAS and cas=fail), Quit -- no error, no small number in scientific form (94 frames)
+PASS R8 beta 3b, the same run (pages 1-3 and the plots; its page 4 stops): scientific forms ['1.00ᴇ-3', '5.00ᴇ-3', '3.8ᴇ-2', '7.4ᴇ-2']
+PASS R8 beta 3b, the same run (pages 1-3 and the plots; its page 4 stops): scientific forms ['1.908ᴇ-6', '9.803ᴇ-5']
+PASS R8 beta 3b, the same run (pages 1-3 and the plots; its page 4 stops): scientific forms ['3.8ᴇ-16', '9.6ᴇ-17', '2.500000ᴇ-9', '8.826ᴇ-6', '1.67ᴇ-5', '1.667ᴇ-5']
+PASS R8 beta 3b, the same run (pages 1-3 and the plots; its page 4 stops): scientific forms ['7.39ᴇ-3', '3.5ᴇ-2', '7.0ᴇ-2']
+PASS R8 beta 3b, the same run (pages 1-3 and the plots; its page 4 stops): scientific forms ['4.285714ᴇ-9']
+PASS R8 beta 3b, the same run (pages 1-3 and the plots; its page 4 stops): scientific forms ['8.42ᴇ-3', '8.48ᴇ-3', '1.6ᴇ-2', '4.5ᴇ-2', '5.0ᴇ-2', '8.6ᴇ-2']
+PASS R8 beta 3b, the same run (pages 1-3 and the plots; its page 4 stops): scientific forms ['6.4ᴇ-2', '8.1ᴇ-2', '9.6ᴇ-2']
+PASS R9 every STRING(x, 2, d) left with d > 0 (14) is a justified site; the rest go through trFx (29 calls): extra [], missing []
+PASS R9 every STRING(x, 2, 0) prints a whole number (counts, levels, df, lengths; doV >= 1, xsV and nmV in their FP = 0 branches): ['DIM(clT)', 'cfN', 'cqDf', 'doV', 'enK', 'nmV', 'rsI', 'trA(rsI)', 'trA(trSel)', 'trDFD', 'trK', 'trK - 1', 'trSel', 'trSum(enA)', 'trSum(enN)', 'trTot(rsI)', 'trTot(trSel)', 'xsV']
+PASS R9 INSTRING first arguments: ['"0123456789"', 'cR', 'ccR', 'cxX', 'rnR', 'rpS', 'soS', 'trCxSa', 'trCxSb']
+PASS R9 the guards are in place: cR (trCas), rpS and rpO (trRepl), ccR (trCxClean), soS and the halves (trCxSol); cxX is never empty (trCxMake returns first), rnR always holds a "/" (trCxMake calls trRatNote only then), trCxSb is non-empty (soK < DIM(soS)) []
+  LEFT / MID / RIGHT calls in the code (counts and starts reviewed by hand, see the CHANGES): 6 / 15 / 0
+PASS G 3c: routines that differ from beta 3b (comments included): ['TrendTest', 'trCas', 'trChiPanel', 'trCxClean', 'trCxSol', 'trDec', 'trDrawProp', 'trFx', 'trHelp', 'trNum', 'trOrStr', 'trPage1', 'trPageChi', 'trRepl', 'trWaitAny', 'trXStr']
+PASS G 3c: beta 3b has 50 routines; the other 35 are byte-identical in beta 3c, comments included; one new (trFx), none removed
+PASS G 3c: outside those routines only comments differ (the header)
+PASS G 3c: trCas = beta 3b's with only the brief's DIM guard (the IFERR line and the quote strip byte-identical)
+PASS G 3c: trRepl is the brief's replace loop, line for line
+PASS G 3c: no #PYTHON block, as before
+PASS R10 h.sci_strings over all 55 beta 3c runs: 0 small (must be 0); from 1E12 up only trNum's six significant digits on the decimal page: ['3.20000ᴇ17', '7.00018ᴇ13']
+  beta 3c sci_strings (every run): ['7.00018ᴇ13', '3.20000ᴇ17']
+  the older versions' sci_strings in this script (51 distinct): ['1.000ᴇ-4', '1.00ᴇ-3', '1.500ᴇ-4', '1.667ᴇ-5', '1.67ᴇ-5', '1.6ᴇ-2', '1.908ᴇ-6', '2.500000ᴇ-9', '2.742ᴇ-5', '2.832ᴇ-4', '3.5ᴇ-2', '3.646ᴇ-4', '3.8ᴇ-16', '3.8ᴇ-2', '4.285714ᴇ-9', '4.410ᴇ-4', '4.44ᴇ-3', '4.5ᴇ-2', '4.7ᴇ-2', '5.0000ᴇ-5']
+
+0 failure(s)

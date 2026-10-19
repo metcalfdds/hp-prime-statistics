@@ -1,0 +1,24 @@
+A. Find probability / Find critical value: v2.3 against v2.2 and SciPy
+   65 cases run through both files
+B. Soft keys n-, n+, nx4, Tail on the probability graph
+C. Live bound: drag, snap on lift, arrows, nearer-bound choice
+D. Critical-value mode: a new n moves the critical values, alpha kept; drag changes alpha
+E. mu,sigma soft key and the Enter menu
+F. Compare: animation, cursor readings, pick a curve, fill order
+G. Watch sample means: the 40 means, their mean and SD, the histogram
+H. Population ghost scale, window, label; help pages; widths; frame cost
+   widest unclipped font-1 line ends near x = 319 (6.2 px per character)
+   drawing calls per live frame (right tail, n = 30): [502, 467, 457, 447, 437, 436]
+I. v2.3a: no "=" before a relation; the right tail as a lower tail (harness v3e)
+   I1 (1, -6): v2.3 ['P(\ue000 < -6.000) = < 0.000001', 'z = -6.0000   = < 0.001%']  ->  v2.3a ['P(\ue000 < -6.000) < 0.000001', 'z = -6.0000   < 0.001%']
+   I1 (2, 6): v2.3 ['P(\ue000 > 6.000) = < 0.000001', 'z = 6.0000   = < 0.001%']  ->  v2.3a ['P(\ue000 > 6.000) < 0.000001', 'z = 6.0000   < 0.001%']
+   I1 (2, 10): v2.3 ['P(\ue000 > 10.000) = 0.000000', 'z = 10.0000   = 0.000%']  ->  v2.3a ['P(\ue000 > 10.000) < 0.000001', 'z = 10.0000   < 0.001%']
+   I1 (3, 5, 6): v2.3 ['P(5.000 < \ue000 < 6.000) = < 0.000001', 'z = 5.0000 to 6.0000   = < 0.001%']  ->  v2.3a ['P(5.000 < \ue000 < 6.000) < 0.000001', 'z = 5.0000 to 6.0000   < 0.001%']
+   I1 (4, -10, 10): v2.3 ['P(outside -10.000 .. 10.000) = < 0.000001', 'z = -10.0000 / 10.0000   = < 0.001%']  ->  v2.3a ['P(outside -10.000 .. 10.000) < 0.000001', 'z = -10.0000 / 10.0000   < 0.001%']
+   I1 (2, 1): v2.3 ['P(\ue000 > 1.000) = 0.158655', 'z = 1.0000   = 15.866%']  ->  v2.3a ['P(\ue000 > 1.000) = 0.158655', 'z = 1.0000   = 15.866%']
+   I1 (4, -1, 1): v2.3 ['P(outside -1.000 .. 1.000) = 0.317311', 'z = -1.0000 / 1.0000   = 31.731%']  ->  v2.3a ['P(outside -1.000 .. 1.000) = 0.317311', 'z = -1.0000 / 1.0000   = 31.731%']
+   I1 (2, 0.5, None, 0.0, 1.0, 30): v2.3 ['P(\ue000 > 0.500) = 0.003085', 'z = 2.7386   = 0.308%']  ->  v2.3a ['P(\ue000 > 0.500) = 0.003085', 'z = 2.7386   = 0.308%']
+   I3 108 panels, 18 of them rewritten from v2.3's text
+   I6 scientific fixed decimals: v2.3a [(-0.0, 1, '-5.6ᴇ-17')], v2.3 [(-0.0, 1, '-5.6ᴇ-17')]
+
+337 checks, 0 failures

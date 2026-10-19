@@ -1,0 +1,447 @@
+==============================================================================
+A. The formulas as the PPL computes them, against statsmodels / SciPy
+==============================================================================
+
+A1. Clopper-Pearson vs proportion_confint(method="beta")
+    level   intervals  worst |diff|   worst rel (low>0)  max passes  mean BINOMIAL calls/interval
+    0.5          1945      1.89e-15           3.83e-15           5      15.7
+    0.8          1945      3.33e-15           7.03e-15           5      17.6
+    0.9          1945      3.66e-15           8.60e-15           6      18.4
+    0.95         1945      3.22e-15           8.18e-15           6      18.3
+    0.99         1945      3.66e-15           1.10e-14           7      19.6
+    0.999        1945      5.94e-15           1.11e-13          13      22.5
+  ok    Clopper-Pearson: 11670 intervals, worst |difference| from statsmodels 5.9e-15 (target 1E-8)
+  ok    at most 13 passes (Newton steps or halvings) per end
+
+A2. mid-P vs an independent brentq on the mid-P tails (levels 90 %, 95 %, 99 %; n = 1..60)
+  ok    mid-P: worst |difference| 1.9e-15 over 5,490 intervals
+  ok    mid-P always lies inside Clopper-Pearson (0 exceptions over 1,890 intervals at 95 %)
+
+A3. Conditional MLE OR and exact CI vs scipy.stats.contingency.odds_ratio
+    458 tables compared; 3 with an empty margin (undefined, CI (0, inf), as SciPy); 1 with N > 2000 (not computed, by design)
+    worst relative difference from SciPy: 8.77e-12; max passes per root 5; max EXP terms per table 2126
+  ok    conditional OR: worst relative difference from SciPy 8.8e-12
+  ok    wherever the two differ by more than 1E-9, our answer solves its equation at least as well (0 differ; SciPy's brentq stops at an ABSOLUTE 1E-13 in psi)
+  ok    at most 5 passes per root (bisection on ln psi with Newton steps)
+    (12, 5, 8, 30)     MLE 8.558485 (2.087486-41.317307)  scipy 8.558485 (2.087486-41.317307)  212 EXP terms
+    (7, 15, 58, 472)   MLE 3.783669 (1.251483-10.363494)  scipy 3.783669 (1.251483-10.363494)  253 EXP terms
+    (700, 300, 280, 700) MLE 5.827442 (4.783758-7.113846)  scipy 5.827442 (4.783758-7.113846)  2126 EXP terms
+  [A: 70 s]
+
+==============================================================================
+B. The PPL routines themselves, in the harness (ppl_run_v3d)
+==============================================================================
+  ok    es_CPInt (the PPL) vs statsmodels beta: 1569 intervals, worst |diff| 5.9e-15
+  ok    es_CPInt mid-P (the PPL) vs brentq: worst |diff| 6.7e-16
+    BINOMIAL_CDF + BINOMIAL calls per interval: mean 19.0, max 38  [9 s]
+  ok    es_CondOR (the PPL) vs SciPy: 70 tables, worst relative difference 3.5e-08  [4 s]
+  ok    es_CondOR states: 0 inside, 1 at the bottom, 2 at the top, 3 empty margin, 4 N > 2000
+  ok    es_BinCheck passes with BINOMIAL_CDF(n, p, k)
+  ok    es_BinCheck fails when BINOMIAL_CDF reads (n, k, p): exact CIs say "unavailable"
+  ok    es_BinCheck / es_CPB / es_CPInt are line for line the same as CICatcher beta 2a's cq* copies (80 lines)
+
+==============================================================================
+C. Every CAS template, through desktop Giac (icas), against Python fractions
+==============================================================================
+    diff(ln(esq/(1-esq)),esq)                 -> 1/esq+1/(1-esq)
+    simplify(that - 1/(esq*(1-esq)))          -> 0
+  ok    the derivative Giac returns equals 1/(p(1-p)) (SymPy)
+  ok    the check template returns "0" (the page then says "the CAS: the difference is 0")
+    1/12+1/5+1/8+1/30                    -> 53/120                       fits
+  ok    Help F fraction for (12, 5, 8, 30) equals Python Fraction 53/120
+    1/40+1/60+1/20+1/80                  -> 5/48                         fits
+  ok    Help F fraction for (40, 60, 20, 80) equals Python Fraction 5/48
+    2/1+2/11+2/7+2/21                    -> 592/231                      fits
+  ok    Help F fraction for (0, 5, 3, 10) equals Python Fraction 592/231
+    2/11+2/1+2/7+2/21                    -> 592/231                      fits
+  ok    Help F fraction for (5, 0, 3, 10) equals Python Fraction 592/231
+    1/1+1/1+1/1+1/1                      -> 4                            fits
+  ok    Help F fraction for (1, 1, 1, 1) equals Python Fraction 4
+    1/700+1/300+1/280+1/700              -> 41/4200                      fits
+  ok    Help F fraction for (700, 300, 280, 700) equals Python Fraction 41/4200
+    1/1997+1/1993+1/1999+1/1987          -> 31712695576/15808695152273   fits
+  ok    Help F fraction for (1997, 1993, 1999, 1987) equals Python Fraction 31712695576/15808695152273
+    2/1+2/1+2/11+2/41                    -> 1908/451                     fits
+  ok    Help F fraction for (0, 0, 5, 20) equals Python Fraction 1908/451
+    1/999999+1/3+1/7+1/999998            -> 476191047617/999997000002    fits
+  ok    Help F fraction for (999999, 3, 7, 999998) equals Python Fraction 476191047617/999997000002
+    1-(1/40)^(1/n) and (1/40)^(1/n), n = 1..60, 100..2000: e.g. n = 1 -> 39/40, n = 2 -> 1-sqrt(1/40), n = 20 -> 1-(1/40)^(1/20)
+  ok    every closed form evaluates to 1 - 0.025^(1/n) / 0.025^(1/n) (130 templates; longest answer 17 characters; page 6 shows up to 22)
+  ok    1.7a: in the Prime's printing n = 2 reads 1-√(1/40) and √(1/40), no "sqrt" anywhere, none longer than desktop Giac's
+    (why simplify() is NOT used: simplify(1-(1/40)^(1/3)) -> -(1/40)^(1/3)+1; simplify(1-(1/4)^(1/10)) -> 1-(1/4)^(1/10))
+
+==============================================================================
+D. End to end in the harness, cas = giac and cas = fail
+==============================================================================
+
+--- D1 module 1, 12 5 8 30, cas = giac ---
+  ok    cohort tab, under the OR: '  cond. MLE OR = 8.56  (2.09-41.3): page 7' (orange)
+  ok    cohort tab: the two v1.6 notes share one line
+  ok    cohort tab: nine lines, the last at y 194 (footer at 224)
+  ok    Diagnostic tab: 'Exact: sens (36.1-80.9%), spec (69.7-95.2%)' = statsmodels beta
+  ok    Diagnostic tab keeps Wilson on the sensitivity line
+  ok    page 7/7 is reached (Left from page 1)
+  [page 7, 12 5 8 30]
+    y  4 x  8 f3.0 #FFFFFF  EXACT ODDS RATIO
+    y  6 x250 f2.0 #B4C8FF  7/7
+    y 27 x  6 f1.0 #000000  Sample OR = ad/bc = 9.00, Woolf CI (2.45-33.11)
+    y 39 x  6 f1.0 #FF4500  Conditional MLE OR = 8.56  (2.09-41.3)
+    y 51 x  6 f1.0 #5A5A5A  (exact CI; R's fisher.test and SciPy report it)
+    y 60 x225 f1.0 #FF0000  a = 12
+    y152 x  4 f1.0 #5A5A5A  a =
+    y152 x 35 f1.0 #5A5A5A  0
+    y152 x111 f1.0 #5A5A5A  5
+    y152 x186 f1.0 #5A5A5A  10
+    y152 x262 f1.0 #5A5A5A  15
+    y164 x  6 f1.0 #FF4500  orange = P(a) at the MLE: its mean is your a
+    y176 x  6 f1.0 #5A5A5A  grey = P(a) if OR = 1 (page 4); its mean is 6.18
+    y188 x  6 f1.0 #000000  Why two? This one fixes all four totals, as
+    y200 x  6 f1.0 #000000  Fisher's test does: nearer 1; big N: the same.
+    y224 x  8 f1.0 #1E90FF  ←/→ or tap left/right = page, Esc = menu
+  ok    page 7: "Conditional MLE OR = 8.56  (2.09-41.3)"
+  ok    page 7: the sample OR beside it
+  ok    page 7: 10 orange bars (P(a) at the MLE)
+  ok    page 7: the null mean (a+b)(a+c)/N = 6.18
+  ok    EP_OR_CMLE = 8.558485, EP_OR_CMLE_CI = {2.087486, 41.317307}
+  ok    module 1 needs no CAS at all: 0 calls
+
+--- D1 module 1, 12 5 8 30, cas = fail ---
+  ok    cohort tab, under the OR: '  cond. MLE OR = 8.56  (2.09-41.3): page 7' (orange)
+  ok    cohort tab: the two v1.6 notes share one line
+  ok    cohort tab: nine lines, the last at y 194 (footer at 224)
+  ok    Diagnostic tab: 'Exact: sens (36.1-80.9%), spec (69.7-95.2%)' = statsmodels beta
+  ok    Diagnostic tab keeps Wilson on the sensitivity line
+  ok    page 7/7 is reached (Left from page 1)
+  ok    page 7: "Conditional MLE OR = 8.56  (2.09-41.3)"
+  ok    page 7: the sample OR beside it
+  ok    page 7: 10 orange bars (P(a) at the MLE)
+  ok    page 7: the null mean (a+b)(a+c)/N = 6.18
+  ok    EP_OR_CMLE = 8.558485, EP_OR_CMLE_CI = {2.087486, 41.317307}
+  ok    module 1 needs no CAS at all: 0 calls
+
+--- D2 EpiStats2x2: every state of the conditional OR ---
+  ok    EpiStats2x2(0, 5, 3, 10) -> page 7: 'MLE 0: your a is the smallest it can be'; 'Conditional MLE OR = 0  (0-6.61)'
+  ok    EpiStats2x2(5, 0, 3, 10) -> page 7: 'MLE infinite: your a is the largest it can be'; 'Conditional MLE OR = infinite  (1.70-infinity)'
+  ok    EpiStats2x2(0, 0, 5, 20) -> page 7: 'A row or column total is 0: with every table'; 'Conditional MLE OR = undefined (a total is 0)'
+  ok    EpiStats2x2(700, 300, 600, 500) -> page 7: 'N > 2000: not computed here, the same cap'; 'Conditional MLE OR = not computed (N > 2000)'
+  ok    EpiStats2x2(700, 300, 280, 700) -> page 7: 'orange = P(a) at the MLE: its mean is your a'; 'Conditional MLE OR = 5.83  (4.78-7.11)'
+
+--- D3 module 2, 40 60 20 80: the risk bars ---
+  ok    module 2 page 4 shown
+  ok    legend names both whiskers
+  ok    8 orange whisker lines (2 bars x 4)
+  ok    EP_risk_exp_CP {0.3033, 0.5028}, EP_risk_unexp_CP {0.1267, 0.2918} = statsmodels beta
+
+--- D4 module 3, 12 0 8 30 (spec 30/30, PPV 12/12): page 6, cas = giac ---
+  ok    page 6 drawn 5 times (open, tap, Down, Up, tap): 5
+  [page 6, row 2 picked (cas = giac)]
+    y  4 x  8 f3.0 #FFFFFF  EXACT vs WILSON
+    y  6 x250 f2.0 #B4C8FF  6/6
+    y 28 x  4 f1.0 #000000  Sens 12/20
+    y 40 x  4 f1.0 #5A5A5A  60.0%
+    y 60 x  4 f1.0 #000000  Spec 30/30
+    y 72 x  4 f1.0 #5A5A5A  100.0%
+    y 92 x  4 f1.0 #000000  PPV 12/12
+    y104 x  4 f1.0 #5A5A5A  100.0%
+    y124 x  4 f1.0 #000000  NPV 30/38
+    y136 x  4 f1.0 #5A5A5A  78.9%
+    y156 x104 f1.0 #5A5A5A  0
+    y156 x153 f1.0 #5A5A5A  25
+    y156 x202 f1.0 #5A5A5A  50
+    y156 x251 f1.0 #5A5A5A  75
+    y156 x286 f1.0 #5A5A5A  100%
+    y170 x  8 f1.0 #000000  Specificity d/(b+d) = 30/30 = 100.0%
+    y182 x  8 f1.0 #000000  Wilson (88.6-100.0%)
+    y182 x164 f1.0 #FF4500  exact (88.4-100.0%)
+    y194 x  8 f1.0 #008C3C  mid-P (90.5-100.0%)
+    y194 x164 f1.0 #FF4500  coverage >= 95 %
+    y206 x  8 f1.0 #000000  exact lower = (1/40)^(1/30)
+    y206 x244 f1.0 #1E90FF  exact (CAS)
+    y224 x  8 f1.0 #1E90FF  tap a row = its numbers, ←/→ = page, Esc = menu
+  ok    EP_sens_CP, EP_spec_CP, EP_ppv_CP, EP_npv_CP = statsmodels beta
+  ok    panel for Specificity 30/30: Wilson (88.6-100.0%), exact (88.4-100.0%), mid-P (90.5-100.0%)
+  ok    CAS line: "exact lower = (1/40)^(1/30)" with the badge "exact (CAS)"
+  ok    the CAS is asked once per row with 0 or n, on the tap (1.7a: as string(...)): ['string((1/40)^(1/30))', 'string((1/40)^(1/12))']
+  ok    1.7a: no CAS variable assigned, no CAS call of a variable
+  ok    the panel follows the picked row (row 1 at open and after the last tap)
+  ok    16 orange (exact) bar lines: 4 rows x 4
+  ok    module 3 page 1 points to page 6 and reads 1/6
+
+--- D4 module 3, 12 0 8 30 (spec 30/30, PPV 12/12): page 6, cas = fail ---
+  ok    page 6 drawn 5 times (open, tap, Down, Up, tap): 5
+  [page 6, row 2 picked (cas = fail)]
+    y  4 x  8 f3.0 #FFFFFF  EXACT vs WILSON
+    y  6 x250 f2.0 #B4C8FF  6/6
+    y 28 x  4 f1.0 #000000  Sens 12/20
+    y 40 x  4 f1.0 #5A5A5A  60.0%
+    y 60 x  4 f1.0 #000000  Spec 30/30
+    y 72 x  4 f1.0 #5A5A5A  100.0%
+    y 92 x  4 f1.0 #000000  PPV 12/12
+    y104 x  4 f1.0 #5A5A5A  100.0%
+    y124 x  4 f1.0 #000000  NPV 30/38
+    y136 x  4 f1.0 #5A5A5A  78.9%
+    y156 x104 f1.0 #5A5A5A  0
+    y156 x153 f1.0 #5A5A5A  25
+    y156 x202 f1.0 #5A5A5A  50
+    y156 x251 f1.0 #5A5A5A  75
+    y156 x286 f1.0 #5A5A5A  100%
+    y170 x  8 f1.0 #000000  Specificity d/(b+d) = 30/30 = 100.0%
+    y182 x  8 f1.0 #000000  Wilson (88.6-100.0%)
+    y182 x164 f1.0 #FF4500  exact (88.4-100.0%)
+    y194 x  8 f1.0 #008C3C  mid-P (90.5-100.0%)
+    y194 x164 f1.0 #FF4500  coverage >= 95 %
+    y206 x  8 f1.0 #000000  exact lower = (α/2)^(1/n) = 0.8843
+    y206 x244 f1.0 #1E90FF  decimal
+    y224 x  8 f1.0 #1E90FF  tap a row = its numbers, ←/→ = page, Esc = menu
+  ok    EP_sens_CP, EP_spec_CP, EP_ppv_CP, EP_npv_CP = statsmodels beta
+  ok    panel for Specificity 30/30: Wilson (88.6-100.0%), exact (88.4-100.0%), mid-P (90.5-100.0%)
+  ok    fallback: "exact lower = (alpha/2)^(1/n) = 0.8843" with the badge "decimal", no error
+  ok    the panel follows the picked row (row 1 at open and after the last tap)
+  ok    16 orange (exact) bar lines: 4 rows x 4
+  ok    module 3 page 1 points to page 6 and reads 1/6
+
+--- D5 Help E and F ---
+  ok    Help F opened three times (3)
+  [Help F, example table, cas = giac]
+    y  4 x  8 f3.0 #FFFFFF  WHERE THE SE COMES FROM
+    y 30 x 12 f1.0 #000000  Why is SE(ln OR) = sqrt(1/a+1/b+1/c+1/d)?
+    y 43 x 12 f1.0 #000000  A row's log odds: g(p) = ln(p/(1-p)).
+    y 56 x 12 f1.0 #C800C8  CAS: g'(p) = 1/p+1/(1-p)
+    y 69 x 12 f1.0 #C800C8    = 1/(p(1-p))   (CAS: the difference is 0)
+    y 82 x 12 f1.0 #003CC8  Delta method: Var g() is about g'(p)² Var()
+    y 95 x 12 f1.0 #003CC8    = 1/(n p(1-p)) = 1/(np) + 1/(n(1-p))
+    y108 x 12 f1.0 #003CC8    = 1/cases + 1/non-cases: 1/a + 1/b in row 1.
+    y121 x 12 f1.0 #003CC8  The rows are independent: the four terms add.
+    y134 x 12 f1.0 #000000  Example table: a = 12, b = 5, c = 8, d = 30
+    y147 x 12 f1.0 #000000  Var = 1/12+1/5+1/8+1/30
+    y160 x 12 f1.0 #008C3C    = 53/120
+    y173 x 12 f1.0 #008C3C  SE = sqrt(53/120) = 0.6646
+    y186 x 12 f1.0 #1E90FF  exact (CAS)
+    y224 x  8 f1.0 #1E90FF  any key or tap = back
+  ok    Help F: the CAS derivative "1/p+1/(1-p)" and its check
+  ok    Help F, 12 5 8 30: "= 53/120", "SE = sqrt(53/120) = 0.6646", badge "exact (CAS)"
+  ok    Help F, 0 5 3 10: 0.5 added, "= 592/231"
+  ok    CAS calls: derivative, check, two fractions -- the second open asked nothing (['string(diff(ln(esq/(1-esq)),esq))', 'string(simplify(diff(ln(esq/(1-esq)),esq)-1/(esq*(1-esq))))', 'string(1/12+1/5+1/8+1/30)', 'string(2/1+2/11+2/7+2/21)'])
+  ok    1.7a: every CAS text asks for string(...), every answer arrives quoted, no CAS variable assigned
+  ok    Help E: 12 lines
+  ok    the Help menu: list form, 16 items, E = "Exact CIs, Exact OR", F = "Where the SE Comes From"
+  ok    Help F opened three times (3)
+  [Help F, example table, cas = fail]
+    y  4 x  8 f3.0 #FFFFFF  WHERE THE SE COMES FROM
+    y 30 x 12 f1.0 #000000  Why is SE(ln OR) = sqrt(1/a+1/b+1/c+1/d)?
+    y 43 x 12 f1.0 #000000  A row's log odds: g(p) = ln(p/(1-p)).
+    y 56 x 12 f1.0 #C800C8  g'(p) = 1/p + 1/(1-p)  (textbook form)
+    y 69 x 12 f1.0 #C800C8    = 1/(p(1-p))
+    y 82 x 12 f1.0 #003CC8  Delta method: Var g() is about g'(p)² Var()
+    y 95 x 12 f1.0 #003CC8    = 1/(n p(1-p)) = 1/(np) + 1/(n(1-p))
+    y108 x 12 f1.0 #003CC8    = 1/cases + 1/non-cases: 1/a + 1/b in row 1.
+    y121 x 12 f1.0 #003CC8  The rows are independent: the four terms add.
+    y134 x 12 f1.0 #000000  Example table: a = 12, b = 5, c = 8, d = 30
+    y147 x 12 f1.0 #000000  Var = 1/12+1/5+1/8+1/30
+    y160 x 12 f1.0 #008C3C    = 0.441667
+    y173 x 12 f1.0 #008C3C  SE = sqrt(0.441667) = 0.6646
+    y186 x 12 f1.0 #1E90FF  decimal
+    y224 x  8 f1.0 #1E90FF  any key or tap = back
+  ok    fallback: the textbook form, "= 0.441667", the badge "decimal"
+  ok    with the CAS failing it is asked 3 times in the run, not on every open (3)
+  ok    Help E: 12 lines
+  ok    the Help menu: list form, 16 items, E = "Exact CIs, Exact OR", F = "Where the SE Comes From"
+  ok    nothing draws on G0 except BLIT_P(G0, ...)
+  ok    1.7a: CAS( appears on one code line only, inside es_Cas, in the EXPR form (line [803])
+  ok    es_Cas is called only from es_Help_SE and es_XCas (events): ['es_Help_SE', 'es_XCas']
+  ok    layout on the new and changed pages (6.5/8/9.5 px a character): no problems
+
+==============================================================================
+E. The v1.6 verification suite (verify_EpiStats.py) against v1.7b, on harness v3d
+==============================================================================
+  --- layout audit over every page shown (262) ---
+    0 warnings (estimates: 6.5/8/9.5 px per character for fonts 1/2/3)
+  RESULT: ALL CHECKS PASSED
+  ok    verify_EpiStats.py (v1.6: 120 formula checks, 83 harness checks, 28 scripted runs) passes on v1.7b, harness v3d  [18 s]
+  V3D-SHIM: 27 harness runs, 0 scientific STRING results []
+  ok    1.7b: the v1.6 suite's 27 harness runs on v1.7b print no scientific STRING (v1.7a: 7, in es_FmtCI, es_ForestDraw and es_RuleTxt)
+
+==============================================================================
+G. 1.7a: v1.7 in harness v3d, and v1.7a against v1.7 (kept from verify_EpiStats_v1.7a.py)
+==============================================================================
+  ok    1.7a: v1.7 in v3d shows its own CAS text on Help F as if it were the answer ("g'(p) = diff(ln(p/(1-p)),p)", "= 1/12+1/5+1/8+1/30") -- the emulator's finding
+
+G. v1.7a: v1.7 in harness v3b, and v1.7a against v1.7
+  ok    v1.7a: routines that differ from v1.7: ['EpiStats', 'es_Cas', 'es_Help_About'] (want EpiStats, es_Cas, es_Help_About)
+  ok    v1.7a: outside those routines only comments differ
+  ok    v1.7a: the #PYTHON blocks are unchanged
+  routines that differ from v1.7: EpiStats, es_Cas, es_Help_About; everything else differs only in comments
+
+==============================================================================
+F. 1.7b: the round-2 string rules, v1.7b against v1.7a, both in harness v3d
+==============================================================================
+
+F1. es_Cas, called directly
+    1/2+1/3 -> '5/6'; 1/0 -> '' (the CAS said "±∞"); 0/0 -> ''; a syntax error -> ''
+  ok    1.7b: es_Cas (cas=giac): 5/6 with esCasOK 1; the infinity, undef and a syntax error give "" with esCasOK 0
+  ok    1.7b: es_Cas with the CAS failing returns "" with esCasOK 0 and no error ('', None)
+  ok    1.7b: v1.7a's es_Cas with the CAS failing stops: INSTRING: Invalid input (the first argument is an empty string -- emul
+
+F2. every CAS page with cas = fail: v1.7b against v1.7a
+    v1.7b module 3 page 6: exact lower = (α/2)^(1/n) = 0.8843
+  ok    1.7b: module 3 page 6, Spec 30/30, CAS failing: "exact lower = (alpha/2)^(1/n) = 0.8843", "decimal", no error
+    v1.7a module 3 page 6: PPLError: INSTRING: Invalid input (the first argument is an empty string -- emulator, 17 Oct 2026) [EpiStats > es_Module_SensSpec > es_ExactPage > es_XCas > es_Cas]
+  ok    1.7b: v1.7a on the same run stops: PPLError: INSTRING: Invalid input (the first argument is an empty string -- emulator, 17 Oct 2026) [EpiStats >
+    v1.7b Help F:   = 0.441667 | SE = sqrt(0.441667) = 0.6646 | decimal | any key or tap = back
+  ok    1.7b: Help F, CAS failing: the textbook form, "= 0.441667", "SE = sqrt(0.441667) = 0.6646", "decimal", no error
+    v1.7a Help F: PPLError: INSTRING: Invalid input (the first argument is an empty string -- emulator, 17 Oct 2026) [EpiStats > es_Module_Help > es_Help_SE > es_Cas]
+  ok    1.7b: v1.7a on the same run stops: PPLError: INSTRING: Invalid input (the first argument is an empty string -- emulator, 17 Oct 2026) [EpiStats >
+
+F3. tables that push a fixed-decimal display below 10^-d (cas = giac unless said)
+    module 1, 1 2999 50 50 (pages 1-7, the three boxes, four tiles)
+      v1.7a: ran; scientific in ['es_Arith', 'es_FmtCI', 'es_FmtPct', 'es_Mosaic'], e.g. ['2.46ᴇ-3', '3.2ᴇ-2', '3.333ᴇ-4', '3.334ᴇ-4']
+      v1.7b: ran; scientific: 0
+  ok    1.7b: module 1, 1 2999 50 50 (pages 1-7, the three boxes, four tiles) -- v1.7a prints scientific in es_Arith, es_FmtCI, es_FmtPct, es_Mosaic
+  ok    1.7b: module 1, 1 2999 50 50 (pages 1-7, the three boxes, four tiles) -- v1.7b: no scientific STRING, and 'OR = ad/bc = < 0.001   (0.00-0.00)'; 'Risk if exposed, a/(a+b) = 0.0%'; 'OR = (a×d)/(b×c) = (1×50)/(2999×50) = 0.00'; '   = 0.00 to 0.00'; '   = 0.000 / 0.500 = 0.001'; 'row % = 0.0 %   (all rows: 1.6 %)'; 'Sample OR = ad/bc = 0.000333, Woolf CI (0.00-0.00)'
+  ok    1.7b: module 1, 1 2999 50 50 (pages 1-7, the three boxes, four tiles) -- the same pages as v1.7a; every word that changed was a scientific number
+    module 1, 500 500 502 501 (the paired reading)
+      v1.7a: ran; scientific in ['es_Arith', 'es_FmtPct', 'es_ReadPage'], e.g. ['-1.0ᴇ-1', '-4.985ᴇ-4', '-5.0ᴇ-2', '-9.965ᴇ-4']
+      v1.7b: ran; scientific: 0
+  ok    1.7b: module 1, 500 500 502 501 (the paired reading) -- v1.7a prints scientific in es_Arith, es_FmtPct, es_ReadPage
+  ok    1.7b: module 1, 500 500 502 501 (the paired reading) -- v1.7b: no scientific STRING, and 'McNemar χ² (cont. corr.) = 0.001, p = 0.9748'; '^Youden J = sens \\+ spec - 1 = -?0\\.000$'; '^Kappa = \\(po-pe\\)/\\(1-pe\\) = -?0\\.000 \\(Poor\\)$'; "Yule's Q = (ad-bc)/(ad+bc) = -0.001"
+  ok    1.7b: module 1, 500 500 502 501 (the paired reading) -- the same pages as v1.7a; every word that changed was a scientific number
+    module 1, 1 1 1 997 (page 7, the mosaic)
+      v1.7a: ran; scientific in ['es_CORPage', 'es_Mosaic'], e.g. ['4.00ᴇ-3']
+      v1.7b: ran; scientific: 0
+  ok    1.7b: module 1, 1 1 1 997 (page 7, the mosaic) -- v1.7a prints scientific in es_CORPage, es_Mosaic
+  ok    1.7b: module 1, 1 1 1 997 (page 7, the mosaic) -- v1.7b: no scientific STRING, and 'grey = P(a) if OR = 1 (page 4); its mean is 0.00'; 'a: Exposed+, Outcome+: O = 1, E = 0.00'
+  ok    1.7b: module 1, 1 1 1 997 (page 7, the mosaic) -- the same pages as v1.7a; every word that changed was a scientific number
+    module 1, 20000 20000 20000 20001 (a mosaic tile)
+      v1.7a: ran; scientific in ['es_FmtPct', 'es_Sgn'], e.g. ['1.2ᴇ-3', '2.5ᴇ-3', '3.54ᴇ-3']
+      v1.7b: ran; scientific: 0
+  ok    1.7b: module 1, 20000 20000 20000 20001 (a mosaic tile) -- v1.7a prints scientific in es_FmtPct, es_Sgn
+  ok    1.7b: module 1, 20000 20000 20000 20001 (a mosaic tile) -- v1.7b: no scientific STRING, and 'adj. residual = +0.00: about as expected'
+  ok    1.7b: module 1, 20000 20000 20000 20001 (a mosaic tile) -- the same pages as v1.7a; every word that changed was a scientific number
+    module 1, a count typed as 0.004
+      v1.7a: ran; scientific in ['es_Grid'], e.g. ['4.00ᴇ-3']
+      v1.7b: ran; scientific: 0
+  ok    1.7b: module 1, a count typed as 0.004 -- v1.7a prints scientific in es_Grid
+  ok    1.7b: module 1, a count typed as 0.004 -- v1.7b: no scientific STRING, and 'Counts are whole numbers: 0.00 was rounded to the nearest one.'
+  ok    1.7b: module 1, a count typed as 0.004 -- the same pages as v1.7a; every word that changed was a scientific number
+    module 2, 1 2999 1 999 (risk bars, NNT)
+      v1.7a: ran; scientific in ['es_FmtPct', 'es_NNTIcons', 'es_RiskBars'], e.g. ['-6.7ᴇ-2', '3.3ᴇ-2', '5.0ᴇ-2', '6.667ᴇ-4']
+      v1.7b: ran; scientific: 0
+  ok    1.7b: module 2, 1 2999 1 999 (risk bars, NNT) -- v1.7a prints scientific in es_FmtPct, es_NNTIcons, es_RiskBars
+  ok    1.7b: module 2, 1 2999 1 999 (risk bars, NNT) -- v1.7b: no scientific STRING, and 'NNT = 1/0.000667 = 1500.00, round up: 1500'; 'the outcome is rare here (Ru = 0.1 %).'
+  ok    1.7b: module 2, 1 2999 1 999 (risk bars, NNT) -- the same pages as v1.7a; every word that changed was a scientific number
+    module 2, 3 2997 1 2999 (OR vs RR, rare)
+      v1.7a: ran; scientific in ['es_FmtCI', 'es_FmtPct', 'es_NNTIcons', 'es_RiskBars'], e.g. ['-6.4ᴇ-2', '3.3ᴇ-2', '6.667ᴇ-4', '6.7ᴇ-2']
+      v1.7b: ran; scientific: 0
+  ok    1.7b: module 2, 3 2997 1 2999 (OR vs RR, rare) -- v1.7a prints scientific in es_RiskBars
+  ok    1.7b: module 2, 3 2997 1 2999 (OR vs RR, rare) -- v1.7b: no scientific STRING, and 'OR = 3.00 overstates RR = 3.00 by only 0 %:'; 'the outcome is rare here (Ru = 0.0 %).'
+  ok    1.7b: module 2, 3 2997 1 2999 (OR vs RR, rare) -- the same pages as v1.7a; every word that changed was a scientific number
+    module 2, 1 999 600 401 (OR, RR below 0.005)
+      v1.7a: ran; scientific in ['es_FmtCI', 'es_RiskBars'], e.g. ['1.67ᴇ-3', '2.35ᴇ-4', '4.77ᴇ-3', '6.69ᴇ-4']
+      v1.7b: ran; scientific: 0
+  ok    1.7b: module 2, 1 999 600 401 (OR, RR below 0.005) -- v1.7a prints scientific in es_FmtCI, es_RiskBars
+  ok    1.7b: module 2, 1 999 600 401 (OR, RR below 0.005) -- v1.7b: no scientific STRING, and 'OR = 0.00 exaggerates RR = 0.00 by 60 % here'; '95% CI: (0.00-0.00)'; '95% CI: (0.00-0.01)'
+  ok    1.7b: module 2, 1 999 600 401 (OR, RR below 0.005) -- the same pages as v1.7a; every word that changed was a scientific number
+    module 3, 1 2999 2 999 (prevalence page)
+      v1.7a: ran; scientific in ['es_FmtCI', 'es_FmtPct', 'es_PctTxt', 'es_PrevDraw'], e.g. ['1.7ᴇ-3', '3.3ᴇ-2', '5.9ᴇ-3', '7.5ᴇ-2']
+      v1.7b: ran; scientific: 0
+  ok    1.7b: module 3, 1 2999 2 999 (prevalence page) -- v1.7a prints scientific in es_FmtCI, es_FmtPct, es_PctTxt, es_PrevDraw
+  ok    1.7b: module 3, 1 2999 2 999 (prevalence page) -- v1.7b: no scientific STRING, and 'PPV = 0.0 %'; 'sample: 0.1 %'; 'p = 0.1 %'
+  ok    1.7b: module 3, 1 2999 2 999 (prevalence page) -- the same pages as v1.7a; every word that changed was a scientific number
+    module 3, 1 1 2999 2999 (the ROC square)
+      v1.7a: ran; scientific in ['es_FmtCI', 'es_FmtPct', 'es_PrevDraw', 'es_ROCPage'], e.g. ['1.7ᴇ-3', '3.333ᴇ-4', '3.3ᴇ-2', '5.9ᴇ-3']
+      v1.7b: ran; scientific: 0
+  ok    1.7b: module 3, 1 1 2999 2999 (the ROC square) -- v1.7a prints scientific in es_FmtCI, es_PrevDraw, es_ROCPage
+  ok    1.7b: module 3, 1 1 2999 2999 (the ROC square) -- v1.7b: no scientific STRING, and 'TPR = sens = 0.0 %'; 'FPR = 1-spec = 0.0 %'; ' = 0.000/0.000 = 1.00'; 'Youden J = sens + spec - 1 = 0.000:'
+  ok    1.7b: module 3, 1 1 2999 2999 (the ROC square) -- the same pages as v1.7a; every word that changed was a scientific number
+    module 3, 0 1 60000 1, CAS failing (page 6 decimal)
+      v1.7a: PPLError: INSTRING: Invalid input (the first argument is an empty string -- emulator, 17 Oct 2026) [EpiStats > es_Module_SensSpec > es_ExactPage > es_XCas > es_Cas]; scientific in ['es_FmtCI', 'es_FmtPct', 'es_PctTxt'], e.g. ['1.7ᴇ-3', '2.33ᴇ-7', '2.98ᴇ-4', '2.9ᴇ-4']
+      v1.7b: ran; scientific: 0
+  ok    1.7b: module 3, 0 1 60000 1, CAS failing (page 6 decimal) -- v1.7a stops (INSTRING)
+  ok    1.7b: module 3, 0 1 60000 1, CAS failing (page 6 decimal) -- v1.7b: no scientific STRING, and 'exact upper = 1 - (α/2)^(1/n) = 0.0001'
+    module 5 OR, opposite strata (forest: Breslow-Day p)
+      v1.7a: ran; scientific in ['es_FmtCI', 'es_ForestDraw'], e.g. ['3.86ᴇ-6', '4.67ᴇ-3']
+      v1.7b: ran; scientific: 0
+  ok    1.7b: module 5 OR, opposite strata (forest: Breslow-Day p) -- v1.7a prints scientific in es_FmtCI, es_ForestDraw
+  ok    1.7b: module 5 OR, opposite strata (forest: Breslow-Day p) -- v1.7b: no scientific STRING, and "Breslow-Day p < 0.01: are the strata's ORs alike?"
+  ok    1.7b: module 5 OR, opposite strata (forest: Breslow-Day p) -- the same pages as v1.7a; every word that changed was a scientific number
+    module 5 OR, 1 1 1 1 and 500 500 500 500 (forest weights)
+      v1.7a: ran; scientific in ['es_ForestDraw'], e.g. ['2ᴇ-1']
+      v1.7b: ran; scientific: 0
+  ok    1.7b: module 5 OR, 1 1 1 1 and 500 500 500 500 (forest weights) -- v1.7a prints scientific in es_ForestDraw
+  ok    1.7b: module 5 OR, 1 1 1 1 and 500 500 500 500 (forest weights) -- v1.7b: no scientific STRING, and 'w = 0 %'; 'w = 100 %'
+  ok    1.7b: module 5 OR, 1 1 1 1 and 500 500 500 500 (forest weights) -- the same pages as v1.7a; every word that changed was a scientific number
+    module 5 OR, crude and M-H 0.02 % apart
+      v1.7a: ran; scientific in ['es_RuleTxt'], e.g. ['2ᴇ-2']
+      v1.7b: ran; scientific: 0
+  ok    1.7b: module 5 OR, crude and M-H 0.02 % apart -- v1.7a prints scientific in es_RuleTxt
+  ok    1.7b: module 5 OR, crude and M-H 0.02 % apart -- v1.7b: no scientific STRING, and 'Crude and M-H differ by 0 % (of the M-H).'
+  ok    1.7b: module 5 OR, crude and M-H 0.02 % apart -- the same pages as v1.7a; every word that changed was a scientific number
+    module 5 RR, M-H chi-square 0.0006
+      v1.7a: ran; scientific in ['es_MHSummary', 'es_RuleTxt'], e.g. ['6.223ᴇ-4', '8ᴇ-5']
+      v1.7b: ran; scientific: 0
+  ok    1.7b: module 5 RR, M-H chi-square 0.0006 -- v1.7a prints scientific in es_MHSummary, es_RuleTxt
+  ok    1.7b: module 5 RR, M-H chi-square 0.0006 -- v1.7b: no scientific STRING, and 'M-H χ² (1 df) = 0.001, p = 0.9801'
+  ok    1.7b: module 5 RR, M-H chi-square 0.0006 -- the same pages as v1.7a; every word that changed was a scientific number
+    Help F with EP_table = 1E9 each
+      v1.7a: ran; scientific in ['es_Help_SE'], e.g. ['6.3246ᴇ-5']
+      v1.7b: ran; scientific: 0
+  ok    1.7b: Help F with EP_table = 1E9 each -- v1.7a prints scientific in es_Help_SE
+  ok    1.7b: Help F with EP_table = 1E9 each -- v1.7b: no scientific STRING, and 'SE = sqrt(1/250000000) = 0.0001'
+  ok    1.7b: Help F with EP_table = 1E9 each -- the same pages as v1.7a; every word that changed was a scientific number
+
+F4. every STRING(x, 2, d) in v1.7b: rounded first, or unable to reach 0 < |x| < 10^-d
+    154 calls: 86 rounded first (STRING(ROUND(x, d), 2, d)), 68 left as they were:
+        1  Re as the "common" risk: shown only when Re >= 0.1, so 10.0 % or more
+       52  a count, a total or a loop index: a whole number, so 0 or at least 1 (d = 0)
+        3  an axis label: a multiple of a 1-2-5 step with d = -FLOOR(LOG(step)), so 0 or at least 10^-d
+        2  es_Cnt: a whole count (d = 0) or a Haldane half, x.5 (d = 1)
+        6  guarded by the helper itself (es_PTxt, es_FmtNum, es_SigTxt: values below 10^-d take another form)
+        1  the Breslow-Day p in the "homogeneous" branch: 0.05 or more
+        1  the NNT page's |RD|: this branch runs only when |RD| >= 0.001
+        1  the NNT, 1/|RD| with |RD| <= 1: 1 or more
+        1  the mosaic's "all" bar: drawn only when its tile is 12 px or more of 112, so 10 % or more
+  ok    1.7b: every bare STRING(x, 2, d) has a reason it cannot print scientific (unlisted: none; listed but gone: none)
+  ok    1.7b: v1.7a has 155 such calls; v1.7b 154 (the forest plot's Breslow-Day p now goes through es_PTxt), 86 of them rounded first
+
+F5. INSTRING, LEFT, MID and RIGHT in v1.7b (code only)
+      757  IF LEFT(eqS, 1) == "<" OR LEFT(eqS, 1) == ">" THEN RETURN eqL + " " + eqS; END;
+      810  IF LEFT(cR, 1) == CHAR(34) AND MID(cR, DIM(cR), 1) == CHAR(34) THEN
+      811  cR := MID(cR, 2, DIM(cR) - 2);
+      819  IF INSTRING(cR, "undef") > 0 OR INSTRING(cR, "rror") > 0 OR INSTRING(cR, CHAR(8734)) > 0 THEN cR := ""; END;
+      836  IF MID(swS, swI, swL) == swA THEN
+      839  swR := swR + MID(swS, swI, 1); swI := swI + 1;
+  ok    1.7b: the one INSTRING line ([819]) runs only inside IF DIM(cR) > 0
+  ok    1.7b: every LEFT counts 1 (3), every MID starts at 2, DIM(cR) >= 2 or swI >= 1 (4), no RIGHT
+
+==============================================================================
+G2. 1.7b: v1.7b against v1.7a
+==============================================================================
+  routines that differ from v1.7a (21): EpiStats, es_Arith, es_CORPage, es_Cas, es_ExactPage, es_FmtCI, es_FmtPct, es_ForestDraw, es_Grid, es_Help_About, es_Help_SE, es_MHSummary, es_Mosaic, es_NNTIcons, es_PctTxt, es_PrevDraw, es_ROCPage, es_ReadPage, es_RiskBars, es_RuleTxt, es_Sgn
+  ok    1.7b: the routines that differ from v1.7a are exactly the 21 listed in CHANGES
+  ok    1.7b: outside them only comments differ
+  ok    1.7b: es_Cas keeps the IFERR line and the quote strip byte-identical
+  ok    1.7b: es_Cas runs the unchanged undef/rror/infinity test only inside IF DIM(cR) > 0 (the brief's shape)
+  ok    1.7b: the version reads v1.7b in the banner, the menu title and About; no code line says v1.7a
+
+==============================================================================
+SCI. Every scientific STRING result (h.sci_strings) of every harness run
+==============================================================================
+  v1.7b: 34 harness runs in this script (B, D, F), 0 scientific results: none
+         plus the v1.6 suite (E): 27 runs, 0 scientific results
+  v1.7a (F, for comparison): 19 runs, 66 distinct scientific results, in es_Arith, es_CORPage, es_FmtCI, es_FmtPct, es_ForestDraw, es_Grid, es_Help_SE, es_MHSummary, es_Mosaic, es_NNTIcons, es_PctTxt, es_PrevDraw, es_ROCPage, es_ReadPage, es_RiskBars, es_RuleTxt, es_Sgn
+      es_Arith         -4.985ᴇ-4
+      es_Arith         -5.0ᴇ-2
+      es_Arith         -9.965ᴇ-4
+      es_Arith         2.46ᴇ-3
+      es_Arith         3.333ᴇ-4
+      es_Arith         3.334ᴇ-4
+      es_Arith         3.33ᴇ-4
+      es_Arith         4.52ᴇ-5
+      es_Arith         4.78ᴇ-3
+      es_Arith         6.667ᴇ-4
+      es_Arith         9.30ᴇ-5
+      es_CORPage       4.00ᴇ-3
+  ok    1.7b: no scientific STRING result in any of the 34 + 27 harness runs of v1.7b
+
+==============================================================================
+ALL CHECKS PASSED: 163 checks, 0 failures  [145 s]

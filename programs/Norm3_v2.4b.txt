@@ -1,0 +1,940 @@
+#pragma mode( separator(.,;) integer(h32) )
+
+// ============================================================
+// NORM3 - v2.4b
+// ============================================================
+// Author: Roger Metcalf, 2026.  Written with AI assistance
+//   (Anthropic Claude); concept, direction and all hardware
+//   testing by the author.
+//
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
+//   the file and credit the author if you pass it on.  Not for
+//   sale or commercial redistribution.  Provided as is, with no
+//   warranty: check any result you intend to rely on.
+// DISCLAIMER: a teaching and demonstration aid. Not validated for
+//   forensic, clinical or legal use; do not rely on its results for
+//   legal purposes.
+//
+// Firmware: this version has NOT yet been run on hardware or on
+//   the emulator: v2.4b has run only in the PC harness
+//   (ppl_run_v3e).  v2.4 passed the HP Prime Virtual Calculator
+//   (build 2026-09-09, 16-17 Oct 2026); v2.4a never ran there.
+//   Written for the 2026-09-09 firmware (2.4.2); none of its
+//   commands is new in 2.4.x, so older firmware should also work.
+//
+// What changed in v2.4b (19 Oct 2026; line numbers are v2.4a's)
+//   -- N1 of the fleet review (19 Oct 2026), the rule Roger set for
+//   small values (decision D14 is still open; this is the honest
+//   minimum), and the review's Norm3 improvement 3 (the K counter).
+//   * N1: STRING(x, 2, d) prints the Prime's SCIENTIFIC form whenever
+//     0 < |x| < 10^-d, and mu, sigma, x0 and z went to STRING with no
+//     ROUND first.  31 sigma- presses read "sigma = 1.000E-4" in the
+//     title; a press on the S-curve at p = 0.51 with sigma 0.1 read
+//     "x0 = 2.51E-3"; Norm3(0, 1, 0.004) read "x0 = 4.00E-3, z =
+//     4.00E-3" (the E is the Prime's small capital).  New n3_Fx (after
+//     n3_Eq) rounds first, STRING(ROUND(x, d), 2, d), and a value that
+//     is not 0 but rounds to 0 at the shown decimals keeps n3_fmtp's
+//     "< 0.001" form, so it never reads as a false 0.000 either:
+//     "sigma < 0.001", "x0 < 0.01", "z > -0.01".  The title (624),
+//     row 2 in both forms (636-637, 640-641) and the summary returned
+//     to Home (849-850) use it.  New n3_Nm writes a slot that the text
+//     already names: the number, or "sigma < 0.001" inside "N(0.000,
+//     sigma < 0.001)"; a tiny x0 in the summary reads "P(X <= x0) =
+//     0.5016 with x0 < 0.01".  Every ordinary display is unchanged.
+//     p on the inverse row (636) is kept at 0.005 or more by its own
+//     clamp, the tick labels are multiples of their step, and n3_fmtp
+//     floors its own values: those STRING calls are left as they were.
+//   * Improvement 3 ("when the file is touched for N1", findings A):
+//     the two MAKELIST caches (388-389) count with the LOCAL n3I,
+//     not Home's K (GfxProbe T19 showed a LOCAL counter works and
+//     leaves Home's K alone; Lessons Learned v7i section 5).
+//   * A DISCLAIMER line beside the distribution terms above (Roger,
+//     19 Oct 2026): a teaching and demonstration aid, not validated for
+//     forensic, clinical or legal use.  A comment only.
+//   * The banner, the firmware lines and the help page's title say
+//     v2.4b.  Nothing else changed.
+//
+// What changed in v2.4a (17 Oct 2026, evening; line numbers are v2.4's)
+//   -- no "=" before a relation, and the right tail kept.  Roger
+//   approved the pass, 17 Oct 2026, 21:18.
+//   * n3_fmtp writes "< 0.0001" below its floor, and four displays put
+//     that after "= ": "pdf = < 0.0001 (a height)", "P(X ≤ x₀) = <
+//     0.0001", "P(X > x₀) = < 0.0001" and the summary returned to Home.
+//     New n3_Eq (after n3_fmtp) returns " = 0.8413", or " < 0.0001"
+//     when the relation is already there; the four use it (610, 614,
+//     616, 815).
+//   * P(X > x₀) (616) is the lower tail NORMALD_CDF(μ, σ, 2μ - x₀), the
+//     same number by symmetry.  1 - NORMALD_CDF is exactly 0 once the
+//     tail is below the CDF's last digit, so x₀ ten σ to the right read
+//     "P(X > x₀) = 0.0000" where ten σ to the left read "< 0.0001".
+//   * The help page's title says v2.4a (270).  Nothing else changed.
+//
+// What changed in v2.4 (16 Oct 2026) -- the first TOUCH version
+//   (Fleet Review section 6: "drag x0, tap the S-curve").  It is
+//   built on v2.3 and keeps every v2.3 fix.  Line numbers are v2.3's.
+//   * DRAG x0.  The frame loop polls GETKEY and MOUSE together
+//     (v2.3 waited on keys only, 363).  A finger in the plot box sets
+//     x0 from its pixel column through the same LFT/W/xmin/xmax the
+//     drawing uses; the blue area, both P values, the readout and the
+//     magenta point on the S-curve follow it, redrawn from the cached
+//     pdf/CDF lists (no NORMALD per column while dragging).  A finger
+//     held still redraws nothing.  On lift x0 snaps to a nice grid
+//     (1/100 of the window, 1-2-5 rounded) and the lift is drained
+//     with a capped n3_Drain().
+//   * TAP THE S-CURVE.  In a view with the CDF, a press on the magenta
+//     S-curve (within 16 px of it, and nearer it than the blue pdf),
+//     or on the new right-hand 0-1 axis, is the inverse: p comes from the finger's height on
+//     the right-hand axis (to 0.01; 0.025 and 0.975 are caught),
+//     x0 := NORMALD_ICDF(mu, sd, p),
+//     and a drag runs along the S-curve.  Row 2 reads
+//     "p = 0.900 -> x0 = 1.28, z = 1.28".
+//   * RIGHT-HAND CDF AXIS (CDF views): a magenta 0-1 axis at the right
+//     edge with ticks 0, .5, 1; the magenta point rides the S-curve at
+//     x0 with a dotted line across to it.  It replaces the lone "1"
+//     label (292).  RGT moved 314 -> 302 to make room for its labels.
+//   * SOFT KEYS: DRAWMENU({"mu-","mu+","sigma-","sigma+","View","Quit"})
+//     after every blit; a tap at y >= 218 is slot MIN(6, IP(x/53.4)+1).
+//     The hardware keys stay.  Enter now opens a small menu (Help, Next
+//     view, Re-centre, Quit); View has its own soft key.
+//   * VERTICAL ROOM: BOT 194 -> 190 and nothing is drawn below y = 216
+//     (the strip paints 218-239).  The readouts moved to two rows above
+//     the plot (TOPy 22 -> 37); the legend line (355) and the mu/sigma
+//     panel (339-341) are gone -- mu and sigma are in the title row,
+//     the keys are on the strip and the help page.  x tick labels at
+//     BOT+4, the new z-ruler at BOT+14.
+//   * GRAB THE MEAN: a press within 6 px of the green dotted mu line
+//     (and nearer it than the x0 line) grabs mu; a drag slides the bell
+//     inside the frozen window, the grabbed line is drawn 3 px wide,
+//     and mu snaps to the grid on lift.  While it is held the cached
+//     pdf/CDF are read shifted by whole pixel columns (only columns the
+//     cache does not cover are computed).
+//   * COMPLEMENT: right of x0 is shaded light red RGB(255,235,235);
+//     row 3 prints both areas, "P(X <= x0) = 0.8413" on a blue key and
+//     "P(X > x0) = 0.1587" on a light-red key.
+//   * z-RULER: grey z labels -3..3 at mu + k*sigma under the x labels
+//     (thinned when sigma is narrow on screen), captions "x" and "z".
+//   * THE WINDOW IS FROZEN (Lessons Learned section 6: "If it tracks mu,
+//     the bell sits centred forever"; NormExplorer's Explorer).  v2.3
+//     refitted mu +/- 4 sigma every frame (202-205); now the arrows move
+//     the bell inside a fixed window, x0 still pushes the window when
+//     it goes past an edge, and 0 (or the menu) re-centres it.  Row 1
+//     shows "0 = re-centre" in orange when pressing 0 would move the
+//     window by more than a tenth of its width.
+//     The y-scale is not frozen: it refits after every sigma change.
+//   * SIGMA ANIMATION: Up/Down and the sigma soft keys move sigma over
+//     4 frames with the window and the y-scale held, so the peak visibly
+//     falls and spreads (or rises and narrows) while the area stays 1;
+//     a fifth frame then refits the y-scale.  The y headroom is now
+//     1.45 x the peak (was 1.15, 210) so a step down fits.
+//   * THE CACHE IS FILLED ONLY WHEN mu, sigma OR THE WINDOW CHANGES
+//     (v2.3 refilled it every frame, 216-223), so x0 moves cost two
+//     NORMALD calls a frame.  Shading and curve share one column loop.
+//   * HELP: a drawn page (n3_Help) from Enter -> Help, listing every
+//     gesture and key; held with n3_WaitAny() (drain, wait for a key
+//     or a tap, drain).
+//   * Ends with RETURN "Norm3: ..." (a summary) instead of the list of
+//     EP_ names; the EP_NORM_* globals are still set.
+// What changed in v2.3 (16 Oct 2026) -- the fleet review's fix list.
+//   Line numbers are those of v2.2.
+//   * The pdf is evaluated ONCE per frame into a list (n3Pdf); the
+//     shading loop (202) and the curve loop (213) read from it instead
+//     of calling NORMALD again at the same 290 x values.  The CDF goes
+//     into n3Cdf the same way when a CDF view is on (225).  NORMALD
+//     calls per frame: up to 581 before, 291 now.  NORMALD_CDF: 291
+//     before and after (it was already evaluated once per frame; the
+//     list is there for the touch version that follows).
+//   * A key drain before the frame loop (294): the Enter that closed
+//     the launch form could satisfy the first wait and skip a frame
+//     (Lessons Learned section 7: drain, wait, drain).
+//   * LOCAL lines 131, 134 and 135 carried 7 names; split to <= 6.
+//   * The bare names i, x, y (133), f (107) and the parameter x of
+//     n3_NiceNum (105) are now n3I, n3X, n3Y, n3F and n3V (section 5:
+//     x is the CAS variable, i the imaginary unit).
+//   * Panel border (274): RGB(255,165,0) -> the house orange RGB(255,69,0).
+//   * x-axis tick labels are centred under their ticks by 3*SIZE(label)
+//     (251), as NormExplorer does, instead of a flat tickx-8.
+//   * The CDF "1" label (230) is 4 px lower: off the top-right corner of
+//     the mu/sigma panel and below the S-curve's plateau.
+//   * The readout (283-285) says "P(X <= x0) = ..." instead of "CDF = ...",
+//     and the density is labelled "pdf = ... (height, not a probability)"
+//     on a line of its own.  To make room, BOT moved from 200 to 194 and
+//     the bottom rows are now 199 (tick labels), 207 and 217 (readouts)
+//     and 228 (legend, the row ChiTable's footer uses on the device).
+// v2.2 (10 Oct 2026): every helper routine now carries the program
+//   tag "n3_" (fmtp -> n3_fmtp, NiceNum -> n3_NiceNum).
+//   The Prime keeps the routines of ALL programs in one shared
+//   pool, so two programs that define the same helper name
+//   (NiceNum, fmtp and lngamma were each shared by up to eight
+//   programs) can run each other's code.  That is what sent
+//   StudRange into a Burr3 screen and forced a reset.
+//   Rule: every non-EXPORT routine gets the program's tag.
+// v2.1 (29 Sep 2026): the key-press variable is renamed from
+//   key to kk (house rule: KEY heads user-key definitions).
+//   No other change from v2.
+// ============================================================
+
+// (C) 2026 Roger D Metcalf
+// Program concept and rudimentary code by Roger D. Metcalf
+// Code corrected, expanded, and vastly improved by Claude Code Fable 5
+// For academic use only – do not rely on results for anything important
+// Results have not been rigorously verified and/or validated
+
+// Normal distribution — interactive pdf/CDF explorer — Roger D Metcalf
+//   μ = mean   σ = std dev   x₀ = evaluation point
+// Launch:  Norm3(0, 1, 1)   (parallel to Burr3)
+// TOUCH:     drag in the plot = x₀;  press on the S-curve (or on the
+//            right-hand 0-1 axis) = the inverse, p -> x₀;  press on the
+//            green μ line = drag the mean;  soft keys μ− μ+ σ− σ+ View Quit
+// KEYS:      Left/Right = μ    Up/Down = σ (animated)    (-)/(+) = x₀
+//            0 = re-centre the window    Enter = menu (Help, Next view,
+//            Re-centre, Quit)    Esc = quit
+// Live readouts: μ and σ (title row), x₀, z, the pdf height, and both
+// areas P(X ≤ x₀) and P(X > x₀).
+// Window frozen at μ ± 4σ on entry (x₀ can push it; 0 re-centres);
+// nice-number labelled ticks on both axes; a z-ruler under the x-axis;
+// CDF S-curve with its own 0-1 axis on the right; dotted mean marker;
+// solid vertical x₀ marker + dotted horizontal line to the y-axis.
+//
+// v2 CHANGES (28 Jul 2026) — presentation and controls only, no maths
+//   * Flicker-free: draw to G1, BLIT once per frame. v1 cleared G0 and
+//     rebuilt it in view, so every keypress flashed.
+//   * μ/σ panel: v1 padded the strings with 6 leading spaces inside a
+//     206..296 box with text at x=212. That fits "μ = 0" but a negative
+//     mean overflows — "      μ = -12.5" runs to x≈302 and clips. Since a
+//     normal mean is routinely negative (unlike Burr3's x, which is always
+//     positive) this bites in ordinary use. Padding dropped, box widened
+//     to 194..306 with text at 200: "μ = -123.456" now ends near x=272.
+//     (v2.4: the panel is gone; μ and σ are in the title row.)
+//   * ADAPTIVE STEPS. v1 moved μ and σ by a fixed 0.25 regardless of scale.
+//     At σ=15 that is 0.017σ per keypress; at σ=100 it is invisible on a
+//     290 px plot. Now μ steps by σ/4 and σ scales by ×1.25 / ÷1.25, so the
+//     controls feel identical at every scale.
+//   * All STRING(ROUND(x,d)) -> fixed-decimal STRING(x,2,d); mode 1 drops
+//     trailing zeros regardless of the digit count, so σ = 1.500 printed
+//     "1.5" and the tick labels came out ragged.
+//   * pdf/CDF readouts through n3_fmtp(), which floors at "< 0.0001" instead
+//     of printing "0.0000" — four sigma out the density is small, not zero,
+//     and showing that is the point of the explorer.
+//   * x-axis tick labels moved BELOW the axis (v1 drew them at BOT-11, i.e.
+//     inside the plot, on top of the shading and curve). BOT 208 -> 200 to
+//     make room.
+//   * Mean marker dotted, to read differently from the solid red x₀ line.
+//   * Exports EP_NORM_* so results are readable in Home after Esc.
+//
+// VERIFIED (verify_Norm3.py, all checks pass):
+//   NORMALD(μ,σ,μ) is the closed-form peak 1/(σ√(2π)); the μ±4σ window is
+//   symmetric and covers 99.9937%; edge/peak density ratio is exp(-8) at
+//   every scale; CDF(x₀) == Φ(z) for the z readout; and the tick ladder
+//   CEILING(xmin/stp)*stp places every tick inside a NEGATIVE range (the
+//   one structural difference from Burr3, whose x starts at 0).
+//   v2.4 (verify_Norm3.py, rewritten): the pixel -> x0 map, the p -> x0 inverse,
+//   P(X > x0), the shifted-cache read used while mu is dragged, and the
+//   z-ruler positions, against scipy.stats.norm.
+//   v2.4a (verify_Norm3_v2.4a.py): every display that n3_fmtp floors reads
+//   "< 0.0001" without an "=" before it, and P(X > x₀) is norm.sf, not 0.
+//   v2.4b (verify_Norm3_v2.4b.py): no STRING of μ, σ, x₀ or z prints the
+//   scientific form, and a value too small for its decimals reads "< 0.001",
+//   never 0.000; the review's check_Norm3.py passes in full.
+
+EXPORT EP_NORM_MU;
+EXPORT EP_NORM_SD;
+EXPORT EP_NORM_X0;
+EXPORT EP_NORM_Z;
+EXPORT EP_NORM_PDF;
+EXPORT EP_NORM_CDF;
+
+// ---- fixed-decimal formatter with a floor ----
+// Mode 2 keeps trailing zeros. The floor matters in the tail: at z = -4 the
+// density is ~1.3e-4 and beyond that it prints "0.0000", which reads as zero
+// for a value that is merely small. Params pv/dg, not p/d — short parameter
+// names collide with builtins. Non-EXPORT so it stays out of the catalog.
+n3_fmtp(pv, dg)
+BEGIN
+  LOCAL thr;
+  thr := 10^(-dg);
+  IF pv != 0 AND ABS(pv) < thr THEN
+    IF pv > 0 THEN RETURN "< " + STRING(thr,2,dg); END;
+    RETURN "> -" + STRING(thr,2,dg);
+  END;
+  RETURN STRING(pv,2,dg);
+END;
+
+// " = 0.8413", or " < 0.0001" when n3_fmtp has already written the
+// relation (v2.4a): "P(X > x₀) = < 0.0001" said two things at once;
+// "P(X > x₀) < 0.0001" says the one that is true.  The first character
+// decides, read only when there is one (DIM first: an empty string has
+// no first character).
+n3_Eq(eqS)
+BEGIN
+  IF DIM(eqS) > 0 THEN
+    IF LEFT(eqS, 1) == "<" OR LEFT(eqS, 1) == ">" THEN RETURN " " + eqS; END;
+  END;
+  RETURN " = " + eqS;
+END;
+
+// ---- a measured or dragged value to fxD decimals (v2.4b) ----
+// STRING(x, 2, d) on the Prime prints the SCIENTIFIC form whenever
+// 0 < |x| < 10^-d ("1.000E-4" for sigma = 0.0001 at three decimals;
+// Lessons Learned v7i section 3).  Rounded first, a value is either 0
+// or at least 10^-d, and the fixed form holds.  But a value that is
+// NOT 0 and rounds to 0 would then read 0.000, which is false too, so
+// it keeps n3_fmtp's honest "< 0.001" (or "> -0.001") instead.
+// Exactly 0 still reads 0.000 (x0 = mu gives z = 0.00).
+n3_Fx(fxV, fxD)
+BEGIN
+  LOCAL fxR;
+  fxR := ROUND(fxV, fxD);
+  // not 0, but it rounds to 0: the floor form ("< 0.001"); n3_fmtp
+  // writes it, because |fxV| < 0.5 x 10^-d is under its threshold
+  IF fxR == 0 AND fxV <> 0 THEN RETURN n3_fmtp(fxV, fxD); END;
+  RETURN STRING(fxR, 2, fxD);
+END;
+
+// ---- a value in a slot the text already names (v2.4b) ----
+// The summary writes "N(0.000, 1.000)": the slot says which number it
+// is.  A bare "< 0.001" there would not, so a value too small for its
+// decimals takes its name with it: "N(0.000, σ < 0.001)".  n3_Eq tells
+// the two forms apart (" = " + text for a plain number).
+n3_Nm(nmS, nmV, nmD)
+BEGIN
+  LOCAL nmT;
+  nmT := n3_Fx(nmV, nmD);
+  IF n3_Eq(nmT) == " = " + nmT THEN RETURN nmT; END;
+  RETURN nmS + " " + nmT;
+END;
+
+// ---- "nice" number for axis ticks ----
+// n3V is the raw step; roundf = 1 rounds to the nearest 1/2/5, 0 rounds up.
+// (The parameter was x in v2.2: bare x is the CAS variable, section 5.)
+n3_NiceNum(n3V, roundf)
+BEGIN
+  LOCAL expv, n3F, nf;
+  IF n3V <= 0 THEN RETURN 1; END;
+  expv := FLOOR(LOG(n3V));
+  n3F := n3V / 10^expv;
+  IF roundf THEN
+    CASE
+      IF n3F < 1.5 THEN nf := 1; END;
+      IF n3F < 3 THEN nf := 2; END;
+      IF n3F < 7 THEN nf := 5; END;
+      DEFAULT nf := 10;
+    END;
+  ELSE
+    CASE
+      IF n3F <= 1 THEN nf := 1; END;
+      IF n3F <= 2 THEN nf := 2; END;
+      IF n3F <= 5 THEN nf := 5; END;
+      DEFAULT nf := 10;
+    END;
+  END;
+  RETURN nf * 10^expv;
+END;
+
+// ---- wait for the finger to lift, but never for more than a second ----
+// MOUSE(1) is -1 while nothing touches the screen.  Without the time limit
+// a stuck or phantom touch would hold the program here for ever, and the
+// only way out would be a reset (Lessons Learned section 7; ChiTable's
+// csDrain, device-verified).  TICKS is the millisecond clock.
+n3_Drain()
+BEGIN
+  LOCAL drT;
+  drT := TICKS;
+  REPEAT UNTIL MOUSE(1) == -1 OR TICKS - drT > 1000;
+END;
+
+// ---- hold a page until any key OR a tap: drain, wait, drain ----
+// The house page-hold (ChiTable's csWaitAny).  A GETKEY drain does not
+// drain touch, so both are drained before and after the wait; GETKEY and
+// MOUSE are polled together so a tap closes the page as well as a key.
+n3_WaitAny()
+BEGIN
+  LOCAL waK, waM, waM1;
+  REPEAT waK := GETKEY; UNTIL waK == -1;
+  n3_Drain();
+  REPEAT
+    waK := GETKEY;
+    waM := MOUSE;
+    waM1 := waM(1);
+  UNTIL waK > -1 OR SIZE(waM1) > 0;
+  n3_Drain();
+  REPEAT waK := GETKEY; UNTIL waK == -1;
+END;
+
+// ---- the help page: every gesture and key on one drawn page ----
+// Drawn in G1 and shown with one blit (a MSGBOX shows only about five
+// lines).  Font 1 rows 12 px apart; section names in orange.
+n3_Help()
+BEGIN
+  LOCAL hpB, hpO, hpG;
+  hpB := RGB(0,0,0); hpO := RGB(255,69,0); hpG := RGB(90,90,90);
+  RECT_P(G1, 0, 0, 319, 239, RGB(255,255,255));
+  RECT_P(G1, 2, 2, 317, 237, hpO, RGB(255,240,220));
+  TEXTOUT_P("Norm3 v2.4b  -  touch and keys", G1, 8, 6, 2, hpO);
+  TEXTOUT_P("TOUCH (in the plot)", G1, 8, 26, 1, hpO);
+  TEXTOUT_P("Drag: x₀ follows your finger, with the blue", G1, 8, 38, 1, hpB);
+  TEXTOUT_P("  area, both P values and the magenta point.", G1, 8, 50, 1, hpB);
+  TEXTOUT_P("  Lift: x₀ snaps to a round value.", G1, 8, 62, 1, hpB);
+  TEXTOUT_P("Press ON the magenta S-curve, or on the 0-1", G1, 8, 74, 1, hpB);
+  TEXTOUT_P("  axis at the right: p is that height and", G1, 8, 86, 1, hpB);
+  TEXTOUT_P("  x₀ its quantile. Drag up the curve to 0.900.", G1, 8, 98, 1, hpB);
+  TEXTOUT_P("Press on the green dotted μ line: drag the mean.", G1, 8, 110, 1, hpB);
+  TEXTOUT_P("KEYS", G1, 8, 126, 1, hpO);
+  TEXTOUT_P("Soft keys: μ− μ+ σ− σ+, View (4 views), Quit", G1, 8, 138, 1, hpB);
+  TEXTOUT_P("⇆ = μ, ⇅ = σ (animated), +/- = x₀,", G1, 8, 150, 1, hpB);
+  TEXTOUT_P("0 = re-centre, Ent = menu, Esc = quit", G1, 8, 162, 1, hpB);
+  TEXTOUT_P("READING IT", G1, 8, 178, 1, hpO);
+  TEXTOUT_P("Blue = P(X ≤ x₀), light red = P(X > x₀).", G1, 8, 190, 1, hpB);
+  TEXTOUT_P("The pdf is a HEIGHT, not a probability.", G1, 8, 202, 1, hpG);
+  TEXTOUT_P("tap or press any key to return", G1, 8, 220, 1, RGB(30,144,255));
+  BLIT_P(G0, 0, 0, G1);
+  n3_WaitAny();
+END;
+
+EXPORT Norm3(mu,sd,x₀)
+BEGIN
+  LOCAL LFT,RGT,TOPy,BOT;
+  LOCAL W,H,N;
+  LOCAL xmin,xmax,dx,ymax,dX;
+  LOCAL n3I,n3J,n3X,n3Y;
+  LOCAL pxx,pyy,ppx,ppy;
+  LOCAL x0px,pdf0,cdf0,zz,n3Lo,n3Hi;
+  LOCAL cSh,cCp,cCv,cAx,cX0;
+  LOCAL cTx,cGrid,cMn,cGy,cOrg;
+  LOCAL kk,showMode,lastcy,cy;
+  LOCAL stp,ystp,nfrac,ynfrac;
+  LOCAL tickx,ticky,xv,yv;
+  LOCAL n3Pdf,n3Cdf,n3Lbl,n3X0;
+  LOCAL n3M,n3M1,n3Ev,n3Act,n3Quit;
+  LOCAL n3Drag,n3TX,n3TY,n3LX,n3LY;
+  LOCAL n3PX,n3Mu0,n3Sh,n3P,n3Msg;
+  LOCAL n3Re,n3CdfOK,n3Fit,n3YFit,n3Snap;
+  LOCAL n3Anim,n3SdA,n3SdB,n3C,n3Off;
+  LOCAL n3Zp,n3Za,n3Zs,n3K,n3Mx;
+  LOCAL n3XS,n3XT;
+
+  IF sd <= 0 THEN RETURN "σ must be > 0"; END;
+  // x₀ arrives as the third argument; the program works on an ASCII copy,
+  // n3X0, so that no new non-ASCII name appears in the code (house rule:
+  // no new Unicode in executable code; x₀ stays as the Home signature).
+  n3X0 := x₀;
+
+  // ---- constants (screen 320x240, origin top-left, y increases DOWN) ----
+  // Rows ABOVE the plot: 1 = title (μ, σ), 11 = x₀ / z / pdf readout,
+  // 22-34 = the two area keys.  So the plot starts at TOPy = 37.
+  // Rows BELOW it: x tick labels at BOT+4 = 194, the z-ruler at
+  // BOT+14 = 204 (ends by 214).  Nothing is drawn below 216: the soft-key
+  // strip DRAWMENU paints is 218..239.
+  // RGT is 302 (was 314) so that the right-hand CDF axis labels ("1",
+  // ".5", "0") fit between it and the screen edge.
+  // THE TOUCH HANDLER USES THESE SAME CONSTANTS: a finger at pixel column
+  // px means x = xmin + (px - LFT)/W*(xmax - xmin), the drawing's own map.
+  LFT:= 24; RGT:=302; TOPy:=37; BOT:=190;
+  W:=RGT-LFT; H:=BOT-TOPy; N:=W;
+  // palette (Lessons Learned section 13), set once, not inside loops
+  cSh:=RGB(170,205,255); cCp:=RGB(255,235,235); cCv:=RGB(0,60,200);
+  cAx:=RGB(0,0,0); cX0:=RGB(255,0,0); cTx:=RGB(200,0,200);
+  cGrid:=RGB(225,228,235); cMn:=RGB(0,140,60); cGy:=RGB(90,90,90);
+  cOrg:=RGB(255,69,0);
+  showMode := 0;    // 0 = grid+CDF, 1 = grid, 2 = CDF, 3 = plain
+
+  // ---- the state of the touch loop ----
+  // n3Drag: what the finger holds -- 0 nothing, 1 x₀, 2 the S-curve
+  //   (inverse), 3 the mean.  n3Sh: while the mean is held, how many
+  //   pixel columns it has moved (the cache is read shifted by that).
+  // n3Re = 1: the pdf cache must be refilled (μ, σ or the window moved).
+  // n3CdfOK = 1: the CDF cache matches the pdf cache.
+  // n3Fit = 1: re-centre the window on μ ± 4σ.  n3YFit = 1: refit the
+  //   y-scale.  n3Anim: frames of the σ animation still to draw.
+  // n3Msg = 1: row 2 shows the inverse "p = ... -> x₀ = ...".
+  n3Drag := 0; n3Sh := 0; n3Msg := 0; n3Act := 0; n3Quit := 0;
+  n3Anim := 0; n3SdA := sd; n3SdB := sd; n3P := 0.5;
+  n3Fit := 1; n3YFit := 1; n3Re := 1; n3CdfOK := 0;
+  n3LX := -1; n3LY := -1; n3PX := 0; n3Mu0 := mu;
+  xmin := mu - 4*sd; xmax := mu + 4*sd; ymax := 1;
+  pdf0 := 0; cdf0 := 0;
+
+  // ---- caches, sized once: n3Pdf(k) and n3Cdf(k) hold the pdf and CDF
+  //      at pixel column k (x = xmin + k*dx), k = 1..N.  v2.4b: the
+  //      MAKELIST counter is this routine's own LOCAL n3I, so Home's K
+  //      is left alone (v2.4a counted with K, which overwrote K in Home).
+  //      GfxProbe T19 (emulator, 17 Oct 2026) showed a LOCAL counter
+  //      works; Lessons Learned v7i section 5: new code uses one. ----
+  n3Pdf := MAKELIST(0, n3I, 1, N, 1);
+  n3Cdf := MAKELIST(0, n3I, 1, N, 1);
+
+  DIMGROB_P(G1,320,240);            // off-screen buffer, built once
+
+  // ---- drain the key that closed the launch form, and any touch, so
+  //      neither can satisfy the first wait below (section 7) ----
+  REPEAT kk := GETKEY; UNTIL kk == -1;
+  n3_Drain();
+
+  REPEAT
+    // ==== 1. the σ animation: one step per pass, no waiting ====
+    // Frames 4, 3, 2, 1 to go move σ a quarter of the way each, with the
+    // window AND the y-scale held, so the peak visibly falls and spreads
+    // (or rises and narrows) while the area under it stays 1.  The last
+    // frame (n3Anim = 1) refits the y-scale to the new peak.
+    IF n3Anim > 0 THEN
+      IF n3Anim > 1 THEN
+        sd := n3SdB + (n3SdA - n3SdB)*(n3Anim - 2)/4;
+        n3Re := 1;
+      ELSE
+        n3YFit := 1;
+      END;
+      n3Anim := n3Anim - 1;
+    END;
+
+    // ==== 2. the window: frozen, re-centred only on request ====
+    // Lessons Learned section 6: a window that tracks μ keeps the bell
+    // centred for ever and moving the mean looks like nothing happening.
+    // So the window is set to μ ± 4σ on entry and on 0 (re-centre), and
+    // otherwise held.  x₀ may still PUSH it: past an edge, the window
+    // stretches to x₀ ± 0.5σ, as in v2.3.
+    IF n3Fit == 1 THEN
+      xmin := mu - 4*sd;
+      xmax := mu + 4*sd;
+      n3Fit := 0; n3YFit := 1; n3Re := 1;
+    END;
+    IF n3X0 < xmin THEN xmin := n3X0 - 0.5*sd; n3Re := 1; END;
+    IF n3X0 > xmax THEN xmax := n3X0 + 0.5*sd; n3Re := 1; END;
+    // y-range: the peak is known in closed form.  Headroom 1.45 (v2.3:
+    // 1.15) so that one σ step DOWN (peak x 1.25) still fits while the
+    // animation holds the scale.  Refitted after σ changes only -- μ does
+    // not change a normal's peak height.
+    IF n3YFit == 1 THEN
+      ymax := NORMALD(mu, sd, mu)*1.45;
+      n3YFit := 0;
+    END;
+    dx := (xmax - xmin)/N;
+    dX := (xmax - xmin)/40;           // x₀ slide step for the +/- keys
+    // the grid x₀ and μ snap to on lift: 1/100 of the window, 1-2-5
+    n3Snap := n3_NiceNum((xmax - xmin)/100, 1);
+
+    // ==== 3. the cache: refilled only when μ, σ or the window changed ====
+    // Moving x₀ (keys, finger, S-curve) needs no refill at all: the pdf
+    // and CDF at every column are the same; only the shading boundary
+    // and the marker move.  The CDF is filled only in the views that
+    // draw it.
+    IF n3Re == 1 THEN
+      FOR n3I FROM 1 TO N DO
+        n3Pdf(n3I) := NORMALD(mu, sd, xmin + n3I*dx);
+      END;
+      n3Re := 0; n3CdfOK := 0;
+    END;
+    IF (showMode == 0 OR showMode == 2) AND n3CdfOK == 0 THEN
+      FOR n3I FROM 1 TO N DO
+        n3Cdf(n3I) := NORMALD_CDF(mu, sd, xmin + n3I*dx);
+      END;
+      n3CdfOK := 1;
+    END;
+
+    // ==== 4. the values at x₀ (two calls a frame) ====
+    pdf0 := NORMALD(mu, sd, n3X0);
+    cdf0 := NORMALD_CDF(mu, sd, n3X0);
+    zz   := (n3X0 - mu)/sd;
+    x0px := IP(LFT + (n3X0 - xmin)/(xmax - xmin)*W);
+
+    RECT_P(G1,0,0,319,239,RGB(255,255,255));      // clear the buffer
+
+    // ---- nice-number tick positions ----
+    stp := n3_NiceNum((xmax - xmin)/6, 1);
+    nfrac := MAX(0, -FLOOR(LOG(stp)));
+    ystp := n3_NiceNum(ymax/4, 1);
+    ynfrac := MAX(0, -FLOOR(LOG(ystp)));
+
+    // ---- grid at nice values (behind everything) ----
+    IF showMode == 0 OR showMode == 1 THEN
+      xv := CEILING(xmin/stp)*stp;
+      WHILE xv <= xmax + stp/1000 DO
+        tickx := LFT + IP((xv - xmin)/(xmax - xmin)*W);
+        IF tickx > LFT AND tickx <= RGT THEN
+          LINE_P(G1, tickx, TOPy, tickx, BOT-1, cGrid);
+        END;
+        xv := xv + stp;
+      END;
+      yv := ystp;
+      WHILE yv < ymax DO
+        ticky := BOT - IP(yv/ymax*H);
+        LINE_P(G1, LFT+1, ticky, RGT, ticky, cGrid);
+        yv := yv + ystp;
+      END;
+    END;
+
+    // ---- ONE pass over the pixel columns: shading, then the curve ----
+    // Column k (screen x = LFT + k) is x = xmin + k*dx.  Left of x₀ the
+    // column is shaded blue (the area P(X <= x₀)), right of it light red
+    // (the complement P(X > x₀)); then the curve segment into this column
+    // is drawn on top.  Each column's height comes from the cache.  While
+    // the mean is held (n3Sh <> 0) the bell has slid by n3Sh whole
+    // columns, so column k reads cache entry k - n3Sh; the few columns
+    // the cache does not cover are computed directly.
+    ppx := -1;
+    FOR n3I FROM 1 TO N DO
+      pxx := LFT + n3I;
+      n3X := xmin + n3I*dx;
+      n3J := n3I - n3Sh;
+      IF n3J >= 1 AND n3J <= N THEN
+        n3Y := n3Pdf(n3J);
+      ELSE
+        n3Y := NORMALD(mu, sd, n3X);
+      END;
+      pyy := IP(BOT - n3Y/ymax*H);
+      IF pyy < TOPy THEN pyy := TOPy; END;
+      IF n3X <= n3X0 THEN
+        LINE_P(G1, pxx, BOT, pxx, pyy, cSh);
+      ELSE
+        LINE_P(G1, pxx, BOT, pxx, pyy, cCp);
+      END;
+      IF ppx >= 0 THEN LINE_P(G1, ppx, ppy, pxx, pyy, cCv); END;
+      ppx := pxx; ppy := pyy;
+    END;
+
+    // ---- CDF S-curve (0..1 over the full plot height) and its axis ----
+    IF showMode == 0 OR showMode == 2 THEN
+      lastcy := -1;
+      FOR n3I FROM 1 TO N DO
+        n3J := n3I - n3Sh;
+        IF n3J >= 1 AND n3J <= N THEN
+          n3Y := n3Cdf(n3J);
+        ELSE
+          n3Y := NORMALD_CDF(mu, sd, xmin + n3I*dx);
+        END;
+        cy := IP(BOT - n3Y*H);
+        pxx := LFT + n3I;
+        IF lastcy >= 0 THEN LINE_P(G1, pxx-1, lastcy, pxx, cy, cTx); END;
+        lastcy := cy;
+      END;
+      // the right-hand 0-1 axis for the S-curve: a magenta line at RGT
+      // with ticks at 0, .5 and 1 (it replaces v2.3's lone "1")
+      LINE_P(G1, RGT, TOPy, RGT, BOT, cTx);
+      FOR n3I FROM 0 TO 2 DO
+        ticky := BOT - IP(n3I*H/2);
+        LINE_P(G1, RGT, ticky, RGT+3, ticky, cTx);
+      END;
+      TEXTOUT_P("1", G1, RGT+6, TOPy-4, 1, cTx);
+      TEXTOUT_P(".5", G1, RGT+5, BOT-IP(H/2)-4, 1, cTx);
+      TEXTOUT_P("0", G1, RGT+6, BOT-9, 1, cTx);
+    END;
+
+    // ---- mean marker: DOTTED vertical at μ (3 px wide while held) ----
+    n3Mx := LFT + IP((mu - xmin)/(xmax - xmin)*W);
+    IF n3Mx > LFT AND n3Mx < RGT THEN
+      FOR n3I FROM TOPy TO BOT STEP 4 DO
+        PIXON_P(G1, n3Mx, n3I, cMn);
+        IF n3Drag == 3 THEN
+          PIXON_P(G1, n3Mx-1, n3I, cMn);
+          PIXON_P(G1, n3Mx+1, n3I, cMn);
+          PIXON_P(G1, n3Mx, n3I+1, cMn);
+        END;
+      END;
+    END;
+
+    // ---- axes + labelled nice ticks ----
+    LINE_P(G1, LFT, BOT, RGT, BOT, cAx);
+    LINE_P(G1, LFT, BOT, LFT, TOPy, cAx);
+    xv := CEILING(xmin/stp)*stp;
+    WHILE xv <= xmax + stp/1000 DO
+      tickx := LFT + IP((xv - xmin)/(xmax - xmin)*W);
+      IF tickx >= LFT AND tickx <= RGT THEN
+        LINE_P(G1, tickx, BOT, tickx, BOT+3, cAx);
+        // BELOW the axis, centred under the tick: font 1 runs about 6 px a
+        // character, so 3*SIZE(label) is half the label's width.
+        n3Lbl := STRING(xv,2,nfrac);
+        TEXTOUT_P(n3Lbl, G1, tickx - 3*SIZE(n3Lbl), BOT+4, 1, cGy);
+      END;
+      xv := xv + stp;
+    END;
+    yv := ystp;
+    WHILE yv < ymax DO
+      ticky := BOT - IP(yv/ymax*H);
+      LINE_P(G1, LFT-3, ticky, LFT, ticky, cAx);
+      TEXTOUT_P(STRING(yv,2,ynfrac), G1, 1, ticky-4, 1, cGy);
+      yv := yv + ystp;
+    END;
+
+    // ---- z-ruler: z = -3..3 at μ + k*σ, under the x labels ----
+    // The same column map as everything else, so a z label sits exactly
+    // under the x value it standardises.  n3Zp is one σ in pixels: below
+    // 14 px only z = -3, 0, 3 are labelled, below 5 px only z = 0.
+    TEXTOUT_P("x", G1, 8, BOT+4, 1, cGy);
+    TEXTOUT_P("z", G1, 8, BOT+14, 1, cGy);
+    n3Zp := sd/(xmax - xmin)*W;
+    n3Za := -3; n3Zs := 1;
+    IF n3Zp < 14 THEN n3Zs := 3; END;
+    IF n3Zp < 5 THEN n3Za := 0; END;
+    FOR n3K FROM n3Za TO -n3Za STEP n3Zs DO
+      tickx := LFT + IP((mu + n3K*sd - xmin)/(xmax - xmin)*W);
+      IF tickx >= LFT AND tickx <= RGT THEN
+        n3Lbl := STRING(n3K,2,0);
+        TEXTOUT_P(n3Lbl, G1, tickx - 3*SIZE(n3Lbl), BOT+14, 1, cGy);
+      END;
+    END;
+
+    // ---- x₀ marker (solid red vertical) + dotted line to the y-axis ----
+    pyy  := IP(BOT - pdf0/ymax*H);
+    IF pyy < TOPy THEN pyy := TOPy; END;
+    LINE_P(G1, x0px, BOT, x0px, pyy, cX0);
+    FOR n3I FROM LFT+1 TO x0px STEP 4 DO
+      PIXON_P(G1, n3I, pyy, cX0);
+    END;
+    // ---- the magenta point riding the S-curve at x₀, with a dotted
+    //      line across to the right-hand axis, where its height is read
+    //      as P(X <= x₀) ----
+    IF showMode == 0 OR showMode == 2 THEN
+      cy := IP(BOT - cdf0*H);
+      FOR n3I FROM x0px+4 TO RGT STEP 4 DO
+        PIXON_P(G1, n3I, cy, cTx);
+      END;
+      RECT_P(G1, x0px-2, cy-2, x0px+2, cy+2, cTx);
+    END;
+
+    // ---- the rows above the plot ----
+    // Row 1: the distribution; an orange hint when pressing 0 would move
+    // the frozen window by more than a tenth of its width: μ or σ has
+    // moved a long way, or x₀ pushed the window and has come back since.
+    // (n3Lo..n3Hi is the window a re-centre would give: μ ± 4σ,
+    // stretched for x₀ exactly as the fit in step 2 does.)
+    // v2.4b: n3_Fx rounds before STRING (never the scientific form), and
+    // n3_Eq writes " = 1.000" or, for a σ too small for three decimals,
+    // " < 0.001": "Normal  μ = 0.000, σ < 0.001" after 31 σ- presses
+    TEXTOUT_P("Normal  μ"+n3_Eq(n3_Fx(mu,3))+", σ"+n3_Eq(n3_Fx(sd,3)),
+              G1, 4, 1, 1, cAx);
+    n3Lo := mu - 4*sd; n3Hi := mu + 4*sd;
+    IF n3X0 < n3Lo THEN n3Lo := n3X0 - 0.5*sd; END;
+    IF n3X0 > n3Hi THEN n3Hi := n3X0 + 0.5*sd; END;
+    n3Off := ABS(n3Lo - xmin) + ABS(n3Hi - xmax);
+    IF n3Off > (xmax - xmin)/10 THEN
+      TEXTOUT_P("0 = re-centre", G1, 236, 1, 1, cOrg);
+    END;
+    // Row 2: x₀, z and the pdf -- a HEIGHT at x₀, not a probability (it
+    // passes 1 when σ is small).  After the S-curve, the inverse instead.
+    // v2.4b: x₀ and z through n3_Fx and n3_Eq ("x₀ < 0.01" for a press
+    // at p = 0.51 with σ = 0.1, where v2.4a printed the scientific form).
+    // n3P needs no ROUND: its clamp below keeps it at 0.005 or more.
+    IF n3Msg == 1 THEN
+      TEXTOUT_P("p = "+STRING(n3P,2,3)+" "+CHAR(8594)+" x₀"+n3_Eq(n3_Fx(n3X0,2))+
+                ", z"+n3_Eq(n3_Fx(zz,2)), G1, 4, 11, 1, cTx);
+    ELSE
+      // v2.4a: n3_Eq -- "pdf < 0.0001 (a height)", not "pdf = < 0.0001"
+      TEXTOUT_P("x₀"+n3_Eq(n3_Fx(n3X0,2))+", z"+n3_Eq(n3_Fx(zz,2))+
+                ", pdf"+n3_Eq(n3_fmtp(pdf0,4))+" (a height)", G1, 4, 11, 1, cTx);
+    END;
+    // Row 3: the two areas, each on a key filled with its shading colour
+    // v2.4a: n3_Eq on both keys, and P(X > x₀) as the LOWER tail
+    // NORMALD_CDF(μ, σ, 2μ - x₀): the same number, but a tail too small for
+    // the CDF's last digit is kept ("< 0.0001") instead of 1 - 1 = 0
+    RECT_P(G1, 3, 22, 129, 34, cCv, cSh);
+    TEXTOUT_P("P(X ≤ x₀)"+n3_Eq(n3_fmtp(cdf0,4)), G1, 6, 24, 1, cAx);
+    RECT_P(G1, 135, 22, 261, 34, cX0, cCp);
+    TEXTOUT_P("P(X > x₀)"+n3_Eq(n3_fmtp(NORMALD_CDF(mu, sd, 2*mu - n3X0),4)), G1, 138, 24, 1, cAx);
+
+    BLIT_P(G0, 0, 0, G1);             // one flicker-free page flip
+    // the soft keys, painted on the screen after the blit, every frame
+    DRAWMENU({"μ−", "μ+", "σ−", "σ+", "View", "Quit"});
+
+    // ==== 5. input: a key, a press, a drag sample, or a lift ====
+    // n3Ev: 1 a press or a moved finger, 2 the finger lifted, 3 a key.
+    // While something is held (n3Drag > 0) the loop waits until the
+    // finger MOVES or lifts: MOUSE keeps reporting a finger that rests,
+    // and redrawing for it would only burn time (NormExplorer beta 41).
+    // A key during a hold ends the hold (the way out of a stuck touch).
+    n3Ev := 0; kk := -1;
+    IF n3Anim > 0 THEN
+      n3Ev := 9;                      // the animation draws its next frame
+    ELSE
+      REPEAT
+        kk := GETKEY;
+        n3M := MOUSE;
+        n3M1 := n3M(1);
+        IF n3Drag > 0 THEN
+          IF SIZE(n3M1) == 0 THEN
+            n3Ev := 2;
+          ELSE
+            IF n3M1(1) <> n3LX OR n3M1(2) <> n3LY THEN n3Ev := 1; END;
+          END;
+        ELSE
+          IF SIZE(n3M1) > 0 THEN n3Ev := 1; END;
+        END;
+        IF kk > -1 THEN n3Ev := 3; END;
+      UNTIL n3Ev > 0;
+    END;
+
+    // ---- a press or a drag sample ----
+    IF n3Ev == 1 THEN
+      n3TX := n3M1(1); n3TY := n3M1(2);
+      IF n3Drag == 0 THEN
+        // A NEW PRESS: decide what it holds, once, from the first sample.
+        IF n3TY >= 218 THEN
+          // the soft-key strip: six 53-px slots; act once, on the lift
+          n3_Drain();
+          n3Act := MIN(6, IP(n3TX/53.4) + 1);
+        ELSE
+          IF n3TX >= LFT AND n3TX <= RGT AND n3TY >= TOPy AND n3TY <= BOT THEN
+            n3PX := n3TX;
+            // the mean line, if the press is within 6 px of it and
+            // nearer it than the x₀ line (a tie goes to x₀)
+            IF n3Mx > LFT AND n3Mx < RGT AND ABS(n3TX - n3Mx) <= 6
+               AND ABS(n3TX - n3Mx) < ABS(n3TX - x0px) THEN
+              n3Drag := 3; n3Mu0 := mu; n3Sh := 0;
+            ELSE
+              n3Drag := 1;
+              // the S-curve, if it is drawn and the press is ON it (within
+              // 16 px, vertically) and nearer it than the bell in that
+              // column (the caches hold both).  Without the 16 px a press
+              // low in the middle of the plot, where the S-curve crosses
+              // half height, would be read as the inverse and x₀ would
+              // jump to a quantile instead of to the finger.
+              IF showMode == 0 OR showMode == 2 THEN
+                n3J := MAX(1, MIN(N, n3TX - LFT));
+                n3Y := ABS(n3TY - (BOT - n3Cdf(n3J)*H));
+                IF n3Y <= 16 AND n3Y < ABS(n3TY - (BOT - n3Pdf(n3J)/ymax*H)) THEN
+                  n3Drag := 2;
+                END;
+              END;
+            END;
+          ELSE
+            // on the right-hand 0-1 axis: the inverse as well
+            IF (showMode == 0 OR showMode == 2) AND n3TX > RGT
+               AND n3TY >= TOPy AND n3TY <= BOT THEN
+              n3Drag := 2;
+            ELSE
+              n3_Drain();             // outside the plot: nothing to do
+            END;
+          END;
+        END;
+      END;
+      // APPLY THIS SAMPLE to what is held (the first sample too).  The
+      // finger is clamped to the plot box, so a drag that wanders off the
+      // plot holds x₀ at the edge instead of throwing it off screen.
+      IF n3Drag > 0 THEN
+        n3LX := n3TX; n3LY := n3TY;
+        n3TX := MAX(LFT+1, MIN(RGT, n3TX));
+        n3TY := MAX(TOPy, MIN(BOT, n3TY));
+        IF n3Drag == 1 THEN
+          // x₀ from the pixel column: the drawing's own map
+          n3X0 := xmin + (n3TX - LFT)/W*(xmax - xmin);
+          n3Msg := 0;
+        END;
+        IF n3Drag == 2 THEN
+          // p from the height on the right-hand 0-1 axis.  One pixel is
+          // 1/H = 0.0065 of p, so p is rounded to 0.01 (every 0.01 can be
+          // reached; a 0.005 grid would skip 0.500), and 0.025 / 0.975,
+          // the 95% central limits (z = -/+1.96), are caught within
+          // 0.0035.  p is kept inside the part of the S-curve on screen,
+          // so x₀ stays in the frozen window; then the inverse normal.
+          n3P := (BOT - n3TY)/H;
+          IF ABS(n3P - 0.975) < 0.0035 THEN
+            n3P := 0.975;
+          ELSE
+            IF ABS(n3P - 0.025) < 0.0035 THEN
+              n3P := 0.025;
+            ELSE
+              n3P := ROUND(n3P*100, 0)/100;
+            END;
+          END;
+          n3P := MAX(n3P, MAX(0.005, n3Cdf(2)));
+          n3P := MIN(n3P, MIN(0.995, n3Cdf(N-1)));
+          IF n3P > 0 AND n3P < 1 THEN
+            n3X0 := NORMALD_ICDF(mu, sd, n3P);
+            n3Msg := 1;
+          END;
+        END;
+        IF n3Drag == 3 THEN
+          // the mean slides by whole pixel columns: the bell is the
+          // cached one, n3Sh columns over
+          n3Sh := n3TX - n3PX;
+          mu := n3Mu0 + n3Sh*dx;
+          n3Msg := 0;
+        END;
+      END;
+    END;
+
+    // ---- the finger lifted (or a key ended the hold) ----
+    IF n3Ev == 2 OR (n3Ev == 3 AND n3Drag > 0) THEN
+      IF n3Drag == 1 THEN
+        // x₀ snaps to the grid, staying inside the window
+        n3X0 := ROUND(n3X0/n3Snap, 0)*n3Snap;
+        IF n3X0 > xmax THEN n3X0 := n3X0 - n3Snap; END;
+        IF n3X0 < xmin THEN n3X0 := n3X0 + n3Snap; END;
+      END;
+      IF n3Drag == 3 THEN
+        // μ snaps to the grid; the cache is refilled for the true μ
+        mu := ROUND(mu/n3Snap, 0)*n3Snap;
+        n3Sh := 0; n3Re := 1;
+      END;
+      n3Drag := 0;
+      n3_Drain();
+    END;
+
+    // ---- keys: the hardware keys stay as shortcuts for the strip ----
+    // n3Act: 1 μ-, 2 μ+, 3 σ-, 4 σ+, 5 view, 6 quit (the six soft keys),
+    //        7 x₀-, 8 x₀+, 9 re-centre, 10 menu
+    IF n3Ev == 3 THEN
+      IF kk == 7  THEN n3Act := 1;  END;  // Left  : μ down
+      IF kk == 8  THEN n3Act := 2;  END;  // Right : μ up
+      IF kk == 12 THEN n3Act := 3;  END;  // Down  : σ down
+      IF kk == 2  THEN n3Act := 4;  END;  // Up    : σ up
+      IF kk == 4  THEN n3Act := 6;  END;  // Esc   : quit
+      IF kk == 45 THEN n3Act := 7;  END;  // (-)   : x₀ down
+      IF kk == 50 THEN n3Act := 8;  END;  // (+)   : x₀ up
+      IF kk == 42 THEN n3Act := 9;  END;  // 0     : re-centre
+      IF kk == 30 THEN n3Act := 10; END;  // Enter : menu
+    END;
+
+    // ---- the menu (Enter): Help, Next view, Re-centre, Quit ----
+    IF n3Act == 10 THEN
+      n3Act := 0;
+      n3C := 0;
+      CHOOSE(n3C, "Norm3", {"Help: touch and keys", "Next view",
+                            "Re-centre the window", "Quit"});
+      // the press that closed the menu can arrive again underneath
+      REPEAT kk := GETKEY; UNTIL kk == -1;
+      n3_Drain();
+      IF n3C == 1 THEN n3_Help(); END;
+      IF n3C == 2 THEN n3Act := 5; END;
+      IF n3C == 3 THEN n3Act := 9; END;
+      IF n3C == 4 THEN n3Act := 6; END;
+    END;
+
+    // ---- do it ----
+    // ADAPTIVE STEPS: μ moves by σ/4 and σ scales by x1.25, so the controls
+    // behave the same whether σ is 0.25 or 100.
+    IF n3Act == 1 THEN mu := mu - sd/4; n3Re := 1; n3Msg := 0; END;
+    IF n3Act == 2 THEN mu := mu + sd/4; n3Re := 1; n3Msg := 0; END;
+    IF n3Act == 3 OR n3Act == 4 THEN
+      // start the σ animation: from σ to the new σ over four frames
+      n3SdA := sd;
+      IF n3Act == 3 THEN n3SdB := MAX(0.0001, sd/1.25); ELSE n3SdB := sd*1.25; END;
+      n3Anim := 5;
+      n3Msg := 0;
+    END;
+    IF n3Act == 5 THEN showMode := (showMode+1) MOD 4; END;
+    IF n3Act == 6 THEN n3Quit := 1; END;
+    IF n3Act == 7 THEN n3X0 := n3X0 - dX; n3Msg := 0; END;
+    IF n3Act == 8 THEN n3X0 := n3X0 + dX; n3Msg := 0; END;
+    IF n3Act == 9 THEN n3Fit := 1; END;
+    n3Act := 0;
+  UNTIL n3Quit == 1;
+
+  // ---- export the final state so it can be read in Home ----
+  EP_NORM_MU  := mu;
+  EP_NORM_SD  := sd;
+  EP_NORM_X0  := n3X0;
+  EP_NORM_Z   := (n3X0 - mu)/sd;
+  EP_NORM_PDF := NORMALD(mu, sd, n3X0);
+  EP_NORM_CDF := NORMALD_CDF(mu, sd, n3X0);
+
+  // v2.4b: x₀ rounded first (n3_Fx).  A plain x₀ goes inside P( ) as
+  // before; one too small for two decimals keeps its name there and its
+  // size after the area: "P(X ≤ x₀) = 0.5016 with x₀ < 0.01".
+  n3XS := n3_Fx(n3X0,2); n3XT := "";
+  IF n3_Eq(n3XS) <> " = " + n3XS THEN
+    n3XT := " with x₀ " + n3XS;
+    n3XS := "x₀";
+  END;
+  // v2.4a: n3_Eq -- "P(X ≤ -5.00) < 0.0001", not "= < 0.0001".
+  // v2.4b: μ and σ through n3_Nm ("N(0.000, σ < 0.001)")
+  RETURN "Norm3: N(" + n3_Nm("μ",mu,3) + ", " + n3_Nm("σ",sd,3) + "), P(X ≤ " +
+         n3XS + ")" + n3_Eq(n3_fmtp(EP_NORM_CDF,4)) + n3XT + "; values in EP_NORM_*";
+END;

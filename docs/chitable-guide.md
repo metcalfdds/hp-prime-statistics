@@ -1,8 +1,8 @@
-# ChiTable beta 3b: User's Guide
+# ChiTable beta 3d: User's Guide
 
 ChiTable runs a chi-square test for a 2 × 2, 2 × 3 or 3 × 2 table on the HP Prime. The engine is pure PPL, with no MicroPython: the arithmetic is light, and the live touch screens belong in PPL. Beta 3 adds a few **exact answers from the calculator's CAS** (its computer algebra system), shown beside the decimals the program has always computed.
 
-**Status: betas 2 and 3b have not yet been run on hardware.** Beta 2 passed every item of its checklist on the HP Prime Virtual Calculator (2.4.2, build 2026-09-09) on 17 Oct 2026, with every number matching SciPy. Beta 3b's CAS lines have run only in the off-device harness. They use the CAS call form that CASProbe beta 1b found on the emulator, the one ErrorRate beta 1a has already shown working there. Beta 1j ran on an HP Prime G2 and a G1, both on the 2026-09-09 firmware (2.4.2), on 10 Oct 2026. That run covered the entry grid and its soft keys, the Values form, the results pages and all three plots.
+**Status: beta 3d (19 Oct 2026) has run in the PC test harness only; beta 3c passed the emulator retest on 17 Oct 2026. Betas 2 to 3d have not yet been run on hardware.** Beta 2 passed every item of its checklist on the HP Prime Virtual Calculator (2.4.2, build 2026-09-09) on 17 Oct 2026, with every number matching SciPy. Beta 3b's CAS lines have run only in the off-device harness. They use the CAS call form that CASProbe beta 1b found on the emulator, the one ErrorRate beta 1a has already shown working there. Beta 1j ran on an HP Prime G2 and a G1, both on the 2026-09-09 firmware (2.4.2), on 10 Oct 2026. That run covered the entry grid and its soft keys, the Values form, the results pages and all three plots.
 
 - **What has been checked off-device:**
   - The arithmetic was verified against scipy and statsmodels on 4,900 random tables. It has not changed since.
@@ -10,6 +10,13 @@ ChiTable runs a chi-square test for a 2 × 2, 2 × 3 or 3 × 2 table on the HP P
   - Beta 3's exact answers are checked in `verify_ChiTable_beta3.py`. Every CAS text the program builds was run through desktop Giac (the engine inside the Prime's CAS, a newer build) for 18 chosen and 450 random tables. Each answer was compared with Python's exact fractions and with SciPy's `fisher_exact` and `chi2_contingency`. Every screen was also run in the off-device harness twice: once with Giac answering, and once with every CAS call failing.
   - Beta 3b's checks are in `verify_ChiTable_beta3b.py` (5,969 checks, 0 failures), in the harness that follows the Prime's CAS (`ppl_run_v3c`).
 - **What to try first on the calculator:** `ChiTable_beta3_CHANGES.md` has a device checklist, ordered from least to most risky; `ChiTable_beta3a_CHANGES.md` and `ChiTable_beta3b_CHANGES.md` add what changed since.
+
+**beta 3d (19 Oct 2026): fixes from the fleet review.**
+- **Newcombe's interval for the risk difference.** It is built from the two rows' Wilson intervals. It never leaves [−1, 1] and never shrinks to width 0 at the extremes. The Wald interval it replaces did both: it left [−1, 1] in 17.8 % of the 2 × 2 tables with row totals up to 12. For the tea table, Wald gave (−0.10, 1.10) and Newcombe gives (−0.14, 0.79).
+- **Every chi-square p, and the `CS_P` export, is computed as a lower tail**: 2Φ(−√χ²) for 1 df, e^(−χ²/2) for 2 df. The Prime's 12-digit arithmetic made 1 − CDF exactly 0 past χ² ≈ 52; these forms keep their digits.
+- **The help now states the expected-count rule the program applies.**
+
+**beta 3c (17 Oct 2026): the compile fix.** Two comment lines moved out of a `CHOOSE` list. A comment inside an open bracket is a syntax error on the Prime.
 
 **beta 3b (17 Oct 2026): two menu lines shortened.** The emulator cut two CHOOSE lines at the edge of the box. The Results menu now reads "N / 10: counts divided by 10", and the Examples list reads "Death penalty × defendant" and "Death penalty × victim". Each results page still names the variable in full.
 
@@ -121,7 +128,7 @@ Counts are rounded to whole numbers. Run refuses a negative count, an empty tabl
 3. **The test:** χ², df, p (right tail), the critical value at α, the decision, Cramér's V with Cohen's label, the contingency coefficient C, the likelihood-ratio G², the smallest expected count and how many cells fall below 5.
 4. **Contributions:** (O − E)²/E per cell on top (they add to χ², shown in the corner), and the adjusted residual, blue when ≥ 2, red when ≤ −2.
 5. **What it means:** an APA-style line (`χ²(1, N = 674) = 13.16, p < .001, V = .14`), the decision in words, the effect size, the cell that drives the result, and the expected-count check.
-6. **2 × 2 only:** p₁ and p₂, the two-proportion z (z² = χ²), Yates' corrected χ², Fisher's exact two-sided p, risk difference, relative risk and odds ratio with 95% intervals, and phi. **Beta 3:** Fisher's p has its own line, as an exact fraction from the CAS when it fits ("p = 17/35 = 0.4857"), with its badge. The lines below it moved down a few pixels to make room.
+6. **2 × 2 only:** p₁ and p₂, the two-proportion z (z² = χ²), Yates' corrected χ², Fisher's exact two-sided p, risk difference (Newcombe's interval since beta 3d), relative risk and odds ratio (log method) with 95% intervals, and phi. **Beta 3:** Fisher's p has its own line, as an exact fraction from the CAS when it fits ("p = 17/35 = 0.4857"), with its badge. The lines below it moved down a few pixels to make room.
 7. **Where the numbers come from** (new; it is page 6 for a 2 × 3 or 3 × 2). See *Exact answers* below.
 
 The page number ("3/7") sits in a corner: the top-left cell of the table pages, the top right of the text pages. You can move between pages several ways:

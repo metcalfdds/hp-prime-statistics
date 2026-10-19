@@ -1,0 +1,239 @@
+A. Giac 1.9 (desktop icas): the templates avoid the symbolic-sum trap
+  sum(comb(..),csj,0,1)+...      -> ['34'], with 4 warning lines: "Warning: solving in csj equation Gamma(csj+1)^2*Gamma(-csj+5)^2=0"
+  sum(seq(comb(..),csj,0,1))+... -> ['34'], 0 warnings  (the form the program uses)
+  N(ad-bc)^2/(r1 r2 c1 c2), ex. 2  -> 5549501668/421789635;  comb(8,4) -> 70;  one r x c term -> 478898136/99048901
+
+B. the program's own CAS text (harness, cas=giac) against fractions and SciPy
+  lady tasting tea         Fisher 17/35                        (scipy 0.485714)  chi2 2 = 2.0000   runs [(0, 1), (3, 4)]   calls 6   digits 2
+  tea, other tail          Fisher 17/35                        (scipy 0.485714)  chi2 2 = 2.0000   runs [(0, 1), (3, 4)]   calls 6   digits 2
+  tea, all correct         Fisher 1/35                         (scipy 0.0285714)  chi2 8 = 8.0000   runs [(0, 0), (4, 4)]   calls 6   digits 2
+  p = 1 (the mode)         Fisher 1                            (scipy 1)  chi2 0 = 0.0000   runs [(0, 4)]   calls 6   digits 2
+  smallest, a tie          Fisher 1                            (scipy 1)  chi2 2 = 2.0000   runs [(0, 1)]   calls 6   digits 1
+  zero cell                Fisher 1/39                         (scipy 0.025641)  chi2 105/16 = 6.5625   runs [(0, 0), (5, 5)]   calls 6   digits 4
+  zero cell, a = 0         Fisher 1/39                         (scipy 0.025641)  chi2 105/16 = 6.5625   runs [(0, 0), (5, 5)]   calls 6   digits 4
+  symmetric ties           Fisher 283/2145                     (scipy 0.131935)  chi2 4 = 4.0000   runs [(0, 2), (6, 8)]   calls 6   digits 5
+  extreme                  Fisher 1/92378                      (scipy 1.08251e-05)  chi2 20 = 20.0000   runs [(0, 0), (10, 10)]   calls 6   digits 6
+  extreme, a = 0           Fisher 1/92378                      (scipy 1.08251e-05)  chi2 20 = 20.0000   runs [(0, 0), (10, 10)]   calls 6   digits 6
+  near extreme             Fisher 101/92378                    (scipy 0.00109333)  chi2 64/5 = 12.8000   runs [(0, 1), (9, 10)]   calls 6   digits 6
+  ordinary                 Fisher 149267/310155                (scipy 0.481266)  chi2 5577/7616 = 0.7323   runs [(5, 9), (12, 17)]   calls 6   digits 9
+  ordinary 2               Fisher 1063/46189                   (scipy 0.0230141)  chi2 12844/2025 = 6.3427   runs [(0, 2), (8, 9)]   calls 6   digits 5
+  example 1                Fisher 6311710625486602257167197785 (scipy 0.257782)  chi2 697832977/475195203 = 1.4685   runs [(0, 44), (53, 68)]   calls 6   digits 95
+  example 2                Fisher 1608086916452621047721794978 (scipy 0.000117698)  chi2 5549501668/421789635 = 13.1570   runs [(0, 38), (64, 68)]   calls 6   digits 95
+  tea x 10                 Fisher 845215940079519/568219919309 (scipy 1.48748e-05)  chi2 20 = 20.0000   runs [(0, 10), (30, 40)]   calls 6   digits 24
+  large N, few cases       Fisher 109748052851/151165177601    (scipy 0.726014)  chi2 125/249 = 0.5020   runs [(0, 3), (5, 8)]   calls 6   digits 22
+  example 2 x 10           Fisher state 3                      (scipy 2.77993e-38)  chi2 11099003336/84357927 = 131.5704   runs [(0, 374), (640, 680)]   calls 3   digits 956
+  tea: csXPText(33) = "p = 17/35 = 0.4857"
+  example 2: csXPText(33) = "p = 0.0001 (140-digit fraction)"  (the fraction has 68 + 72 = 140 digits)
+  example 2: csXX2Txt(44) = "= 5549501668/421789635 = 13.157"
+  r x c:
+  example 3 (2 x 3)        chi2 3668733438511/122005828000 = 30.0701 (scipy 30.0701), template 239 chars
+  example 4 (3 x 2)        chi2 3668733438511/122005828000 = 30.0701 (scipy 30.0701), template 239 chars
+  small 2 x 3              chi2 7/25 = 0.2800 (scipy 0.2800), template 145 chars
+  zero cells 3 x 2         chi2 925/72 = 12.8472 (scipy 12.8472), template 160 chars
+  example 3 x 10           chi2 3668733438511/12200582800 = 300.7015 (scipy 300.7015), template 281 chars
+
+C. random tables
+  300 random 2 x 2 and 150 random 2 x 3 / 3 x 2 tables done (failures, if any, listed above)
+
+D. end to end in the harness
+  [giac] tea typed in the grid, Run, pages 6 and 7, the Fisher plot; Quit returned "ChiTable: χ²(1, N = 8) = 2.0000, p = 0.1573, V = 0.5000"
+      p7| Where the numbers come from
+      p7| 7/7
+      p7| 1. χ², the 2 × 2 shortcut:
+      p7| exact (CAS)
+      p7| χ² = N(ad - bc)² / (r₁ r₂ c₁ c₂)
+      p7|   = 8 × (3 × 3 - 1 × 1)²
+      p7|       / (4 × 4 × 4 × 4)
+      p7|   = 8 × 8² / 256
+      p7|   = 2 = 2.000
+      p7| the same χ² as the sum of (O - E)²/E, page 3.
+      p7| 2. Fisher's p counts tables:
+      p7| exact (CAS)
+      p7| P(a) = C(4, a) × C(4, 4 - a) / C(8, 4)
+      p7| the chance of top-left count a, totals fixed.
+      p7| Tables no likelier than yours (red + magenta):
+      p7|   34 of the 70 equally likely ways
+      p7| p = 34/70 = 17/35 = 0.4857
+      p6| Fisher's exact test, two-sided: / p = 17/35 = 0.4857 / exact (CAS)
+      fp| Tables with these margins / exact (CAS) / red + magenta: p = 17/35 = 0.4857
+      CAS calls: 6
+  [fail] tea typed in the grid, Run, pages 6 and 7, the Fisher plot; Quit returned "ChiTable: χ²(1, N = 8) = 2.0000, p = 0.1573, V = 0.5000"
+      p7| Where the numbers come from
+      p7| 7/7
+      p7| 1. χ², the 2 × 2 shortcut:
+      p7| decimal
+      p7| χ² = N(ad - bc)² / (r₁ r₂ c₁ c₂)
+      p7|   = 8 × (3 × 3 - 1 × 1)²
+      p7|       / (4 × 4 × 4 × 4)
+      p7|   = 2.000
+      p7| the same χ² as the sum of (O - E)²/E, page 3.
+      p7| 2. Fisher's p counts tables:
+      p7| decimal
+      p7| P(a) = C(4, a) × C(4, 4 - a) / C(8, 4)
+      p7| the chance of top-left count a, totals fixed.
+      p7| Tables no likelier than yours (red + magenta):
+      p7|   (the CAS did not answer: the decimal only)
+      p7| p = 0.4857
+      p6| Fisher's exact test, two-sided: / p = 0.4857 / decimal
+      fp| Tables with these margins / decimal / red + magenta: p = 0.4857
+      CAS calls: 4
+  [quoted] every answer arrived as '"..."' (e.g. "17/35"): csCas dropped the quotes; page 6 "p = 17/35 = 0.4857"
+  [giac] example 2: 5 frames of page 7, 3 of page 6; 15 CAS calls
+      x10 N: C(6740, 680) has about 956 digits: too big
+      p7| Where the numbers come from
+      p7| 7/7
+      p7| 1. χ², the 2 × 2 shortcut:
+      p7| exact (CAS)
+      p7| χ² = N(ad - bc)² / (r₁ r₂ c₁ c₂)
+      p7|   = 674 × (64 × 155 - 451 × 4)²
+      p7|       / (515 × 159 × 68 × 606)
+      p7|   = 674 × 8116² / 3374317080
+      p7|   = 5549501668/421789635 = 13.157
+      p7| the same χ² as the sum of (O - E)²/E, page 3.
+      p7| 2. Fisher's p counts tables:
+      p7| exact (CAS)
+      p7| P(a) = C(515, a) × C(159, 68 - a) / C(674, 68)
+      p7| the chance of top-left count a, totals fixed.
+      p7| Tables no likelier than yours (red + magenta):
+      p7|   their ways, over all C(674, 68) ways:
+      p7| p = 0.0001 (140-digit fraction)
+  [fail] example 2: 5 frames of page 7, 3 of page 6; 11 CAS calls
+      ex3| Where the numbers come from
+      ex3| 6/6
+      ex3| 1. χ² for a 2 × 3 table:
+      ex3| exact (CAS)
+      ex3| χ² = sum of (O - E)² / E,  E = R × C / N
+      ex3| first cell: (762 - 1557 × 1246 / 2757)²
+      ex3|       / (1557 × 1246 / 2757), and 5 more
+      ex3|   = 3668733438511/122005828000 = 30.070
+      ex3| Every E is a fraction, so χ² is one too; the
+      ex3| decimal is the same as on page 3.
+      ex3| Fisher's exact p, as a fraction: 2 × 2 only.
+  [giac] examples 3 and 4: 2 exact-page frames, 2 CAS calls
+  [fail] examples 3 and 4: 2 exact-page frames, 2 CAS calls
+
+E. the fence
+  csCas is called by ['csXChi', 'csXFisher'] only; csXEnsure by ['csFishPlot', 'csPage2x2', 'csPageExact']; no drag, animation or frame routine reaches it
+  page 6 twice: 1 call; a bar drag (count 12 -> 8): 0 calls; page 6 after it: 1 call
+  the morph (10 frames) and a drag of the critical line (alpha 0.05 -> 0.147): 0 CAS calls
+  byte-identical to beta 2: csFisher, csFishW, csCheck, csTotals, csNewTable, csSetAlpha, csDrain, csWaitAny, csBarDrag, csMorph, csCurve
+  3d: csCompute, csAskAll, csEntry were byte-identical to beta 2 in beta 3c; beta 3d changes them (G3d)
+  3c: csCvDraw, csBars, csMosaic differ from beta 2 only by STRING(x, 2, d) -> STRING(ROUND(x, d), 2, d)
+  3a: beta 3 in v3b: csXFr = '', csXX2 = '' -- its csCas handed back its own text
+
+G. beta 3b against beta 3a (kept from the 3b script)
+  routines that differ from beta 3a: csExamples, csResMenu; everything else differs only in comments
+
+W. 3b: every CHOOSE line fits its box (the emulator cut two lines at about 31 characters)
+  23 CHOOSE lines, the longest 28 characters; beta 3a's two long ones: ["Death penalty × defendant's race", 'N / 10: every count divided by 10']
+
+R. 3c: the round-2 emulator findings (harness v3d; now v3e, run on beta 3d)
+  R1 own scan: beta 3b comments inside an open bracket at [1277, 1278] (the { of line 1274); beta 3d: none
+  R1 ppl_check_v4 E12: beta 3b 2, beta 3d 0
+  R1 csResMenu: the same code as beta 3b once comments are set aside; items ['Main menu', '×10 N: every count times 10', 'N / 10: counts divided by 10', 'Restore the original counts']
+  R2 csCas("34/70") with the CAS failing: '', no error
+  R2 csCas with Giac: 34/70 -> 17/35, comb(8,4) -> 70; 1/0 (the Prime prints +-inf), 0/0 (undef), a one-sided limit to infinity -> "" (refused)
+  R2 beta 3b csCas, the same failed call in v3d: stops -- INSTRING: Invalid input (the first argument is an empty string -- emul
+  R3 tea (pages 6, 7, Fisher plot)  cas=fail: beta 3d completes, 3 exact-page frames, all "decimal"; beta 3b stops in csCas: INSTRING: Invalid input (the first argum
+  R3 example 2, x10 N, N / 10       cas=fail: beta 3d completes, 4 exact-page frames, all "decimal"; beta 3b stops in csCas: INSTRING: Invalid input (the first argum
+  R3 examples 3 and 4               cas=fail: beta 3d completes, 2 exact-page frames, all "decimal"; beta 3b stops in csCas: INSTRING: Invalid input (the first argum
+  R4 near independence (chi2 0.0003, V 0.0003, z, RD ~ 0)       beta 3d: 0 scientific, 20 screens; beta 3b: 31 scientific
+      | H₀: row and column variables are independent
+      | H₁: they are associated (not independent)
+      | χ² = sum of (O - E)² / E = 0.000
+      | p-value p = 0.9874   (right tail, df = 1)
+      | critical value at α = 0.05: 3.841
+      | Decision: χ² < critical, p >= α
+      | z, two proportions = -0.016;  z² = χ² = 0.00
+      | Risk diff. p1 - p2 = -0.0002 (-0.0312, 0.0307)
+      | phi = +0.000   (positive when a*d > b*c)
+      | 4001
+      | 40010
+      | 0.00
+      | 0.00
+      | 0.000
+      | 0.000
+  R4 a sparse table (E 0.0002, p2 0.00005), alpha typed 0.00005 beta 3d: 0 scientific, 20 screens; beta 3b: 30 scientific
+      | Set α (now 0.00005)  /  critical value at α = 0.00005: 16.448
+  R4 rare outcome (p1, p2 under 0.0001, RR bounds)              beta 3d: 0 scientific, 20 screens; beta 3b: 15 scientific
+  R4 the tea table                                              beta 3d: 0 scientific, 20 screens; beta 3b: 1 scientific
+  R4 beta 3b printed, in these runs (value, digits -> text):
+      STRING(0.00166658, 2, 1) -> 1.7ᴇ-3
+      STRING(0.00333317, 2, 1) -> 3.3ᴇ-3
+      STRING(0.00499925, 2, 1) -> 5.0ᴇ-3
+      STRING(0.00666622, 2, 1) -> 6.7ᴇ-3
+      STRING(0.0099985, 2, 1) -> 1.0ᴇ-2
+      STRING(8.33236e-06, 2, 2) -> 8.33ᴇ-6
+      STRING(4.99825e-05, 2, 2) -> 5.00ᴇ-5
+      STRING(6.24219e-05, 2, 2) -> 6.24ᴇ-5
+      STRING(6.24532e-05, 2, 2) -> 6.25ᴇ-5
+      STRING(0.00019997, 2, 2) -> 2.00ᴇ-4
+      STRING(0.000249813, 2, 2) -> 2.50ᴇ-4
+      STRING(0.0023569, 2, 2) -> 2.36ᴇ-3
+      STRING(0.00249813, 2, 2) -> 2.50ᴇ-3
+      STRING(1.6665e-05, 2, 3) -> 1.667ᴇ-5
+      STRING(6.24532e-05, 2, 3) -> 6.245ᴇ-5
+      STRING(0.000124875, 2, 3) -> 1.249ᴇ-4
+      STRING(0.000249813, 2, 3) -> 2.498ᴇ-4
+      STRING(-0.000249875, 2, 3) -> -2.499ᴇ-4
+      STRING(0.000249875, 2, 3) -> 2.499ᴇ-4
+      STRING(1.20756e-36, 2, 4) -> 1.2076ᴇ-36
+      STRING(1.48748e-05, 2, 4) -> 1.4875ᴇ-5
+      STRING(3.333e-05, 2, 4) -> 3.3330ᴇ-5
+      STRING(3.33322e-05, 2, 4) -> 3.3332ᴇ-5
+      STRING(4.99975e-05, 2, 4) -> 4.9998ᴇ-5
+  R5 csSgn(-0.004, 2) = "+0.00", csNoZero(0.004, 2) = ".00", csAStr at 0.00005 = "0.00005", at 5E-8 = "0.00000005"
+  R6 tea, page 6: "Risk diff. p1 - p2 = +0.5000 (-0.1355, 0.7891)" -- Newcombe (3d); beta 3c showed Wald, 0.5 +/- 1.96 x 0.3062 = (-0.1001, 1.1001)
+
+G. 3c: beta 3c against beta 3b (the 3c record, read from out/ChiTable_beta3c.txt)
+  differ from beta 3b: ChiTable, csAStr, csBars, csCas, csCvDraw, csEStr, csGrid, csMosaic, csNoZero, csPage2x2, csPageExact, csPageInterp, csPageTest, csResBars, csScaleN, csSgn, csXX2Txt
+    the sweep only (STRING(x, 2, d) -> STRING(ROUND(x, d), 2, d)): ChiTable, csBars, csCvDraw, csEStr, csGrid, csMosaic, csNoZero, csPage2x2, csPageInterp, csPageTest, csResBars, csScaleN, csXX2Txt
+    csCas: the DIM(cR) > 0 guard; csAStr: a first branch below 0.0001; csSgn: rounds first;
+    csPageExact: pxR built in one IF; csResMenu: the same code, its comment moved above the CHOOSE
+
+N. 3d: the fleet review of 19 Oct 2026 (D8, D-CT-1 .. D-CT-5); each test on beta 3d and on beta 3c
+  N1a csWils, 671 intervals (n 1..30, 50, 100, 674, 1000, 9999999): vs statsmodels 3.3e-16, vs 40 digits 2.2e-16; k = 0 gives exactly 0, k = n exactly 1
+  N1b our Newcombe = statsmodels' newcomb on all 7,812 grid tables to 4.4e-16 (at its z = 1.959963984540)
+  N1c csCompute over the review's grid (7812 tables) + 9 big or example tables:
+      beta 3d (Newcombe): max error vs 40 digits 2.6e-16; outside [-1, 1]: 0; width 0: 0; min lower -1.0000, max upper 1.0000
+      beta 3c (Wald):     outside [-1, 1]: 1388 of 7812 (17.8%), width 0: 288; e.g. [[0, 1, 1, 1], [1, 0, 1, 1]]
+      the program's z 1.959964 against statsmodels' 1.959963985 moves an end by at most 5.5e-09 (invisible at 4 decimals)
+  N1d a 12-digit transcription (decimal, prec 12) on the same 7821 tables: none outside [-1, 1], none of width 0, max error 6.5e-12
+  N1e [3, 1, 1, 3]  beta 3d "+0.5000 (-0.1355, 0.7891)"   beta 3c "+0.5000 (-0.1001, 1.1001)"
+  N1e [3, 1, 0, 4]  beta 3d "+0.7500 (0.0852, 0.9544)"   beta 3c "+0.7500 (0.3257, 1.1743)"
+  N1e [5, 0, 0, 5]  beta 3d "+1.0000 (0.3855, 1.0000)"   beta 3c "+1.0000 (1.0000, 1.0000)"
+  N2 csUpper against scipy chi2.sf, df 1 and 2, chi2 from 1E-9 to 1400: max relative error 2.0e-13; chi2 <= 0 gives 1
+  N2 a 2 x 2, chi2 = 200    chi2 200 (df 1): CS_P beta 3d 2.088e-45 = scipy 2.088e-45; beta 3c 0  <- 1 - CDF lost every digit
+  N2 a 2 x 2, chi2 = 64     chi2 64 (df 1): CS_P beta 3d 1.244e-15 = scipy 1.244e-15; beta 3c 1.221e-15
+  N2 a 2 x 3, chi2 = 600    chi2 600 (df 2): CS_P beta 3d 5.148e-131 = scipy 5.148e-131; beta 3c 0  <- 1 - CDF lost every digit
+  N2 a 3 x 2                chi2 394 (df 2): CS_P beta 3d 2.725e-86 = scipy 2.725e-86; beta 3c 0  <- 1 - CDF lost every digit
+  N2 with 12-digit built-ins: [45,5,5,45] (chi2 = 64): CS_P beta 3c 0.0, beta 3d 1.24419e-15 (true 1.24419e-15); csUpper(1, 60) = 9.48574e-15
+  N2 every results page and the bars plot, 8 tables (the examples, tea, three huge or near-null ones): identical to beta 3c's except page 6's RD line and note, e.g. ([53, 430, 15, 176], ['Risk diff. p1 - p2 = +0.0312 (-0.0220, 0.0746)', '(95% CIs; Newcombe for RD, log for RR and OR)'])
+  N3 2 x 3 [12, 13, 5, 28, 32, 10], E = [12.0, 13.5, 4.5, 28.0, 31.5, 10.5]: page 5 says "1 of 6 ... below 5: chi-square is shaky" in both versions;
+      beta 3d help: "Assumption: every expected count is 5 or more / (the pages flag any E below 5).  If not: use" (agrees); beta 3c help: the 80% rule (passes the table: disagrees)
+  N4 typed 0.004: beta 3d "Counts are whole numbers: 0.00 was rounded to 0."; beta 3c "Counts are whole numbers: 4.00ᴇ−3 was rounded to 0." (scientific)
+  N5 Edit: 1E9, 1E7, 9999999.6 and 1E12 refused with the message, the cell kept; 9,999,999 taken; beta 3c took every one
+  N5 Values form: 1E9 x 4 refused (one message; beta 3c took them and ran: the review's probe P2); [5, 1E9, 3, 7] -> [5.0, 0.0, 3.0, 7.0]
+  N5 exact page: 9,999,999 x 4 and the 1E9 table say "(your counts are too long to write out here)", nothing clipped; beta 3c printed lines up to 379 px (est.) in a 296-px box; tea, example 2, example 2 x 10 and 5-digit counts unchanged
+  N6 Values [5, -5, 3, 7]: beta 3d keeps -5 (grid ['5', '−5', '5', '−5']), Run says "A count cannot be negative."; beta 3c made it 0 silently and ran
+  N7 page 6 note: "(95% CIs; Newcombe for RD, log for RR and OR)" (no zero cell), "(95% CIs; zero cell: +0.5 per cell for RR, OR)" (a zero cell)
+  the review's check_ChiTable_harness.py on beta 3d: P1 "['Counts are whole numbers: 0.00 was rounded to 0.']"; P5 "[5.0, 0.0, 0.0, 5.0]: Risk diff. p1 - p2 = +1.0000 (0.3855, 1.0000)"
+
+G3d. beta 3d against beta 3c
+  csCompute    7 code lines out, 8 in (exactly as listed)
+  csAskAll     2 code lines out, 10 in (exactly as listed)
+  csEntry      1 code lines out, 5 in (exactly as listed)
+  csPageExact  2 code lines out, 8 in (exactly as listed)
+  csPage2x2    2 code lines out, 2 in (exactly as listed)
+  csHelp       2 code lines out, 2 in (exactly as listed)
+  csUpper and csWils: new, defined before csCompute, called only from it; 17 new names, none a built-in; LOCAL lines <= 6; INSTRING / LEFT / MID / RIGHT as in 3c; pure ASCII
+
+S. h.sci_strings over every harness run of this script
+  78 beta 3d harness runs, 0 scientific STRING results (52 runs of older versions not counted)
+
+6931 checks passed, 0 failed
+ALL OK
+
+real	19m33.836s
+user	2m40.612s
+sys	0m16.674s

@@ -1,0 +1,278 @@
+==============================================================================
+A. The exact interval, by the program's own cqCPInt / cqCPB (harness)
+==============================================================================
+  ok    cqBinCheck passes with BINOMIAL_CDF(n, p, k)
+  ok    cqCPInt vs statsmodels beta: 3798 intervals (n 5-30, 50, 100; 50-99.9 %), worst |diff| 6.1e-15
+  ok    the drag path (each level started from the last one's ends, 8 counts x 499 levels): worst |diff| 3.8e-15
+    BINOMIAL_CDF + BINOMIAL calls per count per level step: mean 9.3, max 20
+  ok    cqBinCheck fails when BINOMIAL_CDF reads (n, k, p); setup then refuses Exact
+
+==============================================================================
+B. The coverage bookkeeping for Exact
+==============================================================================
+  ok    p 0.1  n 20  cqXBuild: catch level <= L  <=>  statsmodels' interval contains p, every k and every level 500..999 (0 mismatches)
+  ok    p 0.5  n 5   cqXBuild: catch level <= L  <=>  statsmodels' interval contains p, every k and every level 500..999 (0 mismatches)
+  ok    p 0.38 n 100 cqXBuild: catch level <= L  <=>  statsmodels' interval contains p, every k and every level 500..999 (0 mismatches)
+  ok    p 0.01 n 5   cqXBuild: catch level <= L  <=>  statsmodels' interval contains p, every k and every level 500..999 (0 mismatches)
+  ok    p 0.99 n 50  cqXBuild: catch level <= L  <=>  statsmodels' interval contains p, every k and every level 500..999 (0 mismatches)
+  ok    p 0.25 n 37  cqXBuild: catch level <= L  <=>  statsmodels' interval contains p, every k and every level 500..999 (0 mismatches)
+  ok    Exact n = 20, p = 0.1  cqLimits vs statsmodels beta: worst 2.4e-15 (1,500 PPL samples x 8 levels)
+  ok    Exact n = 20, p = 0.1  colour from the catch level == interval contains the truth: 0 mismatches
+  ok    Exact n = 20, p = 0.1  long-run tally after cqSetLevel == direct recount at all 8 levels
+  ok    Exact n = 5, p = 0.1   cqLimits vs statsmodels beta: worst 1.9e-15 (1,500 PPL samples x 8 levels)
+  ok    Exact n = 5, p = 0.1   colour from the catch level == interval contains the truth: 0 mismatches
+  ok    Exact n = 5, p = 0.1   long-run tally after cqSetLevel == direct recount at all 8 levels
+  ok    Exact n = 100, p = 0.38 cqLimits vs statsmodels beta: worst 4.7e-15 (1,500 PPL samples x 8 levels)
+  ok    Exact n = 100, p = 0.38 colour from the catch level == interval contains the truth: 0 mismatches
+  ok    Exact n = 100, p = 0.38 long-run tally after cqSetLevel == direct recount at all 8 levels
+
+==============================================================================
+C. Coverage by exact enumeration, and the numbers help page 4 quotes
+==============================================================================
+    p = 0.10, n = 20      80 %      90 %      95 %      99 %
+    exact              0.9568    0.9568    0.9887    0.9976  
+    wilson             0.7455    0.9568    0.9568    0.9887  
+    wald               0.8352    0.8672    0.8760    0.8780  
+    worst exact coverage over p (n = 20, 95 %): 0.9580 at p = 0.4911; mean 0.9770
+    the k = 0 upper end at n = 20, 95 %: 1 - 0.025^(1/20) = 0.168433 (statsmodels 0.168433)
+    mean width at p = 0.10, n = 20, 95 %: exact 0.292, Wilson 0.263
+  ok    help page 4 quotes '95.8 %' (computed 0.9580)
+  ok    help page 4 quotes '98.9 %' (computed 0.9887)
+  ok    help page 4 quotes '95.7 %, Wald' (computed 0.9568)
+  ok    help page 4 quotes 'Wald 87.6 %' (computed 0.8760)
+  ok    help page 4 quotes 'catches 95.7 %' (computed 0.9568)
+  ok    help page 4 quotes '0.168' (computed 0.1684)
+  ok    exact at 80 % and 90 % both 0.9568 (the page says 95.7 % for both)
+  ok    exact coverage is at or above 95 % at every level shown, and over all p
+  ok    help page 4 as drawn: 14 lines, the longest 46 characters (ChiTable's 48 fit)
+      | Exact (Clopper-Pearson) uses no normal curve:
+      | it keeps every p under which your count is in
+      | neither tail of Binomial(n, p) holding α/2.
+      | A count has only n + 1 possible values, so no
+      | interval can catch exactly 95 % at every p.
+      | Exact makes sure it is NEVER LESS: at n = 20
+      | its worst case over every p is 95.8 %.
+      | At p = 0.10, n = 20 it catches 98.9 % (Wilson
+      | 95.7 %, Wald 87.6 %); at 80 % or 90 % it still
+      | catches 95.7 %. The price: longer lines.
+      | 0 yeses: from 0 to 1 - (α/2)^(1/n), 0.168 at
+      | n = 20 and 95 %. Tap such a line: the panel
+      | shows that end as the CAS writes it.
+      | exact ends: bisection on BINOMIAL_CDF, checked
+
+==============================================================================
+D. The PPL sampler: 20,000 Exact intervals through cqAdd1
+==============================================================================
+  ok    PPL coverage 0.9895 vs exact 0.9887 (4 SE = 0.0030)  [17 s]
+
+==============================================================================
+E. Scripted sessions, cas = giac and cas = fail; the CAS templates
+==============================================================================
+  ok    a first run finds the rows with 0 yeses: [36, 44]
+
+  --- cas = giac: 'CICatcher: 49 of 50 caught the truth (98.0 %) at 99.5 %, Exact, p = 0.10, n = 20; see CQ_COVER'  [2.0 s, 22 frames]
+  ok    the session runs to Quit: 'CICatcher: 49 of 50 caught the truth (98.0 %) at 99.5 %, Exact, p = 0.10, n = 20; see CQ_COVER'
+  ok    every scripted event was used
+    closed-form lines seen: ['upper = 1 - (α/2)^(1/n) = 0.1684', 'upper = 1 - (α/2)^(1/n) = 0.1937', 'upper = 1 - (α/2)^(1/n) = 0.2327', 'upper = 1-(1/200)^(1/20) = 0.2327', 'upper = 1-(1/40)^(1/20) = 0.1684', 'upper = 1-(1/400)^(1/20) = 0.2589']
+    badges, frame by frame: dCCddCCC
+    CAS calls: ['string(1-(50/2000)^(1/20))', 'string(1-(10/2000)^(1/20))', 'string(1-(5/2000)^(1/20))']
+  ok    the picked line (0 of 20): "upper = 1-(1/40)^(1/20) = 0.1684" with "exact (CAS)"
+  ok    the CAS is asked once per (end, n, level) after an event, never twice: 3 calls
+  ok    the template: alpha/2 as (1000 - L)/2000 in whole numbers (2a: asked as string(...))
+  ok    2a: every answer arrives quoted, no CAS variable assigned, no CAS call of a variable
+  ok    the CAS was asked only at levels [950, 990, 995]; the 1 frames drawn at other levels (inside the drag) all show the decimal form
+  ok    help page 4 shown, with its engine line (2c: "exact ends: bisection on BINOMIAL_CDF, checked")
+  ok    the header names the method: "Exact, p = 0.10, n = 20" (15 frames)
+
+  --- cas = fail: 'CICatcher: 49 of 50 caught the truth (98.0 %) at 99.5 %, Exact, p = 0.10, n = 20; see CQ_COVER'  [1.4 s, 22 frames]
+  ok    the session runs to Quit: 'CICatcher: 49 of 50 caught the truth (98.0 %) at 99.5 %, Exact, p = 0.10, n = 20; see CQ_COVER'
+  ok    every scripted event was used
+    closed-form lines seen: ['upper = 1 - (α/2)^(1/n) = 0.1684', 'upper = 1 - (α/2)^(1/n) = 0.1937', 'upper = 1 - (α/2)^(1/n) = 0.2327', 'upper = 1 - (α/2)^(1/n) = 0.2589']
+    badges, frame by frame: dddddddd
+    CAS calls: ['string(1-(50/2000)^(1/20))', 'string(1-(10/2000)^(1/20))', 'string(1-(5/2000)^(1/20))']
+  ok    cas = fail: "upper = 1 - (alpha/2)^(1/n) = 0.1684" and the badge "decimal" throughout, no error
+  ok    help page 4 shown, with its engine line (2c: "exact ends: bisection on BINOMIAL_CDF, checked")
+  ok    the header names the method: "Exact, p = 0.10, n = 20" (15 frames)
+  ok    1728 CAS templates (n 5-100, 9 levels, both ends) evaluate to the closed form; longest answer 20 characters (the panel shows up to 20 with the decimal, 28 without)
+    e.g. 1-(500/2000)^(1/5) -> 1-(1/4)^(1/5); (50/2000)^(1/5) -> (1/40)^(1/5)
+  ok    2a: in the Prime's printing no answer has "sqrt" and none is longer than desktop Giac's (longest 20)
+    one frame with 50 Exact intervals: 130 shapes, 19 texts
+  ok    per-frame drawing calls within the beta 1 budget
+    BINOMIAL calls in the whole session (cqBinCheck, cqXBuild, 50 samples, 4 drag steps): 524
+  ok    Exact n = 5 session with drags and keys: 'CICatcher: 49 of 51 caught the truth (96.1 %) at 51 %, Exact, p = 0.10, n = 5; see CQ_COVER'
+  ok    Exact n = 100 session with drags and keys: 'CICatcher: 34 of 51 caught the truth (66.7 %) at 51 %, Exact, p = 0.10, n = 100; see CQ_COVER'
+  ok    with BINOMIAL_CDF failing its check, Exact is refused with a message: 'CICatcher: no interval chosen'
+
+==============================================================================
+F. Beta 1's suite (verify_CICatcher.py) against beta 2
+==============================================================================
+  PASS: 0 failures  [345 s]
+  ok    beta 1's suite passes on beta 2: 71 checks (one script change: six help pages)  [351 s]
+
+==============================================================================
+G. 2a: beta 2 in harness v3d, and beta 2a against beta 2 (kept from the 2a script)
+==============================================================================
+  ok    2a: beta 2 in v3b shows its own CAS text, "upper = 1-(50/2000)^(1/20)", unreduced, as if the CAS had answered -- the emulator's finding
+
+G. beta 2a: beta 2 in harness v3b, and beta 2a against beta 2
+  ok    beta 2a: routines that differ from beta 2: ['cqCas'] (want cqCas)
+  ok    beta 2a: outside those routines only comments differ
+  ok    beta 2a: the #PYTHON blocks are unchanged
+  routines that differ from beta 2: cqCas; everything else differs only in comments
+
+==============================================================================
+R. 2b: the round-2 emulator findings (harness v3d)
+==============================================================================
+  ok    R1: cqCas with the CAS failing returns "" (''), no error, cqCasOK = 0
+  ok    R1: cqCas('1-(50/2000)^(1/20)') with Giac = '1-(1/40)^(1/20)' (want '1-(1/40)^(1/20)')
+  ok    R1: cqCas('1/0') with Giac = '' (want '')
+  ok    R1: cqCas('0/0') with Giac = '' (want '')
+  ok    R1: cqCas('limit(1/cqq,cqq,0,1)') with Giac = '' (want '')
+  ok    R1: beta 2a cqCas, the same failed call in v3d, stops: INSTRING: Invalid input (the first argument is an empty stri
+  ok    R2: beta 2c, cas=fail session to Quit: 8 closed-form frames, all "decimal", no error
+  ok    R2: beta 2a, the same session in v3d, stops on INSTRING (INSTRING: Invalid input (the first argument is an )
+  ok    R3: the Exact item is "Proportion: Exact (C-P)" (23 characters)
+  ok    R3 (2c): every CHOOSE line is 28 characters or fewer, the main menu's first included: []
+  ok    R3: beta 2a: ['New setup: interval, population, n', 'Proportion: Exact (Clopper-Pearson)']
+    CHOOSE lines: 13, the longest 28 ("New: interval, population, n"); the Exact item 'Proportion: Exact (C-P)'
+  ok    R3: in a run the new line is shown and item 5 still sets Exact: 'CICatcher: 49 of 50 caught the truth (98.0 %) at 95 %, Exact, p = 0.10, n = 20; see CQ_COVER'
+  ok    R4 Exact, p = 0.01, n = 100 (lower end 0.00025 for one yes) [giac]: beta 2c runs to Quit (None)
+  ok    R4 Exact, p = 0.01, n = 100 (lower end 0.00025 for one yes) [giac]: beta 2c printed scientific: []
+  ok    R4 Exact, p = 0.01, n = 100 (lower end 0.00025 for one yes) [giac]: a small-capital E on screen
+    Exact, p = 0.01, n = 100 (lower end 0.00025 for one yes)       beta 2c: 0 scientific, 41 frames; beta 2a: 7
+        a one-yes panel: ['\ue001 = 1/100 = 0.010: 0.000 to 0.054, caught']
+  ok    R4 Exact, p = 0.01, n = 100 (lower end 0.00025 for one yes) [fail]: beta 2c runs to Quit (None)
+  ok    R4 Exact, p = 0.01, n = 100 (lower end 0.00025 for one yes) [fail]: beta 2c printed scientific: []
+  ok    R4 Exact, p = 0.01, n = 100 (lower end 0.00025 for one yes) [fail]: a small-capital E on screen
+  ok    R4 Wald, p = 0.05, n = 20, the level dragged (an end crosses 0) [giac]: beta 2c runs to Quit (None)
+  ok    R4 Wald, p = 0.05, n = 20, the level dragged (an end crosses 0) [giac]: beta 2c printed scientific: []
+  ok    R4 Wald, p = 0.05, n = 20, the level dragged (an end crosses 0) [giac]: a small-capital E on screen
+    Wald, p = 0.05, n = 20, the level dragged (an end crosses 0)   beta 2c: 0 scientific, 41 frames; beta 2a: 0
+  ok    R4 Wald, p = 0.05, n = 20, the level dragged (an end crosses 0) [fail]: beta 2c runs to Quit (None)
+  ok    R4 Wald, p = 0.05, n = 20, the level dragged (an end crosses 0) [fail]: beta 2c printed scientific: []
+  ok    R4 Wald, p = 0.05, n = 20, the level dragged (an end crosses 0) [fail]: a small-capital E on screen
+  ok    R4 Wilson, p = 0.01, n = 5 [giac]: beta 2c runs to Quit (None)
+  ok    R4 Wilson, p = 0.01, n = 5 [giac]: beta 2c printed scientific: []
+  ok    R4 Wilson, p = 0.01, n = 5 [giac]: a small-capital E on screen
+    Wilson, p = 0.01, n = 5                                        beta 2c: 0 scientific, 41 frames; beta 2a: 1
+        a 0-yes Wilson line: beta 2c ['\ue001 = 0/5 = 0.00: 0.00 to 0.08, caught', '\ue001 = 0/5 = 0.00: 0.00 to 0.26, caught', '\ue001 = 0/5 = 0.00: 0.00 to 0.36, caught', '\ue001 = 0/5 = 0.00: 0.00 to 0.43, caught', '\ue001 = 0/5 = 0.00: 0.00 to 0.60, caught', '\ue001 = 0/5 = 0.00: 0.00 to 0.61, caught', '\ue001 = 0/5 = 0.00: 0.00 to 0.68, caught']; beta 2a ['\ue001 = 0/5 = 0.00: -5.55ᴇ-17 to 0.60, caught', '\ue001 = 0/5 = 0.00: 0.00 to 0.08, caught', '\ue001 = 0/5 = 0.00: 0.00 to 0.26, caught', '\ue001 = 0/5 = 0.00: 0.00 to 0.36, caught', '\ue001 = 0/5 = 0.00: 0.00 to 0.43, caught', '\ue001 = 0/5 = 0.00: 0.00 to 0.61, caught', '\ue001 = 0/5 = 0.00: 0.00 to 0.68, caught']
+  ok    R4: the Wilson 0-yes lower end reads 0.00 (not -0.00): ['\ue001 = 0/5 = 0.00: 0.00 to 0.08, caught', '\ue001 = 0/5 = 0.00: 0.00 to 0.26, caught', '\ue001 = 0/5 = 0.00: 0.00 to 0.36, caught', '\ue001 = 0/5 = 0.00: 0.00 to 0.43, caught', '\ue001 = 0/5 = 0.00: 0.00 to 0.60, caught', '\ue001 = 0/5 = 0.00: 0.00 to 0.61, caught', '\ue001 = 0/5 = 0.00: 0.00 to 0.68, caught']
+        header: ['Wilson, p = 0.01, n = 5']
+  ok    R4 Wilson, p = 0.01, n = 5 [fail]: beta 2c runs to Quit (None)
+  ok    R4 Wilson, p = 0.01, n = 5 [fail]: beta 2c printed scientific: []
+  ok    R4 Wilson, p = 0.01, n = 5 [fail]: a small-capital E on screen
+  ok    R4 z, mu = 0.00003, sigma = 0.00001 (typed) [giac]: beta 2c runs to Quit (None)
+  ok    R4 z, mu = 0.00003, sigma = 0.00001 (typed) [giac]: beta 2c printed scientific: []
+  ok    R4 z, mu = 0.00003, sigma = 0.00001 (typed) [giac]: a small-capital E on screen
+    z, mu = 0.00003, sigma = 0.00001 (typed)                       beta 2c: 0 scientific, 41 frames; beta 2a: 144
+        header: ['z, μ = 0.000030, σ = 0.000010, n = 10']
+  ok    R4: the typed mu and sigma read 0.000030 and 0.000010: ['z, μ = 0.000030, σ = 0.000010, n = 10']
+  ok    R4 z, mu = 0.00003, sigma = 0.00001 (typed) [fail]: beta 2c runs to Quit (None)
+  ok    R4 z, mu = 0.00003, sigma = 0.00001 (typed) [fail]: beta 2c printed scientific: []
+  ok    R4 z, mu = 0.00003, sigma = 0.00001 (typed) [fail]: a small-capital E on screen
+  ok    R4 t, mu = 0.0004, sigma = 0.0002, n = 2 [giac]: beta 2c runs to Quit (None)
+  ok    R4 t, mu = 0.0004, sigma = 0.0002, n = 2 [giac]: beta 2c printed scientific: []
+  ok    R4 t, mu = 0.0004, sigma = 0.0002, n = 2 [giac]: a small-capital E on screen
+    t, mu = 0.0004, sigma = 0.0002, n = 2                          beta 2c: 0 scientific, 41 frames; beta 2a: 8
+  ok    R4 t, mu = 0.0004, sigma = 0.0002, n = 2 [fail]: beta 2c runs to Quit (None)
+  ok    R4 t, mu = 0.0004, sigma = 0.0002, n = 2 [fail]: beta 2c printed scientific: []
+  ok    R4 t, mu = 0.0004, sigma = 0.0002, n = 2 [fail]: a small-capital E on screen
+    beta 2a printed, in these runs:
+      STRING(-5.55112e-17, 2, 2) -> -5.55ᴇ-17
+      STRING(2.5031e-05, 2, 3) -> 2.503ᴇ-5
+      STRING(0.000253146, 2, 3) -> 2.531ᴇ-4
+      STRING(7.48306e-07, 2, 4) -> 7.4831ᴇ-7
+      STRING(1e-05, 2, 4) -> 1.0000ᴇ-5
+      STRING(1.86971e-05, 2, 4) -> 1.8697ᴇ-5
+      STRING(2.07072e-05, 2, 4) -> 2.0707ᴇ-5
+      STRING(2.2108e-05, 2, 4) -> 2.2108ᴇ-5
+      STRING(2.25379e-05, 2, 4) -> 2.2538ᴇ-5
+      STRING(2.40719e-05, 2, 4) -> 2.4072ᴇ-5
+      STRING(2.44292e-05, 2, 4) -> 2.4429ᴇ-5
+      STRING(2.56008e-05, 2, 4) -> 2.5601ᴇ-5
+      STRING(2.57882e-05, 2, 4) -> 2.5788ᴇ-5
+      STRING(2.62168e-05, 2, 4) -> 2.6217ᴇ-5
+  ok    R4: beta 2a printed scientific strings in these runs (50)
+  ok    R5: cqF(0.000253, 3) = '0.000' (want '0.000')
+  ok    R5: cqF(0.00052, 3) = '0.001' (want '0.001')
+  ok    R5: cqF(-0.0002, 3) = '0.000' (want '0.000')
+  ok    R5: cqF(0.1684, 4) = '0.1684' (want '0.1684')
+  ok    R5: cqF(4e-07, 6) = '0.000000' (want '0.000000')
+  ok    R5: cqF(100.0, 1) = '100.0' (want '100.0')
+  ok    R5: cqF(-5.551115123125783e-17, 2) = '0.00' (want '0.00')
+  ok    R5: cqF(-0.0312, 4) = '-0.0312' (want '-0.0312')
+  ok    R5: cqNumS(100.0) = '100' (want '100')
+  ok    R5: cqNumS(0.1) = '0.10' (want '0.10')
+  ok    R5: cqNumS(0.12345) = '0.1235' (want '0.1235')
+  ok    R5: cqNumS(1e-05) = '0.000010' (want '0.000010')
+  ok    R5: cqNumS(3e-05) = '0.000030' (want '0.000030')
+  ok    R5: cqNumS(1.5e-05) = '0.000015' (want '0.000015')
+  ok    R5: cqNumS(-2e-05) = '-0.000020' (want '-0.000020')
+  ok    R5: cqNumS(15.0) = '15' (want '15')
+  ok    R5: cqNumS(0.0005) = '0.0005' (want '0.0005')
+  ok    R5: cqPct(1, 2000) = '0.1' (want '0.1')
+  ok    R5: cqPct(1, 3000) = '0.0' (want '0.0')
+  ok    R5: cqPct(47, 50) = '94.0' (want '94.0')
+  ok    R5: cqPct(0, 7) = '0.0' (want '0.0')
+  ok    R5: cqPct(3, 0) = '--' (want '--')
+  ok    R5: the helpers printed scientific: []
+    cqF(0.000253, 3) = "0.000", cqNumS(0.00001) = "0.000010", cqPct(1, 3000) = "0.0"
+
+==============================================================================
+G. 2b: beta 2b against beta 2a (the record of 2b; 2c compares those two files, not itself)
+==============================================================================
+  ok    G: routines that differ from beta 2a: ['cqCas', 'cqF', 'cqNumS', 'cqPct', 'cqSetup']
+  ok    G: cqCas is the DIM guard only
+  ok    G: cqF rounds (+ 0), nothing else
+  ok    G: cqPct rounds, nothing else
+  ok    G: cqNumS: the small-value line and the ROUND
+  ok    G: cqSetup: the one menu line
+  ok    G: outside those routines only comments differ
+  differ from beta 2a: cqCas, cqF, cqNumS, cqPct, cqSetup, each exactly as listed; everything else differs only in comments
+
+==============================================================================
+S. h.sci_strings over every beta 2c harness run of this script (parts A-R)
+==============================================================================
+  ok    S: 37 beta 2c harness runs, 0 scientific STRING results (13 runs of older versions not counted)
+
+==============================================================================
+X. 2c: the fleet review's C-C1 and C-C2, and its regressions
+==============================================================================
+    beta 2c: CHOOSE items over 27: [(28, 'New: interval, population, n')]; fixed strings over 46: []
+  ok    X1 review E2 on beta 2c: every CHOOSE item fits the box (<= 31): [(28, 'New: interval, population, n')]
+  ok    X1 review E3 (at 46, the header's limit) on beta 2c: no fixed help string over 46: []
+  ok    X1 beta 2b fails the same E2: [(34, 'New setup: interval, population, n')]
+  ok    X1 beta 2b fails the same E3 at 46: [(47, 'exact ends: bisection on BINOMIAL_CDF (checked)')]
+  ok    X2 C-C1: the main menu's first line is 'New: interval, population, n' (28 characters)
+  ok    X2 C-C1: item 1 still opens the setup ("Which interval?"): ['Which interval?', 'CICatcher', 'Which interval?', 'CICatcher']
+  ok    X2 C-C1: Cancel in the new setup keeps the run, and Quit returns it: 'CICatcher: 49 of 50 caught the truth (98.0 %) at 95 %, Exact, p = 0.10, n = 20; see CQ_COVER'
+  ok    X2 every CHOOSE line shown in the run is 28 characters or fewer (longest 28: 'New: interval, population, n')
+  ok    X2 beta 2b, the same run: the first line is 'New setup: interval, population, n' (34 characters)
+  ok    X3 C-C2 [Exact, BINOMIAL check passing]: 90 help lines drawn, the longest 46 characters (<= 46)
+  ok    X3 C-C2: help page 4's last line is ['exact ends: bisection on BINOMIAL_CDF, checked'] (46 characters)
+  ok    X3 C-C2 [t (the engine line)]: 90 help lines drawn, the longest 46 characters (<= 46)
+  ok    X3 C-C2: help page 4's last line is ['exact ends: bisection on BINOMIAL_CDF, checked'] (46 characters)
+  ok    X3 C-C2 [Wilson, BINOMIAL check failing]: 90 help lines drawn, the longest 46 characters (<= 46)
+  ok    X3 the engine line when the check fails: ['exact: OFF (BINOMIAL_CDF failed its check)']
+  ok    X3 beta 2b, the same pages: lines over 46: [(47, 'exact ends: bisection on BINOMIAL_CDF (checked)')]
+    check_CICatcher.py on beta 2c: 50 checks passed, 0 failed; 5 notes
+    check_CICatcher.py on beta 2b: 49 checks passed, 1 failed; 5 notes
+  ok    X4 the review's check_CICatcher.py on beta 2c: every check passes (50 checks passed, 0 failed; 5 notes)
+  ok    X4 on beta 2b: only E2 fails, as the review left it: ["E2 every CHOOSE item fits the box (<= 31 characters)   [(34, 'New setup: interval, population, n')]"]
+
+==============================================================================
+G. 2c: beta 2c against beta 2b
+==============================================================================
+  ok    G2c: routines that differ from beta 2b: ['cqMenu', 'cqXEngS'] (want cqMenu, cqXEngS)
+  ok    G2c: cqMenu: the one menu line (C-C1)
+  ok    G2c: cqXEngS: the one line (C-C2)
+  ok    G2c: the other 61 routines are byte-identical, comments included
+  ok    G2c: outside those two routines only comments differ (the header, two notes)
+  ok    G2c: no #PYTHON block, as before
+  ok    G2c: the banner says beta 2c
+  ok    G2c: the header carries Roger's DISCLAIMER line under the terms; no on-screen string states the terms, so no page needs "Teaching aid; not for legal use."
+  differ from beta 2b: cqMenu, cqXEngS; 61 routines byte-identical
+  ok    S (2c, all parts): 41 beta 2c harness runs, 0 scientific STRING results
+
+==============================================================================
+PASS: 158 checks, 0 failures, 0 skipped  [839 s]

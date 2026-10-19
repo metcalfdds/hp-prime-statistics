@@ -1,0 +1,2550 @@
+// ============================================================
+// STUDRANGE - beta 15d
+// Studentized range (Tukey q) - MicroPython engine with a PPL
+//   fallback, in one program
+// ============================================================
+// Author: Roger Metcalf, 2026.  Written with AI assistance
+//   (Anthropic Claude); concept, direction and all hardware
+//   testing by the author.
+//
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Share it, teach with
+//   it, adapt it for your own classroom.  Please keep this
+//   header with the file and credit the author if you pass it
+//   on or build on it.  Not for sale or commercial
+//   redistribution.  Provided as is, with no warranty: check
+//   any result you intend to rely on.
+// DISCLAIMER: a teaching and demonstration aid. Not validated for
+//   forensic, clinical or legal use; do not rely on its results for
+//   legal purposes.
+//
+// Tested on an HP Prime G2 and G1, both running the 2026-09-09
+//   firmware, plus the desktop Virtual Calculator (the PPL
+//   program through beta 12; the MicroPython twin StudRangePy
+//   through beta 14b, G2).  Beta 13, 14, 15, 15a, 15b, 15c and
+//   this beta 15d have NOT yet been run on hardware.  Beta 15 ran on
+//   the HP Prime Virtual Calculator (2.4.2, build 2026-09-09) on 17
+//   Oct 2026 and beta 15a fixed what that run found; beta 15a ran
+//   there in round 2 the same day (its soft keys fire) and beta 15b
+//   fixes what round 2 found (beta 15c and 15d have not run there;
+//   beta 15d has run only in the PC harness).  The Python path in
+//   particular must be tried on a calculator with the Terminal
+//   open (Lessons Learned v7f section 9 -- the emulator cannot
+//   catch a bridge failure, because the fallback hides it).
+//
+// Delivered as .txt on purpose: paste into the Connectivity Kit
+//   editor.  .hpprgm is binary and imports badly.  Paste, do not
+//   retype: the Python block below depends on its indentation.
+//
+// Algorithm after Dunlap, Powell & Konnerth (1977),
+//   Behavior Research Methods & Instrumentation 9(4):373-375,
+//   with native distribution functions replacing their
+//   polynomial approximations and a u^2 substitution added.
+// Run StudRange() from the Program Catalog.
+//
+// TWO ENGINES, ONE PROGRAM (beta 15):
+//   * The MicroPython engine (the #PYTHON srq block) is the FAST
+//     PATH: native erf and lgamma, a secant solver, df 1 and up.
+//     A critical value takes about 1.5 s on a G2 (StudRangePy's
+//     measurement, df 4-50) instead of about a minute; df 1-3
+//     use four times the nodes (an estimated 6 s; not yet timed).
+//   * The PPL engine (sr_BuildZ ... sr_SRCrit) is the FALLBACK,
+//     unchanged from beta 14: df 3 and up, slower, and it needs
+//     no Python at all.
+//   Every result is tried in Python first.  A Python failure is
+//   SILENT on this calculator (no PPL error, only a traceback in
+//   the Terminal), so the program clears the output, checks the
+//   answer by using it, and falls back to PPL -- and then SAYS
+//   which engine answered: an engine badge on every result page
+//   and on the plot, and a Diagnostics item that probes the
+//   bridge live.  StudRangePy is retired by this version.
+//
+// What changed in beta 15d (19 Oct 2026): S1, S3 and Home's X
+//   (fleet review 19 Oct; line numbers are beta 15c's):
+//   * S1: A NOTE WHERE THE FALLBACK MAY BE OFF.  The Critical value
+//     and Tukey HSD forms take alpha down to 1E-4, but the PPL
+//     engine's grid (32-48 x 64 Simpson intervals) loses accuracy
+//     below alpha = 0.005 when k is large and df small: k 20, df 3,
+//     alpha 1E-4 gives q crit 94.658 where SciPy gives 92.944 (1.8 %
+//     high); k 50 is worse (up to 8 % in a sweep on the PC).  The
+//     MicroPython engine is right there (within 5E-6), so a student
+//     meets this only when Python has not answered.  Both pages now
+//     say so in two lines when the PPL engine answered and alpha is
+//     below 0.005: "PPL fallback at α < 0.005:" and "q crit may be off
+//     by a few %" (1516-1525, 1570-1579).  The numbers are unchanged
+//     (a finer grid would take about four times as long on a G1; that
+//     choice is Roger's).
+//   * S3: SPACES ROUND "=" on the HSD page's first line (1571):
+//     "α = 0.0500  k = 4  m = 8  ν = 28", not "α=0.0500  k=4 ...".
+//   * HOME'S X IS NO LONGER A COUNTER.  MAKELIST(0, X, 1, n) in
+//     sr_BuildZ (877-879) and sr_Cache (1334-1335) wrote Home's X,
+//     the Function app's plot variable, every time the PPL engine
+//     built its tables.  A LOCAL counter does the same job (GfxProbe
+//     T19: a LOCAL MAKELIST counter works and leaves Home alone).
+//   * THE DISCLAIMER above (Roger, 19 Oct 2026), and one line of it on
+//     the About page (1/4), its ninth: "Teaching aid; not for legal
+//     use." (sr_HelpMode; with nine lines sr_ShowRes spaces them 18
+//     px apart instead of 22).
+//   Left alone: the Harter year (1959 on the result page, 1960 in
+//   Help; Roger's decision).  The #PYTHON srq block is byte-identical.
+//
+// What changed in beta 15c (17 Oct 2026, evening; line numbers are
+//   beta 15b's):
+//   * NO "=" BEFORE A RELATION (Roger approved the pass, 17 Oct
+//     2026, 21:18).  sr_FmtP writes "< 0.00001" below its floor, and
+//     the P-value page put that after "= ": "P(Q >= q) = < 0.00001",
+//     "F(q) = < 0.00001" (q = 0.001).  New sr_Eq (after sr_FmtP)
+//     returns " = 0.07000", or " < 0.00001" when the relation is
+//     already there; the page's two lines (1429, 1430) and the Quit
+//     summary's p (1422-1423) use it.  Beta 15b had fixed the summary
+//     alone, by testing p twice; it now reads the same text as the
+//     page.
+//   * NOT "0.00000" FOR A p THAT IS NOT 0.  P(Q >= q) is never 0 for
+//     a finite q, but the PPL engine's p is 1 - F, and F reaches 1 in
+//     the calculator's digits for a large q: q 40, k 3, df 12 printed
+//     "P(Q >= q) = 0.00000" and "p = 0.00000" where q 12 printed
+//     "< 0.00001".  An exact 0 there now reads "< 0.00001" (1422-
+//     1423; new LOCAL pvS).  EP_QPVAL still holds the computed value.
+//     The plot's p never needed this: it is floored at 1E-12 before
+//     its log interpolation.
+//   Nothing else changed; the #PYTHON srq block is byte-identical.
+//
+// What changed in beta 15b (17 Oct 2026; the second emulator round,
+//   beta 15a on the same Virtual Calculator; line numbers are beta
+//   15a's):
+//   * A REAL TAP IS NO LONGER SKIPPED.  On the emulator: Plot menu ->
+//     Help for this plot, close it by tapping its footer at the alpha-
+//     key's spot, then tap alpha- there -- ignored once, then it worked.
+//     sr_WaitAny read the closing tap through MOUSE and put its spot on
+//     the stale-click list (1040), but no click of a MOUSE-read tap ever
+//     reached WAIT(-1), so the entry waited for the next real tap at
+//     that spot and ate it.  The plot now reads TICKS just before and
+//     just after WAIT(-1) (1926), and a matching click is stale only if
+//     WAIT(-1) handed it over within srQueuedMs = 100 ms -- it was
+//     already queued (1973-1980).  A real, later tap at the same spot
+//     counts; a click that really was queued (the case no one has
+//     measured on a calculator) is still skipped.  The same fix as
+//     BayesTree beta 8c.
+//   * THE QUIT SUMMARY REPORTS WHAT THE PLOT SHOWED.  After a session
+//     that used only the Distribution plot (q crit 3.638, p 0.0643 on
+//     the screen) it said "q crit not computed, p not computed".  The
+//     plot now sets the summary's q crit (with its k, df and alpha) and
+//     p as it leaves them (2153-2157), and the menu modes record theirs
+//     as shown (1357, 1404, 1456; new srQS, srAS, srPS), so the summary
+//     reports the last values the student saw, each to the decimals of
+//     its page, with alpha now named too: "q crit (k = 3, ν = 12, α =
+//     0.050) = 3.773, p = 0.0700".  EP_QCRIT and EP_QPVAL still hold only
+//     the full-precision menu values (beta 14).  "not computed" stays for
+//     what was not.
+//   * NO SCIENTIFIC "FIXED" DECIMALS.  STRING(x, 2, d) prints "9.6E-2"
+//     (a small capital E) when 0 < |x| < 10^-d.  sr_FmtF (982-985) rounds
+//     to d places first, so every value it prints is safe; the
+//     simulation's percents (1308-1311, 1907-1908: one replicate in 2,000
+//     is 0.05 %), the yardstick's means and tick labels (1549, 1558) and
+//     the summary's HSD (2325) now go through it, and F(q) (1362), a
+//     probability, through sr_FmtP's "< 0.00001".
+//   * INSTRING, LEFT, MID: none in the PPL code (checked).
+//   Nothing else changed; the #PYTHON srq block is byte-identical.
+//
+// What changed in beta 15a (17 Oct 2026; the emulator's findings on
+//   beta 15, Emulator_Round1_Results_2026-10-17_v1.md; line numbers
+//   are beta 15's):
+//   * THE PLOT'S SOFT KEYS FIRE.  On the emulator, alpha-, alpha+, k-,
+//     k+, df and Menu did nothing.  MenuTapProbe beta 1 showed why:
+//     with DRAWMENU on the screen, a tap on the soft-key strip reaches
+//     WAIT(-1) ONLY as {3, x, y} -- type 3, a "click" -- with no press
+//     (type 0) and no lift; a tap above the strip arrives as {0, x, y},
+//     then {2}, then {3, x, y}.  The plot read its soft keys from a
+//     type-0 press with y >= 218 (1915-1917), which never comes.  It
+//     now reads them from a TYPE 3 event with y >= 218 (slot
+//     MIN(6, IP(x/53.4)+1), as before).  A type 3 above the strip is
+//     still ignored (the press already acted on it), and a type-0
+//     press at y >= 218, should one ever come, now does nothing.
+//   * NO STALE CLICK.  The click of a tap the plot has already used
+//     (its own presses, and every tap a page held by sr_WaitAny reads,
+//     in case that click also reaches WAIT(-1)) is written down in
+//     order (new srTLX, srTLY, srTLi) and skipped when it arrives, so
+//     a tap that closed a page on its footer cannot run a soft key.
+//   * THE QUIT SUMMARY.  It printed "p = 0.00000" when no P-value had
+//     been asked for, and the HSD run's q crit with nothing to say so.
+//     It now names the q crit's k and df -- "q crit (k = 4, ν = 28) =
+//     3.8612" -- and says "p not computed" (and "HSD not computed",
+//     the same slip) for what was not asked for in this session (new
+//     srQK, srQV, srPK, srHK, set by the three modes, reset at start).
+//   Nothing else changed.
+//
+// What changed in beta 15 (16 Oct 2026; the merge of StudRange
+//   beta 14 and StudRangePy beta 14c; "b14" = StudRange beta 14
+//   line numbers, "py" = StudRangePy beta 14c line numbers):
+//   * NEW #PYTHON srq block: Phi, prange, gpdf, outer, scdf,
+//     spdf, qsolve and qcrit pasted whole from py 96-228 (code
+//     unchanged), plus the bridge (ev, num, mark, put, putel,
+//     bar), the plot cache, the k = 2 curve, the H0 simulation
+//     and a dispatcher on SR_MODE.  py's Terminal UI, its plot
+//     and main menu (py 230-493) are not carried over.
+//   * NUMERICS, found by verify_StudRange.py (both engines checked
+//     against SciPy on k 2-20, df 1-20000, alpha .1-.001):
+//     - StudRangePy's u^2 grid was wrong at both ends of the df
+//       range: df 1, alpha .01 gave q crit 1-14 % low (alpha .001:
+//       up to 25 %); df 120, alpha .001, 2E-4 off; df 1000 and up,
+//       no answer at all.  New outer2() integrates over s = e^t for
+//       df below 4 and over the spike 1 +/- 12/sqrt(2 df) for df 51
+//       to 25000; scdf / spdf are re-routed there and nowhere else.
+//       The pasted functions are untouched (renamed scdf_u2/spdf_u2
+//       by assignment, not edited).  Now: q crit within 5E-6
+//       (relative) of SciPy over the whole grid.
+//     - The PPL engine had the same high-df failure (df 240: q crit
+//       0.9 % low; df 1000: -infinity).  sr_SRCDF (b14 250-271)
+//       gets the same spike window for df above 100; df 100 and
+//       below run exactly as before.
+//     - The menu modes use 48 inner intervals from k = 6 (b14 428,
+//       461, 497: from k = 11).  At k 6-10 the 32-interval grid left
+//       q crit up to 0.05 off at alpha .005.  PPL worst case now
+//       k = 20, df = 3, alpha .005: 0.008.
+//   * NEW EXPORTed bridge globals SR_K, SR_DF, SR_A, SR_Q,
+//     SR_MODE, SR_OUT, SR_M, SR_N, SR_TC, SR_ENGINE, SR_PZ and
+//     the lists EP_SRCDF, EP_SRPDF, EP_SRCD2, EP_SRSIM.  Python
+//     reads them with hpprime.eval (never argv) and writes ONE
+//     value per eval as "%.10f" text (never repr).
+//   * NEW sr_PyRun / sr_PyNum: the three guards of section 9 --
+//     clear first, validate by using, fall back to PPL.
+//   * P-value, Critical value, HSD (b14 411-512): Python first;
+//     df 1 and 2 are legal when Python answers; the PPL fallback
+//     keeps b14's "df below 3 is not supported" message.  HSD's
+//     "auto df" now means df < 1 (b14 490 said df < 3).
+//   * NEW engine badge (sr_Badge) under the title of every result
+//     page and on the plot: "engine: MicroPython 1.9.4" or
+//     "engine: PPL (Python unavailable)".
+//   * NEW menu item Diagnostics (Python): a live probe that runs
+//     scdf(3.5; 3, 12) in Python, checks it against SciPy's
+//     0.930005 and times it, shows the last Python mark (SR_PZ)
+//     and which engine produced the last result.
+//   * sr_ShowRes (b14 383-405) composes on G1 and blits once, and
+//     holds with sr_WaitAny (a key OR a tap; the capped finger
+//     drain before and after).  It takes a footer and a badge flag
+//     and returns the key (-1 for a tap).
+//   * Plot (b14 535-745): the cache build moved to sr_Cache (b14
+//     566-598 are its PPL fallback, unchanged); Python returns the
+//     pdf itself (spdf) instead of central differences; two-colour
+//     tails (alpha tail light orange, the p region beyond q obs
+//     light red, both darker); the alpha ladder as five thin
+//     labelled ticks above the plot; soft keys alpha-, alpha+,
+//     k-, k+, df, Menu (DRAWMENU after the blit); a vertical drag
+//     on the right-hand CDF axis sets any alpha (a height on the
+//     CDF); a tap on the q crit box sets q obs = q crit; + / - and
+//     0 keys; Enter opens a plot menu.  b14's WAIT(-1) drag of
+//     q obs is kept exactly (b14 726-735), with no in-loop drain.
+//     The footer text is gone (the soft keys use that strip); the
+//     plot box moved to 34..290 x 54..200 for the header lines.
+//   * Python-only extras (hidden when Python did not answer): the
+//     H0 simulation (2,000 replicates of k groups of m normals,
+//     urandom, Marsaglia polar) overlaid as a 40-bin histogram,
+//     with how often q > q crit (about alpha) beside how often ANY
+//     pairwise t > t crit (the family-wise rate, far above alpha);
+//     and a grey k = 2 comparison curve.
+//   * NEW HSD yardstick page after the HSD result: up to six group
+//     means on a number line with an HSD-length bar; tap two means
+//     for their difference and a green / red verdict.
+//   * Help is four pages (b14 514-530 was one): the formulas, why
+//     q and not t (for k = 2, q = t x sqrt 2), the two engines,
+//     the plot's gestures.
+//   * Soft keys: the plot's actions fit in six (Menu opens the
+//     rest), so the house "More" page key (Roger, 16 Oct 2026) is
+//     not needed here and the brief's six labels stay as they are.
+//   * StudRange() returns a summary line instead of ending with
+//     nothing (house rule: RETURN, not PRINT).
+//   * NEW tagged helpers: sr_WaitAny, sr_Badge, sr_Busy, sr_PyRun,
+//     sr_PyNum, sr_InvC, sr_TCrit, sr_Cache, sr_Cmp, sr_SimRun,
+//     sr_Yard, sr_DiagMode.  New file-level LOCALs srEng, srQmax,
+//     srTX, srTY, srYM.
+// beta 14 (16 Oct 2026; line numbers are beta 13's):
+//   * Plot mode no longer overwrites EP_QCRIT (673) and EP_QPVAL
+//     (674) with its fast-grid interpolations; the full-precision
+//     values stored by the P-value, Critical value and HSD modes
+//     survive a visit to the plot.  The plot stores nothing.
+//   * sr_ShowRes spaces its lines 18 px apart when more than 8
+//     are passed.
+//   * House palette (navy -> blue, firebrick -> red, the result
+//     title bar orange, CDF green 0,140,60, tail light orange,
+//     grid 225,228,235, ticks 90,90,90, footers dodger blue).
+//   * sr_DrainT(): a finger-lift drain capped at one second by
+//     TICKS, run with the key drain before the plot loop starts.
+//     It is NOT run after a handled drag event inside the loop:
+//     the loop reads drags from WAIT(-1), and a wait for the
+//     finger to lift there would freeze a drag for up to a second.
+//   * Header: the solver is Illinois regula falsi, not bisection.
+// beta 13 (10 Oct 2026): every helper routine now carries the program
+//   tag "sr_" (NiceNum -> sr_NiceNum, FmtP -> sr_FmtP).
+//   The Prime keeps the routines of ALL programs in one shared
+//   pool, so two programs that define the same helper name
+//   can run each other's code.  That is what sent StudRange into
+//   a Burr3 screen and forced a reset.
+//   Also: the plot loop only reads tap coordinates from a touch
+//   event that carries them (a finger LIFT can arrive as a
+//   one-element list; reading pmKey(2) from it was a runtime error
+//   that opened the Program Editor on the failing line).
+// beta 12: the plot takes touch -- tap or drag anywhere in the
+//   plot box to move the observed q, and the tail probability
+//   sweeps with your finger.  WAIT(-1) was already returning the
+//   touch list; the old code threw it away.
+// ============================================================
+// MAP OF THE FILE
+//
+//   #PYTHON srq ......... the MicroPython engine (fast path):
+//                      scdf / spdf / qsolve from StudRangePy,
+//                      the plot cache, the k = 2 curve, the H0
+//                      simulation, the bridge write-back
+//   sr_BuildZ ........... cached standard-normal grid   } the PPL
+//   sr_RngCDF ........... P(range of k std normals <= x)} engine
+//   sr_LGAM ............. log-gamma, Lanczos (PPL has no} (the
+//                      LNGAMMA outside the CAS)        } fallback,
+//   sr_SRCDF ............ studentized range CDF, double } unchanged
+//                      Simpson, u^2 substitution       } from
+//   sr_SRCrit ........... critical value, Illinois      } beta 14)
+//                      regula falsi (about 6-9 CDF evaluations)
+//   sr_NiceNum, sr_DotV, sr_FmtF, sr_FmtP, sr_Drain, sr_DrainT,
+//   sr_WaitAny, sr_Badge, sr_Busy, sr_ShowRes ..... helpers
+//   sr_PyRun, sr_PyNum .. the bridge: run the Python block, check
+//   sr_InvC ............. q crit for any alpha from the plot cache
+//   sr_TCrit ............ t crit (STUDENT_ICDF, checked; bisection)
+//   sr_Cache ............ the plot cache: Python, else PPL
+//   sr_Cmp, sr_SimRun ... the k = 2 curve and the H0 simulation
+//   sr_PvMode ........... menu 1: p-value from q
+//   sr_CritMode ......... menu 2: critical value
+//   sr_HSDMode, sr_Yard . menu 3: Tukey HSD and its yardstick
+//   sr_PlotMode ......... menu 4: the interactive plot
+//   sr_DiagMode ......... menu 5: the Python bridge probe
+//   sr_HelpMode ......... menu 6
+//
+// IF YOU ARE READING FOR THE TECHNIQUES: compare outer() in the
+// Python block with sr_SRCDF -- the same algorithm twice, the
+// same u^2 substitution that makes low degrees of freedom work
+// (the 1977 original excluded them); then sr_Cache, which shows
+// the whole bridge guard in twenty lines.
+// ============================================================
+
+// ============================================================
+// StudRange beta 15d — Studentized Range Distribution (Tukey q)
+// ============================================================
+// Modernized from: Dunlap, Powell & Konnerth (1977),
+//   "A FORTRAN IV function for calculating probabilities
+//    associated with the studentized range statistic,"
+//   Behavior Research Methods & Instrumentation 9(4), 373-375.
+//
+// What changed since 1977:
+//   * Hastings polynomial normal CDF  ->  native erf (Python) or
+//                                         NORMALD_CDF (PPL)
+//   * Hand-coded log-gamma ladder     ->  lgamma (Python) or the
+//                                         Lanczos sr_LGAM (PPL)
+//   * 32x32 Simpson grid              ->  64x96 (Python) / 64x32
+//                                         (PPL) for the menu modes
+//   * Table lookup                    ->  live plot, touch, soft keys
+//
+// Modes:  1 P-value from q      2 Critical value q(alpha)
+//         3 Tukey HSD           4 Distribution plot
+//         5 Diagnostics         6 Help
+//
+// Exports: EP_QPVAL, EP_QCRIT, EP_HSD (written by modes 1-3 at
+//   full precision; the plot's fast-grid values are not stored),
+//   SR_ENGINE ("Python" or "PPL": which engine gave the last
+//   result) and the bridge variables listed above.
+// Formulas verified against scipy.stats.studentized_range
+// (verify_StudRange.py, k 2-20, df 1-20000, alpha .1-.001: Python
+//  engine q crit within 5E-6 relative; PPL engine within 0.008,
+//  the worst case k = 20, df = 3, alpha .005).
+// df: 1 and up with the Python engine, 3 and up with PPL.
+//
+// R. Metcalf / Claude — EpiStats fleet satellite
+// ============================================================
+
+// ---- prototypes ----
+sr_BuildZ();
+sr_RngCDF();
+sr_SRCDF();
+sr_SRCrit();
+sr_NiceNum();
+sr_DotV();
+sr_FmtF();
+sr_FmtP();
+sr_Eq();
+sr_Drain();
+sr_DrainT();
+sr_WaitAny();
+sr_Badge();
+sr_Busy();
+sr_ShowRes();
+sr_PyRun();
+sr_PyNum();
+sr_InvC();
+sr_TCrit();
+sr_Cache();
+sr_Cmp();
+sr_SimRun();
+sr_PvMode();
+sr_CritMode();
+sr_HSDMode();
+sr_Yard();
+sr_PlotMode();
+sr_DiagMode();
+sr_HelpMode();
+
+// ---- file-scope state ----
+LOCAL gZN:={};   // z nodes for inner (range) integral
+LOCAL gZW:={};   // Simpson weight * h/3 * phi(z), precomputed
+LOCAL gZC:={};   // Phi(z) at nodes, precomputed
+LOCAL gNZ:=0;    // current inner resolution (# intervals)
+LOCAL srEng:=0;  // which engine gave the last result: 0 none, 1 Python, 2 PPL
+LOCAL srQmax:=6; // the right end of the plot window built by sr_Cache
+LOCAL srTX:=-1;  // where the last tap landed (sr_WaitAny)
+LOCAL srTY:=-1;
+LOCAL srYM:={10,11,12.5,13,14.5,15};  // the yardstick's group means (an example)
+// beta 15a: taps whose WAIT(-1) click (type 3) may still reach the plot,
+// in order, and the next one due (see the plot's touch handling)
+LOCAL srTLX:={};
+LOCAL srTLY:={};
+LOCAL srTLi:=1;
+// beta 15a: what this session computed, for the Quit summary
+LOCAL srQK:=0;   // k of the q crit in EP_QCRIT (0 = none computed yet)
+LOCAL srQV:=0;   // its df (0 = infinity)
+LOCAL srPK:=0;   // 1 = a P-value was computed (EP_QPVAL)
+LOCAL srHK:=0;   // 1 = an HSD was computed (EP_HSD)
+// beta 15b: the last q crit, alpha and p the student SAW, as shown on
+// their page (the plot's too), for the Quit summary
+LOCAL srQS:="";  // the q crit after its brackets: " = 3.8612", or " > 6.0"
+LOCAL srAS:="";  // its alpha: "0.0500"
+LOCAL srPS:="";  // the p: "p = 0.06430", or "p < 0.00001"
+// beta 15b: THE ONE THRESHOLD of the plot's stale-click test.  A click
+// that matches the next spot on srTLX, srTLY is stale only if it was
+// ALREADY QUEUED: WAIT(-1) handed it over within this many milliseconds
+// of being called.  A real tap comes later than that -- the student sees
+// the plot first -- so it counts even at the very same spot.
+LOCAL srQueuedMs:=100;
+
+EXPORT EP_QPVAL:=0;
+EXPORT EP_QCRIT:=0;
+EXPORT EP_HSD:=0;
+
+// ---- the Python bridge (beta 15) ----
+// PPL writes the inputs, runs PYTHON(srq), and reads the outputs.
+// Python reads every input with hpprime.eval -- never through
+// PYTHON()'s argument list, which hands numbers over as Home-
+// formatted text that float() can reject (Lessons Learned s9).
+EXPORT SR_K:=3;        // k, the number of means
+EXPORT SR_DF:=12;      // df error (100000 stands for infinity)
+EXPORT SR_A:=0.05;     // alpha
+EXPORT SR_Q:=3.5;      // q (mode 1); q obs (mode 3); qmax (modes 5, 6)
+EXPORT SR_MODE:=0;     // 0 probe, 1 p-value, 2 q crit, 3 plot cache,
+                       // 5 k = 2 curve, 6 H0 simulation
+EXPORT SR_OUT:=-1;     // the answer; -1 until Python writes it
+EXPORT SR_M:=5;        // simulation: group size m
+EXPORT SR_N:=2000;     // simulation: replicates
+EXPORT SR_TC:=0;       // simulation: t crit for the pairwise t tests
+EXPORT SR_ENGINE;      // "Python" or "PPL": who gave the last result
+EXPORT SR_PZ;          // the last mark the Python script left
+EXPORT EP_SRCDF;       // plot cache: CDF at 65 points on 0..qmax
+EXPORT EP_SRPDF;       // plot cache: pdf at the same 65 points
+EXPORT EP_SRCD2;       // the k = 2 pdf on the same grid (Python only)
+EXPORT EP_SRSIM;       // simulation: 40 bin counts + 5 summaries
+
+// ============================================================
+// THE MICROPYTHON ENGINE (the fast path)
+//
+// PYTHON(srq) runs this whole block from the top each time: the
+// imports, the definitions, then main() at the bottom, which reads
+// SR_MODE and does one job.  The engine functions (Phi down to
+// qcrit) are StudRangePy beta 14c's, pasted whole and unchanged --
+// that code ran on a G2 and was verified against SciPy.  Everything
+// after qcrit is new in beta 15.
+// ============================================================
+#PYTHON srq
+# StudRange beta 15 - the MicroPython engine (Tukey q).
+# Roger Metcalf / Claude, Aug-Oct 2026.  Verified vs
+# scipy.stats.studentized_range with the beta 15 df-range grids below
+# (outer2): q crit within 5e-6 relative for k 2-20, df 1-20000,
+# alpha .1-.001 (verify_StudRange.py runs this very text).
+# u^2 substitution in the outer integral; Simpson 64x96 for results,
+# 32x48 for the plot; secant root-finder (about 9 CDF evaluations).
+#
+# THE BRIDGE (Lessons Learned v7f s9):
+#  * inputs: PPL writes SR_K, SR_DF, SR_A, SR_Q, SR_MODE (and SR_M,
+#    SR_N, SR_TC for the simulation); this script reads each with
+#    hpprime.eval, so it arrives as a true number.  Never sys.argv.
+#  * outputs: ONE value per eval, written as a PPL assignment built
+#    by concatenation, the number as "%.10f" text.  Never repr()
+#    (it can give exponent notation PPL will not read), never join.
+#  * every payload is a fixed size: one number, or 65 cache points,
+#    or 45 simulation numbers, however much work made them.
+#  * only math and hpprime are imported up here.  A top-level import
+#    of a module this MicroPython lacks closes the script with no
+#    message at all; urandom is imported inside simulate() alone.
+#  * mark() leaves a trail in SR_PZ: if the script dies, SR_PZ in
+#    Home (or the Diagnostics page) says how far it got.
+#  * a Python error does NOT stop the PPL program.  The traceback
+#    goes to the Terminal and PPL carries on; PPL notices because
+#    the output it cleared to -1 is still -1, and uses its own engine.
+from math import erf, exp, log, sqrt, pi, lgamma, floor
+import hpprime
+
+SQ2 = sqrt(2.0)
+CPH = 1.0 / sqrt(2.0 * pi)
+
+def Phi(z):
+    return 0.5 * (1.0 + erf(z / SQ2))
+
+def prange(w, k, n):
+    # P(range of k std normals <= w); Simpson on z in [-8,8]
+    if w <= 0.0:
+        return 0.0
+    h = 16.0 / n
+    acc = 0.0
+    i = 0
+    while i <= n:
+        z = -8.0 + i * h
+        d = Phi(z) - Phi(z - w)
+        if d > 0.0:
+            f = CPH * exp(-0.5 * z * z + (k - 1.0) * log(d))
+        else:
+            f = 0.0
+        if i == 0 or i == n:
+            acc += f
+        elif i % 2 == 1:
+            acc += 4.0 * f
+        else:
+            acc += 2.0 * f
+        i += 1
+    v = k * acc * h / 3.0
+    if v > 1.0:
+        v = 1.0
+    return v
+
+def gpdf(w, k, n):
+    # density of range of k std normals at w
+    if w <= 0.0:
+        return 0.0
+    h = 16.0 / n
+    acc = 0.0
+    i = 0
+    while i <= n:
+        z = -8.0 + i * h
+        d = Phi(z) - Phi(z - w)
+        if k == 2:
+            f = CPH * CPH * exp(-0.5 * z * z - 0.5 * (z - w) * (z - w))
+        elif d > 0.0:
+            f = CPH * CPH * exp(-0.5 * z * z - 0.5 * (z - w) * (z - w)
+                                + (k - 2.0) * log(d))
+        else:
+            f = 0.0
+        if i == 0 or i == n:
+            acc += f
+        elif i % 2 == 1:
+            acc += 4.0 * f
+        else:
+            acc += 2.0 * f
+        i += 1
+    return k * (k - 1.0) * acc * h / 3.0
+
+def outer(q, k, v, no, ni, wantpdf):
+    # shared outer integral over s = sqrt(chi2_v/v); u^2 substitution
+    lc = 0.5 * v * log(v) - lgamma(0.5 * v) - (0.5 * v - 1.0) * log(2.0)
+    smax = 1.0 + 10.0 / sqrt(2.0 * v)
+    if v < 4.0 and smax < 6.0:
+        smax = 6.0
+    umax = sqrt(smax)
+    h = umax / no
+    tot = 0.0
+    i = 0
+    while i <= no:
+        u = i * h
+        s = u * u
+        if s > 0.0:
+            f = 2.0 * u * exp(lc + (v - 1.0) * log(s) - 0.5 * v * s * s)
+            if wantpdf:
+                f = f * s * gpdf(q * s, k, ni)
+            else:
+                f = f * prange(q * s, k, ni)
+        else:
+            f = 0.0
+        if i == 0 or i == no:
+            tot += f
+        elif i % 2 == 1:
+            tot += 4.0 * f
+        else:
+            tot += 2.0 * f
+        i += 1
+    return tot * h / 3.0
+
+def scdf(q, k, v, no=64, ni=96):
+    if q <= 0.0:
+        return 0.0
+    if v > 25000.0:
+        return prange(q, k, ni)
+    val = outer(q, k, v, no, ni, 0)
+    if val > 1.0:
+        val = 1.0
+    return val
+
+def spdf(q, k, v, no=32, ni=48):
+    if q <= 0.0:
+        return 0.0
+    if v > 25000.0:
+        return gpdf(q, k, ni)
+    return outer(q, k, v, no, ni, 1)
+
+def qsolve(k, v, target, no, ni):
+    # solve scdf(q) = target by secant with warm start
+    q0 = 2.0 + 0.5 * pow(k, 0.6) * (1.0 + 4.0 / max(v, 1.0))
+    q1 = q0 * 1.2
+    f0 = scdf(q0, k, v, no, ni) - target
+    f1 = scdf(q1, k, v, no, ni) - target
+    j = 0
+    while j < 30:
+        if f1 == f0:
+            break
+        q2 = q1 - f1 * (q1 - q0) / (f1 - f0)
+        if q2 <= 0.0:
+            q2 = 0.5 * q1
+        f2 = scdf(q2, k, v, no, ni) - target
+        q0 = q1
+        f0 = f1
+        q1 = q2
+        f1 = f2
+        if abs(f2) < 1e-9 or abs(q1 - q0) < 5e-6:
+            break
+        j += 1
+    return q1
+
+def qcrit(k, v, alpha):
+    return qsolve(k, v, 1.0 - alpha, 64, 96)
+
+
+# ---------- beta 15: the two ends of the df range ----------
+# verify_StudRange.py found that the u^2 grid above (StudRangePy's,
+# unchanged) loses its accuracy at both ends of the df range:
+#  * df 1-3: a large q puts all the action at s ~ 1/q, between the
+#    first two nodes (df 1, alpha .01: q crit 1-14 % too low; df 3,
+#    k = 10, alpha .001: 0.01 low);
+#  * df above ~50: s is a spike of width 1/sqrt(2 df) round s = 1 that
+#    the grid steps over (df 120, alpha .001: 2E-4 off; df 1000: no
+#    answer at all).
+# So two more grids are used out there, and only out there; the
+# functions above still do df 4-50 and infinity exactly as they ran
+# on the G2:
+#   df < 4 .......... s = e^t, t from ln(1e-9) to ln(8): every scale
+#                     of s gets the same share of nodes (4x as many)
+#   50 < df <= 25000  s in 1 +/- 12/sqrt(2 df): the spike itself
+def outer2(q, k, v, no, ni, wantpdf):
+    lc = 0.5 * v * log(v) - lgamma(0.5 * v) - (0.5 * v - 1.0) * log(2.0)
+    if v < 4.0:
+        a = log(1e-9)
+        b = log(8.0)
+    else:
+        sg = 1.0 / sqrt(2.0 * v)
+        a = 1.0 - 12.0 * sg
+        if a < 1e-9:
+            a = 1e-9
+        b = 1.0 + 12.0 * sg
+    h = (b - a) / no
+    tot = 0.0
+    i = 0
+    while i <= no:
+        t = a + i * h
+        if v < 4.0:
+            s = exp(t)
+            f = s * exp(lc + (v - 1.0) * t - 0.5 * v * s * s)
+        else:
+            s = t
+            f = exp(lc + (v - 1.0) * log(s) - 0.5 * v * s * s)
+        if wantpdf:
+            f = f * s * gpdf(q * s, k, ni)
+        else:
+            f = f * prange(q * s, k, ni)
+        if i == 0 or i == no:
+            tot += f
+        elif i % 2 == 1:
+            tot += 4.0 * f
+        else:
+            tot += 2.0 * f
+        i += 1
+    return tot * h / 3.0
+
+def outer2_n(v, no):
+    # how many outer intervals the extra grids use
+    if v < 4.0:
+        return 4 * no
+    return max(no, 64)
+
+def at_ends(v):
+    return v < 4.0 or (v > 50.0 and v <= 25000.0)
+
+# keep the G2-tested versions under new names, and route the two
+# ends of the df range to outer2.  qsolve and qcrit look scdf up when
+# they run, so they use this routing too.
+scdf_u2 = scdf
+spdf_u2 = spdf
+
+def scdf(q, k, v, no=64, ni=96):
+    if q > 0.0 and at_ends(v):
+        val = outer2(q, k, v, outer2_n(v, no), ni, 0)
+        if val > 1.0:
+            val = 1.0
+        return val
+    return scdf_u2(q, k, v, no, ni)
+
+def spdf(q, k, v, no=32, ni=48):
+    if q > 0.0 and at_ends(v):
+        return outer2(q, k, v, outer2_n(v, no), ni, 1)
+    return spdf_u2(q, k, v, no, ni)
+
+# ---------- beta 15: the bridge ----------
+def ev(s):
+    return hpprime.eval(s)
+
+def num(name):
+    # a PPL real, read as a true number (s9: never through argv)
+    return float(ev(name))
+
+def mark(t):
+    # a trail in a PPL global; t never contains a quote mark
+    try:
+        ev('SR_PZ:="' + t + '"')
+    except Exception:
+        pass
+
+def put(name, x):
+    # ONE value per crossing, fixed-point text
+    ev(name + ":=" + ("%.10f" % x))
+
+def putel(name, j, x):
+    # element j (1-based, as PPL counts) of an EXPORTed list
+    ev(name + "(" + str(j) + "):=" + ("%.10f" % x))
+
+def bar(f):
+    # progress bar in PPL's empty frame (sr_Busy draws it at 50,120);
+    # fillrect(gr, x, y, w, h, edge, fill) is the order that ran on
+    # the G2.  A drawing failure must never cost the result: try.
+    try:
+        w = int(218.0 * f)
+        if w > 0:
+            hpprime.fillrect(0, 51, 121, w, 13, 0xFF0000, 0xFF0000)
+    except Exception:
+        pass
+
+NN = 64     # the plot cache has NN + 1 = 65 points on 0..qmax
+
+def cache(k, v, qo):
+    # The plot's window: the PPL engine's rule, step for step --
+    # widen until F(qmax) >= 0.998 (at most 40), and far enough to
+    # show an observed q out beyond the tail (at most 60).
+    qmax = 6.0
+    while scdf(qmax, k, v, 32, 48) < 0.998 and qmax < 40.0:
+        qmax = qmax * 1.4
+    if qo * 1.15 > qmax:
+        qmax = min(60.0, qo * 1.15)
+    hq = qmax / NN
+    # the density itself (spdf), not central differences of the CDF;
+    # at q = 0 it is read just to the right (for k = 2 it is not 0)
+    j = 0
+    while j <= NN:
+        qq = j * hq
+        if j == 0:
+            qq = 1e-6 * hq
+        putel("EP_SRPDF", j + 1, spdf(qq, k, v, 32, 48))
+        bar(0.5 * j / NN)
+        j += 1
+    put("SR_OUT", qmax)
+    # the CDF last; its LAST element is the one PPL reads to decide
+    # whether this run worked, so it is written last of all
+    prev = 0.0
+    j = 0
+    while j <= NN:
+        c = scdf(j * hq, k, v, 32, 48)
+        if c < prev:
+            c = prev    # monotone, as the PPL engine keeps it
+        prev = c
+        putel("EP_SRCDF", j + 1, c)
+        bar(0.5 + 0.5 * j / NN)
+        j += 1
+
+def curve2(v, qmax):
+    # the k = 2 density on the plot's own grid, for the grey curve
+    hq = qmax / NN
+    j = 0
+    while j <= NN:
+        qq = j * hq
+        if j == 0:
+            qq = 1e-6 * hq
+        putel("EP_SRCD2", j + 1, spdf(qq, 2, v, 32, 48))
+        bar(j / NN)
+        j += 1
+
+def simulate(k, m, nrep, alpha, tc, qmax):
+    # H0 true: k groups of m values, all from the SAME normal
+    # population.  For each replicate compute Tukey's q, and ask
+    # whether ANY of the k(k-1)/2 pairwise t tests would reject.
+    from urandom import random as rnd
+    df = k * (m - 1)
+    qc = qcrit(k, df, alpha)     # exact, the same solver as menu 2
+    spare = [0.0, 0]
+
+    def gauss():
+        # Marsaglia polar: two normals per accepted point, no trig
+        if spare[1]:
+            spare[1] = 0
+            return spare[0]
+        while True:
+            a = 2.0 * rnd() - 1.0
+            b = 2.0 * rnd() - 1.0
+            s = a * a + b * b
+            if 0.0 < s < 1.0:
+                break
+        f = sqrt(-2.0 * log(s) / s)
+        spare[0] = b * f
+        spare[1] = 1
+        return a * f
+
+    nb = 40
+    bw = qmax / nb
+    cnt = [0] * nb
+    nq = 0      # replicates with q > q crit: Tukey, about alpha
+    nt = 0      # replicates where ANY pairwise t > t crit
+    nover = 0   # q beyond the plot window (counted, not drawn)
+    r = 0
+    while r < nrep:
+        means = []
+        sse = 0.0
+        g = 0
+        while g < k:
+            s1 = 0.0
+            s2 = 0.0
+            i = 0
+            while i < m:
+                x = gauss()
+                s1 += x
+                s2 += x * x
+                i += 1
+            mu = s1 / m
+            means.append(mu)
+            sse += s2 - m * mu * mu
+            g += 1
+        if sse < 1e-12:
+            sse = 1e-12
+        sm = sqrt(sse / df / m)          # sqrt(MSE / m)
+        q = (max(means) - min(means)) / sm
+        if q > qc:
+            nq += 1
+        # every pair, as k(k-1)/2 separate t tests would do it:
+        # t = (mean_a - mean_b) / sqrt(2 MSE / m)
+        hit = 0
+        a = 0
+        while a < k - 1 and hit == 0:
+            b = a + 1
+            while b < k:
+                if abs(means[a] - means[b]) / (sm * SQ2) > tc:
+                    hit = 1
+                    break
+                b += 1
+            a += 1
+        nt += hit
+        bi = int(q / bw)
+        if bi < nb:
+            cnt[bi] += 1
+        else:
+            nover += 1
+        if r % 100 == 0:
+            bar(r / nrep)
+        r += 1
+    # 45 numbers, one at a time; nrep LAST (PPL checks it)
+    j = 0
+    while j < nb:
+        putel("EP_SRSIM", j + 1, cnt[j])
+        j += 1
+    putel("EP_SRSIM", 41, nq)
+    putel("EP_SRSIM", 42, nt)
+    putel("EP_SRSIM", 43, nover)
+    putel("EP_SRSIM", 44, qc)
+    putel("EP_SRSIM", 45, nrep)
+
+def main():
+    mark("started")
+    md = int(num("SR_MODE"))
+    k = int(num("SR_K"))
+    v = num("SR_DF")
+    mark("read mode " + str(md))
+    if md == 0:
+        # the Diagnostics probe: F(3.5; 3, 12), read through the bridge
+        put("SR_OUT", scdf(num("SR_Q"), k, v))
+    elif md == 1:
+        p = 1.0 - scdf(num("SR_Q"), k, v)
+        if p < 0.0:
+            p = 0.0
+        put("SR_OUT", p)
+    elif md == 2:
+        put("SR_OUT", qcrit(k, v, num("SR_A")))
+    elif md == 3:
+        cache(k, v, num("SR_Q"))
+    elif md == 5:
+        curve2(v, num("SR_Q"))
+    elif md == 6:
+        simulate(k, int(num("SR_M")), int(num("SR_N")),
+                 num("SR_A"), num("SR_TC"), num("SR_Q"))
+    mark("finished mode " + str(md))
+
+main()
+#END
+
+// ============================================================
+// THE PPL ENGINE (the fallback) -- unchanged from beta 14.
+// It runs whenever the Python block does not answer: on firmware
+// without Python, or when the script fails.  df 3 and up.
+// ============================================================
+// ============================================================
+// Core numerics
+// ============================================================
+
+// Precompute inner-integral node tables for nz intervals.
+// z range [-7,4] per Dunlap et al.; Phi(z) and phi(z)*w*h/3
+// are q-independent, so caching them cuts CDF cost ~in half.
+sr_BuildZ(nz)
+BEGIN
+  LOCAL bzJ,bzH,zv,bzW,bzI;
+  IF nz==gNZ THEN RETURN 0; END;
+  // beta 15d: MAKELIST's counter is the LOCAL bzI, not Home's X.  MAKELIST
+  // writes its counter, and X is the Function app's plot variable, the
+  // one a student is most likely to have set (GfxProbe T19: a LOCAL
+  // counter works and leaves Home's variables alone).
+  gZN:=MAKELIST(0,bzI,1,nz+1);
+  gZW:=MAKELIST(0,bzI,1,nz+1);
+  gZC:=MAKELIST(0,bzI,1,nz+1);
+  bzH:=11/nz;
+  FOR bzJ FROM 0 TO nz DO
+    zv:=-7+bzJ*bzH;
+    IF bzJ==0 OR bzJ==nz THEN
+      bzW:=1;
+    ELSE
+      IF bzJ MOD 2==1 THEN bzW:=4; ELSE bzW:=2; END;
+    END;
+    gZN(bzJ+1):=zv;
+    gZW(bzJ+1):=bzW*bzH/3*NORMALD(0,1,zv);
+    gZC(bzJ+1):=NORMALD_CDF(0,1,zv);
+  END;
+  gNZ:=nz;
+  RETURN 0;
+END;
+
+// P_k(x): CDF of the range of k independent std normals
+// = k * INT phi(z)*[Phi(z+x)-Phi(z)]^(k-1) dz   (Simpson)
+sr_RngCDF(rcX,rcK)
+BEGIN
+  LOCAL rcJ,acc,rcD;
+  IF rcX<=0 THEN RETURN 0; END;
+  acc:=0;
+  FOR rcJ FROM 1 TO gNZ+1 DO
+    rcD:=NORMALD_CDF(0,1,gZN(rcJ)+rcX)-gZC(rcJ);
+    IF rcD>0 THEN acc:=acc+gZW(rcJ)*rcD^(rcK-1); END;
+  END;
+  RETURN rcK*acc;
+END;
+
+// Log-gamma, Lanczos g=7 (LNGAMMA is CAS-only; not PPL).
+// Accurate to ~1E-13 for x >= 0.5 (we only need x >= 1.5).
+// 0.918938533204673 = 0.5*LN(2*pi).
+sr_LGAM(lgX)
+BEGIN
+  LOCAL lgC,acc,lgT,lgJ;
+  lgC:={676.5203681218851,-1259.1392167224028,
+      771.32342877765313,-176.61502916214059,
+      12.507343278686905,-0.13857109526572012,
+      9.9843695780195716E-6,1.5056327351493116E-7};
+  lgX:=lgX-1; acc:=0.99999999999980993;
+  FOR lgJ FROM 1 TO 8 DO
+    acc:=acc+lgC(lgJ)/(lgX+lgJ);
+  END;
+  lgT:=lgX+7.5;
+  RETURN 0.918938533204673+(lgX+0.5)*LN(lgT)-lgT+LN(acc);
+END;
+
+// F(q): studentized range CDF, k means, v df.
+// F(q) = INT_0^inf f_s(s)*P_k(q*s) ds, s = sqrt(chi2_v / v);
+// density constant kept in log form (the 1977 underflow trick)
+// via sr_LGAM (Lanczos). ns = outer Simpson intervals (even).
+// Substitution s = u^2 clusters nodes near s=0, which fixes
+// the deep-tail inaccuracy at low df that limited the 1977
+// program (they simply excluded df 1-2; we are exact from
+// df 3 up: qcrit err < 4E-4 even at alpha=.005, df=3).
+sr_SRCDF(scQ,scK,scV,ns)
+BEGIN
+  LOCAL ulo,uhi,scH,lc,scJ,uv;
+  LOCAL sv,scW,acc,scSg,scLo,scHi;
+  IF scQ<=0 THEN RETURN 0; END;
+  // scV=0 means nu = infinity: s -> 1, so F(scQ) is the plain
+  // range CDF (Harter 1960 Table 1 case). Exact and instant.
+  IF scV==0 THEN RETURN sr_RngCDF(scQ,scK); END;
+  // beta 15: above df 100 the density of s is a spike of width
+  // 1/sqrt(2 df) round s = 1, and the u^2 grid below steps over it
+  // (verify_StudRange.py: df 240 gave q crit 0.9 % low, df 1000 no
+  // answer).  So for large df integrate over the spike itself,
+  // s in 1 +/- 12/sqrt(2 df).  df 100 and below: unchanged.
+  IF scV>100 THEN
+    scSg:=1/SQRT(2*scV);
+    scLo:=MAX(1E-9,1-12*scSg); scHi:=1+12*scSg; scH:=(scHi-scLo)/ns;
+    lc:=(1-scV/2)*LN(2)+(scV/2)*LN(scV)-sr_LGAM(scV/2);
+    acc:=0;
+    FOR scJ FROM 0 TO ns DO
+      sv:=scLo+scJ*scH;
+      IF scJ==0 OR scJ==ns THEN
+        scW:=1;
+      ELSE
+        IF scJ MOD 2==1 THEN scW:=4; ELSE scW:=2; END;
+      END;
+      acc:=acc+scW*EXP(lc+(scV-1)*LN(sv)-scV*sv*sv/2)*sr_RngCDF(scQ*sv,scK);
+    END;
+    RETURN MIN(1,scH/3*acc);
+  END;
+  uhi:=SQRT(1+9/SQRT(scV)); ulo:=1E-3; scH:=(uhi-ulo)/ns;
+  lc:=(1-scV/2)*LN(2)+(scV/2)*LN(scV)-sr_LGAM(scV/2);
+  acc:=0;
+  FOR scJ FROM 0 TO ns DO
+    uv:=ulo+scJ*scH; sv:=uv*uv;
+    IF scJ==0 OR scJ==ns THEN
+      scW:=1;
+    ELSE
+      IF scJ MOD 2==1 THEN scW:=4; ELSE scW:=2; END;
+    END;
+    acc:=acc+scW*EXP(lc+(scV-1)*LN(sv)-scV*sv*sv/2)*2*uv*sr_RngCDF(scQ*sv,scK);
+  END;
+  RETURN MIN(1,scH/3*acc);
+END;
+
+// Inverse: q with F(q)=1-a. Illinois-modified regula falsi
+// (~6-9 CDF evaluations vs ~16 for plain bisection).
+sr_SRCrit(crA,crK,crV,ns)
+BEGIN
+  LOCAL crT,qlo,qhi,flo,fhi,qm;
+  LOCAL fm,it,side;
+  crT:=1-crA;
+  qlo:=0.6; flo:=sr_SRCDF(qlo,crK,crV,ns)-crT;
+  qhi:=4;   fhi:=sr_SRCDF(qhi,crK,crV,ns)-crT;
+  WHILE fhi<0 AND qhi<60 DO
+    qhi:=qhi*1.5; fhi:=sr_SRCDF(qhi,crK,crV,ns)-crT;
+  END;
+  qm:=(qlo+qhi)/2; side:=0;
+  FOR it FROM 1 TO 40 DO
+    qm:=(qlo*fhi-qhi*flo)/(fhi-flo);
+    fm:=sr_SRCDF(qm,crK,crV,ns)-crT;
+    IF ABS(fm)<1E-7 OR ABS(qhi-qlo)<5E-5 THEN BREAK; END;
+    IF fm*flo>0 THEN
+      qlo:=qm; flo:=fm;
+      IF side==-1 THEN fhi:=fhi/2; END;
+      side:=-1;
+    ELSE
+      qhi:=qm; fhi:=fm;
+      IF side==1 THEN flo:=flo/2; END;
+      side:=1;
+    END;
+  END;
+  RETURN qm;
+END;
+
+// ============================================================
+// Utilities (house standards)
+// ============================================================
+
+sr_NiceNum(nnX,rnd)
+BEGIN
+  LOCAL nnE,nnF,nf;
+  IF nnX<=0 THEN RETURN 1; END;
+  nnE:=FLOOR(LOG(nnX));
+  nnF:=nnX/ALOG(nnE);
+  IF rnd THEN
+    IF nnF<1.5 THEN
+      nf:=1;
+    ELSE
+      IF nnF<3 THEN
+        nf:=2;
+      ELSE
+        IF nnF<7 THEN nf:=5; ELSE nf:=10; END;
+      END;
+    END;
+  ELSE
+    IF nnF<=1 THEN
+      nf:=1;
+    ELSE
+      IF nnF<=2 THEN
+        nf:=2;
+      ELSE
+        IF nnF<=5 THEN nf:=5; ELSE nf:=10; END;
+      END;
+    END;
+  END;
+  RETURN nf*ALOG(nnE);
+END;
+
+// Dotted vertical line, 3 px on / 3 px off (fleet style)
+sr_DotV(dvG,px,y1,y2,dvC)
+BEGIN
+  LOCAL yy;
+  FOR yy FROM y1 TO y2 STEP 6 DO
+    LINE_P(dvG,px,yy,px,MIN(yy+3,y2),dvC);
+  END;
+END;
+
+// Fixed-decimal string (mode 2 keeps trailing zeros: 0.0500)
+// beta 15b: ROUND first.  STRING(x, 2, d) prints SCIENTIFIC when
+// 0 < |x| < 10^-d (emulator, 17 Oct 2026: STRING(0.096, 2, 1) = "9.6E-2",
+// with a small capital E), so a tiny MSE, HSD, mean or difference would
+// have shown that way; rounded first it reads 0.0000.  A value a hair
+// below 0 (a tick label summed across zero) rounds to minus zero, which
+// is set to plain 0 so it cannot print as "-0.0".
+sr_FmtF(ffX,ffD)
+BEGIN
+  LOCAL ffR;
+  ffR:=ROUND(ffX,ffD);
+  IF ffR==0 THEN ffR:=0; END;
+  RETURN STRING(ffR,2,ffD);
+END;
+
+// Probability string with a floor: below 10^-d, Fixed mode would
+// print a row of zeros ("p = 0.00000" reads as impossible), so
+// report "< 0.00001" instead.  Same rule as PowerViz FMTP.
+sr_FmtP(fpX,fpD)
+BEGIN
+  LOCAL fpT;
+  fpT:=10^(-fpD);
+  IF fpX>0 AND fpX<fpT THEN RETURN "< "+STRING(fpT,2,fpD); END;
+  RETURN STRING(fpX,2,fpD);
+END;
+
+// " = 0.07000", or " < 0.00001" when sr_FmtP has already written the
+// relation (beta 15c): "P(Q >= q) = < 0.00001" said two things at
+// once; "P(Q >= q) < 0.00001" says the one that is true.  The first
+// character decides, read only when there is one (DIM first: an
+// empty string has no first character).
+sr_Eq(eqS)
+BEGIN
+  IF DIM(eqS)>0 THEN
+    IF LEFT(eqS,1)=="<" OR LEFT(eqS,1)==">" THEN RETURN " "+eqS; END;
+  END;
+  RETURN " = "+eqS;
+END;
+
+// Empty the key buffer (the OK / Enter that closed a form or menu).
+// Keys only: a GETKEY drain does not see a finger on the screen.
+sr_Drain()
+BEGIN
+  LOCAL drK;
+  REPEAT drK:=GETKEY; UNTIL drK==-1;
+END;
+
+// Wait for the finger to lift -- but never for more than a second.
+// MOUSE(1) is -1 while nothing touches the screen.  Without the
+// time limit a stuck or phantom touch would hold the program here
+// for ever, and the only way out would be a reset.  (The same
+// shape as ChiTable's csDrain, which has run on the G2 and G1.)
+sr_DrainT()
+BEGIN
+  LOCAL dtT;
+  dtT:=TICKS;                                    // milliseconds
+  REPEAT UNTIL MOUSE(1)==-1 OR TICKS-dtT>1000;
+END;
+
+// Drain, wait for a key OR a tap, drain (the house xxWaitAny,
+// ChiTable's shape).  Returns the key code, or -1 for a tap, whose
+// x and y are left in srTX and srTY.  A GETKEY drain alone does not
+// drain touch, which is why the capped MOUSE drain is here too.
+// Unlike WAIT(-1) it never gives up by itself, so a result page
+// stays up through a lecture.
+sr_WaitAny()
+BEGIN
+  LOCAL wk,wm,wm1,wk2;
+  REPEAT wk:=GETKEY; UNTIL wk==-1;
+  sr_DrainT();
+  REPEAT
+    wk:=GETKEY;
+    wm:=MOUSE;
+    wm1:=wm(1);
+  UNTIL wk>-1 OR SIZE(wm1)>0;
+  srTX:=-1; srTY:=-1;
+  IF SIZE(wm1)>0 THEN
+    srTX:=wm1(1); srTY:=wm1(2); wk:=-1;
+    // beta 15a: if this tap's click also reaches the plot's WAIT(-1)
+    // (not seen on the emulator, not ruled out), the plot must not take
+    // it for a soft key: its spot goes on the list of expected clicks
+    srTLX:=CONCAT(srTLX,{srTX}); srTLY:=CONCAT(srTLY,{srTY});
+  END;
+  sr_DrainT();
+  REPEAT wk2:=GETKEY; UNTIL wk2==-1;
+  RETURN wk;
+END;
+
+// The ENGINE BADGE (beta 15): which code produced the result on
+// this page.  Drawn on G1 at (bdX, bdY).  Green panel = the
+// MicroPython engine answered; red panel = Python did not answer
+// and the PPL engine did the work (slower, df 3 and up).  Without
+// it a Python failure would be invisible (Lessons Learned s9).
+sr_Badge(bdX,bdY)
+BEGIN
+  IF srEng==1 THEN
+    RECT_P(G1,bdX,bdY,bdX+150,bdY+13,RGB(0,140,60),RGB(232,246,235));
+    TEXTOUT_P("engine: MicroPython 1.9.4",G1,bdX+4,bdY+2,1,RGB(0,140,60));
+  END;
+  IF srEng==2 THEN
+    RECT_P(G1,bdX,bdY,bdX+190,bdY+13,RGB(255,0,0),RGB(255,235,235));
+    TEXTOUT_P("engine: PPL (Python unavailable)",G1,bdX+4,bdY+2,1,RGB(255,0,0));
+  END;
+END;
+
+// "Working..." screen with an empty progress frame at 50,120-270,134.
+// The PPL engine fills the bar from PPL; the Python engine fills the
+// same frame from Python (hpprime.fillrect), so both look alike.
+sr_Busy(buT)
+BEGIN
+  RECT_P(G0,RGB(255,255,255));
+  TEXTOUT_P(buT,G0,50,90,3,RGB(0,60,200));
+  RECT_P(G0,50,120,270,134,RGB(0,0,0),RGB(255,255,255));
+END;
+
+// Styled result screen (orange title bar, house style), composed on
+// G1 and shown with ONE blit (beta 15; beta 14 drew straight on G0).
+// Lines are 22 px apart; when more than 8 are passed they close up
+// to 18 px.  bdg = 1 puts the engine badge under the title and moves
+// the lines down 14 px.  ft is the footer.  Held by sr_WaitAny: a
+// key or a tap closes it.  Returns the key (-1 for a tap).
+sr_ShowRes(ttl,lns,ft,bdg)
+BEGIN
+  LOCAL srJ,srSp,srY,srY0;
+  srSp:=22;
+  IF SIZE(lns)>8 THEN srSp:=18; END;
+  srY0:=30;
+  DIMGROB_P(G1,320,240,#FFFFFFh);
+  RECT_P(G1,0,0,319,24,RGB(255,69,0),RGB(255,69,0));
+  TEXTOUT_P(ttl,G1,8,4,3,RGB(255,255,255));
+  IF bdg==1 AND srEng>0 THEN
+    sr_Badge(4,28);
+    srY0:=44;
+  END;
+  FOR srJ FROM 1 TO SIZE(lns) DO
+    srY:=srY0+srSp*(srJ-1);
+    TEXTOUT_P(lns(srJ),G1,12,srY,3,RGB(0,0,0));
+  END;
+  TEXTOUT_P(ft,G1,12,222,2,RGB(30,144,255));
+  BLIT_P(G0,0,0,G1);
+  RETURN sr_WaitAny();
+END;
+
+// ============================================================
+// The bridge (beta 15) -- Lessons Learned v7f section 9
+// ============================================================
+
+// Run the Python block in mode prMd.  GUARD 1: clear the output
+// first, so a failure cannot leave an old answer behind.  IFERR is
+// here only for firmware without Python, where PYTHON() itself may
+// error; a Python exception does NOT raise a PPL error -- it prints
+// a traceback to the Terminal and PPL simply carries on.  That is
+// why every caller then checks the answer (GUARD 2) and has a PPL
+// fallback (GUARD 3).  The list outputs are cleared by the callers.
+sr_PyRun(prMd)
+BEGIN
+  SR_MODE:=prMd;
+  SR_OUT:=-1;
+  SR_PZ:="";
+  IFERR
+    PYTHON(srq);
+  THEN
+    SR_OUT:=-1;
+  END;
+  RETURN 0;
+END;
+
+// GUARD 2: validate by USING the answer -- read SR_OUT inside IFERR
+// and check that it lies in [pnLo, pnHi].  The -1 left by sr_PyRun
+// fails every check, so "Python never wrote it" and "Python wrote
+// nonsense" both come back 0.  1 = the answer is usable.
+sr_PyNum(pnLo,pnHi)
+BEGIN
+  LOCAL pnV,pnOK;
+  pnOK:=0;
+  IFERR
+    pnV:=SR_OUT+0;
+    IF pnV>=pnLo AND pnV<=pnHi THEN pnOK:=1; END;
+  THEN
+    pnOK:=0;
+  END;
+  RETURN pnOK;
+END;
+
+// q at which the cached CDF reaches 1 - icA: inverse interpolation
+// on LN(1-F), beta 14's tail-accurate rule (the survival function is
+// close to log-linear out there), now for ANY alpha.  Beyond the
+// window it extrapolates from the last cell, so the caller compares
+// the answer with qmax.  icH is the grid step qmax/64.
+sr_InvC(icA,icH)
+BEGIN
+  LOCAL icT,icJ,icS0,icS1;
+  icT:=1-icA; icJ:=1;
+  WHILE icJ<64 AND EP_SRCDF(icJ+1)<icT DO icJ:=icJ+1; END;
+  icS0:=MAX(1E-12,1-EP_SRCDF(icJ)); icS1:=MAX(1E-12,1-EP_SRCDF(icJ+1));
+  IF icS1<icS0 THEN
+    RETURN icH*((icJ-1)+(LN(icA)-LN(icS0))/(LN(icS1)-LN(icS0)));
+  END;
+  RETURN icH*icJ;
+END;
+
+// t crit with tcV df: the point where the t CDF reaches tcQ.  For
+// the simulation's "separate t tests" line.  STUDENT_ICDF is
+// documented but not on our device-verified list, so (CICatcher's
+// pattern) try it inside IFERR, USE the answer before trusting it,
+// and otherwise bisect on STUDENT_CDF, which is verified.
+sr_TCrit(tcV,tcQ)
+BEGIN
+  LOCAL tcT,tcOK,tcLo,tcHi,tcMid,tcI;
+  tcOK:=0; tcT:=0;
+  IFERR
+    tcT:=STUDENT_ICDF(tcV,tcQ);
+    IF tcT>0 THEN
+      IF ABS(STUDENT_CDF(tcV,tcT)-tcQ)<0.000001 THEN tcOK:=1; END;
+    END;
+  THEN
+    tcOK:=0;
+  END;
+  IF tcOK==1 THEN RETURN tcT; END;
+  tcLo:=0; tcHi:=4;
+  WHILE STUDENT_CDF(tcV,tcHi)<tcQ AND tcHi<1000000 DO
+    tcLo:=tcHi; tcHi:=2*tcHi;
+  END;
+  FOR tcI FROM 1 TO 60 DO
+    tcMid:=(tcLo+tcHi)/2;
+    IF STUDENT_CDF(tcV,tcMid)<tcQ THEN tcLo:=tcMid; ELSE tcHi:=tcMid; END;
+  END;
+  RETURN (tcLo+tcHi)/2;
+END;
+
+// The plot cache: CDF and pdf at 65 points on 0..qmax, into
+// EP_SRCDF and EP_SRPDF; the window's right end into srQmax.
+// Python first (an estimated 5 s on a G2 for all 130 points, up to
+// about 20 s at df 1-3; to be timed on the device); the PPL engine's fast grid otherwise, with
+// its red progress bar (about a minute).  Returns the df it
+// actually used: df 1 or 2 is raised to 3 when PPL has to do it.
+sr_Cache(cbK,cbV,cbQo)
+BEGIN
+  LOCAL cbOK,cbC,cbP,cbM,nn,qmax;
+  LOCAL hq,cdf,pdf,pmJ,nzp,nsp;
+  LOCAL cbI;
+  // GUARD 1: clear the outputs, so nothing stale can pass for a result
+  EP_SRCDF:=MAKELIST(-1,K,1,65,1);
+  EP_SRPDF:=MAKELIST(-1,K,1,65,1);
+  sr_Busy("Building distribution cache...");
+  SR_K:=cbK; SR_DF:=IFTE(cbV==0,100000,cbV); SR_Q:=cbQo;
+  sr_PyRun(3);
+  // GUARD 2: use the result -- the CDF's last element is the last
+  // value Python writes; if it is a probability, the run finished
+  cbOK:=0;
+  IFERR
+    cbC:=EP_SRCDF(65)+0;
+    cbP:=EP_SRPDF(65)+0;
+    cbM:=SR_OUT+0;
+    IF cbC>=0 AND cbC<=1 AND cbP>=0 AND cbM>0 THEN cbOK:=1; END;
+  THEN
+    cbOK:=0;
+  END;
+  IF cbOK==1 THEN
+    srQmax:=cbM; srEng:=1; SR_ENGINE:="Python";
+    RETURN cbV;
+  END;
+  // GUARD 3: the PPL engine -- beta 14's fast grid, unchanged
+  srEng:=2; SR_ENGINE:="PPL";
+  IF cbV>0 AND cbV<3 THEN
+    MSGBOX("df below 3 is not supported: using df = 3."+CHAR(10)+"(PPL engine: MicroPython did not answer)");
+    cbV:=3;
+    sr_Busy("Building distribution cache...");
+  END;
+  nn:=64; qmax:=6;
+  // inner: k-dependent (sharper integrand for large k)
+  // outer: extra nodes for small df (heavy tail near s=0)
+  IF cbK<=5 THEN nzp:=24; ELSE nzp:=32; END;
+  IF cbK>10 THEN nzp:=48; END;
+  IF cbV<8  THEN nsp:=64; ELSE nsp:=32; END;
+  sr_BuildZ(nzp);
+  WHILE sr_SRCDF(qmax,cbK,cbV,nsp)<0.998 AND qmax<40 DO
+    qmax:=qmax*1.4;
+  END;
+  // widen to show an observed q out beyond the tail (AutoWin lesson)
+  IF cbQo*1.15>qmax THEN qmax:=MIN(60,cbQo*1.15); END;
+  hq:=qmax/nn;
+  // beta 15d: the LOCAL cbI counts, not Home's X (see sr_BuildZ)
+  cdf:=MAKELIST(0,cbI,1,nn+1);
+  pdf:=MAKELIST(0,cbI,1,nn+1);
+  FOR pmJ FROM 1 TO nn DO
+    cdf(pmJ+1):=sr_SRCDF(pmJ*hq,cbK,cbV,nsp);
+    IF cdf(pmJ+1)<cdf(pmJ) THEN cdf(pmJ+1):=cdf(pmJ); END;
+    RECT_P(G0,51,121,51+IP(218*pmJ/nn),133,RGB(255,0,0),RGB(255,0,0));
+  END;
+  // pdf via central differences on the cache
+  FOR pmJ FROM 2 TO nn DO
+    pdf(pmJ):=(cdf(pmJ+1)-cdf(pmJ-1))/(2*hq);
+  END;
+  pdf(1):=0; pdf(nn+1):=MAX(0,(cdf(nn+1)-cdf(nn))/hq);
+  EP_SRCDF:=cdf; EP_SRPDF:=pdf;
+  srQmax:=qmax;
+  RETURN cbV;
+END;
+
+// The grey k = 2 comparison curve (Python only): the k = 2 density
+// on the plot's own grid, into EP_SRCD2.  Same three guards; there
+// is no PPL fallback (the menu offers it only when Python answered).
+// Returns 1 if the curve arrived.
+sr_Cmp(c2V,c2Q)
+BEGIN
+  LOCAL c2C;
+  EP_SRCD2:=MAKELIST(-1,K,1,65,1);
+  sr_Busy("Building the k = 2 curve...");
+  SR_K:=2; SR_DF:=IFTE(c2V==0,100000,c2V); SR_Q:=c2Q;
+  sr_PyRun(5);
+  IFERR
+    c2C:=EP_SRCD2(65)+0;
+  THEN
+    c2C:=-1;
+  END;
+  IF c2C>=0 THEN RETURN 1; END;
+  RETURN 0;
+END;
+
+// The H0 simulation (Python only): 2,000 replicates of k groups of
+// m normals with equal means.  Python returns 45 numbers into
+// EP_SRSIM: 40 bin counts of q on 0..smQ, then how many q > q crit,
+// how many had ANY pairwise t > t crit, how many q fell beyond the
+// window, the exact q crit it used, and the replicate count LAST
+// (the value checked here).  Returns 1 and shows the teaching page
+// if it worked, 0 if Python did not answer.
+sr_SimRun(smK,smM,smA,smQ)
+BEGIN
+  LOCAL smN,smV,smOK,smTc,smP1,smP2;
+  smV:=smK*(smM-1);
+  smTc:=sr_TCrit(smV,1-smA/2);
+  EP_SRSIM:=MAKELIST(-1,K,1,45,1);
+  sr_Busy("Simulating 2,000 experiments...");
+  SR_K:=smK; SR_M:=smM; SR_DF:=smV; SR_N:=2000;
+  SR_A:=smA; SR_TC:=smTc; SR_Q:=smQ;
+  sr_PyRun(6);
+  smOK:=0;
+  IFERR
+    smN:=EP_SRSIM(45)+0;
+    IF smN==2000 THEN smOK:=1; END;
+  THEN
+    smOK:=0;
+  END;
+  IF smOK==0 THEN RETURN 0; END;
+  srEng:=1; SR_ENGINE:="Python";
+  smP1:=100*EP_SRSIM(41)/smN;
+  smP2:=100*EP_SRSIM(42)/smN;
+  // beta 15b: the percents through sr_FmtF, which rounds first: one
+  // replicate in 2,000 is 0.05 %, and STRING(0.05, 2, 1) is "5.0E-2"
+  // (scientific) on the Prime; it now reads 0.1 %
+  sr_ShowRes("H0 simulation: q and t",
+    {"k = "+STRING(smK,2,0)+" groups of m = "+STRING(smM,2,0)+", equal means",
+     "(H0 true), df = "+STRING(smV,2,0)+", α = "+sr_FmtF(smA,3),
+     "Of 2,000 replicates, "+sr_FmtF(smP1,1)+" % exceeded",
+     "  q crit = "+sr_FmtF(EP_SRSIM(44),3)+"  (α = "+sr_FmtF(100*smA,1)+" %)",
+     "Any pairwise t > t crit = "+sr_FmtF(smTc,3)+":",
+     "  "+sr_FmtF(smP2,1)+" %  ("+STRING(smK*(smK-1)/2,2,0)+" separate t tests)",
+     "Tukey's q holds the family at α;",
+     "separate t tests do not."},
+    "any key or tap = back to the plot",1);
+  RETURN 1;
+END;
+
+// ============================================================
+// Modes
+// ============================================================
+
+sr_PvMode()
+BEGIN
+  LOCAL tq,tk,tv,pv,fv,pvS;
+  tq:=3.5; tk:=3; tv:=12;
+  IF INPUT({tq,tk,tv},"P-value from q",
+     {"q:","k:","df:"},
+     {"Observed studentized range statistic",
+      "Number of means spanned (Tukey: all k)",
+      "df error (1+ with Python, 3+ PPL; 0 = ∞)"})==0 THEN RETURN 0; END;
+  tk:=MAX(2,IP(tk));
+  tv:=IP(MAX(0,tv));
+  RECT_P(G0,RGB(255,255,255));
+  TEXTOUT_P("Computing (full precision)...",G0,50,110,3,RGB(0,60,200));
+  // beta 15: the MicroPython engine first (64 x 96 Simpson)
+  SR_K:=tk; SR_DF:=IFTE(tv==0,100000,tv); SR_Q:=tq;
+  sr_PyRun(1);
+  IF sr_PyNum(0,1)==1 THEN
+    pv:=SR_OUT; fv:=1-pv;
+    srEng:=1; SR_ENGINE:="Python";
+  ELSE
+    // the PPL engine: the fallback, df 3 and up
+    srEng:=2; SR_ENGINE:="PPL";
+    IF tv>0 AND tv<3 THEN
+      MSGBOX("df below 3 is not supported: using df = 3."+CHAR(10)+"(PPL engine: MicroPython did not answer)");
+      tv:=3;
+      RECT_P(G0,RGB(255,255,255));
+      TEXTOUT_P("Computing (full precision)...",G0,50,110,3,RGB(0,60,200));
+    END;
+    // beta 15: 48 inner intervals from k = 6 (was k = 11): at k 6-10
+    // the 32-interval grid left q crit up to 0.05 off at alpha .005
+    IF tk>5 THEN sr_BuildZ(48); ELSE sr_BuildZ(32); END;
+    fv:=sr_SRCDF(tq,tk,tv,64);
+    pv:=MAX(0,1-fv);
+  END;
+  EP_QPVAL:=pv;
+  srPK:=1;                 // beta 15a: a P-value exists (the Quit summary)
+  // beta 15b: the p as shown here, for the Quit summary ("p < 0.00001"
+  // rather than "p = < 0.00001" when it is that small)
+  // beta 15c: the p as text ONCE, for this page and the Quit summary.
+  // P(Q >= q) is never 0 for a finite q, so an exact 0 -- the PPL
+  // engine's 1 - F after F reached 1 in the calculator's digits (q 40,
+  // k 3, df 12) -- is shown below the floor, "< 0.00001", not "0.00000";
+  // sr_Eq then gives "p = 0.07000" or "p < 0.00001", never "p = < ..."
+  pvS:=sr_FmtP(pv,5);
+  IF pv<=0 THEN pvS:="< "+STRING(0.00001,2,5); END;
+  srPS:="p"+sr_Eq(pvS);
+  // beta 15b: F(q) is a probability too, so it gets sr_FmtP's floor
+  // ("< 0.00001") instead of the scientific form a tiny F printed in
+  // beta 15c: sr_Eq on both lines: "P(Q >= q) < 0.00001", "F(q) < 0.00001"
+  sr_ShowRes("P-value: Studentized Range",
+    {"q = "+sr_FmtF(tq,4)+"   k = "+STRING(tk,2,0)+"   ν = "+IFTE(tv==0,CHAR(8734),STRING(tv,2,0)),
+     "",
+     "P(Q ≥ q)"+sr_Eq(pvS),
+     "F(q)"+sr_Eq(sr_FmtP(fv,5)),
+     "",
+     "Tukey HSD: reject pair if p ≤ α",
+     "Duncan: compare p to 1-(1-α)^(n-1)",
+     "Stored in EP_QPVAL"},
+    "any key or tap = menu",1);
+  RETURN 0;
+END;
+
+sr_CritMode()
+BEGIN
+  LOCAL ta,tk,tv,qc,crH,crL;
+  ta:=0.05; tk:=3; tv:=12;
+  IF INPUT({ta,tk,tv},"Critical value q(α)",
+     {"α:","k:","df:"},
+     {"Significance level (upper tail)",
+      "Number of means",
+      "df error (1+ with Python, 3+ PPL; 0 = ∞)"})==0 THEN RETURN 0; END;
+  ta:=MIN(0.5,MAX(1E-4,ta)); tk:=MAX(2,IP(tk));
+  tv:=IP(MAX(0,tv));
+  RECT_P(G0,RGB(255,255,255));
+  TEXTOUT_P("Solving (full precision)...",G0,50,110,3,RGB(0,60,200));
+  // beta 15: the MicroPython engine first (secant, about 1.5 s)
+  SR_K:=tk; SR_DF:=IFTE(tv==0,100000,tv); SR_A:=ta;
+  sr_PyRun(2);
+  IF sr_PyNum(0.000001,1000000)==1 THEN
+    qc:=SR_OUT;
+    srEng:=1; SR_ENGINE:="Python";
+  ELSE
+    srEng:=2; SR_ENGINE:="PPL";
+    IF tv>0 AND tv<3 THEN
+      MSGBOX("df below 3 is not supported: using df = 3."+CHAR(10)+"(PPL engine: MicroPython did not answer)");
+      tv:=3;
+      RECT_P(G0,RGB(255,255,255));
+      TEXTOUT_P("Solving (full precision)...",G0,50,110,3,RGB(0,60,200));
+    END;
+    // beta 15: 48 inner intervals from k = 6 (was k = 11): at k 6-10
+    // the 32-interval grid left q crit up to 0.05 off at alpha .005
+    IF tk>5 THEN sr_BuildZ(48); ELSE sr_BuildZ(32); END;
+    qc:=sr_SRCrit(ta,tk,tv,64);
+  END;
+  EP_QCRIT:=qc;
+  srQK:=tk; srQV:=tv;      // beta 15a: WHICH q crit this is (the Quit summary)
+  srAS:=sr_FmtF(ta,4); srQS:=" = "+sr_FmtF(qc,4);   // beta 15b: as shown below
+  crH:="α = "+sr_FmtF(ta,4)+"   k = "+STRING(tk,2,0)+"   ν = "+IFTE(tv==0,CHAR(8734),STRING(tv,2,0));
+  // beta 15d (fleet review S1): the PPL engine's grid loses accuracy below
+  // alpha = 0.005 when k is large and df small (k 20, df 3, alpha 1E-4:
+  // 94.658 where the true value is 92.944, 1.8 % high; more at larger k).
+  // When the PPL engine answered there, two lines say so plainly, in
+  // place of the page's two blank lines; otherwise the page is as before.
+  IF srEng==2 AND ta<0.005 THEN
+    crL:={crH,
+     "",
+     "q crit = "+sr_FmtF(qc,4),
+     "PPL fallback at α < 0.005:",
+     "q crit may be off by a few %",
+     "Reject H0 for a pair if q ≥ q crit",
+     "(matches Harter 1959 tables)",
+     "Stored in EP_QCRIT"};
+  ELSE
+    crL:={crH,
+     "",
+     "q crit = "+sr_FmtF(qc,4),
+     "",
+     "Reject H0 for a pair if q ≥ q crit",
+     "(matches Harter 1959 tables)",
+     "",
+     "Stored in EP_QCRIT"};
+  END;
+  sr_ShowRes("Critical value q(α)",crL,"any key or tap = menu",1);
+  RETURN 0;
+END;
+
+sr_HSDMode()
+BEGIN
+  LOCAL ta,tk,tm,tmse,tvo,vv;
+  LOCAL qc,hsd,xb,hk,hdH,hdL;
+  ta:=0.05; tk:=4; tm:=8; tmse:=1; tvo:=0;
+  IF INPUT({ta,tk,tm,tmse,tvo},"Tukey HSD",
+     {"α:","k:","m:","MSE:","df:"},
+     {"Significance level",
+      "Number of group means",
+      "Sample size per group (equal n)",
+      "Mean square error from ANOVA",
+      "df error (0 = auto: k(m-1))"})==0 THEN RETURN 0; END;
+  ta:=MIN(0.5,MAX(1E-4,ta)); tk:=MAX(2,IP(tk)); tm:=MAX(2,IP(tm));
+  tmse:=MAX(1E-12,tmse);
+  // beta 15: "auto" is df < 1 (beta 14: df < 3, when df 1-2 were illegal)
+  IF tvo<1 THEN vv:=tk*(tm-1); ELSE vv:=IP(tvo); END;
+  RECT_P(G0,RGB(255,255,255));
+  TEXTOUT_P("Solving (full precision)...",G0,50,110,3,RGB(0,60,200));
+  SR_K:=tk; SR_DF:=vv; SR_A:=ta;
+  sr_PyRun(2);
+  IF sr_PyNum(0.000001,1000000)==1 THEN
+    qc:=SR_OUT;
+    srEng:=1; SR_ENGINE:="Python";
+  ELSE
+    srEng:=2; SR_ENGINE:="PPL";
+    IF vv<3 THEN
+      MSGBOX("df below 3 is not supported: using df = 3."+CHAR(10)+"(PPL engine: MicroPython did not answer)");
+      vv:=3;
+      RECT_P(G0,RGB(255,255,255));
+      TEXTOUT_P("Solving (full precision)...",G0,50,110,3,RGB(0,60,200));
+    END;
+    // beta 15: 48 inner intervals from k = 6 (was k = 11): at k 6-10
+    // the 32-interval grid left q crit up to 0.05 off at alpha .005
+    IF tk>5 THEN sr_BuildZ(48); ELSE sr_BuildZ(32); END;
+    qc:=sr_SRCrit(ta,tk,vv,64);
+  END;
+  hsd:=qc*SQRT(tmse/tm);
+  EP_QCRIT:=qc; EP_HSD:=hsd;
+  srQK:=tk; srQV:=vv; srHK:=1;   // beta 15a: which q crit, and an HSD (Quit summary)
+  srAS:=sr_FmtF(ta,4); srQS:=" = "+sr_FmtF(qc,4);   // beta 15b: as shown below
+  xb:=CHAR(57344);
+  // beta 15d (fleet review S3): spaces round every "=", as on the
+  // fleet's other pages ("α = 0.0500  k = 4", not "α=0.0500  k=4")
+  hdH:="α = "+sr_FmtF(ta,4)+"  k = "+STRING(tk,2,0)+"  m = "+STRING(tm,2,0)+"  ν = "+STRING(vv,2,0);
+  // beta 15d (fleet review S1): as on the Critical value page, two lines
+  // say when the PPL engine answered below alpha = 0.005, where its q crit
+  // (and so the HSD) may be off by a few per cent; they take the place of
+  // the two blank lines, and otherwise the page is as before
+  IF srEng==2 AND ta<0.005 THEN
+    hdL:={hdH,
+     "MSE = "+sr_FmtF(tmse,4),
+     "q crit = "+sr_FmtF(qc,4),
+     "HSD = q·√(MSE/m) = "+sr_FmtF(hsd,4),
+     "PPL fallback at α < 0.005:",
+     "q crit, HSD may be off a few %",
+     "|"+xb+"i - "+xb+"j| > HSD → significant",
+     "Stored in EP_QCRIT, EP_HSD"};
+  ELSE
+    hdL:={hdH,
+     "MSE = "+sr_FmtF(tmse,4),
+     "",
+     "q crit = "+sr_FmtF(qc,4),
+     "HSD = q·√(MSE/m) = "+sr_FmtF(hsd,4),
+     "",
+     "|"+xb+"i - "+xb+"j| > HSD → significant",
+     "Stored in EP_QCRIT, EP_HSD"};
+  END;
+  hk:=sr_ShowRes("Tukey HSD",hdL,"Ent or tap = yardstick, Esc = menu",1);
+  // beta 15: Enter or a tap opens the HSD yardstick
+  IF hk==30 OR hk==-1 THEN sr_Yard(tk,hsd); END;
+  RETURN 0;
+END;
+
+// ------------------------------------------------------------
+// The HSD yardstick (beta 15): up to six group means on a number
+// line, and a bar exactly HSD long.  Tap two means (or move with
+// the arrows and press Enter twice): the program draws their
+// difference and says whether it is longer than the bar.  Green =
+// the difference exceeds HSD (significant at alpha), red = it does
+// not.  The means default to an example set; your own values are
+// remembered for the next visit (srYM).
+// ------------------------------------------------------------
+sr_Yard(ydK,ydH)
+BEGIN
+  LOCAL ymA,ymB,ymC,ymD,ymE,ymF;
+  LOCAL lbA,lbB,lbC,lbD,lbE,lbF;
+  LOCAL yn,ylo,yhi,yI,yJ,ysc;
+  LOCAL ysA,ysB,ycur,ykk,ygo,yok;
+  LOCAL yX,yv,yBest,yCol,yrk,xb;
+  LOCAL ydY,yxa,yxb,ytx,yt0;
+  yn:=MIN(6,MAX(2,ydK));
+  ymA:=srYM(1); ymB:=srYM(2); ymC:=srYM(3);
+  ymD:=srYM(4); ymE:=srYM(5); ymF:=srYM(6);
+  xb:=CHAR(57344);
+  lbA:=xb+"1:"; lbB:=xb+"2:"; lbC:=xb+"3:";
+  lbD:=xb+"4:"; lbE:=xb+"5:"; lbF:=xb+"6:";
+  // INPUT takes a list of variable NAMES, so there is one form per
+  // group count (k above 6: the first six means are used)
+  yok:=0;
+  IF yn==2 THEN
+    yok:=INPUT({ymA,ymB},"Group means",{lbA,lbB},
+      {"Mean of group 1","Mean of group 2"});
+  END;
+  IF yn==3 THEN
+    yok:=INPUT({ymA,ymB,ymC},"Group means",{lbA,lbB,lbC},
+      {"Mean of group 1","Mean of group 2","Mean of group 3"});
+  END;
+  IF yn==4 THEN
+    yok:=INPUT({ymA,ymB,ymC,ymD},"Group means",{lbA,lbB,lbC,lbD},
+      {"Mean of group 1","Mean of group 2","Mean of group 3",
+       "Mean of group 4"});
+  END;
+  IF yn==5 THEN
+    yok:=INPUT({ymA,ymB,ymC,ymD,ymE},"Group means",{lbA,lbB,lbC,lbD,lbE},
+      {"Mean of group 1","Mean of group 2","Mean of group 3",
+       "Mean of group 4","Mean of group 5"});
+  END;
+  IF yn==6 THEN
+    yok:=INPUT({ymA,ymB,ymC,ymD,ymE,ymF},"Group means",{lbA,lbB,lbC,lbD,lbE,lbF},
+      {"Mean of group 1","Mean of group 2","Mean of group 3",
+       "Mean of group 4","Mean of group 5","Mean of group 6"});
+  END;
+  IF yok==0 THEN RETURN 0; END;
+  srYM:={ymA,ymB,ymC,ymD,ymE,ymF};
+  // the window: every mean, and room for the bar from the smallest
+  ylo:=srYM(1); yhi:=srYM(1);
+  FOR yI FROM 2 TO yn DO
+    IF srYM(yI)<ylo THEN ylo:=srYM(yI); END;
+    IF srYM(yI)>yhi THEN yhi:=srYM(yI); END;
+  END;
+  yhi:=MAX(yhi,ylo+ydH);
+  yv:=yhi-ylo;
+  IF yv<=0 THEN yv:=1; END;
+  ylo:=ylo-0.08*yv; yhi:=yhi+0.08*yv;
+  ysc:=280/(yhi-ylo);                    // pixels per unit
+  yX:={0,0,0,0,0,0};
+  FOR yI FROM 1 TO yn DO
+    yX(yI):=IP(20+(srYM(yI)-ylo)*ysc);
+  END;
+  ysA:=0; ysB:=0; ycur:=1; ygo:=1;
+  sr_Drain(); sr_DrainT();
+  WHILE ygo==1 DO
+    DIMGROB_P(G1,320,240,#FFFFFFh);
+    RECT_P(G1,0,0,319,24,RGB(255,69,0),RGB(255,69,0));
+    TEXTOUT_P("HSD yardstick",G1,8,4,3,RGB(255,255,255));
+    sr_Badge(4,28);
+    TEXTOUT_P("HSD = "+sr_FmtF(ydH,4)+" (the orange bar)",G1,160,30,1,RGB(255,69,0));
+    // the means as text, two rows of three
+    // beta 15b: the means and the tick labels through sr_FmtF, which rounds
+    // first.  A mean such as 0.0004 printed "4.000E-4" (STRING(x, 2, d) is
+    // scientific for 0 < |x| < 10^-d on the Prime), and a tick summed up
+    // across zero (-0.1 + 0.1) is a hair off 0, which printed the same way.
+    FOR yI FROM 1 TO yn DO
+      TEXTOUT_P(xb+STRING(yI,2,0)+" = "+sr_FmtF(srYM(yI),3),G1,8+100*((yI-1) MOD 3),48+12*IP((yI-1)/3),1,RGB(0,60,200));
+    END;
+    // the number line and its ticks
+    LINE_P(G1,20,150,300,150,RGB(0,0,0));
+    ytx:=sr_NiceNum((yhi-ylo)/5,1);
+    yt0:=CEILING(ylo/ytx)*ytx;
+    WHILE yt0<=yhi DO
+      yI:=IP(20+(yt0-ylo)*ysc);
+      LINE_P(G1,yI,150,yI,154,RGB(90,90,90));
+      TEXTOUT_P(sr_FmtF(yt0,MAX(0,-FLOOR(LOG(ytx)+0.000001))),G1,yI-8,156,1,RGB(90,90,90));
+      yt0:=yt0+ytx;
+    END;
+    // the means: a dot on the line, a label above (three staggered
+    // rows by rank, so close means do not print on top of each other)
+    FOR yI FROM 1 TO yn DO
+      yrk:=0;
+      FOR yJ FROM 1 TO yn DO
+        IF srYM(yJ)<srYM(yI) OR (srYM(yJ)==srYM(yI) AND yJ<yI) THEN yrk:=yrk+1; END;
+      END;
+      ydY:=104+12*(yrk MOD 3);
+      yCol:=RGB(0,60,200);
+      IF yI==ysA OR yI==ysB THEN yCol:=RGB(255,0,0); END;
+      LINE_P(G1,yX(yI),ydY+12,yX(yI),146,RGB(225,228,235));
+      TEXTOUT_P(xb+STRING(yI,2,0),G1,yX(yI)-6,ydY,2,yCol);
+      RECT_P(G1,yX(yI)-3,147,yX(yI)+3,153,yCol,yCol);
+      IF yI==ycur THEN LINE_P(G1,yX(yI)-5,170,yX(yI)+5,170,RGB(30,144,255)); END;
+    END;
+    // the yardstick: HSD long, from the lower of the chosen pair
+    // (or from the smallest mean); clipped at the right edge
+    yxa:=20+IP((MIN(srYM(1),srYM(2))-ylo)*ysc);
+    FOR yI FROM 1 TO yn DO
+      yxa:=MIN(yxa,yX(yI));
+    END;
+    IF ysA>0 AND ysB>0 THEN yxa:=MIN(yX(ysA),yX(ysB)); END;
+    yxb:=MIN(302,yxa+IP(ydH*ysc+0.5));
+    RECT_P(G1,yxa,176,yxb,182,RGB(255,69,0),RGB(255,69,0));
+    TEXTOUT_P("HSD",G1,yxa,184,1,RGB(255,69,0));
+    // the chosen pair: a bracket and the verdict
+    IF ysA>0 AND ysB>0 THEN
+      yv:=ABS(srYM(ysA)-srYM(ysB));
+      yCol:=RGB(255,0,0);
+      IF yv>ydH THEN yCol:=RGB(0,140,60); END;
+      yxb:=MAX(yX(ysA),yX(ysB));
+      LINE_P(G1,yxa,166,yxb,166,yCol);
+      LINE_P(G1,yxa,162,yxa,170,yCol);
+      LINE_P(G1,yxb,162,yxb,170,yCol);
+      IF yv>ydH THEN
+        TEXTOUT_P("|"+xb+STRING(ysA,2,0)+" − "+xb+STRING(ysB,2,0)+"| = "+sr_FmtF(yv,3)+" > HSD: significant",G1,8,198,2,yCol);
+      ELSE
+        TEXTOUT_P("|"+xb+STRING(ysA,2,0)+" − "+xb+STRING(ysB,2,0)+"| = "+sr_FmtF(yv,3)+" ≤ HSD: not significant",G1,8,198,2,yCol);
+      END;
+    ELSE
+      TEXTOUT_P("Tap two means to compare them.",G1,8,198,2,RGB(90,90,90));
+    END;
+    TEXTOUT_P("tap a mean, ⇆ = move, Ent = pick, Esc = back",G1,8,224,1,RGB(30,144,255));
+    BLIT_P(G0,0,0,G1);
+    ykk:=sr_WaitAny();
+    yJ:=0;
+    IF ykk==-1 THEN
+      // a tap: the nearest mean within 14 px, in the band round the line
+      IF srTY>=96 AND srTY<=175 THEN
+        yBest:=15;
+        FOR yI FROM 1 TO yn DO
+          IF ABS(srTX-yX(yI))<yBest THEN yBest:=ABS(srTX-yX(yI)); yJ:=yI; END;
+        END;
+      END;
+    ELSE
+      IF ykk==7 THEN ycur:=MAX(1,ycur-1); END;
+      IF ykk==8 THEN ycur:=MIN(yn,ycur+1); END;
+      IF ykk==30 THEN yJ:=ycur; END;
+      IF ykk==4 THEN ygo:=0; END;
+    END;
+    // choose: first mean, then a different second; a third pick
+    // starts a new pair
+    IF yJ>0 THEN
+      ycur:=yJ;
+      IF ysA==0 THEN
+        ysA:=yJ;
+      ELSE
+        IF ysB==0 AND yJ<>ysA THEN
+          ysB:=yJ;
+        ELSE
+          ysA:=yJ; ysB:=0;
+        END;
+      END;
+    END;
+  END;
+  RETURN 0;
+END;
+
+// ------------------------------------------------------------
+// Plot mode: density + CDF overlay, live q and alpha
+// ------------------------------------------------------------
+sr_PlotMode()
+BEGIN
+  LOCAL tk,tv,qo,nn,qmax,hq;
+  LOCAL pmJ,ymax;
+  LOCAL cdf,pdf,alad,ai,qc,pv;
+  LOCAL dq,pmKey;
+  LOCAL px1,px2,py1,py2;
+  LOCAL fj,fr;
+  LOCAL px,qq,dd,yy,ij,ir;
+  LOCAL tx,tk2,gx,gy;
+  LOCAL pmMT,pmMX,pmMY;
+  LOCAL s0,s1,ysp;
+  LOCAL pmA,pmDrag,pmAct,pmGo,pmRb,pmTv;
+  LOCAL pmLad,pmLbl,pmLE,pmCol,pmInA,pmQs;
+  LOCAL pmCmp,pmCGo,pmFit,pmSim,pmSGo,pmD2;
+  LOCAL pmSM,pmBW,pmSN,pmY0,pmY1,pmCh;
+  LOCAL pmMap,pmPy,pmX2,pmSA,pmOK,pmPs;
+  LOCAL pmStl;             // beta 15a: 1 = this click ends a tap already used
+  LOCAL pmWT;              // beta 15b: how long the last WAIT(-1) took (ms)
+
+  tk:=3; tv:=12; qo:=3.5;
+  IF INPUT({tk,tv,qo},"Distribution plot",
+     {"k:","df:","q obs:"},
+     {"Number of means (2-20)",
+      "df error (1+ with Python, 3+ PPL; 0 = ∞)",
+      "Observed q (0 = none)"})==0 THEN RETURN 0; END;
+  tk:=MAX(2,MIN(20,IP(tk)));
+  tv:=IP(MAX(0,tv));
+  qo:=MAX(0,qo);
+
+  nn:=64; qmax:=6; ymax:=0;
+  alad:={0.10,0.05,0.025,0.01,0.005}; ai:=2; pmA:=0.05;
+  pmLbl:={".10",".05",".025",".01",".005"};
+  pmLad:={0,0,0,0,0};
+  // the plot box: the drawing AND the touch handler read these.
+  // beta 15: top 54 (was 34) for the badge and the ladder labels,
+  // right 290 (was 306) so the CDF axis strip is wide enough for a
+  // finger.  The soft keys own y >= 218.
+  px1:=34; px2:=290; py1:=54; py2:=200;
+  pmRb:=1; pmCmp:=0; pmCGo:=0; pmFit:=0; pmSim:=0; pmSGo:=0;
+  pmGo:=1; pmDrag:=1; pmKey:=0; pmPy:=0; pmSM:=5; pmSA:=0.05;
+  pmD2:={}; pmSN:={};
+  srTLX:={}; srTLY:={}; srTLi:=1;      // beta 15a: no click expected yet
+  DIMGROB_P(G1,320,240);
+
+  REPEAT
+    // ---- (re)build what changed, in order: the cache, the k = 2
+    // ---- curve, the y scale, the simulation
+    IF pmRb==1 THEN
+      tv:=sr_Cache(tk,tv,qo);
+      cdf:=EP_SRCDF; pdf:=EP_SRPDF;
+      qmax:=srQmax; hq:=qmax/nn;
+      pmPy:=0;
+      IF srEng==1 THEN pmPy:=1; END;      // the Python extras are on offer
+      IF qo>qmax THEN qo:=qmax; END;
+      // round step for the arrow keys: qmax/100 pushed to 1, 2 or 5
+      dq:=sr_NiceNum(qmax/100,1);
+      // the alpha ladder's q crits, once per cache (cheap per frame)
+      FOR pmJ FROM 1 TO 5 DO pmLad(pmJ):=sr_InvC(alad(pmJ),hq); END;
+      pmSim:=0;                            // a histogram for other k, df
+      IF pmCmp==1 THEN pmCGo:=1; END;
+      pmFit:=1; pmRb:=0;
+      // empty the key buffer and wait (at most a second) for the
+      // finger that closed a form or pressed a soft key to lift, so
+      // neither arrives as the plot's next WAIT(-1) event (beta 14)
+      sr_Drain(); sr_DrainT();
+    END;
+    IF pmCGo==1 THEN
+      IF sr_Cmp(tv,qmax)==1 THEN
+        pmD2:=EP_SRCD2;
+      ELSE
+        pmCmp:=0;
+        MSGBOX("The k = 2 curve needs the MicroPython engine,"+CHAR(10)+"and it did not answer.");
+      END;
+      pmCGo:=0; pmFit:=1;
+      sr_Drain(); sr_DrainT();
+    END;
+    IF pmFit==1 THEN
+      // nice y-axis over every curve that will be drawn (both axes
+      // checked before a reference curve is drawn: Lessons s6)
+      ymax:=0;
+      FOR pmJ FROM 1 TO nn+1 DO
+        IF pdf(pmJ)>ymax THEN ymax:=pdf(pmJ); END;
+        IF pmCmp==1 THEN
+          IF pmD2(pmJ)>ymax THEN ymax:=pmD2(pmJ); END;
+        END;
+      END;
+      ysp:=sr_NiceNum(ymax/4,1);
+      ymax:=ysp*CEILING(ymax/ysp);
+      pmFit:=0;
+    END;
+    IF pmSGo==1 THEN
+      IF sr_SimRun(tk,pmSM,pmA,qmax)==1 THEN
+        pmSN:=EP_SRSIM; pmSA:=pmA; pmSim:=1;
+      ELSE
+        MSGBOX("The H0 simulation needs the MicroPython engine,"+CHAR(10)+"and it did not answer.");
+      END;
+      pmSGo:=0;
+      sr_Drain(); sr_DrainT();
+    END;
+
+    // q crit for the current alpha, from the cache
+    qc:=sr_InvC(pmA,hq);
+    // p at q obs: the same log-survival interpolation (instant)
+    IF qo>0 THEN
+      fj:=MIN(nn,MAX(1,FLOOR(qo/hq)+1));
+      fr:=qo/hq-(fj-1);
+      s0:=MAX(1E-12,1-cdf(fj));
+      s1:=MAX(1E-12,1-cdf(MIN(nn+1,fj+1)));
+      pv:=EXP(LN(s0)+fr*(LN(s1)-LN(s0)));
+      pv:=MAX(0,MIN(1,pv));
+    ELSE
+      pv:=-1;
+    END;
+
+    // ---- draw (double-buffered on G1) ----
+    RECT_P(G1,0,0,319,239,RGB(255,255,255),RGB(255,255,255));
+
+    // beta 15: TWO-COLOUR TAILS, pixel columns (before grid and
+    // curve).  Beyond q crit = the alpha region (light orange);
+    // beyond q obs = the p region (light red); beyond both = darker.
+    // When q obs = q crit the two coincide: p = alpha.
+    pmQs:=qc;
+    IF qo>0 AND qo<qc THEN pmQs:=qo; END;
+    FOR px FROM MAX(px1,IP(px1+(pmQs/qmax)*(px2-px1))) TO px2 DO
+      qq:=(px-px1)/(px2-px1)*qmax;
+      pmInA:=0;
+      IF qq>=qc THEN pmInA:=1; END;
+      IF qo>0 AND qq>=qo THEN pmInA:=pmInA+2; END;
+      IF pmInA>0 THEN
+        ij:=MIN(nn,MAX(1,FLOOR(qq/hq)+1));
+        ir:=qq/hq-(ij-1);
+        dd:=pdf(ij)+ir*(pdf(MIN(nn+1,ij+1))-pdf(ij));
+        yy:=py2-(dd/ymax)*(py2-py1);
+        pmCol:=RGB(255,240,220);                       // alpha only
+        IF pmInA==2 THEN pmCol:=RGB(255,235,235); END; // p only
+        IF pmInA==3 THEN pmCol:=RGB(250,190,160); END; // both
+        IF yy<py2 THEN LINE_P(G1,px,IP(yy),px,py2,pmCol); END;
+      END;
+    END;
+
+    // grid + x ticks (sr_NiceNum)
+    tx:=sr_NiceNum(qmax/6,1); tk2:=0;
+    WHILE tk2<=qmax DO
+      gx:=IP(px1+(tk2/qmax)*(px2-px1));
+      LINE_P(G1,gx,py1,gx,py2,RGB(225,228,235));
+      TEXTOUT_P(STRING(tk2,2,MAX(0,-FLOOR(LOG(tx)+0.000001))),G1,gx-6,py2+4,1,RGB(90,90,90));
+      tk2:=tk2+tx;
+    END;
+    // y grid at nice density ticks (left, blue side)
+    FOR pmJ FROM 0 TO IP(ymax/ysp+0.5) DO
+      gy:=IP(py2-(pmJ*ysp/ymax)*(py2-py1));
+      LINE_P(G1,px1,gy,px2,gy,RGB(225,228,235));
+      TEXTOUT_P(STRING(pmJ*ysp,2,MAX(0,-FLOOR(LOG(ysp)+0.000001))),G1,2,gy-4,1,RGB(90,90,90));
+    END;
+    // CDF 0-1 quarter labels (right, green) with small tick dashes
+    FOR pmJ FROM 0 TO 4 DO
+      gy:=IP(py2-pmJ*(py2-py1)/4);
+      LINE_P(G1,px2-4,gy,px2,gy,RGB(0,140,60));
+      TEXTOUT_P(STRING(pmJ/4,2,2),G1,px2+2,gy-4,1,RGB(0,140,60));
+    END;
+    // frame
+    LINE_P(G1,px1,py1,px2,py1,RGB(0,0,0));
+    LINE_P(G1,px1,py2,px2,py2,RGB(0,0,0));
+    LINE_P(G1,px1,py1,px1,py2,RGB(0,0,0));
+    LINE_P(G1,px2,py1,px2,py2,RGB(0,0,0));
+
+    // beta 15: the H0 simulation as a 40-bin histogram (magenta step
+    // outline, density scale: count / (replicates x bin width)),
+    // drawn under the curves so the theory stays on top
+    IF pmSim==1 THEN
+      pmBW:=qmax/40;
+      pmY0:=py2;
+      FOR pmJ FROM 1 TO 40 DO
+        dd:=pmSN(pmJ)/(pmSN(45)*pmBW);
+        pmY1:=IP(py2-MIN(1,dd/ymax)*(py2-py1));
+        gx:=IP(px1+((pmJ-1)/40)*(px2-px1));
+        pmX2:=IP(px1+(pmJ/40)*(px2-px1));
+        LINE_P(G1,gx,pmY0,gx,pmY1,RGB(200,0,200));
+        LINE_P(G1,gx,pmY1,pmX2,pmY1,RGB(200,0,200));
+        pmY0:=pmY1;
+      END;
+      LINE_P(G1,pmX2,pmY0,pmX2,py2,RGB(200,0,200));
+    END;
+
+    // CDF overlay (green), 0-1 scaled to plot height
+    FOR pmJ FROM 1 TO nn DO
+      LINE_P(G1,
+        IP(px1+((pmJ-1)*hq/qmax)*(px2-px1)), IP(py2-cdf(pmJ)*(py2-py1)),
+        IP(px1+(pmJ*hq/qmax)*(px2-px1)),     IP(py2-cdf(pmJ+1)*(py2-py1)),
+        RGB(0,140,60));
+    END;
+
+    // beta 15: the k = 2 density (grey), the two-means case
+    IF pmCmp==1 THEN
+      FOR pmJ FROM 1 TO nn DO
+        LINE_P(G1,
+          IP(px1+((pmJ-1)*hq/qmax)*(px2-px1)), IP(py2-(pmD2(pmJ)/ymax)*(py2-py1)),
+          IP(px1+(pmJ*hq/qmax)*(px2-px1)),     IP(py2-(pmD2(pmJ+1)/ymax)*(py2-py1)),
+          RGB(140,140,140));
+      END;
+    END;
+
+    // density curve (blue)
+    FOR pmJ FROM 1 TO nn DO
+      LINE_P(G1,
+        IP(px1+((pmJ-1)*hq/qmax)*(px2-px1)), IP(py2-(pdf(pmJ)/ymax)*(py2-py1)),
+        IP(px1+(pmJ*hq/qmax)*(px2-px1)),     IP(py2-(pdf(pmJ+1)/ymax)*(py2-py1)),
+        RGB(0,60,200));
+    END;
+
+    // dotted verticals: q crit (orange), q obs (red)
+    IF qc<=qmax THEN
+      sr_DotV(G1,IP(px1+(qc/qmax)*(px2-px1)),py1,py2,RGB(255,69,0));
+      // beta 15: alpha is a HEIGHT on the CDF -- a dotted line from
+      // the CDF at q crit (height 1 - alpha) to the right-hand axis
+      gy:=IP(py2-(1-pmA)*(py2-py1));
+      FOR px FROM IP(px1+(qc/qmax)*(px2-px1)) TO px2 STEP 4 DO
+        PIXON_P(G1,px,gy,RGB(255,69,0));
+      END;
+    END;
+    IF qo>0 AND qo<=qmax THEN
+      sr_DotV(G1,IP(px1+(qo/qmax)*(px2-px1)),py1,py2,RGB(255,0,0));
+    END;
+    // the alpha handle on the CDF axis: drag it up or down
+    gy:=IP(py2-(1-pmA)*(py2-py1));
+    RECT_P(G1,px2+1,gy-1,px2+7,gy+1,RGB(255,69,0),RGB(255,69,0));
+
+    // beta 15: the alpha ladder as five thin ticks above the plot,
+    // from the cache; the current rung in orange.  A label that
+    // would overlap the one before it is left out.
+    pmLE:=-100;
+    FOR pmJ FROM 1 TO 5 DO
+      IF pmLad(pmJ)>0 AND pmLad(pmJ)<=qmax THEN
+        gx:=IP(px1+(pmLad(pmJ)/qmax)*(px2-px1));
+        pmCol:=RGB(90,90,90);
+        IF pmJ==ai THEN pmCol:=RGB(255,69,0); END;
+        LINE_P(G1,gx,49,gx,py1-1,pmCol);
+        IF gx-8>pmLE THEN
+          TEXTOUT_P(pmLbl(pmJ),G1,gx-8,39,1,pmCol);
+          pmLE:=gx+12;
+        END;
+      END;
+    END;
+
+    // ---- header: k and df, q obs and p; the q crit box (tap it);
+    // ---- the engine badge
+    TEXTOUT_P("k = "+STRING(tk,2,0)+"   ν = "+IFTE(tv==0,CHAR(8734),STRING(tv,2,0)),G1,4,1,2,RGB(0,0,0));
+    IF qo>0 THEN
+      pmPs:="p = "+sr_FmtP(pv,4);
+      IF pv>0 AND pv<0.0001 THEN pmPs:="p "+sr_FmtP(pv,4); END;
+      TEXTOUT_P("q obs = "+sr_FmtF(qo,3)+"   "+pmPs,G1,124,1,2,RGB(255,0,0));
+    END;
+    RECT_P(G1,2,12,186,27,RGB(255,69,0),RGB(255,240,220));
+    IF qc<=qmax THEN
+      TEXTOUT_P("α = "+sr_FmtF(pmA,3)+"   q crit = "+sr_FmtF(qc,3),G1,6,14,2,RGB(255,69,0));
+    ELSE
+      TEXTOUT_P("α = "+sr_FmtF(pmA,3)+"   q crit > "+sr_FmtF(qmax,1),G1,6,14,2,RGB(255,69,0));
+    END;
+    TEXTOUT_P("tap box: q to q crit",G1,192,16,1,RGB(30,144,255));
+    sr_Badge(2,29);
+
+    // beta 15: the simulation's score, in a panel at the top right
+    IF pmSim==1 THEN
+      RECT_P(G1,px2-160,py1+2,px2-4,py1+36,RGB(200,0,200),RGB(250,235,250));
+      TEXTOUT_P("2,000 H0 reps, α = "+sr_FmtF(pmSA,3),G1,px2-156,py1+4,1,RGB(200,0,200));
+      // beta 15b: through sr_FmtF (it rounds first): 1 in 2,000 = 0.05 %
+      // printed "5.0E-2" with STRING(x, 2, 1)
+      TEXTOUT_P("q > q crit: "+sr_FmtF(100*pmSN(41)/pmSN(45),1)+" %",G1,px2-156,py1+14,1,RGB(200,0,200));
+      TEXTOUT_P("any t > t crit: "+sr_FmtF(100*pmSN(42)/pmSN(45),1)+" %",G1,px2-156,py1+24,1,RGB(200,0,200));
+    END;
+    // legend
+    TEXTOUT_P("pdf",G1,px1+4,py1+3,1,RGB(0,60,200));
+    IF pmCmp==1 THEN TEXTOUT_P("k = 2",G1,px1+4,py1+14,1,RGB(140,140,140)); END;
+    IF pmSim==1 THEN TEXTOUT_P("H0 sim",G1,px1+4,py1+25,1,RGB(200,0,200)); END;
+    pmY0:=py1+14;
+    IF pmSim==1 THEN pmY0:=py1+40; END;
+    TEXTOUT_P("cdf",G1,px2-26,pmY0,1,RGB(0,140,60));
+
+    BLIT_P(G0,G1);
+    // soft keys: painted on the SCREEN after the blit, every frame.
+    // A tap with y >= 218 is a soft key; the labels never produce a
+    // key code, so every one has a hardware key as well.  beta 15a: such
+    // a tap reaches WAIT(-1) only as a click, {3, x, y} (below).
+    DRAWMENU({"α−","α+","k−","k+","df","Menu"});
+
+    // ---- keys and touch ----
+    // beta 15b: the clock is read just before the wait and just after it,
+    // so the stale-click test below can tell a click that was ALREADY
+    // QUEUED (handed over at once) from a real tap made later.
+    pmWT:=TICKS;
+    pmKey:=WAIT(-1);
+    pmWT:=TICKS-pmWT;
+    pmAct:=0;
+    IF TYPE(pmKey)<>6 THEN
+      // next multiple of the step, so an odd q snaps onto the grid
+      IF pmKey==7  THEN qo:=MAX(0,ROUND((CEILING(qo/dq-0.000001)-1)*dq,6)); END;
+      IF pmKey==8  THEN qo:=MIN(qmax,ROUND((FLOOR(qo/dq+0.000001)+1)*dq,6)); END;
+      IF pmKey==2  THEN pmAct:=1; END;     // Up: smaller alpha
+      IF pmKey==12 THEN pmAct:=2; END;     // Down: larger alpha
+      IF pmKey==45 THEN pmAct:=3; END;     // -: k - 1
+      IF pmKey==50 THEN pmAct:=4; END;     // +: k + 1
+      IF pmKey==30 THEN pmAct:=6; END;     // Enter: the plot menu
+      IF pmKey==42 THEN pmAct:=7; END;     // 0: q obs = q crit
+      // beta 15a: a key comes after any click still queued: none is left
+      IF pmKey>=0 THEN srTLX:={}; srTLY:={}; srTLi:=1; END;
+    ELSE
+      // TOUCH.  WAIT(-1) hands back {type, x, y} for a screen event,
+      // read with WAIT(-1)'s OWN type table: 0 is a new press (Down),
+      // 1 is a drag (Move).  Taking both means the observed q
+      // follows a finger dragged across the plot, which is the point
+      // -- p recomputes every frame, so the tail area sweeps live.
+      // beta 13: a finger LIFT can arrive as a one-element list, so
+      // read x and y only when the list actually carries them.
+      // beta 14: no finger-lift drain here on purpose -- WAIT(-1)
+      // delivers the drag as a stream of type-1 events, and a wait
+      // for the lift after each one would stall the drag for up to
+      // a second.  The lift itself is just one more event, ignored.
+      // beta 15: the PRESS decides what the touch is for, and the
+      // drag samples that follow keep it: 1 the plot (q obs, exactly
+      // as beta 14), 2 the CDF axis strip at the right (alpha),
+      // 3 the q crit box (q obs = q crit), 4 the soft keys.
+      // beta 15a, measured on the emulator (MenuTapProbe beta 1, 17 Oct
+      // 2026) with the soft keys on the screen -- WAIT(-1)'s table:
+      //   a tap on a SOFT KEY (y >= 218) -> only {3, x, y} (3 = click)
+      //   a tap ANYWHERE ELSE            -> {0, x, y}, then {2}, then {3, x, y}
+      //   a drag                         -> {0, x, y}, {1, x, y} ..., {2}
+      // So a soft key is read from type 3, and the plot's taps and drags
+      // from types 0 and 1.  (The values are whole numbers; arithmetic on
+      // them is fine.)
+      pmMT:=pmKey(1);
+      pmMX:=-1;
+      IF SIZE(pmKey)>=3 THEN pmMX:=pmKey(2); END;
+      // beta 15a: STALE CLICKS.  A click may end a tap already used: the
+      // plot's own press, or a tap on a page held by sr_WaitAny.  Their
+      // spots are on the list srTLX, srTLY (srTLi = the next one due);
+      // they arrive first and in order, so a click matching the next spot
+      // is skipped, and the first event that does not match means none
+      // are left.  (ABS, not ==: WAIT(-1) hands back integers.)
+      // beta 15b: ... but only a click that was ALREADY QUEUED, i.e. that
+      // WAIT(-1) handed over within srQueuedMs of being called.  On the
+      // emulator (17 Oct 2026) the click of a tap read through MOUSE (a
+      // page held by sr_WaitAny) never reached WAIT(-1), so its spot sat
+      // on the list until the student's NEXT tap there -- a real one, on
+      // the soft key under it -- and that tap was skipped (Help for this
+      // plot closed on its footer at the alpha- key, then alpha- once:
+      // nothing).  A real tap comes long after the wait began, so it now
+      // counts; a click that really is still queued (not seen; the
+      // calculators are unmeasured) is still skipped.
+      pmStl:=0;
+      IF pmMT==3 AND pmMX>=0 AND pmWT<=srQueuedMs THEN
+        IF srTLi<=SIZE(srTLX) THEN
+          IF ABS(pmMX-srTLX(srTLi))<=2 AND ABS(pmKey(3)-srTLY(srTLi))<=2 THEN
+            pmStl:=1; srTLi:=srTLi+1;
+          END;
+        END;
+      END;
+      IF pmMT==0 OR pmMT==1 OR (pmMT==3 AND pmStl==0) THEN
+        srTLX:={}; srTLY:={}; srTLi:=1;
+      END;
+      // a press above the strip: ITS click comes after its lift
+      IF pmMT==0 AND pmMX>=0 THEN
+        IF pmKey(3)<218 THEN srTLX:={pmMX}; srTLY:={pmKey(3)}; END;
+      END;
+      // beta 15a: A SOFT KEY -- a click on the strip that is not stale
+      IF pmMT==3 AND pmMX>=0 AND pmStl==0 THEN
+        IF pmKey(3)>=218 THEN pmAct:=MIN(6,IP(pmMX/53.4)+1); END;
+      END;
+      IF (pmMT==0 OR pmMT==1) AND pmMX>=0 THEN
+        pmMY:=pmKey(3);
+        IF pmMT==0 THEN
+          pmDrag:=1;
+          IF pmMX>=px2-4 AND pmMY>=py1 AND pmMY<=py2 THEN pmDrag:=2; END;
+          IF pmMX<=186 AND pmMY>=12 AND pmMY<=27 THEN pmDrag:=3; END;
+          IF pmMY>=218 THEN pmDrag:=4; END;
+          IF pmDrag==3 THEN pmAct:=7; END;
+          // beta 15a: NEUTRALISED.  pmDrag 4 = a press on the strip: the
+          // drag samples after it are ignored, and nothing runs here.  A
+          // soft-key tap arrives as a click (type 3, above); should a
+          // press ever come too, acting on both would run the key twice.
+        END;
+        IF pmDrag==2 THEN
+          // alpha = 1 - (the CDF height of the finger)
+          pmA:=ROUND(MAX(0.001,MIN(0.99,1-(py2-pmMY)/(py2-py1))),3);
+          ai:=0;
+          FOR pmJ FROM 1 TO 5 DO
+            IF alad(pmJ)==pmA THEN ai:=pmJ; END;
+          END;
+        END;
+        IF pmDrag==1 THEN
+          // beta 14's q obs handling, unchanged
+          IF pmMX>=px1 AND pmMX<=px2 AND pmKey(3)>=py1 AND pmKey(3)<=py2 THEN
+            qo:=ROUND((pmMX-px1)/(px2-px1)*qmax,6);
+            IF qo<0 THEN qo:=0; END;
+            IF qo>qmax THEN qo:=qmax; END;
+          END;
+        END;
+      END;
+      pmKey:=0;
+    END;
+
+    // ---- actions (the same codes for keys, soft keys and the menu):
+    // 1 smaller alpha, 2 larger alpha, 3 k-1, 4 k+1, 5 df, 6 the plot
+    // menu, 7 q obs = q crit, 8 type an alpha, 9 H0 simulation,
+    // 10 k = 2 curve on/off, 11 clear the simulation, 12 help,
+    // 13 leave the plot, 14 type a k
+    IF pmAct==6 THEN
+      pmCh:=0;
+      pmAct:=0;
+      IF pmPy==1 THEN
+        CHOOSE(pmCh,"Plot menu",
+          "Set α (any value)",
+          "q obs = q crit",
+          "Change k",
+          "Change df",
+          "H0 simulation (Python)",
+          "k = 2 curve on/off (Python)",
+          "Clear the simulation",
+          "Help for this plot",
+          "Leave the plot");
+        pmMap:={8,7,14,5,9,10,11,12,13};
+      ELSE
+        CHOOSE(pmCh,"Plot menu",
+          "Set α (any value)",
+          "q obs = q crit",
+          "Change k",
+          "Change df",
+          "Help for this plot",
+          "Leave the plot");
+        pmMap:={8,7,14,5,12,13};
+      END;
+      IF pmCh>0 THEN pmAct:=pmMap(pmCh); END;
+    END;
+    IF pmAct==1 THEN
+      IF ai>0 THEN
+        ai:=MIN(5,ai+1);
+      ELSE
+        // from a free alpha: the next rung below it
+        FOR pmJ FROM 1 TO 5 DO
+          IF ai==0 AND alad(pmJ)<pmA THEN ai:=pmJ; END;
+        END;
+        IF ai==0 THEN ai:=5; END;
+      END;
+      pmA:=alad(ai);
+    END;
+    IF pmAct==2 THEN
+      IF ai>0 THEN
+        ai:=MAX(1,ai-1);
+      ELSE
+        // from a free alpha: the next rung above it
+        FOR pmJ FROM 1 TO 5 DO
+          IF alad(pmJ)>pmA THEN ai:=pmJ; END;
+        END;
+        IF ai==0 THEN ai:=1; END;
+      END;
+      pmA:=alad(ai);
+    END;
+    IF pmAct==3 THEN
+      IF tk>2 THEN tk:=tk-1; pmRb:=1; END;
+    END;
+    IF pmAct==4 THEN
+      IF tk<20 THEN tk:=tk+1; pmRb:=1; END;
+    END;
+    IF pmAct==5 THEN
+      pmTv:=tv;
+      pmOK:=INPUT({pmTv},"Degrees of freedom",{"df:"},
+        {"df error (1+ with Python, 3+ PPL; 0 = ∞)"});
+      IF pmOK>0 THEN tv:=IP(MAX(0,pmTv)); pmRb:=1; END;
+    END;
+    IF pmAct==7 THEN
+      IF qc<=qmax THEN qo:=qc; END;
+    END;
+    IF pmAct==8 THEN
+      pmTv:=pmA;
+      pmOK:=INPUT({pmTv},"Significance level",{"α:"},
+        {"Any α from 0.001 to 0.5"});
+      IF pmOK>0 THEN
+        pmA:=ROUND(MIN(0.5,MAX(0.001,pmTv)),4);
+        ai:=0;
+        FOR pmJ FROM 1 TO 5 DO
+          IF alad(pmJ)==pmA THEN ai:=pmJ; END;
+        END;
+      END;
+    END;
+    IF pmAct==9 THEN
+      // group size m; the simulation's df is k(m-1), so the plot is
+      // rebuilt for that df if it differs
+      pmSM:=10;
+      IF tv>0 THEN pmSM:=MAX(2,ROUND(tv/tk,0)+1); END;
+      pmTv:=MIN(30,pmSM);
+      pmOK:=INPUT({pmTv},"H0 simulation",{"m:"},
+        {"Group size m (2 to 30); df = k(m-1)"});
+      IF pmOK>0 THEN
+        pmSM:=MAX(2,MIN(30,IP(pmTv)));
+        IF tk*(pmSM-1)<>tv THEN
+          MSGBOX("k = "+STRING(tk,2,0)+" groups of m = "+STRING(pmSM,2,0)+" give df = k(m-1) = "+STRING(tk*(pmSM-1),2,0)+"."+CHAR(10)+"The plot is rebuilt for that df.");
+          tv:=tk*(pmSM-1); pmRb:=1;
+        END;
+        pmSGo:=1;
+      END;
+    END;
+    IF pmAct==10 THEN
+      pmCmp:=1-pmCmp;
+      IF pmCmp==1 THEN pmCGo:=1; ELSE pmFit:=1; END;
+    END;
+    IF pmAct==11 THEN pmSim:=0; END;
+    IF pmAct==12 THEN
+      sr_ShowRes("The plot: gestures",
+        {"Drag in the plot: q obs (p sweeps)",
+         "Drag the right edge: α (CDF height)",
+         "Tap the q crit box: q obs = q crit",
+         "⇆ = q   ⇅ = α   +/− = k   0 = q crit",
+         "Soft keys: α− α+ k− k+ df Menu",
+         "Ent = plot menu, Esc = leave",
+         "Shade: orange α, red p, darker both",
+         "Python adds: H0 sim, k = 2 curve"},
+        "any key or tap = back to the plot",0);
+    END;
+    IF pmAct==13 THEN pmGo:=0; END;
+    IF pmAct==14 THEN
+      pmTv:=tk;
+      pmOK:=INPUT({pmTv},"Number of means",{"k:"},{"k from 2 to 20"});
+      IF pmOK>0 THEN tk:=MAX(2,MIN(20,IP(pmTv))); pmRb:=1; END;
+    END;
+    // after an action: empty the keys and let the finger lift
+    // (never after a plain drag sample -- pmAct is 0 then)
+    IF pmAct>0 THEN sr_Drain(); sr_DrainT(); END;
+  UNTIL pmKey==4 OR pmGo==0;
+
+  // nothing is stored in EP_QCRIT or EP_QPVAL: qc and pv here come from
+  // the fast grid by interpolation (curve-level accuracy), and those keep
+  // the full-precision values of the P-value, Critical value and HSD
+  // modes (beta 14).
+  // beta 15b: but the Quit summary reports the q crit (with its k, df
+  // and alpha) and the p the student last SAW, so the plot sets them as
+  // they were on the screen when it was left.  (On the emulator, 17 Oct
+  // 2026, a plot-only session ended "q crit not computed, p not computed"
+  // after the plot had shown q crit 3.638 and p 0.0643.)  The last frame
+  // drawn is the state left: Esc and "Leave the plot" change nothing.
+  srQK:=tk; srQV:=tv; srAS:=sr_FmtF(pmA,3);
+  IF qc<=qmax THEN srQS:=" = "+sr_FmtF(qc,3); ELSE srQS:=" > "+sr_FmtF(qmax,1); END;
+  IF qo>0 THEN srPK:=1; srPS:=pmPs; END;
+  RETURN 0;
+END;
+
+// ------------------------------------------------------------
+// Diagnostics (beta 15): is the Python bridge answering?
+//
+// A Python failure is invisible: the PPL fallback gives the same
+// numbers, only slower (Lessons Learned s9 -- NormExplorer's
+// sampler failed silently for eleven builds).  This page runs a
+// live probe -- Python reads k = 3, df = 12, q = 3.5 through the
+// bridge, computes F(q) and writes it back -- checks the answer
+// against SciPy, times it, and names the engine of the last result.
+// ------------------------------------------------------------
+sr_DiagMode()
+BEGIN
+  LOCAL dgT,dgMs,dgOK,dgV,dgKnown,dgE;
+  LOCAL dgL,dgZ;
+  // scipy.stats.studentized_range.cdf(3.5, 3, 12) = 0.9300045147
+  dgKnown:=0.9300045147;
+  RECT_P(G0,RGB(255,255,255));
+  TEXTOUT_P("Probing the Python bridge...",G0,50,110,3,RGB(0,60,200));
+  SR_K:=3; SR_DF:=12; SR_Q:=3.5;
+  dgT:=TICKS;
+  sr_PyRun(0);
+  dgMs:=TICKS-dgT;
+  dgOK:=sr_PyNum(0,1);
+  dgV:=-1;
+  IF dgOK==1 THEN
+    dgV:=SR_OUT;
+    IF ABS(dgV-dgKnown)>0.00001 THEN dgOK:=2; END;
+  END;
+  dgE:="nothing yet";
+  IF srEng==1 THEN dgE:="the MicroPython engine"; END;
+  IF srEng==2 THEN dgE:="the PPL engine (fallback)"; END;
+  dgZ:="none";
+  IFERR
+    IF DIM(SR_PZ)>0 THEN dgZ:=SR_PZ; END;
+  THEN
+    dgZ:="none";
+  END;
+  IF dgOK==1 THEN
+    dgL:={"Python bridge OK ("+STRING(dgMs,2,0)+" ms)",
+          "  F(3.5; k = 3, ν = 12) = "+sr_FmtF(dgV,6),
+          "  SciPy: 0.930005",
+          "Last result by:",
+          "  "+dgE,
+          "Python reads SR_K, SR_DF, SR_Q;",
+          "writes SR_OUT, one value a time.",
+          "Last Python mark: "+dgZ};
+  END;
+  IF dgOK==2 THEN
+    dgL:={"Python answered, but WRONGLY:",
+          "  F(3.5; k = 3, ν = 12) = "+sr_FmtF(dgV,6),
+          "  SciPy: 0.930005",
+          "Results will use Python anyway --",
+          "  tell Claude what this page says.",
+          "Last result by:",
+          "  "+dgE,
+          "Last Python mark: "+dgZ};
+  END;
+  IF dgOK==0 THEN
+    dgL:={"Python bridge NOT answering",
+          "  ("+STRING(dgMs,2,0)+" ms; no Python firmware,",
+          "  or a Python error).",
+          "Last Python mark: "+dgZ,
+          "A traceback, if any, is in the",
+          "Terminal. The PPL engine still works.",
+          "Last result by:",
+          "  "+dgE};
+  END;
+  sr_ShowRes("Diagnostics: Python bridge",dgL,"any key or tap = menu",1);
+  RETURN 0;
+END;
+
+sr_HelpMode()
+BEGIN
+  LOCAL xb,hk;
+  xb:=CHAR(57344);
+  hk:=sr_ShowRes("About StudRange (1/4)",
+    {"q = ("+xb+"max - "+xb+"min)/√(MSE/m)",
+     "Tukey HSD: n = total k means",
+     "Newman-Keuls: n = span of pair",
+     "Duncan: N-K q, α* = 1-(1-α)^(n-1)",
+     "Unequal n: use Tukey-Kramer",
+     "df = 0 → ν = ∞ (plain range dist)",
+     "Verified vs Harter 1960 tables",
+     "After Dunlap et al. 1977, BRMI 9(4)",
+     "Teaching aid; not for legal use."},
+    "any key or tap = next, Esc = menu",0);
+  IF hk==4 THEN RETURN 0; END;
+  hk:=sr_ShowRes("Why q and not t (2/4)",
+    {"Two means (k = 2): q = t·√2 exactly,",
+     "so q crit = √2 · t crit (two-sided).",
+     "k means make k(k−1)/2 pairs. A t test",
+     "on each at α finds SOME difference",
+     "far more often than α: that is the",
+     "family-wise error rate. q is the range",
+     "(the largest pair), so q > q crit has",
+     "chance α for the whole family."},
+    "any key or tap = next, Esc = menu",0);
+  IF hk==4 THEN RETURN 0; END;
+  hk:=sr_ShowRes("Two engines (3/4)",
+    {"MicroPython: the fast path, df ≥ 1",
+     "  (a q crit in about 1.5 s on a G2)",
+     "PPL: the fallback when Python does",
+     "  not answer; df ≥ 3, about a minute",
+     "Each result page names its engine.",
+     "Diagnostics probes Python live.",
+     "Python errors are silent here: test",
+     "with the Terminal open (hardware)."},
+    "any key or tap = next, Esc = menu",0);
+  IF hk==4 THEN RETURN 0; END;
+  hk:=sr_ShowRes("The plot (4/4)",
+    {"Drag in the plot: q obs (p sweeps)",
+     "Drag the right edge: α (CDF height)",
+     "Tap the q crit box: q obs = q crit",
+     "⇆ = q   ⇅ = α   +/− = k   0 = q crit",
+     "Soft keys: α− α+ k− k+ df Menu",
+     "Ent = plot menu: H0 sim, k = 2 curve",
+     "Menu modes: full precision",
+     "Plot: fast grid (curve-level)"},
+    "any key or tap = menu",0);
+  RETURN 0;
+END;
+
+// ============================================================
+// Launcher (zero-argument)
+// ============================================================
+EXPORT StudRange()
+BEGIN
+  LOCAL ch,done,qsS;
+  // a new session: no result yet, no Python mark
+  srEng:=0; SR_ENGINE:="none"; SR_PZ:="";
+  srQK:=0; srQV:=0; srPK:=0; srHK:=0;    // beta 15a: nothing computed yet
+  srQS:=""; srAS:=""; srPS:="";          // beta 15b: nothing seen yet
+  done:=0;
+  WHILE done==0 DO
+    // index reset to 0 and tested itself; the return value is not
+    ch:=0;
+    CHOOSE(ch,"StudRange — Tukey q",
+      "P-value from q",
+      "Critical value q(α)",
+      "Tukey HSD calculator",
+      "Distribution plot",
+      "Diagnostics (Python)",
+      "Help / About",
+      "Quit");
+    IF ch==0 THEN
+      done:=1;
+    ELSE
+      IF ch==1 THEN sr_PvMode(); END;
+      IF ch==2 THEN sr_CritMode(); END;
+      IF ch==3 THEN sr_HSDMode(); END;
+      IF ch==4 THEN sr_PlotMode(); END;
+      IF ch==5 THEN sr_DiagMode(); END;
+      IF ch==6 THEN sr_HelpMode(); END;
+      IF ch==7 THEN done:=1; END;
+    END;
+  END;
+  // beta 15a: the summary says WHICH q crit it quotes (the last one
+  // computed, by Critical value or HSD: its k and df), and "not
+  // computed" for a value this session never asked for -- beta 15
+  // printed "p = 0.00000" then, which reads as a real (tiny) p.
+  // beta 15b: the q crit and p are the LAST ONES THE STUDENT SAW, the
+  // Distribution plot's included, as their page showed them (the plot:
+  // q crit to 3 decimals, p to 4; the menu modes: 4 and 5), and the q crit
+  // names its alpha too: "q crit (k = 3, ν = 12, α = 0.050) = 3.773".  The
+  // HSD goes through sr_FmtF (it rounds first: a tiny HSD printed in
+  // scientific form).
+  qsS:="StudRange: ";
+  IF srQK>0 THEN
+    qsS:=qsS+"q crit (k = "+STRING(srQK,2,0)+", ν = "+IFTE(srQV==0,CHAR(8734),STRING(srQV,2,0))+", α = "+srAS+")"+srQS;
+  ELSE
+    qsS:=qsS+"q crit not computed";
+  END;
+  IF srPK==1 THEN qsS:=qsS+", "+srPS; ELSE qsS:=qsS+", p not computed"; END;
+  IF srHK==1 THEN qsS:=qsS+", HSD = "+sr_FmtF(EP_HSD,4); ELSE qsS:=qsS+", HSD not computed"; END;
+  RETURN qsS+" (engine: "+SR_ENGINE+")";
+END;

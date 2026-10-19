@@ -1,0 +1,283 @@
+==== Part A: every CAS template in desktop Giac, against the Python engine ====
+PASS Giac formula = Python engine, 20 loci x 6 frequency sets x 6 thetas   worst relative difference 2.66e-13
+PASS Giac theta = 0 formula = Python engine at theta 0   worst 5.81e-14
+
+  Which formulas the locus page can show (labels 10, 11 ...; 4 lines x 48 characters):
+  pr  m  genotypes V S T      in     out    theta formula          theta = 0
+  1   4  [1, 2, 3, 4, 0, 0]   313    63     shown (2 lines)        15 chars
+  1   3  [1, 1, 2, 3, 0, 0]   269    63     shown (2 lines)        15 chars
+  1   3  [1, 2, 2, 3, 0, 0]   171    99     shown (2 lines)        29 chars
+  1   2  [1, 2, 1, 2, 0, 0]   105    93     shown (2 lines)        15 chars
+  1   2  [1, 1, 2, 2, 0, 0]   147    83     shown (2 lines)        22 chars
+  1   3  [1, 2, 3, 3, 0, 0]   171    101    shown (2 lines)        29 chars
+  2   4  [0, 0, 1, 2, 0, 0]   2123   64     shown (2 lines)        16 chars
+  2   3  [0, 0, 1, 2, 0, 0]   1013   172    shown (4 lines)        52 chars
+  2   2  [0, 0, 1, 2, 0, 0]   507    318    too long to show       59 chars
+  2   3  [0, 0, 1, 1, 0, 0]   1111   95     shown (2 lines)        27 chars
+  2   2  [0, 0, 1, 1, 0, 0]   549    268    too long to show       54 chars
+  3   2  [0, 0, 1, 2, 0, 0]   225    61     shown (2 lines)        15 chars
+  4   3  [1, 2, 2, 3, 0, 0]   409    534    too long to show       109 chars
+  4   4  [1, 2, 3, 4, 0, 0]   703    740    too long to show       148 chars
+  4   5  [1, 2, 3, 4, 0, 0]   1397   244    too long to show       80 chars
+  4   6  [1, 2, 3, 4, 0, 0]   2875   64     shown (2 lines)        16 chars
+  4   4  [1, 1, 2, 3, 0, 0]   1209   208    shown (4 lines)        66 chars
+  5   6  [1, 2, 3, 4, 5, 6]   393    63     shown (2 lines)        15 chars
+  5   5  [1, 2, 3, 4, 4, 5]   211    136    shown (3 lines)        43 chars
+  6   4  [0, 0, 1, 2, 0, 0]   3315   1151   too long to show       235 chars
+PASS the longest CAS input any preset (1-4) can produce fits dmCasMx = 3000   2875 characters, preset 4 with 6 alleles [1, 2, 3, 4, 0, 0]
+PASS custom, 3 unknowns: 3315 characters > 3000, so the program does not send it ("too many terms")
+
+  The worked example (preset 1), as Giac simplifies it:
+    locus [12, 13, 14, 15]: (3×th+1)×(4×th+1)/(2×(th×p15-th-p15)×(p14×th-p14-th))
+                   theta 0: 1/(2×p15×p14)
+    locus [8, 9, 11]: (3×th+1)×(4×th+1)/(2×(th×p11-th-p11)×(p9×th-p9-th))
+                   theta 0: 1/(2×p11×p9)
+    locus [16, 17]: (3×th+1)×(4×th+1)/((th×p16+th×p17-5×th-p16-p17)×(th×p16+th×p17-4×th-p16-p17))
+                   theta 0: 1/(p16+p17)^2
+PASS 3a: every template's answer (39) prints the same on the Prime as in desktop Giac (no exp, sqrt, list, infinity)   []
+
+==== Part B: the PPL program in the harness (ppl_run_v3b) ====
+PASS the PPL dmCasLR text = the Python builder, every case (theta and theta = 0)
+PASS CAS formula (Giac, from the PPL text) = the PPL engine dmEval, 240 comparisons   worst relative difference 8.78e-16
+PASS band edge: worked example, theta 0.01   program theta 0.08914508 (LR 1000), brentq 0.08914508 (LR 1000)
+PASS band edge: worked example, theta 0.03   program theta 0.08914508 (LR 1000), brentq 0.08914508 (LR 1000)
+PASS band edge: worked example, theta 0   program theta 0.08914508 (LR 1000), brentq 0.08914508 (LR 1000)
+PASS band edge: locus 1 alone (LR 56.8 at 0.01)   program theta -1.00000000 (LR 0), brentq -1.00000000 (LR 0)
+PASS band edge: rare alleles: p14 = p15 = 0.01   program theta 0.01355674 (LR 1000), brentq 0.01355674 (LR 1000)
+PASS band edge: just above 10: p = 0.2, 0.2   program theta -1.00000000 (LR 0), brentq -1.00000000 (LR 0)
+PASS band edge: preset 2, two loci   program theta 0.10885597 (LR 10), brentq 0.10885597 (LR 10)
+PASS formula view (Giac): badge, formula, theta = 0 line, value line   ['LR as a formula in p and th (theta):', 'exact (CAS)', 'LR = (3×th+1)×(4×th+1)/(2×(th×p15-th-p15)×', '(p14×th-p14-th))', 'theta = 0: LR = 1/(2×p15×p14)', '(p×th-p-th) = -(th+(1-th)p): signs pair off', "your p, th = 0.010: LR = 56.793 (the program's value)"]
+PASS formula view: two CAS calls (theta and theta = 0), both answered   2 calls
+PASS 3a: both texts ask for string(...), both answers arrive quoted; no CAS variable assigned, no CAS call of a variable
+PASS 3a: no quote mark reaches the formula view
+PASS formula view footer
+PASS the same locus again: no new CAS call (cached)   0 calls
+PASS a tap on the footer row switches back to the picture
+PASS three loci visited in the formula view, then back: 2 calls per new formula   8 calls
+PASS cas=fail: decimal badge, "did not answer", the value line, no error   ['LR as a formula in p and th (theta):', 'decimal', 'The CAS did not answer: no formula here.', "your p, th = 0.010: LR = 56.793 (the program's value)"]
+PASS preset 4, 4 alleles: "too long to show" for theta, theta = 0 formula shown instead   ['LR as a formula in p and th (theta):', 'exact (CAS)', 'With theta: 740 characters, too long to show.', 'theta = 0: LR = (p10+p11+p12+p13)^2/', '(2×p13×p12×(6×p10^2+12×p10×p11+6×p10×p12+6×p10×', 'p13+6×p11^2+6×p11×p12+6×p11×p13+2×p12^2+3×p12×', 'p13+2×p13^2))', "your p, th = 0.010: LR = 14.569 (the program's value)"]
+PASS custom, 3 unknowns: "Too many terms to send to the CAS here.", only the theta = 0 call   ['LR as a formula in p and th (theta):', 'exact (CAS)', 'Too many terms to send to the CAS here.', 'theta = 0: LR = (6×p10^2+12×p10×p11+6×p10×p12+6×', 'p10×p13+6×p11^2+6×p11×p12+6×p11×p13+2×p12^2+3×', 'p12×p13+2×p13^2)/(30×p11×p10×', '(2×p12^2+3×p12×p11+3×p12×p10+3×p12×p13+2×p11^2', '+3×p11×p10+3×p11×p13+2×p10^2+3×p10×p13+2×p13^2))', "your p, th = 0.010: LR = 3.557 (the program's value)"]
+PASS exclusion: LR = 0 explained, no CAS call
+PASS exclusion: no band edge to look for (dmEdT = -2)
+PASS theta plot: "band edge LR 1,000 / at theta 0.0891 (off plot)"   ['band edge LR 1,000', 'at theta 0.0891 (off plot)']
+PASS theta drag: no CAS call at all
+PASS an edge inside the plot (theta 0.0136): text, and the orange dot at x 90   ['band edge LR 1,000', 'at theta 0.0136'] dots 1
+PASS stale-key run: menu -> example -> bar -> locus page -> formula -> quit, no skipped page   result 'DNAMixLR: combined LR = 3981.5, log10 = 3.600, 3 loci, theta = 0.010', skips []
+PASS dmKnowns byte-for-byte beta 2
+PASS dmTyped byte-for-byte beta 2
+PASS dmEval byte-for-byte beta 2
+PASS 3c: dmProb is NOT beta 2's any more (rewritten without cancellation; part V6 checks it by value)
+PASS 3a: beta 3 in v3b shows its own CAS text as the formula ("factor(normal(..." under "exact (CAS)")   ['LR as a formula in p and th (theta):', 'exact (CAS)', 'With theta: 313 characters, too long to show.', 'theta = 0: LR = factor(normal((1)/', '(((p12+p13+p14+p15)×(p12+p13+p14+p15)']
+
+G. beta 3a: beta 3 in harness v3d, and beta 3a against beta 3 (kept from the 3a script)
+PASS beta 3a: routines that differ from beta 3: ['dmCas'] (want dmCas)
+PASS beta 3a: outside those routines only comments differ
+PASS beta 3a: the #PYTHON blocks are unchanged
+  routines that differ from beta 3: dmCas; everything else differs only in comments
+
+==== R. 3b: the round-2 emulator findings, run on beta 3c (harness v3e) ====
+PASS R1: dmCas with the CAS failing returns "" with no error   ''
+PASS R1: dmCas('factor(normal(1/(2*dmq1*dmq2)))') with Giac = '1/(2*dmq2*dmq1)'   '1/(2*dmq2*dmq1)'
+PASS R1: dmCas('1/0') with Giac = ''   ''
+PASS R1: dmCas('0/0') with Giac = ''   ''
+PASS R1: dmCas('limit(1/dmt,dmt,0,1)') with Giac = ''   ''
+PASS R1: beta 3a dmCas, the same failed call in v3d, stops on INSTRING   INSTRING: Invalid input (the first argument is an empty stri
+PASS R2: dmRepl('1/2/dmq4/dmq3', 'dmq3', 'p14') = '1/2/dmq4/p14'   '1/2/dmq4/p14'
+PASS R2: dmRepl('dmq3*dmt+1', 'dmq3', 'p14') = 'p14*dmt+1'   'p14*dmt+1'
+PASS R2: dmRepl('dmq3', 'dmq3', 'p14') = 'p14'   'p14'
+PASS R2: dmRepl('abc', '', 'X') = 'abc'   'abc'
+PASS R2: dmRepl('', 'dmq3', 'p14') = ''   ''
+PASS R2: dmRepl('(3*dmt+1)*(4*dmt+1)', 'dmt', 'th') = '(3*th+1)*(4*th+1)'   '(3*th+1)*(4*th+1)'
+PASS R2: dmRepl('a*b*c*', '*', '×') = 'a×b×c×'   'a×b×c×'
+PASS R2: dmRepl('dmtdmt', 'dmt', 'th') = 'thth'   'thth'
+PASS R2: dmRepl('xyz', 'dmq3', 'p14') = 'xyz'   'xyz'
+PASS R2: dmRepl('ab', 'abc', 'Z') = 'ab'   'ab'
+PASS R2: dmRepl('aaa', 'aa', 'b') = 'ba'   'ba'
+PASS R2: beta 3a dmRepl with the pattern at the END stops in v3d (INSTRING("", ...))   INSTRING: Invalid input (the first argument is an empty stri
+PASS R2: the formula view with a theta = 0 answer ending in a symbol ("1/2/dmq4/dmq3") opens: "theta = 0: LR = 1/2/p15/p14", "exact (CAS)"   ['LR as a formula in p and th (theta):', 'exact (CAS)', 'LR = (3×th+1)×(4×th+1)/(2×(th×p15-th-p15)×', '(p14×th-p14-th))', 'theta = 0: LR = 1/2/p15/p14', '(p×th-p-th) = -(th+(1-th)p): signs pair off']
+PASS R2: beta 3a, the same formula view, stops in dmRepl (INSTRING("", ...))   INSTRING: Invalid input (the first argument is an empty stri
+  R2 dmRepl: 11 cases = Python str.replace (empty pattern: the text unchanged); a formula ending in a symbol opens the formula view (beta 3a stops)
+PASS R3: beta 3c, cas=fail, menu -> example -> bar -> locus page -> formula view -> Quit: completes, "decimal" and "did not answer"   'DNAMixLR: combined LR = 3981.5, log10 = 3.600, 3 loci, theta = 0.010'
+PASS R3: beta 3a, the same run in v3d, stops on INSTRING   INSTRING: Invalid input (the first argument is an empty stri
+PASS R4: the menu shows "Results (tap a row to drop)" (27 characters) and item 4 still opens the Results table
+PASS R4: every fixed CHOOSE line is 30 characters or fewer (the hypotheses line, built from the hypotheses, excepted: see Unresolved)   ['Hypotheses:  V + S, no unknown  vs  V + 1 unknown']
+PASS R4: beta 3a had the 36-character line the emulator cut; beta 3c does not (comments aside)
+  R4 the main menu: 12 lines shown, the longest 49 ("Hypotheses:  V + S, no unknown  vs  V + 1 unknown")
+  R5 the loci: LR 1.000297 (log10 0.000129), 0.5491 (log10 -0.2604), and an allele at p = 0.0004
+PASS R5 2 loci, theta 0.01 giac: beta 3c runs every view and the locus pages   None
+PASS R5 2 loci, theta 0.01 giac: beta 3c printed no scientific STRING   []
+PASS R5 2 loci, theta 0.01 giac: no small-capital E on screen
+  R5 2 loci, theta 0.01    beta 3c: 0 scientific, 13 screens; beta 3a: 10 scientific
+PASS R5: two loci: the LR-by-locus axis reads -0.3, -0.2, -0.1, 0.0 (beta 3a: ['-2.8ᴇ-17'])   ['-0.1', '-0.2', '-0.3', '0.0', '0.1', '0.2']
+      axis labels ['-0.1', '-0.2', '-0.3', '0.0', '0.1', '0.2']; beta 3a drew ['-2.8ᴇ-17']
+PASS R5 2 loci, theta 0.01 fail: beta 3c runs every view and the locus pages   None
+PASS R5 2 loci, theta 0.01 fail: beta 3c printed no scientific STRING   []
+PASS R5 2 loci, theta 0.01 fail: no small-capital E on screen
+PASS R5 3 loci, theta 0.01 giac: beta 3c runs every view and the locus pages   None
+PASS R5 3 loci, theta 0.01 giac: beta 3c printed no scientific STRING   []
+PASS R5 3 loci, theta 0.01 giac: no small-capital E on screen
+  R5 3 loci, theta 0.01    beta 3c: 0 scientific, 16 screens; beta 3a: 11 scientific
+PASS R5: the rare allele's box reads ".0004"   ['.0004']
+PASS R5: the LR-1.0003 locus: "log10 LR = 0.000"   ['log10 LR = 0.000', 'log10 LR = 0.000', 'log10 LR = 0.000']
+      axis labels ['-0.2', '0.0', '0.2']; allele box ['.0004']; locus page ['log10 LR = -0.260', 'log10 LR = 0.000', 'log10 LR = 0.620']
+PASS R5 3 loci, theta 0.01 fail: beta 3c runs every view and the locus pages   None
+PASS R5 3 loci, theta 0.01 fail: beta 3c printed no scientific STRING   []
+PASS R5 3 loci, theta 0.01 fail: no small-capital E on screen
+PASS R5 3 loci, theta 4e-05 giac: beta 3c runs every view and the locus pages   None
+PASS R5 3 loci, theta 4e-05 giac: beta 3c printed no scientific STRING   []
+PASS R5 3 loci, theta 4e-05 giac: no small-capital E on screen
+  R5 3 loci, theta 4e-05   beta 3c: 0 scientific, 16 screens; beta 3a: 29 scientific
+PASS R5: a typed theta of 0.00004 reads "theta = 0.000040"   ['theta = 0.000040', 'theta = 0.000040']
+PASS R5 3 loci, theta 4e-05 fail: beta 3c runs every view and the locus pages   None
+PASS R5 3 loci, theta 4e-05 fail: beta 3c printed no scientific STRING   []
+PASS R5 3 loci, theta 4e-05 fail: no small-capital E on screen
+  R5 beta 3a printed, in these runs:
+      STRING(-2.77556e-17, 2, 1) -> -2.8ᴇ-17
+      STRING(0.000128786, 2, 2) -> 1.29ᴇ-4
+      STRING(0.000128786, 2, 3) -> 1.288ᴇ-4
+      STRING(0.0004, 2, 3) -> 4.000ᴇ-4
+      STRING(4e-05, 2, 4) -> 4.0000ᴇ-5
+PASS R5: beta 3a printed scientific strings in these runs (5)
+PASS R6: dmF(0.0001287, 3) = '0.000'   '0.000'
+PASS R6: dmF(-0.00115, 3) = '-0.001'   '-0.001'
+PASS R6: dmF(2.7755575615628914e-17, 1) = '0.0'   '0.0'
+PASS R6: dmF(-2.7755575615628914e-17, 1) = '0.0'   '0.0'
+PASS R6: dmF(3.6, 3) = '3.600'   '3.600'
+PASS R6: dmF(0.0004, 4) = '0.0004'   '0.0004'
+PASS R6: dmF(95.4, 1) = '95.4'   '95.4'
+PASS R6: dmThS(0.01) = '0.010'   '0.010'
+PASS R6: dmThS(0.0125) = '0.0125'   '0.0125'
+PASS R6: dmThS(0.0) = '0.000'   '0.000'
+PASS R6: dmThS(4e-05) = '0.000040'   '0.000040'
+PASS R6: dmThS(1.5e-05) = '0.000015'   '0.000015'
+PASS R6: dmThS(0.03) = '0.030'   '0.030'
+PASS R6: dmThS(0.0001) = '0.0001'   '0.0001'
+PASS R6: dmThS(0.00012) = '0.0001'   '0.0001'
+PASS R6: the helpers printed no scientific STRING   []
+
+==== G (3b): beta 3b against beta 3a (3c: kept on those two files) ====
+PASS G: the routines that differ from beta 3a are exactly ['DNAMixLR', 'dmCas', 'dmDrawFx', 'dmDrawLoci', 'dmF', 'dmFxMake', 'dmPicture', 'dmRepl', 'dmThS', 'dmThStatic']   ['DNAMixLR', 'dmCas', 'dmDrawFx', 'dmDrawLoci', 'dmF', 'dmFxMake', 'dmPicture', 'dmRepl', 'dmThS', 'dmThStatic']
+PASS G: dmCas is the DIM guard only
+PASS G: dmF rounds (+ 0), nothing else
+PASS G: dmDrawLoci: one label line through dmF
+PASS G: dmThStatic: one label line through dmF
+PASS G: dmPicture: the one ".0004" line
+PASS G: dmFxMake: the two DIM guards only
+PASS G: dmDrawFx: the note's IF split, nothing else
+PASS G: DNAMixLR: the one menu line
+PASS G: dmRepl is the round-2 brief's loop
+PASS G: outside those routines only comments differ
+  differ from beta 3a: DNAMixLR, dmCas, dmDrawFx, dmDrawLoci, dmF, dmFxMake, dmPicture, dmRepl, dmThS, dmThStatic, each exactly as listed
+
+==== V (3c): the fleet review of 19 Oct 2026 -- B1, B2, B4 (harness v3e) ====
+-- V1 (B1): the custom hypotheses --
+PASS V1 B1: Hp 5 unknowns refused: the "0 to 4" box, and dmHp, dmHd, dmPres, dmNL and every LR (after a recalculation) exactly as before   dmHp [1.0, 1.0, 0.0, 0.0] dmHd [1.0, 0.0, 0.0, 1.0] LR [56.79293799538742, 19.08256880733945, 3.6738403498242307]
+PASS V1 B1: ... beta 3b, the same: the box, but the refused 5 is KEPT (dmHp(4) = 5.0), and the next recalculation uses it (LRs ['0.1177', '0.3882', '0.007613'])
+PASS V1 B1: Hp -1 unknowns refused: the "0 to 4" box, and dmHp, dmHd, dmPres, dmNL and every LR (after a recalculation) exactly as before   dmHp [1.0, 1.0, 0.0, 0.0] dmHd [1.0, 0.0, 0.0, 1.0] LR [56.79293799538742, 19.08256880733945, 3.6738403498242307]
+PASS V1 B1: ... beta 3b, the same: the box, but the refused -1 is KEPT (dmHp(4) = -1.0), and the next recalculation uses it (LRs ['0', '0', '0'])
+PASS V1 B1: Hd 5 unknowns refused: the "0 to 4" box, and dmHp, dmHd, dmPres, dmNL and every LR (after a recalculation) exactly as before   dmHp [1.0, 1.0, 0.0, 0.0] dmHd [1.0, 0.0, 0.0, 1.0] LR [56.79293799538742, 19.08256880733945, 3.6738403498242307]
+PASS V1 B1: ... beta 3b, the same: the box, but the refused 5 is KEPT (dmHd(4) = 5.0), and the next recalculation uses it (LRs ['765.6', '62.14', '482.6'])
+PASS V1 B1: Hd -1 unknowns refused: the "0 to 4" box, and dmHp, dmHd, dmPres, dmNL and every LR (after a recalculation) exactly as before   dmHp [1.0, 1.0, 0.0, 0.0] dmHd [1.0, 0.0, 0.0, 1.0] LR [56.79293799538742, 19.08256880733945, 3.6738403498242307]
+PASS V1 B1: ... beta 3b, the same: the box, but the refused -1 is KEPT (dmHd(4) = -1.0), and the next recalculation uses it (LRs ['-1', '-1', '-1'])
+PASS V1 B1: Hp 4.7 unknowns, Hd 5 (IP(4.7) = 4 is fine, 5 is not) refused: the "0 to 4" box, and dmHp, dmHd, dmPres, dmNL and every LR (after a recalculation) exactly as before   dmHp [1.0, 1.0, 0.0, 0.0] dmHd [1.0, 0.0, 0.0, 1.0] LR [56.79293799538742, 19.08256880733945, 3.6738403498242307]
+PASS V1 B1: ... beta 3b, the same: the box, but the refused 5 is KEPT (dmHd(4) = 5.0), and the next recalculation uses it (LRs ['5.131', '2.661', '3.234'])
+PASS V1 B1: a third person typed AND a refused count: dmPres stays {1, 1, 0}, the 3 loci are not cleared, one box   [1.0, 1.0, 0.0]
+PASS V1 B1: through the menu (example, Custom, Hp 5): the menu still reads "Hypotheses:  V + S, no unknown  vs  V + 1 unknown" and Quit returns 'DNAMixLR: combined LR = 3981.5, log10 = 3.600, 3 loci, theta = 0.010'
+PASS V1 B1: ... beta 3b, the same run: the menu reads "Hypotheses:  V + S + 5 unknowns  vs  V + 1 unknown" (the refused count shown as the hypothesis)
+PASS V1 B1: "Victim typed? = 2" is stored as 0 (dmPres = [0.0, 1.0, 0.0]), Hp's 2 as 0 and Hd's 1 as 1 (dmHp [0.0, 1.0, 0.0, 1.0], dmHd [1.0, 0.0, 0.0, 2.0]); every flag is 0 or 1
+PASS V1 B1: ... beta 3b stored the 2s (dmPres [2.0, 1.0, 0.0], dmHp [2.0, 1.0, 0.0, 1.0])
+PASS V1 B1: a valid custom pair (V + S + 1U vs V + 2U) is stored, no box, the 3 loci kept and recomputed = the Python engine (['14.5691', '5.7596', '3.5494'])
+PASS V1 B1: 4 and 4 unknowns are accepted (dmHp [1.0, 1.0, 0.0, 4.0], dmHd [1.0, 0.0, 0.0, 4.0])
+PASS V1 B1: the Hd form cancelled: nothing changes
+-- V2 (B2): the reason for an LR of 0 --
+PASS V2 B2: a known's allele outside M (suspect 14/out): LR = 0, reason 1 (Python: 1): the page and the formula view say 'LR = 0: a known contributor under Hp has an'   ['LR = 0: a known contributor under Hp has an', 'Combined: EXCLUDED at locus 1 (LR = 0)']
+PASS V2 B2: ... beta 3b says the same here (the one case its sentence fits)
+PASS V2 B2: the review's case: V 12/13 + S 14/14 cannot explain {12, 13, 14, 15}: LR = 0, reason 2 (Python: 2): the page and the formula view say 'LR = 0: under Hp the contributors cannot'   ['LR = 0: under Hp the contributors cannot', 'Combined: EXCLUDED at locus 1 (LR = 0)']
+PASS V2 B2: ... beta 3b says "a known contributor under Hp has an allele the mixture does not show" here
+PASS V2 B2: S + 1U cannot supply 3 more alleles: LR = 0, reason 2 (Python: 2): the page and the formula view say 'LR = 0: under Hp the contributors cannot'   ['LR = 0: under Hp the contributors cannot', 'Combined: EXCLUDED at locus 1 (LR = 0)']
+PASS V2 B2: ... beta 3b says "a known contributor under Hp has an allele the mixture does not show" here
+PASS V2 B2: a true underflow: four alleles at p = 1E-100 that S + 2U must draw (V + T + 1U carry them), theta 0: LR = 0, reason 0 (Python: 0): the page and the formula view say 'LR = 0: P(E|Hp) underflows: it is below the'   ['LR = 0: P(E|Hp) underflows: it is below the', 'Combined: EXCLUDED at locus 1 (LR = 0)']
+PASS V2 B2: ... beta 3b says "a known contributor under Hp has an allele the mixture does not show" here
+PASS V2 B2: ... and it IS an underflow: exact P(E|Hp) = 24E-400 > 0, below the smallest double (and the Prime holds down to 1E-499, so on the calculator this locus would not underflow), P(E|Hd) = 0.36
+PASS V2: the caption reads "0 unknown(s) cannot supply 1 allele: P = 0" and "... 2 alleles: P = 0" (beta 3b: "1 alleles")
+  V2 sweep: 63 loci with LR = 0 (reason 1: 24, reason 2: 39, underflow: 0), 126 pages; 384 loci checked by value, 25 of them positive loci that beta 3b's inclusion-exclusion (in doubles) made 0
+PASS V2 B2: a sweep of 63 LR = 0 loci under 8 hypothesis pairs: every page and formula view gives the reason the Python engine finds (1: 24, 2: 39), and none is left without a rule (no underflow at these frequencies)   []
+PASS V2 (3c): every one of the 384 loci of that sweep has the exact LR (fractions; 1E-9 relative), including the 25 that beta 3b's cancelling sum made 0   []
+-- V6 (3c): dmProb adds without subtracting --
+PASS V6: the per-allele sum equals the inclusion-exclusion sum EXACTLY, in fractions, in 1499 random loci (1-8 alleles, 0-4 unknowns, theta 0 to 0.499, knowns inside and outside M)   []
+PASS V6: the PPL dmProb (harness) = exact fractions in 2051 evaluations -- 9 preset/custom pairs, every CASES genotype, ordinary and rare frequencies, theta 0 to 0.3, |U| up to 8: worst relative difference 1.2e-15   []
+PASS V6: the PPL dmProb = brute-force enumeration of every order of draws (60 cases): worst 1.4e-15
+     12-digit model, 85 rare-allele probabilities: beta 3c worst relative error 6.9e-12, beta 3b 6.9e+06
+PASS V6: in a 12-significant-digit model of the Prime (every operation rounded), beta 3c's sum stays within 1E-9 of the exact value on 85 rare-allele probabilities (worst 6.9e-12); beta 3b's cancelling sum is off by up to 6.9e+06 (relative)
+PASS V6: S 1/1 + 4U vs V 5/7 + 4U, theta 0: exact LR 6.64228e-07; beta 3c 6.64228e-07 (relative 0e+00), the page shows ['LR = 6.64E-7'] and no "LR = 0"
+PASS V6: ... beta 3b: LR 0.0 and the page says ['LR = 0: a known contributor under Hp has an']
+PASS V6: V 1/1 + S 2/3 + 3U vs V + 4U, theta 0: exact LR 357500; beta 3c 357500 (relative 0e+00), the page shows ['LR = 357499.6'] and no "LR = 0"
+PASS V6: ... beta 3b: LR -1.0 and the page says ['Hd cannot produce this mixture (P = 0),']
+     the largest case (8 alleles, 4 unknowns, |U| = 8): about 432 multiply-adds in beta 3c, 4096 in beta 3b; harness 5.6 ms vs 96.5 ms per call (PC); the same value, 0.0003177531612 / 0.0003177531612
+PASS V6: the largest case costs about 432 operations (beta 3b: 4096) and runs 17 times faster in the harness, with the same value
+-- V3 (B4): the ENFSI scale in help --
+PASS V3 B4: help page 2 reads "ENFSI scale: LR 2-10 weak, 10-100 moderate," (beta 3b: "LR 1-10 weak")
+     dmVerbal(1) = 'about equal support for Hp and Hd', dmBand = 6
+     dmVerbal(1.99) = 'about equal support for Hp and Hd', dmBand = 6
+     dmVerbal(2) = 'weak support for Hp', dmBand = 7
+     dmVerbal(9.99) = 'weak support for Hp', dmBand = 7
+     dmVerbal(10) = 'moderate support for Hp', dmBand = 8
+PASS V3 B4: the program's own scale puts the lower edge of "weak" at 2, as the help now says: dmVerbal 1 and 1.99 "about equal", 2 and 9.99 "weak support for Hp", 10 "moderate"; dmBand steps at 2 and at 10
+-- V4: the review's check_DNAMixLR.py (19 Oct 2026) on beta 3c and on beta 3b --
+PASS V4: the review script ran 112 checks on each version
+     beta 3b: 104 PASS, 8 FAIL; beta 3c: 100 PASS, 12 FAIL
+     fixed:  E: ... but dmHp is left at the refused value (dmSetHyp 1338-1343 assigns BEFORE it validates): dmHp = [1.0, 1.
+     open:   G: Hypotheses sub-menu line 42 chars <= 31: 'Victim + suspect   vs   victim + 1 unknown'
+     open:   G: Hypotheses sub-menu line 37 chars <= 31: 'Suspect + 1 unknown   vs   2 unknowns'
+     open:   G: Hypotheses sub-menu line 47 chars <= 31: 'Suspect alone   vs   1 unknown  (single source)'
+     open:   G: Hypotheses sub-menu line 55 chars <= 31: 'Victim + suspect + 1 unknown   vs   victim + 2 unknowns'
+     open:   G: Hypotheses sub-menu line 43 chars <= 31: 'Custom: choose the persons and contributors'
+     open:   G: main menu line 49 chars <= 31: 'Hypotheses:  V + S, no unknown  vs  V + 1 unknown'
+     open:   H: dmBig(0.009999) prints a mantissa below 10 (it prints '10.00E-3')   (cosmetic if it fails)
+     recorded bug, now gone: E: a refused -1 unknowns is kept too (dmHp = [1.0, 1.0, 0.0, 0.0]) and dmRecalc then runs without a 
+     recorded bug, now gone: E: custom "Victim typed? = 2" is NOT validated: dmPres = [0.0, 1.0, 0.0] (the victim is then treated
+     recorded bug, now gone: F: the locus page (picture view) says "a known contributor under Hp has an allele the mixture does n
+     recorded bug, now gone: F: the caption also says "1 alleles" (plural for one)   (cosmetic)
+     recorded bug, now gone: F: the formula view says the same wrong sentence ("a known contributor ... allele the mixture does n
+PASS V4: every check beta 3b failed passes on beta 3c (1), except the 7 that wait on open decisions (D17 wording, B5)
+PASS V4: the checks that recorded the bugs (pass while the bug is there) now fail, and only those (5)
+PASS V4: the B1 regression check of the review ("dmHp is left at the refused value") fails on beta 3b and passes on beta 3c
+-- V5: the teaching-aid notice on screen --
+PASS V5: the header carries the DISCLAIMER line beside the distribution terms
+     notices seen (page, text, y): [(1, 'Teaching aid only', 6.0), (2, 'Teaching aid only', 6.0), (3, 'Teaching aid; not for casework or legal use.', 103.0), (3, 'Teaching aid; not for casework or legal use.', 114.0), (3, 'Teaching aid; not for casework or legal use.', 190.0), (3, 'Teaching aid; not for casework or legal use.', 201.0), (4, 'Teaching aid only', 6.0), (7, 'Teaching aid; not for casework or legal use.', 84.0), (8, 'Teaching aid; not for casework or legal use.', 196.0)]
+PASS V5: every LR page shows the notice in red -- "Teaching aid; not for casework or legal use." on the Results table, every locus page (picture and formula view; LR > 0, = 0 and "no LR") and the fallacy page; "Teaching aid only" in the title row of the three plots -- inside the screen and clear of every other text by a 6.5 / 7.6 px-per-character model; 53 screens, 5 states; beta 3b shows neither   []
+PASS V5: help page 1 shows the notice in red at y 193, between the last line (y 180) and the footer (y 204), every other line as in beta 3b (moved up at most 6 px)
+PASS V5: a tap on the locus plot's title row at x 30 still switches to the waterfall
+PASS V5: a tap on the locus plot's title row at x 120 still switches to the waterfall
+PASS V5: a tap on the locus plot's title row at x 250 still switches to the waterfall
+
+==== G (3c): beta 3c against beta 3b ====
+PASS G (3c): the routines that differ from beta 3b are exactly ['dmCombLines', 'dmDrawFall', 'dmDrawFx', 'dmDrawLoci', 'dmDrawPanel', 'dmHelpPage', 'dmLadFrame', 'dmProb', 'dmSetHyp', 'dmThStatic'] (B1, B2, B4, dmProb and the notice)   ['dmCombLines', 'dmDrawFall', 'dmDrawFx', 'dmDrawLoci', 'dmDrawPanel', 'dmHelpPage', 'dmLadFrame', 'dmProb', 'dmSetHyp', 'dmThStatic']
+PASS G (3c): dmHelpPage: the B4 help line, on page 1 the notice at y 193 with the lines above it moved up 3 and 6 px, and page 4's "same model"; nothing else
+PASS G (3c): dmCombLines: the caution in one line and the notice under it; the notice after an exclusion too
+PASS G (3c): dmDrawFall: the caution in one line and the notice on the line it freed; nothing else
+PASS G (3c): dmDrawLoci: the two titles moved left, the short notice in the title row; nothing else
+PASS G (3c): dmThStatic: the title moved left, the short notice in the title row; nothing else
+PASS G (3c): dmLadFrame: the shorter title and the short notice in the title row; nothing else
+PASS G (3c): dmSetHyp: the counts tested before anything is stored, the flags forced to 1 / 0, nothing else
+PASS G (3c): dmDrawPanel: the LR = 0 lines become the three-way test, "allele(s)", and the caution in one line with the notice at y 84 for every LR; nothing else
+PASS G (3c): dmDrawFx: the LR = 0 lines become the three-way test; nothing else
+PASS G (3c): outside those routines only comments differ
+PASS G (3c): dmProb: no subtraction of a term (no "pbTot :=  pbTot -"), no MAX(0, ...), no 2^ mask loop, no Home K as a counter; every FOR whose finish can fall below its start is guarded
+PASS G (3c): dmKnowns byte for byte beta 3b's
+PASS G (3c): dmTyped byte for byte beta 3b's
+PASS G (3c): dmEval byte for byte beta 3b's
+PASS G (3c): dmUSet byte for byte beta 3b's
+PASS G (3c): dmCasP byte for byte beta 3b's
+PASS G (3c): the banner reads "DNAMIXLR - beta 3c", the tested-on lines name 3c, and a "beta 3c" paragraph is there
+PASS G (3c): no code line names a beta (version strings live in comments only)
+PASS G (3c): every LOCAL line holds at most 6 names (max 6)
+PASS G (3c): no // comment inside an open bracket   []
+PASS G (3c): INSTRING appears exactly as often as in beta 3b (no new search of a string)
+  differ from beta 3b: dmCombLines, dmDrawFall, dmDrawFx, dmDrawLoci, dmDrawPanel, dmHelpPage, dmLadFrame, dmProb, dmSetHyp, dmThStatic, each exactly as listed
+
+==== S: h.sci_strings over every beta 3c harness run of this script ====
+PASS S: 184 beta 3c harness runs, 0 scientific STRING results (81 runs of older versions not counted)   []
+
+188 PASS, 0 failure(s)
+exit 0

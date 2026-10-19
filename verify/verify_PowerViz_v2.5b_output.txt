@@ -1,0 +1,133 @@
+== A. the CAS templates through desktop Giac 1.9 ==
+PASS A1 test 1 symbolic: Giac solves (delta - za SE0)/SE1 = zb for n -> ((pvs*pvza+pvs*pvzb)/pvd)^2 = ((za u + zb w)/delta)^2
+PASS A1 test 2 symbolic: Giac solves (delta - za SE0)/SE1 = zb for n -> ((sqrt(2)*pvs*pvza+sqrt(2)*pvs*pvzb)/pvd)^2 = ((za u + zb w)/delta)^2
+PASS A1 test 3 symbolic: Giac solves (delta - za SE0)/SE1 = zb for n -> ((sqrt(-pvp^2+pvp)*pvza+sqrt(-pvr^2+pvr)*pvzb)/pvd)^2 = ((za u + zb w)/delta)^2
+PASS A1 test 4 symbolic: Giac solves (delta - za SE0)/SE1 = zb for n -> ((sqrt(2)*sqrt(-pvm^2+pvm)*pvza+sqrt(-pvp^2+pvp-pvr^2+pvr)*pvzb)/pvd)^2 = ((za u + zb w)/delta)^2
+PASS A2 32 numeric templates x 7 alphas x 2 tails (448 values): Giac, evaluated at the plot's z, = PPL closed form   []
+PASS A2 the PPL closed form = statsmodels (normal_sample_size_one_tail, NormalIndPower, samplesize_proportions_2indep_onetail), 448 cases (NormalIndPower did not converge in 15, n > 1000: normal_sample_size_one_tail there)   []
+PASS A2 no CAS text holds a decimal point (BRIEF_CAS rule 1)   []
+PASS A2 defaults, test 1: the CAS with the numbers gives (3*pvza+3*pvzb)^2   (3*pvza+3*pvzb)^2
+PASS A2 defaults, test 3: the CAS with the numbers gives (5*pvza+2*sqrt(6)*pvzb)^2   (5*pvza+2*sqrt(6)*pvzb)^2
+PASS A2 defaults, test 4: the CAS with the numbers gives (3*sqrt(22)/2*pvza+7*pvzb)^2   (3*sqrt(22)/2*pvza+7*pvzb)^2
+PASS A2 defaults, test 2: the CAS with the numbers gives (3*sqrt(2)*pvza+3*sqrt(2)*pvzb)^2   (3*sqrt(2)*pvza+3*sqrt(2)*pvzb)^2
+PASS A3 1-sided: ceiling(formula) = brute-force n80 in every case (222)   {(1, 0): 222}
+PASS A3 2-sided: n80 is never larger than the ceiling, and smaller only by 1 or 2 (215 off by 0, 5 off by 1, 1 off by 2)
+   the differing cases: test 1 2-sided a 0.2: n* 1014.269 -> 1015, n80 1014; test 2 2-sided a 0.2: n* 2028.538 -> 2029, n80 2027; test 2 2-sided a 0.2: n* 507.135 -> 508, n80 507; test 4 2-sided a 0.2: n* 898.425 -> 899, n80 898; test 4 2-sided a 0.2: n* 114.054 -> 115, n80 114; test 4 2-sided a 0.2: n* 205.023 -> 206, n80 205
+PASS A3 2-sided means tests: ceil(statsmodels NormalIndPower two-sided, both tails) = brute-force n80 (95 cases; 17 where its solver did not converge, n in the thousands)   []
+PASS A4 pv_RatS writes 15 (15), 2.5 (25/10), -5 (-5), 0.55 (55/100) ... exactly   []
+PASS A4 pv_RatS gives up beyond 6 decimals (the page then skips the CAS line)
+PASS A5 Giac 1.9 factor() of the symbolic one-proportion form is WRONG (-34.49, not 152.47): the program does not use factor
+   2.5a test 1, as the Prime prints it: {((pvs*pvza+pvs*pvzb)/pvd)^2}
+   2.5a test 2, as the Prime prints it: {((√2*pvs*pvza+√2*pvs*pvzb)/pvd)^2}
+   2.5a test 3, as the Prime prints it: {((√(-pvp^2+pvp)*pvza+√(-pvr^2+pvr)*pvzb)/pvd)^2}
+   2.5a test 4, as the Prime prints it: {((√2*√(-pvm^2+pvm)*pvza+√(-pvp^2+pvp-pvr^2+pvr)*pvzb)/pvd)^2}
+PASS A6 2.5a: every template (4 symbolic, 32 numeric), read as on the calculator, arrives in braces with the root sign, passes pv_CasUse, and has the value of desktop Giac's answer   []
+
+== B. the program in the harness (ppl_run_v3d; 2.5b) ==
+PASS B1 test 1, 1-sided: panel "n₈₀ = 56 (55.6)", inside the panel, clear of the SE line   [('SE₀ = σ/√n = 15/√30 = 2.74', 8.0), ('n₈₀ = 56 (55.6)', 228.0)]
+PASS B2 test 1, 1-sided formula page: CAS solve, CAS numbers, PPL n = 55.64, round up = 56 = n80, the right explanation, layout
+PASS B2 2.5a: every CAS text asks for string(...), every answer arrives quoted; no CAS variable assigned, no CAS call of a variable   [('string(solve((pvd-pvza*pvs/sqrt(pvn))/(pvs/sqrt(pvn))=pvzb,pvn))', '"{((pvs*pvza+pvs*pvzb)/pvd)^2}"', 40.64798355102539)]
+PASS B2 test 1 page shows "(μ₁−μ₀ − zα×SE₀)/SE₁ = zβ,  SE₀ = SE₁ = σ/√n"
+PASS B2 test 1 page shows "n = ((σ×zα+σ×zβ)/(μ₁−μ₀))^2"
+PASS B2 test 1 page shows "CAS, with σ = 15, |μ₁−μ₀| = 5 (z kept exact):"
+PASS B2 test 1 page shows "n = (3×zα+3×zβ)^2"
+PASS B2 test 1 page shows "n = ((15×1.645 + 15×0.842)/5)^2 = 55.64"
+PASS B1 test 1, 2-sided: panel "n₈₀ = 71 (70.6)", inside the panel, clear of the SE line   [('SE₀ = σ/√n = 15/√30 = 2.74', 8.0), ('n₈₀ = 71 (70.6)', 228.0)]
+PASS B2 test 1, 2-sided formula page: CAS solve, CAS numbers, PPL n = 70.64, round up = 71 = n80, the right explanation, layout
+PASS B1 test 2, 1-sided: panel "n₈₀ = 112 (111.3)", inside the panel, clear of the SE line   [('SE₀ = σ√(2/n) = 15√(2/30) = 3.87', 8.0), ('n₈₀ = 112 (111.3)', 221.0)]
+PASS B2 test 2, 1-sided formula page: CAS solve, CAS numbers, PPL n = 111.29, round up = 112 = n80, the right explanation, layout
+PASS B1 test 2, 2-sided: panel "n₈₀ = 142 (141.3)", inside the panel, clear of the SE line   [('SE₀ = σ√(2/n) = 15√(2/30) = 3.87', 8.0), ('n₈₀ = 142 (141.3)', 221.0)]
+PASS B2 test 2, 2-sided formula page: CAS solve, CAS numbers, PPL n = 141.28, round up = 142 = n80, the right explanation, layout
+PASS B1 test 3, 1-sided: panel "n₈₀ = 153 (152.5)", inside the panel, clear of the SE line   [('SE₀ = √(0.5×0.5/100) = 0.0500', 8.0), ('n₈₀ = 153 (152.5)', 221.0)]
+PASS B2 test 3, 1-sided formula page: CAS solve, CAS numbers, PPL n = 152.46, round up = 153 = n80, the right explanation, layout
+PASS B2 2.5a test 3: the CAS lines carry the Prime's root sign, shown as it is, and no "sqrt"   ["critical line, which is zα SE₀ past H₀'s centre:", '  (p₁−p₀ − zα×SE₀)/SE₁ = zβ,', '  SE₀ = √(p₀(1−p₀)/n),  SE₁ = √(p₁(1−p₁)/n)', 'CAS, solved for n:', '  n = ((√(-p₀^2+p₀)×zα+√(-p₁^2+p₁)×zβ)/(p₁−p₀))^2', 'CAS, with p₀ = 0.5, p₁ = 0.6 (z kept exact):']
+PASS B1 test 3, 2-sided: panel "n₈₀ = 194 (193.8)", inside the panel, clear of the SE line   [('SE₀ = √(0.5×0.5/100) = 0.0500', 8.0), ('n₈₀ = 194 (193.8)', 221.0)]
+PASS B2 test 3, 2-sided formula page: CAS solve, CAS numbers, PPL n = 193.85, round up = 194 = n80, the right explanation, layout
+PASS B1 test 4, 1-sided: panel "n₈₀ = 305 (304.99)", inside the panel, clear of the SE line   [('SE₀ = √(2×0.55×0.45/100) = 0.0704', 8.0), ('n₈₀ = 305 (304.99)', 215.0)]
+PASS B2 test 4, 1-sided formula page: CAS solve, CAS numbers, PPL n = 304.99, round up = 305 = n80, the right explanation, layout
+PASS B1 test 4, 2-sided: panel "n₈₀ = 388 (387.3)", inside the panel, clear of the SE line   [('SE₀ = √(2×0.55×0.45/100) = 0.0704', 8.0), ('n₈₀ = 388 (387.3)', 221.0)]
+PASS B2 test 4, 2-sided formula page: CAS solve, CAS numbers, PPL n = 387.34, round up = 388 = n80, the right explanation, layout
+PASS B3 five openings of the page: CAS calls 2 + 0 + 0 + 0 + 1 = 3 (symbolic once; numbers again only when mu1 changed; n and alpha never, because z stays a symbol)   3 calls: ['string(solve((pvd-pvza*pvs/sqrt(pvn))/(p', 'string(solve((((105)-(100))-pvza*(15)/sq', 'string(solve((((106)-(100))-pvza*(15)/sq']
+PASS B3 after Right (mu1 106) the CAS line reads n = (15/6×zα+15/6×zβ)^2 in some exact form   ['CAS, solved for n:', '  n = ((σ×zα+σ×zβ)/(μ₁−μ₀))^2', 'CAS, with σ = 15, |μ₁−μ₀| = 6 (z kept exact):']
+PASS B3 after alpha+ (0.10) the PPL line uses z(0.9) = 1.282
+PASS B4 an H1 drag, an n drag, arrows and soft keys: no CAS call at all   0
+PASS B4 the panel's formula n follows the drag (PPL): final "(7.0)"
+PASS B5 cas=fail: no error; the page says "decimal", gives the textbook form, keeps the PPL numbers   ['Where n comes from', 'decimal', "Power = 0.80 when H₁'s centre is zβ SE₁ past the", "critical line, which is zα SE₀ past H₀'s centre:", '  (p₁−p₀ − zα×SE₀)/SE₁ = zβ,', '  SE₀ = √(p₀(1−p₀)/n),  SE₁ = √(p₁(1−p₁)/n)', '(no CAS: the formula as textbooks print it)', '  n = ((zα√(p₀(1−p₀)) + zβ√(p₁(1−p₁)))/(p₁−p₀))^2', '(no CAS line with p₀ = 0.5, p₁ = 0.6)']
+PASS B5 cas=fail: the panel is the same as with the CAS ("n₈₀ = 153 (152.5)")
+PASS B6 2-sided, alpha 0.20, mu1 101: n* = 1014.27 -> 1015, n80 = 1014; the page says n80 stops 1 sooner   ['2-sided: the formula drops the far tail, whose', 'tiny extra power lets n₈₀ stop 1 sooner.', 'any key or tap = back   (CAS: 1 ms)']
+PASS B6 panel "n₈₀ = 1014 (1014.27)"
+PASS B7 no effect (mu1 = mu0): the panel has no bracket, the page says no n is enough, one CAS call   ['Where n comes from', 'exact (CAS)', "Power = 0.80 when H₁'s centre is zβ SE₁ past the", "critical line, which is zα SE₀ past H₀'s centre:", '  (μ₁−μ₀ − zα×SE₀)/SE₁ = zβ,  SE₀ = SE₁ = σ/√n', 'CAS, solved for n:', '  n = ((σ×zα+σ×zβ)/(μ₁−μ₀))^2', 'No effect (σ = 15, |μ₁−μ₀| = 0): no n is enough.', 'any key or tap = back   (CAS: 1 ms)']
+PASS B8 Menu has 9 items and "Sample-size formula" opens the page   ['Edit values', 'Toggle 1/2-sided', 'Set α', 'Power vs n curve', 'Power vs effect size', 'Sample-size formula', 'Change test', 'Help', 'Return to plot']
+PASS B8 help: three pages, page 3 is the n formula, all text inside x 318
+PASS B9 Pow-n view: "formula: 55.6 → 56" in magenta under the green n80 label
+PASS B10 answers wrapped in quotes: stripped by the kit, the page is exact
+PASS B10 an approximate-mode answer (decimals) is refused: badge "decimal", no CAS number line
+PASS B11 stale-key mode: the menu's Enter does not skip the formula page   []
+
+== B12. v2.4's verify_PowerViz.py run against v2.5b (harness v3d) ==
+   64 PASS, 1 FAIL
+   FAIL soft key Menu -> Help: two drawn pages
+   SCI-LIST []
+PASS B12 v2.4's verification runs to the end on v2.5: 64 PASS, the only FAIL is the intended help-page count   []
+
+== G. 2.5a: v2.5 in harness v3b, and v2.5a against v2.5 ==
+PASS G v2.5 in v3b: its pv_Cas hands back its own text, so the page shows the textbook form and "decimal"
+
+G. v2.5a: v2.5 in harness v3b, and v2.5a against v2.5
+PASS v2.5a: routines that differ from v2.5: ['pv_Cas'] (want pv_Cas)
+PASS v2.5a: outside those routines only comments differ
+PASS v2.5a: the #PYTHON blocks are unchanged
+  routines that differ from v2.5: pv_Cas; everything else differs only in comments
+
+== R. 2.5b: the round-2 string fixes (harness v3d) ==
+PASS R1 2.5b: a failed CAS call -> pv_Cas returns "" with no error
+PASS R1 v2.5a in v3d: the same call stops the program   INSTRING: Invalid input (the first argument is an empty stri
+PASS R1 2.5b: an empty CAS string -> "", undef -> "", {7/2} kept
+PASS R2 2.5b cas=fail, test 1, 1-sided: the formula page opens with "decimal" and the textbook form, no error
+PASS R2 v2.5a in v3d, cas=fail, test 1, 1-sided: stops   INSTRING: Invalid input (the first argument 
+PASS R2 2.5b cas=fail, test 2, 1-sided: the formula page opens with "decimal" and the textbook form, no error
+PASS R2 v2.5a in v3d, cas=fail, test 2, 1-sided: stops   INSTRING: Invalid input (the first argument 
+PASS R2 2.5b cas=fail, test 3, 1-sided: the formula page opens with "decimal" and the textbook form, no error
+PASS R2 v2.5a in v3d, cas=fail, test 3, 1-sided: stops   INSTRING: Invalid input (the first argument 
+PASS R2 2.5b cas=fail, test 4, 1-sided: the formula page opens with "decimal" and the textbook form, no error
+PASS R2 v2.5a in v3d, cas=fail, test 4, 1-sided: stops   INSTRING: Invalid input (the first argument 
+PASS R2 2.5b cas=fail, test 2, 2-sided: the formula page opens with "decimal" and the textbook form, no error
+PASS R2 v2.5a in v3d, cas=fail, test 2, 2-sided: stops   INSTRING: Invalid input (the first argument 
+PASS R2 2.5b cas=fail, test 4, menu route: the formula page opens with "decimal" and the textbook form, no error
+PASS R2 v2.5a in v3d, cas=fail, test 4, menu route: stops   INSTRING: Invalid input (the first argument 
+PASS R2 2.5b cas=fail, no effect: the formula page opens with "decimal" and the textbook form, no error
+PASS R2 v2.5a in v3d, cas=fail, no effect: stops   INSTRING: Invalid input (the first argument 
+PASS R3 pv_Rep('pvza+pvzb', 'pvzb', 'zβ') = 'pvza+zβ'
+PASS R3 pv_Rep('pvza+pvzb', 'pvza', 'zα') = 'zα+pvzb'
+PASS R3 pv_Rep('pvd', 'pvd', 'δ') = 'δ'
+PASS R3 pv_Rep('3*pvs*pvs', 'pvs', 'σ') = '3*σ*σ'
+PASS R3 pv_Rep('a*b', '', 'x') = 'a*b'
+PASS R3 pv_Rep('', 'pvd', 'δ') = ''
+PASS R3 pv_Rep('', '', 'x') = ''
+PASS R3 pv_Rep('abc', 'pvd', 'δ') = 'abc'
+PASS R3 pv_Rep('2*3*', '*', '×') = '2×3×'
+PASS R3 pv_Rep('**', '*', '') = ''
+PASS R3 pv_Strip('') = ''
+PASS R3 pv_Strip('{}') = ''
+PASS R3 pv_Strip('list[(3*pvza)^2]') = '(3*pvza)^2'
+PASS R3 pv_Strip('{((pvs*pvza+pvs*pvzb)/pvd)^2}') = '((pvs*pvza+pvs*pvzb)/pvd)^2'
+PASS R3 pv_Strip('list') = ''
+PASS R3 v2.5a in v3d: pv_Rep with the pattern at the end stops   INSTRING: Invalid input (the first argument 
+PASS R3 2.5b: CAS answers ending in pvzb: the page opens "exact (CAS)" and shows them   ["critical line, which is zα SE₀ past H₀'s centre:", '  (μ₁−μ₀ − zα×SE₀)/SE₁ = zβ,  SE₀ = SE₁ = σ/√n', 'CAS, solved for n:', '  n = (zα+zβ)^2×σ^2/(μ₁−μ₀)^2×zβ/zβ', 'CAS, with σ = 15, |μ₁−μ₀| = 5 (z kept exact):']
+PASS R3 v2.5a in v3d, the same canned answers: stops in pv_Rep   INSTRING: Invalid input (the first argument 
+PASS R4 pv_FMT rounds first: ['0.00', '0.01', '0.1', '0.0', '1.645', '55.64']
+PASS R4 pv_NumS(0.0004) = "0.000", pv_NumS(2.5) = "2.5", pv_NumD(0.00004) = "0.0000", pv_NumD(0.0005) = "0.0005"
+PASS R4 v2.5a in v3d: pv_FMT(0.0033, 2) = '3.30ᴇ-3', pv_NumS(0.0004) = '4.000ᴇ-4' (the finding)
+PASS R4 2.5b mu1 = 100.001 (d = 0.0000667): ['at d = 0.00: power = 0.050, key or tap = back'], summary ['effect = 0.0010   d = 0.000']; sigma 0.0004: ['SE₀ = σ/√n = 0.000/√30 = 0.0000730']; no scientific text
+PASS R4 v2.5a in v3d, the same inputs: ['at d = 6.67ᴇ-5: power = 0.050, key or tap = back'], ['effect = 0.0010   d = 6.667ᴇ-5'], ['SE₀ = σ/√n = 4.000ᴇ-4/√30 = 0.0000730']
+PASS R5 2.5b: routines that differ from v2.5a: ['pv_Cas', 'pv_FMT', 'pv_NumD', 'pv_NumS', 'pv_Rep', 'pv_Strip']
+PASS R5 2.5b: outside those routines only comments differ
+PASS R5 2.5b: 57 of the 57 untouched routines are byte-identical, comments included
+  INSTRING sites in v2.5b: 446, 484, 489, 504, 509, 523, 524, 525, 669, 670
+  harness runs: 34 of v2.5b here, plus B12's subprocess; 14 of v2.5 / v2.5a
+  h.sci_strings, v2.5b: []
+  h.sci_strings, B12 (v2.4's script on v2.5b): []
+  h.sci_strings, v2.5 / v2.5a (for comparison): [(6.6666667e-05, 2, '6.67ᴇ-5'), (6.6666667e-05, 3, '6.667ᴇ-5'), (0.0004, 3, '4.000ᴇ-4'), (0.0033, 2, '3.30ᴇ-3')]
+PASS R6 2.5b: no scientific STRING(x, 2, d) result in any of the 34 v2.5b runs, nor in B12
+
+106 PASS, 0 FAIL

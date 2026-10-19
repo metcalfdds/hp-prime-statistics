@@ -1,0 +1,175 @@
+==== Part A: every CAS template in desktop Giac, against the Python engine ====
+PASS Giac formula = Python engine, 20 loci x 6 frequency sets x 6 thetas   worst relative difference 2.66e-13
+PASS Giac theta = 0 formula = Python engine at theta 0   worst 5.81e-14
+
+  Which formulas the locus page can show (labels 10, 11 ...; 4 lines x 48 characters):
+  pr  m  genotypes V S T      in     out    theta formula          theta = 0
+  1   4  [1, 2, 3, 4, 0, 0]   313    63     shown (2 lines)        15 chars
+  1   3  [1, 1, 2, 3, 0, 0]   269    63     shown (2 lines)        15 chars
+  1   3  [1, 2, 2, 3, 0, 0]   171    99     shown (2 lines)        29 chars
+  1   2  [1, 2, 1, 2, 0, 0]   105    93     shown (2 lines)        15 chars
+  1   2  [1, 1, 2, 2, 0, 0]   147    83     shown (2 lines)        22 chars
+  1   3  [1, 2, 3, 3, 0, 0]   171    101    shown (2 lines)        29 chars
+  2   4  [0, 0, 1, 2, 0, 0]   2123   64     shown (2 lines)        16 chars
+  2   3  [0, 0, 1, 2, 0, 0]   1013   172    shown (4 lines)        52 chars
+  2   2  [0, 0, 1, 2, 0, 0]   507    318    too long to show       59 chars
+  2   3  [0, 0, 1, 1, 0, 0]   1111   95     shown (2 lines)        27 chars
+  2   2  [0, 0, 1, 1, 0, 0]   549    268    too long to show       54 chars
+  3   2  [0, 0, 1, 2, 0, 0]   225    61     shown (2 lines)        15 chars
+  4   3  [1, 2, 2, 3, 0, 0]   409    534    too long to show       109 chars
+  4   4  [1, 2, 3, 4, 0, 0]   703    740    too long to show       148 chars
+  4   5  [1, 2, 3, 4, 0, 0]   1397   244    too long to show       80 chars
+  4   6  [1, 2, 3, 4, 0, 0]   2875   64     shown (2 lines)        16 chars
+  4   4  [1, 1, 2, 3, 0, 0]   1209   208    shown (4 lines)        66 chars
+  5   6  [1, 2, 3, 4, 5, 6]   393    63     shown (2 lines)        15 chars
+  5   5  [1, 2, 3, 4, 4, 5]   211    136    shown (3 lines)        43 chars
+  6   4  [0, 0, 1, 2, 0, 0]   3315   1151   too long to show       235 chars
+PASS the longest CAS input any preset (1-4) can produce fits dmCasMx = 3000   2875 characters, preset 4 with 6 alleles [1, 2, 3, 4, 0, 0]
+PASS custom, 3 unknowns: 3315 characters > 3000, so the program does not send it ("too many terms")
+
+  The worked example (preset 1), as Giac simplifies it:
+    locus [12, 13, 14, 15]: (3×th+1)×(4×th+1)/(2×(th×p15-th-p15)×(p14×th-p14-th))
+                   theta 0: 1/(2×p15×p14)
+    locus [8, 9, 11]: (3×th+1)×(4×th+1)/(2×(th×p11-th-p11)×(p9×th-p9-th))
+                   theta 0: 1/(2×p11×p9)
+    locus [16, 17]: (3×th+1)×(4×th+1)/((th×p16+th×p17-5×th-p16-p17)×(th×p16+th×p17-4×th-p16-p17))
+                   theta 0: 1/(p16+p17)^2
+PASS 3a: every template's answer (39) prints the same on the Prime as in desktop Giac (no exp, sqrt, list, infinity)   []
+
+==== Part B: the PPL program in the harness (ppl_run_v3b) ====
+PASS the PPL dmCasLR text = the Python builder, every case (theta and theta = 0)
+PASS CAS formula (Giac, from the PPL text) = the PPL engine dmEval, 240 comparisons   worst relative difference 8.47e-13
+PASS band edge: worked example, theta 0.01   program theta 0.08914508 (LR 1000), brentq 0.08914508 (LR 1000)
+PASS band edge: worked example, theta 0.03   program theta 0.08914508 (LR 1000), brentq 0.08914508 (LR 1000)
+PASS band edge: worked example, theta 0   program theta 0.08914508 (LR 1000), brentq 0.08914508 (LR 1000)
+PASS band edge: locus 1 alone (LR 56.8 at 0.01)   program theta -1.00000000 (LR 0), brentq -1.00000000 (LR 0)
+PASS band edge: rare alleles: p14 = p15 = 0.01   program theta 0.01355674 (LR 1000), brentq 0.01355674 (LR 1000)
+PASS band edge: just above 10: p = 0.2, 0.2   program theta -1.00000000 (LR 0), brentq -1.00000000 (LR 0)
+PASS band edge: preset 2, two loci   program theta 0.10885597 (LR 10), brentq 0.10885597 (LR 10)
+PASS formula view (Giac): badge, formula, theta = 0 line, value line   ['LR as a formula in p and th (theta):', 'exact (CAS)', 'LR = (3×th+1)×(4×th+1)/(2×(th×p15-th-p15)×', '(p14×th-p14-th))', 'theta = 0: LR = 1/(2×p15×p14)', '(p×th-p-th) = -(th+(1-th)p): signs pair off', "your p, th = 0.010: LR = 56.793 (the program's value)"]
+PASS formula view: two CAS calls (theta and theta = 0), both answered   2 calls
+PASS 3a: both texts ask for string(...), both answers arrive quoted; no CAS variable assigned, no CAS call of a variable
+PASS 3a: no quote mark reaches the formula view
+PASS formula view footer
+PASS the same locus again: no new CAS call (cached)   0 calls
+PASS a tap on the footer row switches back to the picture
+PASS three loci visited in the formula view, then back: 2 calls per new formula   8 calls
+PASS cas=fail: decimal badge, "did not answer", the value line, no error   ['LR as a formula in p and th (theta):', 'decimal', 'The CAS did not answer: no formula here.', "your p, th = 0.010: LR = 56.793 (the program's value)"]
+PASS preset 4, 4 alleles: "too long to show" for theta, theta = 0 formula shown instead   ['LR as a formula in p and th (theta):', 'exact (CAS)', 'With theta: 740 characters, too long to show.', 'theta = 0: LR = (p10+p11+p12+p13)^2/', '(2×p13×p12×(6×p10^2+12×p10×p11+6×p10×p12+6×p10×', 'p13+6×p11^2+6×p11×p12+6×p11×p13+2×p12^2+3×p12×', 'p13+2×p13^2))', "your p, th = 0.010: LR = 14.569 (the program's value)"]
+PASS custom, 3 unknowns: "Too many terms to send to the CAS here.", only the theta = 0 call   ['LR as a formula in p and th (theta):', 'exact (CAS)', 'Too many terms to send to the CAS here.', 'theta = 0: LR = (6×p10^2+12×p10×p11+6×p10×p12+6×', 'p10×p13+6×p11^2+6×p11×p12+6×p11×p13+2×p12^2+3×', 'p12×p13+2×p13^2)/(30×p11×p10×', '(2×p12^2+3×p12×p11+3×p12×p10+3×p12×p13+2×p11^2', '+3×p11×p10+3×p11×p13+2×p10^2+3×p10×p13+2×p13^2))', "your p, th = 0.010: LR = 3.557 (the program's value)"]
+PASS exclusion: LR = 0 explained, no CAS call
+PASS exclusion: no band edge to look for (dmEdT = -2)
+PASS theta plot: "band edge LR 1,000 / at theta 0.0891 (off plot)"   ['band edge LR 1,000', 'at theta 0.0891 (off plot)']
+PASS theta drag: no CAS call at all
+PASS an edge inside the plot (theta 0.0136): text, and the orange dot at x 90   ['band edge LR 1,000', 'at theta 0.0136'] dots 1
+PASS stale-key run: menu -> example -> bar -> locus page -> formula -> quit, no skipped page   result 'DNAMixLR: combined LR = 3981.5, log10 = 3.600, 3 loci, theta = 0.010', skips []
+PASS dmProb byte-for-byte beta 2
+PASS dmKnowns byte-for-byte beta 2
+PASS dmTyped byte-for-byte beta 2
+PASS dmEval byte-for-byte beta 2
+PASS 3a: beta 3 in v3b shows its own CAS text as the formula ("factor(normal(..." under "exact (CAS)")   ['LR as a formula in p and th (theta):', 'exact (CAS)', 'With theta: 313 characters, too long to show.', 'theta = 0: LR = factor(normal((1)/', '(((p12+p13+p14+p15)×(p12+p13+p14+p15)']
+
+G. beta 3a: beta 3 in harness v3d, and beta 3a against beta 3 (kept from the 3a script)
+PASS beta 3a: routines that differ from beta 3: ['dmCas'] (want dmCas)
+PASS beta 3a: outside those routines only comments differ
+PASS beta 3a: the #PYTHON blocks are unchanged
+  routines that differ from beta 3: dmCas; everything else differs only in comments
+
+==== R. 3b: the round-2 emulator findings (harness v3d) ====
+PASS R1: dmCas with the CAS failing returns "" with no error   ''
+PASS R1: dmCas('factor(normal(1/(2*dmq1*dmq2)))') with Giac = '1/(2*dmq2*dmq1)'   '1/(2*dmq2*dmq1)'
+PASS R1: dmCas('1/0') with Giac = ''   ''
+PASS R1: dmCas('0/0') with Giac = ''   ''
+PASS R1: dmCas('limit(1/dmt,dmt,0,1)') with Giac = ''   ''
+PASS R1: beta 3a dmCas, the same failed call in v3d, stops on INSTRING   INSTRING: Invalid input (the first argument is an empty stri
+PASS R2: dmRepl('1/2/dmq4/dmq3', 'dmq3', 'p14') = '1/2/dmq4/p14'   '1/2/dmq4/p14'
+PASS R2: dmRepl('dmq3*dmt+1', 'dmq3', 'p14') = 'p14*dmt+1'   'p14*dmt+1'
+PASS R2: dmRepl('dmq3', 'dmq3', 'p14') = 'p14'   'p14'
+PASS R2: dmRepl('abc', '', 'X') = 'abc'   'abc'
+PASS R2: dmRepl('', 'dmq3', 'p14') = ''   ''
+PASS R2: dmRepl('(3*dmt+1)*(4*dmt+1)', 'dmt', 'th') = '(3*th+1)*(4*th+1)'   '(3*th+1)*(4*th+1)'
+PASS R2: dmRepl('a*b*c*', '*', '×') = 'a×b×c×'   'a×b×c×'
+PASS R2: dmRepl('dmtdmt', 'dmt', 'th') = 'thth'   'thth'
+PASS R2: dmRepl('xyz', 'dmq3', 'p14') = 'xyz'   'xyz'
+PASS R2: dmRepl('ab', 'abc', 'Z') = 'ab'   'ab'
+PASS R2: dmRepl('aaa', 'aa', 'b') = 'ba'   'ba'
+PASS R2: beta 3a dmRepl with the pattern at the END stops in v3d (INSTRING("", ...))   INSTRING: Invalid input (the first argument is an empty stri
+PASS R2: the formula view with a theta = 0 answer ending in a symbol ("1/2/dmq4/dmq3") opens: "theta = 0: LR = 1/2/p15/p14", "exact (CAS)"   ['LR as a formula in p and th (theta):', 'exact (CAS)', 'LR = (3×th+1)×(4×th+1)/(2×(th×p15-th-p15)×', '(p14×th-p14-th))', 'theta = 0: LR = 1/2/p15/p14', '(p×th-p-th) = -(th+(1-th)p): signs pair off']
+PASS R2: beta 3a, the same formula view, stops in dmRepl (INSTRING("", ...))   INSTRING: Invalid input (the first argument is an empty stri
+  R2 dmRepl: 11 cases = Python str.replace (empty pattern: the text unchanged); a formula ending in a symbol opens the formula view (beta 3a stops)
+PASS R3: beta 3b, cas=fail, menu -> example -> bar -> locus page -> formula view -> Quit: completes, "decimal" and "did not answer"   'DNAMixLR: combined LR = 3981.5, log10 = 3.600, 3 loci, theta = 0.010'
+PASS R3: beta 3a, the same run in v3d, stops on INSTRING   INSTRING: Invalid input (the first argument is an empty stri
+PASS R4: the menu shows "Results (tap a row to drop)" (27 characters) and item 4 still opens the Results table
+PASS R4: every fixed CHOOSE line is 30 characters or fewer (the hypotheses line, built from the hypotheses, excepted: see Unresolved)   ['Hypotheses:  V + S, no unknown  vs  V + 1 unknown']
+PASS R4: beta 3a had the 36-character line the emulator cut; beta 3b does not (comments aside)
+  R4 the main menu: 12 lines shown, the longest 49 ("Hypotheses:  V + S, no unknown  vs  V + 1 unknown")
+  R5 the loci: LR 1.000297 (log10 0.000129), 0.5491 (log10 -0.2604), and an allele at p = 0.0004
+PASS R5 2 loci, theta 0.01 giac: beta 3b runs every view and the locus pages   None
+PASS R5 2 loci, theta 0.01 giac: beta 3b printed no scientific STRING   []
+PASS R5 2 loci, theta 0.01 giac: no small-capital E on screen
+  R5 2 loci, theta 0.01    beta 3b: 0 scientific, 13 screens; beta 3a: 10 scientific
+PASS R5: two loci: the LR-by-locus axis reads -0.3, -0.2, -0.1, 0.0 (beta 3a: ['-2.8ᴇ-17'])   ['-0.1', '-0.2', '-0.3', '0.0', '0.1', '0.2']
+      axis labels ['-0.1', '-0.2', '-0.3', '0.0', '0.1', '0.2']; beta 3a drew ['-2.8ᴇ-17']
+PASS R5 2 loci, theta 0.01 fail: beta 3b runs every view and the locus pages   None
+PASS R5 2 loci, theta 0.01 fail: beta 3b printed no scientific STRING   []
+PASS R5 2 loci, theta 0.01 fail: no small-capital E on screen
+PASS R5 3 loci, theta 0.01 giac: beta 3b runs every view and the locus pages   None
+PASS R5 3 loci, theta 0.01 giac: beta 3b printed no scientific STRING   []
+PASS R5 3 loci, theta 0.01 giac: no small-capital E on screen
+  R5 3 loci, theta 0.01    beta 3b: 0 scientific, 16 screens; beta 3a: 11 scientific
+PASS R5: the rare allele's box reads ".0004"   ['.0004']
+PASS R5: the LR-1.0003 locus: "log10 LR = 0.000"   ['log10 LR = 0.000', 'log10 LR = 0.000', 'log10 LR = 0.000']
+      axis labels ['-0.2', '0.0', '0.2']; allele box ['.0004']; locus page ['log10 LR = -0.260', 'log10 LR = 0.000', 'log10 LR = 0.620']
+PASS R5 3 loci, theta 0.01 fail: beta 3b runs every view and the locus pages   None
+PASS R5 3 loci, theta 0.01 fail: beta 3b printed no scientific STRING   []
+PASS R5 3 loci, theta 0.01 fail: no small-capital E on screen
+PASS R5 3 loci, theta 4e-05 giac: beta 3b runs every view and the locus pages   None
+PASS R5 3 loci, theta 4e-05 giac: beta 3b printed no scientific STRING   []
+PASS R5 3 loci, theta 4e-05 giac: no small-capital E on screen
+  R5 3 loci, theta 4e-05   beta 3b: 0 scientific, 16 screens; beta 3a: 29 scientific
+PASS R5: a typed theta of 0.00004 reads "theta = 0.000040"   ['theta = 0.000040', 'theta = 0.000040']
+PASS R5 3 loci, theta 4e-05 fail: beta 3b runs every view and the locus pages   None
+PASS R5 3 loci, theta 4e-05 fail: beta 3b printed no scientific STRING   []
+PASS R5 3 loci, theta 4e-05 fail: no small-capital E on screen
+  R5 beta 3a printed, in these runs:
+      STRING(-2.77556e-17, 2, 1) -> -2.8ᴇ-17
+      STRING(0.000128786, 2, 2) -> 1.29ᴇ-4
+      STRING(0.000128786, 2, 3) -> 1.288ᴇ-4
+      STRING(0.0004, 2, 3) -> 4.000ᴇ-4
+      STRING(4e-05, 2, 4) -> 4.0000ᴇ-5
+PASS R5: beta 3a printed scientific strings in these runs (5)
+PASS R6: dmF(0.0001287, 3) = '0.000'   '0.000'
+PASS R6: dmF(-0.00115, 3) = '-0.001'   '-0.001'
+PASS R6: dmF(2.7755575615628914e-17, 1) = '0.0'   '0.0'
+PASS R6: dmF(-2.7755575615628914e-17, 1) = '0.0'   '0.0'
+PASS R6: dmF(3.6, 3) = '3.600'   '3.600'
+PASS R6: dmF(0.0004, 4) = '0.0004'   '0.0004'
+PASS R6: dmF(95.4, 1) = '95.4'   '95.4'
+PASS R6: dmThS(0.01) = '0.010'   '0.010'
+PASS R6: dmThS(0.0125) = '0.0125'   '0.0125'
+PASS R6: dmThS(0.0) = '0.000'   '0.000'
+PASS R6: dmThS(4e-05) = '0.000040'   '0.000040'
+PASS R6: dmThS(1.5e-05) = '0.000015'   '0.000015'
+PASS R6: dmThS(0.03) = '0.030'   '0.030'
+PASS R6: dmThS(0.0001) = '0.0001'   '0.0001'
+PASS R6: dmThS(0.00012) = '0.0001'   '0.0001'
+PASS R6: the helpers printed no scientific STRING   []
+
+==== G (3b): beta 3b against beta 3a ====
+PASS G: the routines that differ from beta 3a are exactly ['DNAMixLR', 'dmCas', 'dmDrawFx', 'dmDrawLoci', 'dmF', 'dmFxMake', 'dmPicture', 'dmRepl', 'dmThS', 'dmThStatic']   ['DNAMixLR', 'dmCas', 'dmDrawFx', 'dmDrawLoci', 'dmF', 'dmFxMake', 'dmPicture', 'dmRepl', 'dmThS', 'dmThStatic']
+PASS G: dmCas is the DIM guard only
+PASS G: dmF rounds (+ 0), nothing else
+PASS G: dmDrawLoci: one label line through dmF
+PASS G: dmThStatic: one label line through dmF
+PASS G: dmPicture: the one ".0004" line
+PASS G: dmFxMake: the two DIM guards only
+PASS G: dmDrawFx: the note's IF split, nothing else
+PASS G: DNAMixLR: the one menu line
+PASS G: dmRepl is the round-2 brief's loop
+PASS G: outside those routines only comments differ
+  differ from beta 3a: DNAMixLR, dmCas, dmDrawFx, dmDrawLoci, dmF, dmFxMake, dmPicture, dmRepl, dmThS, dmThStatic, each exactly as listed
+
+==== S: h.sci_strings over every beta 3b harness run of this script ====
+PASS S: 50 beta 3b harness runs, 0 scientific STRING results (11 runs of older versions not counted)   []
+
+115 PASS, 0 failure(s)

@@ -1,0 +1,126 @@
+1. MicroPython engine (the block as shipped) vs SciPy
+     k=2  df=1   a=0.050  python 17.96929  scipy 17.96929
+     k=3  df=12  a=0.050  python 3.77293  scipy 3.77293
+     k=10 df=2   a=0.010  python 31.68935  scipy 31.68935
+  ok   python q crit, max relative error < 1E-5 (5.04e-06)
+  ok   python p at the true q crit, max relative error < 1E-4 (2.42e-05)
+  ok   Lessons s11 case k=4 df=3 a=.005 -> 15.4503 (15.4503)
+  ok   df = infinity (100000) matches SciPy df=inf-ish (1e6) (0.0355570 vs 0.0355570)
+  ok   Diagnostics probe value F(3.5;3,12) within 1E-5 of 0.9300045147 (0.9300045147)
+2. PPL engine (mirror) vs SciPy, the menu resolution (64 x 32/48)
+  ok   PPL q crit, max absolute error < 1E-2 (df >= 3; it is k = 20, df = 3 at the worst) (8.1e-03 at k=20 df=3 a=0.005)
+  ok   sr_LGAM (Lanczos) vs lgamma < 1E-12 (1.8e-15)
+3. The plot cache (32 x 48) and spdf vs SciPy
+  ok   cache CDF max abs error < 5E-4 (curve level; worst k = 20, df = 2) (3.0e-04)
+  ok   cache pdf max error relative to the peak < 1E-2 (curve level) (5.7e-03)
+  ok   cache(): 65 + 65 + 1 = 131 crossings (131)
+  ok   cache(): CDF monotone, last element in [0,1] (F(qmax) = 0.99981, qmax = 8.400)
+4. The H0 simulation (the block's simulate(), urandom -> random.random)
+  ok   k=3 m=5 a=0.05: q > q crit 5.19 % (alpha 5 %, |z| < 4) (z = 0.87)
+  ok   k=3 m=5: any t > t crit 11.56 % vs theory 11.56 % (|z| < 4) (z = 0.01)
+  ok   k=4 m=8 a=0.05: q > q crit 5.17 % (alpha 5 %, |z| < 4) (z = 0.78)
+  ok   k=4 m=8: any t > t crit 19.64 % vs theory 19.49 % (|z| < 4) (z = 0.37)
+  ok   k=6 m=4 a=0.10: q > q crit 10.10 % (alpha 10 %, |z| < 4) (z = 0.33)
+  ok   k=6 m=4: any t > t crit 53.13 % vs theory 52.85 % (|z| < 4) (z = 0.56)
+  ok   k=3 m=5 a=0.01: q > q crit 1.00 % (alpha 1 %, |z| < 4) (z = 0.00)
+  ok   k=3 m=5: any t > t crit 2.49 % vs theory 2.51 % (|z| < 4) (z = -0.15)
+     (theory for the family-wise line: any pair exceeds t crit exactly when the
+      largest pair does, i.e. when q > sqrt2 * t crit)
+5. k = 2: q = t * sqrt 2
+  ok   q crit(k=2) = sqrt2 * t crit (two-sided), SciPy and the Python engine (1.8e-08)
+6. The real PPL source in the harness (v3d)
+  ok   harness sr_SRCDF(3.5,3,12) = 0.930005 (SciPy 0.930005) 
+  ok   harness sr_SRCDF(4,5,20) = 0.930413 (SciPy 0.930413) 
+  ok   harness sr_SRCDF(5,4,3) = 0.890110 (SciPy 0.890109) 
+  ok   harness sr_SRCrit(.05,3,12) = 3.77293 (SciPy 3.77293) 
+  ok   P-value via Python: EP_QPVAL 0.069995 (SciPy 0.069995), badge shown, SR_ENGINE Python 
+  ok   P-value via PPL: EP_QPVAL 0.069995 (SciPy 0.069995), badge shown, SR_ENGINE PPL 
+  ok   Critical value df=2 via Python: 8.3308 (SciPy 8.3308), no MSGBOX 
+  ok   Critical value df=2 via PPL: raised to df 3 with the beta 14 message (5.9096, SciPy df3 5.9096) 
+     result: StudRange: q crit (k = 3, ν = 3, α = 0.0500) = 5.9096, p not computed, HSD not computed (engine: PPL)
+  ok   HSD = 1.3652 (SciPy 1.3652) 
+  ok   yardstick verdict for means 10 and 12.5 says significant (|diff| 2.5 > 1.365) ['|\ue0001 − \ue0003| = 2.500 > HSD: significant']
+  ok   plot via Python: badge on the plot 
+     header readouts seen: ['α = 0.050   q crit = 3.773', 'α = 0.100   q crit = 3.204', 'α = 0.110   q crit = 3.123', 'α = 0.144   q crit = 2.891']
+     q obs readouts (last 3): ['q obs = 3.204   p = 0.1000', 'q obs = 3.204   p = 0.1000', 'q obs = 3.204   p = 0.1000']
+  ok   soft keys drawn 
+  ok   after the q crit tap: q obs = q crit and p = alpha (α = 0.100   q crit = 3.204 | q obs = 3.204   p = 0.1000)
+  ok   plot via PPL: red badge and a 6-item plot menu without the Python extras 
+  ok   simulation ran through the bridge (2,000 replicates; q > q crit 4.5 %, any t 11.7 %) 
+     page/panel lines: ['Of 2,000 replicates, 4.5 % exceeded', 'any t > t crit: 11.7 %', 'q > q crit: 4.5 %']
+  ok   k = 2 curve arrived and its legend is drawn 
+  ok   Diagnostics with Python answering: ['Python bridge OK (1 ms)'] 
+  ok   Diagnostics with Python failing: ['Python bridge NOT answering'] 
+  ok   help: 4 pages, no line estimated clipped []
+7. beta 15a: the plot soft keys under WAIT(-1), stale clicks, the Quit summary (v3d)
+  ok   7a soft key 1 (α−) on a type-3 click: α 0.050 -> 0.025 [0.025, 0.05]
+  ok   7a soft key 2 (α+) on a type-3 click: α 0.050 -> 0.100 [0.05, 0.1]
+  ok   7a soft key 3 (k−): k 3 -> 2 k = 2   ν = 12
+  ok   7a soft key 4 (k+): k 3 -> 4 k = 4   ν = 12
+  ok   7a soft key 5 (df): the df form opens; df 20 rebuilds the plot k = 3   ν = 20
+  ok   7a soft key 6 (Menu): the plot menu opens ['StudRange — Tukey q', 'Plot menu', 'StudRange — Tukey q']
+  ok   7b beta 15 in v3d: α+ and Menu do nothing (the emulator's FAIL) [0.05]
+  ok   7c a type-0 PRESS on the strip (the v3b model) does nothing -- neutralised [0.05]
+  ok   7c a firmware that sent {0}, {2} AND {3} for a strip tap would still step α ONCE (0.05 -> 0.10) [0.05, 0.05, 0.05, 0.1, 0.1]
+  ok   7d a tap in the plot ({0}, {2}, {3}) moves q obs to the finger (4.200): q obs = 4.200   p = 0.0293 
+  ok   7d a tap on the q crit box sets q obs = q crit (α = 0.050   q crit = 3.773 | q obs = 3.773   p = 0.0500) 
+  ok   7e the plot's help page closed by a footer tap (x 150, y 226): no soft key fires on the plot (k stays 3, α stays 0.05) [0.05] ['k = 3   ν = 12']
+  ok   7e the plot's help page closed by a footer tap (x 150, y 226) -- mouse_tail worst case: no soft key fires on the plot (k stays 3, α stays 0.05) [0.05] ['k = 3   ν = 12']
+  ok   7e (without the guard, in that worst case, the click WOULD run soft key 3: k 3 -> 2) k = 2   ν = 12
+  ok   7f Quit with nothing computed: "StudRange: q crit not computed, p not computed, HSD not computed (engine: none)" 
+  ok   7f after HSD only (the emulator's run): "StudRange: q crit (k = 4, ν = 28, α = 0.0500) = 3.8612, p not computed, HSD = 1.3652 (engine: Python)" want StudRange: q crit (k = 4, ν = 28, α = 0.0500) = 3.8612, p not computed, HSD = 1.3652 (engine: Python)
+  ok   7f (beta 15 in the same run: "StudRange: q crit = 3.8612, p = 0.00000, HSD = 1.3652 (engine: Python)" -- the emulator's "p = 0.00000") 
+  ok   7f after P-value and Critical value: "StudRange: q crit (k = 3, ν = 12, α = 0.0500) = 3.7729, p = 0.07000, HSD not computed (engine: Python)" want StudRange: q crit (k = 3, ν = 12, α = 0.0500) = 3.7729, p = 0.07000, HSD not computed (engine: Python)
+  ok   7f the PPL fallback raised df 2 to 3: the summary names the df it used, ν = 3 ("StudRange: q crit (k = 3, ν = 3, α = 0.0500) = 5.9096, p not computed, HSD not computed (engine: PPL)") 
+  ok   7f df 0 (infinity) is named with the infinity sign ("StudRange: q crit (k = 3, ν = ∞, α = 0.0500) = 3.3145, p not computed, HSD not computed (engine: Python)") 
+  ok   7g routines that differ from beta 15: ['StudRange', 'sr_CritMode', 'sr_HSDMode', 'sr_PlotMode', 'sr_PvMode', 'sr_WaitAny'] want ['StudRange', 'sr_CritMode', 'sr_HSDMode', 'sr_PlotMode', 'sr_PvMode', 'sr_WaitAny']
+  ok   7g the #PYTHON srq block is byte-identical to beta 15 
+  ok   7g 15b: routines that differ from beta 15a: ['StudRange', 'sr_CritMode', 'sr_FmtF', 'sr_HSDMode', 'sr_PlotMode', 'sr_PvMode', 'sr_SimRun', 'sr_Yard'] want ['StudRange', 'sr_CritMode', 'sr_FmtF', 'sr_HSDMode', 'sr_PlotMode', 'sr_PvMode', 'sr_SimRun', 'sr_Yard']
+  ok   7g 15b: sr_WaitAny (it still appends its tap) is byte-identical to beta 15a 
+  ok   7g 15b: the #PYTHON srq block is byte-identical to beta 15a (and to beta 15) 
+  ok   7g 15b: outside those routines only the new file-level lines differ (LOCAL srQS:="";, LOCAL srAS:="";, LOCAL srPS:="";, LOCAL srQueuedMs:=100;); the rest is comments 
+  ok   7g 15b: the stale test reads the threshold by name, set in ONE place; the clock is read around the wait 
+  ok   7g 15b: the type-3 soft-key logic the emulator confirmed is unchanged 
+8. beta 15b: the stale spot, the Quit summary, small numbers (v3d)
+   8a. the stale spot, both ways
+  ok   8a beta 15a, the emulator's case: Help closed on its footer at the α− key, then α− once -> nothing (α stays 0.050) [0.05]
+  ok   8a beta 15a: ... a second α− tap works (the emulator: "ignored once, then works"): 0.050 -> 0.025 [0.025, 0.05]
+  ok   8a beta 15b: the same taps -- α− works on the FIRST tap (a real, later tap at the spot counts): 0.050 -> 0.025 [0.025, 0.05]
+  ok   8a beta 15b: a click ALREADY QUEUED at the α− spot (mouse_tail, a clock that has not moved (plain v3d)) is still skipped: α stays 0.050 [0.05]
+  ok   8a beta 15b: a click ALREADY QUEUED at the α− spot (mouse_tail, the student's taps 400 ms apart) is still skipped: α stays 0.050 [0.05]
+  ok   8a beta 15b: ... and the real α− tap after that queued click counts, ONCE: 0.050 -> 0.025 [0.025, 0.05]
+  ok   8a (with the stale test patched out, that queued click WOULD step α: 0.050 -> 0.025 -- the skip is real) [0.025, 0.05]
+  ok   8a beta 15b, time passing: a tap in the plot still moves q obs to the finger once (4.200) q obs = 4.200   p = 0.0293
+  ok   8a beta 15b, time passing: two α+ taps step α twice (0.050 -> 0.100 -> ... ) -- soft keys unchanged [0.05, 0.1]
+   8b. the Quit summary reports what the student saw
+  ok   8b plot only (the emulator's session): "StudRange: q crit (k = 3, ν = 12, α = 0.050) = 3.773, p = 0.0700, HSD not computed (engine: Python)" -- the plot's own readouts "α = 0.050   q crit = 3.773" / "q obs = 3.500   p = 0.0700" want StudRange: q crit (k = 3, ν = 12, α = 0.050) = 3.773, p = 0.0700, HSD not computed (engine: Python)
+  ok   8b ... and those are SciPy's q crit and p to the plot's decimals (3.773 / 0.0700; curve-level accuracy) 
+  ok   8b ... EP_QCRIT and EP_QPVAL are still not written by the plot (beta 14) 0.0 0.0
+  ok   8b (beta 15a, same session: "StudRange: q crit not computed, p not computed, HSD not computed (engine: Python)" -- the emulator's finding) 
+  ok   8b plot, α− then k+: the summary has k = 4, α = 0.025, q crit = 4.761, as on the last frame ("StudRange: q crit (k = 4, ν = 12, α = 0.025) = 4.761, p = 0.1151, HSD not computed (engine: Python)") k = 4   ν = 12
+  ok   8b plot with no q obs: "StudRange: q crit (k = 3, ν = 12, α = 0.050) = 3.773, p not computed, HSD not computed (engine: Python)" (p not computed) 
+  ok   8b α = 0.001 on the plot: the summary says what the header said ("α = 0.001   q crit = 6.917" / "StudRange: q crit (k = 3, ν = 12, α = 0.001) = 6.917, p = 0.0700, HSD not computed (engine: Python)") 
+  ok   8b P-value, then the plot (k 4, df 20, q obs 4.5): the plot's p is the last seen ("StudRange: q crit (k = 4, ν = 20, α = 0.050) = 3.958, p = 0.0223, HSD not computed (engine: Python)") 
+  ok   8b the plot, then P-value: the P-value page's p (5 decimals) is the last seen ("StudRange: q crit (k = 4, ν = 20, α = 0.050) = 3.958, p = 0.07000, HSD not computed (engine: Python)") 
+  ok   8b a P-value below 0.00001 reads "p < 0.00001" in the summary ("StudRange: q crit not computed, p < 0.00001, HSD not computed (engine: Python)") 
+   8c. no fixed decimals in scientific form
+  ok   8c sr_FmtF(0.0004, 3) = "0.000" want 0.000
+  ok   8c sr_FmtF(0.096, 1) = "0.1" want 0.1
+  ok   8c sr_FmtF(-1e-17, 1) = "0.0" want 0.0
+  ok   8c sr_FmtF(0.05, 1) = "0.1" want 0.1
+  ok   8c sr_FmtF(3.77293, 3) = "3.773" want 3.773
+  ok   8c sr_FmtF(1e-06, 4) = "0.0000" want 0.0000
+  ok   8c sr_FmtF(-2.5, 2) = "-2.50" want -2.50
+  ok   8c ... none of them printed in scientific form []
+     (beta 15a on the same run: ['-2.8ᴇ-17', '1.0000ᴇ-10', '1.3652ᴇ-5', '2.75700ᴇ-7', '4.000ᴇ-4'])
+  ok   8c yardstick: means -0.3, 0.0004, 0.2, 0.25 print as ['\ue0001 = -0.300', '\ue0002 = 0.000', '\ue0003 = 0.200', '\ue0004 = 0.250']; the ticks ['-0.3', '-0.2', '-0.1', '0.0', '0.1', '0.2'] -- no scientific form, no "-0.0" []
+  ok   8c F(q) for q = 0.001 (a probability under 0.00001) reads "F(q) = < 0.00001" 
+  ok   8c a tiny MSE gives HSD "0.0000" on the page and in the summary ("StudRange: q crit (k = 4, ν = 28, α = 0.0500) = 3.8612, p = 1.00000, HSD = 0.0000 (engine: Python)") 
+  ok   8c one replicate in 2,000 = 0.05 % prints "0.1" (STRING(0.05, 2, 1) is "5.0ᴇ-2") 
+   8d. INSTRING, LEFT, MID
+  ok   8d the PPL code (outside comments, strings and the #PYTHON block) calls none of INSTRING, LEFT, RIGHT, MID []
+     harness runs of beta 15b: 45; scientific STRING results: none
+  ok   8c no STRING(x, 2, d) of beta 15b printed in scientific form in any of the 45 runs []
+     (beta 15a in this script: [(-0.0, 1, '-2.8ᴇ-17'), (1e-10, 4, '1.0000ᴇ-10'), (2.757e-07, 5, '2.75700ᴇ-7'), (1.3651558e-05, 4, '1.3652ᴇ-5'), (0.0004, 3, '4.000ᴇ-4')])
+
+FAILURES: 0 []

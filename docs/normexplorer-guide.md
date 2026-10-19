@@ -1,8 +1,8 @@
-# NormExplorer beta 42 — User's Guide
+# NormExplorer beta 42a — User's Guide
 
 A normal-distribution workbench for the HP Prime: set any N(μ, σ), find areas and the x-values behind them, solve the z-formula, look at your own data against a fitted curve, compare two curves, and — the heart of it — **explore the curve with your finger**: drag a cut point and watch the area change, drag the mean, stretch σ, and see the probability travel with the shaded region. PPL, with an optional MicroPython sampler for simulated histograms.
 
-**Status:** beta 42 (16 Oct 2026) is the touch and graphics version. It has **not yet been run on hardware**. Builds up to beta 39 were tested on an HP Prime G2 and G1 (2026-09-09 firmware) and the Virtual Calculator; beta 40, 41 and 42 have not been. The arithmetic was checked against SciPy and the program's own code was run, path by path, in an off-device interpreter (see *How it was checked*). The device checklist is in `NormExplorer_beta42_CHANGES.md`.
+**Status:** beta 42a (19 Oct 2026) fixes what the fleet review found; it has run in the PC test harness only. Beta 42 (16 Oct 2026) is the touch and graphics version. It has **not yet been run on hardware**. Builds up to beta 39 were tested on an HP Prime G2 and G1 (2026-09-09 firmware) and the Virtual Calculator; beta 40, 41 and 42 have not been. The arithmetic was checked against SciPy and the program's own code was run, path by path, in an off-device interpreter (see *How it was checked*). The device checklist is in `NormExplorer_beta42_CHANGES.md`.
 
 Install: paste `NormExplorer_beta42.txt` into the Connectivity Kit editor and send it to the calculator. Run **NormExp** from the Program Catalog (Shift-1).
 
@@ -224,6 +224,18 @@ Two phases on a window wide enough for the whole journey: the mean slides to 0 (
 
 Every new formula was checked against SciPy in `verify_NormExplorer.py`, and the program itself was run in hp-prime-kit's PPL interpreter with scripted menu choices, keys and touches: all four probability types, all five inverse items, the solver, the power picture, the Explorer's drags, grabs and soft keys, a histogram bar tap, the CDF overlay, the animation, the help pages, the window menu and a whole session — 135 checks, none failed. None of that is a substitute for the calculator: the device checklist in `NormExplorer_beta42_CHANGES.md` lists what to try, least risky first.
 
+## What changed in beta 42a
+
+The fleet review of 19 Oct 2026 found that the 17 Oct display clean-up had never reached NormExplorer. Details, line by line, are in `NormExplorer_beta42a_CHANGES.md`.
+- **No number on screen turns scientific any more** (`4.8213ᴇ−8` for a far right tail). Every value is rounded before it is printed, in 134 places. A probability too small to show reads "< 0.0001".
+- **Right tails keep their digits on the Prime:**
+  - the area between two bounds far out on one side;
+  - the right-tail and two-tailed critical values.
+  Before, they printed 0.0000 past about z = 7, and a tiny α could ask for Φ⁻¹(1), which is an error.
+- A typed confidence level of 1 now means 1 %.
+- After a σ drag, the arrow steps refit to the new σ.
+- Every menu follows the house rule for reading `CHOOSE`.
+
 ## What changed in beta 42
 
 The touch and graphics version (on top of beta 41's fixes): drag either bound of between/outside shading with the area riding the region; two pages of soft keys (More turns the page; page 2 chooses what the arrow keys move); grab μ and σ; live result views (tap to explore, tap a bar); filled histogram bars and bar counts; the shading sweep; the CDF overlay; the z-ruler; "height is not probability"; left-tail and two-tailed critical values; the power picture; three help pages. Details, with line numbers, in `NormExplorer_beta42_CHANGES.md`.
@@ -236,4 +248,4 @@ Concept, source material, direction, classroom judgement and all hardware testin
 
 *Free for educational and personal use. © 2026 Roger Metcalf. Written with AI assistance (Anthropic Claude). Keep this header with the file and credit the author if you pass it on. Not for sale or commercial redistribution. Provided as is, with no warranty.*
 
-*Firmware: builds through beta 39 tested on HP Prime G2 and G1, 2026-09-09 firmware. Beta 42 has not yet been run on hardware.*
+*Firmware: builds through beta 39 tested on HP Prime G2 and G1, 2026-09-09 firmware. Betas 42 and 42a have not yet been run on hardware.*

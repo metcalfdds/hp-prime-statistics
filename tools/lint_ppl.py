@@ -1,5 +1,24 @@
 """
-lint_ppl.py — structural lint for an HP Prime PPL source file.
+lint_ppl.py (version 2) — structural lint for an HP Prime PPL source file.
+(A fixed-name tool, edited in place: the gate finds it by this name. Version 1 is archived as
+_superseded_2026-10-19/tools/lint_ppl_v1.py.)
+
+v2 (19 Oct 2026; fleet review of 19 Oct 2026, tools item 21), from version 1.  Three fixes,
+each a false report the review found (the second with two more of its kind):
+  - HP_Prime_Builtin_Names.txt: lines that start with '#' are comments and are skipped.  v1 read
+    every word of them as a built-in name, so "catalog listing MEANS the NAME is known" made
+    'means' (and 'the', 'name', 'listing' ...) built-ins, and FDAES's LOCAL 'means' was reported.
+  - STRING() arity (check 7): the arguments are split only at the commas at the call's own
+    bracket level, so STRING(MAX(a, b), 2, 1) has three arguments (v1 said four), at any depth
+    and with {} and [] counted as brackets too.  Beside it: a name that only ENDS in STRING
+    (INSTRING) is no longer read as a STRING call (v1 reported INSTRING(s, t) as "STRING()
+    with 2 args"); and the CAS fence's one-argument STRING(EXPR(...)), which v1 never reached
+    (two levels of brackets), is not reported now that the call is read to any depth.
+  - LOCAL sizes (checks 2, 3 and 6, function-level and file-level): the names are split only at
+    the commas outside brackets, so LOCAL ALAD:={0.001,0.005,0.01,0.02,0.05,0.10,0.20}; is ONE
+    name with a seven-element list (PowerViz), not seven names.
+  The built-in name table is looked for beside this script, then one folder up, then beside the
+  file being linted.  Everything else is v1's, line for line.
 
 10 Oct 2026: builtin-name collisions are now checked case-insensitively for FILE-LEVEL
 LOCALs, EXPORT variables and function names too (csC is CSC; ChiSquare is CHISQUARE), and
@@ -32,7 +51,6 @@ import os
 import re
 import sys
 
-BUILTINS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "HP_Prime_Builtin_Names.txt")
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
@@ -48,6 +66,14 @@ if not os.path.isabs(SRC) and not os.path.exists(SRC):
     # grep made the failure look like a clean lint).
     SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)), SRC)
 ENTRY = os.path.splitext(os.path.basename(SRC))[0]
+
+# v2: the built-in name table beside this script, then one folder up, then beside the source file
+_HERE = os.path.dirname(os.path.abspath(__file__))
+BUILTINS = os.path.join(_HERE, "HP_Prime_Builtin_Names.txt")
+for _d in (_HERE, os.path.dirname(_HERE), os.path.dirname(os.path.abspath(SRC))):
+    if os.path.exists(os.path.join(_d, "HP_Prime_Builtin_Names.txt")):
+        BUILTINS = os.path.join(_d, "HP_Prime_Builtin_Names.txt")
+        break
 
 PROBLEMS = []
 NCHECK = 0
@@ -94,6 +120,30 @@ def strip_line(s):
 
 code = [strip_line(l) for l in lines]
 codetext = "\n".join(code)
+
+
+def split_top(text):
+    """v2: split at the commas that are not inside (), {} or [] -- string literals are already
+    blanked in the code text, so a comma inside a string never counts."""
+    parts, depth, cur = [], 0, ""
+    for ch in text:
+        if ch in "({[":
+            depth += 1
+        elif ch in ")}]":
+            depth -= 1
+        if ch == "," and depth == 0:
+            parts.append(cur)
+            cur = ""
+        else:
+            cur += ch
+    parts.append(cur)
+    return parts
+
+
+def local_names(decl):
+    """v2: the names a LOCAL statement declares: one per top-level comma, ':= value' dropped, so
+    LOCAL a := {1,2,3,4,5,6,7}; is one name (v1 split at every comma: seven)."""
+    return [p.split(":=")[0].strip() for p in split_top(decl) if p.split(":=")[0].strip()]
 
 print(f"=== {os.path.basename(SRC)}  (entry point: {ENTRY}) ===")
 
@@ -153,8 +203,7 @@ for name, exported, params, s, e in funcs:
             continue
         m = LOCALRE.match(l)
         if m:
-            names = [p.split(":=")[0].strip()
-                     for p in m.group(1).split(",") if p.split(":=")[0].strip()]
+            names = local_names(m.group(1))          # v2: top-level commas only
             check(len(names) <= 6,
                   f"{name} line {k+1}: LOCAL declares {len(names)} names (max 6, the house rule)")
             check(depth_in == 0, f"{name} line {k+1}: LOCAL inside a nested block")
@@ -173,6 +222,9 @@ KEYWORDS = {"STEP", "KEY", "TO", "FROM", "DO", "OR", "AND", "NOT", "MOD", "E",
             "RETURN", "IF", "THEN", "ELSE", "FOR", "WHILE", "REPEAT", "UNTIL"}
 try:
     btext = open(BUILTINS, encoding="utf-8", errors="replace").read()
+    # v2: a line that starts with '#' is a comment, not names (v1 made 'means', 'the', 'name'
+    # ... built-ins from the file's own header and reported FDAES's LOCAL 'means')
+    btext = "\n".join(l for l in btext.split("\n") if not l.lstrip().startswith("#"))
     BUILT_UP = {t.upper() for t in re.split(r"[\s,()]+", btext) if t}
 except OSError:
     BUILT_UP = set()
@@ -207,7 +259,7 @@ for k, l in enumerate(code):
     m = LOCALRE.match(l)
     names = []
     if m:
-        names = [p.split(":=")[0].strip() for p in m.group(1).split(",") if p.split(":=")[0].strip()]
+        names = local_names(m.group(1))              # v2: a list's commas are not names
         check(len(names) <= 6, f"line {k+1}: file-level LOCAL declares {len(names)} names (max 6)")
     elif re.match(r"\s*EXPORT\s+[A-Za-z_]", l) and not re.search(r"\)\s*;?\s*$", l):
         names = re.findall(r"[A-Za-z_]\w*", re.sub(r":=\s*[^,;]+", "", l.replace("EXPORT", "")))
@@ -259,9 +311,27 @@ for m in re.finditer(r"CHOOSE\s*\(\s*([A-Za-z_][A-Za-z_0-9]*)", codetext):
 
 # ---------------------------------------------------------------- 7
 print(" 7. no mode-1 STRING with decimals")
-for m in re.finditer(r"STRING\s*\(([^()]*(?:\([^()]*\)[^()]*)*)\)", codetext):
-    parts = [a.strip() for a in m.group(1).split(",")]
+# v2: the call is read to its own closing bracket at any depth, and split at its top-level
+# commas only (STRING(MAX(a,b),2,1) has 3 arguments; v1 split at every comma and said 4).  The
+# look-behind keeps INSTRING( and other names ending in STRING from being read as STRING(.
+for m in re.finditer(r"(?<![A-Za-z0-9_])STRING\s*\(", codetext):
+    start = m.end() - 1
+    d, j = 0, start
+    while j < len(codetext):
+        if codetext[j] in "({[":
+            d += 1
+        elif codetext[j] in ")}]":
+            d -= 1
+            if d == 0:
+                break
+        j += 1
+    parts = [a.strip() for a in split_top(codetext[start + 1:j])]
     lineno = codetext[:m.start()].count("\n") + 1
+    # v2: STRING(EXPR(...)) with one argument is the CAS fence's own form (Lessons Learned 9b:
+    # it turns the CAS answer into a PPL string); v1 never reached it (two levels of brackets),
+    # so reading deeper must not turn it into a new report
+    if len(parts) == 1 and re.match(r"EXPR\s*\(", parts[0]):
+        continue
     if len(parts) == 3:
         if parts[1] == "1":
             check(parts[2] == "0",
