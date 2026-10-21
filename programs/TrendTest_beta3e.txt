@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// TRENDTEST - beta 3d
+// TRENDTEST - beta 3e
 // Chi-square for linear trend in proportions (2 x k table)
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
@@ -28,6 +28,20 @@
 //   passed the retest that afternoon.  The call form (beta 3a) is
 //   the one CASProbe beta 1b found on the HP Prime Virtual
 //   Calculator (build 2026-09-09, 17 Oct 2026).
+//
+// beta 3e (20 Oct 2026): symbols instead of spelled-out names, on screen
+//   only (Roger, 20 Oct 2026: "use the symbols we developed").  In the
+//   text the student sees, the titles, help pages and Home summary's "Chi-square", "X2", "^2" and "xbar" now
+//   use the house glyphs: χ² (CHAR(967) CHAR(178), device-verified),
+//   ² (CHAR(178)), √ (CHAR(8730)), and the x-bar and p-hat glyphs,
+//   CHAR(57344) and CHAR(57345), HP's own private-use characters.  Text built for the CAS is
+//   untouched (it must stay ASCII), and so are Home variable names
+//   and comments.  No number, layout position or logic changed.
+//   Second pass, same day, after all 20 programs were checked: "S^2",
+//   "N^2", "SE^2", "r^2" and "+/- 1.96"
+//   now use ² (CHAR(178)), ± (CHAR(177)).  The "+/-" that names the + and
+//   - keys is kept.
+//
 //
 // beta 3d (19 Oct 2026) - what changed: the fleet review of 19 Oct
 //   2026 (findings_C: improvement 1 as a fix, and C-T1 to C-T4).
@@ -1043,7 +1057,7 @@ BEGIN
   LOCAL rsI, rsY, rsS, rsDec, rsF;
   DIMGROB_P(G1, 320, 240, #FFFFFFh);
   RECT_P(G1, 4, 4, 315, 217, trORNG, trLORN);
-  TEXTOUT_P("Chi-square test for linear trend", G1, 10, 6, 2, trBLUE);
+  TEXTOUT_P("χ² test for linear trend", G1, 10, 6, 2, trBLUE);
   IF trIllu == 1 THEN
     TEXTOUT_P(trLbl, G1, 10, 22, 1, trRED, 300);
   ELSE
@@ -1219,10 +1233,10 @@ BEGIN
   IF trHald == 1 THEN
     TEXTOUT_P("Zero cell: +0.5 in every cell (Haldane).", G1, 10, 114, 1, trRED, 300);
   END;
-  TEXTOUT_P(trChi + " trend = S^2 / V  (1 df),  where", G1, 10, 128, 1, #000000h);
+  TEXTOUT_P(trChi + " trend = S² / V  (1 df),  where", G1, 10, 128, 1, #000000h);
   TEXTOUT_P("S = sum(x a) - A sum(x n) / N", G1, 10, 140, 1, #000000h);
-  TEXTOUT_P("V = A (N-A) / (N^2 (N-1))", G1, 10, 152, 1, #000000h);
-  TEXTOUT_P("      * [ N sum(x^2 n) - (sum x n)^2 ]", G1, 10, 164, 1, #000000h);
+  TEXTOUT_P("V = A (N-A) / (N² (N-1))", G1, 10, 152, 1, #000000h);
+  TEXTOUT_P("      * [ N sum(x² n) - (sum x n)² ]", G1, 10, 164, 1, #000000h);
   TEXTOUT_P("Departure = Pearson - trend, k-2 df", G1, 10, 176, 1, #000000h);
   TEXTOUT_P("Home: TR_X2T TR_P TR_X2 TR_DF TR_OR TR_B", G1, 10, 190, 1, trGRAY, 300);
   TEXTOUT_P("3/4, ⇆ or tap = page, Esc = menu", G1, 10, 205, 1, trFOOT, 300);
@@ -1436,7 +1450,7 @@ BEGIN
     TEXTOUT_P("decimal", G1, 268, 8, 1, trFOOT);
   END;
   TEXTOUT_P("The plotted line makes this SSE smallest:", G1, 10, 24, 1, #000000h, 302);
-  TEXTOUT_P("SSE = sum n(p - a - bx)^2; p = cases/n, x = score", G1, 10, 35, 1, #000000h, 302);
+  TEXTOUT_P("SSE = sum n(p - a - bx)²; p = cases/n, x = score", G1, 10, 35, 1, #000000h, 302);
   p4Y := 46;
   IF trCxSt == 1 THEN
     // ---- exact: the CAS's own lines ----
@@ -1465,7 +1479,7 @@ BEGIN
     TEXTOUT_P("Both slopes of the SSE = 0, the normal equations:", G1, 10, p4Y, 1, #000000h, 302);
     TEXTOUT_P("N a + (sum n x) b = A", G1, 10, p4Y + 11, 1, trBLUE, 302);
     TEXTOUT_P("  " + trNum(trNT) + " a + " + trNum(p4Sx) + " b = " + trNum(trAT), G1, 10, p4Y + 22, 1, trBLUE, 302);
-    TEXTOUT_P("(sum n x) a + (sum n x^2) b = sum x a", G1, 10, p4Y + 33, 1, trBLUE, 302);
+    TEXTOUT_P("(sum n x) a + (sum n x²) b = sum x a", G1, 10, p4Y + 33, 1, trBLUE, 302);
     TEXTOUT_P("  " + trNum(p4Sx) + " a + " + trNum(p4Sxx) + " b = " + trNum(p4Sxa), G1, 10, p4Y + 44, 1, trBLUE, 302);
     TEXTOUT_P("Solving them (the program's decimals):", G1, 10, p4Y + 55, 1, #000000h, 302);
     TEXTOUT_P("  b = " + trDec(trB) + ",  a = " + trDec(trA0), G1, 10, p4Y + 66, 1, trMAG, 302);
@@ -1984,9 +1998,9 @@ trHelp()
 BEGIN
   DIMGROB_P(G1, 320, 240, #FFFFFFh);
   RECT_P(G1, 4, 4, 315, 235, trBLUE, trLBLU);
-  TEXTOUT_P("Chi-square for trend: the idea", G1, 12, 8, 2, trBLUE);
+  TEXTOUT_P("χ² for trend: the idea", G1, 12, 8, 2, trBLUE);
   TEXTOUT_P("Exposure levels have an ORDER (dose, hours,", G1, 12, 32, 1, #000000h);
-  TEXTOUT_P("grade).  Pearson's chi-square (k-1 df) asks", G1, 12, 45, 1, #000000h);
+  TEXTOUT_P("grade).  Pearson's χ² (k-1 df) asks", G1, 12, 45, 1, #000000h);
   TEXTOUT_P("only 'do the proportions differ?'.  The trend", G1, 12, 58, 1, #000000h);
   TEXTOUT_P("test (1 df) asks 'do they rise or fall", G1, 12, 71, 1, #000000h);
   TEXTOUT_P("steadily with the score?'", G1, 12, 84, 1, #000000h);
@@ -2010,15 +2024,15 @@ BEGIN
   TEXTOUT_P("with its 95% Wilson bar; the weighted (WLS)", G1, 12, 41, 1, trBLUE);
   TEXTOUT_P("line in magenta with its 95% band; overall p", G1, 12, 54, 1, trBLUE);
   TEXTOUT_P("dotted.  Dots: blue above the line, red below,", G1, 12, 67, 1, trBLUE);
-  TEXTOUT_P("grey within 1 SE of it (SE^2 = P(1-P)/n).", G1, 12, 80, 1, trBLUE);
+  TEXTOUT_P("grey within 1 SE of it (SE² = P(1-P)/n).", G1, 12, 80, 1, trBLUE);
   TEXTOUT_P("Drag a dot up or down (or Up/Down) to change", G1, 12, 96, 1, #000000h);
   TEXTOUT_P("its cases: the line tilts, the band and the", G1, 12, 109, 1, #000000h);
   TEXTOUT_P("tests follow.  Restore puts the data back.", G1, 12, 122, 1, #000000h);
   TEXTOUT_P("Odds ratio plot: each level against level 1,", G1, 12, 138, 1, trMAG);
   TEXTOUT_P("log scale: 0.5 and 2 lie equally far from 1;", G1, 12, 151, 1, trMAG);
   TEXTOUT_P("Woolf 95% intervals; dotted line = OR 1.", G1, 12, 164, 1, trMAG);
-  TEXTOUT_P("Band: fit +/- 1.96 SE, SE^2 = P(1-P) times", G1, 12, 180, 1, trGRAY);
-  TEXTOUT_P("(1/N + (x - xbar)^2 / sum n(x - xbar)^2).", G1, 12, 193, 1, trGRAY);
+  TEXTOUT_P("Band: fit ± 1.96 SE, SE² = P(1-P) times", G1, 12, 180, 1, trGRAY);
+  TEXTOUT_P("(1/N + (x - " + CHAR(57344) + ")² / sum n(x - " + CHAR(57344) + ")²).", G1, 12, 193, 1, trGRAY);
   TEXTOUT_P("Results page 4: where the line comes from.", G1, 12, 206, 1, trMAG);
   TEXTOUT_P("any key = page 3, Esc = menu", G1, 12, 220, 1, trFOOT);
   BLIT_P(G0, 0, 0, G1);
@@ -2043,9 +2057,9 @@ BEGIN
   // stays the headline.  JMP is no longer named (its form was not
   // checked).
   TEXTOUT_P("Same test elsewhere: Epi Info StatCalc prints", G1, 12, 146, 1, trGRAY);
-  TEXTOUT_P("Mantel's (1963) (N-1) r^2, as this page does;", G1, 12, 159, 1, trGRAY);
+  TEXTOUT_P("Mantel's (1963) (N-1) r², as this page does;", G1, 12, 159, 1, trGRAY);
   TEXTOUT_P("R prop.trend.test and SAS PROC FREQ / TREND", G1, 12, 172, 1, trGRAY);
-  TEXTOUT_P("print Armitage's (1955) N r^2: 72.688 for", G1, 12, 185, 1, trGRAY);
+  TEXTOUT_P("print Armitage's (1955) N r²: 72.688 for", G1, 12, 185, 1, trGRAY);
   TEXTOUT_P("snoring, 72.659 here.  The ratio is N/(N-1).", G1, 12, 198, 1, trGRAY);
   TEXTOUT_P("any key = menu", G1, 12, 220, 1, trFOOT);
   BLIT_P(G0, 0, 0, G1);
@@ -2090,7 +2104,7 @@ BEGIN
     // after about 31 on the emulator; now 29 (fleet review 19 Oct
     // 2026, C-T3).  Comments go above the CHOOSE, never inside the
     // list (a Syntax Error on the Prime).
-    CHOOSE(mnI, "Chi-square for linear trend", {
+    CHOOSE(mnI, "χ² for linear trend", {
       "Enter data (2-6 levels)",
       "Results",
       "Plot: proportions, trend line",
@@ -2119,7 +2133,7 @@ BEGIN
   // the history and no Terminal screen opens.  The numbers stay in
   // TR_X2T TR_P TR_X2 TR_DF TR_OR TR_B.
   IF trHas == 1 THEN
-    mnS := "TrendTest: X2 trend = " + trFx(trX2T, 4) + " (1 df), " + trPStr(trPT) + "; Pearson X2 = " + trFx(trX2P, 4) + " (" + STRING(trK - 1, 2, 0) + " df)";
+    mnS := "TrendTest: χ² trend = " + trFx(trX2T, 4) + " (1 df), " + trPStr(trPT) + "; Pearson χ² = " + trFx(trX2P, 4) + " (" + STRING(trK - 1, 2, 0) + " df)";
     IF trScM <> 0 THEN mnS := mnS + "; scores " + trScName(); END;
     IF trEdit == 1 THEN mnS := mnS + "; counts edited"; END;
     RETURN mnS;

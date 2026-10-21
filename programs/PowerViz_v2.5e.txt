@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// POWERVIZ - v2.5d
+// POWERVIZ - v2.5e
 // ============================================================
 // FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
 //   the file and credit the author if you pass it on.  Not for
@@ -29,6 +29,16 @@
 //   harness).  v2.5 is the first version that calls the CAS;
 //   its call form (v2.5a) is the one CASProbe beta 1b found on the
 //   emulator, see pv_Cas below.
+//
+// v2.5e (20 Oct 2026): symbols instead of spelled-out names, on screen
+//   only (Roger, 20 Oct 2026: "use the symbols we developed"; every
+//   program of the 20 checked).  In the text the student sees, the sample-
+//   size formula's "^2" (the text shown, not the text sent to the CAS)
+//   now use the house glyphs: ² (CHAR(178)).  Text built for the CAS is
+//   untouched (it must stay ASCII), and so are Home variable names, the
+//   "+/-" that names the + and - keys, and comments.  No number, layout
+//   position or logic changed.
+//
 //
 // What changed in v2.5d (19 Oct 2026): P1 and the "POWER > 0.999"
 //   floor (fleet review 19 Oct).  Line numbers are v2.5c's.
@@ -2073,10 +2083,10 @@ BEGIN
   fs1 := pv_Wrap("  n = "+pv_Disp(FSY), 54);
  ELSE
   fln := CONCAT(fln, {"(no CAS: the formula as textbooks print it)"});
-  IF TT==1 THEN fs1 := {"  n = ((zα+zβ)×σ/(μ₁−μ₀))^2"}; END;
-  IF TT==2 THEN fs1 := {"  n = 2×((zα+zβ)×σ/(μ₂−μ₁))^2"}; END;
-  IF TT==3 THEN fs1 := pv_Wrap("  n = ((zα"+SQG+"(p₀(1−p₀)) + zβ"+SQG+"(p₁(1−p₁)))/(p₁−p₀))^2", 54); END;
-  IF TT==4 THEN fs1 := pv_Wrap("  n = ((zα"+SQG+"(2"+CHAR(57345)+"(1−"+CHAR(57345)+")) + zβ"+SQG+"(p₁(1−p₁)+p₂(1−p₂)))/(p₂−p₁))^2", 54); END;
+  IF TT==1 THEN fs1 := {"  n = ((zα+zβ)×σ/(μ₁−μ₀))²"}; END;
+  IF TT==2 THEN fs1 := {"  n = 2×((zα+zβ)×σ/(μ₂−μ₁))²"}; END;
+  IF TT==3 THEN fs1 := pv_Wrap("  n = ((zα"+SQG+"(p₀(1−p₀)) + zβ"+SQG+"(p₁(1−p₁)))/(p₁−p₀))²", 54); END;
+  IF TT==4 THEN fs1 := pv_Wrap("  n = ((zα"+SQG+"(2"+CHAR(57345)+"(1−"+CHAR(57345)+")) + zβ"+SQG+"(p₁(1−p₁)+p₂(1−p₂)))/(p₂−p₁))²", 54); END;
  END;
  fcl := CONCAT(fcl, {cgry});
  fln := CONCAT(fln, fs1);
@@ -2104,12 +2114,12 @@ BEGIN
   // 8-9: PPL puts in the z values (the plot's own) and gets the number
   fln := CONCAT(fln, {"PPL: zα = z("+pv_NumD(1-AL/TL)+") = "+pv_FMT(fza,3)+", zβ = z(0.80) = "+pv_FMT(fzb,3)});
   fcl := CONCAT(fcl, {cgry});
-  IF TT==1 THEN fs3 := "(("+pv_NumD(SG)+"×"+pv_FMT(fza,3)+" + "+pv_NumD(SG)+"×"+pv_FMT(fzb,3)+")/"+pv_NumD(fdl)+")^2"; END;
-  IF TT==2 THEN fs3 := "(("+pv_NumD(SG)+SQG+"2×"+pv_FMT(fza,3)+" + "+pv_NumD(SG)+SQG+"2×"+pv_FMT(fzb,3)+")/"+pv_NumD(fdl)+")^2"; END;
-  IF TT==3 THEN fs3 := "(("+SQG+"("+pv_NumD(PP0*(1-PP0))+")×"+pv_FMT(fza,3)+" + "+SQG+"("+pv_NumD(PP1*(1-PP1))+")×"+pv_FMT(fzb,3)+")/"+pv_NumD(fdl)+")^2"; END;
+  IF TT==1 THEN fs3 := "(("+pv_NumD(SG)+"×"+pv_FMT(fza,3)+" + "+pv_NumD(SG)+"×"+pv_FMT(fzb,3)+")/"+pv_NumD(fdl)+")²"; END;
+  IF TT==2 THEN fs3 := "(("+pv_NumD(SG)+SQG+"2×"+pv_FMT(fza,3)+" + "+pv_NumD(SG)+SQG+"2×"+pv_FMT(fzb,3)+")/"+pv_NumD(fdl)+")²"; END;
+  IF TT==3 THEN fs3 := "(("+SQG+"("+pv_NumD(PP0*(1-PP0))+")×"+pv_FMT(fza,3)+" + "+SQG+"("+pv_NumD(PP1*(1-PP1))+")×"+pv_FMT(fzb,3)+")/"+pv_NumD(fdl)+")²"; END;
   IF TT==4 THEN
    fnc := (PP0+PP1)/2;
-   fs3 := "(("+SQG+"("+pv_NumD(2*fnc*(1-fnc))+")×"+pv_FMT(fza,3)+" + "+SQG+"("+pv_NumD(PP0*(1-PP0)+PP1*(1-PP1))+")×"+pv_FMT(fzb,3)+")/"+pv_NumD(fdl)+")^2";
+   fs3 := "(("+SQG+"("+pv_NumD(2*fnc*(1-fnc))+")×"+pv_FMT(fza,3)+" + "+SQG+"("+pv_NumD(PP0*(1-PP0)+PP1*(1-PP1))+")×"+pv_FMT(fzb,3)+")/"+pv_NumD(fdl)+")²";
   END;
   IF NCF < 0 THEN
    // v2.5d (fleet review P1): pv_NCF found no root -- the bracket is 0 or

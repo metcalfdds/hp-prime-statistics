@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// ERRORRATE LAB - beta 1d
+// ERRORRATE LAB - beta 1e
 // "Zero errors in 30 proficiency tests: how good is the examiner?"
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
@@ -42,6 +42,18 @@
 //   output, the device-test checklist, what is not confirmed) and
 //   errorrate-guide_beta1.md (the user's guide; its Engines-page
 //   lines about CASProbe are out of date, see the CHANGES file).
+//
+// beta 1e (20 Oct 2026): symbols instead of spelled-out names, on screen
+//   only (Roger, 20 Oct 2026: "use the symbols we developed"; every
+//   program of the 20 checked).  In the text the student sees, the help
+//   page's "alpha"
+//   now use the house glyphs: alpha (CHAR(945)).  Text built for the CAS is
+//   untouched (it must stay ASCII), and so are Home variable names, the
+//   "+/-" that names the + and - keys, and comments.  No number, layout
+//   position or logic changed.
+//   In this program the glyphs are built with CHAR(), as its other
+//   display glyphs are, so the source stays pure ASCII.
+//
 //
 // What changed in beta 1d (19 Oct 2026): E1, E2, E4, E5 (fleet
 //   review 19 Oct).  Line numbers are beta 1c's.
@@ -2478,7 +2490,7 @@ BEGIN
     "source tests; a miss rate, same-source ones.",
     "One-sided 95 % is the upper end of a two-",
     "sided 90 % interval, not of a 95 % one.",
-    "Change alpha with the n, k soft key."},
+    ("Change " + CHAR(945) + " with the n, k soft key.")},
     {hpR, hpR, hpR, hpN, hpN, hpN, hpB, hpM, hpM, hpN, hpN, hpO, hpO, hpG}, hpF, "");
   hpK := erlWaitAny();
   IF hpK == 4 THEN RETURN; END;

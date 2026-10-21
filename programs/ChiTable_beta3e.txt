@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// CHITABLE - beta 3d
+// CHITABLE - beta 3e
 // Chi-square test for a 2 x 2, 2 x 3 or 3 x 2 table
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
@@ -38,6 +38,23 @@
 //   beta 1l (its fixes are all kept here) has not been re-run.
 //
 // Run ChiTable() from the Program Catalog.
+//
+// beta 3e (20 Oct 2026): symbols instead of spelled-out names, on screen
+//   only (Roger, 20 Oct 2026: "use the symbols we developed").  In the
+//   text the student sees, the expected-count verdicts' "chi-square" now
+//   use the house glyphs: chi-square (CHAR(967) CHAR(178), device-verified),
+//   ^2 (CHAR(178)), sqrt (CHAR(8730)), and the x-bar and p-hat glyphs,
+//   CHAR(57344) and CHAR(57345), HP's own private-use characters.  Text built for the CAS is
+//   untouched (it must stay ASCII), and so are Home variable names
+//   and comments.  No number, layout position or logic changed.
+//   Second pass, same day, after all 20 programs were checked: ">=",
+//   "+/-2", p1 and p2, "phi" and "a*d > b*c"
+//   now use >= (CHAR(8805)), +/- (CHAR(177)), the subscripts 0 1 2
+//   (CHAR(8320)-8322), phi (CHAR(966)).  The "+/-" that names the + and -
+//   keys is kept.
+//   In this program the glyphs are built with CHAR(), as its other
+//   display glyphs are, so the source stays pure ASCII.
+//
 //
 // WHAT CHANGED in beta 3d (19 Oct 2026): the fleet review's fixes
 //   (D8, D-CT-1 to D-CT-5, fleet review 19 Oct 2026).  Line numbers
@@ -1671,7 +1688,7 @@ BEGIN
       END;
       IF gmMode == 2 THEN TEXTOUT_P("Tap a cell: how its E is made.  Red frame: E < 5.", G1, 6, 184, 1, csGRAY, 308); END;
       IF gmMode == 3 THEN TEXTOUT_P("Row % compares groups; col % profiles an outcome.", G1, 6, 184, 1, csGRAY, 308); END;
-      DEFAULT TEXTOUT_P("Top: (O-E)" + csSqS + "/E, summing to " + csX2S + ".  |adj| >= 2: notable.", G1, 6, 184, 1, csGRAY, 308);
+      DEFAULT TEXTOUT_P("Top: (O-E)" + csSqS + "/E, summing to " + csX2S + (".  |adj| " + CHAR(8805) + " 2: notable."), G1, 6, 184, 1, csGRAY, 308);
     END;
     IF DIM(csLbl2) > 0 AND (gmMode <> 2 OR csTapC == 0) THEN TEXTOUT_P(csLbl2, G1, 6, 200, 1, csGRN, 308); END;
   END;
@@ -1698,7 +1715,7 @@ BEGIN
   a1 := csO(1); a2 := csO(2); a3 := csO(3); a4 := csO(4);
   a5 := 0; a6 := 0;
   IF (csNR * csNC) == 6 THEN a5 := csO(5); a6 := csO(6); END;
-  akH := "Observed count, a whole number >= 0";
+  akH := ("Observed count, a whole number " + CHAR(8805) + " 0");
   akOK := 0;
   CASE
     IF csNR == 2 AND csNC == 2 THEN
@@ -1892,12 +1909,12 @@ BEGIN
     TEXTOUT_P("REJECT " + csH0 + " because the data show evidence of", G1, 12, 130, 1, csRED, 302);
     TEXTOUT_P("an association between the variables", G1, 12, 143, 1, csRED, 302);
   ELSE
-    TEXTOUT_P("Decision: " + csX2S + " < critical, p >= " + csAl, G1, 12, 117, 1, #000000h, 296);
+    TEXTOUT_P("Decision: " + csX2S + (" < critical, p " + CHAR(8805) + " ") + csAl, G1, 12, 117, 1, #000000h, 296);
     TEXTOUT_P("DO NOT REJECT " + csH0 + " because the data do not", G1, 12, 130, 1, csGRN, 302);
     TEXTOUT_P("show an association between the variables", G1, 12, 143, 1, csGRN, 302);
   END;
   TEXTOUT_P("Effect size: Cramer's V = " + STRING(ROUND(csV, 3), 2, 3) + " (" + csVWord(csV) + ")", G1, 12, 155, 1, csBLUE, 296);
-  TEXTOUT_P("(V = phi = Cohen's w here, since min(r,c) = 2)", G1, 12, 168, 1, csGRAY, 296);
+  TEXTOUT_P(("(V = " + CHAR(966) + " = Cohen's w here, since min(r,c) = 2)"), G1, 12, 168, 1, csGRAY, 296);
   TEXTOUT_P("Contingency coefficient C = " + STRING(ROUND(csCC, 3), 2, 3), G1, 12, 181, 1, csBLUE, 296);
   TEXTOUT_P("Likelihood-ratio G" + csSqS + " = " + STRING(ROUND(csG2, 3), 2, 3) + ",  " + csPStr(csPG), G1, 12, 194, 1, csGRAY, 296);
   ptS := "Min expected " + STRING(ROUND(csMinE, 2), 2, 2) + "; cells with E < 5: " + STRING(csN5, 2, 0) + " of " + STRING(csNR * csNC, 2, 0);
@@ -1930,7 +1947,7 @@ BEGIN
     TEXTOUT_P("The data show an association between the", G1, 12, 75, 1, #000000h, 296);
     TEXTOUT_P("row and column variables.", G1, 12, 88, 1, #000000h, 296);
   ELSE
-    TEXTOUT_P("p >= " + csAl + " (" + csAStr() + "): DO NOT REJECT " + csH0 + "; " + csH1 + " not accepted.", G1, 12, 62, 1, csGRN, 296);
+    TEXTOUT_P(("p " + CHAR(8805) + " ") + csAl + " (" + csAStr() + "): DO NOT REJECT " + csH0 + "; " + csH1 + " not accepted.", G1, 12, 62, 1, csGRN, 296);
     TEXTOUT_P("The data do not show an association between", G1, 12, 75, 1, #000000h, 296);
     TEXTOUT_P("the row and column variables (at this n).", G1, 12, 88, 1, #000000h, 296);
   END;
@@ -1944,11 +1961,11 @@ BEGIN
   TEXTOUT_P(piS, G1, 12, 137, 1, csMAG, 296);
   TEXTOUT_P("adj. residual = " + csSgn(csAdj(csBig), 2) + "  (|2| or more is notable)", G1, 12, 150, 1, csMAG, 296);
   IF csN5 == 0 THEN
-    TEXTOUT_P("All expected counts >= 5: chi-square is fine.", G1, 12, 168, 1, csGRN, 296);
+    TEXTOUT_P(("All expected counts " + CHAR(8805) + " 5: " + CHAR(967) + CHAR(178) + " is fine."), G1, 12, 168, 1, csGRN, 296);
     TEXTOUT_P("Association is not causation: check the design.", G1, 12, 181, 1, csGRAY, 296);
   ELSE
     TEXTOUT_P(STRING(csN5, 2, 0) + " of " + STRING(csNR * csNC, 2, 0) + " expected counts are below 5:", G1, 12, 168, 1, csRED, 296);
-    TEXTOUT_P("chi-square is shaky; Fisher (2x2) or merge cells.", G1, 12, 181, 1, csRED, 296);
+    TEXTOUT_P((CHAR(967) + CHAR(178) + " is shaky; Fisher (2x2) or merge cells."), G1, 12, 181, 1, csRED, 296);
   END;
   IF csNR == 2 AND csNC == 2 THEN
     TEXTOUT_P("Next page: Yates, Fisher, z, RD, RR and OR.", G1, 12, 199, 1, csGRAY, 296);
@@ -1976,7 +1993,7 @@ BEGIN
   // beta 3c: every decimal on this page is rounded before STRING (a
   // p1 of 1/20,000, a z of 0.0004, an RR bound under 0.001 would have
   // printed in scientific form); csSgn rounds inside
-  TEXTOUT_P("p1 = " + STRING(csO(1), 2, 0) + "/" + STRING(csRT(1), 2, 0) + " = " + STRING(ROUND(csP1, 4), 2, 4) + "   p2 = " + STRING(csO(3), 2, 0) + "/" + STRING(csRT(2), 2, 0) + " = " + STRING(ROUND(csP2, 4), 2, 4), G1, 12, 46, 1, #000000h, 296);
+  TEXTOUT_P(("p" + CHAR(8321) + " = ") + STRING(csO(1), 2, 0) + "/" + STRING(csRT(1), 2, 0) + " = " + STRING(ROUND(csP1, 4), 2, 4) + ("   p" + CHAR(8322) + " = ") + STRING(csO(3), 2, 0) + "/" + STRING(csRT(2), 2, 0) + " = " + STRING(ROUND(csP2, 4), 2, 4), G1, 12, 46, 1, #000000h, 296);
   TEXTOUT_P("z, two proportions = " + STRING(ROUND(csZ, 3), 2, 3) + ";  z" + csSqS + " = " + csX2S + " = " + STRING(ROUND(csX2, 2), 2, 2), G1, 12, 59, 1, #000000h, 296);
   TEXTOUT_P("Yates corrected " + csX2S + " = " + STRING(ROUND(csYat, 3), 2, 3) + ",  " + csPStr(csPY), G1, 12, 72, 1, csBLUE, 296);
   IF csFish >= 0 THEN
@@ -1990,8 +2007,8 @@ BEGIN
   END;
   // beta 3: the rest moved down (104 117 130 143 162 180 193 became
   // 111 124 137 150 167 184 197)
-  TEXTOUT_P("Risk diff. p1 - p2 = " + csSgn(csRD, 4) + " (" + STRING(ROUND(csRDL, 4), 2, 4) + ", " + STRING(ROUND(csRDH, 4), 2, 4) + ")", G1, 12, 111, 1, csMAG, 296);
-  TEXTOUT_P("Relative risk p1/p2 = " + STRING(ROUND(csRR, 3), 2, 3) + " (" + STRING(ROUND(csRRL, 3), 2, 3) + ", " + STRING(ROUND(csRRH, 3), 2, 3) + ")", G1, 12, 124, 1, csMAG, 296);
+  TEXTOUT_P(("Risk diff. p" + CHAR(8321) + " - p" + CHAR(8322) + " = ") + csSgn(csRD, 4) + " (" + STRING(ROUND(csRDL, 4), 2, 4) + ", " + STRING(ROUND(csRDH, 4), 2, 4) + ")", G1, 12, 111, 1, csMAG, 296);
+  TEXTOUT_P(("Relative risk p" + CHAR(8321) + "/p" + CHAR(8322) + " = ") + STRING(ROUND(csRR, 3), 2, 3) + " (" + STRING(ROUND(csRRL, 3), 2, 3) + ", " + STRING(ROUND(csRRH, 3), 2, 3) + ")", G1, 12, 124, 1, csMAG, 296);
   TEXTOUT_P("Odds ratio ad/bc = " + STRING(ROUND(csOdds, 3), 2, 3) + " (" + STRING(ROUND(csORL, 3), 2, 3) + ", " + STRING(ROUND(csORH, 3), 2, 3) + ")", G1, 12, 137, 1, csMAG, 296);
   // beta 3d: the RD interval is Newcombe's now (csCompute), so the
   // note names it.  "(95% CIs; Newcombe for RD, log method for RR and
@@ -2005,7 +2022,7 @@ BEGIN
   ELSE
     TEXTOUT_P("(95% CIs; Newcombe for RD, log for RR and OR)", G1, 12, 150, 1, csGRAY, 296);
   END;
-  TEXTOUT_P("phi = " + csSgn(csPhi, 3) + "   (positive when a*d > b*c)", G1, 12, 167, 1, csBLUE, 296);
+  TEXTOUT_P((CHAR(966) + " = ") + csSgn(csPhi, 3) + ("   (positive when a" + CHAR(215) + "d > b" + CHAR(215) + "c)"), G1, 12, 167, 1, csBLUE, 296);
   TEXTOUT_P("Swapping rows and columns leaves " + csX2S + " and p alone;", G1, 12, 184, 1, csGRAY, 296);
   TEXTOUT_P("RD, RR and OR describe column 1 within each row.", G1, 12, 197, 1, csGRAY, 296);
   // beta 2: the page number, top right (the soft keys take the bottom)
@@ -2463,7 +2480,7 @@ BEGIN
       TEXTOUT_P("of the grey 'all' bar; tiles hold E.  Tap = back", G1, 6, 202, 1, csGRAY, 308);
     END;
   ELSE
-    TEXTOUT_P("blue: more than expected; red: fewer (|adj|>=2)", G1, 6, 190, 1, csGRAY, 308);
+    TEXTOUT_P(("blue: more than expected; red: fewer (|adj|" + CHAR(8805) + "2)"), G1, 6, 190, 1, csGRAY, 308);
     moS := "R" + STRING(IP((csSel - 1) / csNC) + 1, 2, 0) + " C" + STRING(csSel - IP((csSel - 1) / csNC) * csNC, 2, 0) + ":  O = " + STRING(csO(csSel), 2, 0) + ",  row " + STRING(ROUND(100 * csO(csSel) / csRT(IP((csSel - 1) / csNC) + 1), 1), 2, 1) + "%,  adj = " + csSgn(csAdj(csSel), 2);
     TEXTOUT_P(moS, G1, 6, 202, 1, csRED, 308);
   END;
@@ -3403,7 +3420,7 @@ BEGIN
   TEXTOUT_P("the outcome.  Row % compares the groups and is", G1, 12, 43, 1, #000000h, 296);
   TEXTOUT_P("the percentage to report; col % profiles an", G1, 12, 56, 1, #000000h, 296);
   TEXTOUT_P("outcome; % of N is the joint distribution.", G1, 12, 69, 1, #000000h, 296);
-  TEXTOUT_P("2x2 extras take column 1 as the outcome: p1, p2,", G1, 12, 86, 1, csMAG, 296);
+  TEXTOUT_P(("2x2 extras take column 1 as the outcome: p" + CHAR(8321) + ", p" + CHAR(8322) + ","), G1, 12, 86, 1, csMAG, 296);
   TEXTOUT_P("z, risk difference, RR, OR (95% CI), Yates, Fisher.", G1, 12, 99, 1, csMAG, 296);
   TEXTOUT_P("Mosaic plot: bar width = row size, tile height =", G1, 12, 116, 1, csBLUE, 296);
   TEXTOUT_P("row %; blue = more than expected, red = fewer.", G1, 12, 129, 1, csBLUE, 296);
@@ -3431,7 +3448,7 @@ BEGIN
   TEXTOUT_P(".001 .005 .01 .02 .05 .10 .20 it snaps to them;", G1, 12, 138, 1, csMAG, 296);
   TEXTOUT_P(CHAR(8592) + " " + CHAR(8594) + " step that ladder; Reset = 0.05.", G1, 12, 151, 1, csMAG, 296);
   TEXTOUT_P("Results page 1: tap a cell to see how E is made.", G1, 12, 166, 1, #000000h, 296);
-  TEXTOUT_P("Residual plot: one bar per cell, dotted at +/-2.", G1, 12, 179, 1, csGRAY, 296);
+  TEXTOUT_P(("Residual plot: one bar per cell, dotted at " + CHAR(177) + "2."), G1, 12, 179, 1, csGRAY, 296);
   TEXTOUT_P("Fisher plot (2" + csTimes + "2): every table with these", G1, 12, 192, 1, csGRAY, 296);
   TEXTOUT_P("margins; red = yours, red + magenta = p.", G1, 12, 205, 1, csGRAY, 296);
   TEXTOUT_P("Any key = page 4", G1, 12, 222, 1, csFOOT, 296);

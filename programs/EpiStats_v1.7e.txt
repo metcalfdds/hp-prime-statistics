@@ -1,6 +1,6 @@
 #pragma mode( separator(.,;) integer(h32) )
 // ============================================================
-// EPISTATS - v1.7d
+// EPISTATS - v1.7e
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
 //   (Anthropic Claude); concept, direction and all hardware
@@ -27,6 +27,21 @@
 //   "exact (CAS)", = 53/120, SE = 0.6646.  The CAS never failed
 //   there, so the fallback fixed in v1.7b has run only in the PC
 //   harness (ppl_run_v3d).
+//
+// v1.7e (20 Oct 2026): symbols instead of spelled-out names, on screen
+//   only (Roger, 20 Oct 2026: "use the symbols we developed").  In the
+//   text the student sees, the formula pages' "sqrt(" and the 2x2 note's "chi-square" now
+//   use the house glyphs: χ² (CHAR(967) CHAR(178), device-verified),
+//   ² (CHAR(178)), √ (CHAR(8730)), and the x-bar and p-hat glyphs,
+//   CHAR(57344) and CHAR(57345), HP's own private-use characters.  Text built for the CAS is
+//   untouched (it must stay ASCII), and so are Home variable names
+//   and comments.  No number, layout position or logic changed.
+//   Second pass, same day, after all 20 programs were checked: the "Chi-
+//   Square" headings, ">=", "<=", "-infinity", p1, p2, n1, n2 and "->"
+//   now use χ², ≤ (CHAR(8804)), ≥ (CHAR(8805)), ∞ (CHAR(8734)), the
+//   subscripts ₀ ₁ ₂ (CHAR(8320)-8322), → (CHAR(8594)).  The "+/-" that
+//   names the + and - keys is kept.
+//
 //
 // What changed in v1.7d (19 Oct 2026) -- E1, E2, E3, E4, E6, E7, E8,
 //   E9, E10 and E11 of the fleet review (19 Oct 2026); line numbers
@@ -380,7 +395,7 @@
 // For academic use only – do not rely on results for anything important
 // Results have not been rigorously verified and/or validated
 // ═══════════════════════════════════════════════════════════════════════════
-// EpiStats v1.7d - Comprehensive Biostatistics & Epidemiology Calculator
+// EpiStats v1.7e - Comprehensive Biostatistics & Epidemiology Calculator
 // ═══════════════════════════════════════════════════════════════════════════
 // Based on Harvard STAT S-103 "Introduction to Epidemiology and Biostatistics"
 // Original programs by Roger Metcalf - Enhanced with modern UI
@@ -614,7 +629,7 @@ BEGIN
         choice := 0;   // v1.2: CHOOSE leaves its index unchanged on cancel
         // v1.4: no numbers in the item strings -- the Prime numbers
         // its CHOOSE items itself (1-9, then A, B, C).
-        CHOOSE(choice, "EpiStats v1.7d ══════════",
+        CHOOSE(choice, "EpiStats v1.7e ══════════",
             "2×2 Table Analysis",
             "Risk Analysis (RR, OR, NNT)",
             "Sensitivity & Specificity",
@@ -1299,7 +1314,7 @@ BEGIN
   IF esCO(4) == 4 THEN RETURN "not computed (N > 2000)"; END;
   IF esCO(4) == 3 THEN RETURN "undefined (a total is 0)"; END;
   IF esCO(4) == 1 THEN RETURN "0  (0-" + es_SigTxt(esCO(3)) + ")"; END;
-  IF esCO(4) == 2 THEN RETURN "infinite  (" + es_SigTxt(esCO(2)) + "-infinity)"; END;
+  IF esCO(4) == 2 THEN RETURN "infinite  (" + es_SigTxt(esCO(2)) + "-∞)"; END;
   RETURN es_SigTxt(esCO(1)) + "  (" + es_SigTxt(esCO(2)) + "-" + es_SigTxt(esCO(3)) + ")";
 END;
 
@@ -2010,9 +2025,9 @@ BEGIN
             apA2 := apA + apH; apB2 := apB + apH; apC2 := apC + apH; apD2 := apD + apH;
             apV := (apA2 * apD2) / (apB2 * apC2);
             apY := es_ALine("ln OR = ln(" + STRING(ROUND(apV, 3), 2, 3) + ") = " + STRING(ROUND(LN(apV), 3), 2, 3), apY, #000000h);
-            apY := es_ALine("SE = sqrt(1/a + 1/b + 1/c + 1/d)", apY, #000000h);
+            apY := es_ALine("SE = √(1/a + 1/b + 1/c + 1/d)", apY, #000000h);
             apSE := (1/apA2 + 1/apB2 + 1/apC2 + 1/apD2)^0.5;
-            apY := es_Line2("   = sqrt(1/" + es_Cnt(apA2) + " + 1/" + es_Cnt(apB2) + " + 1/" + es_Cnt(apC2) + " + 1/" + es_Cnt(apD2) + ")", " = " + STRING(ROUND(apSE, 3), 2, 3), apY, #000000h);
+            apY := es_Line2("   = √(1/" + es_Cnt(apA2) + " + 1/" + es_Cnt(apB2) + " + 1/" + es_Cnt(apC2) + " + 1/" + es_Cnt(apD2) + ")", " = " + STRING(ROUND(apSE, 3), 2, 3), apY, #000000h);
             apLo := LN(apV) - apZ * apSE;
             apHi := LN(apV) + apZ * apSE;
             apY := es_ALine("ln OR - and + 1.96 × SE: " + STRING(ROUND(apLo, 3), 2, 3) + " to " + STRING(ROUND(apHi, 3), 2, 3), apY, #000000h);
@@ -2036,9 +2051,9 @@ BEGIN
                     IF apP1 > 0 THEN
                         apY := es_ALine("95% CI, worked on the log scale:", apY, esBLUE);
                         apY := es_ALine("ln RR = ln(" + STRING(ROUND(apV, 3), 2, 3) + ") = " + STRING(ROUND(LN(apV), 3), 2, 3), apY, #000000h);
-                        apY := es_ALine("SE = sqrt((1-p1)/a + (1-p2)/c)", apY, #000000h);
+                        apY := es_ALine("SE = √((1-p₁)/a + (1-p₂)/c)", apY, #000000h);
                         apSE := ((1 - apP1)/apA + (1 - apP2)/apC)^0.5;
-                        apY := es_Line2("   = sqrt(" + STRING(ROUND(1 - apP1, 3), 2, 3) + "/" + es_Cnt(apA) + " + " + STRING(ROUND(1 - apP2, 3), 2, 3) + "/" + es_Cnt(apC) + ")", " = " + STRING(ROUND(apSE, 3), 2, 3), apY, #000000h);
+                        apY := es_Line2("   = √(" + STRING(ROUND(1 - apP1, 3), 2, 3) + "/" + es_Cnt(apA) + " + " + STRING(ROUND(1 - apP2, 3), 2, 3) + "/" + es_Cnt(apC) + ")", " = " + STRING(ROUND(apSE, 3), 2, 3), apY, #000000h);
                         apLo := LN(apV) - apZ * apSE;
                         apHi := LN(apV) + apZ * apSE;
                         apY := es_ALine("ln RR - and + 1.96 × SE: " + STRING(ROUND(apLo, 3), 2, 3) + " to " + STRING(ROUND(apHi, 3), 2, 3), apY, #000000h);
@@ -2050,7 +2065,7 @@ BEGIN
                     END;
                 ELSE
                     apY := es_ALine("c = 0: no events among the unexposed, so", apY, esRED);
-                    apY := es_ALine("RR = p1 / 0 is undefined (and has no CI).", apY, esRED);
+                    apY := es_ALine("RR = p₁ / 0 is undefined (and has no CI).", apY, esRED);
                 END;
             ELSE
                 apY := es_ALine("A row total is 0: a risk needs people in", apY, esRED);
@@ -2070,9 +2085,9 @@ BEGIN
                 apY := es_ALine("   = " + STRING(ROUND(apV, 3), 2, 3) + "   (" + STRING(ROUND(100 * apV, 1), 2, 1) + " %)", apY, #000000h);
                 apY := apY + 4;
                 apY := es_ALine("95% CI (Wald, on the risk scale):", apY, esBLUE);
-                apY := es_ALine("SE = sqrt(p1(1-p1)/n1 + p2(1-p2)/n2)", apY, #000000h);
+                apY := es_ALine("SE = √(p₁(1-p₁)/n₁ + p₂(1-p₂)/n₂)", apY, #000000h);
                 apSE := (apP1 * (1 - apP1) / apN1 + apP2 * (1 - apP2) / apN2)^0.5;
-                apY := es_Line2("   = sqrt(" + STRING(ROUND(apP1, 3), 2, 3) + "×" + STRING(ROUND(1 - apP1, 3), 2, 3) + "/" + es_Cnt(apN1), " + " + STRING(ROUND(apP2, 3), 2, 3) + "×" + STRING(ROUND(1 - apP2, 3), 2, 3) + "/" + es_Cnt(apN2) + ")", apY, #000000h);
+                apY := es_Line2("   = √(" + STRING(ROUND(apP1, 3), 2, 3) + "×" + STRING(ROUND(1 - apP1, 3), 2, 3) + "/" + es_Cnt(apN1), " + " + STRING(ROUND(apP2, 3), 2, 3) + "×" + STRING(ROUND(1 - apP2, 3), 2, 3) + "/" + es_Cnt(apN2) + ")", apY, #000000h);
                 apY := es_ALine("   = " + STRING(ROUND(apSE, 3), 2, 3), apY, #000000h);
                 apLo := apV - apZ * apSE;
                 apHi := apV + apZ * apSE;
@@ -2202,7 +2217,7 @@ BEGIN
     ELSE
         TEXTOUT_P("Tap a tile (or Up/Down): its O, E and row %.", G1, 10, 177, 1, #000000h, 302);
         TEXTOUT_P("blue = more than expected, red = fewer,", G1, 10, 190, 1, esGRAY, 302);
-        TEXTOUT_P("when |adjusted residual| >= 2; grey = neither", G1, 10, 203, 1, esGRAY, 302);
+        TEXTOUT_P("when |adjusted residual| ≥ 2; grey = neither", G1, 10, 203, 1, esGRAY, 302);
     END;
     es_Foot("tap a tile = numbers, " + CHAR(8592) + "/" + CHAR(8594) + " = page, Esc = menu");
 END;
@@ -2365,7 +2380,7 @@ BEGIN
         rpQ := (rpA * rpD)^0.5; rpYu := (rpB * rpC)^0.5;
         rpS := "undef";
         IF rpQ + rpYu > 0 THEN rpS := STRING(ROUND((rpQ - rpYu) / (rpQ + rpYu), 3), 2, 3); END;
-        rpY := es_ALine("Yule's Y (on sqrt(ad), sqrt(bc)) = " + rpS, rpY, #000000h);
+        rpY := es_ALine("Yule's Y (on √(ad), √(bc)) = " + rpS, rpY, #000000h);
         rpY := es_ALine("Disagreement (error) rate (b+c)/N = " + es_FmtPct((rpB + rpC) / rpN), rpY, #000000h);
         rpY := es_ALine("Same pairs rated twice: McNemar, not χ².", rpY, esGRAY);
     END;
@@ -2453,7 +2468,7 @@ BEGIN
     IF esQOK <> 1 THEN
         TEXTOUT_P("N > 2000: Fisher's exact test is not", G1, 12, 44, 1, #000000h, 296);
         TEXTOUT_P("computed here (too many tables to add);", G1, 12, 58, 1, #000000h, 296);
-        TEXTOUT_P("use the chi-square on page 3.", G1, 12, 72, 1, #000000h, 296);
+        TEXTOUT_P("use the χ² on page 3.", G1, 12, 72, 1, #000000h, 296);
         es_DrawFooter(1);
         RETURN 0;
     END;
@@ -2508,7 +2523,7 @@ BEGIN
     TEXTOUT_P("a =", G1, 4, 158, 1, esGRAY, 26);
     // ---- the legend ----
     TEXTOUT_P("red = your table (a = " + STRING(hgA, 2, 0) + "), " + es_EqTxt("P", es_FmtNum(esQP0, 6)), G1, 6, 170, 1, esRED, 308);
-    TEXTOUT_P("magenta = P <= yours; they sum to " + es_EqTxt("p", es_FmtNum(esQPv, 6)), G1, 6, 182, 1, esMAG, 308);
+    TEXTOUT_P("magenta = P ≤ yours; they sum to " + es_EqTxt("p", es_FmtNum(esQPv, 6)), G1, 6, 182, 1, esMAG, 308);
     TEXTOUT_P("grey = tables more likely than yours", G1, 6, 194, 1, esGRAY, 308);
     IF esQCut > 0 THEN
         hgS := STRING(esQCut, 2, 0) + " more tables have P near 0 (not drawn)";
@@ -2997,7 +3012,7 @@ BEGIN
     // at 222, on the footer).  Rows are 14 px apart; the last row,
     // N, is at y 196 and ends at 208.
     y := 30;
-    TEXTOUT_P("─── Chi-Square Tests (df=1) ───", G1, 10, y, 2, RGB(0,60,200));
+    TEXTOUT_P("─── χ² Tests (df=1) ───", G1, 10, y, 2, RGB(0,60,200));
     y := y + 18;
     TEXTOUT_P("Pearson χ²:", G1, 10, y, 2, RGB(0,0,0));
     TEXTOUT_P(es_FmtNum(chisq, 4), G1, 140, y, 2, RGB(0,0,0));
@@ -4020,7 +4035,7 @@ BEGIN
     IF esBinOK == 1 THEN
       TEXTOUT_P("exact " + es_FmtCI({esXCP(2 * epR - 1), esXCP(2 * epR)}, 1), G1, 164, 182, 1, esORNG, 150);
       TEXTOUT_P("mid-P " + es_FmtCI({esXMP(2 * epR - 1), esXMP(2 * epR)}, 1), G1, 8, 194, 1, esGRN, 150);
-      TEXTOUT_P("coverage >= 95 %", G1, 164, 194, 1, esORNG, 150);
+      TEXTOUT_P("coverage ≥ 95 %", G1, 164, 194, 1, esORNG, 150);
       IF epK(epR) == 0 OR epK(epR) == epN(epR) THEN
         // the closed form: from the CAS when it answered, else the
         // formula in words with the PPL's decimal
@@ -4419,7 +4434,7 @@ BEGIN
     TEXTOUT_P(STRING(c2,1,0), G1, x2+10, y, 2, RGB(90,90,90));
     TEXTOUT_P(STRING(N,1,0), G1, x3+10, y, 2, RGB(0,60,200));
     y := y + 22;
-    TEXTOUT_P("─── Chi-Square & Fisher's ───", G1, 10, y, 2, RGB(0,60,200));
+    TEXTOUT_P("─── χ² & Fisher's ───", G1, 10, y, 2, RGB(0,60,200));
     y := y + 16;
     TEXTOUT_P("Pearson χ²:", G1, 10, y, 2, RGB(0,0,0));
     TEXTOUT_P(es_FmtNum(EP_chisq, 3), G1, 120, y, 2, RGB(0,0,0));
@@ -5728,7 +5743,7 @@ END;
 es_Help_About()
 BEGIN
     es_HelpPage("ABOUT EPISTATS",
-        {"EpiStats v1.7d",
+        {"EpiStats v1.7e",
          "",
          "Comprehensive biostatistics and epidemiology",
          "calculator.",
@@ -5885,7 +5900,7 @@ BEGIN
          "CI step by step.  Any key or tap closes it.",
          "Page 6, the mosaic: bar width = row share of",
          "N, tile height = row %.  Blue = more than",
-         "expected, red = fewer (|adj. residual| >= 2).",
+         "expected, red = fewer (|adj. residual| ≥ 2).",
          "Tap a tile (or Up/Down) for its O, E, row %.",
          "Page 7: the exact (conditional) odds ratio."});
 END;
@@ -6015,7 +6030,7 @@ BEGIN
     IF DIM(hsN) > 46 THEN hsN := "Var = 1/a+1/b+1/c+1/d with these counts"; END;
     IF hsOK == 1 AND DIM(esSET) <= 40 THEN
         hsF := "  = " + esSET;
-        hsS := "SE = sqrt(" + esSET + ") = " + STRING(ROUND(hsSE, 4), 2, 4);
+        hsS := "SE = √(" + esSET + ") = " + STRING(ROUND(hsSE, 4), 2, 4);
         IF DIM(hsS) > 46 THEN hsS := "SE = its square root = " + STRING(ROUND(hsSE, 4), 2, 4); END;
     ELSE
         IF hsOK == 1 THEN
@@ -6023,13 +6038,13 @@ BEGIN
         ELSE
             hsF := "  = " + STRING(ROUND(hsV, 6), 2, 6);
         END;
-        hsS := "SE = sqrt(" + STRING(ROUND(hsV, 6), 2, 6) + ") = " + STRING(ROUND(hsSE, 4), 2, 4);
+        hsS := "SE = √(" + STRING(ROUND(hsV, 6), 2, 6) + ") = " + STRING(ROUND(hsSE, 4), 2, 4);
     END;
     // the badge: "exact (CAS)" only when both the calculus and the fraction came
     // from the CAS
     hsB := "decimal";
     IF hsOK == 1 AND esDvOK == 1 THEN hsB := "exact (CAS)"; END;
-    hsLs := {"Why is SE(ln OR) = sqrt(1/a+1/b+1/c+1/d)?",
+    hsLs := {"Why is SE(ln OR) = √(1/a+1/b+1/c+1/d)?",
             "A row's log odds: g(p) = ln(p/(1-p)).",
             hsC1, hsC2,
             "Delta method: Var g(" + CHAR(57345) + ") is about g'(p)" + CHAR(178) + " Var(" + CHAR(57345) + ")",
@@ -6057,7 +6072,7 @@ BEGIN
          "each.  Red = yours; magenta = no more likely",
          "than yours: their sum is Fisher's p.  Grey =",
          "more likely.  Tap a bar (or Up/Down): its table.",
-         "From Home: EpiStats2x2(a,b,c,d) -> Fisher p."});
+         "From Home: EpiStats2x2(a,b,c,d) → Fisher p."});
 END;
 
 es_Help_Forest()

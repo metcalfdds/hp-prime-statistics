@@ -26,11 +26,21 @@
 //   5  Help
 // Exports EP_SD_* so results are readable in Home after the menu is cancelled.
 //
-// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  v2.3b has
+// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  v2.3c has
 //   NOT yet been run on hardware or on the emulator, only in the PC
 //   harness (ppl_run_v3e, 19 Oct 2026); v2.3 passed the emulator's round
 //   (17 Oct 2026).  See the checklist at the end, SampDist_v2.3b_CHANGES.md,
 //   SampDist_v2.3a_CHANGES.md and SampDist_v2.3_CHANGES.md.
+//
+// v2.3c (20 Oct 2026): symbols instead of spelled-out names, on screen
+//   only (Roger, 20 Oct 2026: "use the symbols we developed"; every
+//   program of the 20 checked).  In the text the student sees, every "n
+//   must be >= 1" and "whole number >= 1"
+//   now use the house glyphs: ≥ (CHAR(8805)).  Text built for the CAS is
+//   untouched (it must stay ASCII), and so are Home variable names, the
+//   "+/-" that names the + and - keys, and comments.  No number, layout
+//   position or logic changed.
+//
 //
 // v2.3b (19 Oct 2026): S1, S2 (fleet review 19 Oct 2026, findings_B).
 //   Line numbers below are v2.3a's.
@@ -953,19 +963,19 @@ BEGIN
         iok := INPUT({mu2, sg2, nn2, al2}, "Critical Values",
                      {"μ:", "σ:", "n:", "α:"},
                      {"Population mean", "Population SD (> 0)",
-                      "Sample size, whole number >= 1", "Tail area, e.g. 0.05"});
+                      "Sample size, whole number ≥ 1", "Tail area, e.g. 0.05"});
       ELSE
         iok := INPUT({mu2, sg2, nn2}, "Population Parameters",
                      {"μ:", "σ:", "n:"},
                      {"Population mean", "Population SD (> 0)",
-                      "Sample size, whole number >= 1"});
+                      "Sample size, whole number ≥ 1"});
       END;
       REPEAT kk := GETKEY; UNTIL kk == -1;
       sd_Drain();
       IF iok THEN
         CASE
           IF sg2 <= 0 THEN MSGBOX("σ must be > 0; nothing changed"); END;
-          IF nn2 < 1 THEN MSGBOX("n must be >= 1; nothing changed"); END;
+          IF nn2 < 1 THEN MSGBOX("n must be ≥ 1; nothing changed"); END;
           IF nn2 - IP(nn2) > 0 THEN MSGBOX("n must be a whole number; nothing changed"); END;
           IF al2 <= 0 OR al2 >= 1 THEN MSGBOX("α must be between 0 and 1; nothing changed"); END;
           DEFAULT
@@ -1253,10 +1263,10 @@ BEGIN
   iok := INPUT({mu, sg, nn}, "Population Parameters",
                {"μ:", "σ:", "n:"},
                {"Population mean", "Population SD (> 0)",
-                "Sample size, whole number >= 1"});
+                "Sample size, whole number ≥ 1"});
   IF iok == 0 THEN RETURN; END;
   IF sg <= 0 THEN MSGBOX("σ must be > 0"); RETURN; END;
-  IF nn < 1 THEN MSGBOX("n must be >= 1"); RETURN; END;
+  IF nn < 1 THEN MSGBOX("n must be ≥ 1"); RETURN; END;
   IF nn - IP(nn) > 0 THEN MSGBOX("n must be a whole number"); RETURN; END;
 
   se := sg / SQRT(nn);
@@ -1319,10 +1329,10 @@ BEGIN
   iok := INPUT({mu, sg, nn, alp}, "Critical Values",
                {"μ:", "σ:", "n:", "α:"},
                {"Population mean", "Population SD (> 0)",
-                "Sample size, whole number >= 1", "Tail area, e.g. 0.05"});
+                "Sample size, whole number ≥ 1", "Tail area, e.g. 0.05"});
   IF iok == 0 THEN RETURN; END;
   IF sg <= 0 THEN MSGBOX("σ must be > 0"); RETURN; END;
-  IF nn < 1 THEN MSGBOX("n must be >= 1"); RETURN; END;
+  IF nn < 1 THEN MSGBOX("n must be ≥ 1"); RETURN; END;
   IF nn - IP(nn) > 0 THEN MSGBOX("n must be a whole number"); RETURN; END;
   IF alp <= 0 OR alp >= 1 THEN MSGBOX("α must be between 0 and 1"); RETURN; END;
 
@@ -1374,7 +1384,7 @@ BEGIN
   IF iok == 0 THEN RETURN; END;
   IF sg <= 0 THEN MSGBOX("σ must be > 0"); RETURN; END;
   IF n1 < 1 OR n2 < 1 OR n3 < 1 THEN
-    MSGBOX("every n must be >= 1"); RETURN;
+    MSGBOX("every n must be ≥ 1"); RETURN;
   END;
   // same whole-number check as modes 1 and 2: n = 2.5 has no meaning
   IF n1 - IP(n1) > 0 OR n2 - IP(n2) > 0 OR n3 - IP(n3) > 0 THEN
@@ -1416,10 +1426,10 @@ BEGIN
   iok := INPUT({mu, sg, nn}, "Watch Sample Means",
                {"μ:", "σ:", "n:"},
                {"Population mean", "Population SD (> 0)",
-                "Draws per sample, whole number >= 1"});
+                "Draws per sample, whole number ≥ 1"});
   IF iok == 0 THEN RETURN; END;
   IF sg <= 0 THEN MSGBOX("σ must be > 0"); RETURN; END;
-  IF nn < 1 THEN MSGBOX("n must be >= 1"); RETURN; END;
+  IF nn < 1 THEN MSGBOX("n must be ≥ 1"); RETURN; END;
   IF nn - IP(nn) > 0 THEN MSGBOX("n must be a whole number"); RETURN; END;
 
   se := sg / SQRT(nn);

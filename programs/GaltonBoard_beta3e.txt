@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// GALTONBOARD - beta 3d
+// GALTONBOARD - beta 3e
 // Galton's quincunx (bean machine) for the HP Prime
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
@@ -37,6 +37,17 @@
 //   CAS's fallback (the "decimal" badge) has never been needed on
 //   the emulator.  The MicroPython part still needs the G1 and G2,
 //   with the Terminal open (Lessons Learned section 9).
+//
+// beta 3e (20 Oct 2026): symbols instead of spelled-out names, on screen
+//   only (Roger, 20 Oct 2026: "use the symbols we developed"; every
+//   program of the 20 checked).  In the text the student sees, the Poisson
+//   page's "as R -> infinity" and the help's "R <= 9"
+//   now use the house glyphs: ≤ (CHAR(8804)), ∞ (CHAR(8734)).  Text built
+//   for the CAS is
+//   untouched (it must stay ASCII), and so are Home variable names, the
+//   "+/-" that names the + and - keys, and comments.  No number, layout
+//   position or logic changed.
+//
 //
 // WHAT CHANGED in beta 3d (19 Oct 2026): the header only.  The
 //   DISCLAIMER line above (Roger, 19 Oct 2026: the fleet's programs
@@ -1984,7 +1995,7 @@ BEGIN
   END;
   // ---- the limit, from the CAS ----
   TEXTOUT_P("CAS: limit of C(R," + pwKs + ")(" + CHAR(956) + "/R)^" + pwKs + "(1-" + CHAR(956) + "/R)^(R-" + pwKs + ")", G1, 6, 167, 1, #000000h, 308);
-  pwT := "as R " + CHAR(8594) + " infinity";
+  pwT := "as R " + CHAR(8594) + " " + CHAR(8734);
   CASE
     IF pwWait == 1 THEN
       TEXTOUT_P(pwT + ": asking the CAS ...", G1, 6, 180, 1, gbGRAY, 308);
@@ -2174,7 +2185,7 @@ BEGIN
   IF mnI == 10 THEN
     gbPas := (gbPas + 1) MOD 3;
     IF gbPas > 0 AND gbBw < 28 THEN
-      gbMsg := "Pascal's numbers need R <= 9 (pegs 28 px apart)";
+      gbMsg := "Pascal's numbers need R ≤ 9 (pegs 28 px apart)";
       gbMsgC := gbORNG;
     END;
   END;

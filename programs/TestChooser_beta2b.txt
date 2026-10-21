@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// TESTCHOOSER - beta 2a
+// TESTCHOOSER - beta 2b
 // Which statistical test?  A tappable flowchart, the table,
 // and a quiz
 // ============================================================
@@ -31,6 +31,23 @@
 //   only in the PC harness (ppl_run_v3e, 19 Oct 2026); beta 2
 //   passed the emulator (HP Prime Virtual Calculator, build
 //   2026-09-09, 17 Oct 2026).
+//
+// beta 2b (20 Oct 2026): symbols instead of spelled-out names, on screen
+//   only (Roger, 20 Oct 2026: "use the symbols we developed").  In the
+//   text the student sees, every "chi-square", "chi-sq.", "X2" and "p-hat" now
+//   use the house glyphs: χ² (CHAR(967) CHAR(178), device-verified),
+//   ² (CHAR(178)), √ (CHAR(8730)), and the x-bar and p-hat glyphs,
+//   CHAR(57344) and CHAR(57345), HP's own private-use characters.  Text built for the CAS is
+//   untouched (it must stay ASCII), and so are Home variable names
+//   and comments.  No number, layout position or logic changed.
+//   Second pass, same day, after all 20 programs were checked: "mu",
+//   "mu0", "sigma", "rho", "tau", "pi", "pi0", ">=", "<=" and "->" (the R
+//   call wilcox.test(x, mu) is kept)
+//   now use σ (CHAR(963)), ρ (CHAR(961)), μ₀, μ (CHAR(956)), ≥
+//   (CHAR(8805)), ≤ (CHAR(8804)), τ (CHAR(964), new to the fleet), π₀, π
+//   (CHAR(960), new on screen), → (CHAR(8594)).  The "+/-" that names the
+//   + and - keys is kept.
+//
 //
 // beta 2a (19 Oct 2026) - what changed: T1, T2, T3 and three
 //   wordings (fleet review 19 Oct 2026, findings_B).  Line numbers
@@ -238,11 +255,11 @@ BEGIN
     IF fnI == 3 THEN RETURN "Paired t test"; END;
     IF fnI == 4 THEN RETURN "Repeated-measures ANOVA"; END;
     IF fnI == 5 THEN RETURN "Pearson r and linear regression"; END;
-    IF fnI == 6 THEN RETURN "Chi-square 2x2, or Fisher's exact"; END;
-    IF fnI == 7 THEN RETURN "Chi-square for an r x c table"; END;
+    IF fnI == 6 THEN RETURN "χ² 2x2, or Fisher's exact"; END;
+    IF fnI == 7 THEN RETURN "χ² for an r x c table"; END;
     IF fnI == 8 THEN RETURN "McNemar's test"; END;
     IF fnI == 9 THEN RETURN "Cochran's Q test"; END;
-    IF fnI == 10 THEN RETURN "Relative risk, odds ratio, chi-square"; END;
+    IF fnI == 10 THEN RETURN "Relative risk, odds ratio, χ²"; END;
     IF fnI == 11 THEN RETURN "Mann-Whitney U (Wilcoxon rank-sum)"; END;
     IF fnI == 12 THEN RETURN "Kruskal-Wallis test"; END;
     IF fnI == 13 THEN RETURN "Wilcoxon signed-rank test"; END;
@@ -253,8 +270,8 @@ BEGIN
     IF fnI == 18 THEN RETURN "Before/after survival: no usual test"; END;
     IF fnI == 19 THEN RETURN "Repeated survival: no standard test"; END;
     IF fnI == 20 THEN RETURN "Cox proportional-hazards regression"; END;
-    IF fnI == 21 THEN RETURN "One-sample t test (z if sigma known)"; END;
-    IF fnI == 22 THEN RETURN "One-proportion z / chi-square GOF"; END;
+    IF fnI == 21 THEN RETURN "One-sample t test (z if σ known)"; END;
+    IF fnI == 22 THEN RETURN "One-proportion z / χ² GOF"; END;
     IF fnI == 23 THEN RETURN "One-sample Wilcoxon signed-rank/sign"; END;
     DEFAULT RETURN "One-sample survival comparison";
   END;
@@ -269,16 +286,16 @@ BEGIN
     IF clI == 3 THEN RETURN {"paired", "t test"}; END;
     IF clI == 4 THEN RETURN {"repeated", "ANOVA"}; END;
     IF clI == 5 THEN RETURN {"Pearson", "r, regr."}; END;
-    IF clI == 6 THEN RETURN {"chi-sq./", "Fisher"}; END;
-    IF clI == 7 THEN RETURN {"chi-sq.", "r x c"}; END;
+    IF clI == 6 THEN RETURN {"χ²/", "Fisher"}; END;
+    IF clI == 7 THEN RETURN {"χ²", "r x c"}; END;
     IF clI == 8 THEN RETURN {"McNemar", ""}; END;
     IF clI == 9 THEN RETURN {"Cochran", "Q"}; END;
-    IF clI == 10 THEN RETURN {"RR, OR,", "chi-sq."}; END;
+    IF clI == 10 THEN RETURN {"RR, OR,", "χ²"}; END;
     IF clI == 11 THEN RETURN {"Mann-", "Whitney"}; END;
     IF clI == 12 THEN RETURN {"Kruskal-", "Wallis"}; END;
     IF clI == 13 THEN RETURN {"Wilcoxon", "signed"}; END;
     IF clI == 14 THEN RETURN {"Friedman", ""}; END;
-    IF clI == 15 THEN RETURN {"Spearman", "rho"}; END;
+    IF clI == 15 THEN RETURN {"Spearman", "ρ"}; END;
     IF clI == 16 THEN RETURN {"log-rank", ""}; END;
     IF clI == 17 THEN RETURN {"log-rank", "k groups"}; END;
     IF clI == 18 THEN RETURN {"(none)", ""}; END;
@@ -309,7 +326,7 @@ BEGIN
       "Matched pairs or before/after: mean diff.",
       "The DIFFERENCES should be roughly normal.",
       "Form the differences, then Inference >",
-      "Hyp. test > T-Test: 1 mu, with mu0 = 0.",
+      "Hyp. test > T-Test: 1 μ, with μ₀ = 0.",
       "Skewed differences?  Wilcoxon signed-rank."}; END;
     IF dtI == 4 THEN RETURN {
       "Same subjects, 3 or more conditions.",
@@ -322,35 +339,35 @@ BEGIN
       "Both interval; linear; residuals normal.",
       "Statistics 2Var: r, slope.  Inference >",
       "Regression: t test and CI for the slope.",
-      "Curved or ordinal?  Spearman's rho."}; END;
+      "Curved or ordinal?  Spearman's ρ."}; END;
     IF dtI == 6 THEN RETURN {
       "Two proportions; two yes/no traits linked?",
-      "Expected counts >= 5; else Fisher's exact.",
-      "Inference > X2 test > 2-way (matrix).",
+      "Expected counts ≥ 5; else Fisher's exact.",
+      "Inference > χ² test > 2-way (matrix).",
       "Fleet: EpiStats > 2x2 Table; ChiTable.",
       "Report the OR or RR with a 95% CI."}; END;
     IF dtI == 7 THEN RETURN {
       "Proportions in 3 or more groups.",
-      "Expected < 5 in <= 20% of cells; none < 1.",
-      "Inference > X2 test > 2-way (matrix).",
-      "Ordered groups?  TrendTest (X2 for trend).",
+      "Expected < 5 in ≤ 20% of cells; none < 1.",
+      "Inference > χ² test > 2-way (matrix).",
+      "Ordered groups?  TrendTest (χ² for trend).",
       "Which cells differ?  Check contributions."}; END;
     IF dtI == 8 THEN RETURN {
       "Paired yes/no outcomes, same people.",
       "Uses only the discordant pairs b and c.",
       "Fleet: EpiStats > 2x2 Table > Paired.",
-      "By hand, 1 df: X2 = (|b-c| - 1)^2/(b+c).",
+      "By hand, 1 df: χ² = (|b-c| - 1)²/(b+c).",
       "Small b + c?  Exact binomial version."}; END;
     IF dtI == 9 THEN RETURN {
       "Yes/no under 3+ conditions, same subjects.",
-      "Extends McNemar; chi-square, k - 1 df.",
+      "Extends McNemar; χ², k - 1 df.",
       "Not on the Prime.  R: RVAideMemoire pkg.",
       "Then: pairwise McNemar with Bonferroni.",
       "Only two conditions?  That is McNemar."}; END;
     IF dtI == 10 THEN RETURN {
       "Association of two nominal variables.",
       "RR for cohorts, OR for case-control.",
-      "Fleet: EpiStats > Risk; Inference X2.",
+      "Fleet: EpiStats > Risk; Inference χ².",
       "Ordered exposure levels?  TrendTest.",
       "Phi or Cramer's V gives the strength."}; END;
     IF dtI == 11 THEN RETURN {
@@ -361,7 +378,7 @@ BEGIN
       "Normal, equal spread?  t test has power."}; END;
     IF dtI == 12 THEN RETURN {
       "Three or more groups, ranks not means.",
-      "Rank one-way ANOVA; chi-square, k - 1 df.",
+      "Rank one-way ANOVA; χ², k - 1 df.",
       "Not on the Prime.  R: kruskal.test; JMP.",
       "Post hoc: Dunn's test or pairwise M-W.",
       "Ordered groups?  Jonckheere-Terpstra."}; END;
@@ -382,7 +399,7 @@ BEGIN
       "Pearson r on the ranks; -1 to +1.",
       "Rank both lists, then Statistics 2Var r.",
       "R: cor.test(method = 'spearman'); JMP.",
-      "Many ties?  Kendall's tau instead."}; END;
+      "Many ties?  Kendall's τ instead."}; END;
     IF dtI == 16 THEN RETURN {
       "Survival curves of two groups, censored.",
       "Most powerful if hazards are proportional.",
@@ -391,7 +408,7 @@ BEGIN
       "Early events matter more?  Gehan-Wilcoxon."}; END;
     IF dtI == 17 THEN RETURN {
       "Survival curves of three or more groups.",
-      "Chi-square, k - 1 df; prop. hazards.",
+      "χ², k - 1 df; prop. hazards.",
       "Not on the Prime.  R: survdiff; JMP.",
       "Post hoc: pairwise log-rank, Bonferroni.",
       "Ordered groups?  Log-rank test for trend."}; END;
@@ -416,15 +433,15 @@ BEGIN
     IF dtI == 21 THEN RETURN {
       "One group's mean against a given mu0.",
       "Roughly normal, or n large (CLT).",
-      "Inference > Hyp. test > T-Test: 1 mu.",
-      "Also the T-Int: 1 mu confidence interval.",
+      "Inference > Hyp. test > T-Test: 1 μ.",
+      "Also the T-Int: 1 μ confidence interval.",
       "Skewed data?  Wilcoxon signed-rank/sign."}; END;
     IF dtI == 22 THEN RETURN {
       "One proportion vs pi0; counts vs expected.",
-      "n pi0 and n(1-pi0) >= 10; GOF: exp. >= 5.",
-      "Inference > Z-Test: 1 pi; X2 > Goodness.",
+      "n π₀ and n(1-π₀) ≥ 10; GOF: exp. ≥ 5.",
+      "Inference > Z-Test: 1 π; χ² > Goodness.",
       "Small n?  Exact binomial via BINOMIAL_CDF.",
-      "Report p-hat with its CI (Z-Int: 1 pi)."}; END;
+      "Report " + CHAR(57345) + " with its CI (Z-Int: 1 π)."}; END;
     IF dtI == 23 THEN RETURN {
       "One sample vs a median; skewed data.",
       "Signed-rank needs symmetry; sign does not.",
@@ -448,7 +465,7 @@ BEGIN
   IF ckI == 1 OR ckI == 2 THEN RETURN "Check: Stats 1Var normal plot, each group."; END;
   IF ckI == 3 OR ckI == 4 THEN RETURN "Check: Stats 1Var normal plot of diffs."; END;
   IF ckI == 5 THEN RETURN "Check: residuals in NormExplorer's data."; END;
-  IF ckI == 6 OR ckI == 7 OR ckI == 10 THEN RETURN "Check: expected counts >= 5 in ChiTable."; END;
+  IF ckI == 6 OR ckI == 7 OR ckI == 10 THEN RETURN "Check: expected counts ≥ 5 in ChiTable."; END;
   IF ckI == 21 THEN RETURN "Check: NormExplorer's data module (D1)."; END;
   IF ckI == 13 OR ckI == 23 THEN RETURN "Check symmetry: NormExplorer's data (D1)."; END;
   RETURN "";
@@ -1693,10 +1710,10 @@ BEGIN
   TEXTOUT_P("Choosing a test: two questions", G1, 12, 8, 2, tcBLUE);
   TEXTOUT_P("1. What kind of number is the OUTCOME?", G1, 12, 30, 1, #000000h);
   TEXTOUT_P("   Interval/ratio: measurements, about", G1, 12, 42, 1, tcBLUE);
-  TEXTOUT_P("     normal -> t tests, ANOVA, regression.", G1, 12, 54, 1, tcBLUE);
-  TEXTOUT_P("   Nominal: categories -> proportions,", G1, 12, 66, 1, tcORNG);
-  TEXTOUT_P("     chi-square, odds ratios.", G1, 12, 78, 1, tcORNG);
-  TEXTOUT_P("   Ordinal, or skewed, or tiny n -> ranks:", G1, 12, 90, 1, tcMAG);
+  TEXTOUT_P("     normal → t tests, ANOVA, regression.", G1, 12, 54, 1, tcBLUE);
+  TEXTOUT_P("   Nominal: categories → proportions,", G1, 12, 66, 1, tcORNG);
+  TEXTOUT_P("     χ², odds ratios.", G1, 12, 78, 1, tcORNG);
+  TEXTOUT_P("   Ordinal, or skewed, or tiny n → ranks:", G1, 12, 90, 1, tcMAG);
   TEXTOUT_P("     Mann-Whitney, Kruskal-Wallis ...", G1, 12, 102, 1, tcMAG);
   TEXTOUT_P("   Survival: time to event, some censored.", G1, 12, 114, 1, tcGRN);
   TEXTOUT_P("2. What is the DESIGN?  Different people", G1, 12, 130, 1, #000000h);

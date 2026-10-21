@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// SCATTERLAB - beta 2c
+// SCATTERLAB - beta 2d
 // A scatterplot you build with your finger: the least-squares
 // line, r, r-squared and the residuals follow every point
 // ============================================================
@@ -29,6 +29,18 @@
 //   Prime Virtual Calculator (build 2026-09-09, 17 Oct 2026).
 //
 // Run ScatterLab() from the Program Catalog.
+//
+// beta 2d (20 Oct 2026): symbols instead of spelled-out names, on screen
+//   only (Roger, 20 Oct 2026: "use the symbols we developed").  In the
+//   text the student sees, the calculus page's "^2" and "sqrt(" now
+//   use the house glyphs: chi-square (CHAR(967) CHAR(178), device-verified),
+//   ^2 (CHAR(178)), sqrt (CHAR(8730)), and the x-bar and p-hat glyphs,
+//   CHAR(57344) and CHAR(57345), HP's own private-use characters.  Text built for the CAS is
+//   untouched (it must stay ASCII), and so are Home variable names
+//   and comments.  No number, layout position or logic changed.
+//   In this program the glyphs are built with CHAR(), as its other
+//   display glyphs are, so the source stays pure ASCII.
+//
 //
 // What changed in beta 2c (19 Oct 2026): one fix from the fleet review
 //   of 19 Oct 2026 (D-SL-1).  Line numbers are beta 2b's.
@@ -1672,7 +1684,7 @@ BEGIN
     TEXTOUT_P("decimal", G1, 268, 10, 1, slFOOT);
   END;
   TEXTOUT_P("The magenta line makes this SSE smallest:", G1, 12, 26, 1, #000000h, 300);
-  TEXTOUT_P("SSE = sum (y - a - bx)^2 over all n = " + STRING(slN, 2, 0) + " points", G1, 12, 37, 1, #000000h, 300);
+  TEXTOUT_P(("SSE = sum (y - a - bx)" + CHAR(178) + " over all n = ") + STRING(slN, 2, 0) + " points", G1, 12, 37, 1, #000000h, 300);
   cdY := 48;
   IF slCxSt == 1 THEN
     // ---- exact: the CAS's own lines ----
@@ -1701,7 +1713,7 @@ BEGIN
     TEXTOUT_P("Both slopes of the SSE = 0, the normal equations:", G1, 12, cdY + 11, 1, #000000h, 300);
     TEXTOUT_P("n a + (sum x) b = sum y", G1, 12, cdY + 22, 1, slBLUE, 300);
     TEXTOUT_P("  " + slNum(slN) + " a + " + slNum(cdSx) + " b = " + slNum(cdSy), G1, 12, cdY + 33, 1, slBLUE, 300);
-    TEXTOUT_P("(sum x) a + (sum x^2) b = sum x y", G1, 12, cdY + 44, 1, slBLUE, 300);
+    TEXTOUT_P(("(sum x) a + (sum x" + CHAR(178) + ") b = sum x y"), G1, 12, cdY + 44, 1, slBLUE, 300);
     TEXTOUT_P("  " + slNum(cdSx) + " a + " + slNum(cdSxx) + " b = " + slNum(cdSxy), G1, 12, cdY + 55, 1, slBLUE, 300);
     TEXTOUT_P("Solving them (the program's decimals):", G1, 12, cdY + 66, 1, #000000h, 300);
     TEXTOUT_P("  b = " + slDec(slB1) + ",  a = " + slDec(slB0), G1, 12, cdY + 77, 1, slMAG, 300);
@@ -1764,7 +1776,7 @@ BEGIN
     slHT("r has no units: crimes per 1,000 or per", 114, #000000h);
     slHT("100,000 give the same r.  One far-out point", 127, #000000h);
     slHT("can change r a lot (Menu > far-out point).", 140, #000000h);
-    slHT("r = Sxy / sqrt(Sxx Syy), where", 156, slGRAY);
+    slHT(("r = Sxy / " + CHAR(8730) + "(Sxx Syy), where"), 156, slGRAY);
     slHT("Sxx = sum (x - " + slXBAR + ")" + slSQ + ", Syy = sum (y - " + slYBAR + ")" + slSQ + ",", 169, slGRAY);
     slHT("Sxy = sum (x - " + slXBAR + ")(y - " + slYBAR + ").", 182, slGRAY);
   END;

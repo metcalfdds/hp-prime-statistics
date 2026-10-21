@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// CENTRALLIMIT - beta 3c
+// CENTRALLIMIT - beta 3d
 // Central Limit Theorem explorer -- an HP Prime APP built on
 // the Statistics 1Var app
 // ============================================================
@@ -37,6 +37,17 @@
 //   (beta 3c has run only in the PC harness), and nothing has run on
 //   a G1 or G2.  The call form (routine cltCas below) is the one
 //   CASProbe beta 1b found on the emulator.
+//
+// beta 3d (20 Oct 2026): symbols instead of spelled-out names, on screen
+//   only (Roger, 20 Oct 2026: "use the symbols we developed"; every
+//   program of the 20 checked).  In the text the student sees, the "Why
+//   the bell?" pages' "->" and "t^2"
+//   now use the house glyphs: → (CHAR(8594)), ² (CHAR(178)).  Text built
+//   for the CAS is
+//   untouched (it must stay ASCII), and so are Home variable names, the
+//   "+/-" that names the + and - keys, and comments.  No number, layout
+//   position or logic changed.
+//
 //
 // beta 3c (19 Oct 2026) - what changed: C1 (fleet review 19 Oct), a
 //   crash.  Line numbers are beta 3b's.
@@ -2232,13 +2243,13 @@ BEGIN
       IF INSTRING(mgL, "limit") == 0 THEN mgQ := cltCasNum("subst(" + mgL + ",cltqt,1)", 9); END;
     END;
     IF mgQ(2) == 1 AND ABS(mgQ(1) - EXP(0.5)) < 0.000001 THEN
-      cltPgAdd("CAS: as n grows, M(t) -> " + cltShow(mgL) + ":", #C800C8h);
+      cltPgAdd("CAS: as n grows, M(t) → " + cltShow(mgL) + ":", #C800C8h);
       cltPgAdd("   the MGF of N(0, 1). The sum becomes a bell.", #C800C8h);
       cltMgOK := 1;
     ELSE
       // the decimal fallback: the same convergence, at t = 1
       cltPgAdd("M(1) = " + cltF(cltMgfAt(1, 1), 4) + ", " + cltF(cltMgfAt(1, 4), 4) + ", " + cltF(cltMgfAt(1, 16), 4) + ", " + cltF(cltMgfAt(1, 10000), 4) + " (n = 1, 4,", #5A5A5Ah);
-      cltPgAdd("   16, 10000) -> e^(1/2) = " + cltF(EXP(0.5), 4) + ", N(0, 1)'s MGF.", #5A5A5Ah);
+      cltPgAdd("   16, 10000) → e^(1/2) = " + cltF(EXP(0.5), 4) + ", N(0, 1)'s MGF.", #5A5A5Ah);
     END;
     mgS := cltCas("expand(cltqn*subst(convert(series(ln(cosh(cltqu)),cltqu,0,5),polynom),cltqu,cltqt/sqrt(cltqn)))");
     mgQ := {0, 0};
@@ -2250,7 +2261,7 @@ BEGIN
     // t = 1, n = 4: 1/2 - 1/(12 x 4)
     IF mgQ(2) == 1 AND ABS(mgQ(1) - (0.5 - 1/48)) < 0.000001 THEN
       cltPgWrap("CAS: ln M(t) = " + cltShow(mgS) + " + ...", #008C3Ch);
-      cltPgAdd("   The t^4 term shrinks like 1/n; t^2/2 is left.", #008C3Ch);
+      cltPgAdd("   The t^4 term shrinks like 1/n; t²/2 is left.", #008C3Ch);
       cltMgOK := 1;
     END;
     cltMgL := cltPgL; cltMgC := cltPgC; cltMgOn := 1;
@@ -2311,7 +2322,7 @@ BEGIN
   TEXTOUT_P("n = 1", G1, 126, mgT0 + 2, 1, #FF0000h);
   TEXTOUT_P("n = 4", G1, 168, mgT0 + 2, 1, #FF4500h);
   TEXTOUT_P("n = 16", G1, 210, mgT0 + 2, 1, #C800C8h);
-  TEXTOUT_P("e^(t^2/2): N(0, 1)", G1, 126, mgT0 + 14, 1, #003CC8h);
+  TEXTOUT_P("e^(t²/2): N(0, 1)", G1, 126, mgT0 + 14, 1, #003CC8h);
   TEXTOUT_P("all meet at M(0) = 1", G1, 126, mgT0 + 26, 1, #5A5A5Ah);
   mgStr := "decimal";
   IF cltMgOK THEN mgStr := "exact (CAS)"; END;
@@ -2414,7 +2425,7 @@ BEGIN
   TEXTOUT_P("Menu, Exact curve: the CAS's polynomial and its", G1, 8, 128, 1, #C800C8h);
   TEXTOUT_P("  peak as an exact fraction, for your n.", G1, 8, 141, 1, #C800C8h);
   TEXTOUT_P("Menu, Why the bell?: coin flips, cosh(t/√n)^n", G1, 8, 154, 1, #C800C8h);
-  TEXTOUT_P("  and its limit e^(t^2/2), the bell's MGF.", G1, 8, 167, 1, #C800C8h);
+  TEXTOUT_P("  and its limit e^(t²/2), the bell's MGF.", G1, 8, 167, 1, #C800C8h);
   TEXTOUT_P("Badge: exact (CAS) = CAS answers, each checked", G1, 8, 180, 1, #1E90FFh);
   TEXTOUT_P("  against the program's own number; decimal =", G1, 8, 193, 1, #1E90FFh);
   TEXTOUT_P("  the CAS was not used (or failed).", G1, 8, 206, 1, #1E90FFh);

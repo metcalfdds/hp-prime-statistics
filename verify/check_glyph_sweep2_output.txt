@@ -1,0 +1,19 @@
+Burr3_v2.4c.txt              3 code lines changed, non-comment line count 678 -> 678
+CICatcher_beta2d.txt         5 code lines changed, non-comment line count 1426 -> 1426
+CentralLimit_beta3d.txt      5 code lines changed, non-comment line count 1877 -> 1877
+DNAMixLR_beta3d.txt         36 code lines changed, non-comment line count 2261 -> 2261
+ErrorRate_beta1e.txt         1 code lines changed, non-comment line count 2057 -> 2057
+GaltonBoard_beta3e.txt       2 code lines changed, non-comment line count 1641 -> 1641
+PowerViz_v2.5e.txt           8 code lines changed, non-comment line count 1766 -> 1766
+SampDist_v2.3c.txt          10 code lines changed, non-comment line count 1176 -> 1176
+BiNorm3D_beta1b.txt          2 code lines changed, non-comment line count 824 -> 824
+ChiTable_beta3e.txt         14 code lines changed, non-comment line count 2394 -> 2394
+EpiStats_v1.7e.txt          22 code lines changed, non-comment line count 4584 -> 4584
+FDAES_v3.9c.txt             95 code lines changed, non-comment line count 3178 -> 3178
+NormExplorer_beta42c.txt     3 code lines changed, non-comment line count 2312 -> 2312
+ScatterLab_beta2d.txt        3 code lines changed, non-comment line count 1522 -> 1522
+StatDist_v2.7f.txt         125 code lines changed, non-comment line count 3449 -> 3450
+TestChooser_beta2b.txt      32 code lines changed, non-comment line count 1421 -> 1421
+TrendTest_beta3e.txt        15 code lines changed, non-comment line count 1372 -> 1372
+
+TOTAL 381 changed code lines, 0 failures

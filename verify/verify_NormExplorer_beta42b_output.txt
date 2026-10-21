@@ -1,0 +1,39 @@
+Part A  fast drawing
+   42a: 10.800 s, 22 waits
+  ok   42a lasts about 10.8 s (10.800)
+  ok   42a: every WAIT is positive
+   42b: 10.822 s, 22 waits
+  ok   42b lasts about 10.8 s (10.822)
+  ok   42b: every WAIT is positive
+  ok   42b: twenty frame waits (20)
+  ok   42b: each frame wait is a little under 0.3 s (0.2990..0.2990)
+  ok   42b: neAnTot records the run (10.821)
+  ok   42b: neAnMs records the slowest frame (1 ms)
+Part B  slow drawing
+   D = 100 ms: 42a 13.00 s (model 13.00), 42b 11.02 s (model 11.00)
+  ok   42a, D=100: frame waits add to the drawing
+  ok   42b, D=100: frames keep their 0.3 s pace
+  ok   42b, D=100: the slowest frame is recorded (101 ms)
+   D = 250 ms: 42a 16.30 s (model 16.30), 42b 11.32 s (model 11.30)
+  ok   42a, D=250: frame waits add to the drawing
+  ok   42b, D=250: frames keep their 0.3 s pace
+  ok   42b, D=250: the slowest frame is recorded (251 ms)
+   D = 450 ms: 42a 20.70 s (model 20.70), 42b 14.74 s (model 14.70)
+  ok   42a, D=450: frame waits add to the drawing
+  ok   42b, D=450: frames keep their 0.3 s pace
+  ok   42b, D=450: a frame slower than 0.3 s gets no wait (0 waits)
+  ok   42b, D=450: the slowest frame is recorded (451 ms)
+   D = 800 ms: 42a 28.40 s (model 28.40), 42b 22.44 s (model 22.40)
+  ok   42a, D=800: frame waits add to the drawing
+  ok   42b, D=800: frames keep their 0.3 s pace
+  ok   42b, D=800: a frame slower than 0.3 s gets no wait (0 waits)
+  ok   42b, D=800: the slowest frame is recorded (801 ms)
+Part C  the Diagnostics page
+  ok   before a run: "animation: not run yet" at y = 154
+  ok   after a run: '  animation 10.8 s, slowest frame 1 ms'
+  ok   line positions below the Session block: [154.0, 170.0, 183.0, 196.0, 214.0]
+  ok   no hex-printed integer on the line
+Part D  the routine diff
+  ok   routines whose code changed: ['ne_AnimStd', 'ne_DiagPage', 'ne_ResetAll']
+  ok   the #PYTHON block is byte-identical
+28 checks, 0 failures

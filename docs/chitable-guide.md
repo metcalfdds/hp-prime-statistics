@@ -1,8 +1,8 @@
-# ChiTable beta 3d: User's Guide
+# ChiTable beta 3e: User's Guide
 
 ChiTable runs a chi-square test for a 2 × 2, 2 × 3 or 3 × 2 table on the HP Prime. The engine is pure PPL, with no MicroPython: the arithmetic is light, and the live touch screens belong in PPL. Beta 3 adds a few **exact answers from the calculator's CAS** (its computer algebra system), shown beside the decimals the program has always computed.
 
-**Status: beta 3d (19 Oct 2026) has run in the PC test harness only; beta 3c passed the emulator retest on 17 Oct 2026. Betas 2 to 3d have not yet been run on hardware.** Beta 2 passed every item of its checklist on the HP Prime Virtual Calculator (2.4.2, build 2026-09-09) on 17 Oct 2026, with every number matching SciPy. Beta 3b's CAS lines have run only in the off-device harness. They use the CAS call form that CASProbe beta 1b found on the emulator, the one ErrorRate beta 1a has already shown working there. Beta 1j ran on an HP Prime G2 and a G1, both on the 2026-09-09 firmware (2.4.2), on 10 Oct 2026. That run covered the entry grid and its soft keys, the Values form, the results pages and all three plots.
+**Status: beta 3e (20 Oct 2026) changes only the text on screen: χ², ≥, ±, p₁, p₂ and φ where the words were spelled out. Beta 3d (19 Oct 2026) has run in the PC test harness only; beta 3c passed the emulator retest on 17 Oct 2026. Betas 2 to 3d have not yet been run on hardware.** Beta 2 passed every item of its checklist on the HP Prime Virtual Calculator (2.4.2, build 2026-09-09) on 17 Oct 2026, with every number matching SciPy. Beta 3b's CAS lines have run only in the off-device harness. They use the CAS call form that CASProbe beta 1b found on the emulator, the one ErrorRate beta 1a has already shown working there. Beta 1j ran on an HP Prime G2 and a G1, both on the 2026-09-09 firmware (2.4.2), on 10 Oct 2026. That run covered the entry grid and its soft keys, the Values form, the results pages and all three plots.
 
 - **What has been checked off-device:**
   - The arithmetic was verified against scipy and statsmodels on 4,900 random tables. It has not changed since.

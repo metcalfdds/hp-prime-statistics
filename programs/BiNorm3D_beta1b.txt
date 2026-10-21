@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// BINORM3D - beta 1a
+// BINORM3D - beta 1b
 // The bivariate normal surface, turned with a finger:
 //   correlation and regression to the mean
 // ============================================================
@@ -27,6 +27,18 @@
 //   written: verify_BiNorm3D.py.
 //
 // Run BiNorm3D() from the Program Catalog.
+//
+// beta 1b (20 Oct 2026): symbols instead of spelled-out names, on screen
+//   only (Roger, 20 Oct 2026: "use the symbols we developed").  In the
+//   text the student sees, the conditional page's "chi-square" and "(...)^0.5" now
+//   use the house glyphs: chi-square (CHAR(967) CHAR(178), device-verified),
+//   ^2 (CHAR(178)), sqrt (CHAR(8730)), and the x-bar and p-hat glyphs,
+//   CHAR(57344) and CHAR(57345), HP's own private-use characters.  Text built for the CAS is
+//   untouched (it must stay ASCII), and so are Home variable names
+//   and comments.  No number, layout position or logic changed.
+//   In this program the glyphs are built with CHAR(), as its other
+//   display glyphs are, so the source stays pure ASCII.
+//
 //
 // beta 1a (19 Oct 2026): N1, N2 (fleet review 19 Oct 2026,
 //   findings_B).  Line numbers are beta 1's.  No number changed.
@@ -969,7 +981,7 @@ BEGIN
   bnLn("Q = (x" + bnSq + " " + bnMin + " 2" + bnRS + "xy + y" + bnSq + ") / (1 " + bnMin + " " + bnRS + bnSq + ").", 58, #000000h);
   bnLn("The cross term " + bnMin + "2" + bnRS + "xy tilts them: along y = x", 75, bnBLUE);
   bnLn("the variance is 1 + " + bnRS + ", across it 1 " + bnMin + " " + bnRS + ".", 88, bnBLUE);
-  bnLn("Q is chi-square with 2 df, so the share inside", 105, bnMAG);
+  bnLn(("Q is " + CHAR(967) + CHAR(178) + " with 2 df, so the share inside"), 105, bnMAG);
   bnLn("is 1 " + bnMin + " e^(" + bnMin + "k" + bnSq + "/2): 39 % inside k = 1 and", 118, bnMAG);
   bnLn("86 % inside k = 2, whatever " + bnRS + " is.", 131, bnMAG);
   bnLn("The magenta line E[Y | x] = " + bnRS + "x is the", 148, bnGRAY);
@@ -983,7 +995,7 @@ BEGIN
   bnLn("Slice cuts the surface along the line x = " + bnX0S + ".", 32, #000000h);
   bnLn("Scaled to area 1, the cut is the distribution", 45, #000000h);
   bnLn("of Y among the cases that have X = " + bnX0S + ":", 58, #000000h);
-  bnLn("Y | X = " + bnX0S + " is N(" + bnRS + bnX0S + ", (1 " + bnMin + " " + bnRS + bnSq + ")^0.5).", 75, bnMAG);
+  bnLn("Y | X = " + bnX0S + " is N(" + bnRS + bnX0S + (", " + CHAR(8730) + "(1 ") + bnMin + " " + bnRS + bnSq + ")).", 75, bnMAG);
   bnLn("Its centre " + bnRS + bnX0S + " lies on the regression line", 88, bnMAG);
   bnLn("y = " + bnRS + "x; the SD is the same for every " + bnX0S + ".", 101, bnMAG);
   bnLn("The ridge of the bell runs along y = x, but", 118, bnRED);

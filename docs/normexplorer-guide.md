@@ -1,10 +1,10 @@
-# NormExplorer beta 42a — User's Guide
+# NormExplorer beta 42c — User's Guide
 
 A normal-distribution workbench for the HP Prime: set any N(μ, σ), find areas and the x-values behind them, solve the z-formula, look at your own data against a fitted curve, compare two curves, and — the heart of it — **explore the curve with your finger**: drag a cut point and watch the area change, drag the mean, stretch σ, and see the probability travel with the shaded region. PPL, with an optional MicroPython sampler for simulated histograms.
 
-**Status:** beta 42a (19 Oct 2026) fixes what the fleet review found; it has run in the PC test harness only. Beta 42 (16 Oct 2026) is the touch and graphics version. It has **not yet been run on hardware**. Builds up to beta 39 were tested on an HP Prime G2 and G1 (2026-09-09 firmware) and the Virtual Calculator; beta 40, 41 and 42 have not been. The arithmetic was checked against SciPy and the program's own code was run, path by path, in an off-device interpreter (see *How it was checked*). The device checklist is in `NormExplorer_beta42_CHANGES.md`.
+**Status:** beta 42c (20 Oct 2026) writes μ, σ and x̄ as symbols where the text spelled them out; with beta 42b (the same day) it keeps the standardize animation at the same pace on every calculator; it has run in the PC test harness only. Beta 42a (19 Oct 2026) fixed what the fleet review found and ran on the G1 and G2 on 20 Oct 2026. Beta 42 (16 Oct 2026) is the touch and graphics version. It has **not yet been run on hardware**. Builds up to beta 39 were tested on an HP Prime G2 and G1 (2026-09-09 firmware) and the Virtual Calculator; beta 40, 41 and 42 have not been. The arithmetic was checked against SciPy and the program's own code was run, path by path, in an off-device interpreter (see *How it was checked*). The device checklist is in `NormExplorer_beta42_CHANGES.md`.
 
-Install: paste `NormExplorer_beta42.txt` into the Connectivity Kit editor and send it to the calculator. Run **NormExp** from the Program Catalog (Shift-1).
+Install: paste `programs/NormExplorer_beta42c.txt` into the Connectivity Kit editor and send it to the calculator. Run **NormExp** from the Program Catalog (Shift-1).
 
 ---
 
@@ -191,6 +191,8 @@ The bars are filled pale green under the curve. Where a bar stands inside the sh
 
 Two phases on a window wide enough for the whole journey: the mean slides to 0 (*shift x − μ*), a pause, then the spread squeezes or stretches to 1 (*rescale (x − μ)/σ*), ending on N(0,1) with the formula over it. The session μ and σ are not changed. The z-row under the axis travels with the curve and, at the end, sits exactly under the x-row.
 
+It takes about 11 seconds on any calculator: each of its twenty frames lasts 0.3 s, drawing included (beta 42b). The Diagnostics page shows how long the last run took and how long its slowest frame took to draw.
+
 ## Plot window & display (item 9)
 
 | Choice | |
@@ -202,7 +204,7 @@ Two phases on a window wide enough for the whole journey: the mean slides to 0 (
 | N(0,1) reference curve: ON / off | the reference and the CDF share one setting, so turning one on turns the other off |
 | CDF overlay (S-curve): ON / off | |
 | Show current window | the x-range, its width in σ, the y-top and the peak |
-| Diagnostics | whether the MicroPython bridge answers, and which sampler drew the last histogram |
+| Diagnostics | whether the MicroPython bridge answers, which sampler drew the last histogram, and how long the last standardize animation took |
 | Reset everything to N(0,1) | a clean start without quitting |
 
 ---
@@ -223,6 +225,14 @@ Two phases on a window wide enough for the whole journey: the mean slides to 0 (
 ## How it was checked
 
 Every new formula was checked against SciPy in `verify_NormExplorer.py`, and the program itself was run in hp-prime-kit's PPL interpreter with scripted menu choices, keys and touches: all four probability types, all five inverse items, the solver, the power picture, the Explorer's drags, grabs and soft keys, a histogram bar tap, the CDF overlay, the animation, the help pages, the window menu and a whole session — 135 checks, none failed. None of that is a substitute for the calculator: the device checklist in `NormExplorer_beta42_CHANGES.md` lists what to try, least risky first.
+
+## What changed in beta 42c
+
+Symbols instead of spelled-out names (Roger, 20 Oct 2026): the Explorer's page-2 soft keys and their help line say μ and σ, and the z-score message says x̄. Nothing else changed. Details in `NormExplorer_beta42c_CHANGES.md`.
+
+## What changed in beta 42b
+
+On the G1 the standardize animation took too long (Roger, 20 Oct 2026): each frame waited 0.3 s after drawing, so a slow calculator's drawing time came on top of the wait. Each frame is now timed, and the program waits only for what is left of the 0.3 s. The Diagnostics page shows the last run's length and its slowest frame. Nothing else changed. Details in `NormExplorer_beta42b_CHANGES.md`.
 
 ## What changed in beta 42a
 
@@ -248,4 +258,4 @@ Concept, source material, direction, classroom judgement and all hardware testin
 
 *Free for educational and personal use. © 2026 Roger Metcalf. Written with AI assistance (Anthropic Claude). Keep this header with the file and credit the author if you pass it on. Not for sale or commercial redistribution. Provided as is, with no warranty.*
 
-*Firmware: builds through beta 39 tested on HP Prime G2 and G1, 2026-09-09 firmware. Betas 42 and 42a have not yet been run on hardware.*
+*Firmware: builds through beta 39, and beta 42a, tested on HP Prime G2 and G1, 2026-09-09 firmware. Beta 42b has not yet been run on hardware.*

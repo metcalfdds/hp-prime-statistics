@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// DNAMIXLR - beta 3c
+// DNAMIXLR - beta 3d
 // Likelihood ratio for a DNA mixture, with coancestry (theta)
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
@@ -34,6 +34,20 @@
 //   been needed on the emulator.
 //
 // Run DNAMixLR() from the Program Catalog.
+//
+// beta 3d (20 Oct 2026): symbols instead of spelled-out names, on screen
+//   only (Roger, 20 Oct 2026: "use the symbols we developed"; every
+//   program of the 20 checked).  In the text the student sees, every
+//   "theta" (and dmTHG, which was "th" until GfxProbe T14 showed theta
+//   renders), and "p^2"
+//   now use the house glyphs: theta (CHAR(952)), ^2 (CHAR(178)).  Text built
+//   for the CAS is
+//   untouched (it must stay ASCII), and so are Home variable names, the
+//   "+/-" that names the + and - keys, and comments.  No number, layout
+//   position or logic changed.
+//   In this program the glyphs are built with CHAR(), as its other
+//   display glyphs are, so the source stays pure ASCII.
+//
 //
 // What changed in beta 3c (19 Oct 2026): B1, B2 and B4 of the fleet
 //   review (19 Oct 2026, findings_E), dmProb without cancellation,
@@ -434,8 +448,8 @@ LOCAL dmFrm, dmFxK, dmFxT, dmFxS, dmF0K, dmF0T;
 LOCAL dmF0S, dmCasOK, dmTHG, dmCasMx, dmEdT, dmEdV;
 //  dmCasOK 1 = the CAS answered ("exact (CAS)" badge), 0 = it did
 //          not, and only the program's decimals are shown ("decimal")
-//  dmTHG   how theta is written in a formula: "th" until GfxProbe
-//          T14 shows that CHAR(952) renders
+//  dmTHG   how theta is written in a formula: theta, CHAR(952); it was "th" until
+//          GfxProbe T14 showed theta renders (beta 3d)
 //  dmCasMx the longest CAS text the program sends (characters)
 //  dmEdT   theta at the ladder edge; -1 = no edge up to theta 0.25,
 //          -2 = nothing to look for (no loci, or an exclusion)
@@ -1509,10 +1523,10 @@ dmSetTheta()
 BEGIN
   LOCAL stT, stCv;
   stT := dmTh;
-  IF INPUT({stT}, "Coancestry coefficient", {"theta:"},
+  IF INPUT({stT}, "Coancestry coefficient", {(CHAR(952) + ":")},
     {"0 = product rule; 0.01 typical; 0.03 conservative (NRC II)"}) == 1 THEN
     IF stT < 0 OR stT >= 0.5 THEN
-      MSGBOX("theta must be at least 0 and well below 0.5; 0.01 to 0.03 is the usual range.");
+      MSGBOX((CHAR(952) + " must be at least 0 and well below 0.5; 0.01 to 0.03 is the usual range."));
       RETURN;
     END;
     dmTh := stT;
@@ -1987,7 +2001,7 @@ BEGIN
   DIMGROB_P(G2, 320, 240, #FFFFFFh);
   // beta 3c: the title moved left (x 30 before), and the teaching-aid
   // notice sits at the right of the title row (Roger, 19 Oct 2026)
-  TEXTOUT_P("log10 LR against theta", G2, 24, 2, 2, dmBLUE);
+  TEXTOUT_P(("log10 LR against " + CHAR(952)), G2, 24, 2, 2, dmBLUE);
   TEXTOUT_P("Teaching aid only", G2, 202, 6, 1, dmRED);
   // the usual range, theta 0.01 to 0.03, as a light green band
   tsX := dmP2L + IP(0.2 * tsW);
@@ -2049,16 +2063,16 @@ BEGIN
       FOR tsI FROM dmP2T TO dmP2B STEP 3 DO PIXON_P(G2, tsX, tsI, dmORNG); END;
       FOR tsI FROM dmP2L TO tsX STEP 3 DO PIXON_P(G2, tsI, tsY, dmORNG); END;
       RECT_P(G2, tsX - 2, tsY - 2, tsX + 2, tsY + 2, dmORNG, dmORNG);
-      tsS2 := "at theta " + dmF(dmEdT, 4);
+      tsS2 := ("at " + CHAR(952) + " ") + dmF(dmEdT, 4);
     ELSE
-      tsS2 := "at theta " + dmF(dmEdT, 4) + " (off plot)";
+      tsS2 := ("at " + CHAR(952) + " ") + dmF(dmEdT, 4) + " (off plot)";
     END;
     TEXTOUT_P(tsS, G2, dmP2R - 2 - 6 * DIM(tsS), dmP2T + 2, 1, dmORNG);
     TEXTOUT_P(tsS2, G2, dmP2R - 2 - 6 * DIM(tsS2), dmP2T + 12, 1, dmORNG);
   END;
   IF dmEdT == -1 THEN
     TEXTOUT_P("no band edge", G2, dmP2R - 74, dmP2T + 2, 1, dmORNG);
-    TEXTOUT_P("up to theta 0.25", G2, dmP2R - 98, dmP2T + 12, 1, dmORNG);
+    TEXTOUT_P(("up to " + CHAR(952) + " 0.25"), G2, dmP2R - 98, dmP2T + 12, 1, dmORNG);
   END;
   // the verbal ladder at the right
   dmLadDraw(G2, dmLdX1, dmLdX2, dmLdT, dmLdB, 1);
@@ -2070,7 +2084,7 @@ BEGIN
   ELSE
     TEXTOUT_P("0 to 0.03: LR " + CHAR(215) + " " + dmF(10^(dmPtV(13) - dmPtV(1)), 3) + " (your p), " + CHAR(215) + " " + dmF(10^(dmPtH(13) - dmPtH(1)), 3) + " (halved)", G2, 4, 195, 1, #000000h, 312);
   END;
-  TEXTOUT_P("drag or Left/Right = theta, Ent = adopt, Esc = menu", G2, 4, 206, 1, dmFOOT, 312);
+  TEXTOUT_P(("drag or Left/Right = " + CHAR(952) + ", Ent = adopt, Esc = menu"), G2, 4, 206, 1, dmFOOT, 312);
 END;
 
 // One frame of the theta plot: the static picture from G2, then
@@ -2090,7 +2104,7 @@ BEGIN
     tfV := dmInterp(dmPtV, tfTh);
     tfY := dmP2B - IP((tfV - dmYLo) / (dmYHi - dmYLo) * (dmP2B - dmP2T));
     RECT_P(G1, tfX - 2, tfY - 2, tfX + 3, tfY + 2, dmGRN, dmGRN);
-    TEXTOUT_P("theta " + dmF(tfTh, 4), G1, 4, 20, 1, dmGRN);
+    TEXTOUT_P((CHAR(952) + " ") + dmF(tfTh, 4), G1, 4, 20, 1, dmGRN);
     IF dmExcl > 0 THEN
       // the curve is the other loci only: no place on the ladder
       TEXTOUT_P("other loci: LR " + dmLRS(10^tfV), G1, 80, 20, 1, dmRED);
@@ -2100,7 +2114,7 @@ BEGIN
       dmMark(dmLdX1, dmLdX2, dmLdT, dmLdB, tfV);
     END;
   ELSE
-    TEXTOUT_P("your theta " + dmThS(dmTh) + " is off the plot: drag", G1, 4, 20, 1, dmGRN);
+    TEXTOUT_P(("your " + CHAR(952) + " ") + dmThS(dmTh) + " is off the plot: drag", G1, 4, 20, 1, dmGRN);
   END;
   dmMenu();
 END;
@@ -2227,7 +2241,7 @@ BEGIN
   RECT_P(G1, 4, 2, 315, 216, dmORNG, dmPANL);
   TEXTOUT_P("Likelihood ratios by locus", G1, 12, 5, 2, dmBLUE);
   TEXTOUT_P("Hp: " + dmHypStr(dmHp) + "    Hd: " + dmHypStr(dmHd), G1, 12, 22, 1, #000000h, 300);
-  TEXTOUT_P("theta = " + dmThS(dmTh), G1, 12, 33, 1, dmGRAY);
+  TEXTOUT_P((CHAR(952) + " = ") + dmThS(dmTh), G1, 12, 33, 1, dmGRAY);
   TEXTOUT_P("tap row/Ent = drop, Esc = menu", G1, 130, 33, 1, dmFOOT);
   rsH := MIN(11, IP(124 / dmNL));
   dmTbY := 43; dmTbH := rsH;
@@ -2466,7 +2480,7 @@ BEGIN
 END;
 
 // A CAS answer written for people: dmq1 ... dmqm become p and the
-// allele's name (p12, p14.3), dmt becomes dmTHG ("th"), and * the
+// allele's name (p12, p14.3), dmt becomes dmTHG (theta), and * the
 // times sign.  Otherwise the text is the CAS's own.
 dmFxShow(fsT)
 BEGIN
@@ -2490,7 +2504,7 @@ BEGIN
   LOCAL fxMx;
   fxLR := dmLR(fxI);
   fxY := dmPcY - 11;
-  TEXTOUT_P("LR as a formula in p and " + dmTHG + " (theta):", G1, 10, fxY, 1, #000000h, 230);
+  TEXTOUT_P("LR as a formula in p and " + dmTHG + ":", G1, 10, fxY, 1, #000000h, 230);
   IF dmCasOK == 1 AND fxLR > 0 THEN
     TEXTOUT_P("exact (CAS)", G1, 246, fxY, 1, dmFOOT);
   ELSE
@@ -2517,24 +2531,24 @@ BEGIN
         IF SIZE(dmUSet(fxL)) > 2 * dmHp(4) THEN fxOn := 2; END;
       END;
       IF fxOn == 1 THEN
-        TEXTOUT_P("LR = 0 for every p and theta: a known", G1, 10, fxY, 1, dmRED, 300);
+        TEXTOUT_P(("LR = 0 for every p and " + CHAR(952) + ": a known"), G1, 10, fxY, 1, dmRED, 300);
         TEXTOUT_P("contributor under Hp has an allele the", G1, 10, fxY + 11, 1, dmRED, 300);
         TEXTOUT_P("mixture does not show, so P(E|Hp) = 0.", G1, 10, fxY + 22, 1, dmRED, 300);
       END;
       IF fxOn == 2 THEN
-        TEXTOUT_P("LR = 0 for every p and theta: under Hp", G1, 10, fxY, 1, dmRED, 300);
+        TEXTOUT_P(("LR = 0 for every p and " + CHAR(952) + ": under Hp"), G1, 10, fxY, 1, dmRED, 300);
         TEXTOUT_P("the contributors cannot account for every", G1, 10, fxY + 11, 1, dmRED, 300);
         TEXTOUT_P("allele of M, so P(E|Hp) = 0.", G1, 10, fxY + 22, 1, dmRED, 300);
       END;
       IF fxOn == 0 THEN
-        TEXTOUT_P("LR = 0 at these p and theta: P(E|Hp) is", G1, 10, fxY, 1, dmRED, 300);
+        TEXTOUT_P(("LR = 0 at these p and " + CHAR(952) + ": P(E|Hp) is"), G1, 10, fxY, 1, dmRED, 300);
         TEXTOUT_P("below the smallest number the calculator", G1, 10, fxY + 11, 1, dmRED, 300);
         TEXTOUT_P("holds (underflow), so it counts as 0.", G1, 10, fxY + 22, 1, dmRED, 300);
       END;
     END;
     IF fxLR < 0 THEN
       TEXTOUT_P("Hd cannot produce this mixture: P(E|Hd) = 0", G1, 10, fxY, 1, dmRED, 300);
-      TEXTOUT_P("for every p and theta, so no LR, no formula.", G1, 10, fxY + 11, 1, dmRED, 300);
+      TEXTOUT_P(("for every p and " + CHAR(952) + ", so no LR, no formula."), G1, 10, fxY + 11, 1, dmRED, 300);
     END;
     DEFAULT
       // the formula with theta, if the CAS gave one that fits
@@ -2553,7 +2567,7 @@ BEGIN
         // say why it is not here
         fxS := "Too many terms to send to the CAS here.";
         IF dmFxS == 2 THEN fxS := "The CAS did not answer: no formula here."; END;
-        IF dmFxS == 1 THEN fxS := "With theta: " + STRING(DIM(dmFxT), 2, 0) + " characters, too long to show."; END;
+        IF dmFxS == 1 THEN fxS := ("With " + CHAR(952) + ": ") + STRING(DIM(dmFxT), 2, 0) + " characters, too long to show."; END;
         TEXTOUT_P(fxS, G1, 10, fxY, 1, dmGRAY, 304);
         fxY := fxY + 11;
       END;
@@ -2562,14 +2576,14 @@ BEGIN
       // is left
       fxMx := 162;
       IF dmF0S == 1 THEN
-        fxL := dmWrap("theta = 0: LR = " + dmFxShow(dmF0T), 48);
+        fxL := dmWrap((CHAR(952) + " = 0: LR = ") + dmFxShow(dmF0T), 48);
         IF fxY + 11 * (SIZE(fxL) - 1) <= fxMx THEN
           FOR fxJ FROM 1 TO SIZE(fxL) DO
             TEXTOUT_P(fxL(fxJ), G1, 10, fxY, 1, dmBLUE, 304);
             fxY := fxY + 11;
           END;
         ELSE
-          TEXTOUT_P("At theta = 0: " + STRING(DIM(dmF0T), 2, 0) + " characters, too long to show.", G1, 10, fxY, 1, dmGRAY, 304);
+          TEXTOUT_P(("At " + CHAR(952) + " = 0: ") + STRING(DIM(dmF0T), 2, 0) + " characters, too long to show.", G1, 10, fxY, 1, dmGRAY, 304);
           fxY := fxY + 11;
         END;
       END;
@@ -2604,7 +2618,7 @@ BEGIN
   RECT_P(G1, 2, 1, 317, 216, dmORNG, dmPANL);
   TEXTOUT_P("Locus " + STRING(dpI, 2, 0) + " of " + STRING(dmNL, 2, 0), G1, 10, 4, 2, dmBLUE);
   IF dmInc(dpI) == 0 THEN TEXTOUT_P("dropped", G1, 130, 8, 1, dmGRAY); END;
-  TEXTOUT_P("theta = " + dmThS(dmTh), G1, 210, 8, 1, dmGRAY);
+  TEXTOUT_P((CHAR(952) + " = ") + dmThS(dmTh), G1, 210, 8, 1, dmGRAY);
   TEXTOUT_P("Hp: " + dmHypStr(dmHp), G1, 10, 22, 1, #000000h);
   TEXTOUT_P("P(E|Hp) = " + dmBig(dmPp(dpI)), G1, 180, 22, 1, dmBLUE);
   TEXTOUT_P("Hd: " + dmHypStr(dmHd), G1, 10, 33, 1, #000000h);
@@ -2716,12 +2730,12 @@ BEGIN
     dpQ := (dpNa * dmTh + (1 - dmTh) * dmFq(dpA)) / (1 + (dpN - 1) * dmTh);
     dpS := dmAllStr({dmLab(dpA)});
     IF dmTh == 0 THEN
-      TEXTOUT_P("theta = 0: plain p, the product rule.  Next allele", G1, 10, dmPcY + 39, 1, dmGRAY, 300);
+      TEXTOUT_P((CHAR(952) + " = 0: plain p, the product rule.  Next allele"), G1, 10, dmPcY + 39, 1, dmGRAY, 300);
       TEXTOUT_P(dpS + ": p = " + dmF(dmFq(dpA), 3) + " whatever has been seen.", G1, 10, dmPcY + 50, 1, dmGRAY, 300);
     ELSE
       TEXTOUT_P("Next allele " + dpS + ": n = " + STRING(dpN, 2, 0) + " seen, " + STRING(dpNa, 2, 0) + " of them " + dpS + " (NRC II):", G1, 10, dmPcY + 39, 1, dmBLUE, 300);
       TEXTOUT_P("(" + STRING(dpNa, 2, 0) + CHAR(215) + dmThS(dmTh) + " + " + dmThS(1 - dmTh) + CHAR(215) + dmF(dmFq(dpA), 3) + ") / (1 + " + STRING(dpN - 1, 2, 0) + CHAR(215) + dmThS(dmTh) + ") = " + dmF(dpQ, 4), G1, 10, dmPcY + 50, 1, dmBLUE, 304);
-      TEXTOUT_P("plain p = " + dmF(dmFq(dpA), 3) + " becomes " + dmF(dpQ, 3) + " with theta", G1, 10, dmPcY + 61, 1, dmMAG, 300);
+      TEXTOUT_P("plain p = " + dmF(dmFq(dpA), 3) + " becomes " + dmF(dpQ, 3) + (" with " + CHAR(952)), G1, 10, dmPcY + 61, 1, dmMAG, 300);
     END;
 
     // ---- the combined result ----
@@ -2734,9 +2748,9 @@ BEGIN
     // random match probability -- 1/(2pq) or 1/p^2 at theta = 0,
     // the theta-corrected match probability otherwise
     IF dmTh == 0 THEN
-      TEXTOUT_P("single source: LR = 1/(2pq) or 1/p^2 = 1/RMP", G1, 12, dmPcY + 83, 1, dmGRN, 300);
+      TEXTOUT_P(("single source: LR = 1/(2pq) or 1/p" + CHAR(178) + " = 1/RMP"), G1, 12, dmPcY + 83, 1, dmGRN, 300);
     ELSE
-      TEXTOUT_P("single source: LR = 1/RMP, theta-corrected", G1, 12, dmPcY + 83, 1, dmGRN, 300);
+      TEXTOUT_P(("single source: LR = 1/RMP, " + CHAR(952) + "-corrected"), G1, 12, dmPcY + 83, 1, dmGRN, 300);
     END;
   END;
   // the footer row is also a button (dmLocusPanel): tap it, or press -,
@@ -3056,7 +3070,7 @@ BEGIN
   dmInc := {1, 1, 1};
   dmNL := 3;
   dmRecalc();
-  MSGBOX("Loaded: victim + suspect vs victim + 1 unknown, 3 loci, theta = " + dmThS(dmTh) + ".  Locus 1: victim 12/13, suspect 14/15, mixture 12,13,14,15.  Now see Results and the plots.");
+  MSGBOX(("Loaded: victim + suspect vs victim + 1 unknown, 3 loci, " + CHAR(952) + " = ") + dmThS(dmTh) + ".  Locus 1: victim 12/13, suspect 14/15, mixture 12,13,14,15.  Now see Results and the plots.");
 END;
 
 // One help page, composed in G1.
@@ -3093,8 +3107,8 @@ BEGIN
     TEXTOUT_P("are a) = (n_a th + (1-th) p_a)/(1 + (n-1) th)", G1, 12, 76, 1, dmMAG);
     TEXTOUT_P("ALL typed people condition it, contributors", G1, 12, 89, 1, #000000h);
     TEXTOUT_P("or not (Curran et al. 1999).  0.01 is usual,", G1, 12, 102, 1, #000000h);
-    TEXTOUT_P("0.03 conservative.  The theta plot shows how", G1, 12, 115, 1, #000000h);
-    TEXTOUT_P("much the LR falls as theta rises.", G1, 12, 128, 1, #000000h);
+    TEXTOUT_P(("0.03 conservative.  The " + CHAR(952) + " plot shows how"), G1, 12, 115, 1, #000000h);
+    TEXTOUT_P(("much the LR falls as " + CHAR(952) + " rises."), G1, 12, 128, 1, #000000h);
     // beta 3c (B4): "weak" starts at 2, as in dmVerbal and dmBand (an LR
     // from 1 to 2 is "about equal support"), the ENFSI 2015 scale
     TEXTOUT_P("ENFSI scale: LR 2-10 weak, 10-100 moderate,", G1, 12, 142, 1, dmGRN);
@@ -3110,7 +3124,7 @@ BEGIN
     TEXTOUT_P("numbers; again (or Ent) for the locus page.", G1, 12, 60, 1, dmBLUE);
     TEXTOUT_P("+ or a tap on the title: the waterfall.", G1, 12, 71, 1, dmBLUE);
     TEXTOUT_P("THETA PLOT: drag across it (or Left/Right);", G1, 12, 85, 1, dmGRN);
-    TEXTOUT_P("LR and the ladder follow.  Ent adopts theta.", G1, 12, 96, 1, dmGRN);
+    TEXTOUT_P(("LR and the ladder follow.  Ent adopts " + CHAR(952) + "."), G1, 12, 96, 1, dmGRN);
     TEXTOUT_P("TABLE: tap a row (or Up/Down, Ent) to drop", G1, 12, 110, 1, dmMAG);
     TEXTOUT_P("that locus -- as if not typed; tap to restore.", G1, 12, 121, 1, dmMAG);
     TEXTOUT_P("LOCUS PAGE: tap the boxes (or +) for Hp / Hd:", G1, 12, 135, 1, #000000h);
@@ -3124,17 +3138,17 @@ BEGIN
     // beta 3: the two new features, in teaching terms
     TEXTOUT_P("THE LR AS A FORMULA: on a locus page press -", G1, 12, 24, 1, dmMAG);
     TEXTOUT_P("(or tap the footer).  The CAS writes the LR", G1, 12, 37, 1, dmMAG);
-    TEXTOUT_P("in the allele frequencies p and theta (th),", G1, 12, 50, 1, dmMAG);
+    TEXTOUT_P(("in the allele frequencies p and " + CHAR(952) + ","), G1, 12, 50, 1, dmMAG);
     // beta 3c: dmProb now sums the same probability another way
     TEXTOUT_P("from the same model the program uses, and", G1, 12, 63, 1, dmMAG);
-    TEXTOUT_P("simplifies it.  At theta = 0 it is the product", G1, 12, 76, 1, dmBLUE);
+    TEXTOUT_P(("simplifies it.  At " + CHAR(952) + " = 0 it is the product"), G1, 12, 76, 1, dmBLUE);
     TEXTOUT_P("rule, e.g. LR = 1/(2 p14 p15).  The number", G1, 12, 89, 1, dmBLUE);
     TEXTOUT_P("under it is the program's own LR.  Badge:", G1, 12, 102, 1, dmBLUE);
     TEXTOUT_P("exact (CAS), or decimal if the CAS failed.", G1, 12, 115, 1, dmBLUE);
-    TEXTOUT_P("BAND EDGE (theta plot, orange): the theta at", G1, 12, 131, 1, dmORNG);
+    TEXTOUT_P(("BAND EDGE (" + CHAR(952) + " plot, orange): the " + CHAR(952) + " at"), G1, 12, 131, 1, dmORNG);
     TEXTOUT_P("which the combined LR crosses the next ENFSI", G1, 12, 144, 1, dmORNG);
-    TEXTOUT_P("band edge as theta rises from yours: how far", G1, 12, 157, 1, dmORNG);
-    TEXTOUT_P("theta must go before the words change.", G1, 12, 170, 1, dmORNG);
+    TEXTOUT_P(("band edge as " + CHAR(952) + " rises from yours: how far"), G1, 12, 157, 1, dmORNG);
+    TEXTOUT_P((CHAR(952) + " must go before the words change."), G1, 12, 170, 1, dmORNG);
     TEXTOUT_P("Found by bisection in the program, not by CAS.", G1, 12, 183, 1, dmGRAY);
   END;
   TEXTOUT_P("tap or Ent = next page, Esc = menu", G1, 12, 204, 1, dmFOOT);
@@ -3199,7 +3213,7 @@ BEGIN
   // beta 3: the formula view and the band edge
   dmFrm := 0; dmFxK := ""; dmFxT := ""; dmFxS := 0;
   dmF0K := ""; dmF0T := ""; dmF0S := 0; dmCasOK := 0;
-  dmTHG := "th";                                           // CHAR(952) after GfxProbe T14
+  dmTHG := CHAR(952);                                      // theta: GfxProbe T14 renders it
   dmCasMx := 3000;                                         // longest CAS text sent
   dmEdT := -2; dmEdV := 0; dmEdOK := 0;
   dmClearLoci();
@@ -3311,10 +3325,10 @@ BEGIN
     CHOOSE(mnI, mnT, {
       "Hypotheses:  " + dmHypStr(dmHp) + "  vs  " + dmHypStr(dmHd),
       "Enter a locus",
-      "Coancestry theta = " + dmThS(dmTh),
+      ("Coancestry " + CHAR(952) + " = ") + dmThS(dmTh),
       "Results (tap a row to drop)",
       "Plot: LR by locus (tap a bar)",
-      "Plot: LR against theta (drag)",
+      ("Plot: LR against " + CHAR(952) + " (drag)"),
       "Ladder: the LR locus by locus",
       "Prosecutor's fallacy",
       "Load the worked example",
@@ -3339,7 +3353,7 @@ BEGIN
   // Home shows this line; nothing is left open on the screen
   mnS := ", " + STRING(dmNL, 2, 0) + " loci";
   IF dmNDrop > 0 THEN mnS := mnS + " (" + STRING(dmNDrop, 2, 0) + " dropped)"; END;
-  mnS := mnS + ", theta = " + dmThS(dmTh);
+  mnS := mnS + (", " + CHAR(952) + " = ") + dmThS(dmTh);
   IF dmExcl > 0 THEN
     RETURN "DNAMixLR: EXCLUDED at locus " + STRING(dmExcl, 2, 0) + " (LR = 0)" + mnS;
   END;

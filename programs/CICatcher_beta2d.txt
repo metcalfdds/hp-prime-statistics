@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// CICATCHER - beta 2c
+// CICATCHER - beta 2d
 // Confidence intervals: "95 % of WHAT?"
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
@@ -41,6 +41,19 @@
 //   the main menu's "New setup: interval, population, n" is now
 //   "New: interval, population, n"; nothing else a user sees
 //   changed, apart from help page 4's last line).
+//
+// beta 2d (20 Oct 2026): symbols instead of spelled-out names, on screen
+//   only (Roger, 20 Oct 2026: "use the symbols we developed"; every
+//   program of the 20 checked).  In the text the student sees, the formula
+//   help's "+/-" and "sqrt("
+//   now use the house glyphs: +/- (CHAR(177)), sqrt (CHAR(8730)).  Text built
+//   for the CAS is
+//   untouched (it must stay ASCII), and so are Home variable names, the
+//   "+/-" that names the + and - keys, and comments.  No number, layout
+//   position or logic changed.
+//   In this program the glyphs are built with CHAR(), as its other
+//   display glyphs are, so the source stays pure ASCII.
+//
 //
 // beta 2c (19 Oct 2026): two lines a character or two too wide for
 //   their boxes, C-C1 and C-C2 (fleet review 19 Oct 2026,
@@ -1793,9 +1806,9 @@ BEGIN
     "grows, red lines turn blue and the catch rate",
     "rises. 99 % catches more but says less.",
     "",
-    "z: " + cqXb + " +/- z " + cqTms + " " + cqSgS + "/sqrt(n) uses the TRUE " + cqSgS + ",",
+    "z: " + cqXb + (" " + CHAR(177) + " z ") + cqTms + " " + cqSgS + ("/" + CHAR(8730) + "(n) uses the TRUE ") + cqSgS + ",",
     "so every z line has the same length.",
-    "t: " + cqXb + " +/- t " + cqTms + " s/sqrt(n) uses the sample's s.",
+    "t: " + cqXb + (" " + CHAR(177) + " t ") + cqTms + (" s/" + CHAR(8730) + "(n) uses the sample's s."),
     "s changes from sample to sample, so t lines",
     "differ in length, and t* is bigger than z* to",
     "pay for it: t(9) = 2.262 against z = 1.960.",
@@ -1806,7 +1819,7 @@ BEGIN
   IF hpK == 4 THEN RETURN; END;
 
   hpK := cqPage("Proportions: Wald and Wilson", {
-    "Wald: " + cqPh + " +/- z " + cqTms + " sqrt(" + cqPh + "(1 - " + cqPh + ")/n), the",
+    "Wald: " + cqPh + (" " + CHAR(177) + " z ") + cqTms + (" " + CHAR(8730) + "(") + cqPh + "(1 - " + cqPh + ")/n), the",
     "textbook interval. Centre and width both",
     "come from " + cqPh + ", which fails when n " + cqTms + " p is small:",
     "at p = 0.10, n = 20 Wald catches only 87.6 %",
@@ -1847,8 +1860,8 @@ BEGIN
     "A city asks n = 100 residents: 'Are you afraid",
     "to walk alone at night?' 38 say yes, so",
     cqPh + " = 0.38 and the 95 % Wald interval is",
-    "0.38 +/- 1.96 " + cqTms + " sqrt(0.38 " + cqTms + " 0.62 / 100)",
-    "= 0.38 +/- 0.095, from 28.5 % to 47.5 %.",
+    ("0.38 " + CHAR(177) + " 1.96 ") + cqTms + (" " + CHAR(8730) + "(0.38 ") + cqTms + " 0.62 / 100)",
+    ("= 0.38 " + CHAR(177) + " 0.095, from 28.5 % to 47.5 %."),
     "",
     "RIGHT: 'We are 95 % confident the true share",
     "is between 28.5 % and 47.5 %': the method",

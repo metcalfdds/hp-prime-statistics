@@ -4,11 +4,12 @@
 
 Teaching programs for the HP Prime graphing calculator, written in PPL and MicroPython. They were originally intended for upper-level university statistics courses, and also to show off some of the capabilities of the HP Prime calculator: the colour screen, the touch screen, and the MicroPython engine running alongside PPL.
 
-**And a set of notes on what the Prime actually does**, as opposed to what the manual says: hard limits, commands that behave differently than documented, the MicroPython bridge and how it fails. Those notes are not specific to statistics. If you write PPL for anything, [docs/lessons-learned_v7l.md](docs/lessons-learned_v7l.md) is the part worth your time, I hope.
+**And a set of notes on what the Prime actually does**, as opposed to what the manual says: hard limits, commands that behave differently than documented, the MicroPython bridge and how it fails. Those notes are not specific to statistics. If you write PPL for anything, [docs/lessons-learned_v7n.md](docs/lessons-learned_v7n.md) is the part worth your time, I hope.
 
 Everything here is **free for educational and personal use**. See [LICENSE](LICENSE.txt).
 
-> **Test status, 19 October 2026.**
+> **Test status, 20 October 2026.**
+> - **20 October 2026: symbols on screen.** Every program was checked for symbols spelled out in the text a student sees. Sixteen of the eighteen here now write χ², x̄, p̂, ², √, ≥, ≤, ±, ×, →, ∞, θ, μ, σ, ρ, φ and the subscripts ₀ ₁ ₂ as symbols (BayesTree, Norm3 and StudRange already did). Only the text changed: the code outside the strings is line-for-line the same, nothing the CAS receives changed, and each program passed the lint gate again. NormExplorer beta 42c also keeps the standardize animation at the same pace on a slow calculator (42b). π, η and τ are new on screen and are on the checklists.
 > - **19 October 2026: a critical sweep and the fixes it called for.** Six reviewers read every program in full and checked about 82,000 numbers against SciPy, statsmodels and exact arithmetic. They found **no wrong formula**. What they found was at the edges: four crashes on odd or edited inputs, six wrong numbers on extreme inputs or in Home exports, and about 25 wrong or stale lines of text. Every program but one has a new lettered version that fixes them (GaltonBoard needed nothing; its new version adds only the disclaimer below). Highlights: ChiTable's risk difference now uses Newcombe's interval, StatDist computes every right tail family by family, and DNAMixLR computes its probabilities without the cancellation that could turn a large LR into "excluded". Every version passes its verify script (re-run independently) and the lint gate. Not yet re-run on the emulator.
 > - **Two emulator rounds.** These programs have run on the **HP Prime Virtual Calculator** (2.4.2, the same 2026-09-09 firmware as the calculators). Round 1 tested the touch-and-graphics versions of 16 October and found six bugs. Round 2 tested the versions that fixed them, with their exact answers from the CAS. Every number checked matched SciPy or exact arithmetic.
 > - **18 October 2026:** nine programs got a lettered version (BayesTree 8d, StudRange 15c, ErrorRate 1c, Norm3 and Burr3 2.4a, SampDist 2.3a, PowerViz 2.5c, StatDist 2.7d, EpiStats 1.7c) that drops the "=" before a "<" or ">" ("p < 0.001", not "p = < 0.001") and computes every upper tail as a lower tail, so a tiny probability no longer rounds to 0 in the Prime's 12 digits. Verified in the PC harness; not yet re-run on the emulator.
@@ -19,7 +20,7 @@ Everything here is **free for educational and personal use**. See [LICENSE](LICE
 >   - BayesTree and StudRange skipped a real tap after a page closed;
 >   - menu lines cut off at the right edge (all but one: DNAMixLR's "Hypotheses" line waits on a wording choice).
 > - **Retested on the emulator.** The fix versions ran there the same afternoon, and all passed. The one surprise was CASProbe beta 1c: its new test T43b failed because it matched the text with a hyphen, where the Prime prints a Unicode minus. The test was wrong, not the calculator. CASProbe beta 1d fixes it, and on the emulator it gives 45 pass, 8 fail, as predicted.
-> - **Not yet on hardware:** none of these versions has been run on a G1 or G2. Earlier versions of ChiTable, NormExplorer, StudRange and BayesTree were tested on both.
+> - **On hardware:** the 19 October versions were loaded on a G1 and a G2 on 20 October 2026, and the first G1 checks (speed, taps, five Home-screen questions) are in the notes; the full checklists have not yet been run there. The 20 October symbol versions have not yet run on a calculator. Earlier versions of ChiTable, NormExplorer, StudRange and BayesTree were tested on both.
 > - **How each program was checked:** every program here passed a four-tool lint gate. It was also run on a PC in a test harness that drives it like a student at the keys, with its numbers checked against SciPy and statsmodels.
 > - **Checklists:** each one has a device-test checklist in [docs/changes/](docs/changes/). The emulator's full reports are in [docs/dev/](docs/dev/).
 
@@ -58,14 +59,14 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 
 ### Distributions
 
-**NormExplorer** (beta 42a): a normal-distribution workbench.
+**NormExplorer** (beta 42c): a normal-distribution workbench.
 - Any μ and σ, four kinds of probability question and three inverse ones, a z-formula solver, Cohen's d, and a standardize animation.
 - A live explorer: drag either bound of a shaded interval. "More" brings up a second page, so the arrow keys can move a bound, μ or σ.
 - Reads your own data from the Statistics apps.
 
-**Norm3 and Burr3** (v2.4b, they take arguments; the Program Catalog asks for them): drag x₀ and watch the area and the S-curve together. Tap the S-curve for the inverse. Burr3 shows its mode, median and mean sliding apart, and announces the moment cases.
+**Norm3 and Burr3** (v2.4b and v2.4c, they take arguments; the Program Catalog asks for them): drag x₀ and watch the area and the S-curve together. Tap the S-curve for the inverse. Burr3 shows its mode, median and mean sliding apart, and announces the moment cases.
 
-**StatDist** (v2.7e): 27 distributions, each result a plot you can touch. Drag x or k, the shading follows, and the window snaps to round values. Overlays show the normal approximation, N(0, 1) behind t, and the CDF as an S-curve. A Gallery opens six examples with one tap.
+**StatDist** (v2.7f): 27 distributions, each result a plot you can touch. Drag x or k, the shading follows, and the window snaps to round values. Overlays show the normal approximation, N(0, 1) behind t, and the CDF as an S-curve. A Gallery opens six examples with one tap.
 
 **StudRange** (beta 15d): the studentized range (Tukey's q).
 - p from q, the critical value from α, Tukey HSD, and an interactive plot.
@@ -76,37 +77,37 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 
 ### Sampling, estimation and power
 
-**CentralLimit** (beta 3c, an app): watch one sample happen, its members lighting up and their mean dropping into the pile. Then drag along the top panel to choose n, and see the square-root law on its own page. After Colin Croft's HP 39G aplet (2003).
+**CentralLimit** (beta 3d, an app): watch one sample happen, its members lighting up and their mean dropping into the pile. Then drag along the top panel to choose n, and see the square-root law on its own page. After Colin Croft's HP 39G aplet (2003).
 
-**SampDist** (v2.3b): the sampling distribution of x̄, with the population drawn faintly behind it.
+**SampDist** (v2.3c): the sampling distribution of x̄, with the population drawn faintly behind it.
 - **n×4** halves the width.
 - The nearer bound follows your finger.
 - "Watch sample means" drops forty of them onto the axis.
 
-**CICatcher** (beta 2c): fifty confidence intervals stack up, blue if it catches the truth (the green line) and red if it misses. **Drag the confidence level**: every interval stretches or shrinks, and the catch count updates exactly without new samples. Covers z, t, Wald, Wilson and the exact Clopper–Pearson interval.
+**CICatcher** (beta 2d): fifty confidence intervals stack up, blue if it catches the truth (the green line) and red if it misses. **Drag the confidence level**: every interval stretches or shrinks, and the catch count updates exactly without new samples. Covers z, t, Wald, Wilson and the exact Clopper–Pearson interval.
 
-**GaltonBoard** (beta 3d): Galton's quincunx.
+**GaltonBoard** (beta 3e): Galton's quincunx.
 - **Pour mode:** hold a finger on the funnel and a stream of balls cascades through the pegs.
 - **Drag sideways** to change p.
 - **Drop 100,000** runs in MicroPython.
 - Tap a bar for its binomial probability and the normal area.
 
-**PowerViz** (v2.5d): **drag the H₁ curve**, and the α, β and power regions reshade live. Drag the critical line to set α, and drag up or down for n. n₈₀ appears in the panel and on the power-versus-n curve.
+**PowerViz** (v2.5e): **drag the H₁ curve**, and the α, β and power regions reshade live. Drag the critical line to set α, and drag up or down for n. n₈₀ appears in the panel and on the power-versus-n curve.
 
 ### Tables and tests
 
-**ChiTable** (beta 3d): chi-square for a 2 × 2, 2 × 3 or 3 × 2 table.
+**ChiTable** (beta 3e): chi-square for a 2 × 2, 2 × 3 or 3 × 2 table.
 - The full statistics: expected counts, G², Cramér's V, adjusted residuals, and for a 2 × 2 Fisher, RR, OR and the risk difference with Newcombe's interval.
 - **Drag an observed bar**, and every expected bar moves with χ² and p.
 - **Drag the critical line** on the χ² curve.
 - An independence morph, a Fisher bar plot, and the Florida death-penalty tables as a Simpson's-paradox page.
 - [docs/chitable-guide.md](docs/chitable-guide.md) is the user's guide.
 
-**TrendTest** (beta 3d): chi-square for linear trend in a 2 × k table. **Drag a dot** to change a level's proportion and watch the trend test respond. Includes a confidence band and Wilson intervals.
+**TrendTest** (beta 3e): chi-square for linear trend in a 2 × k table. **Drag a dot** to change a level's proportion and watch the trend test respond. Includes a confidence band and Wilson intervals.
 
-**TestChooser** (beta 2a): which statistical test? It is a tappable flowchart: tap the outcome's scale and the design, and the path draws itself to a test. There is also a tappable table, and a 20-case criminal-justice and forensic quiz. After Glantz's *Primer of Biostatistics*.
+**TestChooser** (beta 2b): which statistical test? It is a tappable flowchart: tap the outcome's scale and the design, and the path draws itself to a test. There is also a tappable table, and a 20-case criminal-justice and forensic quiz. After Glantz's *Primer of Biostatistics*.
 
-**EpiStats** (v1.7d): epidemiology.
+**EpiStats** (v1.7e): epidemiology.
 - **2 × 2 tables** in cohort, diagnostic and paired layouts: McNemar, Yule's Q, and a bar for every possible table behind Fisher's test. Call `EpiStats2x2(a,b,c,d)` from Home.
 - **Risk and odds** with Wilson intervals, plus an NNT icon array.
 - **Incidence rates and sample size.**
@@ -114,9 +115,9 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 
 ### Correlation and regression
 
-**ScatterLab** (beta 2c): build a scatterplot with your finger. Add, drag or delete points, and the least-squares line, r, r², SSE and the residuals follow. Guess mode lets you fit a line by eye first, then shows that least squares really does have the smallest SSE.
+**ScatterLab** (beta 2d): build a scatterplot with your finger. Add, drag or delete points, and the least-squares line, r, r², SSE and the residuals follow. Guess mode lets you fit a line by eye first, then shows that least squares really does have the smallest SSE.
 
-**BiNorm3D** (beta 1a): the bivariate normal as a wireframe you turn with a finger. It adds a contour view, and a slice that shows regression to the mean.
+**BiNorm3D** (beta 1b): the bivariate normal as a wireframe you turn with a finger. It adds a contour view, and a slice that shows regression to the mean.
 
 ### Bayes and forensic science
 
@@ -125,13 +126,13 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 - Sensitivity and specificity can be dragged on the branches.
 - A Fagan nomogram, a second test, and forensic labels.
 
-**DNAMixLR** (beta 3c): the likelihood ratio for a mixed DNA profile, locus by locus, with the NRC II θ correction (Weir et al. 1997; Curran et al. 1999).
+**DNAMixLR** (beta 3d): the likelihood ratio for a mixed DNA profile, locus by locus, with the NRC II θ correction (Weir et al. 1997; Curran et al. 1999).
 - **Drag θ** and watch the LR fall down an ENFSI verbal ladder.
 - Tap a locus for its numbers, and drop loci from the table.
 - A prosecutor's-fallacy page.
 - **A teaching tool only:** casework needs validated software and a qualified analyst.
 
-**ErrorRate Lab** (beta 1d): "Zero errors in 30 proficiency tests: how good is the examiner?"
+**ErrorRate Lab** (beta 1e): "Zero errors in 30 proficiency tests: how good is the examiner?"
 - The **upper 95 % confidence bound** on the error rate, the convention PCAST (2016) asked forensic disciplines to report. The rule of three appears as the limit it is.
 - A Bayesian view.
 - A MicroPython simulation of 10,000 proficiency programmes.
@@ -173,7 +174,7 @@ Short programs for finding out what your own calculator does.
 
 ## The notes
 
-[**docs/lessons-learned_v7l.md**](docs/lessons-learned_v7l.md) is the substantial document here: everything found the expensive way across roughly forty build iterations on real hardware. It covers:
+[**docs/lessons-learned_v7n.md**](docs/lessons-learned_v7n.md) is the substantial document here: everything found the expensive way across roughly forty build iterations on real hardware. It covers:
 - hard limits;
 - command behaviour that contradicts the manual;
 - graphics and input idioms;

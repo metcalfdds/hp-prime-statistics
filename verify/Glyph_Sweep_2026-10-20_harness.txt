@@ -1,0 +1,56 @@
+Glyph sweep, 20 Oct 2026: each program's own verify script, run on the swept text in the PC harness (ppl_run_v3e)
+
+The scripts were written for the 19 Oct versions, so every check that looks for the old wording, the old version string, or
+"exactly these lines changed" fails by design. Each failure below was read; none reports a wrong number, an error or a stall.
+StatDist's script drives its menus by their text, so its menu item "Chi-square" was renamed "χ²" in four places of a copy;
+The outputs are kept with the
+author's working files.
+
+BiNorm3D_beta1b
+  `verify_BiNorm3D_beta1a.py`: 2 checks fail, "only these lines changed" (D3) and "the version strings say beta 1a" (D4); every other check passes, the source-is-ASCII check among them.
+
+Burr3_v2.4c
+  `verify_Burr3_v2.4b.py`: 3 checks fail: the help page looked up by its old wording (B5), the version string on screen (D2), and the review's own check, which fails on those two (D1). Every number passes.
+
+CICatcher_beta2d
+  `verify_CICatcher_beta2c.py`: 155 of 158 checks pass. The 3 that fail look for the routine list of beta 2c (cqHelp now differs too), the banner "beta 2c", and the old help wording in beta 1's suite. Every interval and catch level passes.
+
+CentralLimit_beta3d
+  `verify_CentralLimit_beta3c.py`: 151 of 156 checks pass. The 5 that fail list the routines and code lines that changed, and the version strings. Every number passes.
+
+DNAMixLR_beta3d
+  `verify_DNAMixLR_beta3c.py`: 167 of 188 checks pass. The 21 that fail look for "theta" on a page that now says θ ("LR as a formula in p and θ:", "θ = 0: LR = …"), or for "only these lines changed". Every LR passes.
+
+ErrorRate_beta1e
+  `verify_ErrorRate_beta1d.py`: 293 of 300 checks pass, "the file is still pure ASCII" among them. The 7 that fail list the routines and lines that changed, the version strings, and two page-identity checks against beta 1b that meet "Change α".
+
+GaltonBoard_beta3e
+  `verify_GaltonBoard_beta3c.py`, run on beta 3c (all OK) and on beta 3e: 4 checks fail on 3e, two that look for "as R → infinity" where the Poisson page now says "as R → ∞", and two that list the routines and menu lines that changed. Every probability passes.
+
+PowerViz_v2.5e
+  `verify_PowerViz_v2.5d.py`: 160 of 174 checks pass. The 14 that fail compare the sample-size page with its old text ("…)^2 = 55.64" is now "…)² = 55.64"), the textbook form, or the version strings. Every n and every power passes.
+
+SampDist_v2.3c
+  `verify_SampDist_v2.3b.py`: 351 of 354 checks pass. The 3 that fail say "only sd_fix changed", "exactly the two code lines of S1 and S2 changed" and the version strings.
+
+ChiTable_beta3e
+  `verify_ChiTable_beta3d.py`: 6,910 of 6,931 checks pass, every number against SciPy and statsmodels and "the file is still pure ASCII" among them. The 21 that fail look for the old wording (p1 - p2, p >= α, phi, chi-square is shaky, |adj| >= 2) or for "only these routines changed".
+
+EpiStats_v1.7e
+  `verify_EpiStats_v1.7d.py`: 271 of 302 checks pass. The 31 that fail look for the old wording ("Chi-Square", "sqrt(", ">="), or compare pages word by word with v1.7a to v1.7c, or list the routines that changed. Every number passes.
+
+
+NormExplorer_beta42c
+  `verify_NormExplorer_beta42b.py`: 27 of 28 checks pass, the animation's pace on fast and slow drawing among them. The 1 that fails lists the routines that changed (the Explorer, its help and the z-score message now differ too).
+
+ScatterLab_beta2d
+  `verify_ScatterLab_beta2c.py`: every check passes but 6, "the file is still pure ASCII" among the passes. The 6 look for the calculus page's old text ("sum x^2", "(y - a - bx)^2") or list the routines and lines that changed.
+
+StatDist_v2.7f
+  `verify_StatDist_v2.7e.py`, with its menu item "Chi-square" renamed "χ²" in four places so that it can reach the χ² forms: every check passes but 19. The 19 look for the old text ("P(X <= 5) = 0.876911" where the screen says "P(X ≤ 5) = 0.876911", the soft keys "P<=x", the menu "Chi-square") or list the routines that changed. Every probability equals SciPy's.
+
+TestChooser_beta2b
+  `verify_TestChooser_beta2a.py`: 238 of 252 checks pass. The 14 that fail look for the old test names ("chi-square", "1 mu") or list the routines and lines that changed.
+
+TrendTest_beta3e
+  `verify_TrendTest_beta3d.py`: 111 of 134 checks pass. The 23 that fail look for the old wording: the help titles ("Chi-square for trend"), the Home summary ("TrendTest: X2 trend"), the menu line; the script drives the menus by their text, so a renamed title also stops its later steps. Every number passes.

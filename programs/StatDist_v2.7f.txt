@@ -1,7 +1,7 @@
 #pragma mode(separator(.,;) integer(h32))
 
 // ============================================================
-// STATDIST - v2.7e
+// STATDIST - v2.7f
 // Probabilities, densities and moments for 27 distributions,
 // each drawn as a plot you can touch
 // ============================================================
@@ -33,6 +33,22 @@
 //   (ppl_run_v3e, 19 Oct 2026), not on the emulator or a calculator.
 //   Written for the 2026-09-09 firmware (2.4.2); none of its commands
 //   is new in 2.4.x, so older firmware should also work.
+//
+// v2.7f (20 Oct 2026): symbols instead of spelled-out names, on screen
+//   only (Roger, 20 Oct 2026: "use the symbols we developed").  In the
+//   text the student sees, the family names, titles and formula page's "Chi-square", "^2" and "sqrt(" now
+//   use the house glyphs: χ² (CHAR(967) CHAR(178), device-verified),
+//   ² (CHAR(178)), √ (CHAR(8730)), and the x-bar and p-hat glyphs,
+//   CHAR(57344) and CHAR(57345), HP's own private-use characters.  Text built for the CAS is
+//   untouched (it must stay ASCII), and so are Home variable names
+//   and comments.  No number, layout position or logic changed.
+//   Second pass, same day, after all 20 programs were checked: ">=", "<=",
+//   "x0", "theta", "eta", "pi", "z^2", "K*C" and the CAS pages' "infinity"
+//   now use ≥ (CHAR(8805)), ≤ (CHAR(8804)), θ (CHAR(952)), η (CHAR(951),
+//   new to the fleet), π (CHAR(960), new on screen), ² (CHAR(178)), ×
+//   (CHAR(215)), ∞ (CHAR(8734)), the subscript ₀ (CHAR(8320)).  The "+/-"
+//   that names the + and - keys is kept.
+//
 //
 // WHAT CHANGED in v2.7e (19 Oct 2026): the right tail of every family
 //   computed as a tail, and four smaller items -- D9, B1, B2, B5, B7
@@ -1137,7 +1153,7 @@ st_Name(dId)
 BEGIN
   LOCAL nmL;
   nmL := {"Normal", "Uniform", "Exponential", "Weibull", "LogNormal",
-    "Laplace", "Student t", "Chi-square", "Fisher F", "Burr XII",
+    "Laplace", "Student t", "χ²", "Fisher F", "Burr XII",
     "Gumbel (max)", "Pareto", "Rayleigh", "Logistic", "Binomial",
     "Poisson", "Geometric", "Triangular", "Cauchy", "Frechet",
     "Gompertz", "Maxwell-Boltzmann", "Erlang", "Gamma", "Beta",
@@ -1842,16 +1858,16 @@ BEGIN
     IF dId == 5 THEN mM := EXP(pr1 + pr2^2/2); mV := (EXP(pr2^2) - 1)*EXP(2*pr1 + pr2^2); END;
     IF dId == 6 THEN mM := pr1; mV := 2*pr2^2; END;
     IF dId == 7 THEN
-      IF pr1 > 1 THEN mM := 0; ELSE mM := "undef (df<=1)"; END;
-      IF pr1 > 2 THEN mV := pr1/(pr1 - 2); ELSE mV := "undef (df<=2)"; END;
+      IF pr1 > 1 THEN mM := 0; ELSE mM := "undef (df≤1)"; END;
+      IF pr1 > 2 THEN mV := pr1/(pr1 - 2); ELSE mV := "undef (df≤2)"; END;
     END;
     IF dId == 8 THEN mM := pr1; mV := 2*pr1; END;
     IF dId == 9 THEN
-      IF pr2 > 2 THEN mM := pr2/(pr2 - 2); ELSE mM := "undef (df2<=2)"; END;
+      IF pr2 > 2 THEN mM := pr2/(pr2 - 2); ELSE mM := "undef (df2≤2)"; END;
       IF pr2 > 4 THEN
         mV := 2*pr2^2*(pr1 + pr2 - 2)/(pr1*(pr2 - 2)^2*(pr2 - 4));
       ELSE
-        mV := "undef (df2<=4)";
+        mV := "undef (df2≤4)";
       END;
     END;
     // Burr XII: the v2.5 Lanczos moments; the mean needs K C > 1,
@@ -1860,20 +1876,20 @@ BEGIN
       IF pr2*pr1 > 1 THEN
         mM := pr3*EXP(st_lngamma(1 + 1/pr1) + st_lngamma(pr2 - 1/pr1) - st_lngamma(pr2));
       ELSE
-        mM := "undef (K*C<=1)";
+        mM := "undef (K×C≤1)";
       END;
       IF pr2*pr1 > 2 THEN
         mE2 := pr3^2*EXP(st_lngamma(1 + 2/pr1) + st_lngamma(pr2 - 2/pr1) - st_lngamma(pr2));
         mV := MAX(0, mE2 - mM^2);
       ELSE
-        mV := "undef (K*C<=2)";
+        mV := "undef (K×C≤2)";
       END;
     END;
     // Gumbel: mu + Euler's gamma beta, (pi^2/6) beta^2
     IF dId == 11 THEN mM := pr1 + 0.577215664901533*pr2; mV := 1.64493406684823*pr2^2; END;
     IF dId == 12 THEN
-      IF pr2 > 1 THEN mM := pr2*pr1/(pr2 - 1); ELSE mM := "undef (α<=1)"; END;
-      IF pr2 > 2 THEN mV := pr1^2*pr2/((pr2 - 1)^2*(pr2 - 2)); ELSE mV := "undef (α<=2)"; END;
+      IF pr2 > 1 THEN mM := pr2*pr1/(pr2 - 1); ELSE mM := "undef (α≤1)"; END;
+      IF pr2 > 2 THEN mV := pr1^2*pr2/((pr2 - 1)^2*(pr2 - 2)); ELSE mV := "undef (α≤2)"; END;
     END;
     // Rayleigh: sigma sqrt(pi/2), (4 - pi)/2 sigma^2
     IF dId == 13 THEN mM := 1.2533141373155*pr1; mV := 0.429203673205103*pr1^2; END;
@@ -1890,11 +1906,11 @@ BEGIN
     // Frechet: m + s Gamma(1 - 1/alpha) for alpha > 1;
     // s^2 (Gamma(1 - 2/alpha) - Gamma(1 - 1/alpha)^2) for alpha > 2
     IF dId == 20 THEN
-      IF pr1 > 1 THEN mM := pr3 + pr2*EXP(st_lngamma(1 - 1/pr1)); ELSE mM := "undef (α<=1)"; END;
+      IF pr1 > 1 THEN mM := pr3 + pr2*EXP(st_lngamma(1 - 1/pr1)); ELSE mM := "undef (α≤1)"; END;
       IF pr1 > 2 THEN
         mV := MAX(0, pr2^2*(EXP(st_lngamma(1 - 2/pr1)) - EXP(2*st_lngamma(1 - 1/pr1))));
       ELSE
-        mV := "undef (α<=2)";
+        mV := "undef (α≤2)";
       END;
     END;
     IF dId == 21 THEN mE2 := st_gompMom(pr1, pr2); mM := mE2(1); mV := mE2(2); END;
@@ -1938,12 +1954,12 @@ BEGIN
     IF dId == 16 THEN RETURN "λ" + psA; END;
     IF dId == 17 THEN RETURN "p" + psA; END;
     IF dId == 18 THEN RETURN "min" + psA + ", mode" + psB + ", max" + psC; END;
-    IF dId == 19 THEN RETURN "x0" + psA + ", scale" + psB; END;
+    IF dId == 19 THEN RETURN "x₀" + psA + ", scale" + psB; END;
     IF dId == 20 THEN RETURN "α" + psA + ", s" + psB + ", m" + psC; END;
-    IF dId == 21 THEN RETURN "eta" + psA + ", b" + psB; END;
+    IF dId == 21 THEN RETURN "η" + psA + ", b" + psB; END;
     IF dId == 22 THEN RETURN "a" + psA; END;
     IF dId == 23 THEN RETURN "k" + psA + ", λ" + psB; END;
-    IF dId == 24 THEN RETURN "k" + psA + ", theta" + psB; END;
+    IF dId == 24 THEN RETURN "k" + psA + ", θ" + psB; END;
     IF dId == 25 THEN RETURN "α" + psA + ", β" + psB; END;
     IF dId == 26 THEN RETURN "r" + psA + ", p" + psB; END;
     IF dId == 27 THEN RETURN "N" + psA + ", K" + psB + ", n" + psC; END;
@@ -1991,27 +2007,27 @@ BEGIN
   CASE
     IF dId == 1 THEN RETURN {"Lower bound (default = μ - σ)", "Upper bound (default = μ + σ)"}; END;
     IF dId == 2 THEN RETURN {"Lower bound (default = a)", "Upper bound (default = b)"}; END;
-    IF dId == 3 THEN RETURN {"Lower >= 0 (default = 0)", "Upper > a (default = μ = 1/λ)"}; END;
-    IF dId == 4 OR dId == 13 THEN RETURN {"Lower >= 0 (default = 0)", "Upper > a (default = μ)"}; END;
+    IF dId == 3 THEN RETURN {"Lower ≥ 0 (default = 0)", "Upper > a (default = μ = 1/λ)"}; END;
+    IF dId == 4 OR dId == 13 THEN RETURN {"Lower ≥ 0 (default = 0)", "Upper > a (default = μ)"}; END;
     IF dId == 5 THEN RETURN {"Lower > 0 (default = 0.5)", "Upper > a (default = mean)"}; END;
     IF dId == 6 THEN RETURN {"Lower (default = μ - b)", "Upper > a (default = μ + b)"}; END;
     IF dId == 7 THEN RETURN {"Lower bound (default = -2)", "Upper > a (default = 2)"}; END;
-    IF dId == 8 THEN RETURN {"Lower >= 0 (default = df/2)", "Upper > a (default = 2 df)"}; END;
-    IF dId == 9 THEN RETURN {"Lower >= 0 (default = 0.5)", "Upper > a (default = 2)"}; END;
+    IF dId == 8 THEN RETURN {"Lower ≥ 0 (default = df/2)", "Upper > a (default = 2 df)"}; END;
+    IF dId == 9 THEN RETURN {"Lower ≥ 0 (default = 0.5)", "Upper > a (default = 2)"}; END;
     IF dId == 10 THEN RETURN {"Lower > 0 (default = 0.5)", "Upper > a (default = 2)"}; END;
     IF dId == 11 THEN RETURN {"Lower (default = μ - β)", "Upper > a (default = μ + 2β)"}; END;
-    IF dId == 12 THEN RETURN {"Lower >= x_m (default = x_m)", "Upper > a (default = 2 x_m)"}; END;
+    IF dId == 12 THEN RETURN {"Lower ≥ x_m (default = x_m)", "Upper > a (default = 2 x_m)"}; END;
     IF dId == 14 THEN RETURN {"Lower (default = μ - s)", "Upper > a (default = μ + s)"}; END;
     IF dId == 15 THEN RETURN {"Lower int (default = μ - σ)", "Upper int (default = μ + σ)"}; END;
-    IF dId == 16 THEN RETURN {"Lower int >= 0 (default = λ - 2σ)", "Upper int (default = λ + 2σ)"}; END;
-    IF dId == 17 THEN RETURN {"Lower int >= 1 (default = 1)", "Upper int (default = μ + 2σ)"}; END;
+    IF dId == 16 THEN RETURN {"Lower int ≥ 0 (default = λ - 2σ)", "Upper int (default = λ + 2σ)"}; END;
+    IF dId == 17 THEN RETURN {"Lower int ≥ 1 (default = 1)", "Upper int (default = μ + 2σ)"}; END;
     IF dId == 18 THEN RETURN {"Lower (default = min)", "Upper > a (default = mode)"}; END;
-    IF dId == 19 THEN RETURN {"Lower (default = x0 - scale)", "Upper (default = x0 + scale)"}; END;
-    IF dId == 20 THEN RETURN {"Lower >= m (default = m)", "Upper > a (default = m + 2s)"}; END;
-    IF dId == 21 THEN RETURN {"Lower >= 0 (default = mean - sd)", "Upper (default = mean + sd)"}; END;
-    IF dId == 22 OR dId == 23 OR dId == 24 THEN RETURN {"Lower >= 0 (default = 0)", "Upper > a (default = mean)"}; END;
-    IF dId == 25 THEN RETURN {"Lower >= 0 (default = mean - sd)", "Upper <= 1 (default = mean + sd)"}; END;
-    IF dId == 26 THEN RETURN {"Lower int >= 0 (default = 0)", "Upper int (default = mean)"}; END;
+    IF dId == 19 THEN RETURN {"Lower (default = x₀ - scale)", "Upper (default = x₀ + scale)"}; END;
+    IF dId == 20 THEN RETURN {"Lower ≥ m (default = m)", "Upper > a (default = m + 2s)"}; END;
+    IF dId == 21 THEN RETURN {"Lower ≥ 0 (default = mean - sd)", "Upper (default = mean + sd)"}; END;
+    IF dId == 22 OR dId == 23 OR dId == 24 THEN RETURN {"Lower ≥ 0 (default = 0)", "Upper > a (default = mean)"}; END;
+    IF dId == 25 THEN RETURN {"Lower ≥ 0 (default = mean - sd)", "Upper ≤ 1 (default = mean + sd)"}; END;
+    IF dId == 26 THEN RETURN {"Lower int ≥ 0 (default = 0)", "Upper int (default = mean)"}; END;
     IF dId == 27 THEN RETURN {"Lower int (default = smallest k)", "Upper int (default = mean)"}; END;
   END;
   RETURN {"Lower bound", "Upper bound"};
@@ -2041,7 +2057,7 @@ BEGIN
   LOCAL idx;
   idx := 0;
   CHOOSE(idx, "Probability Type",
-    "Lower tail: P(X <= a)", "Upper tail: P(X > a)",
+    "Lower tail: P(X ≤ a)", "Upper tail: P(X > a)",
     "Between: P(a < X < b)", "Cancel");
   IF idx == 0 OR idx == 4 THEN RETURN 0; END;
   RETURN idx;
@@ -2138,9 +2154,9 @@ BEGIN
   ELSE
     okI := INPUT({lambda, x_val}, "Exponential: time to incident",
       {"Rate (λ):", "X value:"},
-      {"Rate > 0", "Value >= 0"}, {1, 0});
+      {"Rate > 0", "Value ≥ 0"}, {1, 0});
     IF okI == 0 THEN RETURN 0; END;
-    IF x_val < 0 THEN MSGBOX("Error: x must be >= 0"); RETURN 0; END;
+    IF x_val < 0 THEN MSGBOX("Error: x must be ≥ 0"); RETURN 0; END;
   END;
   IF lambda <= 0 THEN MSGBOX("Error: λ must be > 0"); RETURN 0; END;
   RETURN st_AskAB(3, {lambda, 0, 0}, x_val, aTl, aFull);
@@ -2161,9 +2177,9 @@ BEGIN
   ELSE
     okI := INPUT({ksh, stS, x_val}, "Weibull: time to re-offence",
       {"Shape k:", "Scale λ:", "X value:"},
-      {"k > 0", "λ > 0", "x >= 0"}, {2, 1, 1});
+      {"k > 0", "λ > 0", "x ≥ 0"}, {2, 1, 1});
     IF okI == 0 THEN RETURN 0; END;
-    IF x_val < 0 THEN MSGBOX("Error: x must be >= 0"); RETURN 0; END;
+    IF x_val < 0 THEN MSGBOX("Error: x must be ≥ 0"); RETURN 0; END;
   END;
   IF ksh <= 0 THEN MSGBOX("Error: k must be > 0"); RETURN 0; END;
   IF stS <= 0 THEN MSGBOX("Error: λ must be > 0"); RETURN 0; END;
@@ -2239,16 +2255,16 @@ BEGIN
   IF aTl == 3 THEN
     // v2.7b: "df:" (the emulator cut "Degrees of freedom:" to "Degrees
     // of fr..."); any df > 0, whole or not
-    okI := INPUT({df}, "Chi-square: goodness of fit",
+    okI := INPUT({df}, "χ²: goodness of fit",
       {"df:"},
-      {"0 < df <= 5000 (need not be whole)"}, {10});
+      {"0 < df ≤ 5000 (need not be whole)"}, {10});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({df, x_val}, "Chi-square: goodness of fit",
+    okI := INPUT({df, x_val}, "χ²: goodness of fit",
       {"df:", "X value:"},
-      {"0 < df <= 5000 (need not be whole)", "Value >= 0"}, {10, 5});
+      {"0 < df ≤ 5000 (need not be whole)", "Value ≥ 0"}, {10, 5});
     IF okI == 0 THEN RETURN 0; END;
-    IF x_val < 0 THEN MSGBOX("Error: x must be >= 0"); RETURN 0; END;
+    IF x_val < 0 THEN MSGBOX("Error: x must be ≥ 0"); RETURN 0; END;
   END;
   IF df <= 0 THEN MSGBOX("Error: df must be > 0"); RETURN 0; END;
   // v2.7e (B1): the program's own incomplete gamma (st_gammaP, and
@@ -2257,7 +2273,7 @@ BEGIN
   // 10000 on the answer is quietly wrong (Gamma(20000, 1) at its mean
   // gave 0.5007, not 0.5009).  So df is kept at most 5000, the Gamma's
   // bound for k, with room to spare -- no classroom table goes near it.
-  IF df > 5000 THEN MSGBOX("Error: df must be <= 5000 here" + CHAR(10) + "(the incomplete gamma stops after 500 steps)"); RETURN 0; END;
+  IF df > 5000 THEN MSGBOX("Error: df must be ≤ 5000 here" + CHAR(10) + "(the incomplete gamma stops after 500 steps)"); RETURN 0; END;
   RETURN st_AskAB(8, {df, 0, 0}, x_val, aTl, aFull);
 END;
 
@@ -2276,9 +2292,9 @@ BEGIN
   ELSE
     okI := INPUT({df1, df2, x_val}, "Fisher F: ANOVA variances",
       {"df1:", "df2:", "X value:"},
-      {"Numerator df > 0", "Denominator df > 0", "Value >= 0"}, {10, 15, 1});
+      {"Numerator df > 0", "Denominator df > 0", "Value ≥ 0"}, {10, 15, 1});
     IF okI == 0 THEN RETURN 0; END;
-    IF x_val < 0 THEN MSGBOX("Error: x must be >= 0"); RETURN 0; END;
+    IF x_val < 0 THEN MSGBOX("Error: x must be ≥ 0"); RETURN 0; END;
   END;
   IF df1 <= 0 THEN MSGBOX("Error: df1 must be > 0"); RETURN 0; END;
   IF df2 <= 0 THEN MSGBOX("Error: df2 must be > 0"); RETURN 0; END;
@@ -2343,12 +2359,12 @@ BEGIN
   ELSE
     okI := INPUT({xm, al, x_val}, "Pareto: offending (80/20)",
       {"Scale x_m:", "Shape α:", "X value:"},
-      {"x_m > 0", "α > 0", "x >= x_m"}, {1, 3, 2});
+      {"x_m > 0", "α > 0", "x ≥ x_m"}, {1, 3, 2});
     IF okI == 0 THEN RETURN 0; END;
   END;
   IF xm <= 0 THEN MSGBOX("Error: x_m must be > 0"); RETURN 0; END;
   IF al <= 0 THEN MSGBOX("Error: α must be > 0"); RETURN 0; END;
-  IF aTl <> 3 AND x_val < xm THEN MSGBOX("Error: x must be >= x_m"); RETURN 0; END;
+  IF aTl <> 3 AND x_val < xm THEN MSGBOX("Error: x must be ≥ x_m"); RETURN 0; END;
   RETURN st_AskAB(12, {xm, al, 0}, x_val, aTl, aFull);
 END;
 
@@ -2363,9 +2379,9 @@ BEGIN
     IF okI == 0 THEN RETURN 0; END;
   ELSE
     okI := INPUT({sg, x_val}, "Rayleigh: shot miss distance",
-      {"Scale σ:", "X value:"}, {"σ > 0", "x >= 0"}, {1.5, 2});
+      {"Scale σ:", "X value:"}, {"σ > 0", "x ≥ 0"}, {1.5, 2});
     IF okI == 0 THEN RETURN 0; END;
-    IF x_val < 0 THEN MSGBOX("Error: x must be >= 0"); RETURN 0; END;
+    IF x_val < 0 THEN MSGBOX("Error: x must be ≥ 0"); RETURN 0; END;
   END;
   IF sg <= 0 THEN MSGBOX("Error: σ must be > 0"); RETURN 0; END;
   RETURN st_AskAB(13, {sg, 0, 0}, x_val, aTl, aFull);
@@ -2411,9 +2427,9 @@ BEGIN
   END;
   stN := st_Int(stN, "n");
   IF aTl <> 3 THEN k_val := st_Int(k_val, "k"); END;
-  IF stN < 1 THEN MSGBOX("Error: n must be >= 1"); RETURN 0; END;
+  IF stN < 1 THEN MSGBOX("Error: n must be ≥ 1"); RETURN 0; END;
   IF stP <= 0 OR stP >= 1 THEN MSGBOX("Error: 0 < p < 1"); RETURN 0; END;
-  IF aTl <> 3 AND (k_val < 0 OR k_val > stN) THEN MSGBOX("Error: 0 <= k <= n"); RETURN 0; END;
+  IF aTl <> 3 AND (k_val < 0 OR k_val > stN) THEN MSGBOX("Error: 0 ≤ k ≤ n"); RETURN 0; END;
   RETURN st_AskAB(15, {stN, stP, 0}, k_val, aTl, aFull);
 END;
 
@@ -2433,7 +2449,7 @@ BEGIN
       {"Rate > 0", "Events"}, {5, 3});
     IF okI == 0 THEN RETURN 0; END;
     k_val := st_Int(k_val, "k");
-    IF k_val < 0 THEN MSGBOX("Error: k must be >= 0"); RETURN 0; END;
+    IF k_val < 0 THEN MSGBOX("Error: k must be ≥ 0"); RETURN 0; END;
   END;
   IF lambda <= 0 THEN MSGBOX("Error: λ must be > 0"); RETURN 0; END;
   RETURN st_AskAB(16, {lambda, 0, 0}, k_val, aTl, aFull);
@@ -2453,10 +2469,10 @@ BEGIN
   ELSE
     okI := INPUT({stP, k_val}, "Geometric: searches to 1st hit",
       {"p (success):", "k (trial):"},
-      {"0 < p < 1", "Trial of 1st success (>=1)"}, {0.3, 3});
+      {"0 < p < 1", "Trial of 1st success (≥1)"}, {0.3, 3});
     IF okI == 0 THEN RETURN 0; END;
     k_val := st_Int(k_val, "k");
-    IF k_val < 1 THEN MSGBOX("Error: k must be >= 1"); RETURN 0; END;
+    IF k_val < 1 THEN MSGBOX("Error: k must be ≥ 1"); RETURN 0; END;
   END;
   IF stP <= 0 OR stP >= 1 THEN MSGBOX("Error: 0 < p < 1"); RETURN 0; END;
   RETURN st_AskAB(17, {stP, 0, 0}, k_val, aTl, aFull);
@@ -2483,7 +2499,7 @@ BEGIN
     IF okI == 0 THEN RETURN 0; END;
   END;
   IF trB <= trA OR trC < trA OR trC > trB THEN
-    MSGBOX("Error: need min <= mode <= max, min < max"); RETURN 0;
+    MSGBOX("Error: need min ≤ mode ≤ max, min < max"); RETURN 0;
   END;
   RETURN st_AskAB(18, {trA, trC, trB}, x_val, aTl, aFull);
 END;
@@ -2497,12 +2513,12 @@ BEGIN
   cLoc := aCur(1); cScl := aCur(2); x_val := aCur(4);
   IF aTl == 3 THEN
     okI := INPUT({cLoc, cScl}, "Cauchy: ratio of errors",
-      {"Location (x0):", "Scale:"},
+      {"Location (x₀):", "Scale:"},
       {"The median", "Scale > 0 (half the IQR)"}, {0, 1});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
     okI := INPUT({cLoc, cScl, x_val}, "Cauchy: ratio of errors",
-      {"Location (x0):", "Scale:", "X value:"},
+      {"Location (x₀):", "Scale:", "X value:"},
       {"The median", "Scale > 0 (half the IQR)", "Value to evaluate"},
       {0, 1, 1});
     IF okI == 0 THEN RETURN 0; END;
@@ -2545,19 +2561,19 @@ BEGIN
   gmEt := aCur(1); gmBr := aCur(2); x_val := aCur(4);
   IF aTl == 3 THEN
     okI := INPUT({gmEt, gmBr}, "Gompertz: years lived past 20",
-      {"Shape (eta):", "Rate (b):"},
-      {"eta > 0 (smaller = longer lives)", "b > 0 (doubling time ln2/b)"},
+      {"Shape (η):", "Rate (b):"},
+      {"η > 0 (smaller = longer lives)", "b > 0 (doubling time ln2/b)"},
       {0.01, 0.085});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
     okI := INPUT({gmEt, gmBr, x_val}, "Gompertz: years lived past 20",
-      {"Shape (eta):", "Rate (b):", "X value:"},
-      {"eta > 0 (smaller = longer lives)", "b > 0 (doubling time ln2/b)", "x >= 0"},
+      {"Shape (η):", "Rate (b):", "X value:"},
+      {"η > 0 (smaller = longer lives)", "b > 0 (doubling time ln2/b)", "x ≥ 0"},
       {0.01, 0.085, 50});
     IF okI == 0 THEN RETURN 0; END;
-    IF x_val < 0 THEN MSGBOX("Error: x must be >= 0"); RETURN 0; END;
+    IF x_val < 0 THEN MSGBOX("Error: x must be ≥ 0"); RETURN 0; END;
   END;
-  IF gmEt <= 0 THEN MSGBOX("Error: eta must be > 0"); RETURN 0; END;
+  IF gmEt <= 0 THEN MSGBOX("Error: η must be > 0"); RETURN 0; END;
   IF gmBr <= 0 THEN MSGBOX("Error: b must be > 0"); RETURN 0; END;
   RETURN st_AskAB(21, {gmEt, gmBr, 0}, x_val, aTl, aFull);
 END;
@@ -2575,10 +2591,10 @@ BEGIN
     IF okI == 0 THEN RETURN 0; END;
   ELSE
     okI := INPUT({mxA, x_val}, "Maxwell: 3-D miss distance",
-      {"Scale (a):", "X value:"}, {"a > 0 (the sd of each axis)", "x >= 0"},
+      {"Scale (a):", "X value:"}, {"a > 0 (the sd of each axis)", "x ≥ 0"},
       {1, 1.5});
     IF okI == 0 THEN RETURN 0; END;
-    IF x_val < 0 THEN MSGBOX("Error: x must be >= 0"); RETURN 0; END;
+    IF x_val < 0 THEN MSGBOX("Error: x must be ≥ 0"); RETURN 0; END;
   END;
   IF mxA <= 0 THEN MSGBOX("Error: a must be > 0"); RETURN 0; END;
   RETURN st_AskAB(22, {mxA, 0, 0}, x_val, aTl, aFull);
@@ -2593,17 +2609,17 @@ BEGIN
   IF aTl == 3 THEN
     okI := INPUT({erK, erL}, "Erlang: time to the k-th call",
       {"Shape k:", "Rate (λ):"},
-      {"Whole number >= 1", "λ > 0"}, {3, 1});
+      {"Whole number ≥ 1", "λ > 0"}, {3, 1});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
     okI := INPUT({erK, erL, x_val}, "Erlang: time to the k-th call",
       {"Shape k:", "Rate (λ):", "X value:"},
-      {"Whole number >= 1", "λ > 0", "x >= 0"}, {3, 1, 2});
+      {"Whole number ≥ 1", "λ > 0", "x ≥ 0"}, {3, 1, 2});
     IF okI == 0 THEN RETURN 0; END;
-    IF x_val < 0 THEN MSGBOX("Error: x must be >= 0"); RETURN 0; END;
+    IF x_val < 0 THEN MSGBOX("Error: x must be ≥ 0"); RETURN 0; END;
   END;
   erK := st_Int(erK, "k");
-  IF erK < 1 THEN MSGBOX("Error: k must be >= 1"); RETURN 0; END;
+  IF erK < 1 THEN MSGBOX("Error: k must be ≥ 1"); RETURN 0; END;
   IF erL <= 0 THEN MSGBOX("Error: λ must be > 0"); RETURN 0; END;
   RETURN st_AskAB(23, {erK, erL, 0}, x_val, aTl, aFull);
 END;
@@ -2617,23 +2633,23 @@ BEGIN
   gaK := aCur(1); gaT := aCur(2); x_val := aCur(4);
   IF aTl == 3 THEN
     okI := INPUT({gaK, gaT}, "Gamma: case processing time",
-      {"Shape (k):", "Scale (theta):"},
-      {"0 < k <= 5000 (any, not just whole)", "theta > 0"}, {2.5, 2});
+      {"Shape (k):", "Scale (θ):"},
+      {"0 < k ≤ 5000 (any, not just whole)", "θ > 0"}, {2.5, 2});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
     okI := INPUT({gaK, gaT, x_val}, "Gamma: case processing time",
-      {"Shape (k):", "Scale (theta):", "X value:"},
-      {"0 < k <= 5000 (any, not just whole)", "theta > 0", "x >= 0"}, {2.5, 2, 4});
+      {"Shape (k):", "Scale (θ):", "X value:"},
+      {"0 < k ≤ 5000 (any, not just whole)", "θ > 0", "x ≥ 0"}, {2.5, 2, 4});
     IF okI == 0 THEN RETURN 0; END;
-    IF x_val < 0 THEN MSGBOX("Error: x must be >= 0"); RETURN 0; END;
+    IF x_val < 0 THEN MSGBOX("Error: x must be ≥ 0"); RETURN 0; END;
   END;
   IF gaK <= 0 THEN MSGBOX("Error: k must be > 0"); RETURN 0; END;
   // v2.7e (B1): k at most 5000, as the chi-square's df: the program's
   // own incomplete gamma stops after 500 passes, and from about
   // k = 10000 that is too few (Gamma(20000, 1) at its mean: 0.5007,
   // where 0.5009 is right)
-  IF gaK > 5000 THEN MSGBOX("Error: k must be <= 5000 here" + CHAR(10) + "(the incomplete gamma stops after 500 steps)"); RETURN 0; END;
-  IF gaT <= 0 THEN MSGBOX("Error: theta must be > 0"); RETURN 0; END;
+  IF gaK > 5000 THEN MSGBOX("Error: k must be ≤ 5000 here" + CHAR(10) + "(the incomplete gamma stops after 500 steps)"); RETURN 0; END;
+  IF gaT <= 0 THEN MSGBOX("Error: θ must be > 0"); RETURN 0; END;
   RETURN st_AskAB(24, {gaK, gaT, 0}, x_val, aTl, aFull);
 END;
 
@@ -2651,9 +2667,9 @@ BEGIN
   ELSE
     okI := INPUT({btA, btB, x_val}, "Beta: clearance rates",
       {"Shape (α):", "Shape (β):", "X value:"},
-      {"α > 0", "β > 0", "0 <= x <= 1"}, {2, 5, 0.3});
+      {"α > 0", "β > 0", "0 ≤ x ≤ 1"}, {2, 5, 0.3});
     IF okI == 0 THEN RETURN 0; END;
-    IF x_val < 0 OR x_val > 1 THEN MSGBOX("Error: 0 <= x <= 1"); RETURN 0; END;
+    IF x_val < 0 OR x_val > 1 THEN MSGBOX("Error: 0 ≤ x ≤ 1"); RETURN 0; END;
   END;
   IF btA <= 0 OR btB <= 0 THEN MSGBOX("Error: α and β must be > 0"); RETURN 0; END;
   RETURN st_AskAB(25, {btA, btB, 0}, x_val, aTl, aFull);
@@ -2668,19 +2684,19 @@ BEGIN
   IF aTl == 3 THEN
     okI := INPUT({nbR, nbP}, "Neg. binomial: stops, r arrests",
       {"r (successes):", "p (success):"},
-      {"Whole number >= 1", "0 < p < 1"}, {3, 0.4});
+      {"Whole number ≥ 1", "0 < p < 1"}, {3, 0.4});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
     okI := INPUT({nbR, nbP, k_val}, "Neg. binomial: stops, r arrests",
       {"r (successes):", "p (success):", "k (failures):"},
-      {"Whole number >= 1", "0 < p < 1", "Failures before the r-th success"},
+      {"Whole number ≥ 1", "0 < p < 1", "Failures before the r-th success"},
       {3, 0.4, 4});
     IF okI == 0 THEN RETURN 0; END;
     k_val := st_Int(k_val, "k");
-    IF k_val < 0 THEN MSGBOX("Error: k must be >= 0"); RETURN 0; END;
+    IF k_val < 0 THEN MSGBOX("Error: k must be ≥ 0"); RETURN 0; END;
   END;
   nbR := st_Int(nbR, "r");
-  IF nbR < 1 THEN MSGBOX("Error: r must be >= 1"); RETURN 0; END;
+  IF nbR < 1 THEN MSGBOX("Error: r must be ≥ 1"); RETURN 0; END;
   IF nbP <= 0 OR nbP >= 1 THEN MSGBOX("Error: 0 < p < 1"); RETURN 0; END;
   RETURN st_AskAB(26, {nbR, nbP, 0}, k_val, aTl, aFull);
 END;
@@ -2704,16 +2720,16 @@ BEGIN
   ELSE
     okI := INPUT({hgN, hgK, hgM, k_val}, "Hypergeometric: seized packets",
       {"N (pop.):", "K (pos. in N):", "n (drawn):", "k (pos. in n):"},
-      {"Population size, 1 to 1000", "Positives in N, 0 to N", "Drawn, 1 to N", "Positives drawn, 0 <= k <= n"},
+      {"Population size, 1 to 1000", "Positives in N, 0 to N", "Drawn, 1 to N", "Positives drawn, 0 ≤ k ≤ n"},
       {50, 40, 6, 5});
     IF okI == 0 THEN RETURN 0; END;
     k_val := st_Int(k_val, "k");
   END;
   hgN := st_Int(hgN, "N"); hgK := st_Int(hgK, "K"); hgM := st_Int(hgM, "n");
   IF hgN < 1 OR hgN > 1000 THEN MSGBOX("Error: N from 1 to 1000"); RETURN 0; END;
-  IF hgK < 0 OR hgK > hgN THEN MSGBOX("Error: 0 <= K <= N"); RETURN 0; END;
-  IF hgM < 1 OR hgM > hgN THEN MSGBOX("Error: 1 <= n <= N"); RETURN 0; END;
-  IF aTl <> 3 AND (k_val < 0 OR k_val > hgM) THEN MSGBOX("Error: 0 <= k <= n"); RETURN 0; END;
+  IF hgK < 0 OR hgK > hgN THEN MSGBOX("Error: 0 ≤ K ≤ N"); RETURN 0; END;
+  IF hgM < 1 OR hgM > hgN THEN MSGBOX("Error: 1 ≤ n ≤ N"); RETURN 0; END;
+  IF aTl <> 3 AND (k_val < 0 OR k_val > hgM) THEN MSGBOX("Error: 0 ≤ k ≤ n"); RETURN 0; END;
   RETURN st_AskAB(27, {hgN, hgK, hgM}, k_val, aTl, aFull);
 END;
 
@@ -2760,7 +2776,7 @@ END;
 // v2.5: a drawn page; v2.6 adds every gesture and soft key (two pages).
 st_show_help()
 BEGIN
-  st_Page("Statistical Distributions v2.7e", {
+  st_Page("Statistical Distributions v2.7f", {
     "Probabilities for 27 distributions.",
     "Gallery: tap a family (or arrows),",
     "Menus: the tail first, then the form.",
@@ -2769,7 +2785,7 @@ BEGIN
     "Tap or drag in the plot = move x (k);",
     "  on lift x snaps to the grid.",
     "Soft keys, page 1:",
-    "P<=x, P>x = which tail is shaded.",
+    "P≤x, P>x = which tail is shaded.",
     "a<X<b: tap a, then tap b; after that",
     "  a drag moves the nearer line.",
     "Zoom-, Zoom+ = about x.",
@@ -2780,7 +2796,7 @@ BEGIN
     "  N(0,1) = the overlay (else Refit),",
     "  Menu = back to the menu.",
     "More again = page 3: Formula = the",
-    "  CAS works out E[X], E[X^2], Var",
+    "  CAS works out E[X], E[X²], Var",
     "  (and F(x) for Exponential, Weibull,",
     "  Pareto; an exact P for discrete),",
     "  each checked against the program;",
@@ -3257,11 +3273,11 @@ BEGIN
   pnP := st_Prob();
   // v2.7d: st_Eq -- the relation without "=" ("P(X <= -6) < 0.000001")
   // v2.7e: x, a and b through st_XStr -- a value, never "< 0.0001" (B7)
-  IF stTl == 1 THEN pnS := "P(X <= " + st_XStr(stXv, st_fmtx(stXv)) + ")" + st_Eq(st_fmtp(pnP, 6)); END;
+  IF stTl == 1 THEN pnS := "P(X ≤ " + st_XStr(stXv, st_fmtx(stXv)) + ")" + st_Eq(st_fmtp(pnP, 6)); END;
   IF stTl == 2 THEN
     IF stDisc == 1 THEN
       // v2.7d: st_Eq -- the relation without "=" ("P(X <= -6) < 0.000001")
-      pnS := "P(X > " + st_fmtx(stXv) + ") = P(X >= " + st_fmtx(stXv + 1) + ")" + st_Eq(st_fmtp(pnP, 6));
+      pnS := "P(X > " + st_fmtx(stXv) + ") = P(X ≥ " + st_fmtx(stXv + 1) + ")" + st_Eq(st_fmtp(pnP, 6));
     ELSE
       // v2.7d: st_Eq -- the relation without "=" ("P(X <= -6) < 0.000001")
       pnS := "P(X > " + st_XStr(stXv, st_fmtx(stXv)) + ")" + st_Eq(st_fmtp(pnP, 6));
@@ -3270,7 +3286,7 @@ BEGIN
   IF stTl == 3 THEN
     IF stDisc == 1 THEN
       // v2.7d: st_Eq -- the relation without "=" ("P(X <= -6) < 0.000001")
-      pnS := "P(" + st_fmtx(stAv) + " <= X <= " + st_fmtx(stBv) + ")" + st_Eq(st_fmtp(pnP, 6));
+      pnS := "P(" + st_fmtx(stAv) + " ≤ X ≤ " + st_fmtx(stBv) + ")" + st_Eq(st_fmtp(pnP, 6));
     ELSE
       // v2.7d: st_Eq -- the relation without "=" ("P(X <= -6) < 0.000001")
       pnS := "P(" + st_XStr(stAv, st_fmtx(stAv)) + " < X < " + st_XStr(stBv, st_fmtx(stBv)) + ")" + st_Eq(st_fmtp(pnP, 6));
@@ -3405,9 +3421,9 @@ BEGIN
   // page and Help, with Menu in the same slot as on page 2.
   IF stSKP == 1 THEN
     IF stDisc == 1 THEN
-      DRAWMENU({"P<=k", "P>k", "a<X<b", "Zoom−", "Zoom+", "More"});
+      DRAWMENU({"P≤k", "P>k", "a<X<b", "Zoom−", "Zoom+", "More"});
     ELSE
-      DRAWMENU({"P<=x", "P>x", "a<X<b", "Zoom−", "Zoom+", "More"});
+      DRAWMENU({"P≤x", "P>x", "a<X<b", "Zoom−", "Zoom+", "More"});
     END;
   ELSE
     IF stSKP == 2 THEN
@@ -3638,10 +3654,10 @@ BEGIN
     IF stDisc == 1 THEN
       nuFa := st_cdf(stId, stPar, stAv - 1); nuFb := st_cdf(stId, stPar, stBv);
       // v2.7d: st_Eq -- the relation without "=" ("P(X <= -6) < 0.000001")
-      nuL := CONCAT(nuL, {"CDF(b) = P(X <= " + STRING(stBv, 2, 0) + ")" + st_Eq(st_fmtp(nuFb, 6)),
-        "CDF(a-1) = P(X <= " + STRING(stAv - 1, 2, 0) + ")" + st_Eq(st_fmtp(nuFa, 6)),
+      nuL := CONCAT(nuL, {"CDF(b) = P(X ≤ " + STRING(stBv, 2, 0) + ")" + st_Eq(st_fmtp(nuFb, 6)),
+        "CDF(a-1) = P(X ≤ " + STRING(stAv - 1, 2, 0) + ")" + st_Eq(st_fmtp(nuFa, 6)),
         "P = CDF(b) - CDF(a-1)", "",
-        "P(" + STRING(stAv, 2, 0) + " <= X <= " + STRING(stBv, 2, 0) + ")" + st_Eq(st_fmtp(nuP, 6))});
+        "P(" + STRING(stAv, 2, 0) + " ≤ X ≤ " + STRING(stBv, 2, 0) + ")" + st_Eq(st_fmtp(nuP, 6))});
     ELSE
       nuFa := st_cdf(stId, stPar, stAv); nuFb := st_cdf(stId, stPar, stBv);
       // v2.7d: st_Eq -- the relation without "=" ("P(X <= -6) < 0.000001")
@@ -3660,10 +3676,10 @@ BEGIN
         "  CDF: " + st_fmtp(nuF, 6), ""});
       IF stTl == 1 THEN
         // v2.7d: st_Eq -- the relation without "=" ("P(X <= -6) < 0.000001")
-        nuS := "P(X <= " + nuX + ")" + st_Eq(st_fmtp(nuP, 6));
+        nuS := "P(X ≤ " + nuX + ")" + st_Eq(st_fmtp(nuP, 6));
       ELSE
         // v2.7d: st_Eq -- the relation without "=" ("P(X <= -6) < 0.000001")
-        nuS := "P(X > " + nuX + ") = P(X >= " + STRING(stXv + 1, 2, 0) + ")" + st_Eq(st_fmtp(nuP, 6));
+        nuS := "P(X > " + nuX + ") = P(X ≥ " + STRING(stXv + 1, 2, 0) + ")" + st_Eq(st_fmtp(nuP, 6));
       END;
     ELSE
       // v2.7e: x through st_XStr -- a value, never "< 0.0001" (B7)
@@ -3674,7 +3690,7 @@ BEGIN
         "  CDF: " + st_fmtp(nuF, 6), ""});
       IF stTl == 1 THEN
         // v2.7d: st_Eq -- the relation without "=" ("P(X <= -6) < 0.000001")
-        nuS := "P(X <= " + nuX + ")" + st_Eq(st_fmtp(nuP, 6));
+        nuS := "P(X ≤ " + nuX + ")" + st_Eq(st_fmtp(nuP, 6));
       ELSE
         // v2.7d: st_Eq -- the relation without "=" ("P(X <= -6) < 0.000001")
         nuS := "P(X > " + nuX + ")" + st_Eq(st_fmtp(nuP, 6));
@@ -3732,12 +3748,12 @@ BEGIN
     IF nmI == 15 THEN RETURN {"n", "p", ""}; END;
     IF nmI == 17 THEN RETURN {"p", "", ""}; END;
     IF nmI == 18 THEN RETURN {"min", "mode", "max"}; END;
-    IF nmI == 19 THEN RETURN {"x0", "scale", ""}; END;
+    IF nmI == 19 THEN RETURN {"x₀", "scale", ""}; END;
     IF nmI == 20 THEN RETURN {"α", "s", "m"}; END;
-    IF nmI == 21 THEN RETURN {"eta", "b", ""}; END;
+    IF nmI == 21 THEN RETURN {"η", "b", ""}; END;
     IF nmI == 22 THEN RETURN {"a", "", ""}; END;
     IF nmI == 23 THEN RETURN {"k", "λ", ""}; END;
-    IF nmI == 24 THEN RETURN {"k", "theta", ""}; END;
+    IF nmI == 24 THEN RETURN {"k", "θ", ""}; END;
     IF nmI == 25 THEN RETURN {"α", "β", ""}; END;
     IF nmI == 26 THEN RETURN {"r", "p", ""}; END;
     IF nmI == 27 THEN RETURN {"N", "K", "n"}; END;
@@ -3766,30 +3782,30 @@ END;
 st_FmF(ffI)
 BEGIN
   CASE
-    IF ffI == 1 THEN RETURN "f(x) = e^(-(x-μ)^2/(2σ^2)) / (σ sqrt(2 pi))"; END;
-    IF ffI == 2 THEN RETURN "f(x) = 1/(b - a) for a <= x <= b"; END;
-    IF ffI == 3 THEN RETURN "f(x) = λ e^(-λx) for x >= 0"; END;
-    IF ffI == 4 THEN RETURN "f(x) = (k/λ) (x/λ)^(k-1) e^(-(x/λ)^k), x >= 0"; END;
-    IF ffI == 5 THEN RETURN "f(x) = e^(-(ln x - μ)^2/(2σ^2)) / (x σ sqrt(2 pi))"; END;
+    IF ffI == 1 THEN RETURN "f(x) = e^(-(x-μ)²/(2σ²)) / (σ √(2 π))"; END;
+    IF ffI == 2 THEN RETURN "f(x) = 1/(b - a) for a ≤ x ≤ b"; END;
+    IF ffI == 3 THEN RETURN "f(x) = λ e^(-λx) for x ≥ 0"; END;
+    IF ffI == 4 THEN RETURN "f(x) = (k/λ) (x/λ)^(k-1) e^(-(x/λ)^k), x ≥ 0"; END;
+    IF ffI == 5 THEN RETURN "f(x) = e^(-(ln x - μ)²/(2σ²)) / (x σ √(2 π))"; END;
     IF ffI == 6 THEN RETURN "f(x) = e^(-|x - μ|/b) / (2b)"; END;
-    IF ffI == 7 THEN RETURN "f(x) = Gamma((df+1)/2) / (sqrt(df pi) Gamma(df/2)) (1 + x^2/df)^(-(df+1)/2)"; END;
+    IF ffI == 7 THEN RETURN "f(x) = Gamma((df+1)/2) / (√(df π) Gamma(df/2)) (1 + x²/df)^(-(df+1)/2)"; END;
     IF ffI == 8 THEN RETURN "f(x) = x^(df/2-1) e^(-x/2) / (2^(df/2) Gamma(df/2))"; END;
-    IF ffI == 9 THEN RETURN "f(x) = sqrt((d1 x)^d1 d2^d2 / (d1 x + d2)^(d1+d2)) / (x B(d1/2, d2/2))"; END;
+    IF ffI == 9 THEN RETURN "f(x) = √((d1 x)^d1 d2^d2 / (d1 x + d2)^(d1+d2)) / (x B(d1/2, d2/2))"; END;
     IF ffI == 10 THEN RETURN "f(x) = K C (x/S)^C / (x (1 + (x/S)^C)^(K+1)), x > 0"; END;
     IF ffI == 11 THEN RETURN "f(x) = e^(-z - e^(-z)) / β, z = (x - μ)/β"; END;
-    IF ffI == 12 THEN RETURN "f(x) = α x_m^α / x^(α+1) for x >= x_m"; END;
-    IF ffI == 13 THEN RETURN "f(x) = (x/σ^2) e^(-x^2/(2σ^2)), x >= 0"; END;
-    IF ffI == 14 THEN RETURN "f(x) = e^(-z) / (s (1 + e^(-z))^2), z = (x - μ)/s"; END;
+    IF ffI == 12 THEN RETURN "f(x) = α x_m^α / x^(α+1) for x ≥ x_m"; END;
+    IF ffI == 13 THEN RETURN "f(x) = (x/σ²) e^(-x²/(2σ²)), x ≥ 0"; END;
+    IF ffI == 14 THEN RETURN "f(x) = e^(-z) / (s (1 + e^(-z))²), z = (x - μ)/s"; END;
     IF ffI == 15 THEN RETURN "P(X = k) = C(n, k) p^k (1 - p)^(n-k)"; END;
     IF ffI == 16 THEN RETURN "P(X = k) = e^(-λ) λ^k / k!"; END;
     IF ffI == 17 THEN RETURN "P(X = k) = p (1 - p)^(k-1), k = 1, 2, 3 ..."; END;
     IF ffI == 18 THEN RETURN "f(x) = 2(x - a)/((b - a)(c - a)) up to the mode c, then 2(b - x)/((b - a)(b - c))"; END;
-    IF ffI == 19 THEN RETURN "f(x) = 1 / (pi scale (1 + z^2)), z = (x - x0)/scale"; END;
+    IF ffI == 19 THEN RETURN "f(x) = 1 / (π scale (1 + z²)), z = (x - x₀)/scale"; END;
     IF ffI == 20 THEN RETURN "f(x) = (α/s) z^(-1-α) e^(-z^(-α)), z = (x - m)/s"; END;
-    IF ffI == 21 THEN RETURN "f(x) = b eta e^(eta + b x - eta e^(b x)), x >= 0"; END;
-    IF ffI == 22 THEN RETURN "f(x) = sqrt(2/pi) x^2 e^(-x^2/(2a^2)) / a^3"; END;
+    IF ffI == 21 THEN RETURN "f(x) = b η e^(η + b x - η e^(b x)), x ≥ 0"; END;
+    IF ffI == 22 THEN RETURN "f(x) = √(2/π) x² e^(-x²/(2a²)) / a^3"; END;
     IF ffI == 23 THEN RETURN "f(x) = λ^k x^(k-1) e^(-λx) / (k-1)!"; END;
-    IF ffI == 24 THEN RETURN "f(x) = x^(k-1) e^(-x/theta) / (Gamma(k) theta^k)"; END;
+    IF ffI == 24 THEN RETURN "f(x) = x^(k-1) e^(-x/θ) / (Gamma(k) θ^k)"; END;
     IF ffI == 25 THEN RETURN "f(x) = x^(α-1) (1 - x)^(β-1) / B(α, β), 0 < x < 1"; END;
     IF ffI == 26 THEN RETURN "P(X = k) = C(k+r-1, k) p^r (1 - p)^k"; END;
     IF ffI == 27 THEN RETURN "P(X = k) = C(K, k) C(N-K, n-k) / C(N, n)"; END;
@@ -3990,7 +4006,8 @@ BEGIN
   LOCAL fwS, fwN;
   fwN := st_FmNm(stId);
   fwS := st_Repl(fwT, "*", CHAR(215));
-  fwS := st_Repl(fwS, "+infinity", "infinity");
+  fwS := st_Repl(fwS, "+infinity", CHAR(8734));   // 2.7f: shown as ∞
+  fwS := st_Repl(fwS, "infinity", CHAR(8734));
   fwS := st_Repl(fwS, "stqx", "x");
   fwS := st_Repl(fwS, "stqt", "t");
   fwS := st_Repl(fwS, "stqk", "k");
@@ -4005,8 +4022,8 @@ END;
 st_FmLimS(flT)
 BEGIN
   LOCAL flI, flN;
-  IF flT == "-inf" THEN RETURN "-infinity"; END;
-  IF flT == "inf" THEN RETURN "infinity"; END;
+  IF flT == "-inf" THEN RETURN CHAR(8722) + CHAR(8734); END;
+  IF flT == "inf" THEN RETURN CHAR(8734); END;
   flN := st_FmNm(stId);
   FOR flI FROM 1 TO 3 DO
     IF flT == stFmPT(flI) THEN
@@ -4092,9 +4109,9 @@ BEGIN
     fcR := st_Cas("exp(-(simplify(" + st_FmInt(fcH, 1, "stqx") + ")" + fcSf + "))");
     IF st_FmInf(fcR) THEN
       IF stId == 7 OR stId == 19 THEN
-        st_FmAdd("  from the centre up alone: infinity (CAS).", stMAG);
+        st_FmAdd("  from the centre up alone: ∞ (CAS).", stMAG);
       ELSE
-        st_FmAdd("  = infinity (CAS).", stMAG);
+        st_FmAdd("  = ∞ (CAS).", stMAG);
       END;
       st_FmAdd("  So there is NO mean (the program: undef).", stGRN);
       stCasOK := 1;
@@ -4103,7 +4120,7 @@ BEGIN
     END;
   END;
   // ---- E[X^2] ----
-  st_FmAdd("E[X^2] = integral of x^2 f(x) dx, same limits:", #000000h);
+  st_FmAdd("E[X²] = integral of x² f(x) dx, same limits:", #000000h);
   fcE := "";
   IF TYPE(stMu) == 0 AND TYPE(stVr) == 0 THEN
     fcV := stVr + stMu^2;
@@ -4113,7 +4130,7 @@ BEGIN
     // v2.7a: asked as exp(-(integral)), which is 0 when it is infinite
     fcR := st_Cas("exp(-(simplify(" + st_FmInt(fcD, 2, "stqx") + ")" + fcSf + "))");
     IF st_FmInf(fcR) THEN
-      st_FmAdd("  = infinity (CAS): there is NO variance", stMAG);
+      st_FmAdd("  = ∞ (CAS): there is NO variance", stMAG);
       st_FmAdd("  (the program: undef).", stGRN);
       stCasOK := 1;
     ELSE
@@ -4122,7 +4139,7 @@ BEGIN
   END;
   // ---- Var(X), from the two answers above ----
   IF DIM(fcM) > 0 AND DIM(fcE) > 0 THEN
-    st_FmAdd("Var(X) = E[X^2] - E[X]^2:", #000000h);
+    st_FmAdd("Var(X) = E[X²] - E[X]²:", #000000h);
     fcR := st_FmAsk("simplify((" + fcE + ")-(" + fcM + ")^2)" + fcSf, stVr);
     IF DIM(fcR) > 0 THEN st_FmRes(fcR, stVr); ELSE st_FmNone(stVr); END;
   END;
@@ -4173,9 +4190,9 @@ BEGIN
   END;
   ddPm := st_FmPmf(stId, ddP, "stqk");
   // ---- the probability on the plot, as a sum ----
-  IF stTl == 1 THEN st_FmAdd("P(X <= " + st_IStr(stXv) + ") = the sum of P(X = k),", #000000h); END;
+  IF stTl == 1 THEN st_FmAdd("P(X ≤ " + st_IStr(stXv) + ") = the sum of P(X = k),", #000000h); END;
   IF stTl == 2 THEN st_FmAdd("P(X > " + st_IStr(stXv) + ") = 1 - the sum of P(X = k),", #000000h); END;
-  IF stTl == 3 THEN st_FmAdd("P(" + st_IStr(stAv) + " <= X <= " + st_IStr(stBv) + ") = the sum of P(X = k),", #000000h); END;
+  IF stTl == 3 THEN st_FmAdd("P(" + st_IStr(stAv) + " ≤ X ≤ " + st_IStr(stBv) + ") = the sum of P(X = k),", #000000h); END;
   st_FmAdd("  k from " + st_IStr(ddA) + " to " + st_IStr(ddB) + ":", #000000h);
   IF ddB < ddA THEN
     // no k at all in the range: nothing to add up
@@ -4476,7 +4493,7 @@ BEGIN
   LOCAL gdI, gdC, gdR, gdX, gdY, gdB;
   LOCAL gdS, gdH, gdP, gdK, gdLb, gdF;
   LOCAL gdMn;
-  gdLb := {"Normal(0, 1)", "Exponential(1)", "Chi-square(4)",
+  gdLb := {"Normal(0, 1)", "Exponential(1)", "χ²(4)",
     "t(3) and N(0,1)", "Binomial(10,0.3)", "Poisson(3)"};
   gdMn := {49, 20, 28, 49, 32, 32};      // pixel offset of each mean
   DIMGROB_P(G1, 320, 240, #FFFFFFh);
@@ -4629,7 +4646,7 @@ BEGIN
   // plot and the Numbers page (st_Name).  No comment goes inside the
   // list's brackets: a // there is a syntax error on the Prime.
   CHOOSE(idx, "Advanced Continuous",
-    {"Student t", "Chi-square", "Fisher F", "Gamma", "Beta",
+    {"Student t", "χ²", "Fisher F", "Gamma", "Beta",
     "Burr Type XII", "Weibull", "Gumbel", "Frechet", "Pareto",
     "Rayleigh", "Gompertz", "Erlang", "Maxwell-Boltzmann", "Logistic", "Back"});
   IF idx == 0 THEN RETURN; END;

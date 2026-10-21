@@ -1,5 +1,5 @@
 // ============================================================
-// NORM EXPLORER - beta 42a
+// NORM EXPLORER - beta 42c
 // Normal distribution workbench for the HP Prime
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
@@ -21,19 +21,22 @@
 //   firmware, plus the desktop Virtual Calculator (through
 //   beta 39).  Beta 42 ran on the Virtual Calculator (the same
 //   firmware, 16-17 Oct 2026; most of its checklist passed).
-//   Beta 42a has run on the PC harness only (ppl_run_v3e), not
-//   yet on the Virtual Calculator.  Beta 40, 41, 42 and 42a have
-//   NOT yet been run on hardware.
+//   Beta 42a ran on the Virtual Calculator and on the G1 and G2
+//   (20 Oct 2026; on the G1 the standardize animation was slow,
+//   which beta 42b fixes).  Beta 42b has run on the PC harness
+//   only (ppl_run_v3e), not yet on a calculator.
 //
 // Delivered as .txt on purpose: paste into the Connectivity Kit
 //   editor.  .hpprgm is binary and imports badly.
 //
 // The companion user's guide is normexplorer-guide_beta42.md
 //   (written for beta 42; beta 42a's display changes are listed in
-//   NormExplorer_beta42a_CHANGES.md).
+//   NormExplorer_beta42a_CHANGES.md, beta 42b's in
+//   NormExplorer_beta42b_CHANGES.md, beta 42c's in
+//   NormExplorer_beta42c_CHANGES.md).
 // Run NormExp() from the Program Catalog.
 // ============================================================
-// MAP OF THE FILE  (3706 lines; this is where things live)
+// MAP OF THE FILE  (3769 lines; this is where things live)
 //
 //   Constants, session globals ............ top, after this block
 //   File-level state: curve caches, touch records, palette (beta 42)
@@ -84,10 +87,36 @@
 // ============================================================
 
 // =====================================================
-// NORM EXPLORER — beta 42a
+// NORM EXPLORER — beta 42c
 // NORMAL DISTRIBUTION WORKBENCH
 // HP Prime (PPL + optional MicroPython sampler)
 // =====================================================
+// beta 42c (20 Oct 2026): symbols instead of spelled-out names, on screen
+//   only (Roger, 20 Oct 2026: "use the symbols we developed").  In the
+//   text the student sees, the z-score message's "x-bar" now
+//   use the house glyphs: χ² (CHAR(967) CHAR(178), device-verified),
+//   ² (CHAR(178)), √ (CHAR(8730)), and the x-bar and p-hat glyphs,
+//   CHAR(57344) and CHAR(57345), HP's own private-use characters.  Text built for the CAS is
+//   untouched (it must stay ASCII), and so are Home variable names
+//   and comments.  No number, layout position or logic changed.
+//   Second pass, same day, after all 20 programs were checked: the page-2
+//   soft keys and their help line, "mu" and "sigma"
+//   now use μ (CHAR(956)), σ (CHAR(963)).  The "+/-" that names the + and
+//   - keys is kept.
+//
+//
+// beta 42b (20 Oct 2026): the standardize animation keeps its pace
+//   on a slow calculator.  On the G1 it "just takes too long"
+//   (Roger, 20 Oct 2026): each of its twenty frames waited 0.3 s
+//   AFTER drawing, and on the G1 the drawing itself takes time, so
+//   the two added up.  ne_AnimStd now times each frame with TICKS
+//   and waits only for what is left of the 0.3 s (nothing, if the
+//   frame took longer), so the run lasts about the same on the
+//   Virtual Calculator, the G2 and the G1.  It also remembers the
+//   last run's length and its slowest frame, and the Diagnostics
+//   page (menu) shows them, so a G1's drawing speed can be read off
+//   the screen.  Nothing else changed.
+//
 // beta 42a (19 Oct 2026): fixes from the fleet review of 19 Oct 2026
 //   (D-NE-1 to D-NE-5, fleet review 19 Oct; findings_D.md).  Run on
 //   the PC harness only (ppl_run_v3e).  Line numbers are beta 42's.
@@ -632,6 +661,13 @@ LOCAL neGrab, neHint, neSweep;
 // region) and the orange-framed panel for a histogram bar.
 LOCAL neMAG, neFOOT, neZG, nePOWC, neBARF, neBARS;
 LOCAL neORNG, nePANF;
+
+// ---- beta 42b: what the last standardize animation cost ----
+//   neAnTot ............ its length, seconds (0 = not run yet)
+//   neAnMs ............. its slowest frame's drawing time, ms
+// Shown on the Diagnostics page; set by ne_AnimStd, cleared by
+// ne_ResetAll.
+LOCAL neAnTot, neAnMs;
 
 
 // =====================================================
@@ -1213,7 +1249,7 @@ BEGIN
   // The two pages of soft keys (house "More" convention): More is
   // slot 6 on every page and turns the page.
   exSK := {{"Bands", "Ref", "Centre", "Shade", "Hist", "More"},
-           {"Bnd A", "Bnd B", "mu", "sigma", "Menu", "More"}};
+           {"Bnd A", "Bnd B", "μ", "σ", "Menu", "More"}};
   exPage := 1;                             // page 1 on entry
   exArw := 0;                              // what ← → move: 0 = the default
                                            // (mu; ↑ ↓ sigma), 1 bound a,
@@ -2519,7 +2555,7 @@ BEGIN
   D2 := MAKELIST((D1(K) - zdXB) / zdS, K, 1, zdN, 1);
   // beta 42a (D-NE-1): rounded before STRING (ne_Fx); s cannot be
   // negative, so below the last digit it prints "< 0.0001" (ne_PStr)
-  MSGBOX("Wrote " + ne_Fx(zdN, 0) + " z-scores into D2.  x-bar = "
+  MSGBOX("Wrote " + ne_Fx(zdN, 0) + " z-scores into D2.  " + CHAR(57344) + " = "
     + ne_Fx(zdXB, 4) + ", s" + ne_Eq(ne_PStr(zdS, 4)));
 END;
 
@@ -2559,11 +2595,18 @@ END;
 ne_AnimStd(asMU, asSG, asBand, asRef)
 BEGIN
   LOCAL asF, asM, asS, asZero, asSav, asWt;
-  LOCAL asLo, asHi, asC1, asC2;
+  LOCAL asLo, asHi, asC1, asC2, asT0, asRm;
+  LOCAL asTS;
   // One knob for the whole animation.  0.06 ran the twenty frames
   // in about a second — too fast to read the mu and sigma readouts
   // that change on every frame, which is the point of watching it.
+  // beta 42b: asWt is now the length of a whole frame, drawing
+  // included.  Each frame is timed with TICKS (milliseconds) and
+  // the program waits only for what is left of asWt, so a slow
+  // calculator no longer adds its drawing time on top of the wait.
   asWt := 0.3;
+  asTS := TICKS;                           // start of the whole run
+  neAnMs := 0;
   asZero := MAKELIST(0, K, 1, NBINS+2, 1);
   // Remember the window mode AND its range: a custom range would
   // otherwise be overwritten below and lost on the way out (beta 41).
@@ -2587,9 +2630,15 @@ BEGIN
 
   // phase 1: slide the mean to 0
   FOR asF FROM 1 TO 10 DO
+    asT0 := TICKS;
     asM := asMU * (1 - asF/10);
     ne_NormDraw(asM, asSG, asBand, asRef, 0, 0, 0, 0, 0, asZero, 0, asC1);
-    WAIT(asWt);
+    // this frame's drawing time, ms (+ 0.0: a real, which prints in
+    // decimal; Lessons Learned section 7 on integers in hex)
+    asRm := (TICKS - asT0) + 0.0;
+    IF asRm > neAnMs THEN neAnMs := asRm; END;
+    // wait only for the rest of the frame; skip a wait under 5 ms
+    IF asWt*1000 - asRm > 5 THEN WAIT(asWt - asRm/1000); END;
   END;
   // let the eye settle on mu = 0 before the shape starts changing:
   // the last frame again (asM is exactly 0 now), with a second
@@ -2601,15 +2650,22 @@ BEGIN
   WAIT(1.8);
   // phase 2: rescale sd to 1
   FOR asF FROM 1 TO 10 DO
+    asT0 := TICKS;
     asS := asSG + (1 - asSG) * asF/10;
     ne_NormDraw(0, asS, asBand, asRef, 0, 0, 0, 0, 0, asZero, 0, asC2);
-    WAIT(asWt);
+    // as in phase 1: time the frame, wait only for what is left
+    asRm := (TICKS - asT0) + 0.0;
+    IF asRm > neAnMs THEN neAnMs := asRm; END;
+    IF asWt*1000 - asRm > 5 THEN WAIT(asWt - asRm/1000); END;
   END;
   // the finished picture: N(0,1), with the formula over it
   ne_NormDraw(0, 1, asBand, asRef, 0, 0, 0, 0, 0, asZero, 0,
     {"Standardizing: rescale  (x − μ)/σ", 60, 24, 2,
      "z = (x − μ)/σ  →  N(0,1)", 84, 110, 2});
   WAIT(3);
+  // beta 42b: the whole run's length, seconds, for the Diagnostics
+  // page (the two holds, 1.8 s and 3 s, included)
+  neAnTot := ((TICKS - asTS) + 0.0) / 1000;
 
   NE_KH := 0;
   NE_WA := asSav;
@@ -2675,9 +2731,19 @@ BEGIN
   TEXTOUT_P("  bins " + ne_Fx(NBINS, 0)
     + "   sample n " + ne_Fx(NE_HN, 0), 20, 140, 1, NBLACK);
 
-  TEXTOUT_P("If the fast path is not being used, check", 20, 162, 1, NGRAY);
-  TEXTOUT_P("the Terminal (Shift-View) for a Python", 20, 175, 1, NGRAY);
-  TEXTOUT_P("traceback after drawing a histogram.", 20, 188, 1, NGRAY);
+  // beta 42b: the last standardize animation, so a calculator's
+  // drawing speed can be read here (14 px under the line above; the
+  // grey block below moved down 8 px to make room)
+  IF neAnTot > 0 THEN
+    TEXTOUT_P("  animation " + ne_Fx(neAnTot, 1) + " s, slowest frame "
+      + ne_Fx(neAnMs, 0) + " ms", 20, 154, 1, NBLACK);
+  ELSE
+    TEXTOUT_P("  animation: not run yet", 20, 154, 1, NBLACK);
+  END;
+
+  TEXTOUT_P("If the fast path is not being used, check", 20, 170, 1, NGRAY);
+  TEXTOUT_P("the Terminal (Shift-View) for a Python", 20, 183, 1, NGRAY);
+  TEXTOUT_P("traceback after drawing a histogram.", 20, 196, 1, NGRAY);
 
   TEXTOUT_P("Any key: back to the menu", 20, 214, 1, NGRAY);
   REPEAT dgK := GETKEY; UNTIL dgK > -1;
@@ -2742,7 +2808,7 @@ BEGIN
   TEXTOUT_P("PAGE 2: WHAT " + CHAR(8592) + " " + CHAR(8594) + " MOVE", G1, 20, 123, 1, NBLUE);
   TEXTOUT_P("Bnd A, B", G1, 20, 136, 1, NBLACK);
   TEXTOUT_P("the lower bound (or x₀), the upper", G1, 80, 136, 1, NBLACK);
-  TEXTOUT_P("mu, sigma", G1, 20, 149, 1, NBLACK);
+  TEXTOUT_P("μ, σ", G1, 20, 149, 1, NBLACK);
   TEXTOUT_P("μ; or σ, ← narrower → wider", G1, 80, 149, 1, NBLACK);
   TEXTOUT_P("Menu", G1, 20, 162, 1, NBLACK);
   TEXTOUT_P("back to the menu  (Esc, Enter)", G1, 80, 162, 1, NBLACK);
@@ -2830,6 +2896,7 @@ BEGIN
                                           // the shaded region
   neORNG := #FF4500h;                     // orange: the bar panel frame
   nePANF := #FFF0DCh;                     // light orange: its fill
+  neAnTot := 0; neAnMs := 0;              // beta 42b: no animation yet
   ne_AutoWin();
 END;
 

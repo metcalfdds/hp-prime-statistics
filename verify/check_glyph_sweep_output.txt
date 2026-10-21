@@ -1,0 +1,10 @@
+BiNorm3D_beta1b          code lines 769=769, code diffs 0 (all glyph splits: True), CAS lines same: True, harness loads: True, still spelled: 0  OK
+ChiTable_beta3e          code lines 2274=2274, code diffs 0 (all glyph splits: True), CAS lines same: True, harness loads: True, still spelled: 0  OK
+EpiStats_v1.7e           code lines 4326=4326, code diffs 0 (all glyph splits: True), CAS lines same: True, harness loads: True, still spelled: 0  OK
+ScatterLab_beta2d        code lines 1422=1422, code diffs 0 (all glyph splits: True), CAS lines same: True, harness loads: True, still spelled: 0  OK
+StatDist_v2.7f           code lines 3285=3285, code diffs 0 (all glyph splits: True), CAS lines same: True, harness loads: True, still spelled: 0  OK
+TestChooser_beta2b       code lines 1351=1351, code diffs 1 (all glyph splits: True), CAS lines same: True, harness loads: True, still spelled: 0  OK
+TrendTest_beta3e         code lines 1274=1274, code diffs 1 (all glyph splits: True), CAS lines same: True, harness loads: True, still spelled: 0  OK
+FDAES_v3.9c              code lines 3049=3049, code diffs 0 (all glyph splits: True), CAS lines same: True, harness loads: True, still spelled: 0  OK
+NormExplorer_beta42c     code lines 2106=2106, code diffs 1 (all glyph splits: True), CAS lines same: True, harness loads: True, still spelled: 0  OK
+failures: 0

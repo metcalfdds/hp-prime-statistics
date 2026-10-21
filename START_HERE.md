@@ -8,7 +8,7 @@ Everything here is free for educational and personal use ([LICENSE](LICENSE.txt)
 
 ## If you have five minutes: read the notes
 
-[**docs/lessons-learned_v7l.md**](docs/lessons-learned_v7l.md) is the most useful file here, even if you never run a statistics program. It covers hard limits, commands that behave differently from the manual, touch and graphics idioms, `WAIT(-1)` and soft keys, the MicroPython bridge and how it fails silently, how to call the CAS from a program safely, numerical methods for 12-digit reals, and testing on the Virtual Calculator. Theories that turned out wrong are kept, marked as disproved.
+[**docs/lessons-learned_v7n.md**](docs/lessons-learned_v7n.md) is the most useful file here, even if you never run a statistics program. It covers hard limits, commands that behave differently from the manual, touch and graphics idioms, `WAIT(-1)` and soft keys, the MicroPython bridge and how it fails silently, how to call the CAS from a program safely, numerical methods for 12-digit reals, and testing on the Virtual Calculator. Theories that turned out wrong are kept, marked as disproved.
 
 Three findings that save the most time:
 
