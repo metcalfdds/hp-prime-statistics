@@ -36,7 +36,7 @@ The full list of programs, with what each one does, is in the [README](README.md
 
 - Every program passes a four-tool lint gate and runs in a PC harness that presses keys and taps like a student. Its numbers are checked against SciPy, statsmodels and exact arithmetic. A review on 19 October 2026 made about 82,000 such checks and found no wrong formula.
 - Earlier versions ran in two rounds on the **HP Prime Virtual Calculator**. Its reports are in [docs/dev/](docs/dev/).
-- **The current versions have not yet been run on a G1 or G2.** Earlier versions of ChiTable, NormExplorer, StudRange and BayesTree were tested on both.
+- **The current versions have had only a quick, cursory try on a G1 and a G2**, not a systematic run of their checklists; the two 22 October versions (StudRange beta 15e, TrendTest beta 3f) have not yet run on a calculator. Earlier versions of ChiTable, NormExplorer, StudRange and BayesTree were tested on both.
 - Each version has a device-test checklist in [docs/changes/](docs/changes/), ordered from least to most risky.
 
 ## If you would like to help
