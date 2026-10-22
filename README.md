@@ -8,7 +8,8 @@ Teaching programs for the HP Prime graphing calculator, written in PPL and Micro
 
 Everything here is **free for educational and personal use**. See [LICENSE](LICENSE.txt).
 
-> **Test status, 20 October 2026.**
+> **Test status, 22 October 2026.**
+> - **22 October 2026: StudRange beta 15e.** An independent re-check of the fleet in a fresh environment (the gate with hp-prime-kit, the harness with Giac, and 281 comparisons of the programs' own routines against SciPy, statsmodels and brute-force enumeration) found no wrong formula and one wrong number: the PPL engine's plot cache in StudRange used a 32-node grid for df 8 and above, and from df about 50 to 100 that grid steps over the narrowing density of s, so the cached CDF behind the Plot page was off by up to 2 percentage points (df 90, k 6: 0.968 for a true 0.950). Beta 15e uses 64 nodes at every df, as the Critical value and P-value pages already did; the Python engine, which answers first on a working calculator, is untouched. Only that one line of arithmetic changed. Passed the gate; run in the PC harness; not yet run on the emulator or a calculator.
 > - **20 October 2026: symbols on screen.** Every program was checked for symbols spelled out in the text a student sees. Sixteen of the eighteen here now write χ², x̄, p̂, ², √, ≥, ≤, ±, ×, →, ∞, θ, μ, σ, ρ, φ and the subscripts ₀ ₁ ₂ as symbols (BayesTree, Norm3 and StudRange already did). Only the text changed: the code outside the strings is line-for-line the same, nothing the CAS receives changed, and each program passed the lint gate again. NormExplorer beta 42c also keeps the standardize animation at the same pace on a slow calculator (42b). π, η and τ are new on screen and are on the checklists.
 > - **19 October 2026: a critical sweep and the fixes it called for.** Six reviewers read every program in full and checked about 82,000 numbers against SciPy, statsmodels and exact arithmetic. They found **no wrong formula**. What they found was at the edges: four crashes on odd or edited inputs, six wrong numbers on extreme inputs or in Home exports, and about 25 wrong or stale lines of text. Every program but one has a new lettered version that fixes them (GaltonBoard needed nothing; its new version adds only the disclaimer below). Highlights: ChiTable's risk difference now uses Newcombe's interval, StatDist computes every right tail family by family, and DNAMixLR computes its probabilities without the cancellation that could turn a large LR into "excluded". Every version passes its verify script (re-run independently) and the lint gate. Not yet re-run on the emulator.
 > - **Two emulator rounds.** These programs have run on the **HP Prime Virtual Calculator** (2.4.2, the same 2026-09-09 firmware as the calculators). Round 1 tested the touch-and-graphics versions of 16 October and found six bugs. Round 2 tested the versions that fixed them, with their exact answers from the CAS. Every number checked matched SciPy or exact arithmetic.
@@ -68,7 +69,7 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 
 **StatDist** (v2.7f): 27 distributions, each result a plot you can touch. Drag x or k, the shading follows, and the window snaps to round values. Overlays show the normal approximation, N(0, 1) behind t, and the CDF as an S-curve. A Gallery opens six examples with one tap.
 
-**StudRange** (beta 15d): the studentized range (Tukey's q).
+**StudRange** (beta 15e): the studentized range (Tukey's q).
 - p from q, the critical value from α, Tukey HSD, and an interactive plot.
 - **MicroPython does the arithmetic, PPL is the fallback**, and a badge says which engine ran.
 - Python adds an H₀ simulation that shows why q, and not t, is the right yardstick.

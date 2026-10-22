@@ -1,5 +1,5 @@
 // ============================================================
-// STUDRANGE - beta 15d
+// STUDRANGE - beta 15e
 // Studentized range (Tukey q) - MicroPython engine with a PPL
 //   fallback, in one program
 // ============================================================
@@ -20,13 +20,14 @@
 // Tested on an HP Prime G2 and G1, both running the 2026-09-09
 //   firmware, plus the desktop Virtual Calculator (the PPL
 //   program through beta 12; the MicroPython twin StudRangePy
-//   through beta 14b, G2).  Beta 13, 14, 15, 15a, 15b, 15c and
-//   this beta 15d have NOT yet been run on hardware.  Beta 15 ran on
+//   through beta 14b, G2).  Beta 13, 14, 15, 15a, 15b, 15c, 15d and
+//   this beta 15e have NOT yet been run on hardware.  Beta 15 ran on
 //   the HP Prime Virtual Calculator (2.4.2, build 2026-09-09) on 17
 //   Oct 2026 and beta 15a fixed what that run found; beta 15a ran
 //   there in round 2 the same day (its soft keys fire) and beta 15b
-//   fixes what round 2 found (beta 15c and 15d have not run there;
-//   beta 15d has run only in the PC harness).  The Python path in
+//   fixes what round 2 found (beta 15c, 15d and 15e have not run
+//   there; beta 15d and 15e have run only in the PC harness).  The
+//   Python path in
 //   particular must be tried on a calculator with the Terminal
 //   open (Lessons Learned v7f section 9 -- the emulator cannot
 //   catch a bridge failure, because the fallback hides it).
@@ -57,6 +58,23 @@
 //   which engine answered: an engine badge on every result page
 //   and on the plot, and a Diagnostics item that probes the
 //   bridge live.  StudRangePy is retired by this version.
+//
+// What changed in beta 15e (22 Oct 2026): the PPL engine's plot cache
+//   (independent review, 22 Oct; line numbers are beta 15d's):
+//   - sr_Cache (1364, now 1386): the outer Simpson grid over s is 64 nodes
+//     at EVERY df.  Beta 14 to 15d used 32 nodes for df 8 and above.
+//     The density of s narrows as df grows (width about 1/sqrt(2 df)),
+//     and from df about 50 to 100, 32 nodes step over it: the cached
+//     CDF, and so the Plot page's curve, shading and the p it reads,
+//     were off by up to 2 percentage points (df 90, k 6: 0.968 for a
+//     true 0.950; df 70: 0.943).  With 64 nodes every df tested from
+//     8 to 1000 agrees with SciPy to 5 decimals, as the Critical
+//     value and P-value pages already did (they pass 64).  Above df
+//     100 the spike branch was already exact.  Only the PPL engine
+//     is touched: the Python cache (sr_PyRun(3)) is unchanged, and
+//     the PPL cache build takes about twice as long when it runs.
+//   - Nothing else changed: no text, no page, and the #PYTHON srq
+//     block is byte-identical.
 //
 // What changed in beta 15d (19 Oct 2026): S1, S3 and Home's X
 //   (fleet review 19 Oct; line numbers are beta 15c's):
@@ -323,7 +341,7 @@
 // ============================================================
 
 // ============================================================
-// StudRange beta 15d — Studentized Range Distribution (Tukey q)
+// StudRange beta 15e — Studentized Range Distribution (Tukey q)
 // ============================================================
 // Modernized from: Dunlap, Powell & Konnerth (1977),
 //   "A FORTRAN IV function for calculating probabilities
@@ -1358,10 +1376,14 @@ BEGIN
   END;
   nn:=64; qmax:=6;
   // inner: k-dependent (sharper integrand for large k)
-  // outer: extra nodes for small df (heavy tail near s=0)
+  // outer: 64 nodes at every df (beta 15e).  Beta 14-15d used 32
+  //   for df 8 and above; from df about 50 to 100 that steps over
+  //   the narrowing density of s and the cache was up to 2
+  //   percentage points off.  64 is what sr_CritMode and sr_PvMode
+  //   already pass.
   IF cbK<=5 THEN nzp:=24; ELSE nzp:=32; END;
   IF cbK>10 THEN nzp:=48; END;
-  IF cbV<8  THEN nsp:=64; ELSE nsp:=32; END;
+  nsp:=64;
   sr_BuildZ(nzp);
   WHILE sr_SRCDF(qmax,cbK,cbV,nsp)<0.998 AND qmax<40 DO
     qmax:=qmax*1.4;
