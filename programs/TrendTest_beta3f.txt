@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// TRENDTEST - beta 3e
+// TRENDTEST - beta 3f
 // Chi-square for linear trend in proportions (2 x k table)
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
@@ -28,6 +28,23 @@
 //   passed the retest that afternoon.  The call form (beta 3a) is
 //   the one CASProbe beta 1b found on the HP Prime Virtual
 //   Calculator (build 2026-09-09, 17 Oct 2026).
+//
+// beta 3f (22 Oct 2026): the Pearson and departure p-values keep
+//   their digits (independent review, 22 Oct 2026; line numbers are
+//   beta 3e's).  trCompute set trPP and trPD (857, 862) with
+//   1 - CHISQUARE_CDF, which is exactly 0 on the Prime's 12-digit
+//   reals once the tail is below about 5E-13 (a chi-square above
+//   about 55 at 2 df), where the trend p (beta 3d) already kept its
+//   digits.  New routine trUpper(df, x), before trCompute: the upper
+//   tail as a finite sum with every term positive, so nothing
+//   cancels.  Even df: e^(-x/2) times the Poisson partial sum
+//   1 + h + h^2/2! + ... + h^(df/2-1)/(df/2-1)!, h = x/2.  Odd df:
+//   2 Phi(-sqrt x) + sqrt(2x/pi) e^(-x/2) (1 + x/3 + x^2/15 + ...),
+//   (df-1)/2 terms.  Both are the textbook closed forms of the
+//   chi-square survival function.  Checked against SciPy at df 1 to
+//   12 and x up to 400 (verify_TrendTest_beta3f.py).  Only those two
+//   assignments and the new routine changed; no text on screen, no
+//   page and no Home export changed, and the trend p is as in 3d.
 //
 // beta 3e (20 Oct 2026): symbols instead of spelled-out names, on screen
 //   only (Roger, 20 Oct 2026: "use the symbols we developed").  In the
@@ -810,6 +827,35 @@ BEGIN
   END;
 END;
 
+// beta 3f: P(chi-square(df) > x) as a finite sum of positive terms, so
+// a tiny tail keeps its digits where 1 - CHISQUARE_CDF rounds to 0.
+// Even df: e^(-h) (1 + h + h^2/2! + ... + h^(m-1)/(m-1)!), h = x/2,
+// m = df/2.  Odd df, m = (df-1)/2: 2 P(Z < -sqrt x) +
+// sqrt(2x/pi) e^(-h) (1 + x/3 + x^2/(3*5) + ... ), m terms.
+trUpper(upDF, upX)
+BEGIN
+  LOCAL upH, upT, upS, upJ, upM;
+  IF upX <= 0 THEN RETURN 1; END;
+  upH := upX / 2;
+  IF upDF MOD 2 == 0 THEN
+    upM := upDF / 2;
+    upT := EXP(-upH); upS := upT;
+    FOR upJ FROM 1 TO upM - 1 DO
+      upT := upT * upH / upJ; upS := upS + upT;
+    END;
+    RETURN MIN(1, upS);
+  END;
+  upM := (upDF - 1) / 2;
+  upS := 2 * NORMALD_CDF(0, 1, -(upX^0.5));
+  IF upM >= 1 THEN
+    upT := (2 * upX / 3.14159265359)^0.5 * EXP(-upH); upS := upS + upT;   // pi to the Prime's 12 digits; ASCII, as the tally wants
+    FOR upJ FROM 2 TO upM DO
+      upT := upT * upX / (2 * upJ - 1); upS := upS + upT;
+    END;
+  END;
+  RETURN MIN(1, upS);
+END;
+
 trCompute()
 BEGIN
   LOCAL cpI, cpSxa, cpSxn, cpSxxn, cpEa, cpEb;
@@ -851,13 +897,13 @@ BEGIN
     cpEb := trTot(cpI) - cpEa;                   // expected non-cases
     trX2P := trX2P + (trA(cpI) - cpEa)^2 / cpEa + (trTot(cpI) - trA(cpI) - cpEb)^2 / cpEb;
   END;
-  trPP := 1 - CHISQUARE_CDF(trK - 1, trX2P);
+  trPP := trUpper(trK - 1, trX2P);                 // beta 3f: keeps its digits
 
   // departure from linearity, k-2 df (needs at least 3 levels)
   trDFD := trK - 2;
   trX2D := MAX(0, trX2P - trX2T);
   IF trDFD >= 1 THEN
-    trPD := 1 - CHISQUARE_CDF(trDFD, trX2D);
+    trPD := trUpper(trDFD, trX2D);                 // beta 3f
   ELSE
     trPD := -1;
   END;
