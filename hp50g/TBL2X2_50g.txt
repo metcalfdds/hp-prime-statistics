@@ -1,0 +1,57 @@
+%%HP: T(3)A(R)F(.);
+@ TBL2X2 - chi-square and odds ratio for a 2 x 2 table (HP 50g, User RPL), version 1
+@ Roger Metcalf, 2026. Written with AI assistance (Anthropic Claude). Free for
+@ educational and personal use; no warranty. NOT YET RUN on a 50g or the Virtual
+@ Calculator: the arithmetic is checked against python/hpstats.py, the RPL by reading.
+@
+@ Opens an input form for the four cells a b / c d, then leaves on the stack:
+@   X2:      Pearson chi-square, 1 df          p:       P(chi-square > X2), from UTPC
+@   Yates:   with the continuity correction    pYates:  its p
+@   OR:      the odds ratio a d / (b c)        ORlo: ORhi:  Woolf's 95% interval
+@   and a note when 0.5 was added to every cell because one was 0 (Haldane).
+@ Set FIX 4 to read them; the stack holds full precision.
+\<<
+  "2 x 2 TABLE"
+  { { "a:" "Row 1, column 1" 0 } { "b:" "Row 1, column 2" 0 }
+    { "c:" "Row 2, column 1" 0 } { "d:" "Row 2, column 2" 0 } }
+  { 2 0 } { 10 20 30 15 } { 10 20 30 15 }
+  INFORM
+  IF
+  THEN
+    OBJ\-> DROP
+    \-> a b c d
+    \<<
+      a b + c d + a c + b d +
+      \-> r1 r2 c1 c2
+      \<<
+        IF r1 r2 MIN c1 MIN c2 MIN 0 ==
+        THEN "A row or column total is 0: the chi-square is undefined." MSGBOX
+        ELSE
+          r1 r2 + a d * b c * -
+          \-> n dt
+          \<<
+            dt SQ n * r1 r2 * c1 * c2 * /
+            DUP "X2" \->TAG SWAP
+            1 SWAP UTPC "p" \->TAG
+            dt ABS n 2 / - 0 MAX SQ n * r1 r2 * c1 * c2 * /
+            DUP "Yates" \->TAG SWAP
+            1 SWAP UTPC "pYates" \->TAG
+            a b MIN c MIN d MIN 0 == .5 0 IFTE
+            \-> h
+            \<<
+              a h + d h + * b h + c h + * /
+              a h + INV b h + INV + c h + INV + d h + INV + .5 ^
+              \-> odr sen
+              \<<
+                odr "OR" \->TAG
+                odr sen 1.959964 * NEG EXP * "ORlo" \->TAG
+                odr sen 1.959964 * EXP * "ORhi" \->TAG
+                IF h 0 > THEN "0.5 added to every cell: a cell was 0" END
+              \>>
+            \>>
+          \>>
+        END
+      \>>
+    \>>
+  END
+\>>
