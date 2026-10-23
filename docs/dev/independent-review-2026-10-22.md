@@ -31,7 +31,7 @@ Every program loaded in `ppl_run_v3e` with zero warnings and ran its main routin
 | StatDist | st_betaI, st_gammaP, st_gammaQ, st_lngamma | SciPy special | all agree |
 | StudRange | sr_SRCDF, sr_SRCrit (PPL engine) | SciPy studentized_range | see below |
 
-Two differences are conventions, not errors: `es_McNemar` returns 0 and p = 1 when the discordant cells are equal, as R's `mcnemar.test` does (statsmodels applies the correction anyway); `trCompute` uses Mantel's N - 1 variance, so R's `prop.trend.test` prints a statistic smaller by (N - 1)/N, which the program's own comments already say.
+Two differences are conventions, not errors: `es_McNemar` returns 0 and p = 1 when the discordant cells are equal, as R's `mcnemar.test` does (statsmodels applies the correction anyway); `trCompute` uses Mantel's N - 1 variance, which is the larger variance, so its statistic is the smaller: R's `prop.trend.test` prints Armitage's form, larger by N/(N - 1), as the program's own comments say.
 
 ## 4. The one wrong number: StudRange's PPL plot cache
 

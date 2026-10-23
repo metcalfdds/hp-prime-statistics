@@ -2,7 +2,7 @@
 
 | File | What it is |
 | --- | --- |
-| `lessons-learned_v7p.md` | The main reference: PPL, CAS and MicroPython behaviour found on hardware, and the house rules that came out of it. Start here. |
+| `lessons-learned_v7q.md` | The main reference: PPL, CAS and MicroPython behaviour found on hardware, and the house rules that came out of it. Start here. |
 | `micropython-on-the-prime.md` | Field notes on the Python side: what the interpreter is, how the bridge fails, and when it is worth using. |
 | `implementation-notes.md` | Why the code looks the way it does. Annotated excerpts, for people who write PPL. |
 | `historical-cross-checks.md` | Worked examples from HP's own 1970s statistics programs, used as a second check on NormExplorer and BayesTree, plus reference cases for testing your own programs. |
