@@ -10,11 +10,21 @@ A few of the fleet's calculating programs in User RPL for the HP 50g, as plain-t
 
 ## Loading a listing
 
-**Virtual Calculator (Emu48-based, Windows):** File, Load Object, choose the `.txt`. The `%%HP: T(3)A(R)F(.);` header on line 1 tells it to translate `\<<`, `\>>` and `\->` into the calculator's characters; the object lands on the stack. Store it under a name: type `'TBL2X2'` then `STO`.
+The steps below for the card are from the HP 50g User's Guide, chapter 26 ("Using SD cards", pages 26-7 to 26-11); the ones for the Virtual Calculator from its File menu.
 
-**Real 50g by SD card:** copy the `.txt` to a FAT-formatted card (2 GB or smaller is the safe size), put the card in the 50g, open the Filer (left-shift FILES), go to port 3 (the card), highlight the file and press RECV or copy it into HOME. If it arrives as a string, press `OBJ→` to compile it, then store it under a name. Lines starting with `@` are comments and are dropped on compile.
+**Virtual Calculator (Emu48-based, Windows):** File, Load Object, choose the `.txt`. The `%%HP: T(3)A(R)F(.);` header on line 1 tells it to translate `\<<`, `\>>` and `\->` into the calculator's characters; the program lands on the stack. Store it: type `'TBL2X2'`, press STO. Test it from VAR.
 
-**Running:** type the name or press its soft key in VAR. Fill the form (defaults are the test table below), press OK. Results arrive as tagged objects; `FIX 4` makes them readable.
+**Real 50g, the sure route (a compiled object, no text translation involved):**
+
+1. On the Virtual Calculator, with the program tested, recall it to the stack (VAR, right-shift, its soft key), then File, Save Object, name `TBL2X2`. That writes the 50g's own binary object format, which the real calculator recognises.
+2. The card: FAT16 or FAT32 (the guide names only those two; 2 GB or smaller is the safe size). The calculator can also format a card itself (ON held, D pressed, then 0 for FORMAT; the result is FAT32). Copy the saved file to the card's top level. Names longer than 8.3 are accepted but shown truncated in the Filer.
+3. Insert the card in the slot on the bottom edge, below the number keys, **label side down** (facing away from you with the keyboard up). It slides most of the way freely, then needs a firm push; fully in, only the top edge shows. To remove it later, turn the calculator off first, then press the edge in and it springs out.
+4. The card is **port 3**. Press left-shift FILES to open the Filer; its tree shows port 3 only when a card is in. Open it, highlight TBL2X2 and press the RCL soft key: the program comes to the stack. Or, from the stack line, type `:3:TBL2X2` and press RCL (right-shift STO). Then `'TBL2X2'` STO to keep it in HOME.
+5. Run it from VAR. `:3:TBL2X2` followed by EVAL runs it straight from the card without storing it.
+
+**Real 50g, the text route, untried:** copy the `.txt` itself to the card. The Filer lists a PC text file as type String; RCL brings it to the stack as a string, and OBJ→ should compile it. Whether the compiler accepts the `\<<` and `\->` transliterations and the `%%HP` header line in that path is not stated in the guide and has not been tried; if it works, it saves step 1, and either way the answer belongs in the Lessons Learned.
+
+**Running:** type the name or press its soft key in VAR. Fill the form (defaults are the test table below), press OK. Results arrive as tagged objects; `FIX 4` (left-shift MODE, Number Format) makes them readable.
 
 ## Expected results for TBL2X2
 
