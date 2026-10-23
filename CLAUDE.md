@@ -10,6 +10,7 @@ Nineteen teaching programs for the HP Prime calculator in PPL (five carry MicroP
 
 The author's cloud credit is spent on tokens, not on processor time. So:
 
+- **Before any task, choose the way that does the job properly at the least cost**, and say the expected cost before starting anything likely to exceed a few dollars. Compute is cheap and tokens are dear: a script that runs for an hour and prints ten lines beats ten minutes of reading. If two methods give the same result, take the cheaper one; if the cheaper one gives a weaker result, say what it loses and let the author choose.
 - **Prefer a script that runs long and prints little.** Run checks and sweeps in the background, filter their output to the lines that decide something, and read a summary, never a whole log.
 - **Do not read whole programs into the conversation.** A program is 1,000 to 6,000 lines. Grep for the routine you need and read that routine. Check a formula by calling its routine through the harness (`h.execute('es_WilsonCI(5,20)')`, or `h.globals_.update({...})` then `h.execute('csCompute()')`), not by reading or driving its pages.
 - **Do not spawn parallel agents** for reading; they multiply the cost. One session, one thread.
