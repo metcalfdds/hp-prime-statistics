@@ -16,7 +16,7 @@ Three findings that save the most time:
 - **A Python exception does not raise a PPL error.** `IFERR` around `PYTHON(...)` catches nothing, and the program carries on with stale values.
 - **Every program's routines share one name pool.** Two programs that both define a helper with the same name can run each other's code. `tools/fleet_names_v2.py` checks for this.
 
-The notes are written so they can also be given to an AI coding assistant as background before it writes PPL for you. They were written with and for Claude Code and read best there; they are meant to help any assistant, but have not been tried with another. `CLAUDE.md` at the top of the repository is the working brief a Claude Code session reads on its own.
+The notes are written so they can also be given to an AI coding assistant as background before it writes PPL for you. They were written with and for Claude Code and read best there; they are meant to help any assistant, but have not been tried with another. `CLAUDE.md` at the top of the repository is the working brief a Claude Code session reads on its own. For a model with a small context window, [docs/ppl-rules-for-any-assistant.md](docs/ppl-rules-for-any-assistant.md) is the same knowledge as about 3,000 words of flat rules, ending in a small program that passes the gate.
 
 ## If you have a calculator: try these first
 
