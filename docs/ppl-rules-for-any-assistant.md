@@ -7,7 +7,7 @@
 ## 1. What PPL is and is not
 
 - PPL is the HP Prime's own language. It is **not** Python, TI-BASIC or BASIC. Blocks are `BEGIN … END;`, `IF … THEN … ELSE … END;`, `FOR i FROM a TO b DO … END;`, `WHILE … DO … END;`, `REPEAT … UNTIL …;`, `CASE IF … THEN … END; … DEFAULT … END;`. Every statement ends with `;`. Assignment is `:=`. Equality test is `==`. Not-equal is `<>`. Comments are `//` to end of line.
-- A program file holds one or more routines. `EXPORT Name()` makes a routine appear in the program catalog; helpers are declared without `EXPORT`. Every routine in every program on the calculator shares one name pool, matched ignoring case, so helper names must be unique across programs: prefix them (`t2Calc`, `t2Show`).
+- A program file holds one or more routines. `EXPORT Name()` makes a routine appear in the program catalog; helpers are declared without `EXPORT`. Every routine in every program on the calculator shares one name pool, matched ignoring case, so helper names must be unique across programs: prefix them (`tbCalc`, `tbShow`).
 - Reals carry 12 significant digits. There is no integer type. Lists are `{1, 2, 3}`, indexed from 1, `L(2)`. Strings are `"…"`, `DIM(s)` is the length, `+` concatenates, `MID`, `LEFT`, `RIGHT`, `INSTRING` are the tools.
 - Use PPL for everything that draws or reacts to keys. Use MicroPython only for a compute-heavy engine that needs a real speed-up, and keep a pure-PPL fallback (section 8). Use the CAS only for exact or symbolic text, behind a guard (section 9).
 
