@@ -6,6 +6,7 @@
 | `micropython-on-the-prime.md` | Field notes on the Python side: what the interpreter is, how the bridge fails, and when it is worth using. |
 | `implementation-notes.md` | Why the code looks the way it does. Annotated excerpts, for people who write PPL. |
 | `historical-cross-checks.md` | Worked examples from HP's own 1970s statistics programs, used as a second check on NormExplorer and BayesTree, plus reference cases for testing your own programs. |
+| `ppl-rules-for-any-assistant.md` | The Lessons Learned condensed to about 3,000 words of flat rules for an AI assistant with a small context window (a local model in LM Studio, say), with a 2 × 2 table analyzer that passes the gate as the example to imitate. |
 | `normexplorer-guide.md` | User's guide to NormExplorer (beta 42c), written for students. |
 | `chitable-guide.md` | User's guide to ChiTable (beta 3e), the two-way-table chi-square program, including Newcombe's interval for the risk difference. |
 | `studrange-guide.md` | User's guide to StudRange (beta 15a, with the MicroPython engine). The program is now beta 15d. Since 15a: the Quit summary counts the plot and the first tap after a page closes is no longer skipped (15b); an exact 0 prints "p < 0.00001" (15c); a note appears when the PPL fallback answers at α < 0.005, and Home's X is left alone (15d). |
