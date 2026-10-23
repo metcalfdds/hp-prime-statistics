@@ -4,7 +4,7 @@
 
 Teaching programs for the HP Prime graphing calculator, written in PPL and MicroPython. They were originally intended for upper-level university statistics courses, and also to show off some of the capabilities of the HP Prime calculator: the colour screen, the touch screen, and the MicroPython engine running alongside PPL.
 
-**And a set of notes on what the Prime actually does**, as opposed to what the manual says: hard limits, commands that behave differently than documented, the MicroPython bridge and how it fails. Those notes are not specific to statistics. If you write PPL for anything, [docs/lessons-learned_v7o.md](docs/lessons-learned_v7o.md) is the part worth your time, I hope.
+**And a set of notes on what the Prime actually does**, as opposed to what the manual says: hard limits, commands that behave differently than documented, the MicroPython bridge and how it fails. Those notes are not specific to statistics. If you write PPL for anything, [docs/lessons-learned_v7p.md](docs/lessons-learned_v7p.md) is the part worth your time, I hope.
 
 Everything here is **free for educational and personal use**. See [LICENSE](LICENSE.txt).
 
@@ -176,7 +176,7 @@ Short programs for finding out what your own calculator does.
 
 ## The notes
 
-[**docs/lessons-learned_v7o.md**](docs/lessons-learned_v7o.md) is the substantial document here: everything found the expensive way across roughly forty build iterations on real hardware. It covers:
+[**docs/lessons-learned_v7p.md**](docs/lessons-learned_v7p.md) is the substantial document here: everything found the expensive way across roughly forty build iterations on real hardware. It covers:
 - hard limits;
 - command behaviour that contradicts the manual;
 - graphics and input idioms;
