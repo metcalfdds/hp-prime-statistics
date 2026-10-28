@@ -21,6 +21,8 @@ Most of the programs are built around the touch screen. You drag a bound and the
 | **Bayes and forensic science** | BayesTree, DNAMixLR, ErrorRate Lab |
 | **Criminal justice and forensic statistics** (new, October 2026) | RankLab, AnovaLab, SeizureLab, SurvLab, FitCheck, ResampLab, AgreeLab, RiskLab |
 
+Together the 27 programs run to about **76,000 lines**: 52,000 of PPL, 640 of MicroPython (in five of them), and 20,000 lines of comments, written so a student can follow what each part does. The largest is EpiStats at about 6,100 lines; the eight October programs average about 3,000 each.
+
 And around the programs:
 
 - **[The notes](docs/lessons-learned_v7s.md)**: hard limits, commands that differ from the manual, touch and graphics idioms, the MicroPython bridge and how it fails silently, calling the CAS safely, numerical methods for 12-digit reals. Useful even if you never run a statistics program, and written so you can hand them to an AI assistant before it writes PPL for you.
@@ -68,7 +70,7 @@ Every program is a plain `.txt` file, on purpose.
 > 1. **Delete any ordinary program called CentralLimit** from the calculator (Program Catalog → highlight it → Delete). It may be there from an earlier version, or from pasting it as a plain program by mistake.
 > 2. **Make the app:** Apps → highlight Statistics 1Var *without opening it* → **Save** → name it `CentralLimit` → OK.
 > 3. **Paste the program into the app:** in the Connectivity Kit, Application Library → double-click CentralLimit → **Program** tab → select all → paste `CentralLimit_beta3d.txt` → save. On the calculator, Check it (it is the first entry in the Program Catalog while the app is active).
-> 4. **Restart the calculator** (on the Virtual Calculator, close and reopen it; on a G1 or G2, a soft reset). Without this, the deleted program's routines can stay in memory and the app keeps opening on its spreadsheet.
+> 4. **Reset the calculator** (a soft reset: on the Virtual Calculator, its **Calculator menu → Reset**; on a G1 or G2, press the reset button in the small hole on the back with a straightened paper clip). Closing and reopening the Virtual Calculator is not enough. Without the reset, the deleted program's routines can stay in memory and the app keeps opening on its spreadsheet.
 > 5. **Start it:** Apps → highlight CentralLimit *without touching it* → tap **Start**. You should see a welcome page and then its menu. Touching the icon only reopens the spreadsheet; press **View** from there to reach the CentralLimit menu.
 >
 > *Found the hard way on 27 October 2026, on the Virtual Calculator and then a G1.*
