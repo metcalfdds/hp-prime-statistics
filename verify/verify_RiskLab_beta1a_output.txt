@@ -1,0 +1,8 @@
+=== Part A: the engine
+=== Part B: menu paths, numbers on the pages
+=== Part D: the second review
+   name scan: 250 names (98 routines, 7 exports, 145 file-level LOCALs), 0 case-folded clashes, 0 inner shadows
+=== Part C: every run
+   texts wider than their width at 6.5 px per character: 0
+
+611 checks, 0 failures

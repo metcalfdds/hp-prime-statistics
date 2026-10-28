@@ -1,0 +1,783 @@
+
+===== Part E: exact permutation distributions =====
+PASS E two-group 5 v 5 preset, mean: exact counts (C, >=, <=, |>=|)   program (252, 6, 249, 12), itertools (252, 6, 249, 12)
+PASS E 5 v 5 preset st1: exact histogram sums to C
+PASS E two-group 5 v 5 preset, median: exact counts (C, >=, <=, |>=|)   program (252, 6, 252, 12), itertools (252, 6, 252, 12)
+PASS E 5 v 5 preset st2: exact histogram sums to C
+PASS E two-group n=2 v 2, mean: exact counts (C, >=, <=, |>=|)   program (6, 1, 6, 2), itertools (6, 1, 6, 2)
+PASS E n=2 v 2 st1: exact histogram sums to C
+PASS E two-group n=2 v 2, median: exact counts (C, >=, <=, |>=|)   program (6, 1, 6, 2), itertools (6, 1, 6, 2)
+PASS E n=2 v 2 st2: exact histogram sums to C
+PASS E two-group 2 v 3 ties, mean: exact counts (C, >=, <=, |>=|)   program (10, 10, 6, 10), itertools (10, 10, 6, 10)
+PASS E 2 v 3 ties st1: exact histogram sums to C
+PASS E two-group 2 v 3 ties, median: exact counts (C, >=, <=, |>=|)   program (10, 10, 6, 10), itertools (10, 10, 6, 10)
+PASS E 2 v 3 ties st2: exact histogram sums to C
+PASS E two-group 3 v 3 neg, mean: exact counts (C, >=, <=, |>=|)   program (20, 6, 15, 12), itertools (20, 6, 15, 12)
+PASS E 3 v 3 neg st1: exact histogram sums to C
+PASS E two-group 3 v 3 neg, median: exact counts (C, >=, <=, |>=|)   program (20, 6, 16, 12), itertools (20, 6, 16, 12)
+PASS E 3 v 3 neg st2: exact histogram sums to C
+PASS E two-group 4 v 6 decimals, mean: exact counts (C, >=, <=, |>=|)   program (210, 7, 206, 11), itertools (210, 7, 206, 11)
+PASS E 4 v 6 decimals st1: exact histogram sums to C
+PASS E two-group 4 v 6 decimals, median: exact counts (C, >=, <=, |>=|)   program (210, 6, 207, 11), itertools (210, 6, 207, 11)
+PASS E 4 v 6 decimals st2: exact histogram sums to C
+PASS E two-group 6 v 6 ints ties, mean: exact counts (C, >=, <=, |>=|)   program (924, 42, 911, 84), itertools (924, 42, 911, 84)
+PASS E 6 v 6 ints ties st1: exact histogram sums to C
+PASS E two-group 6 v 6 ints ties, median: exact counts (C, >=, <=, |>=|)   program (924, 64, 924, 128), itertools (924, 64, 924, 128)
+PASS E 6 v 6 ints ties st2: exact histogram sums to C
+PASS E two-group 7 v 7, mean: exact counts (C, >=, <=, |>=|)   program (3432, 64, 3394, 128), itertools (3432, 64, 3394, 128)
+PASS E 7 v 7 st1: exact histogram sums to C
+PASS E two-group 7 v 7, median: exact counts (C, >=, <=, |>=|)   program (3432, 100, 3412, 200), itertools (3432, 100, 3412, 200)
+PASS E 7 v 7 st2: exact histogram sums to C
+PASS E two-group 5 v 9, mean: exact counts (C, >=, <=, |>=|)   program (2002, 328, 1787, 621), itertools (2002, 328, 1787, 621)
+PASS E 5 v 9 st1: exact histogram sums to C
+PASS E two-group 5 v 9, median: exact counts (C, >=, <=, |>=|)   program (2002, 626, 1731, 1327), itertools (2002, 626, 1731, 1327)
+PASS E 5 v 9 st2: exact histogram sums to C
+PASS E two-group 3 v 12, mean: exact counts (C, >=, <=, |>=|)   program (455, 15, 449, 31), itertools (455, 15, 449, 31)
+PASS E 3 v 12 st1: exact histogram sums to C
+PASS E two-group 3 v 12, median: exact counts (C, >=, <=, |>=|)   program (455, 35, 448, 117), itertools (455, 35, 448, 117)
+PASS E 3 v 12 st2: exact histogram sums to C
+PASS E two-group huge value, mean: exact counts (C, >=, <=, |>=|)   program (126, 55, 75, 55), itertools (126, 55, 75, 55)
+PASS E huge value st1: exact histogram sums to C
+PASS E two-group huge value, median: exact counts (C, >=, <=, |>=|)   program (126, 108, 36, 69), itertools (126, 108, 36, 69)
+PASS E huge value st2: exact histogram sums to C
+PASS E two-group A all equal, mean: exact counts (C, >=, <=, |>=|)   program (210, 120, 120, 210), itertools (210, 120, 120, 210)
+PASS E A all equal st1: exact histogram sums to C
+PASS E two-group A all equal, median: exact counts (C, >=, <=, |>=|)   program (210, 135, 135, 210), itertools (210, 135, 135, 210)
+PASS E A all equal st2: exact histogram sums to C
+PASS E two-group B larger, mean: exact counts (C, >=, <=, |>=|)   program (165, 165, 1, 3), itertools (165, 165, 1, 3)
+PASS E B larger st1: exact histogram sums to C
+PASS E two-group B larger, median: exact counts (C, >=, <=, |>=|)   program (165, 165, 4, 19), itertools (165, 165, 4, 19)
+PASS E B larger st2: exact histogram sums to C
+PASS E two-group obs 0, mean: exact counts (C, >=, <=, |>=|)   program (20, 14, 14, 20), itertools (20, 14, 14, 20)
+PASS E obs 0 st1: exact histogram sums to C
+PASS E two-group obs 0, median: exact counts (C, >=, <=, |>=|)   program (20, 14, 14, 20), itertools (20, 14, 14, 20)
+PASS E obs 0 st2: exact histogram sums to C
+PASS E two-group one big tie, mean: exact counts (C, >=, <=, |>=|)   program (126, 35, 126, 70), itertools (126, 35, 126, 70)
+PASS E one big tie st1: exact histogram sums to C
+PASS E two-group one big tie, median: exact counts (C, >=, <=, |>=|)   program (126, 126, 126, 126), itertools (126, 126, 126, 126)
+PASS E one big tie st2: exact histogram sums to C
+PASS E two-group random 1 (6 v 5), mean: exact counts (C, >=, <=, |>=|)   program (462, 206, 286, 382), itertools (462, 206, 286, 382)
+PASS E random 1 (6 v 5) st1: exact histogram sums to C
+PASS E two-group random 1 (6 v 5), median: exact counts (C, >=, <=, |>=|)   program (462, 301, 281, 462), itertools (462, 301, 281, 462)
+PASS E random 1 (6 v 5) st2: exact histogram sums to C
+PASS E two-group random 2 (2 v 2), mean: exact counts (C, >=, <=, |>=|)   program (6, 1, 6, 2), itertools (6, 1, 6, 2)
+PASS E random 2 (2 v 2) st1: exact histogram sums to C
+PASS E two-group random 2 (2 v 2), median: exact counts (C, >=, <=, |>=|)   program (6, 1, 6, 2), itertools (6, 1, 6, 2)
+PASS E random 2 (2 v 2) st2: exact histogram sums to C
+PASS E two-group random 3 (2 v 2), mean: exact counts (C, >=, <=, |>=|)   program (6, 3, 4, 6), itertools (6, 3, 4, 6)
+PASS E random 3 (2 v 2) st1: exact histogram sums to C
+PASS E two-group random 3 (2 v 2), median: exact counts (C, >=, <=, |>=|)   program (6, 3, 4, 6), itertools (6, 3, 4, 6)
+PASS E random 3 (2 v 2) st2: exact histogram sums to C
+PASS E two-group random 4 (3 v 2), mean: exact counts (C, >=, <=, |>=|)   program (10, 10, 1, 1), itertools (10, 10, 1, 1)
+PASS E random 4 (3 v 2) st1: exact histogram sums to C
+PASS E two-group random 4 (3 v 2), median: exact counts (C, >=, <=, |>=|)   program (10, 10, 1, 1), itertools (10, 10, 1, 1)
+PASS E random 4 (3 v 2) st2: exact histogram sums to C
+PASS E two-group random 5 (4 v 7), mean: exact counts (C, >=, <=, |>=|)   program (330, 81, 250, 159), itertools (330, 81, 250, 159)
+PASS E random 5 (4 v 7) st1: exact histogram sums to C
+PASS E two-group random 5 (4 v 7), median: exact counts (C, >=, <=, |>=|)   program (330, 123, 219, 264), itertools (330, 123, 219, 264)
+PASS E random 5 (4 v 7) st2: exact histogram sums to C
+PASS E two-group random 6 (7 v 2), mean: exact counts (C, >=, <=, |>=|)   program (36, 5, 32, 9), itertools (36, 5, 32, 9)
+PASS E random 6 (7 v 2) st1: exact histogram sums to C
+PASS E two-group random 6 (7 v 2), median: exact counts (C, >=, <=, |>=|)   program (36, 5, 32, 6), itertools (36, 5, 32, 6)
+PASS E random 6 (7 v 2) st2: exact histogram sums to C
+PASS E two-group random 7 (2 v 7), mean: exact counts (C, >=, <=, |>=|)   program (36, 10, 29, 17), itertools (36, 10, 29, 17)
+PASS E random 7 (2 v 7) st1: exact histogram sums to C
+PASS E two-group random 7 (2 v 7), median: exact counts (C, >=, <=, |>=|)   program (36, 10, 29, 17), itertools (36, 10, 29, 17)
+PASS E random 7 (2 v 7) st2: exact histogram sums to C
+PASS E two-group random 8 (6 v 4), mean: exact counts (C, >=, <=, |>=|)   program (210, 114, 97, 189), itertools (210, 114, 97, 189)
+PASS E random 8 (6 v 4) st1: exact histogram sums to C
+PASS E two-group random 8 (6 v 4), median: exact counts (C, >=, <=, |>=|)   program (210, 129, 90, 172), itertools (210, 129, 90, 172)
+PASS E random 8 (6 v 4) st2: exact histogram sums to C
+PASS E two-group random 9 (5 v 3), mean: exact counts (C, >=, <=, |>=|)   program (56, 27, 30, 56), itertools (56, 27, 30, 56)
+PASS E random 9 (5 v 3) st1: exact histogram sums to C
+PASS E two-group random 9 (5 v 3), median: exact counts (C, >=, <=, |>=|)   program (56, 28, 37, 56), itertools (56, 28, 37, 56)
+PASS E random 9 (5 v 3) st2: exact histogram sums to C
+PASS E two-group random 10 (5 v 3), mean: exact counts (C, >=, <=, |>=|)   program (56, 2, 55, 2), itertools (56, 2, 55, 2)
+PASS E random 10 (5 v 3) st1: exact histogram sums to C
+PASS E two-group random 10 (5 v 3), median: exact counts (C, >=, <=, |>=|)   program (56, 6, 56, 6), itertools (56, 6, 56, 6)
+PASS E random 10 (5 v 3) st2: exact histogram sums to C
+PASS E two-group random 11 (3 v 4), mean: exact counts (C, >=, <=, |>=|)   program (35, 11, 25, 21), itertools (35, 11, 25, 21)
+PASS E random 11 (3 v 4) st1: exact histogram sums to C
+PASS E two-group random 11 (3 v 4), median: exact counts (C, >=, <=, |>=|)   program (35, 15, 22, 30), itertools (35, 15, 22, 30)
+PASS E random 11 (3 v 4) st2: exact histogram sums to C
+PASS E two-group random 12 (3 v 4), mean: exact counts (C, >=, <=, |>=|)   program (35, 4, 32, 5), itertools (35, 4, 32, 5)
+PASS E random 12 (3 v 4) st1: exact histogram sums to C
+PASS E two-group random 12 (3 v 4), median: exact counts (C, >=, <=, |>=|)   program (35, 4, 33, 8), itertools (35, 4, 33, 8)
+PASS E random 12 (3 v 4) st2: exact histogram sums to C
+PASS E two-group random 13 (6 v 7), mean: exact counts (C, >=, <=, |>=|)   program (1716, 1330, 478, 878), itertools (1716, 1330, 478, 878)
+PASS E random 13 (6 v 7) st1: exact histogram sums to C
+PASS E two-group random 13 (6 v 7), median: exact counts (C, >=, <=, |>=|)   program (1716, 1058, 918, 1656), itertools (1716, 1058, 918, 1656)
+PASS E random 13 (6 v 7) st2: exact histogram sums to C
+PASS E two-group random 14 (6 v 6), mean: exact counts (C, >=, <=, |>=|)   program (924, 836, 89, 178), itertools (924, 836, 89, 178)
+PASS E random 14 (6 v 6) st1: exact histogram sums to C
+PASS E two-group random 14 (6 v 6), median: exact counts (C, >=, <=, |>=|)   program (924, 896, 34, 68), itertools (924, 896, 34, 68)
+PASS E random 14 (6 v 6) st2: exact histogram sums to C
+PASS E two-group random 15 (6 v 3), mean: exact counts (C, >=, <=, |>=|)   program (84, 54, 31, 78), itertools (84, 54, 31, 78)
+PASS E random 15 (6 v 3) st1: exact histogram sums to C
+PASS E two-group random 15 (6 v 3), median: exact counts (C, >=, <=, |>=|)   program (84, 65, 22, 33), itertools (84, 65, 22, 33)
+PASS E random 15 (6 v 3) st2: exact histogram sums to C
+PASS E scipy.permutation_test exact, 5 v 5 preset: p(greater) 0.023810 vs 0.023810
+PASS E scipy.permutation_test exact, n=2 v 2: p(greater) 0.166667 vs 0.166667
+PASS E scipy.permutation_test exact, 2 v 3 ties: p(greater) 1.000000 vs 1.000000
+PASS E scipy.permutation_test exact, 3 v 3 neg: p(greater) 0.300000 vs 0.300000
+PASS E scipy.permutation_test exact, 4 v 6 decimals: p(greater) 0.033333 vs 0.033333
+PASS E scipy.permutation_test exact, 6 v 6 ints ties: p(greater) 0.045455 vs 0.045455
+PASS E scipy.permutation_test exact, 7 v 7: p(greater) 0.018648 vs 0.018648
+PASS E scipy.permutation_test exact, 5 v 9: p(greater) 0.163836 vs 0.163836
+PASS E Darwin differences x 8 are Fisher's eighths (DATASETS.md)
+PASS E paired Darwin (counting by sums): exact counts (2^n, >=, <=, |>=|)   program (32768, 863, 31933, 1726), itertools (32768, 863, 31933, 1726)
+PASS E paired n=2 (counting by sums): exact counts (2^n, >=, <=, |>=|)   program (4, 2, 3, 4), itertools (4, 2, 3, 4)
+PASS E paired n=3 zero (counting by sums): exact counts (2^n, >=, <=, |>=|)   program (8, 4, 6, 8), itertools (8, 4, 6, 8)
+PASS E paired all positive (counting by sums): exact counts (2^n, >=, <=, |>=|)   program (32, 1, 32, 2), itertools (32, 1, 32, 2)
+PASS E paired ints n=10 (counting by sums): exact counts (2^n, >=, <=, |>=|)   program (1024, 146, 908, 292), itertools (1024, 146, 908, 292)
+PASS E paired decimals (counting by sums): exact counts (2^n, >=, <=, |>=|)   program (128, 10, 119, 20), itertools (128, 10, 119, 20)
+PASS E paired floats Gray n=8 (Gray code): exact counts (2^n, >=, <=, |>=|)   program (256, 73, 184, 146), itertools (256, 73, 184, 146)
+PASS E paired floats Gray n=12 (Gray code): exact counts (2^n, >=, <=, |>=|)   program (4096, 2124, 1973, 3946), itertools (4096, 2124, 1973, 3946)
+PASS E paired mixed zeros (counting by sums): exact counts (2^n, >=, <=, |>=|)   program (32, 12, 28, 24), itertools (32, 12, 28, 24)
+PASS E paired ints n=15 (counting by sums): exact counts (2^n, >=, <=, |>=|)   program (32768, 500, 32410, 1000), itertools (32768, 500, 32410, 1000)
+PASS E paired random 1 (n=7) (counting by sums): exact counts (2^n, >=, <=, |>=|)   program (128, 86, 45, 90), itertools (128, 86, 45, 90)
+PASS E paired random 2 (n=3) (counting by sums): exact counts (2^n, >=, <=, |>=|)   program (8, 6, 3, 6), itertools (8, 6, 3, 6)
+PASS E paired random 3 (n=5) (counting by sums): exact counts (2^n, >=, <=, |>=|)   program (32, 2, 31, 4), itertools (32, 2, 31, 4)
+PASS E paired random 4 (n=8) (counting by sums): exact counts (2^n, >=, <=, |>=|)   program (256, 235, 22, 44), itertools (256, 235, 22, 44)
+PASS E paired random 5 (n=12) (counting by sums): exact counts (2^n, >=, <=, |>=|)   program (4096, 3320, 835, 1670), itertools (4096, 3320, 835, 1670)
+PASS E paired random 6 (n=13): exact refused only when n > 12 and off-grid
+PASS E paired random 7 (n=4) (counting by sums): exact counts (2^n, >=, <=, |>=|)   program (16, 6, 11, 12), itertools (16, 6, 11, 12)
+PASS E Darwin (Python, itertools): 1726 of 32768 two-sided, 863 one-sided (Fisher's own figure is in his book, not checked here)
+PASS E paired off-grid n=3 uses the Gray-code route
+PASS E paired off-grid n=14: exact refused, random flips used
+
+===== Part M: Monte Carlo replays =====
+PASS M two-group replay 5 v 5 mean: B = 2000, counts (47, 1976, 98) = replay (47, 1976, 98), 10000 random numbers used
+PASS M 5 v 5 mean: random p 0.0490 within 3.3 SE of the exact 12/252 = 0.0476
+PASS M two-group replay 5 v 5 median: B = 2000, counts (43, 2000, 84) = replay (43, 2000, 84), 10000 random numbers used
+PASS M 5 v 5 median: random p 0.0420 within 3.3 SE of exact 12/252
+PASS M two-group replay MockJury U v B mean: B = 1000, counts (63, 945, 121) = replay (63, 945, 121), 37000 random numbers used
+PASS M MockJury U v B mean: random p 0.1210 within 3.3 SE of numpy's 200,000-shuffle 0.1047
+PASS M two-group replay MockJury U v B median: B = 600, counts (86, 595, 156) = replay (86, 595, 156), 22200 random numbers used
+PASS M MockJury U v B median: random p 0.2600 within 3.3 SE of numpy's 200,000-shuffle 0.2489
+PASS M two-group replay Rossi aid v no aid mean: B = 600, counts (268, 335, 528) = replay (268, 335, 528), 28800 random numbers used
+PASS M Rossi aid v no aid mean: random p 0.8800 within 3.3 SE of numpy's 200,000-shuffle 0.8900
+PASS M two-group replay MockJury U v Avg mean: B = 600, counts (13, 587, 23) = replay (13, 587, 23), 22200 random numbers used
+PASS M MockJury U v Avg mean: random p 0.0383 within 3.3 SE of numpy's 200,000-shuffle 0.0359
+PASS M paired replay Darwin: counts (62, 2940, 135) = replay (62, 2940, 135)
+PASS M paired Darwin: random p 0.0450 within 3.3 SE of exact 1726/32768
+PASS M paired replay ints n=10: counts (125, 706, 234) = replay (125, 706, 234)
+PASS M paired ints n=10: random p 0.2925 within 3.3 SE of exact 292/1024
+
+===== Part B: the bootstrap against scipy.stats.bootstrap, same resamples =====
+PASS B BJS mean: 1000 bootstrap values = numpy on the same indices
+PASS B BJS mean: percentile (146.901, 163.225) = SciPy (146.901, 163.225)
+PASS B BJS mean: basic (146.921, 163.245) = SciPy (146.921, 163.245)
+PASS B BJS mean: jackknife a 0.01190144 = direct 0.01190144 = SciPy 0.01190144
+PASS B BJS mean: BCa (147.341, 163.823) = SciPy (147.341, 163.823), alpha1 0.030322 alpha2 0.979713
+PASS B BJS mean: t-interval (146.91, 163.236) = scipy.stats.t (146.91, 163.236)
+PASS B BJS mean: SE* = SD of the B values 4.09039 = numpy 4.09039
+PASS B BJS median: 1000 bootstrap values = numpy on the same indices
+PASS B BJS median: percentile (144, 163) = SciPy (144, 163)
+PASS B BJS median: basic (137, 156) = SciPy (137, 156)
+PASS B BJS median: jackknife a 0.00108661 = direct 0.00108661 = SciPy 0.00108661
+PASS B BJS median: BCa (144, 163) = SciPy (144, 163), alpha1 0.024806 alpha2 0.974803
+PASS B BJS median: SE* = SD of the B values 5.73428 = numpy 5.73428
+PASS B BJS SD: 1000 bootstrap values = numpy on the same indices
+PASS B BJS SD: percentile (20.5578, 29.974) = SciPy (20.5578, 29.974)
+PASS B BJS SD: basic (21.751, 31.1672) = SciPy (21.751, 31.1672)
+PASS B BJS SD: jackknife a 0.05285271 = direct 0.05285271 = SciPy 0.05285271
+PASS B BJS SD: BCa (21.6761, 31.207) = SciPy (21.6761, 31.207), alpha1 0.077688 alpha2 0.995670
+PASS B BJS SD: SE* = SD of the B values 2.44452 = numpy 2.44452
+PASS B BJS trimmed: 1000 bootstrap values = numpy on the same indices
+PASS B BJS trimmed: percentile (145.665, 162.758) = SciPy (145.665, 162.758)
+PASS B BJS trimmed: basic (144.636, 161.729) = SciPy (144.636, 161.729)
+PASS B BJS trimmed: jackknife a 0.00583435 = direct 0.00583435 = SciPy 0.00583435
+PASS B BJS trimmed: BCa (145.667, 162.758) = SciPy (145.667, 162.758), alpha1 0.025873 alpha2 0.975868
+PASS B BJS trimmed: SE* = SD of the B values 4.39785 = numpy 4.39785
+PASS B BJS 90% mean: 400 bootstrap values = numpy on the same indices
+PASS B BJS 90% mean: percentile (148.921, 161.805) = SciPy (148.921, 161.805)
+PASS B BJS 90% mean: basic (148.341, 161.226) = SciPy (148.341, 161.226)
+PASS B BJS 90% mean: jackknife a 0.01190144 = direct 0.01190144 = SciPy 0.01190144
+PASS B BJS 90% mean: BCa (149, 161.805) = SciPy (149, 161.805), alpha1 0.051370 alpha2 0.951394
+PASS B BJS 90% mean: t-interval (148.272, 161.874) = scipy.stats.t (148.272, 161.874)
+PASS B BJS 90% mean: SE* = SD of the B values 4.05368 = numpy 4.05368
+PASS B BJS 99% median: 400 bootstrap values = numpy on the same indices
+PASS B BJS 99% median: percentile (136, 168.02) = SciPy (136, 168.02)
+PASS B BJS 99% median: basic (131.98, 164) = SciPy (131.98, 164)
+PASS B BJS 99% median: jackknife a 0.00108661 = direct 0.00108661 = SciPy 0.00108661
+PASS B BJS 99% median: BCa (136, 168) = SciPy (136, 168), alpha1 0.004255 alpha2 0.994136
+PASS B BJS 99% median: SE* = SD of the B values 5.97797 = numpy 5.97797
+PASS B Darwin diffs mean: 500 bootstrap values = numpy on the same indices
+PASS B Darwin diffs mean: percentile (0.020625, 4.91312) = SciPy (0.020625, 4.91312)
+PASS B Darwin diffs mean: basic (0.320208, 5.21271) = SciPy (0.320208, 5.21271)
+PASS B Darwin diffs mean: jackknife a -0.04269288 = direct -0.04269288 = SciPy -0.04269288
+PASS B Darwin diffs mean: BCa (-0.122056, 4.85721) = SciPy (-0.122056, 4.85721), alpha1 0.021219 alpha2 0.971375
+PASS B Darwin diffs mean: t-interval (0.00389916, 5.22943) = scipy.stats.t (0.00389916, 5.22943)
+PASS B Darwin diffs mean: SE* = SD of the B values 1.23205 = numpy 1.23205
+PASS B n=3 mean: 300 bootstrap values = numpy on the same indices
+PASS B n=3 mean: percentile (1, 4) = SciPy (1, 4)
+PASS B n=3 mean: basic (0.666667, 3.66667) = SciPy (0.666667, 3.66667)
+PASS B n=3 mean: jackknife a 0.03673889 = direct 0.03673889 = SciPy 0.03673889
+PASS B n=3 mean: BCa (1.33333, 4) = SciPy (1.33333, 4), alpha1 0.045016 alpha2 0.988271
+PASS B n=3 mean: t-interval (-1.46125, 6.12792) = scipy.stats.t (-1.46125, 6.12792)
+PASS B n=3 mean: SE* = SD of the B values 0.734505 = numpy 0.734505
+PASS B n=3 median: 300 bootstrap values = numpy on the same indices
+PASS B n=3 median: percentile (1, 4) = SciPy (1, 4)
+PASS B n=3 median: basic (0, 3) = SciPy (0, 3)
+PASS B n=3 median: jackknife a 0.03673889 = direct 0.03673889 = SciPy 0.03673889
+PASS B n=3 median: BCa (1, 4) = SciPy (1, 4), alpha1 0.042829 alpha2 0.987412
+PASS B n=3 median: SE* = SD of the B values 1.13587 = numpy 1.13587
+PASS B n=3 SD: 300 bootstrap values = numpy on the same indices
+PASS B n=3 SD: percentile (0, 1.73205) = SciPy (0, 1.73205)
+PASS B n=3 SD: basic (1.323, 3.05505) = SciPy (1.323, 3.05505)
+PASS B n=3 SD: jackknife a -0.00000000 = direct 0.00000000 = SciPy 0.00000000
+PASS B n=3 SD: BCa (0, 1.73205) = SciPy (0, 1.73205), alpha1 0.103684 alpha2 0.996082
+PASS B n=3 SD: SE* = SD of the B values 0.582812 = numpy 0.582812
+PASS B n=3 trimmed: 300 bootstrap values = numpy on the same indices
+PASS B n=3 trimmed: percentile (1, 4) = SciPy (1, 4)
+PASS B n=3 trimmed: basic (0.666667, 3.66667) = SciPy (0.666667, 3.66667)
+PASS B n=3 trimmed: jackknife a 0.03673889 = direct 0.03673889 = SciPy 0.03673889
+PASS B n=3 trimmed: BCa (1.33333, 4) = SciPy (1.33333, 4), alpha1 0.043548 alpha2 0.987704
+PASS B n=3 trimmed: SE* = SD of the B values 0.724106 = numpy 0.724106
+PASS B ties mean: 300 bootstrap values = numpy on the same indices
+PASS B ties mean: percentile (2.8, 5.9) = SciPy (2.8, 5.9)
+PASS B ties mean: basic (2.9, 6) = SciPy (2.9, 6)
+PASS B ties mean: jackknife a 0.03843578 = direct 0.03843578 = SciPy 0.03843578
+PASS B ties mean: BCa (3.1, 6.18775) = SciPy (3.1, 6.18775), alpha1 0.055276 alpha2 0.991434
+PASS B ties mean: t-interval (2.60922, 6.19078) = scipy.stats.t (2.60922, 6.19078)
+PASS B ties mean: SE* = SD of the B values 0.766442 = numpy 0.766442
+PASS B ties median: 300 bootstrap values = numpy on the same indices
+PASS B ties median: percentile (2, 6.5) = SciPy (2, 6.5)
+PASS B ties median: basic (1.5, 6) = SciPy (1.5, 6)
+PASS B ties median: jackknife a 0.00000000 = direct 0.00000000 = SciPy 0.00000000
+PASS B ties median: BCa (2, 6.5) = SciPy (2, 6.5), alpha1 0.020916 alpha2 0.970268
+PASS B ties median: SE* = SD of the B values 1.12886 = numpy 1.12886
+PASS B ties SD: 300 bootstrap values = numpy on the same indices
+PASS B ties SD: percentile (1.23991, 3.09839) = SciPy (1.23991, 3.09839)
+PASS B ties SD: basic (1.90828, 3.76675) = SciPy (1.90828, 3.76675)
+PASS B ties SD: jackknife a 0.07919271 = direct 0.07919271 = SciPy 0.07919271
+PASS B ties SD: BCa (1.56283, 3.24718) = SciPy (1.56283, 3.24718), alpha1 0.082802 alpha2 0.997000
+PASS B ties SD: SE* = SD of the B values 0.466111 = numpy 0.466111
+PASS B ties trimmed: 300 bootstrap values = numpy on the same indices
+PASS B ties trimmed: percentile (2.68438, 6.31562) = SciPy (2.68438, 6.31562)
+PASS B ties trimmed: basic (1.93438, 5.56562) = SciPy (1.93438, 5.56562)
+PASS B ties trimmed: jackknife a 0.03843578 = direct 0.03843578 = SciPy 0.03843578
+PASS B ties trimmed: BCa (2.625, 6.25) = SciPy (2.625, 6.25), alpha1 0.019493 alpha2 0.967019
+PASS B ties trimmed: SE* = SD of the B values 0.936501 = numpy 0.936501
+PASS B negative mean: 300 bootstrap values = numpy on the same indices
+PASS B negative mean: percentile (-1.72393, 0.535714) = SciPy (-1.72393, 0.535714)
+PASS B negative mean: basic (-1.87857, 0.381071) = SciPy (-1.87857, 0.381071)
+PASS B negative mean: jackknife a -0.00707182 = direct -0.00707182 = SciPy -0.00707182
+PASS B negative mean: BCa (-1.80611, 0.491078) = SciPy (-1.80611, 0.491078), alpha1 0.019924 alpha2 0.969064
+PASS B negative mean: t-interval (-2.21481, 0.871951) = scipy.stats.t (-2.21481, 0.871951)
+PASS B negative mean: SE* = SD of the B values 0.561371 = numpy 0.561371
+PASS B negative median: 300 bootstrap values = numpy on the same indices
+PASS B negative median: percentile (-2, 0.5) = SciPy (-2, 0.5)
+PASS B negative median: basic (-1, 1.5) = SciPy (-1, 1.5)
+PASS B negative median: jackknife a -0.01584998 = direct -0.01584998 = SciPy -0.01584998
+PASS B negative median: BCa (-2, 0.5) = SciPy (-2, 0.5), alpha1 0.014057 alpha2 0.958936
+PASS B negative median: SE* = SD of the B values 0.840239 = numpy 0.840239
+PASS B negative SD: 300 bootstrap values = numpy on the same indices
+PASS B negative SD: percentile (0.710913, 2.17679) = SciPy (0.710913, 2.17679)
+PASS B negative SD: basic (1.16081, 2.62668) = SciPy (1.16081, 2.62668)
+PASS B negative SD: jackknife a 0.05380004 = direct 0.05380004 = SciPy 0.05380004
+PASS B negative SD: BCa (1.09104, 2.31031) = SciPy (1.09104, 2.31031), alpha1 0.118722 alpha2 0.998282
+PASS B negative SD: SE* = SD of the B values 0.368488 = numpy 0.368488
+PASS B negative trimmed: 300 bootstrap values = numpy on the same indices
+PASS B negative trimmed: percentile (-1.87893, 0.554464) = SciPy (-1.87893, 0.554464)
+PASS B negative trimmed: basic (-1.89732, 0.536071) = SciPy (-1.89732, 0.536071)
+PASS B negative trimmed: jackknife a -0.00707182 = direct -0.00707182 = SciPy -0.00707182
+PASS B negative trimmed: BCa (-1.99788, 0.500284) = SciPy (-1.99788, 0.500284), alpha1 0.018342 alpha2 0.966688
+PASS B negative trimmed: SE* = SD of the B values 0.617659 = numpy 0.617659
+PASS B huge mean: 300 bootstrap values = numpy on the same indices
+PASS B huge mean: percentile (2.16667, 500002) = SciPy (2.16667, 500002)
+PASS B huge mean: basic (-166663, 333336) = SciPy (-166663, 333336)
+PASS B huge mean: jackknife a 0.12171612 = direct 0.12171612 = SciPy 0.12171612
+PASS B huge mean: BCa (2.66667, 666668) = SciPy (2.66667, 666668), alpha1 0.085840 alpha2 0.998320
+PASS B huge mean: t-interval (-261760, 595098) = scipy.stats.t (-261760, 595098)
+PASS B huge mean: SE* = SD of the B values 154754 = numpy 154754
+PASS B huge median: 300 bootstrap values = numpy on the same indices
+PASS B huge median: percentile (1.5, 500002) = SciPy (1.5, 500002)
+PASS B huge median: basic (-499996, 5.5) = SciPy (-499996, 5.5)
+PASS B huge median: jackknife a 0.00000000 = direct 0.00000000 = SciPy 0.00000000
+PASS B huge median: BCa (1.5, 500002) = SciPy (1.5, 500002), alpha1 0.022656 alpha2 0.972456
+PASS B huge median: SE* = SD of the B values 122804 = numpy 122804
+PASS B huge SD: 300 bootstrap values = numpy on the same indices
+PASS B huge SD: percentile (0.906263, 547721) = SciPy (0.906263, 547721)
+PASS B huge SD: basic (268773, 816493) = SciPy (268773, 816493)
+PASS B huge SD: jackknife a 0.12171612 = direct 0.12171612 = SciPy 0.12171612
+PASS B huge SD: BCa (1.04782, 547722) = SciPy (1.04782, 547722), alpha1 0.059993 alpha2 0.995599
+PASS B huge SD: SE* = SD of the B values 217379 = numpy 217379
+PASS B huge trimmed: 300 bootstrap values = numpy on the same indices
+PASS B huge trimmed: percentile (2, 500001) = SciPy (2, 500001)
+PASS B huge trimmed: basic (-166663, 333336) = SciPy (-166663, 333336)
+PASS B huge trimmed: jackknife a 0.12171612 = direct 0.12171612 = SciPy 0.12171612
+PASS B huge trimmed: BCa (2.66667, 500002) = SciPy (2.66667, 500002), alpha1 0.078403 alpha2 0.997818
+PASS B huge trimmed: SE* = SD of the B values 147629 = numpy 147629
+PASS B skewed mean: 300 bootstrap values = numpy on the same indices
+PASS B skewed mean: percentile (5.7055, 11.7407) = SciPy (5.7055, 11.7407)
+PASS B skewed mean: basic (5.2673, 11.3025) = SciPy (5.2673, 11.3025)
+PASS B skewed mean: jackknife a 0.03896261 = direct 0.03896261 = SciPy 0.03896261
+PASS B skewed mean: BCa (5.99127, 12.3556) = SciPy (5.99127, 12.3556), alpha1 0.049557 alpha2 0.989893
+PASS B skewed mean: t-interval (5.28709, 11.7209) = scipy.stats.t (5.28709, 11.7209)
+PASS B skewed mean: SE* = SD of the B values 1.59342 = numpy 1.59342
+PASS B skewed median: 300 bootstrap values = numpy on the same indices
+PASS B skewed median: percentile (2.3, 9.5) = SciPy (2.3, 9.5)
+PASS B skewed median: basic (4.3, 11.5) = SciPy (4.3, 11.5)
+PASS B skewed median: jackknife a -0.00130574 = direct -0.00130574 = SciPy -0.00130574
+PASS B skewed median: BCa (2.3, 9.5) = SciPy (2.3, 9.5), alpha1 0.031724 alpha2 0.980460
+PASS B skewed median: SE* = SD of the B values 1.8838 = numpy 1.8838
+PASS B skewed SD: 300 bootstrap values = numpy on the same indices
+PASS B skewed SD: percentile (5.02483, 10.1383) = SciPy (5.02483, 10.1383)
+PASS B skewed SD: basic (5.4483, 10.5618) = SciPy (5.4483, 10.5618)
+PASS B skewed SD: jackknife a 0.13841926 = direct 0.13841926 = SciPy 0.13841926
+PASS B skewed SD: BCa (5.83628, 10.833) = SciPy (5.83628, 10.833), alpha1 0.110078 alpha2 0.999445
+PASS B skewed SD: SE* = SD of the B values 1.33756 = numpy 1.33756
+PASS B skewed trimmed: 300 bootstrap values = numpy on the same indices
+PASS B skewed trimmed: percentile (5.38476, 10.9157) = SciPy (5.38476, 10.9157)
+PASS B skewed trimmed: basic (4.4081, 9.93905) = SciPy (4.4081, 9.93905)
+PASS B skewed trimmed: jackknife a 0.01752192 = direct 0.01752192 = SciPy 0.01752192
+PASS B skewed trimmed: BCa (5.30155, 10.6848) = SciPy (5.30155, 10.6848), alpha1 0.016940 alpha2 0.963028
+PASS B skewed trimmed: SE* = SD of the B values 1.46515 = numpy 1.46515
+PASS B decimals mean: 300 bootstrap values = numpy on the same indices
+PASS B decimals mean: percentile (0.348119, 0.677329) = SciPy (0.348119, 0.677329)
+PASS B decimals mean: basic (0.374004, 0.703215) = SciPy (0.374004, 0.703215)
+PASS B decimals mean: jackknife a -0.01310977 = direct -0.01310977 = SciPy -0.01310977
+PASS B decimals mean: BCa (0.349197, 0.678206) = SciPy (0.349197, 0.678206), alpha1 0.026006 alpha2 0.975926
+PASS B decimals mean: t-interval (0.312608, 0.738725) = scipy.stats.t (0.312608, 0.738725)
+PASS B decimals mean: SE* = SD of the B values 0.0922481 = numpy 0.0922481
+PASS B decimals median: 300 bootstrap values = numpy on the same indices
+PASS B decimals median: percentile (0.1475, 0.791) = SciPy (0.1475, 0.791)
+PASS B decimals median: basic (0.473, 1.1165) = SciPy (0.473, 1.1165)
+PASS B decimals median: jackknife a 0.00000000 = direct 0.00000000 = SciPy 0.00000000
+PASS B decimals median: BCa (0.153783, 0.79629) = SciPy (0.153783, 0.79629), alpha1 0.037190 alpha2 0.983646
+PASS B decimals median: SE* = SD of the B values 0.17354 = numpy 0.17354
+PASS B decimals SD: 300 bootstrap values = numpy on the same indices
+PASS B decimals SD: percentile (0.221017, 0.391327) = SciPy (0.221017, 0.391327)
+PASS B decimals SD: basic (0.279333, 0.449644) = SciPy (0.279333, 0.449644)
+PASS B decimals SD: jackknife a 0.00978317 = direct 0.00978317 = SciPy 0.00978317
+PASS B decimals SD: BCa (0.2665, 0.406104) = SciPy (0.2665, 0.406104), alpha1 0.108255 alpha2 0.996661
+PASS B decimals SD: SE* = SD of the B values 0.044009 = numpy 0.044009
+PASS B decimals trimmed: 300 bootstrap values = numpy on the same indices
+PASS B decimals trimmed: percentile (0.327815, 0.734817) = SciPy (0.327815, 0.734817)
+PASS B decimals trimmed: basic (0.315183, 0.722185) = SciPy (0.315183, 0.722185)
+PASS B decimals trimmed: jackknife a -0.01812422 = direct -0.01812422 = SciPy -0.01812422
+PASS B decimals trimmed: BCa (0.304775, 0.709059) = SciPy (0.304775, 0.709059), alpha1 0.013098 alpha2 0.956802
+PASS B decimals trimmed: SE* = SD of the B values 0.108927 = numpy 0.108927
+PASS B large scale mean: 300 bootstrap values = numpy on the same indices
+PASS B large scale mean: percentile (99996.5, 100037) = SciPy (99996.5, 100037)
+PASS B large scale mean: basic (99996, 100037) = SciPy (99996, 100037)
+PASS B large scale mean: jackknife a -0.01081791 = direct -0.01081791 = SciPy -0.01081791
+PASS B large scale mean: BCa (99993.8, 100033) = SciPy (99993.8, 100033), alpha1 0.010410 alpha2 0.947738
+PASS B large scale mean: t-interval (99992.6, 100041) = scipy.stats.t (99992.6, 100041)
+PASS B large scale mean: SE* = SD of the B values 10.3659 = numpy 10.3659
+PASS B large scale median: 300 bootstrap values = numpy on the same indices
+PASS B large scale median: percentile (99993.1, 100055) = SciPy (99993.1, 100055)
+PASS B large scale median: basic (99967.7, 100030) = SciPy (99967.7, 100030)
+PASS B large scale median: jackknife a -0.00000000 = direct -0.00000000 = SciPy -0.00000000
+PASS B large scale median: BCa (99990, 100049) = SciPy (99990, 100049), alpha1 0.011090 alpha2 0.948728
+PASS B large scale median: SE* = SD of the B values 14.7603 = numpy 14.7603
+PASS B large scale SD: 300 bootstrap values = numpy on the same indices
+PASS B large scale SD: percentile (35.9118, 61.9698) = SciPy (35.9118, 61.9698)
+PASS B large scale SD: basic (40.6889, 66.7469) = SciPy (40.6889, 66.7469)
+PASS B large scale SD: jackknife a 0.04769624 = direct 0.04769624 = SciPy 0.04769624
+PASS B large scale SD: BCa (38.8695, 66.4488) = SciPy (38.8695, 66.4488), alpha1 0.064970 alpha2 0.993759
+PASS B large scale SD: SE* = SD of the B values 6.88402 = numpy 6.88402
+PASS B large scale trimmed: 300 bootstrap values = numpy on the same indices
+PASS B large scale trimmed: percentile (99993.1, 100044) = SciPy (99993.1, 100044)
+PASS B large scale trimmed: basic (99994.5, 100045) = SciPy (99994.5, 100045)
+PASS B large scale trimmed: jackknife a -0.00630190 = direct -0.00630190 = SciPy -0.00630190
+PASS B large scale trimmed: BCa (99994.7, 100045) = SciPy (99994.7, 100045), alpha1 0.038854 alpha2 0.984262
+PASS B large scale trimmed: SE* = SD of the B values 12.3574 = numpy 12.3574
+PASS B random 1 (n=16) mean: 300 bootstrap values = numpy on the same indices
+PASS B random 1 (n=16) mean: percentile (8.66627, 12.059) = SciPy (8.66627, 12.059)
+PASS B random 1 (n=16) mean: basic (8.58602, 11.9787) = SciPy (8.58602, 11.9787)
+PASS B random 1 (n=16) mean: jackknife a 0.02001382 = direct 0.02001382 = SciPy 0.02001382
+PASS B random 1 (n=16) mean: BCa (8.67693, 12.1478) = SciPy (8.67693, 12.1478), alpha1 0.028581 alpha2 0.978442
+PASS B random 1 (n=16) mean: t-interval (8.2929, 12.3521) = scipy.stats.t (8.2929, 12.3521)
+PASS B random 1 (n=16) mean: SE* = SD of the B values 0.906686 = numpy 0.906686
+PASS B random 1 (n=16) median: 300 bootstrap values = numpy on the same indices
+PASS B random 1 (n=16) median: percentile (7.9, 12) = SciPy (7.9, 12)
+PASS B random 1 (n=16) median: basic (8.3, 12.4) = SciPy (8.3, 12.4)
+PASS B random 1 (n=16) median: jackknife a -0.00000000 = direct 0.00000000 = SciPy 0.00000000
+PASS B random 1 (n=16) median: BCa (7.9, 12) = SciPy (7.9, 12), alpha1 0.021340 alpha2 0.970828
+PASS B random 1 (n=16) median: SE* = SD of the B values 0.930244 = numpy 0.930244
+PASS B random 1 (n=16) SD: 300 bootstrap values = numpy on the same indices
+PASS B random 1 (n=16) SD: percentile (2.46489, 4.83235) = SciPy (2.46489, 4.83235)
+PASS B random 1 (n=16) SD: basic (2.78539, 5.15284) = SciPy (2.78539, 5.15284)
+PASS B random 1 (n=16) SD: jackknife a 0.09611290 = direct 0.09611290 = SciPy 0.09611290
+PASS B random 1 (n=16) SD: BCa (2.76006, 5.28607) = SciPy (2.76006, 5.28607), alpha1 0.106991 alpha2 0.998735
+PASS B random 1 (n=16) SD: SE* = SD of the B values 0.64916 = numpy 0.64916
+PASS B random 1 (n=16) trimmed: 300 bootstrap values = numpy on the same indices
+PASS B random 1 (n=16) trimmed: percentile (8.34132, 12.143) = SciPy (8.34132, 12.143)
+PASS B random 1 (n=16) trimmed: basic (8.10127, 11.903) = SciPy (8.10127, 11.903)
+PASS B random 1 (n=16) trimmed: jackknife a 0.00131498 = direct 0.00131498 = SciPy 0.00131498
+PASS B random 1 (n=16) trimmed: BCa (8.27197, 11.9442) = SciPy (8.27197, 11.9442), alpha1 0.019941 alpha2 0.968872
+PASS B random 1 (n=16) trimmed: SE* = SD of the B values 0.972002 = numpy 0.972002
+PASS B random 2 (n=7) mean: 300 bootstrap values = numpy on the same indices
+PASS B random 2 (n=7) mean: percentile (7.48793, 12.0053) = SciPy (7.48793, 12.0053)
+PASS B random 2 (n=7) mean: basic (7.60904, 12.1264) = SciPy (7.60904, 12.1264)
+PASS B random 2 (n=7) mean: jackknife a -0.01721241 = direct -0.01721241 = SciPy -0.01721241
+PASS B random 2 (n=7) mean: BCa (7.31932, 11.8503) = SciPy (7.31932, 11.8503), alpha1 0.019148 alpha2 0.968242
+PASS B random 2 (n=7) mean: t-interval (6.56664, 13.0476) = scipy.stats.t (6.56664, 13.0476)
+PASS B random 2 (n=7) mean: SE* = SD of the B values 1.16455 = numpy 1.16455
+PASS B random 2 (n=7) median: 300 bootstrap values = numpy on the same indices
+PASS B random 2 (n=7) median: percentile (7.07, 12) = SciPy (7.07, 12)
+PASS B random 2 (n=7) median: basic (8, 12.93) = SciPy (8, 12.93)
+PASS B random 2 (n=7) median: jackknife a 0.01818482 = direct 0.01818482 = SciPy 0.01818482
+PASS B random 2 (n=7) median: BCa (7.07, 12) = SciPy (7.07, 12), alpha1 0.013611 alpha2 0.954801
+PASS B random 2 (n=7) median: SE* = SD of the B values 1.46435 = numpy 1.46435
+PASS B random 2 (n=7) SD: 300 bootstrap values = numpy on the same indices
+PASS B random 2 (n=7) SD: percentile (1.53515, 4.87945) = SciPy (1.53515, 4.87945)
+PASS B random 2 (n=7) SD: basic (2.1282, 5.47251) = SciPy (2.1282, 5.47251)
+PASS B random 2 (n=7) SD: jackknife a 0.05934961 = direct 0.05934961 = SciPy 0.05934961
+PASS B random 2 (n=7) SD: BCa (2.29958, 5.4706) = SciPy (2.29958, 5.4706), alpha1 0.143892 alpha2 0.999030
+PASS B random 2 (n=7) SD: SE* = SD of the B values 0.877994 = numpy 0.877994
+PASS B random 2 (n=7) trimmed: 300 bootstrap values = numpy on the same indices
+PASS B random 2 (n=7) trimmed: percentile (7.33032, 11.94) = SciPy (7.33032, 11.94)
+PASS B random 2 (n=7) trimmed: basic (7.67429, 12.284) = SciPy (7.67429, 12.284)
+PASS B random 2 (n=7) trimmed: jackknife a -0.01721241 = direct -0.01721241 = SciPy -0.01721241
+PASS B random 2 (n=7) trimmed: BCa (7.29905, 11.94) = SciPy (7.29905, 11.94), alpha1 0.023565 alpha2 0.973593
+PASS B random 2 (n=7) trimmed: SE* = SD of the B values 1.20153 = numpy 1.20153
+PASS B random 3 (n=26) mean: 300 bootstrap values = numpy on the same indices
+PASS B random 3 (n=26) mean: percentile (8.15213, 10.6662) = SciPy (8.15213, 10.6662)
+PASS B random 3 (n=26) mean: basic (8.5153, 11.0294) = SciPy (8.5153, 11.0294)
+PASS B random 3 (n=26) mean: jackknife a -0.05295838 = direct -0.05295838 = SciPy -0.05295838
+PASS B random 3 (n=26) mean: BCa (7.85775, 10.514) = SciPy (7.85775, 10.514), alpha1 0.006399 alpha2 0.937091
+PASS B random 3 (n=26) mean: t-interval (8.211, 10.9705) = scipy.stats.t (8.211, 10.9705)
+PASS B random 3 (n=26) mean: SE* = SD of the B values 0.632661 = numpy 0.632661
+PASS B random 3 (n=26) median: 300 bootstrap values = numpy on the same indices
+PASS B random 3 (n=26) median: percentile (9.05, 11.27) = SciPy (9.05, 11.27)
+PASS B random 3 (n=26) median: basic (8.73, 10.95) = SciPy (8.73, 10.95)
+PASS B random 3 (n=26) median: a refused when every jackknife value is equal (SciPy: nan)
+PASS B random 3 (n=26) median: BCa refused (BCa: a = 0/0 (jackknife all equal)); SciPy gives (nan, nan)
+PASS B random 3 (n=26) median: SE* = SD of the B values 0.480758 = numpy 0.480758
+PASS B random 3 (n=26) SD: 300 bootstrap values = numpy on the same indices
+PASS B random 3 (n=26) SD: percentile (1.92014, 4.68751) = SciPy (1.92014, 4.68751)
+PASS B random 3 (n=26) SD: basic (2.14455, 4.91192) = SciPy (2.14455, 4.91192)
+PASS B random 3 (n=26) SD: jackknife a 0.14747080 = direct 0.14747080 = SciPy 0.14747080
+PASS B random 3 (n=26) SD: BCa (2.29763, 5.12127) = SciPy (2.29763, 5.12127), alpha1 0.118942 alpha2 0.999666
+PASS B random 3 (n=26) SD: SE* = SD of the B values 0.746864 = numpy 0.746864
+PASS B random 3 (n=26) trimmed: 300 bootstrap values = numpy on the same indices
+PASS B random 3 (n=26) trimmed: percentile (8.67076, 11.0631) = SciPy (8.67076, 11.0631)
+PASS B random 3 (n=26) trimmed: basic (8.83785, 11.2301) = SciPy (8.83785, 11.2301)
+PASS B random 3 (n=26) trimmed: jackknife a -0.01038131 = direct -0.01038131 = SciPy -0.01038131
+PASS B random 3 (n=26) trimmed: BCa (8.70249, 11.0927) = SciPy (8.70249, 11.0927), alpha1 0.032371 alpha2 0.980698
+PASS B random 3 (n=26) trimmed: SE* = SD of the B values 0.605456 = numpy 0.605456
+PASS B random 4 (n=20) mean: 300 bootstrap values = numpy on the same indices
+PASS B random 4 (n=20) mean: percentile (8.45448, 11.591) = SciPy (8.45448, 11.591)
+PASS B random 4 (n=20) mean: basic (8.28499, 11.4215) = SciPy (8.28499, 11.4215)
+PASS B random 4 (n=20) mean: jackknife a 0.00081563 = direct 0.00081563 = SciPy 0.00081563
+PASS B random 4 (n=20) mean: BCa (8.21307, 11.422) = SciPy (8.21307, 11.422), alpha1 0.013631 alpha2 0.956495
+PASS B random 4 (n=20) mean: t-interval (8.15889, 11.7171) = scipy.stats.t (8.15889, 11.7171)
+PASS B random 4 (n=20) mean: SE* = SD of the B values 0.792314 = numpy 0.792314
+PASS B random 4 (n=20) median: 300 bootstrap values = numpy on the same indices
+PASS B random 4 (n=20) median: percentile (7.44, 12.77) = SciPy (7.44, 12.77)
+PASS B random 4 (n=20) median: basic (6.02, 11.35) = SciPy (6.02, 11.35)
+PASS B random 4 (n=20) median: jackknife a -0.00000000 = direct 0.00000000 = SciPy -0.00000000
+PASS B random 4 (n=20) median: BCa (7.05607, 12.4051) = SciPy (7.05607, 12.4051), alpha1 0.014717 alpha2 0.959271
+PASS B random 4 (n=20) median: SE* = SD of the B values 1.35526 = numpy 1.35526
+PASS B random 4 (n=20) SD: 300 bootstrap values = numpy on the same indices
+PASS B random 4 (n=20) SD: percentile (2.78976, 4.36213) = SciPy (2.78976, 4.36213)
+PASS B random 4 (n=20) SD: basic (3.24068, 4.81305) = SciPy (3.24068, 4.81305)
+PASS B random 4 (n=20) SD: jackknife a 0.00986737 = direct 0.00986737 = SciPy 0.00986737
+PASS B random 4 (n=20) SD: BCa (2.97728, 4.45755) = SciPy (2.97728, 4.45755), alpha1 0.065596 alpha2 0.992416
+PASS B random 4 (n=20) SD: SE* = SD of the B values 0.407582 = numpy 0.407582
+PASS B random 4 (n=20) trimmed: 300 bootstrap values = numpy on the same indices
+PASS B random 4 (n=20) trimmed: percentile (8.09886, 11.9518) = SciPy (8.09886, 11.9518)
+PASS B random 4 (n=20) trimmed: basic (7.96444, 11.8174) = SciPy (7.96444, 11.8174)
+PASS B random 4 (n=20) trimmed: jackknife a 0.00213257 = direct 0.00213257 = SciPy 0.00213257
+PASS B random 4 (n=20) trimmed: BCa (8.05255, 11.7516) = SciPy (8.05255, 11.7516), alpha1 0.015059 alpha2 0.959909
+PASS B random 4 (n=20) trimmed: SE* = SD of the B values 0.971669 = numpy 0.971669
+PASS B random 5 (n=26) mean: 300 bootstrap values = numpy on the same indices
+PASS B random 5 (n=26) mean: percentile (9.22158, 11.3394) = SciPy (9.22158, 11.3394)
+PASS B random 5 (n=26) mean: basic (9.34365, 11.4615) = SciPy (9.34365, 11.4615)
+PASS B random 5 (n=26) mean: jackknife a -0.00942424 = direct -0.00942424 = SciPy -0.00942424
+PASS B random 5 (n=26) mean: BCa (9.18283, 11.3233) = SciPy (9.18283, 11.3233), alpha1 0.022011 alpha2 0.971805
+PASS B random 5 (n=26) mean: t-interval (9.15072, 11.5324) = scipy.stats.t (9.15072, 11.5324)
+PASS B random 5 (n=26) mean: SE* = SD of the B values 0.550201 = numpy 0.550201
+PASS B random 5 (n=26) median: 300 bootstrap values = numpy on the same indices
+PASS B random 5 (n=26) median: percentile (8.95, 11.57) = SciPy (8.95, 11.57)
+PASS B random 5 (n=26) median: basic (9.37, 11.99) = SciPy (9.37, 11.99)
+PASS B random 5 (n=26) median: jackknife a -0.00000000 = direct -0.00000000 = SciPy -0.00000000
+PASS B random 5 (n=26) median: BCa (8.94431, 11.57) = SciPy (8.94431, 11.57), alpha1 0.019686 alpha2 0.968533
+PASS B random 5 (n=26) median: SE* = SD of the B values 0.707455 = numpy 0.707455
+PASS B random 5 (n=26) SD: 300 bootstrap values = numpy on the same indices
+PASS B random 5 (n=26) SD: percentile (2.04214, 3.52518) = SciPy (2.04214, 3.52518)
+PASS B random 5 (n=26) SD: basic (2.37129, 3.85434) = SciPy (2.37129, 3.85434)
+PASS B random 5 (n=26) SD: jackknife a 0.03981084 = direct 0.03981084 = SciPy 0.03981084
+PASS B random 5 (n=26) SD: BCa (2.23143, 3.65384) = SciPy (2.23143, 3.65384), alpha1 0.048232 alpha2 0.989508
+PASS B random 5 (n=26) SD: SE* = SD of the B values 0.37463 = numpy 0.37463
+PASS B random 5 (n=26) trimmed: 300 bootstrap values = numpy on the same indices
+PASS B random 5 (n=26) trimmed: percentile (9.27956, 11.5835) = SciPy (9.27956, 11.5835)
+PASS B random 5 (n=26) trimmed: basic (9.28102, 11.585) = SciPy (9.28102, 11.585)
+PASS B random 5 (n=26) trimmed: jackknife a -0.00960477 = direct -0.00960477 = SciPy -0.00960477
+PASS B random 5 (n=26) trimmed: BCa (9.21215, 11.5431) = SciPy (9.21215, 11.5431), alpha1 0.018635 alpha2 0.967239
+PASS B random 5 (n=26) trimmed: SE* = SD of the B values 0.611845 = numpy 0.611845
+PASS B random 6 (n=24) mean: 300 bootstrap values = numpy on the same indices
+PASS B random 6 (n=24) mean: percentile (8.80665, 10.6395) = SciPy (8.80665, 10.6395)
+PASS B random 6 (n=24) mean: basic (8.84636, 10.6792) = SciPy (8.84636, 10.6792)
+PASS B random 6 (n=24) mean: jackknife a -0.00798106 = direct -0.00798106 = SciPy -0.00798106
+PASS B random 6 (n=24) mean: BCa (8.7983, 10.6304) = SciPy (8.7983, 10.6304), alpha1 0.024183 alpha2 0.974187
+PASS B random 6 (n=24) mean: t-interval (8.72833, 10.7575) = scipy.stats.t (8.72833, 10.7575)
+PASS B random 6 (n=24) mean: SE* = SD of the B values 0.488483 = numpy 0.488483
+PASS B random 6 (n=24) median: 300 bootstrap values = numpy on the same indices
+PASS B random 6 (n=24) median: percentile (8.41475, 11.21) = SciPy (8.41475, 11.21)
+PASS B random 6 (n=24) median: basic (8.55, 11.3452) = SciPy (8.55, 11.3452)
+PASS B random 6 (n=24) median: jackknife a 0.00000000 = direct 0.00000000 = SciPy 0.00000000
+PASS B random 6 (n=24) median: BCa (8.41, 11.21) = SciPy (8.41, 11.21), alpha1 0.022210 alpha2 0.971922
+PASS B random 6 (n=24) median: SE* = SD of the B values 0.861599 = numpy 0.861599
+PASS B random 6 (n=24) SD: 300 bootstrap values = numpy on the same indices
+PASS B random 6 (n=24) SD: percentile (1.79136, 2.90478) = SciPy (1.79136, 2.90478)
+PASS B random 6 (n=24) SD: basic (1.90069, 3.01411) = SciPy (1.90069, 3.01411)
+PASS B random 6 (n=24) SD: jackknife a 0.07652765 = direct 0.07652765 = SciPy 0.07652765
+PASS B random 6 (n=24) SD: BCa (1.9019, 3.03209) = SciPy (1.9019, 3.03209), alpha1 0.069058 alpha2 0.995438
+PASS B random 6 (n=24) SD: SE* = SD of the B values 0.293027 = numpy 0.293027
+PASS B random 6 (n=24) trimmed: 300 bootstrap values = numpy on the same indices
+PASS B random 6 (n=24) trimmed: percentile (8.84562, 10.6918) = SciPy (8.84562, 10.6918)
+PASS B random 6 (n=24) trimmed: basic (8.85316, 10.6994) = SciPy (8.85316, 10.6994)
+PASS B random 6 (n=24) trimmed: jackknife a -0.00469995 = direct -0.00469995 = SciPy -0.00469995
+PASS B random 6 (n=24) trimmed: BCa (8.91763, 10.7423) = SciPy (8.91763, 10.7423), alpha1 0.034546 alpha2 0.982115
+PASS B random 6 (n=24) trimmed: SE* = SD of the B values 0.468647 = numpy 0.468647
+PASS B random 7 (n=28) mean: 300 bootstrap values = numpy on the same indices
+PASS B random 7 (n=28) mean: percentile (8.80904, 11.1687) = SciPy (8.80904, 11.1687)
+PASS B random 7 (n=28) mean: basic (8.54131, 10.901) = SciPy (8.54131, 10.901)
+PASS B random 7 (n=28) mean: jackknife a 0.03795328 = direct 0.03795328 = SciPy 0.03795328
+PASS B random 7 (n=28) mean: BCa (8.80818, 11.1518) = SciPy (8.80818, 11.1518), alpha1 0.023842 alpha2 0.973598
+PASS B random 7 (n=28) mean: t-interval (8.63856, 11.0714) = scipy.stats.t (8.63856, 11.0714)
+PASS B random 7 (n=28) mean: SE* = SD of the B values 0.616739 = numpy 0.616739
+PASS B random 7 (n=28) median: 300 bootstrap values = numpy on the same indices
+PASS B random 7 (n=28) median: percentile (8.47, 10.7762) = SciPy (8.47, 10.7762)
+PASS B random 7 (n=28) median: basic (7.27375, 9.58) = SciPy (7.27375, 9.58)
+PASS B random 7 (n=28) median: jackknife a -0.00000000 = direct -0.00000000 = SciPy 0.00000000
+PASS B random 7 (n=28) median: BCa (8.47, 10.8) = SciPy (8.47, 10.8), alpha1 0.027018 alpha2 0.976890
+PASS B random 7 (n=28) median: SE* = SD of the B values 0.562021 = numpy 0.562021
+PASS B random 7 (n=28) SD: 300 bootstrap values = numpy on the same indices
+PASS B random 7 (n=28) SD: percentile (1.98319, 4.15335) = SciPy (1.98319, 4.15335)
+PASS B random 7 (n=28) SD: basic (2.12084, 4.29099) = SciPy (2.12084, 4.29099)
+PASS B random 7 (n=28) SD: jackknife a 0.12889793 = direct 0.12889793 = SciPy 0.12889793
+PASS B random 7 (n=28) SD: BCa (2.2666, 4.89311) = SciPy (2.2666, 4.89311), alpha1 0.109090 alpha2 0.999310
+PASS B random 7 (n=28) SD: SE* = SD of the B values 0.613806 = numpy 0.613806
+PASS B random 7 (n=28) trimmed: 300 bootstrap values = numpy on the same indices
+PASS B random 7 (n=28) trimmed: percentile (8.73093, 10.8082) = SciPy (8.73093, 10.8082)
+PASS B random 7 (n=28) trimmed: basic (8.45342, 10.5307) = SciPy (8.45342, 10.5307)
+PASS B random 7 (n=28) trimmed: jackknife a 0.01707034 = direct 0.01707034 = SciPy 0.01707034
+PASS B random 7 (n=28) trimmed: BCa (8.73046, 10.8075) = SciPy (8.73046, 10.8075), alpha1 0.024927 alpha2 0.974921
+PASS B random 7 (n=28) trimmed: SE* = SD of the B values 0.538878 = numpy 0.538878
+PASS B random 8 (n=20) mean: 300 bootstrap values = numpy on the same indices
+PASS B random 8 (n=20) mean: percentile (8.60405, 11.3569) = SciPy (8.60405, 11.3569)
+PASS B random 8 (n=20) mean: basic (8.47409, 11.2269) = SciPy (8.47409, 11.2269)
+PASS B random 8 (n=20) mean: jackknife a 0.00327878 = direct 0.00327878 = SciPy 0.00327878
+PASS B random 8 (n=20) mean: BCa (8.66767, 11.3762) = SciPy (8.66767, 11.3762), alpha1 0.028873 alpha2 0.978469
+PASS B random 8 (n=20) mean: t-interval (8.45782, 11.3732) = scipy.stats.t (8.45782, 11.3732)
+PASS B random 8 (n=20) mean: SE* = SD of the B values 0.72622 = numpy 0.72622
+PASS B random 8 (n=20) median: 300 bootstrap values = numpy on the same indices
+PASS B random 8 (n=20) median: percentile (7.21, 12.255) = SciPy (7.21, 12.255)
+PASS B random 8 (n=20) median: basic (6.945, 11.99) = SciPy (6.945, 11.99)
+PASS B random 8 (n=20) median: jackknife a -0.00000000 = direct -0.00000000 = SciPy -0.00000000
+PASS B random 8 (n=20) median: BCa (7.21, 12.1714) = SciPy (7.21, 12.1714), alpha1 0.016015 alpha2 0.962124
+PASS B random 8 (n=20) median: SE* = SD of the B values 1.33876 = numpy 1.33876
+PASS B random 8 (n=20) SD: 300 bootstrap values = numpy on the same indices
+PASS B random 8 (n=20) SD: percentile (2.48079, 3.53679) = SciPy (2.48079, 3.53679)
+PASS B random 8 (n=20) SD: basic (2.69242, 3.74842) = SciPy (2.69242, 3.74842)
+PASS B random 8 (n=20) SD: jackknife a 0.02456386 = direct 0.02456386 = SciPy 0.02456386
+PASS B random 8 (n=20) SD: BCa (2.576, 3.6475) = SciPy (2.576, 3.6475), alpha1 0.053327 alpha2 0.990402
+PASS B random 8 (n=20) SD: SE* = SD of the B values 0.295202 = numpy 0.295202
+PASS B random 8 (n=20) trimmed: 300 bootstrap values = numpy on the same indices
+PASS B random 8 (n=20) trimmed: percentile (8.335, 11.4918) = SciPy (8.335, 11.4918)
+PASS B random 8 (n=20) trimmed: basic (8.16567, 11.3225) = SciPy (8.16567, 11.3225)
+PASS B random 8 (n=20) trimmed: jackknife a 0.00438810 = direct 0.00438810 = SciPy 0.00438810
+PASS B random 8 (n=20) trimmed: BCa (8.3993, 11.5502) = SciPy (8.3993, 11.5502), alpha1 0.031416 alpha2 0.980362
+PASS B random 8 (n=20) trimmed: SE* = SD of the B values 0.808106 = numpy 0.808106
+PASS B median ties (a = 0/0) median: 200 bootstrap values = numpy on the same indices
+PASS B median ties (a = 0/0) median: percentile (1, 3) = SciPy (1, 3)
+PASS B median ties (a = 0/0) median: basic (1, 3) = SciPy (1, 3)
+PASS B median ties (a = 0/0) median: a refused when every jackknife value is equal (SciPy: nan)
+PASS B median ties (a = 0/0) median: BCa refused (BCa: a = 0/0 (jackknife all equal)); SciPy gives (nan, nan)
+PASS B median ties (a = 0/0) median: SE* = SD of the B values 0.41863 = numpy 0.41863
+PASS B SD of near-constant SD: 200 bootstrap values = numpy on the same indices
+PASS B SD of near-constant SD: percentile (0, 5.17549) = SciPy (0, 5.17549)
+PASS B SD of near-constant SD: basic (1.89558, 7.07107) = SciPy (1.89558, 7.07107)
+PASS B SD of near-constant SD: jackknife a 0.13363062 = direct 0.13363062 = SciPy 0.13363062
+PASS B SD of near-constant SD: BCa (0, 5.18057) = SciPy (0, 5.18057), alpha1 0.055475 alpha2 0.995125
+PASS B SD of near-constant SD: SE* = SD of the B values 2.00514 = numpy 2.00514
+
+----- two-group bootstrap -----
+PASS B2 MockJury U v B mean: 600 values = numpy on the same indices
+PASS B2 MockJury U v B: percentile (-0.0808212, 3.03181) = SciPy (-0.0808212, 3.03181)
+PASS B2 MockJury U v B: Welch t (-0.320752, 3.27571) = scipy ttest_ind (-0.320752, 3.27571)
+PASS B2 MockJury U v B median: 400 values = numpy on the same indices
+PASS B2 MockJury U v B: percentile (-1, 5) = SciPy (-1, 5)
+PASS B2 Rossi mean: 300 values = numpy on the same indices
+PASS B2 Rossi: percentile (-5.33428, 4.92022) = SciPy (-5.33428, 4.92022)
+PASS B2 Rossi: Welch t (-5.03738, 5.82147) = scipy ttest_ind (-5.03738, 5.82147)
+PASS B2 5 v 5 mean: 400 values = numpy on the same indices
+PASS B2 5 v 5: percentile (1.6, 5.6) = SciPy (1.6, 5.6)
+PASS B2 5 v 5: Welch t (1.06205, 6.13795) = scipy ttest_ind (1.06205, 6.13795)
+PASS B2 decimals median: 300 values = numpy on the same indices
+PASS B2 decimals: percentile (0.184375, 2.81562) = SciPy (0.184375, 2.81562)
+PASS B2 negatives mean: 300 values = numpy on the same indices
+PASS B2 negatives: percentile (-10.17, -4.96333) = SciPy (-10.17, -4.96333)
+PASS B2 negatives: Welch t (-11.1107, -3.82268) = scipy ttest_ind (-11.1107, -3.82268)
+
+===== Part H: every menu path in the harness =====
+PASS H1 5 v 5: no runtime error   None
+PASS H1 data page shows the illustrative label and the source line
+PASS H1 exact view: "exact p = 12/252 = 0.0476"
+PASS H1 exact, Ha A > B: "exact p = 6/252 = 0.0238"
+PASS H1 exact, Ha A < B: "exact p = 249/252 = 0.9881"
+PASS H1 exact line says "of all 252"
+PASS H1 median exact p = 12/252 = 0.0476
+PASS H1 Info page names the null hypothesis and the plus-one rule
+PASS H1 Help has five pages (the last one the disclaimer)
+PASS H1 Quit returns the summary   'ResampLab: Permutation test: medians, A vs B: observed +4.00, exact p = 12/252 = 0.0476'
+PASS H1 the opening page shows the disclaimer
+PASS H2 MockJury: no runtime error   None
+PASS H2 MockJury: B = 3 + 10 + 100 + 1000 = 1113   1113
+PASS H2 replay of every random number gives the program's counts
+PASS H2 "observed A - B = +1.477,  Ha: A ≠ B" on the page
+PASS H2 the p line: "p = 114/1,113 = 0.1024,  plus-one p = 0.1032"
+PASS H2 a tap on a bin tells what it holds
+PASS H2 a tap on a dot names its value and both groups
+PASS H2 the Info page says C(76, 37) splits are too many: random shuffles
+PASS H2 the Enter menu lists the actions
+PASS H2 a run shows the progress page
+PASS H3 Darwin: no runtime error   None
+PASS H3 Darwin exact p = 1,726/32,768 = 0.0527
+PASS H3 Darwin observed mean d = 314/120 in
+PASS H3 the Info page gives the count and leaves Fisher's figure to his book
+PASS H3 a tap on a lollipop names the pair
+PASS H3 data page shows the source line
+PASS H4 BJS: no runtime error   None
+PASS H4 status line "95% percentile (147.17, 163.39)" (SciPy on the same 1,000 resamples)
+PASS H4 status line "95% BCa (147.30, 163.44)"
+PASS H4 CIs page: t line
+PASS H4 CIs page: basic line present
+PASS H4 BCa page shows z0 and a
+PASS H4 data page: the name and the source line
+PASS H4b BJS level/stat cycle: no runtime error   None
+PASS H4b level 99% then 90% shown
+PASS H4b every statistic named
+PASS H4b CIs page for the trimmed mean says t is for the mean only
+PASS H5 two-group bootstrap: no runtime error   None
+PASS H5 the Welch line and the percentile line
+PASS H5 a tap on a sample dot (after Once) says how often it was picked
+PASS H5 Welch t line = scipy (-0.321, 3.276)
+PASS H6 Rossi: no runtime error   None
+PASS H6 Rossi caveat on the Info page
+PASS H6 Rossi n = 48 v 66
+PASS H7 Use my data (D1, D2): no runtime error   None
+PASS H7 two groups from D1, D2: exact p = 238/924 = 0.2576
+PASS H7 paired D1 - D2: exact p = 2/64 = 0.0313
+PASS H7 data page: "My data: D1 (A) and D2 (B)"
+PASS H7b no D1: a message, no error   None
+PASS H7c all-equal data refused with messages   ['Every value is the same, so every shuffle gives d = 0: there is nothing to test.', 'Every value is the same, so every resample is the same.', 'Needs differences: load Darwin, or equal-length lists in D1 and D2 (or the differences in D1).']
+PASS H7d one value in D1 refused
+PASS H8 D1 alone as differences, Gray code: exact p = 462/1,024
+PASS H9 Esc during an exact count: marked unfinished, not used, then a fresh count works
+PASS H9 the second (full) count: 64 of 1,716
+PASS H9b 7 v 7 (C(14, 7) = 3,432 > 2,000): Exact refused with the reason   [['C(14, 7) = 3,432 splits: too many to list (limit 2,000); random shuffles are used.']]
+PASS H10 Esc stops x1000 early and says so   B = 20
+PASS H11 a slow calculator (TICKS 5 s per reading here): x1000 capped, the page says so   ['capped at 20: about 60 s on this calculator'] B = 20
+PASS H12 the same seed gives the same 100 shuffles (harness RNG reseeded by RANDSEED)
+PASS H12 a different seed gives different shuffles
+PASS H12 the seed shows in the title band
+PASS H12 bad seeds and levels refused, settings unchanged   ['The seed is 0 or a whole number up to 999,999,999.', 'The seed is 0 or a whole number up to 999,999,999.', 'The level must be between 0.5 and 0.999 (0.95 = 95%).', 'The level must be between 0.5 and 0.999 (0.95 = 95%).']
+PASS H13 no data: four messages, Help, Cancel quits with a summary   'ResampLab: no test run'
+PASS H13 the main menu has 9 items, each 27 characters or fewer
+PASS H14 stale keys: no page skipped by a left-over dialog key   []
+PASS S the source is pure ASCII
+PASS S every routine is defined before its first use (100 routines)   []
+PASS S no two file-level names the same when case is ignored (157 names)   []
+PASS S every file-level LOCAL starts with rs, every routine with rs_
+PASS S no name spells rsolve
+PASS S header: the DISCLAIMER line and "beta 1b  (26 Oct 2026)"
+PASS S the program ends with RETURN, not PRINT
+
+===== Part R: the second review (REVIEW2_ResampLab_beta1.md) =====
+PASS R1 two groups, stale keys, every soft key (Exact opens a MSGBOX): no Actions menu, no page skipped   [] None
+PASS R1 paired, stale keys, every soft key: no Actions menu, no page skipped   None
+PASS R1 one-sample bootstrap, stale keys, every soft key (two MSGBOXes): no Actions menu, no page skipped   None
+PASS R1 two-group bootstrap, stale keys, every soft key: no Actions menu, no page skipped   None
+PASS R1 the Enter menu, stale keys: one Actions menu per Enter press (3), none extra   None
+PASS R2 jackknife n=3 mean: one pass = leave-one-out (max diff 0)
+PASS R2 jackknife n=3 median: one pass = leave-one-out (max diff 0)
+PASS R2 jackknife n=3 SD: one pass = leave-one-out (max diff 4.4e-16)
+PASS R2 jackknife n=3 trimmed: one pass = leave-one-out (max diff 0)
+PASS R2 jackknife n=4 ties mean: one pass = leave-one-out (max diff 0)
+PASS R2 jackknife n=4 ties median: one pass = leave-one-out (max diff 0)
+PASS R2 jackknife n=4 ties SD: one pass = leave-one-out (max diff 0)
+PASS R2 jackknife n=4 ties trimmed: one pass = leave-one-out (max diff 0)
+PASS R2 jackknife BJS mean: one pass = leave-one-out (max diff 0)
+PASS R2 jackknife BJS median: one pass = leave-one-out (max diff 0)
+PASS R2 jackknife BJS SD: one pass = leave-one-out (max diff 7.1e-15)
+PASS R2 jackknife BJS trimmed: one pass = leave-one-out (max diff 0)
+PASS R2 jackknife Darwin d mean: one pass = leave-one-out (max diff 0)
+PASS R2 jackknife Darwin d median: one pass = leave-one-out (max diff 0)
+PASS R2 jackknife Darwin d SD: one pass = leave-one-out (max diff 8.9e-16)
+PASS R2 jackknife Darwin d trimmed: one pass = leave-one-out (max diff 0)
+PASS R2 jackknife even ties mean: one pass = leave-one-out (max diff 0)
+PASS R2 jackknife even ties median: one pass = leave-one-out (max diff 0)
+PASS R2 jackknife even ties SD: one pass = leave-one-out (max diff 4.4e-16)
+PASS R2 jackknife even ties trimmed: one pass = leave-one-out (max diff 0)
+PASS R2 jackknife n=11 mean: one pass = leave-one-out (max diff 0)
+PASS R2 jackknife n=11 median: one pass = leave-one-out (max diff 0)
+PASS R2 jackknife n=11 SD: one pass = leave-one-out (max diff 1.8e-15)
+PASS R2 jackknife n=11 trimmed: one pass = leave-one-out (max diff 0)
+PASS R2 jackknife n=20 mean: one pass = leave-one-out (max diff 1.4e-14)
+PASS R2 jackknife n=20 median: one pass = leave-one-out (max diff 0)
+PASS R2 jackknife n=20 SD: one pass = leave-one-out (max diff 1.4e-14)
+PASS R2 jackknife n=20 trimmed: one pass = leave-one-out (max diff 2.8e-14)
+PASS R2 jackknife n=31 mean: one pass = leave-one-out (max diff 0)
+PASS R2 jackknife n=31 median: one pass = leave-one-out (max diff 0)
+PASS R2 jackknife n=31 SD: one pass = leave-one-out (max diff 8.9e-16)
+PASS R2 jackknife n=31 trimmed: one pass = leave-one-out (max diff 0)
+PASS R2 n = 1,000 mean: start in 0.12 s in the harness (beta 1: about 19 s at n = 999), jackknife exact
+PASS R2 n = 1,000 median: start in 0.10 s in the harness (beta 1: about 19 s at n = 999), jackknife exact
+PASS R2 n = 1,000 SD: start in 0.11 s in the harness (beta 1: about 19 s at n = 999), jackknife exact
+PASS R2 n = 1,000 trimmed: start in 0.13 s in the harness (beta 1: about 19 s at n = 999), jackknife exact
+PASS R2 Esc during the jackknife (n = 400): BCa refused with "stopped by Esc", the page still works   None BCa: jackknife stopped by Esc
+PASS R3 rs_Splits(10, 5) -> 252.0, "252" (C = 252)
+PASS R3 rs_Splits(12, 6) -> 924.0, "924" (C = 924)
+PASS R3 rs_Splits(13, 6) -> 1716.0, "1,716" (C = 1716)
+PASS R3 rs_Splits(14, 7) -> -1.0, "3,432" (C = 3432)
+PASS R3 rs_Splits(76, 37) -> -1.0, "about 10^21" (C = 10^21.83)
+PASS R3 rs_Splits(114, 48) -> -1.0, "about 10^32" (C = 10^32.58)
+PASS R3 rs_Splits(2000, 1000) -> -1.0, "about 10^600" (C = 10^600.31)
+PASS R3 rs_Splits(1670, 835) -> -1.0, "about 10^501" (C = 10^501.01)
+PASS R3 rs_Splits(30, 2) -> 435.0, "435" (C = 435)
+PASS R3 1,000 v 1,000: the page opens, x10 runs, Exact says "about 10^600" with no overflow   None
+PASS R4 a 3,000-resample run with frequent redraws calls rs_BtCI at most once (at the end; beta 1: at every redraw)   calls 1
+PASS R4 a run that slows down after the first check is still capped (on the time used), in hundreds   B = 430, capped at 430: about 60 s on this calculator
+PASS R5 two groups {1..5} v {6..10} x 1e-10: exact |d| >= |obs| = 2 of 252 (beta 1 at 1E-10: 252 of 252)   (252, 2, 252)
+PASS R5 paired {1,3,2,4,-1} x 1e-10: exact counts (32, 3, 31, 6) = itertools (32, 3, 31, 6) (route 3)
+PASS R5 Monte Carlo x 1e-10: the tie count equals the replay's (tolerance relative to the spread)
+PASS R5 two groups {1..5} v {6..10} x 1: exact |d| >= |obs| = 2 of 252 (beta 1 at 1E-10: 252 of 252)   (252, 2, 252)
+PASS R5 paired {1,3,2,4,-1} x 1: exact counts (32, 3, 31, 6) = itertools (32, 3, 31, 6) (route 2)
+PASS R5 Monte Carlo x 1: the tie count equals the replay's (tolerance relative to the spread)
+PASS R5 two groups {1..5} v {6..10} x 1e+10: exact |d| >= |obs| = 2 of 252 (beta 1 at 1E-10: 252 of 252)   (252, 2, 252)
+PASS R5 paired {1,3,2,4,-1} x 1e+10: exact counts (32, 3, 31, 6) = itertools (32, 3, 31, 6) (route 3)
+PASS R5 Monte Carlo x 1e+10: the tie count equals the replay's (tolerance relative to the spread)
+PASS R5 rs_Grid: 1E-10-scale values are not taken as the whole number 0
+PASS R5 rs_Grid: whole numbers x 1E10 are whole (f = 1)
+PASS R6 Darwin: the CSV has 15 pairs in 4 pots, and the data page says "(15 pairs in 4 pots)"
+PASS R7 D1 = 1..15 paired: "exact p = 2/32,768 (p < 0.0001)" on the page and in the Home summary   ResampLab: Paired permutation: sign flips: observed +8.00, plus-one p = 0.0099 (B = 100), exact p = 2/32,768 (p < 0.0001)
+PASS R7 the Info page: no "= <" and the Monte Carlo SE of p = 0 written "= 0"
+PASS R8 the one-sample bootstrap names its data: "mean of differences cross - self"
+PASS R8 a tap after a bulk run: "(a value in the sample)", never "picked 0 times"
+PASS R8 the paired page says "flips each pair's sign"
+PASS R8 the two-group page shows the key legend
+PASS R8 the menu title is the short name ("ResampLab: Rossi")
+PASS R8 Use my data with equal lengths: the bootstrap resamples D1 - D2, as Darwin resamples its differences
+PASS R8 the review's heavy-tie paired Info page: no runtime error (the footer audit below covers its lines)
+PASS R8 (review 9) counting by sums limited by work: n = 30, sum 1,020 (n x sum 30,600) is refused with a message
+PASS R8 every INPUT help line 43 characters or fewer   []
+PASS R8 static: the CIs page labels are "pct"/"basic"/"BCa"/"t" (no "perce"), the animation in mode 2 is gated by rsNd
+
+===== Part A: audits over every harness run (261 runs) =====
+PASS A no STRING printed in scientific form (h.sci_strings) in any run   []
+PASS A no text off the 320 x 240 screen or past its width (6.5 px a character, font 1)   0 texts
+PASS A every text-page line ends above the footer (y <= 209)   []
+PASS A no MSGBOX over 5 lines   []
+PASS A every MSGBOX text 100 characters or fewer (review 12)   []
+PASS A no "= <" in any text or Home summary of any run (review 7)   []
+PASS A every CHOOSE line 30 characters or fewer   []
+PASS A every soft-key strip has six labels   []
+
+767 checks, 0 failures

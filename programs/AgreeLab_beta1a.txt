@@ -1,0 +1,2945 @@
+#pragma mode( separator(.,;) integer(h32) )
+
+// (C) 2026 Roger D Metcalf
+// For academic use only - do not rely on results for anything important
+// Results have not been rigorously verified and/or validated
+//
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with the
+//   file and credit the author if you pass it on.  Not for sale or
+//   commercial redistribution.
+// DISCLAIMER: a teaching and demonstration aid. Not validated for
+//   forensic, clinical or legal use; do not rely on its results for
+//   legal purposes.
+// Written with AI assistance. The concept, direction, decisions and all
+// hardware testing are Roger D. Metcalf's; the code, drafting and
+// source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
+
+// AGREELAB - beta 1a  (26 Oct 2026; beta 1 the same day)
+// Agreement and reliability between examiners or raters, for forensic
+//   science and research-methods classes: what each statistic MEANS, with
+//   pictures you can touch.  Launch AgreeLab() from the Program Catalog:
+//   it takes no arguments, shows an opening page (with the disclaimer),
+//   then its main menu:
+//     Two raters, categories . a k x k table (k = 2..6) on a touch grid:
+//                              observed and chance agreement, Cohen's
+//                              kappa, its SE and 95% CI, the z test of
+//                              kappa = 0, kappa max for the margins,
+//                              PABAK; tiles you can drag a count between
+//                              (diagonal green, off-diagonal red); a bar of
+//                              observed vs chance agreement; the null curve
+//     Two raters, ordered .... weighted kappa, linear (Cicchetti-Allison)
+//                              and quadratic (Fleiss-Cohen) weights, SE,
+//                              CI and test; the weight matrix drawn
+//     Many raters ............ Fleiss' kappa, overall and per category,
+//                              with the SE under H0; stacked bars of each
+//                              subject's ratings
+//     Continuous ............. ICC(1,1), ICC(2,1), ICC(3,1) and the
+//                              average-measure ICCs with F-based 95% CIs
+//                              (a forest plot); a profile plot of the
+//                              ratings; a Bland-Altman plot for two raters
+//                              (bias, limits of agreement with their CIs,
+//                              the proportional-bias regression)
+//     Load a preset, Use my data (D1-D9), New table, Help, Quit
+//   Home exports after a run: AG_K (the last kappa computed: Cohen's,
+//     weighted or Fleiss'), AG_SE (its SE: Fleiss-Cohen-Everitt for Cohen's
+//     and weighted, the SE under H0 for Fleiss'), AG_P (its one-sided p for
+//     kappa = 0), AG_ICC (the six ICCs, in the order ICC(1,1), ICC(2,1),
+//     ICC(3,1), ICC(1,k), ICC(2,k), ICC(3,k)), AG_LOA (Bland-Altman
+//     {lower limit, bias, upper limit}).
+// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  beta 1a (and
+//   beta 1) have NOT been run on hardware or the emulator, only in the PC
+//   harness.
+// WHAT CHANGED in beta 1a (26 Oct 2026): every finding of the second review
+//   (build/AgreeLab/REVIEW2_AgreeLab_beta1.md) with the lead's decisions;
+//   one line per fix in AgreeLab_beta1a_CHANGES.md.
+//   (1) a move needs a change of tile AND at least MAX(8, half a tile) px of
+//       finger travel; less is a tap (a 1-px drift no longer moves a count);
+//   (2) an edited preset says "edited from <source>" on its pages, title and
+//       Home summary;
+//   (3) ICCs with a zero error mean square are reported (ICC(3) = 1 for a
+//       constant offset, ICC(2) and ICC(1) from their formulas), with "no F
+//       interval" where F is infinite; "undefined" only when every rating is
+//       the same;
+//   (4) every ICC denominator is guarded (relative 1E-10): "undefined
+//       (denominator 0)", no off-screen marker; numbers of 1E11 or more print
+//       as "1.234E11" built by hand, never STRING's scientific form;
+//   (5) the Bland-Altman limit CIs are labelled approximate (Bland & Altman
+//       1986 SE), with their simulated coverage on Help page 7;
+//   (6) the kappa CI is clipped to [-1, 1] and says so; no SE, CI or p when
+//       N < 10, a row or column total is 0, or SE = 0; "p > 0.9999";
+//   (7) ag_Poll drains a finger before it waits;
+//   low: the 1986 line shows the program's 2s limits and what the paper,
+//       rounding, prints; the tiles footer says "+/- = count".
+// Sources:
+//   Cohen J (1960) Educ Psychol Meas 20:37-46 (kappa; kappa max from the
+//     margins, p 42: po max = sum of min(row share, column share)).
+//   Fleiss JL, Cohen J, Everitt BS (1969) Psychol Bull 72:323-327: the
+//     large-sample SE of kappa and weighted kappa (used for the CI) and
+//     the SE under H0 (used for the z test).  The same formulas are in
+//     statsmodels cohens_kappa (std_kappa, std_kappa0).
+//   Cohen J (1968) Psychol Bull 70:213-220 (weighted kappa).
+//   Cicchetti DV, Allison T (1971) Am J EEG Technol 11:101-109 (linear
+//     weights 1 - |i - j|/(k - 1)).
+//   Fleiss JL, Cohen J (1973) Educ Psychol Meas 33:613-619 (quadratic
+//     weights 1 - (i - j)^2/(k - 1)^2).
+//   Fleiss JL (1971) Psychol Bull 76:378-382 (kappa for many raters);
+//     Fleiss JL, Nee JCM, Landis JR (1979) Psychol Bull 86:974-977 (its SE
+//     under H0; R irr kappam.fleiss gives the same z).
+//   Byrt T, Bishop J, Carlin JB (1993) J Clin Epidemiol 46:423-429 (PABAK,
+//     prevalence and bias indices); Feinstein AR, Cicchetti DV (1990)
+//     J Clin Epidemiol 43:543-549 (the kappa paradoxes).
+//   Landis JR, Koch GG (1977) Biometrics 33:159-174 (the benchmark bands,
+//     shown only as their stated convention, and the MS data).
+//   Shrout PE, Fleiss JL (1979) Psychol Bull 86:420-428; McGraw KO, Wong SP
+//     (1996) Psychol Methods 1:30-46 (errata p 390): the ICC forms and
+//     their F-based CIs (ICC(2,1) with Satterthwaite's df).
+//   Bland JM, Altman DG (1986) Lancet i(8476):307-310 (limits of
+//     agreement and their CIs); Bland & Altman (1999) Stat Methods Med Res
+//     8:135-160 (SE of a limit s*sqrt(1/n + 1.96^2/(2(n - 1))); the
+//     regression of the difference on the mean).
+//   Special functions: Numerical Recipes 6.1 and 6.4 (Lanczos log-gamma,
+//     incomplete beta), as carried by AnovaLab beta 1a and StatDist v2.7f.
+// Data (data/DATASETS_AGREE.md; two agreeing sources each):
+//   MS diagnosis: Westlund & Kurland (1953) Am J Hyg 57:380-396, as tabled
+//     by Landis & Koch (1977); R vcd MSPatients = Friendly's msdiag.sas.
+//     149 Winnipeg and 69 New Orleans patients; rows = the New Orleans
+//     neurologist, columns = the Winnipeg neurologist.
+//   Psychiatric diagnoses: Fleiss (1971), 30 patients x 6 raters x 5
+//     categories; R irr 'diagnoses' = statsmodels' test copy.
+//   Peak expiratory flow: Bland & Altman (1986) Table 1, first readings of
+//     17 people, Wright vs mini Wright meter (l/min); = R MethComp PEFR.
+//   Shrout & Fleiss (1979): 6 targets x 4 judges; = R psych ICC example and
+//     Howell's ICC page (UVM).
+//   Two 2 x 2 kappa-paradox tables: ILLUSTRATIVE NUMBERS (said on screen).
+// Replaces / reworks: no TI program.  ref/triola_ti_programs/ holds no
+//   agreement program (a search for kappa finds only Bayesian posterior
+//   programs), so nothing is ported and no TI bug applies.
+// File map (line numbers of this file):
+//    132- 173  file-level state and Home exports
+//    174- 477  1. SMALL HELPERS
+//    478- 610  2. SPECIAL FUNCTIONS (pure arithmetic on device-verified com
+//    611-1051  3. ARITHMETIC
+//   1052-1161  4. PRESETS (every value from data/DATASETS_AGREE.md; two sou
+//   1162-1331  5. HELP (pages drawn on G1; any key or tap = next, Left = ba
+//   1332-1744  6. TWO RATERS: the pages (Tiles, Kappa, Null curve, Weights)
+//   1745-2009  7. TWO RATERS: touch, keys, the view
+//   2010-2251  8. MANY RATERS (Fleiss' kappa): pages and view
+//   2252-2674  9. CONTINUOUS RATINGS: ICC and Bland-Altman pages and view
+//   2675-2865  10. YOUR OWN DATA (the Statistics 1Var app's D1-D9), A NEW T
+//   2866-2945  11. PRESETS MENU, THE OPENING PAGE, THE MAIN MENU
+// ============================================================
+
+// ---- palette and glyphs (set in ag_Init) ----
+LOCAL agBLUE, agMAG, agRED, agGRN, agORNG, agGRAY;
+LOCAL agFOOT, agGRID, agSHD, agLGRN, agLRED, agLBLU;
+LOCAL agLORN, agLGRY, agGCol;
+LOCAL agSq, agAl, agSg, agTm, agH0, agH1;
+LOCAL agGE, agLE, agPM, agRt, agS0, agMu;
+LOCAL agLR, agUD, agXb;
+// ---- interaction state ----
+LOCAL agTapX, agTapY, agRelX, agRelY, agScr, agSKP;
+LOCAL agLast, agInfo, agStop;
+// ---- two-rater table: counts (flat, row-major), size, names ----
+LOCAL agT, agK, agCN, agRA, agRB, agTTtl;
+LOCAL agTSrc, agTIll, agTOrd, agTHas, agSel, agSelJ;
+// ---- two-rater results ----
+LOCAL agTOK, agTN, agPo, agPe, agKa, agSE;
+LOCAL agSE0, agZ, agP, agLo, agHi, agPoMx;
+LOCAL agKmx, agPab, agRw, agCl, agPI, agBI;
+LOCAL agWt, agWK, agWSE, agWSE0, agWZ, agWP;
+LOCAL agWPo, agWPe, agWOK;
+// ---- tile geometry ----
+LOCAL agGX0, agGY0, agCZ;
+// ---- many raters (Fleiss) ----
+LOCAL agF, agFN, agFQ, agFM, agFCN, agFTtl;
+LOCAL agFSrc, agFIll, agFHas, agFOK, agFK, agFKj;
+LOCAL agFPj, agFPi, agFPb, agFPe, agFSE0, agFSEj;
+LOCAL agFZ, agFP, agFSel, agFSub, agISel;
+// ---- continuous ratings (targets x raters, flat row-major) ----
+LOCAL agY, agYN, agYK, agYRN, agYTtl, agYSrc;
+LOCAL agYU, agYIll, agYHas, agIOK, agIC, agIL;
+LOCAL agIU, agIF, agID1, agID2, agIPv, agMS;
+LOCAL agIV, agICI, agBA, agBB, agBOK, agBN;
+LOCAL agBD, agBM, agBDb, agBS, agBLo, agBHi;
+LOCAL agBT, agBSeb, agBSel, agB1, agB0, agBSe1;
+LOCAL agBTb, agBPb, agBWhy, agICf, agBSL, agDCa;
+LOCAL agBCa, agIDf, agINo, agTEd, agTShort, agTInf;
+LOCAL agTWhy, agTClp, agYPap;
+// ---- plot boxes ----
+LOCAL agPL, agPR, agPT, agPB;
+LOCAL agXlo, agXhi, agYlo, agYhi;
+
+EXPORT AG_K, AG_SE, AG_P, AG_ICC, AG_LOA;
+
+// ============================================================
+// 1. SMALL HELPERS
+// ============================================================
+
+// The palette, the glyphs and the starting state.  Called once.
+ag_Init()
+BEGIN
+  agBLUE := #003CC8h; agMAG := #C800C8h; agRED := #FF0000h;
+  agGRN := #008C3Ch; agORNG := #FF4500h; agGRAY := #5A5A5Ah;
+  agFOOT := #1E90FFh; agGRID := #E1E4EBh; agSHD := #AACDFFh;
+  agLGRN := #E8F6EBh; agLRED := #FFEBEBh; agLBLU := #EBF2FFh;
+  agLORN := #FFF0DCh; agLGRY := #C8C8C8h;
+  // nine category / rater colours, clearly distinct, always in this order
+  agGCol := {#003CC8h, #DC0000h, #008C3Ch, #FF7800h, #C800C8h, #0096A0h,
+             #8C5014h, #6E28B4h, #788200h};
+  // superscript 2, alpha, sigma, times, H0, H1
+  agSq := CHAR(178); agAl := CHAR(945); agSg := CHAR(963); agTm := CHAR(215);
+  agH0 := "H" + CHAR(8320); agH1 := "H" + CHAR(8321);
+  // >=, <=, plus-minus, root, subscript 0, mu
+  agGE := CHAR(8805); agLE := CHAR(8804); agPM := CHAR(177);
+  agRt := CHAR(8730); agS0 := CHAR(8320); agMu := CHAR(956);
+  // the left/right arrow pair, up/down arrows, x-bar
+  agLR := CHAR(8592) + CHAR(8594); agUD := CHAR(8645); agXb := CHAR(57344);
+  agTapX := -1; agTapY := -1; agRelX := -1; agRelY := -1;
+  agScr := 1; agSKP := 1; agLast := "no analysis run"; agInfo := ""; agStop := 0;
+  agTHas := 0; agFHas := 0; agYHas := 0; agTOK := 0; agFOK := 0; agIOK := 0;
+  agBOK := 0; agWOK := 0; agWt := 1; agSel := 1; agSelJ := 1; agFSel := 0;
+  agBA := 1; agBB := 2; agBSel := 0; agICI := ""; agISel := 0; agFSub := 0;
+  agDCa := 0; agBCa := 0; agTEd := 0; agTShort := ""; agTInf := 0;
+  agTWhy := ""; agTClp := 0; agYPap := 0;
+  agIDf := {1, 1, 1, 1, 1, 1}; agINo := {"", "", "", "", "", ""};
+  agWK := {0, 0}; agWSE := {0, 0}; agWSE0 := {0, 0}; agWZ := {0, 0};
+  agWP := {1, 1}; agWPo := {0, 0}; agWPe := {0, 0};
+  agPL := 34; agPR := 310; agPT := 46; agPB := 170;
+  AG_K := 0; AG_SE := 0; AG_P := 1; AG_ICC := {0, 0, 0, 0, 0, 0}; AG_LOA := {0, 0, 0};
+END;
+
+// Wait for the finger to lift -- never for more than a second (a stuck
+// touch reading must not freeze the program: Lessons Learned 7).
+ag_Drain()
+BEGIN
+  LOCAL drT;
+  drT := TICKS;
+  REPEAT UNTIL MOUSE(1) == -1 OR TICKS - drT > 1000;
+END;
+
+// Empty the key buffer.
+ag_KDrain()
+BEGIN
+  LOCAL kdK;
+  REPEAT kdK := GETKEY; UNTIL kdK == -1;
+END;
+
+// Drain, wait for a key OR a tap, drain.  Returns the key, or -1 for a
+// tap (its x and y left in agTapX, agTapY).  Holds a page for as long as
+// it takes (WAIT(-1) would give up after about a minute).
+ag_WaitAny()
+BEGIN
+  LOCAL waK, waM, waM1;
+  ag_KDrain();
+  ag_Drain();
+  REPEAT
+    waK := GETKEY;
+    waM := MOUSE;
+    waM1 := waM(1);
+  UNTIL waK > -1 OR SIZE(waM1) > 0;
+  agTapX := -1; agTapY := -1;
+  IF SIZE(waM1) > 0 THEN
+    agTapX := waM1(1); agTapY := waM1(2); waK := -1;
+  END;
+  ag_Drain();
+  ag_KDrain();
+  RETURN waK;
+END;
+
+// One event for a view: a key, or -1 for a touch.  For a touch, the press
+// is left in agTapX, agTapY and the last point before the finger lifted in
+// agRelX, agRelY, so a drag from one tile to another can be read.  The
+// GETKEY + MOUSE polling loop of ChiTable: MOUSE sees a tap on the
+// soft-key strip like any other tap (y >= 218).  The finger is followed
+// for at most 5 s, then the capped drain (a stuck reading cannot hang it).
+ag_Poll()
+BEGIN
+  LOCAL poK, poM, poM1, poT;
+  // drain first: a key left by a CHOOSE, INPUT or MSGBOX must not end
+  // the wait before the page is seen, and a finger still down from a
+  // menu tap must not count as a tap on the page (Lessons Learned 7;
+  // beta 1a, second review item 7)
+  ag_KDrain();
+  ag_Drain();
+  REPEAT
+    poK := GETKEY;
+    poM := MOUSE;
+    poM1 := poM(1);
+  UNTIL poK > -1 OR SIZE(poM1) > 0;
+  agTapX := -1; agTapY := -1; agRelX := -1; agRelY := -1;
+  IF SIZE(poM1) > 0 THEN
+    agTapX := poM1(1); agTapY := poM1(2);
+    agRelX := agTapX; agRelY := agTapY; poK := -1;
+    poT := TICKS;
+    REPEAT
+      poM := MOUSE;
+      poM1 := poM(1);
+      IF SIZE(poM1) > 0 THEN agRelX := poM1(1); agRelY := poM1(2); END;
+    UNTIL SIZE(poM1) == 0 OR TICKS - poT > 5000;
+    ag_Drain();
+  ELSE
+    ag_KDrain();
+  END;
+  RETURN poK;
+END;
+
+// A message box, then both drains (a MSGBOX opened from a soft key must
+// not leave a key or a finger behind for the next page).
+ag_Msg(msS)
+BEGIN
+  MSGBOX(msS);
+  ag_KDrain();
+  ag_Drain();
+END;
+
+// Fixed decimals, rounded first: STRING(x, 2, d) prints SCIENTIFIC when
+// 0 < |x| < 10^-d (Lessons Learned 3), and a rounded -0 prints as 0.
+// beta 1a: from 1E11 up the number is written by hand as "1.234E11"
+// (STRING turns scientific from 1E12, with the device's own E glyph).
+ag_Fx(fxV, fxD)
+BEGIN
+  LOCAL fxR, fxE;
+  fxR := ROUND(fxV, fxD);
+  IF fxR == 0 THEN fxR := 0; END;
+  IF ABS(fxR) >= 1E11 THEN
+    fxE := FLOOR(LOG(ABS(fxR)));
+    RETURN STRING(ROUND(fxR/10^fxE, 3), 2, 3) + "E" + STRING(fxE, 2, 0);
+  END;
+  RETURN STRING(fxR, 2, fxD);
+END;
+
+// A whole number as text.
+ag_I(itV)
+BEGIN
+  RETURN ag_Fx(itV, 0);
+END;
+
+// A number with as many decimals as its size deserves (about 4 digits).
+ag_Gn(gnV)
+BEGIN
+  LOCAL gnA, gnD;
+  gnA := ABS(gnV);
+  gnD := 4;
+  IF gnA >= 1 THEN gnD := 3; END;
+  IF gnA >= 10 THEN gnD := 2; END;
+  IF gnA >= 1000 THEN gnD := 1; END;
+  IF gnA >= 100000 THEN gnD := 0; END;
+  RETURN ag_Fx(gnV, gnD);
+END;
+
+// A kappa or an ICC: three decimals.
+ag_K3(k3V)
+BEGIN
+  RETURN ag_Fx(k3V, 3);
+END;
+
+// An ICC that can run far below -1 (an average-measure form): "< -999"
+// beyond that, so a row never overflows.
+ag_KS(ksV)
+BEGIN
+  IF ksV < -999 THEN RETURN "< -999"; END;
+  RETURN ag_K3(ksV);
+END;
+
+// "p = 0.0670", "p < 0.0001" or "p > 0.9999" (never "p = < ..." and
+// never "1.0000": FitCheck's form).
+ag_PE(peP)
+BEGIN
+  IF peP < 0.0001 THEN RETURN "p < 0.0001"; END;
+  IF peP > 0.99995 THEN RETURN "p > 0.9999"; END;
+  RETURN "p = " + ag_Fx(peP, 4);
+END;
+
+// A value of 0 to 1 as a weight: "1", "0", or ".67" (fits a narrow tile).
+ag_W2(w2V)
+BEGIN
+  LOCAL w2S;
+  IF w2V >= 0.995 THEN RETURN "1"; END;
+  IF w2V < 0.005 THEN RETURN "0"; END;
+  w2S := ag_Fx(w2V, 2);
+  RETURN MID(w2S, 2);
+END;
+
+// A "nice" step, 1, 2 or 5 times a power of ten, at least the value
+// handed in (Heckbert), for axis ticks.
+ag_Nice(nnV)
+BEGIN
+  LOCAL nnE, nnF;
+  IF nnV <= 0 THEN RETURN 1; END;
+  nnE := FLOOR(LOG(nnV));
+  nnF := nnV/10^nnE;
+  IF nnF <= 1 THEN RETURN 10^nnE; END;
+  IF nnF <= 2 THEN RETURN 2*10^nnE; END;
+  IF nnF <= 5 THEN RETURN 5*10^nnE; END;
+  RETURN 10^(nnE + 1);
+END;
+
+// A white page on G1 with an orange title band.  Everything is drawn on
+// G1 and shown by ONE blit (Lessons Learned 6).
+ag_Band(bnT)
+BEGIN
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 0, 0, 319, 18, agORNG, agORNG);
+  IF DIM(bnT) > 38 THEN
+    TEXTOUT_P(LEFT(bnT, 36) + "..", G1, 4, 2, 2, #FFFFFFh, 312);
+  ELSE
+    TEXTOUT_P(bnT, G1, 4, 2, 2, #FFFFFFh, 312);
+  END;
+END;
+
+// One line of small text on G1, clipped at the right edge.
+ag_Tx(txS, txX, txY, txC)
+BEGIN
+  TEXTOUT_P(txS, G1, txX, txY, 1, txC, 316 - txX);
+END;
+
+// The footer, house form (dodger blue, comma-separated, spaced "=").
+ag_Foot(ftS)
+BEGIN
+  TEXTOUT_P(ftS, G1, 4, 206, 1, agFOOT, 312);
+END;
+
+// Show the composed page, then the soft keys (DRAWMENU paints the
+// SCREEN, so it comes after the blit, every frame).
+ag_Show(shK)
+BEGIN
+  BLIT_P(G0, 0, 0, G1);
+  DRAWMENU(shK);
+END;
+
+// A dotted vertical line on G1 (LINE_P has no dash style).
+ag_DotV(dvX, dvY1, dvY2, dvC)
+BEGIN
+  LOCAL dvI;
+  FOR dvI FROM dvY1 TO dvY2 STEP 3 DO
+    PIXON_P(G1, dvX, dvI, dvC);
+  END;
+END;
+
+// A dotted horizontal line on G1.
+ag_DotH(dhY, dhX1, dhX2, dhC)
+BEGIN
+  LOCAL dhI;
+  FOR dhI FROM dhX1 TO dhX2 STEP 3 DO
+    PIXON_P(G1, dhI, dhY, dhC);
+  END;
+END;
+
+// A small filled marker, 5 x 5 with the corners off (two RECT_P bars;
+// ARC_P rings leave holes, Lessons Learned 6).
+ag_Mark(mkX, mkY, mkC)
+BEGIN
+  RECT_P(G1, mkX - 1, mkY - 2, mkX + 1, mkY + 2, mkC);
+  RECT_P(G1, mkX - 2, mkY - 1, mkX + 2, mkY + 1, mkC);
+END;
+
+// An outline rectangle (a one-colour RECT_P fills: Lessons Learned v7r),
+// drawn as four lines.
+ag_Box(bxX1, bxY1, bxX2, bxY2, bxC)
+BEGIN
+  LINE_P(G1, bxX1, bxY1, bxX2, bxY1, bxC);
+  LINE_P(G1, bxX1, bxY2, bxX2, bxY2, bxC);
+  LINE_P(G1, bxX1, bxY1, bxX1, bxY2, bxC);
+  LINE_P(G1, bxX2, bxY1, bxX2, bxY2, bxC);
+END;
+
+// White blended toward the colour (r, g, b) by a share f of 0 to 1:
+// the tile shading (more counts, deeper colour).
+ag_Mix(mxF, mxR, mxG, mxB)
+BEGIN
+  LOCAL mxS;
+  mxS := MAX(0, MIN(1, mxF));
+  RETURN RGB(IP(255 - mxS*(255 - mxR)), IP(255 - mxS*(255 - mxG)), IP(255 - mxS*(255 - mxB)));
+END;
+
+// Landis & Koch's (1977) words for ranges of kappa: THEIR stated
+// benchmark.  Shown only beside that citation and the words "a
+// convention, not a test".
+ag_LK(lkV)
+BEGIN
+  IF lkV < 0 THEN RETURN "poor"; END;
+  IF lkV <= 0.2 THEN RETURN "slight"; END;
+  IF lkV <= 0.4 THEN RETURN "fair"; END;
+  IF lkV <= 0.6 THEN RETURN "moderate"; END;
+  IF lkV <= 0.8 THEN RETURN "substantial"; END;
+  RETURN "almost perfect";
+END;
+
+// The "Working" note for a computation that may take a few seconds on a
+// G1 (the ICC intervals need F quantiles at a fractional df).
+ag_Busy(buT)
+BEGIN
+  ag_Band("Working");
+  ag_Tx(buT, 12, 60, agBLUE);
+  ag_Tx("A G1 may need a few seconds.", 12, 80, agGRAY);
+  BLIT_P(G0, 0, 0, G1);
+END;
+
+// ============================================================
+// 2. SPECIAL FUNCTIONS (pure arithmetic on device-verified commands)
+// ============================================================
+
+// Log-gamma, Lanczos g = 7 (LNGAMMA is CAS-only).  StudRange beta 15d's
+// sr_LGAM via AnovaLab: accurate to about 1E-13 for x >= 0.5.
+// 0.918938533204673 is 0.5*LN(2*pi).
+ag_LGam(lgX)
+BEGIN
+  LOCAL lgC, lgA, lgT, lgJ, lgY;
+  lgC := {676.5203681218851, -1259.1392167224028,
+      771.32342877765313, -176.61502916214059,
+      12.507343278686905, -0.13857109526572012,
+      9.9843695780195716E-6, 1.5056327351493116E-7};
+  lgY := lgX - 1; lgA := 0.99999999999980993;
+  FOR lgJ FROM 1 TO 8 DO
+    lgA := lgA + lgC(lgJ)/(lgY + lgJ);
+  END;
+  lgT := lgY + 7.5;
+  RETURN 0.918938533204673 + (lgY + 0.5)*LN(lgT) - lgT + LN(lgA);
+END;
+
+// The continued fraction inside the incomplete beta (Numerical Recipes
+// 6.4, modified Lentz): StatDist v2.7f's st_betacf via AnovaLab.
+ag_BetaCF(bcA, bcB, bcX)
+BEGIN
+  LOCAL bcQab, bcQap, bcQam, bcC, bcD, bcH;
+  LOCAL bcM, bcM2, bcAa, bcDel, bcGo;
+  bcQab := bcA + bcB; bcQap := bcA + 1; bcQam := bcA - 1;
+  bcC := 1; bcD := 1 - bcQab*bcX/bcQap;
+  IF ABS(bcD) < 1E-300 THEN bcD := 1E-300; END;
+  bcD := 1/bcD; bcH := bcD;
+  bcM := 0; bcGo := 1;
+  WHILE bcGo == 1 AND bcM < 300 DO
+    bcM := bcM + 1; bcM2 := 2*bcM;
+    bcAa := bcM*(bcB - bcM)*bcX/((bcQam + bcM2)*(bcA + bcM2));
+    bcD := 1 + bcAa*bcD;
+    IF ABS(bcD) < 1E-300 THEN bcD := 1E-300; END;
+    bcC := 1 + bcAa/bcC;
+    IF ABS(bcC) < 1E-300 THEN bcC := 1E-300; END;
+    bcD := 1/bcD; bcH := bcH*bcD*bcC;
+    bcAa := -(bcA + bcM)*(bcQab + bcM)*bcX/((bcA + bcM2)*(bcQap + bcM2));
+    bcD := 1 + bcAa*bcD;
+    IF ABS(bcD) < 1E-300 THEN bcD := 1E-300; END;
+    bcC := 1 + bcAa/bcC;
+    IF ABS(bcC) < 1E-300 THEN bcC := 1E-300; END;
+    bcD := 1/bcD; bcDel := bcD*bcC; bcH := bcH*bcDel;
+    IF ABS(bcDel - 1) < 0.00000000001 THEN bcGo := 0; END;
+  END;
+  RETURN bcH;
+END;
+
+// Regularized incomplete beta I_x(a, b), with the symmetry
+// I_x(a,b) = 1 - I_(1-x)(b,a) where the fraction is slow.
+ag_BetaI(biA, biB, biX)
+BEGIN
+  LOCAL biL;
+  IF biX <= 0 THEN RETURN 0; END;
+  IF biX >= 1 THEN RETURN 1; END;
+  biL := ag_LGam(biA + biB) - ag_LGam(biA) - ag_LGam(biB) + biA*LN(biX) + biB*LN(1 - biX);
+  IF biX < (biA + 1)/(biA + biB + 2) THEN
+    RETURN EXP(biL)*ag_BetaCF(biA, biB, biX)/biA;
+  END;
+  RETURN 1 - EXP(biL)*ag_BetaCF(biB, biA, 1 - biX)/biB;
+END;
+
+// A probability kept inside (0, 1) before any _ICDF (an ICDF at 0 or 1
+// returns infinity with no error: Lessons Learned 3).
+ag_Clp(cpP)
+BEGIN
+  RETURN MIN(MAX(cpP, 1E-12), 0.999999999999);
+END;
+
+// P(F > f) for F(a, b), computed as a LOWER tail (12-digit reals: 1 - CDF
+// is exactly 0 below about 5E-13).  Whole df: the mirror P(F(a,b) > f) =
+// P(F(b,a) < 1/f) with the built-in FISHER_CDF.  Fractional df: z =
+// b/(a f + b) is Beta(b/2, a/2), so P(F > f) = I_z(b/2, a/2).
+ag_FUp(fuF, fuA, fuB)
+BEGIN
+  IF fuF <= 0 THEN RETURN 1; END;
+  IF FP(fuA) == 0 AND FP(fuB) == 0 THEN RETURN FISHER_CDF(fuB, fuA, 1/fuF); END;
+  RETURN ag_BetaI(fuB/2, fuA/2, fuB/(fuA*fuF + fuB));
+END;
+
+// Right-tail F quantile: the x with P(F(n, d) > x) = a.  Whole df: the
+// mirror 1 / FISHER_ICDF(d, n, a), never FISHER_ICDF(n, d, 1 - a).  A
+// fractional df (ICC(2,1)'s Satterthwaite df) is "Invalid input" for the
+// built-in, so then: P(F > x) = I_y(d/2, n/2) with y = d/(d + n x), which
+// rises with y.  Newton's method on y (the derivative is the Beta(d/2,
+// n/2) density), started from the quantile at the rounded df and kept
+// inside a shrinking bracket (a step that leaves it is a halving), stops
+// when y moves by less than 1E-12 of itself: about 3 to 6 incomplete-beta
+// calls, against 60 for plain halving.  Above 1000 df the df is rounded
+// to a whole number (the quantile moves by less than 1E-4 of itself;
+// verify_AgreeLab_beta1.py).
+ag_FQ(fqA, fqN, fqD)
+BEGIN
+  LOCAL fqLo, fqHi, fqI, fqY, fqNn, fqDd;
+  LOCAL fqA2, fqB2, fqLB, fqG, fqP, fqT;
+  LOCAL fqGo;
+  fqNn := fqN; fqDd := fqD;
+  IF FP(fqNn) <> 0 AND fqNn > 1000 THEN fqNn := ROUND(fqNn, 0); END;
+  IF FP(fqDd) <> 0 AND fqDd > 1000 THEN fqDd := ROUND(fqDd, 0); END;
+  IF FP(fqNn) == 0 AND FP(fqDd) == 0 THEN RETURN 1/FISHER_ICDF(fqDd, fqNn, ag_Clp(fqA)); END;
+  fqA2 := fqDd/2; fqB2 := fqNn/2;
+  fqLB := ag_LGam(fqA2 + fqB2) - ag_LGam(fqA2) - ag_LGam(fqB2);
+  fqT := 1/FISHER_ICDF(MAX(1, ROUND(fqDd, 0)), MAX(1, ROUND(fqNn, 0)), ag_Clp(fqA));
+  fqY := fqDd/(fqDd + fqNn*fqT);
+  IF fqY <= 0 OR fqY >= 1 THEN fqY := 0.5; END;
+  fqLo := 0; fqHi := 1; fqI := 0; fqGo := 1;
+  WHILE fqGo == 1 AND fqI < 60 DO
+    fqI := fqI + 1;
+    fqG := ag_BetaI(fqA2, fqB2, fqY) - fqA;
+    IF fqG < 0 THEN fqLo := fqY; ELSE fqHi := fqY; END;
+    fqP := EXP(fqLB + (fqA2 - 1)*LN(fqY) + (fqB2 - 1)*LN(1 - fqY));
+    fqT := (fqLo + fqHi)/2;
+    IF fqP > 0 THEN
+      fqT := fqY - fqG/fqP;
+      IF fqT <= fqLo OR fqT >= fqHi THEN fqT := (fqLo + fqHi)/2; END;
+    END;
+    IF ABS(fqT - fqY) <= 1E-12*fqY THEN fqGo := 0; END;
+    fqY := fqT;
+  END;
+  RETURN fqDd*(1 - fqY)/(fqNn*fqY);
+END;
+
+// Right-tail t quantile: P(T > t) = a, as -STUDENT_ICDF(df, a), never
+// STUDENT_ICDF(df, 1 - a).
+ag_TQ(tqA, tqD)
+BEGIN
+  RETURN -STUDENT_ICDF(tqD, ag_Clp(tqA));
+END;
+
+// ============================================================
+// 3. ARITHMETIC
+// ============================================================
+
+// The agreement weight of cell (i, j) in a k x k table: wt 1 linear,
+// 1 - |i - j|/(k - 1) (Cicchetti & Allison 1971); wt 2 quadratic,
+// 1 - (i - j)^2/(k - 1)^2 (Fleiss & Cohen 1973).  1 on the diagonal.
+ag_Wt(wtI, wtJ, wtK, wtW)
+BEGIN
+  IF wtW == 1 THEN RETURN 1 - ABS(wtI - wtJ)/(wtK - 1); END;
+  RETURN 1 - (wtI - wtJ)^2/(wtK - 1)^2;
+END;
+
+// Weighted kappa (Cohen 1968) for both weightings, index 1 linear and
+// 2 quadratic, from the row and column shares ag_TCompute left.
+//   po_w = sum w_ij p_ij;  pe_w = sum w_ij p_i. p_.j;
+//   kappa_w = (po_w - pe_w)/(1 - pe_w).
+//   SE (Fleiss, Cohen & Everitt 1969), with wr_i = sum_j p_.j w_ij and
+//   wc_j = sum_i p_i. w_ij:
+//     var  = [sum p_ij (w_ij - (wr_i + wc_j)(1 - kw))^2
+//             - (kw - pe_w(1 - kw))^2] / (N (1 - pe_w)^2)
+//     var0 = [sum p_i. p_.j (w_ij - (wr_i + wc_j))^2 - pe_w^2]
+//             / (N (1 - pe_w)^2)   (under H0, for the z test)
+ag_WCompute()
+BEGIN
+  LOCAL wcW, wcI, wcJ, wcK, wcPo, wcPe;
+  LOCAL wcWr, wcWc, wcS, wcS0, wcKw, wcV;
+  LOCAL wcN, wcPij;
+  wcK := agK; wcN := agTN;
+  agWOK := 1;
+  FOR wcW FROM 1 TO 2 DO
+    wcPo := 0; wcPe := 0;
+    wcWr := MAKELIST(0, wcI, 1, wcK); wcWc := MAKELIST(0, wcI, 1, wcK);
+    FOR wcI FROM 1 TO wcK DO
+      FOR wcJ FROM 1 TO wcK DO
+        wcV := ag_Wt(wcI, wcJ, wcK, wcW);
+        wcPo := wcPo + wcV*agT((wcI - 1)*wcK + wcJ)/wcN;
+        wcPe := wcPe + wcV*agRw(wcI)*agCl(wcJ);
+        wcWr(wcI) := wcWr(wcI) + agCl(wcJ)*wcV;
+        wcWc(wcJ) := wcWc(wcJ) + agRw(wcI)*wcV;
+      END;
+    END;
+    agWPo(wcW) := wcPo; agWPe(wcW) := wcPe;
+    IF wcPe > 0.999999999 THEN
+      agWOK := 0;
+      agWK(wcW) := 0; agWSE(wcW) := 0; agWSE0(wcW) := 0; agWZ(wcW) := 0; agWP(wcW) := -1;
+    ELSE
+      wcKw := (wcPo - wcPe)/(1 - wcPe);
+      wcS := 0; wcS0 := 0;
+      FOR wcI FROM 1 TO wcK DO
+        FOR wcJ FROM 1 TO wcK DO
+          wcV := ag_Wt(wcI, wcJ, wcK, wcW);
+          wcPij := agT((wcI - 1)*wcK + wcJ)/wcN;
+          wcS := wcS + wcPij*(wcV - (wcWr(wcI) + wcWc(wcJ))*(1 - wcKw))^2;
+          wcS0 := wcS0 + agRw(wcI)*agCl(wcJ)*(wcV - (wcWr(wcI) + wcWc(wcJ)))^2;
+        END;
+      END;
+      wcS := wcS - (wcKw - wcPe*(1 - wcKw))^2;
+      wcS0 := wcS0 - wcPe^2;
+      agWK(wcW) := wcKw;
+      agWSE(wcW) := SQRT(MAX(0, wcS)/(wcN*(1 - wcPe)^2));
+      agWSE0(wcW) := SQRT(MAX(0, wcS0)/(wcN*(1 - wcPe)^2));
+      IF agWSE0(wcW) > 0 THEN
+        agWZ(wcW) := wcKw/agWSE0(wcW);
+        agWP(wcW) := NORMALD_CDF(0, 1, -agWZ(wcW));
+      ELSE
+        agWZ(wcW) := 0; agWP(wcW) := -1;
+      END;
+    END;
+  END;
+  RETURN agWOK;
+END;
+
+// Cohen's kappa for the k x k table agT (rows rater A, columns rater B).
+//   po = sum of the diagonal shares; pe = sum of row share x column share;
+//   kappa = (po - pe)/(1 - pe)  (Cohen 1960).
+//   SE (Fleiss, Cohen & Everitt 1969, large-sample, NOT under H0), with
+//   p_ij the cell shares, p_i. the row and p_.j the column shares:
+//     var = [ sum_i p_ii (1 - (p_i. + p_.i)(1 - kappa))^2
+//           + (1 - kappa)^2 sum_(i<>j) p_ij (p_.i + p_j.)^2
+//           - (kappa - pe(1 - kappa))^2 ] / (N (1 - pe)^2)
+//   SE under H0 (for the z test):
+//     var0 = [pe + pe^2 - sum_i p_i. p_.i (p_i. + p_.i)] / (N (1 - pe)^2)
+//   kappa max (Cohen 1960, p 42): po max = sum_i min(p_i., p_.i), the most
+//   agreement the margins allow.  PABAK = (k po - 1)/(k - 1) (Byrt et al.
+//   1993; 2 po - 1 for a 2 x 2).  2 x 2 only: prevalence index (a - d)/N,
+//   bias index (b - c)/N.
+// Sets agTOK: 1 computed, 0 empty table, 2 kappa undefined (pe = 1).
+ag_TCompute()
+BEGIN
+  LOCAL tcI, tcJ, tcN, tcS, tcS0, tcA;
+  LOCAL tcK, tcPij;
+  tcK := agK;
+  agRw := MAKELIST(0, tcI, 1, tcK); agCl := MAKELIST(0, tcI, 1, tcK);
+  tcN := 0;
+  FOR tcI FROM 1 TO tcK DO
+    FOR tcJ FROM 1 TO tcK DO
+      tcA := agT((tcI - 1)*tcK + tcJ);
+      tcN := tcN + tcA;
+      agRw(tcI) := agRw(tcI) + tcA;
+      agCl(tcJ) := agCl(tcJ) + tcA;
+    END;
+  END;
+  agTN := tcN; agTOK := 0; agWOK := 0;
+  agPo := 0; agPe := 0; agPoMx := 0; agKa := 0; agSE := 0; agSE0 := 0;
+  agZ := 0; agP := 1; agLo := 0; agHi := 0; agKmx := 0; agPab := 0;
+  agPI := 0; agBI := 0;
+  IF tcN <= 0 THEN RETURN 0; END;
+  FOR tcI FROM 1 TO tcK DO
+    agRw(tcI) := agRw(tcI)/tcN;
+    agCl(tcI) := agCl(tcI)/tcN;
+  END;
+  FOR tcI FROM 1 TO tcK DO
+    agPo := agPo + agT((tcI - 1)*tcK + tcI)/tcN;
+    agPe := agPe + agRw(tcI)*agCl(tcI);
+    agPoMx := agPoMx + MIN(agRw(tcI), agCl(tcI));
+  END;
+  IF tcK == 2 THEN
+    agPI := (agT(1) - agT(4))/tcN;
+    agBI := (agT(2) - agT(3))/tcN;
+  END;
+  agPab := (tcK*agPo - 1)/(tcK - 1);
+  IF agPe > 0.999999999 THEN agTOK := 2; RETURN 0; END;
+  agKa := (agPo - agPe)/(1 - agPe);
+  agKmx := (agPoMx - agPe)/(1 - agPe);
+  tcS := 0;
+  FOR tcI FROM 1 TO tcK DO
+    FOR tcJ FROM 1 TO tcK DO
+      tcPij := agT((tcI - 1)*tcK + tcJ)/tcN;
+      IF tcI == tcJ THEN
+        tcS := tcS + tcPij*(1 - (agRw(tcI) + agCl(tcI))*(1 - agKa))^2;
+      ELSE
+        tcS := tcS + (1 - agKa)^2*tcPij*(agCl(tcI) + agRw(tcJ))^2;
+      END;
+    END;
+  END;
+  tcS := tcS - (agKa - agPe*(1 - agKa))^2;
+  agSE := SQRT(MAX(0, tcS)/(tcN*(1 - agPe)^2));
+  tcS0 := agPe + agPe^2;
+  FOR tcI FROM 1 TO tcK DO
+    tcS0 := tcS0 - agRw(tcI)*agCl(tcI)*(agRw(tcI) + agCl(tcI));
+  END;
+  agSE0 := SQRT(MAX(0, tcS0)/(tcN*(1 - agPe)^2));
+  agLo := agKa - 1.95996398454*agSE;
+  agHi := agKa + 1.95996398454*agSE;
+  // beta 1a (second review item 6): the large-sample SE, CI and p are
+  // given only when N >= 10, every row and column total is above 0, and
+  // SE > 0; the CI is clipped to [-1, 1] (agTClp = 1 says it was)
+  agTInf := 1; agTWhy := ""; agTClp := 0;
+  FOR tcI FROM 1 TO tcK DO
+    IF agRw(tcI) <= 0 OR agCl(tcI) <= 0 THEN agTInf := 0; agTWhy := "an empty margin"; END;
+  END;
+  IF agSE <= 0 THEN agTInf := 0; agTWhy := "SE = 0"; END;
+  IF tcN < 10 THEN agTInf := 0; agTWhy := "N < 10"; END;
+  IF agLo < -1 THEN agLo := -1; agTClp := 1; END;
+  IF agHi > 1 THEN agHi := 1; agTClp := 1; END;
+  IF agSE0 > 0 THEN
+    agZ := agKa/agSE0;
+    agP := NORMALD_CDF(0, 1, -agZ);
+  ELSE
+    agZ := 0; agP := -1;
+  END;
+  agTOK := 1;
+  ag_WCompute();
+  RETURN 1;
+END;
+
+// Fleiss' kappa (Fleiss 1971) for agF: N subjects (rows) x q categories,
+// n_ij = how many of the m raters put subject i in category j.
+//   p_j = sum_i n_ij / (N m);  P_i = (sum_j n_ij^2 - m)/(m(m - 1)), the
+//   share of subject i's rater pairs that agree;  P-bar = mean P_i;
+//   Pe = sum p_j^2;  kappa = (P-bar - Pe)/(1 - Pe).
+//   Per category: kappa_j = 1 - sum_i n_ij (m - n_ij) / (N m (m-1) p_j q_j).
+//   SE under H0 only (Fleiss, Nee & Landis 1979):
+//     var0 = 2/(N m (m-1)) x [(sum p_j q_j)^2 - sum p_j q_j (q_j - p_j)]
+//            / (sum p_j q_j)^2;   SE0(kappa_j) = sqrt(2/(N m (m-1))).
+//   kappa_j is set to 99 where p_j is 0 or 1 (undefined).
+// Sets agFOK: 1 computed, 2 undefined (Pe = 1: every rating in one category).
+ag_FCompute()
+BEGIN
+  LOCAL fcI, fcJ, fcN, fcQ, fcM, fcA;
+  LOCAL fcS, fcSpq, fcT, fcPq, fcV;
+  fcN := agFN; fcQ := agFQ; fcM := agFM;
+  agFPj := MAKELIST(0, fcJ, 1, fcQ);
+  agFPi := MAKELIST(0, fcI, 1, fcN);
+  agFKj := MAKELIST(99, fcJ, 1, fcQ);
+  agFOK := 0; agFK := 0; agFSE0 := 0; agFZ := 0; agFP := 1;
+  agFPb := 0; agFPe := 0;
+  FOR fcI FROM 1 TO fcN DO
+    fcS := 0;
+    FOR fcJ FROM 1 TO fcQ DO
+      fcA := agF((fcI - 1)*fcQ + fcJ);
+      agFPj(fcJ) := agFPj(fcJ) + fcA;
+      fcS := fcS + fcA^2;
+    END;
+    agFPi(fcI) := (fcS - fcM)/(fcM*(fcM - 1));
+    agFPb := agFPb + agFPi(fcI);
+  END;
+  agFPb := agFPb/fcN;
+  FOR fcJ FROM 1 TO fcQ DO
+    agFPj(fcJ) := agFPj(fcJ)/(fcN*fcM);
+    agFPe := agFPe + agFPj(fcJ)^2;
+  END;
+  agFSEj := SQRT(2/(fcN*fcM*(fcM - 1)));
+  IF agFPe > 0.999999999 THEN agFOK := 2; RETURN 0; END;
+  agFK := (agFPb - agFPe)/(1 - agFPe);
+  fcSpq := 0; fcT := 0;
+  FOR fcJ FROM 1 TO fcQ DO
+    fcPq := agFPj(fcJ)*(1 - agFPj(fcJ));
+    fcSpq := fcSpq + fcPq;
+    fcT := fcT + fcPq*((1 - agFPj(fcJ)) - agFPj(fcJ));
+    IF fcPq > 0 THEN
+      fcV := 0;
+      FOR fcI FROM 1 TO fcN DO
+        fcA := agF((fcI - 1)*fcQ + fcJ);
+        fcV := fcV + fcA*(fcM - fcA);
+      END;
+      agFKj(fcJ) := 1 - fcV/(fcN*fcM*(fcM - 1)*fcPq);
+    END;
+  END;
+  agFSE0 := SQRT(MAX(0, 2/(fcN*fcM*(fcM - 1))*(fcSpq^2 - fcT)/fcSpq^2));
+  IF agFSE0 > 0 THEN
+    agFZ := agFK/agFSE0;
+    agFP := NORMALD_CDF(0, 1, -agFZ);
+  ELSE
+    agFP := -1;
+  END;
+  agFOK := 1;
+  RETURN 1;
+END;
+
+// The intraclass correlations (Shrout & Fleiss 1979; McGraw & Wong 1996)
+// for agY: n targets (rows) x k raters (columns), from the two-way ANOVA:
+//   MSR targets (rows), MSC raters (columns), MSE residual, MSW within
+//   targets = (SSC + SSE)/(n(k - 1)).
+//   ICC(1,1) = (MSR - MSW)/(MSR + (k-1) MSW)          one-way random
+//   ICC(2,1) = (MSR - MSE)/(MSR + (k-1) MSE + k(MSC - MSE)/n)
+//                                       two-way random, absolute agreement
+//   ICC(3,1) = (MSR - MSE)/(MSR + (k-1) MSE)   two-way mixed, consistency
+//   ICC(1,k) = (MSR - MSW)/MSR;  ICC(2,k) = (MSR - MSE)/(MSR + (MSC-MSE)/n);
+//   ICC(3,k) = (MSR - MSE)/MSR   (the mean of the k ratings).
+// 95% CIs: ICC(1): F0 = MSR/MSW on (n-1, n(k-1)); ICC(3): F0 = MSR/MSE on
+//   (n-1, (n-1)(k-1)); FL = F0/F(.025; df1, df2), FU = F0 x F(.025; df2,
+//   df1); single (FL-1)/(FL+k-1) to (FU-1)/(FU+k-1); average 1 - 1/FL to
+//   1 - 1/FU.  ICC(2,1): Satterthwaite's df
+//     a = k r/(n(1-r)), b = 1 + k r (n-1)/(n(1-r)), r = ICC(2,1),
+//     v = (a MSC + b MSE)^2 / ((a MSC)^2/(k-1) + (b MSE)^2/((n-1)(k-1))),
+//     F* = F(.025; n-1, v), F** = F(.025; v, n-1),
+//     L = n(MSR - F* MSE)/(F*(k MSC + (kn - k - n) MSE) + n MSR),
+//     U = n(F** MSR - MSE)/(k MSC + (kn - k - n) MSE + n F** MSR);
+//   ICC(2,k): L k/(1 + (k-1) L) to U k/(1 + (k-1) U).
+//   F(a; d1, d2) is the right-tail quantile.  The F test of each ICC = 0
+//   uses MSR/MSW for ICC(1), MSR/MSE for ICC(2) and ICC(3) (McGraw & Wong
+//   1996, Table 8).  agIDf(r) is 1 when form r's denominator is not zero
+//   (else agIC(r) = -99 and "undefined (denominator 0)"); agICf(r) is 1 when
+//   it has an interval, else agINo(r) says why (an infinite or zero F,
+//   ICC(2,1) outside (-1, 1), Satterthwaite's v < 1).  AG_ICC holds -99 for
+//   an undefined form.
+//   ICC(2,k)'s transform L k/(1 + (k-1) L) has no finite value once
+//   L <= -1/(k-1): that bound is then minus infinity, stored as -1E99.
+// Sets agIOK: 1 computed, 2 undefined (the reason, as text, in agICI).
+ag_ICompute()
+BEGIN
+  LOCAL icI, icJ, icN, icK, icG, icRm;
+  LOCAL icCm, icSR, icSC, icST, icSE, icA;
+  LOCAL icMR, icMC, icME, icMW, icF1, icF3;
+  LOCAL icFL, icFU, icR, icAa, icBb, icV;
+  LOCAL icFs, icFss, icL, icU, icD, icT;
+  LOCAL icDn, icS;
+  icN := agYN; icK := agYK;
+  agIOK := 0; agICI := "";
+  agIC := MAKELIST(0, icI, 1, 6); agIL := MAKELIST(-99, icI, 1, 6);
+  agIU := MAKELIST(-99, icI, 1, 6); agIF := MAKELIST(0, icI, 1, 6);
+  agID1 := MAKELIST(0, icI, 1, 6); agID2 := MAKELIST(0, icI, 1, 6);
+  agIPv := MAKELIST(1, icI, 1, 6); agMS := {0, 0, 0, 0}; agIV := 0;
+  agICf := {1, 1, 1, 1, 1, 1};
+  icRm := MAKELIST(0, icI, 1, icN); icCm := MAKELIST(0, icI, 1, icK);
+  icG := 0;
+  FOR icI FROM 1 TO icN DO
+    FOR icJ FROM 1 TO icK DO
+      icA := agY((icI - 1)*icK + icJ);
+      icRm(icI) := icRm(icI) + icA/icK;
+      icCm(icJ) := icCm(icJ) + icA/icN;
+      icG := icG + icA/(icN*icK);
+    END;
+  END;
+  icSR := 0; icSC := 0; icST := 0;
+  FOR icI FROM 1 TO icN DO icSR := icSR + icK*(icRm(icI) - icG)^2; END;
+  FOR icJ FROM 1 TO icK DO icSC := icSC + icN*(icCm(icJ) - icG)^2; END;
+  FOR icI FROM 1 TO icN DO
+    FOR icJ FROM 1 TO icK DO
+      icST := icST + (agY((icI - 1)*icK + icJ) - icG)^2;
+    END;
+  END;
+  icSE := MAX(0, icST - icSR - icSC);
+  // beta 1a (second review items 3, 4): a sum of squares below 1E-10 of
+  // the total is zero to 12-digit arithmetic (a constant offset leaves
+  // rounding dust in SSE); every point estimate is then computed from its
+  // formula wherever its denominator is not zero
+  icD := 1E-10*MAX(icST, 1E-300);
+  IF icSR <= icD THEN icSR := 0; END;
+  IF icSC <= icD THEN icSC := 0; END;
+  IF icSE <= icD THEN icSE := 0; END;
+  icMR := icSR/(icN - 1); icMC := icSC/(icK - 1);
+  icME := icSE/((icN - 1)*(icK - 1)); icMW := (icSC + icSE)/(icN*(icK - 1));
+  agMS := {icMR, icMC, icME, icMW};
+  IF icST <= 0 THEN agIOK := 2; agICI := "every rating is the same: nothing to correlate"; RETURN 0; END;
+  agIDf := {1, 1, 1, 1, 1, 1}; agICf := {0, 0, 0, 0, 0, 0}; agINo := {"", "", "", "", "", ""};
+  // a denominator at or below 1E-10 of the largest mean square is zero
+  icT := 1E-10*MAX(MAX(icMR, icMC), MAX(icME, icMW));
+  icDn := icMR + (icK - 1)*icMW;
+  IF icDn > icT THEN agIC(1) := (icMR - icMW)/icDn; ELSE agIDf(1) := 0; END;
+  icDn := icMR + (icK - 1)*icME + icK*(icMC - icME)/icN;
+  IF icDn > icT THEN agIC(2) := (icMR - icME)/icDn; ELSE agIDf(2) := 0; END;
+  icDn := icMR + (icK - 1)*icME;
+  IF icDn > icT THEN agIC(3) := (icMR - icME)/icDn; ELSE agIDf(3) := 0; END;
+  icDn := icMR;
+  IF icDn > icT THEN agIC(4) := (icMR - icMW)/icDn; agIC(6) := (icMR - icME)/icDn; ELSE agIDf(4) := 0; agIDf(6) := 0; END;
+  icDn := icMR + (icMC - icME)/icN;
+  IF icDn > icT THEN agIC(5) := (icMR - icME)/icDn; ELSE agIDf(5) := 0; END;
+  FOR icI FROM 1 TO 6 DO
+    IF agIDf(icI) == 0 THEN agIC(icI) := -99; agINo(icI) := "undefined (denominator 0)"; END;
+  END;
+  // the F statistics; -1 stands for infinite (a zero denominator MS)
+  icF1 := -1; IF icMW > 0 THEN icF1 := icMR/icMW; END;
+  icF3 := -1; IF icME > 0 THEN icF3 := icMR/icME; END;
+  ag_Busy("ICC intervals (F quantiles)");
+  // ICC(1,1) and ICC(1,k): an interval needs 0 < F < infinity
+  IF icF1 > 0 THEN
+    icFL := icF1/ag_FQ(0.025, icN - 1, icN*(icK - 1));
+    icFU := icF1*ag_FQ(0.025, icN*(icK - 1), icN - 1);
+    agIL(1) := (icFL - 1)/(icFL + icK - 1); agIU(1) := (icFU - 1)/(icFU + icK - 1);
+    agIL(4) := 1 - 1/icFL; agIU(4) := 1 - 1/icFU;
+    agICf(1) := agIDf(1); agICf(4) := agIDf(4);
+  ELSE
+    IF icF1 == -1 THEN icS := "no F interval (within MS = 0)"; ELSE icS := "no F interval (target MS = 0)"; END;
+    IF agIDf(1) == 1 THEN agINo(1) := icS; END;
+    IF agIDf(4) == 1 THEN agINo(4) := icS; END;
+  END;
+  // ICC(3,1) and ICC(3,k)
+  IF icF3 > 0 THEN
+    icFL := icF3/ag_FQ(0.025, icN - 1, (icN - 1)*(icK - 1));
+    icFU := icF3*ag_FQ(0.025, (icN - 1)*(icK - 1), icN - 1);
+    agIL(3) := (icFL - 1)/(icFL + icK - 1); agIU(3) := (icFU - 1)/(icFU + icK - 1);
+    agIL(6) := 1 - 1/icFL; agIU(6) := 1 - 1/icFU;
+    agICf(3) := agIDf(3); agICf(6) := agIDf(6);
+  ELSE
+    IF icF3 == -1 THEN icS := "no F interval (error MS = 0)"; ELSE icS := "no F interval (target MS = 0)"; END;
+    IF agIDf(3) == 1 THEN agINo(3) := icS; END;
+    IF agIDf(6) == 1 THEN agINo(6) := icS; END;
+  END;
+  // ICC(2,1) and ICC(2,k): Satterthwaite's df v
+  icR := agIC(2);
+  IF agIDf(2) == 1 AND icMR > 0 AND icR < 1 AND icR > -1 THEN
+    icAa := icK*icR/(icN*(1 - icR));
+    icBb := 1 + icK*icR*(icN - 1)/(icN*(1 - icR));
+    icV := (icAa*icMC)^2/(icK - 1) + (icBb*icME)^2/((icN - 1)*(icK - 1));
+    IF icV > 0 THEN icV := (icAa*icMC + icBb*icME)^2/icV; END;
+    agIV := icV;
+    IF icV >= 1 THEN
+      icFs := ag_FQ(0.025, icN - 1, icV);
+      icFss := ag_FQ(0.025, icV, icN - 1);
+      icL := icN*(icMR - icFs*icME)/(icFs*(icK*icMC + (icK*icN - icK - icN)*icME) + icN*icMR);
+      icU := icN*(icFss*icMR - icME)/(icK*icMC + (icK*icN - icK - icN)*icME + icN*icFss*icMR);
+      agIL(2) := icL; agIU(2) := icU;
+      agIL(5) := -1E99; agIU(5) := -1E99;
+      IF 1 + icL*(icK - 1) > 0 THEN agIL(5) := icL*icK/(1 + icL*(icK - 1)); END;
+      IF 1 + icU*(icK - 1) > 0 THEN agIU(5) := icU*icK/(1 + icU*(icK - 1)); END;
+      agICf(2) := 1; agICf(5) := agIDf(5);
+    END;
+  END;
+  IF agIDf(2) == 1 AND agICf(2) == 0 THEN agINo(2) := "no F interval"; END;
+  IF agIDf(5) == 1 AND agICf(5) == 0 THEN agINo(5) := "no F interval"; END;
+  // F tests of ICC = 0 (an infinite F: p = 0, shown as p < 0.0001)
+  FOR icI FROM 1 TO 6 DO
+    IF icI == 1 OR icI == 4 THEN
+      agIF(icI) := icF1; agID1(icI) := icN - 1; agID2(icI) := icN*(icK - 1);
+    ELSE
+      agIF(icI) := icF3; agID1(icI) := icN - 1; agID2(icI) := (icN - 1)*(icK - 1);
+    END;
+    IF agIF(icI) == -1 THEN agIPv(icI) := 0; ELSE agIPv(icI) := ag_FUp(agIF(icI), agID1(icI), agID2(icI)); END;
+  END;
+  agIOK := 1;
+  AG_ICC := agIC;
+  RETURN 1;
+END;
+
+// Bland-Altman for raters (columns) agBA and agBB of agY.
+//   d_i = A_i - B_i, m_i = (A_i + B_i)/2; bias = mean d, s = SD of d (n - 1);
+//   limits of agreement bias -/+ 1.96 s (Bland & Altman 1986; their paper
+//   rounds 1.96 to 2); t = t(.025, n - 1);
+//   CI for the bias: bias -/+ t s/sqrt(n);
+//   CI for a limit: limit -/+ t s sqrt(1/n + 1.96^2/(2(n - 1)))
+//     (Bland & Altman 1999, section 2.2; about sqrt(3 s^2/n) in 1986);
+//   proportional bias: least squares d = b0 + b1 m, t = b1/SE(b1) on
+//   n - 2 df (Bland & Altman 1999, section 3.2).
+// Sets agBOK: 1 computed, 2 not possible (reason in agBWhy).
+ag_BCompute()
+BEGIN
+  LOCAL bcI, bcN, bcS, bcMx, bcSxx, bcSxy;
+  LOCAL bcR, bcK;
+  bcN := agYN; bcK := agYK;
+  agBOK := 0; agBWhy := ""; agBN := bcN; agBCa := 0;
+  agBD := MAKELIST(0, bcI, 1, bcN); agBM := MAKELIST(0, bcI, 1, bcN);
+  FOR bcI FROM 1 TO bcN DO
+    agBD(bcI) := agY((bcI - 1)*bcK + agBA) - agY((bcI - 1)*bcK + agBB);
+    agBM(bcI) := (agY((bcI - 1)*bcK + agBA) + agY((bcI - 1)*bcK + agBB))/2;
+  END;
+  IF bcN < 3 THEN agBOK := 2; agBWhy := "need 3 or more targets"; RETURN 0; END;
+  agBDb := 0; bcMx := 0;
+  FOR bcI FROM 1 TO bcN DO agBDb := agBDb + agBD(bcI)/bcN; bcMx := bcMx + agBM(bcI)/bcN; END;
+  bcS := 0; bcSxx := 0; bcSxy := 0;
+  FOR bcI FROM 1 TO bcN DO
+    bcS := bcS + (agBD(bcI) - agBDb)^2;
+    bcSxx := bcSxx + (agBM(bcI) - bcMx)^2;
+    bcSxy := bcSxy + (agBM(bcI) - bcMx)*(agBD(bcI) - agBDb);
+  END;
+  agBS := SQRT(bcS/(bcN - 1));
+  agBLo := agBDb - 1.96*agBS; agBHi := agBDb + 1.96*agBS;
+  agBT := ag_TQ(0.025, bcN - 1);
+  agBSeb := agBS/SQRT(bcN);
+  agBSL := agBS*SQRT(1/bcN + 1.96^2/(2*(bcN - 1)));
+  agB1 := 0; agB0 := agBDb; agBSe1 := -1; agBTb := 0; agBPb := 1;
+  IF bcSxx > 0 THEN
+    agB1 := bcSxy/bcSxx;
+    agB0 := agBDb - agB1*bcMx;
+    bcR := 0;
+    FOR bcI FROM 1 TO bcN DO bcR := bcR + (agBD(bcI) - agB0 - agB1*agBM(bcI))^2; END;
+    agBSe1 := SQRT(bcR/(bcN - 2)/bcSxx);
+    IF agBSe1 > 0 THEN
+      agBTb := agB1/agBSe1;
+      agBPb := MIN(1, 2*STUDENT_CDF(bcN - 2, -ABS(agBTb)));
+    ELSE
+      agBTb := 0; agBPb := -1;
+    END;
+  END;
+  agBOK := 1;
+  AG_LOA := {agBLo, agBDb, agBHi};
+  RETURN 1;
+END;
+
+// ============================================================
+// 4. PRESETS (every value from data/DATASETS_AGREE.md; two sources each)
+// ============================================================
+
+// The continuous data's common settings after a preset or a load.
+ag_YSet()
+BEGIN
+  // the ICC intervals are computed when the continuous pages open (they
+  // may take a few seconds on a G1); Bland-Altman is quick
+  agYHas := 1; agBA := 1; agBB := 2; agBSel := 0; agInfo := ""; agYPap := 0;
+  agIOK := -1; agISel := 0; agDCa := 0;
+  ag_BCompute();
+END;
+
+// The two-rater table's common settings after a preset or a load.
+// tsShort: the source's short name for "edited from ..." ("" for a table
+// typed in, which is never marked edited).
+ag_TSet(tsTtl, tsSrc, tsIll, tsOrd, tsShort)
+BEGIN
+  agTTtl := tsTtl; agTSrc := tsSrc; agTIll := tsIll; agTOrd := tsOrd;
+  agTShort := tsShort; agTEd := 0;
+  agTHas := 1; agSel := 1; agSelJ := 1; agInfo := "";
+  ag_TCompute();
+END;
+
+// MS diagnosis, Winnipeg patients (149).  Westlund & Kurland (1953) as
+// tabled by Landis & Koch (1977); R vcd MSPatients = Friendly's
+// msdiag.sas.  Rows: the New Orleans neurologist; columns: the Winnipeg
+// neurologist; categories certain, probable, possible, doubtful MS.
+ag_LdMSW()
+BEGIN
+  agK := 4;
+  agT := {38, 5, 0, 1, 33, 11, 3, 0, 10, 14, 5, 6, 3, 7, 3, 10};
+  agCN := {"Certain MS", "Probable MS", "Possible MS", "Doubtful MS"};
+  agRA := "New Orleans neurologist"; agRB := "Winnipeg neurologist";
+  ag_TSet("MS: 149 Winnipeg patients", "Landis & Koch 1977 (Westlund & Kurland)", 0, 1, "Landis & Koch 1977");
+END;
+
+// The same two neurologists, New Orleans patients (69).
+ag_LdMSN()
+BEGIN
+  agK := 4;
+  agT := {5, 3, 0, 0, 3, 11, 4, 0, 2, 13, 3, 4, 1, 2, 4, 14};
+  agCN := {"Certain MS", "Probable MS", "Possible MS", "Doubtful MS"};
+  agRA := "New Orleans neurologist"; agRB := "Winnipeg neurologist";
+  ag_TSet("MS: 69 New Orleans patients", "Landis & Koch 1977 (Westlund & Kurland)", 0, 1, "Landis & Koch 1977");
+END;
+
+// The kappa paradox, ILLUSTRATIVE NUMBERS (not data): both tables have
+// 85% observed agreement.  In the first the finding is common for both
+// raters (90% and 85% "yes"), so chance agreement is high and kappa low.
+ag_LdPar(lpW)
+BEGIN
+  agK := 2;
+  IF lpW == 1 THEN
+    agT := {80, 10, 5, 5};
+    ag_TSet("Paradox: lopsided (illustrative)", "illustrative numbers, not data", 1, 0, "illustrative numbers");
+  ELSE
+    agT := {40, 10, 5, 45};
+    ag_TSet("Paradox: balanced (illustrative)", "illustrative numbers, not data", 1, 0, "illustrative numbers");
+  END;
+  agCN := {"Yes", "No"};
+  agRA := "Rater A"; agRB := "Rater B";
+END;
+
+// Fleiss (1971): 30 psychiatric patients, each diagnosed by 6 raters
+// (different raters for different patients) into 5 categories.  Counts per
+// patient, from R irr 'diagnoses' (= the copy in statsmodels' tests).
+ag_LdDiag()
+BEGIN
+  agFN := 30; agFQ := 5; agFM := 6;
+  agF := {0,0,0,6,0, 0,3,0,0,3, 0,1,4,0,1, 0,0,0,0,6, 0,3,0,3,0,
+          2,0,4,0,0, 0,0,4,0,2, 2,0,3,1,0, 2,0,0,4,0, 0,0,0,0,6,
+          1,0,0,5,0, 1,1,0,4,0, 0,3,3,0,0, 1,0,0,5,0, 0,2,0,3,1,
+          0,0,5,0,1, 3,0,0,1,2, 5,1,0,0,0, 0,2,0,4,0, 1,0,2,0,3,
+          0,0,0,0,6, 0,1,0,5,0, 0,2,0,1,3, 2,0,0,4,0, 1,0,0,4,1,
+          0,5,0,1,0, 4,0,0,0,2, 0,2,0,4,0, 1,0,5,0,0, 0,0,0,0,6};
+  agFCN := {"Depression", "Personality disorder", "Schizophrenia", "Neurosis", "Other"};
+  agFTtl := "Fleiss 1971: 30 patients"; agFSrc := "Fleiss 1971, Psychol Bull 76:378 (R irr)";
+  agFIll := 0; agFHas := 1; agFSel := 0; agInfo := "";
+  ag_FCompute();
+END;
+
+// Bland & Altman (1986) Table 1: peak expiratory flow (l/min) of 17
+// people, first reading on each meter; = R MethComp PEFR (repl 1).
+ag_LdPEF()
+BEGIN
+  agYN := 17; agYK := 2;
+  agY := {494,512, 395,430, 516,520, 434,428, 476,500, 557,600,
+          413,364, 442,380, 650,658, 433,445, 417,432, 656,626,
+          267,260, 478,477, 178,259, 423,350, 427,451};
+  agYRN := {"Wright", "Mini Wright"};
+  agYTtl := "Peak flow: 2 meters, 17 people"; agYSrc := "Bland & Altman 1986, Lancet, Table 1";
+  agYU := " l/min"; agYIll := 0;
+  ag_YSet();
+  agYPap := 1;
+END;
+
+// Shrout & Fleiss (1979): 6 targets rated by 4 judges; = R psych ICC
+// example = Howell's ICC page.
+ag_LdSF()
+BEGIN
+  agYN := 6; agYK := 4;
+  agY := {9,2,5,8, 6,1,3,2, 8,4,6,8, 7,1,2,6, 10,5,6,9, 6,2,4,7};
+  agYRN := {"J1", "J2", "J3", "J4"};
+  agYTtl := "Shrout & Fleiss: 6 targets"; agYSrc := "Shrout & Fleiss 1979, Psychol Bull 86:420";
+  agYU := ""; agYIll := 0;
+  ag_YSet();
+END;
+
+// ============================================================
+// 5. HELP (pages drawn on G1; any key or tap = next, Left = back, Esc = leave)
+// ============================================================
+
+ag_HelpPage(hpN)
+BEGIN
+  LOCAL hpB;
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 3, 3, 316, 236, agBLUE, agLBLU);
+  hpB := #000000h;
+  IF hpN == 1 THEN
+    TEXTOUT_P("1/9  Agreement beyond chance", G1, 10, 7, 2, agBLUE, 300);
+    ag_Tx("Two raters sort the same N items into k", 10, 30, hpB);
+    ag_Tx("categories.  Observed agreement po = the", 10, 43, hpB);
+    ag_Tx("share on the diagonal of the table.", 10, 56, hpB);
+    ag_Tx("Some agreement happens by chance: if the", 10, 72, agMAG);
+    ag_Tx("raters chose independently at their own", 10, 85, agMAG);
+    ag_Tx("rates, pe = sum of (row share " + agTm + " column share).", 10, 98, agMAG);
+    ag_Tx("Cohen's kappa (1960) = (po - pe)/(1 - pe):", 10, 114, agRED);
+    ag_Tx("the share of the possible agreement beyond", 10, 127, agRED);
+    ag_Tx("chance that was reached.  1 = perfect,", 10, 140, agRED);
+    ag_Tx("0 = chance level, below 0 = worse than chance.", 10, 153, agRED);
+    ag_Tx("Tiles page: drag a count from an off-diagonal", 10, 169, agGRAY);
+    ag_Tx("tile to a diagonal one and watch kappa rise.", 10, 182, agGRAY);
+  END;
+  IF hpN == 2 THEN
+    TEXTOUT_P("2/9  SE, CI and the test", G1, 10, 7, 2, agBLUE, 300);
+    ag_Tx("Two different SEs (Fleiss, Cohen & Everitt", 10, 30, hpB);
+    ag_Tx("1969, Psychol Bull 72:323-327):", 10, 43, hpB);
+    ag_Tx("- the large-sample SE gives the 95% CI,", 10, 56, agGRN);
+    ag_Tx("  kappa " + agPM + " 1.96 SE (rough when N is small);", 10, 69, agGRN);
+    ag_Tx("- SE" + agS0 + ", the SE if kappa were 0, gives the", 10, 82, agBLUE);
+    ag_Tx("  test: z = kappa/SE" + agS0 + ", one-sided p.", 10, 95, agBLUE);
+    ag_Tx("p = P(a kappa this big | " + agH0 + ": kappa = 0).", 10, 111, hpB);
+    ag_Tx("It is not the chance that " + agH0 + " is true, and", 10, 124, hpB);
+    ag_Tx("'better than chance' is a low bar: raters", 10, 137, hpB);
+    ag_Tx("who agree on 1 in 3 can beat it easily.", 10, 150, hpB);
+    ag_Tx("Read the CI: how much agreement, how sure.", 10, 166, agRED);
+    ag_Tx("statsmodels' cohens_kappa uses the same SEs.", 10, 182, agGRAY);
+  END;
+  IF hpN == 3 THEN
+    TEXTOUT_P("3/9  Kappa max and the paradox", G1, 10, 7, 2, agBLUE, 300);
+    ag_Tx("kappa max (Cohen 1960): with these row and", 10, 30, hpB);
+    ag_Tx("column totals, at most sum of min(row, col)", 10, 43, hpB);
+    ag_Tx("can agree.  Raters who use the categories at", 10, 56, hpB);
+    ag_Tx("different rates can never reach kappa = 1.", 10, 69, hpB);
+    ag_Tx("The paradox (Feinstein & Cicchetti 1990):", 10, 85, agRED);
+    ag_Tx("high po, low kappa, when one category is", 10, 98, agRED);
+    ag_Tx("very common: pe is then high too.  Load the", 10, 111, agRED);
+    ag_Tx("two paradox tables (illustrative numbers):", 10, 124, agRED);
+    ag_Tx("both have po = 0.85; kappa 0.32 and 0.70.", 10, 137, agRED);
+    ag_Tx("PABAK = (k po - 1)/(k - 1) (Byrt, Bishop &", 10, 153, agBLUE);
+    ag_Tx("Carlin 1993) removes prevalence and bias:", 10, 166, agBLUE);
+    ag_Tx("it is po rescaled.  Report po, the margins", 10, 179, agBLUE);
+    ag_Tx("and kappa together, not kappa alone.", 10, 192, agBLUE);
+  END;
+  IF hpN == 4 THEN
+    TEXTOUT_P("4/9  Weighted kappa", G1, 10, 7, 2, agBLUE, 300);
+    ag_Tx("Ordered categories (certain, probable, ...):", 10, 30, hpB);
+    ag_Tx("a near miss is better than a far one.", 10, 43, hpB);
+    ag_Tx("Weighted kappa (Cohen 1968) gives tile i, j", 10, 56, hpB);
+    ag_Tx("the credit w(i, j), 1 on the diagonal:", 10, 69, hpB);
+    ag_Tx("linear 1 - |i - j|/(k - 1)", 10, 85, agBLUE);
+    ag_Tx("  (Cicchetti & Allison 1971);", 10, 98, agBLUE);
+    ag_Tx("quadratic 1 - (i - j)" + agSq + "/(k - 1)" + agSq, 10, 111, agBLUE);
+    ag_Tx("  (Fleiss & Cohen 1973).", 10, 124, agBLUE);
+    ag_Tx("Then po and pe use the weights, and", 10, 140, hpB);
+    ag_Tx("kappa_w = (po_w - pe_w)/(1 - pe_w); SEs as", 10, 153, hpB);
+    ag_Tx("for kappa (Fleiss, Cohen & Everitt 1969).", 10, 166, hpB);
+    ag_Tx("Quadratic weights give the most credit to", 10, 182, agGRAY);
+    ag_Tx("near misses.  Choose weights before the data.", 10, 195, agGRAY);
+  END;
+  IF hpN == 5 THEN
+    TEXTOUT_P("5/9  Many raters: Fleiss' kappa", G1, 10, 7, 2, agBLUE, 300);
+    ag_Tx("Each of N subjects gets m ratings (Fleiss", 10, 30, hpB);
+    ag_Tx("1971); the raters may differ by subject.", 10, 43, hpB);
+    ag_Tx("Data: counts n(i, j) = how many put subject i", 10, 56, hpB);
+    ag_Tx("in category j (each row adds to m).", 10, 69, hpB);
+    ag_Tx("P_i = share of subject i's m(m-1)/2 rater", 10, 85, agGRN);
+    ag_Tx("pairs that agree; P = their mean.", 10, 98, agGRN);
+    ag_Tx("Pe = sum of p_j" + agSq + ", p_j = category j's share.", 10, 111, agMAG);
+    ag_Tx("kappa = (P - Pe)/(1 - Pe); per category too.", 10, 124, agRED);
+    ag_Tx("SE under " + agH0 + " only (Fleiss, Nee & Landis 1979,", 10, 140, agBLUE);
+    ag_Tx("Psychol Bull 86:974): a test, but no CI.", 10, 153, agBLUE);
+    ag_Tx("Your data: D1-D9 = categories, one row per", 10, 169, agGRAY);
+    ag_Tx("subject, every row adding to the same m.", 10, 182, agGRAY);
+  END;
+  IF hpN == 6 THEN
+    TEXTOUT_P("6/9  ICC: which one?", G1, 10, 7, 2, agBLUE, 300);
+    ag_Tx("n targets " + agTm + " k raters, measured values.", 10, 30, hpB);
+    ag_Tx("ICC = between-target variance / total", 10, 43, hpB);
+    ag_Tx("(Shrout & Fleiss 1979; McGraw & Wong 1996):", 10, 56, hpB);
+    ag_Tx("(1,1) different raters for each target;", 10, 72, agBLUE);
+    ag_Tx("(2,1) same raters, a sample: ABSOLUTE", 10, 85, agBLUE);
+    ag_Tx("      agreement, rater offsets count;", 10, 98, agBLUE);
+    ag_Tx("(3,1) these raters only: CONSISTENCY.", 10, 111, agBLUE);
+    ag_Tx("(.,k): the reliability of the MEAN of k.", 10, 124, agMAG);
+    ag_Tx("CIs from F (S & F 1979; ICC(2,1) with", 10, 140, hpB);
+    ag_Tx("Satterthwaite's df).  Shrout & Fleiss's own", 10, 153, hpB);
+    ag_Tx("example (a preset): .17, .29, .71, .44, .62, .91.", 10, 166, hpB);
+    ag_Tx("Choose the form from the design, not the", 10, 182, agRED);
+    ag_Tx("value: they answer different questions.", 10, 195, agRED);
+  END;
+  IF hpN == 7 THEN
+    TEXTOUT_P("7/9  Bland-Altman", G1, 10, 7, 2, agBLUE, 300);
+    ag_Tx("Two methods on the same n targets (Bland &", 10, 30, hpB);
+    ag_Tx("Altman 1986, Lancet i:307): plot d = A - B", 10, 43, hpB);
+    ag_Tx("against the mean (A + B)/2.", 10, 56, hpB);
+    ag_Tx("bias = mean d; limits of agreement = bias " + agPM, 10, 72, agGRN);
+    ag_Tx("1.96 s: about 95% of differences fall there.", 10, 85, agGRN);
+    ag_Tx("CI of the bias: bias " + agPM + " t s/" + agRt + "n.", 10, 101, agRED);
+    ag_Tx("CI of a limit: " + agPM + " t s" + agRt + "(1/n + 1.96" + agSq + "/(2(n - 1))),", 10, 114, agRED);
+    ag_Tx("APPROXIMATE (Bland & Altman 1986 SE). In a", 10, 127, agRED);
+    ag_Tx("review's simulation (40,000 runs) it covered", 10, 140, agRED);
+    ag_Tx("about 92% at n = 3-5 and 94% at n = 17.", 10, 153, agRED);
+    ag_Tx("Trend: regress d on the mean; a slope says", 10, 169, agMAG);
+    ag_Tx("the disagreement grows with the size.", 10, 182, agMAG);
+    ag_Tx("A high r is not agreement: r ignores bias.", 10, 198, agGRAY);
+  END;
+  IF hpN == 8 THEN
+    TEXTOUT_P("8/9  Benchmarks are conventions", G1, 10, 7, 2, agBLUE, 300);
+    ag_Tx("Landis & Koch (1977, Biometrics 33:159-174)", 10, 30, hpB);
+    ag_Tx("offered words for ranges of kappa, as", 10, 43, hpB);
+    ag_Tx("benchmarks:", 10, 56, hpB);
+    ag_Tx("  below 0 poor, 0 - 0.20 slight,", 10, 72, agGRAY);
+    ag_Tx("  0.21 - 0.40 fair, 0.41 - 0.60 moderate,", 10, 85, agGRAY);
+    ag_Tx("  0.61 - 0.80 substantial,", 10, 98, agGRAY);
+    ag_Tx("  0.81 - 1 almost perfect.", 10, 111, agGRAY);
+    ag_Tx("They are a convention, NOT a test: no", 10, 127, agRED);
+    ag_Tx("p-value or CI stands behind them, and the", 10, 140, agRED);
+    ag_Tx("same kappa means different things at other", 10, 153, agRED);
+    ag_Tx("prevalences or numbers of categories.", 10, 166, agRED);
+    ag_Tx("Report the kappa, its CI, po and the table.", 10, 182, agBLUE);
+  END;
+  IF hpN == 9 THEN
+    TEXTOUT_P("9/9  Agreement and forensic work", G1, 10, 7, 2, agBLUE, 300);
+    ag_Tx("Agreement is reliability, not accuracy:", 10, 30, hpB);
+    ag_Tx("two examiners can agree and both be wrong.", 10, 43, hpB);
+    ag_Tx("Accuracy needs cases where the truth is", 10, 56, hpB);
+    ag_Tx("known (ground truth), not a second opinion.", 10, 69, hpB);
+    ag_Tx("Kappa depends on the mix of cases (the", 10, 85, agMAG);
+    ag_Tx("paradox), so two studies' kappas compare", 10, 98, agMAG);
+    ag_Tx("only if their case mixes are alike.", 10, 111, agMAG);
+    ag_Tx("Kappa assumes independent ratings: a", 10, 127, agRED);
+    ag_Tx("verifier who knows the first conclusion is", 10, 140, agRED);
+    ag_Tx("not an independent rater.", 10, 153, agRED);
+    ag_Tx("A teaching aid only: not validated for", 10, 169, agGRAY);
+    ag_Tx("forensic, clinical or legal use.", 10, 182, agGRAY);
+  END;
+  TEXTOUT_P("Any key or tap = next, " + CHAR(8592) + " = back, Esc = leave", G1, 10, 220, 1, agFOOT, 300);
+  BLIT_P(G0, 0, 0, G1);
+END;
+
+// The help pages from page hsN on.
+ag_Help(hsN)
+BEGIN
+  LOCAL hsP, hsK;
+  hsP := MAX(1, MIN(9, hsN));
+  WHILE hsP >= 1 AND hsP <= 9 DO
+    ag_HelpPage(hsP);
+    hsK := ag_WaitAny();
+    IF hsK == 4 THEN
+      hsP := 0;
+    ELSE
+      IF hsK == 7 THEN hsP := MAX(1, hsP - 1); ELSE hsP := hsP + 1; END;
+    END;
+  END;
+  ag_KDrain();
+END;
+
+// ============================================================
+// 6. TWO RATERS: the pages (Tiles, Kappa, Null curve, Weights)
+// ============================================================
+
+// Tile geometry: k x k tiles of agCZ pixels from (agGX0, agGY0); the
+// drawing and the touch handler both read these.  21 px at k = 6.
+ag_TGeom()
+BEGIN
+  agCZ := MIN(34, IP(126/agK));
+  agGX0 := 22; agGY0 := 34;
+END;
+
+// The tile (as a flat index (i - 1) k + j) under the point (x, y), or 0.
+ag_TCell(tcX, tcY)
+BEGIN
+  LOCAL tcI, tcJ;
+  IF tcX < agGX0 OR tcY < agGY0 THEN RETURN 0; END;
+  tcJ := IP((tcX - agGX0)/agCZ) + 1;
+  tcI := IP((tcY - agGY0)/agCZ) + 1;
+  IF tcI > agK OR tcJ > agK THEN RETURN 0; END;
+  RETURN (tcI - 1)*agK + tcJ;
+END;
+
+// "A2, B1": a tile's name (row = rater A's category, column = rater B's).
+ag_TNm(tnI, tnJ)
+BEGIN
+  RETURN "A" + ag_I(tnI) + ",B" + ag_I(tnJ);
+END;
+
+// The source line of the two-rater table: "Data: <source>", or, once a
+// preset has been edited (beta 1a, second review item 2), "edited from
+// <source>".
+ag_TSrcL()
+BEGIN
+  IF agTEd == 1 THEN RETURN agTSrc; END;
+  RETURN "Data: " + agTSrc;
+END;
+
+// Mark a sourced table as edited, on its first change: the source line and
+// the title say so (and therefore the Home summary).  A table typed in
+// (no short source name) is never marked.
+ag_TEdit()
+BEGIN
+  IF agTEd == 0 AND DIM(agTShort) > 0 THEN
+    agTEd := 1;
+    agTSrc := "edited from " + agTShort;
+    agTTtl := agTTtl + " (edited)";
+  END;
+END;
+
+// The grid.  gdM = 1: counts, tiles shaded by count (diagonal green,
+// off-diagonal red), with row and column totals and the selected tile
+// outlined; gdM = 2: the agreement weights of agWt, shaded blue.
+ag_TGrid(gdM)
+BEGIN
+  LOCAL gdI, gdJ, gdX, gdY, gdN, gdMx;
+  LOCAL gdF, gdC, gdS, gdTc, gdE;
+  ag_TGeom();
+  gdMx := 1;
+  FOR gdI FROM 1 TO agK*agK DO gdMx := MAX(gdMx, agT(gdI)); END;
+  ag_Tx("A|B", 1, 22, agGRAY);
+  FOR gdJ FROM 1 TO agK DO
+    ag_Tx(ag_I(gdJ), agGX0 + (gdJ - 1)*agCZ + IP(agCZ/2) - 4, 22, agBLUE);
+  END;
+  FOR gdI FROM 1 TO agK DO
+    ag_Tx(ag_I(gdI), 8, agGY0 + (gdI - 1)*agCZ + IP(agCZ/2) - 6, agBLUE);
+    FOR gdJ FROM 1 TO agK DO
+      gdX := agGX0 + (gdJ - 1)*agCZ; gdY := agGY0 + (gdI - 1)*agCZ;
+      gdN := agT((gdI - 1)*agK + gdJ);
+      IF gdM == 1 THEN
+        gdF := 0;
+        IF gdN > 0 THEN gdF := 0.15 + 0.85*gdN/gdMx; END;
+        IF gdI == gdJ THEN
+          gdC := ag_Mix(gdF, 0, 140, 60); gdE := agGRN;
+        ELSE
+          gdC := ag_Mix(gdF, 220, 40, 40); gdE := agLGRY;
+        END;
+        gdS := ag_I(gdN);
+      ELSE
+        gdF := ag_Wt(gdI, gdJ, agK, agWt);
+        gdC := ag_Mix(0.85*gdF, 0, 60, 200); gdE := agLGRY;
+        gdS := ag_W2(gdF);
+      END;
+      RECT_P(G1, gdX, gdY, gdX + agCZ - 2, gdY + agCZ - 2, gdE, gdC);
+      gdTc := #000000h;
+      IF gdF > 0.6 THEN gdTc := #FFFFFFh; END;
+      TEXTOUT_P(gdS, G1, gdX + MAX(1, IP((agCZ - 2)/2 - 3.2*DIM(gdS))), gdY + IP(agCZ/2) - 6, 1, gdTc, agCZ - 2);
+    END;
+  END;
+  IF gdM == 1 THEN
+    // the selected tile, outlined twice in red
+    gdX := agGX0 + (agSelJ - 1)*agCZ; gdY := agGY0 + (agSel - 1)*agCZ;
+    ag_Box(gdX - 1, gdY - 1, gdX + agCZ - 1, gdY + agCZ - 1, agRED);
+    ag_Box(gdX - 2, gdY - 2, gdX + agCZ, gdY + agCZ, agRED);
+    // row totals (right) and column totals (below), in grey
+    FOR gdI FROM 1 TO agK DO
+      gdS := ag_I(agRw(gdI)*MAX(agTN, 0));
+      IF agTN <= 0 THEN gdS := "0"; END;
+      ag_Tx(gdS, agGX0 + agK*agCZ + 2, agGY0 + (gdI - 1)*agCZ + IP(agCZ/2) - 6, agGRAY);
+      gdS := ag_I(agCl(gdI)*MAX(agTN, 0));
+      IF agTN <= 0 THEN gdS := "0"; END;
+      TEXTOUT_P(gdS, G1, agGX0 + (gdI - 1)*agCZ + 1, agGY0 + agK*agCZ + 1, 1, agGRAY, agCZ);
+    END;
+  END;
+END;
+
+// The bar under the tiles (and on the Fleiss page, with its own labels): 0 to 1, the chance agreement pe in magenta,
+// what was achieved beyond it (pe to po) in green, or the shortfall
+// (po below pe) in red.  kappa is the green length over (1 - pe).
+ag_Bar(tbPo, tbPe, tbY, tbNo, tbNe)
+BEGIN
+  LOCAL tbX0, tbW, tbA, tbB, tbLa, tbLb;
+  tbX0 := 10; tbW := 300;
+  tbA := tbX0 + IP(tbW*MAX(0, MIN(1, tbPe)));
+  tbB := tbX0 + IP(tbW*MAX(0, MIN(1, tbPo)));
+  RECT_P(G1, tbX0, tbY, tbX0 + tbW, tbY + 9, agGRAY, #FFFFFFh);
+  IF tbA > tbX0 THEN RECT_P(G1, tbX0 + 1, tbY + 1, tbA, tbY + 8, ag_Mix(0.3, 200, 0, 200)); END;
+  IF tbB > tbA THEN RECT_P(G1, tbA, tbY + 1, tbB, tbY + 8, ag_Mix(0.55, 0, 140, 60)); END;
+  IF tbB < tbA THEN RECT_P(G1, tbB, tbY + 1, tbA, tbY + 8, ag_Mix(0.45, 220, 40, 40)); END;
+  LINE_P(G1, tbA, tbY - 2, tbA, tbY + 11, agMAG);
+  LINE_P(G1, tbB, tbY - 2, tbB, tbY + 11, agGRN);
+  tbLa := MAX(0, tbA - 6); tbLb := MAX(0, tbB - 6);
+  IF ABS(tbLb - tbLa) < 16 THEN
+    IF tbLb >= tbLa THEN tbLb := tbLa + 16; ELSE tbLa := tbLb + 16; END;
+  END;
+  ag_Tx(tbNe, MIN(296, tbLa), tbY + 11, agMAG);
+  ag_Tx(tbNo, MIN(296, tbLb), tbY + 11, agGRN);
+  ag_Tx("0", 2, tbY - 1, agGRAY);
+  ag_Tx("1", 309, tbY - 1, agGRAY);
+END;
+
+// Page 1: the tiles, the numbers beside them, the agreement bar.
+ag_TDrawTiles()
+BEGIN
+  LOCAL dtX, dtI;
+  ag_Band(agTTtl);
+  ag_TGrid(1);
+  dtX := 198;
+  IF agTOK == 0 THEN
+    ag_Tx("The table is empty:", dtX, 40, agRED);
+    ag_Tx("tap a tile, then", dtX, 54, agRED);
+    ag_Tx("+ adds 1 to it.", dtX, 68, agRED);
+  ELSE
+    ag_Tx("N = " + ag_I(agTN), dtX, 22, #000000h);
+    ag_Tx("agree po = " + ag_K3(agPo), dtX, 34, agGRN);
+    ag_Tx("chance pe = " + ag_K3(agPe), dtX, 46, agMAG);
+    IF agTOK == 2 THEN
+      ag_Tx("kappa undefined:", dtX, 62, agRED);
+      ag_Tx("pe = 1 (both raters", dtX, 74, agRED);
+      ag_Tx("used one category).", dtX, 86, agRED);
+    ELSE
+      TEXTOUT_P("kappa = " + ag_K3(agKa), G1, dtX, 60, 2, agRED, 118);
+      IF agTInf == 1 THEN
+        IF agTClp == 1 THEN ag_Tx("95% CI (clipped):", dtX, 78, #000000h); ELSE ag_Tx("95% CI:", dtX, 78, #000000h); END;
+        ag_Tx(ag_K3(agLo) + " to " + ag_K3(agHi), dtX, 90, #000000h);
+      ELSE
+        ag_Tx("no SE, CI or p:", dtX, 78, agRED);
+        ag_Tx(agTWhy, dtX, 90, agRED);
+      END;
+      ag_Tx("kappa max = " + ag_K3(agKmx), dtX, 103, agGRAY);
+      ag_Tx("PABAK = " + ag_K3(agPab), dtX, 115, agGRAY);
+      IF agP >= 0 AND agTInf == 1 THEN
+        ag_Tx("1-sided z = " + ag_Fx(agZ, 2), dtX, 129, agBLUE);
+        ag_Tx(ag_PE(agP), dtX, 141, agBLUE);
+      END;
+    END;
+  END;
+  dtI := (agSel - 1)*agK + agSelJ;
+  ag_Tx("tile " + ag_TNm(agSel, agSelJ) + " = " + ag_I(agT(dtI)), dtX, 156, agRED);
+  IF agTOK >= 1 THEN ag_Bar(agPo, agPe, 175, "po", "pe"); END;
+  IF DIM(agInfo) > 0 THEN
+    ag_Tx(agInfo, 4, 195, agBLUE);
+  ELSE
+    IF agTEd == 1 THEN
+      ag_Tx(ag_TSrcL(), 4, 195, agRED);
+    ELSE
+      IF agTIll == 1 THEN ag_Tx("ILLUSTRATIVE NUMBERS, not data", 4, 195, agRED); ELSE ag_Tx(ag_TSrcL(), 4, 195, agGRAY); END;
+    END;
+  END;
+  ag_Foot("+/- = count, drag = move, Ent = menu, Esc = back");
+END;
+
+// Page 2: every number, with what it is.
+ag_TDrawKappa()
+BEGIN
+  LOCAL dkC;
+  ag_Band("Kappa: " + agTTtl);
+  dkC := agGRAY;
+  IF agTIll == 1 OR agTEd == 1 THEN dkC := agRED; END;
+  ag_Tx(ag_TSrcL(), 4, 22, dkC);
+  ag_Tx("rows A = " + agRA, 4, 34, #000000h);
+  ag_Tx("columns B = " + agRB, 4, 46, #000000h);
+  IF agTOK == 0 THEN
+    ag_Tx("The table is empty: nothing to compute.", 4, 70, agRED);
+  ELSE
+    ag_Tx("N = " + ag_I(agTN) + "; observed agreement po = " + ag_K3(agPo), 4, 58, agGRN);
+    ag_Tx("chance agreement pe = " + ag_K3(agPe) + " (rows " + agTm + " columns)", 4, 70, agMAG);
+    IF agTOK == 2 THEN
+      ag_Tx("kappa is undefined: pe = 1, so 1 - pe = 0", 4, 82, agRED);
+      ag_Tx("(both raters put everything in one category).", 4, 94, agRED);
+    ELSE
+      ag_Tx("kappa = (po - pe)/(1 - pe) = " + ag_K3(agKa), 4, 82, agRED);
+      IF agTInf == 0 THEN
+        ag_Tx("No SE, CI or p here: " + agTWhy, 4, 94, agRED);
+        ag_Tx("(large-sample: needs N " + agGE + " 10, no empty margin)", 4, 106, agRED);
+      ELSE
+        IF agTClp == 1 THEN
+          ag_Tx("95% CI " + ag_K3(agLo) + " to " + ag_K3(agHi) + ", clipped (SE " + ag_K3(agSE) + ")", 4, 94, #000000h);
+        ELSE
+          ag_Tx("95% CI " + ag_K3(agLo) + " to " + ag_K3(agHi) + " (SE " + ag_K3(agSE) + ")", 4, 94, #000000h);
+        END;
+        IF agTN < 30 THEN
+          ag_Tx("SE: Fleiss, Cohen & Everitt 1969; N < 30: rough", 4, 106, agRED);
+        ELSE
+          ag_Tx("SE: Fleiss, Cohen & Everitt 1969, large-sample", 4, 106, #000000h);
+        END;
+      END;
+      IF agTInf == 1 THEN
+        IF agP >= 0 THEN
+          ag_Tx("test of kappa = 0: SE" + agS0 + " = " + ag_K3(agSE0) + ", z = " + ag_Fx(agZ, 2) + ",", 4, 118, agBLUE);
+          ag_Tx("one-sided " + ag_PE(agP) + " (" + agH1 + ": kappa > 0)", 4, 130, agBLUE);
+        ELSE
+          ag_Tx("test of kappa = 0: SE" + agS0 + " is 0, no test", 4, 118, agBLUE);
+        END;
+      END;
+      ag_Tx("kappa max for these margins = " + ag_K3(agKmx), 4, 142, agGRAY);
+      IF agK == 2 THEN
+        ag_Tx("PABAK = 2po - 1 = " + ag_K3(agPab) + "; prevalence index " + ag_Fx(agPI, 2), 4, 154, agGRAY);
+        ag_Tx("(a - d)/N, bias index (b - c)/N = " + ag_Fx(agBI, 2), 4, 166, agGRAY);
+      ELSE
+        ag_Tx("PABAK = (k po - 1)/(k - 1) = " + ag_K3(agPab), 4, 154, agGRAY);
+        ag_Tx("weighted kappa: linear " + ag_K3(agWK(1)) + ", quadratic " + ag_K3(agWK(2)), 4, 166, agGRAY);
+      END;
+      ag_Tx("Landis & Koch 1977 (Biometrics 33:159-174):", 4, 178, agGRAY);
+      ag_Tx(CHAR(34) + ag_LK(agKa) + CHAR(34) + ": their convention, not a test", 4, 190, agGRAY);
+    END;
+  END;
+  ag_Foot("Ent = menu, Esc = back, " + agLR + " = pages");
+END;
+
+// A density-curve frame shared by the null-curve pages: a nice x axis
+// over [agXlo, agXhi] at the bottom of the plot box.
+ag_XAxis()
+BEGIN
+  LOCAL xaS, xaV, xaP, xaD;
+  LINE_P(G1, agPL, agPB, agPR, agPB, #000000h);
+  xaS := ag_Nice((agXhi - agXlo)/5);
+  xaD := MAX(0, -FLOOR(LOG(xaS) + 0.000000001));
+  xaV := CEILING(agXlo/xaS)*xaS;
+  WHILE xaV <= agXhi + xaS*0.000001 DO
+    xaP := agPL + IP((xaV - agXlo)/(agXhi - agXlo)*(agPR - agPL));
+    LINE_P(G1, xaP, agPB, xaP, agPB + 3, agGRAY);
+    ag_Tx(ag_Fx(xaV, xaD), xaP - 8, agPB + 4, agGRAY);
+    xaV := xaV + xaS;
+  END;
+END;
+
+// The pixel column of a value on the x axis.
+ag_PX(pxV)
+BEGIN
+  RETURN agPL + IP((pxV - agXlo)/(agXhi - agXlo)*(agPR - agPL));
+END;
+
+// The pixel row of a value on the y axis [agYlo, agYhi].
+ag_PY(pyV)
+BEGIN
+  RETURN agPB - IP((pyV - agYlo)/(agYhi - agYlo)*(agPB - agPT));
+END;
+
+// A nice y axis on the left of the plot box.
+ag_YAxis()
+BEGIN
+  LOCAL yaS, yaV, yaP, yaD;
+  LINE_P(G1, agPL, agPT, agPL, agPB, #000000h);
+  yaS := ag_Nice((agYhi - agYlo)/5);
+  yaD := MAX(0, -FLOOR(LOG(yaS) + 0.000000001));
+  yaV := CEILING(agYlo/yaS)*yaS;
+  WHILE yaV <= agYhi + yaS*0.000001 DO
+    yaP := ag_PY(yaV);
+    LINE_P(G1, agPL - 3, yaP, agPL, yaP, agGRAY);
+    TEXTOUT_P(ag_Fx(yaV, yaD), G1, 1, yaP - 6, 1, agGRAY, agPL - 4);
+    yaV := yaV + yaS;
+  END;
+END;
+
+// The null curve: kappa's distribution if the raters agreed only by
+// chance, N(0, SE0) (the large-sample normal of Fleiss, Cohen & Everitt
+// 1969), the observed kappa in red with its upper tail shaded, the 95%
+// CI (green) and kappa max (grey).  ncK, ncS0, ncLo, ncHi, ncMx: the
+// numbers to draw; ncMx < -9 means "no kappa max to show".
+ag_NullPlot(ncK, ncS0, ncLo, ncHi, ncMx)
+BEGIN
+  LOCAL npC, npX, npD, npY, npPk, npPy;
+  LOCAL npXk, npW;
+  agPL := 34; agPR := 310; agPT := 46; agPB := 160;
+  agXlo := MIN(-4*ncS0, MIN(ncLo, ncK)); agXhi := MAX(4*ncS0, MAX(ncHi, ncK));
+  IF ncMx > -9 THEN agXhi := MAX(agXhi, ncMx); END;
+  npW := agXhi - agXlo;
+  agXlo := agXlo - 0.05*npW; agXhi := agXhi + 0.05*npW;
+  npPk := NORMALD(0, ncS0, 0);
+  // the curve and the shaded tail, one pass over the pixel columns
+  npXk := ag_PX(ncK);
+  npPy := -1;
+  FOR npC FROM agPL TO agPR DO
+    npX := agXlo + (npC - agPL)/(agPR - agPL)*(agXhi - agXlo);
+    npD := NORMALD(0, ncS0, npX);
+    npY := agPB - IP(npD/npPk*(agPB - agPT));
+    IF npC >= npXk AND npY < agPB THEN LINE_P(G1, npC, agPB, npC, npY, agSHD); END;
+    IF npPy >= 0 THEN LINE_P(G1, npC - 1, npPy, npC, npY, agBLUE); END;
+    npPy := npY;
+  END;
+  ag_XAxis();
+  // kappa max, dotted grey
+  IF ncMx > -9 THEN ag_DotV(ag_PX(ncMx), agPT, agPB, agGRAY); END;
+  // the 95% CI for kappa: a green bar near the bottom of the plot
+  LINE_P(G1, ag_PX(ncLo), agPB - 10, ag_PX(ncHi), agPB - 10, agGRN);
+  LINE_P(G1, ag_PX(ncLo), agPB - 13, ag_PX(ncLo), agPB - 7, agGRN);
+  LINE_P(G1, ag_PX(ncHi), agPB - 13, ag_PX(ncHi), agPB - 7, agGRN);
+  // the observed kappa, red
+  LINE_P(G1, npXk, agPT - 4, npXk, agPB, agRED);
+  ag_Mark(npXk, agPB - 10, agRED);
+END;
+
+// Page 3: the null curve for Cohen's kappa.
+ag_TDrawNull()
+BEGIN
+  ag_Band("Null curve: kappa if only chance");
+  IF agTOK <> 1 OR agSE0 <= 0 OR agTInf == 0 THEN
+    ag_Tx("Nothing to draw: kappa or its SE under " + agH0, 4, 40, agRED);
+    ag_Tx("is not defined for this table.", 4, 54, agRED);
+    IF agTOK == 1 AND agTInf == 0 THEN ag_Tx("No SE, CI or p here: " + agTWhy, 4, 68, agRED); END;
+  ELSE
+    ag_Tx(agH0 + ": kappa = 0, SE" + agS0 + " = " + ag_K3(agSE0) + " (blue curve)", 4, 22, agBLUE);
+    ag_Tx("kappa = " + ag_K3(agKa) + " (red): z = " + ag_Fx(agZ, 2) + ", " + ag_PE(agP), 4, 33, agRED);
+    ag_NullPlot(agKa, agSE0, agLo, agHi, agKmx);
+    ag_Tx("shaded: P(kappa this big | " + agH0 + "), one-sided", 4, 176, agBLUE);
+    ag_Tx("green = 95% CI for kappa, grey = kappa max", 4, 188, agGRN);
+  END;
+  ag_Foot("tap = what is this, Ent = menu, Esc = back");
+END;
+
+// Page 4: the weights (ordered categories) and weighted kappa.
+ag_TDrawWts()
+BEGIN
+  LOCAL dwX, dwW, dwI, dwC, dwLo, dwHi;
+  ag_Band("Weights: ordered categories");
+  ag_TGrid(2);
+  dwX := 198; dwW := agWt;
+  IF agWt == 1 THEN
+    ag_Tx("linear weights", dwX, 22, agBLUE);
+    ag_Tx("1 - |i-j|/(k-1)", dwX, 34, agBLUE);
+    ag_Tx("Cicchetti-Allison", dwX, 46, agGRAY);
+  ELSE
+    ag_Tx("quadratic weights", dwX, 22, agBLUE);
+    ag_Tx("1 - (i-j)" + agSq + "/(k-1)" + agSq, dwX, 34, agBLUE);
+    ag_Tx("Fleiss-Cohen 1973", dwX, 46, agGRAY);
+  END;
+  IF agTOK == 0 THEN
+    ag_Tx("The table is empty.", dwX, 64, agRED);
+  ELSE
+    IF agWOK == 0 THEN
+      ag_Tx("weighted kappa is", dwX, 64, agRED);
+      ag_Tx("undefined (pe = 1).", dwX, 76, agRED);
+    ELSE
+      FOR dwI FROM 1 TO 2 DO
+        dwC := agGRAY;
+        IF dwI == agWt THEN dwC := agRED; END;
+        IF dwI == 1 THEN ag_Tx("linear = " + ag_K3(agWK(1)), dwX, 62, dwC); END;
+        IF dwI == 2 THEN ag_Tx("quadratic = " + ag_K3(agWK(2)), dwX, 104, dwC); END;
+        dwLo := agWK(dwI) - 1.95996398454*agWSE(dwI); dwHi := agWK(dwI) + 1.95996398454*agWSE(dwI);
+        IF agTInf == 0 OR agWSE(dwI) <= 0 THEN
+          ag_Tx("no SE, CI or p", dwX, 62 + 42*(dwI - 1) + 12, dwC);
+        ELSE
+          IF dwLo < -1 OR dwHi > 1 THEN
+            ag_Tx("95% CI (clipped):", dwX, 62 + 42*(dwI - 1) + 12, dwC);
+          ELSE
+            ag_Tx("SE " + ag_K3(agWSE(dwI)) + ", 95% CI", dwX, 62 + 42*(dwI - 1) + 12, dwC);
+          END;
+          ag_Tx(ag_K3(MAX(-1, dwLo)) + " to " + ag_K3(MIN(1, dwHi)), dwX, 62 + 42*(dwI - 1) + 24, dwC);
+        END;
+      END;
+      IF agTOK == 1 THEN ag_Tx("unweighted = " + ag_K3(agKa), dwX, 146, agGRAY); END;
+      IF agWP(dwW) >= 0 AND agTInf == 1 THEN
+        ag_Tx("1-sided z = " + ag_Fx(agWZ(dwW), 2), dwX, 158, agBLUE);
+        ag_Tx(ag_PE(agWP(dwW)), dwX, 170, agBLUE);
+      END;
+    END;
+  END;
+  IF agTOrd == 0 THEN
+    ag_Tx("Unordered categories: use unweighted kappa.", 4, 184, agRED);
+  ELSE
+    ag_Tx("Near misses earn partial credit (the weights).", 4, 184, agGRAY);
+  END;
+  ag_Tx("Weights assume the codes 1.." + ag_I(agK) + " are in order.", 4, 195, agGRAY);
+  ag_Foot("+/- = linear/quadratic, Ent = menu, Esc = back");
+END;
+
+ag_TDraw()
+BEGIN
+  IF agScr == 1 THEN ag_TDrawTiles(); END;
+  IF agScr == 2 THEN ag_TDrawKappa(); END;
+  IF agScr == 3 THEN ag_TDrawNull(); END;
+  IF agScr == 4 THEN ag_TDrawWts(); END;
+  // the Home exports follow the page shown
+  IF agScr == 4 THEN
+    IF agWOK == 1 THEN AG_K := agWK(agWt); AG_SE := agWSE(agWt); AG_P := agWP(agWt); END;
+  ELSE
+    IF agTOK == 1 THEN AG_K := agKa; AG_SE := agSE; AG_P := agP; END;
+  END;
+  // no SE or p given on screen: none exported (SE 0, p -1)
+  IF agTInf == 0 THEN AG_SE := 0; AG_P := -1; END;
+END;
+
+// ============================================================
+// 7. TWO RATERS: touch, keys, the view
+// ============================================================
+
+// Move one count from tile mvA to tile mvB (flat indices) and say what it
+// did to kappa.  N stays the same.
+ag_TMove(mvA, mvB)
+BEGIN
+  LOCAL mvO, mvI1, mvJ1, mvI2, mvJ2, mvS;
+  mvI1 := IP((mvA - 1)/agK) + 1; mvJ1 := mvA - (mvI1 - 1)*agK;
+  mvI2 := IP((mvB - 1)/agK) + 1; mvJ2 := mvB - (mvI2 - 1)*agK;
+  IF agT(mvA) <= 0 THEN
+    agInfo := "Tile " + ag_TNm(mvI1, mvJ1) + " is empty: nothing to move.";
+    RETURN 0;
+  END;
+  IF agT(mvB) >= 99999 THEN agInfo := "A tile holds at most 99999."; RETURN 0; END;
+  mvO := agTOK; mvS := agKa;
+  agT(mvA) := agT(mvA) - 1; agT(mvB) := agT(mvB) + 1;
+  ag_TEdit();
+  ag_TCompute();
+  agSel := mvI2; agSelJ := mvJ2;
+  agInfo := "1 moved " + ag_TNm(mvI1, mvJ1) + " to " + ag_TNm(mvI2, mvJ2);
+  IF mvO == 1 AND agTOK == 1 THEN
+    agInfo := agInfo + ": kappa " + ag_K3(mvS) + " " + CHAR(8594) + " " + ag_K3(agKa);
+  ELSE
+    IF agTOK == 1 THEN agInfo := agInfo + ": kappa now " + ag_K3(agKa); END;
+  END;
+  RETURN 1;
+END;
+
+// Add dlD (+1 or -1) to the selected tile.
+ag_TAdd(dlD)
+BEGIN
+  LOCAL dlI, dlO;
+  dlI := (agSel - 1)*agK + agSelJ;
+  IF agT(dlI) + dlD < 0 THEN agInfo := "A count cannot go below 0."; RETURN 0; END;
+  IF agT(dlI) + dlD > 99999 THEN agInfo := "A tile holds at most 99999."; RETURN 0; END;
+  dlO := agKa;
+  agT(dlI) := agT(dlI) + dlD;
+  ag_TEdit();
+  ag_TCompute();
+  agInfo := "tile " + ag_TNm(agSel, agSelJ) + " now " + ag_I(agT(dlI)) + ", N = " + ag_I(agTN);
+  IF agTOK == 1 THEN agInfo := agInfo + ", kappa " + ag_K3(agKa); END;
+  RETURN 1;
+END;
+
+// Type a count into the selected tile.
+ag_TType()
+BEGIN
+  LOCAL ttV, ttL, ttI;
+  ttI := (agSel - 1)*agK + agSelJ;
+  ttV := agT(ttI);
+  ttL := ag_TNm(agSel, agSelJ) + ":";
+  IF INPUT({ttV}, "Count in the selected tile", {ttL}, {"A whole number, 0 to 99999"}) == 1 THEN
+    IF ttV < 0 OR ttV > 99999 OR FP(ttV) <> 0 THEN
+      ag_Msg("A count must be a whole number from 0 to 99999.");
+    ELSE
+      IF ttV <> agT(ttI) THEN ag_TEdit(); END;
+      agT(ttI) := ttV;
+      ag_TCompute();
+      agInfo := "tile " + ag_TNm(agSel, agSelJ) + " set to " + ag_I(ttV);
+    END;
+  END;
+  ag_KDrain(); ag_Drain();
+END;
+
+// Move one count between the selected tile and the diagonal tile of its
+// row (rater A's category stays the same; the row total is kept):
+// tdW = 1 to the diagonal, 2 from it.
+ag_TDiag(tdW)
+BEGIN
+  LOCAL tdS, tdD;
+  IF agSel == agSelJ THEN
+    agInfo := "Select an off-diagonal tile first.";
+    RETURN 0;
+  END;
+  tdS := (agSel - 1)*agK + agSelJ; tdD := (agSel - 1)*agK + agSel;
+  IF tdW == 1 THEN ag_TMove(tdS, tdD); ELSE ag_TMove(tdD, tdS); END;
+  // keep the off-diagonal tile selected, so the button can be pressed again
+  agSelJ := tdS - (agSel - 1)*agK;
+  RETURN 1;
+END;
+
+// A tap on page 1: a tile (select it; tap it again to type a count; drag
+// from one tile to another to move one count), a header number (its
+// category's name), a number in the right-hand panel or the bar (what it
+// means).
+ag_TTap()
+BEGIN
+  LOCAL ttA, ttB, ttI, ttJ, ttS;
+  ttA := ag_TCell(agTapX, agTapY);
+  ttB := ag_TCell(agRelX, agRelY);
+  IF ttA > 0 THEN
+    // a move needs a different tile AND at least MAX(8, half a tile) px of
+    // finger travel (beta 1a, second review item 1): a 1-px drift across an
+    // edge is a tap
+    IF ttB > 0 AND ttB <> ttA AND ABS(agRelX - agTapX) + ABS(agRelY - agTapY) >= MAX(8, agCZ/2) THEN
+      ag_TMove(ttA, ttB);
+      RETURN 0;
+    END;
+    ttI := IP((ttA - 1)/agK) + 1; ttJ := ttA - (ttI - 1)*agK;
+    IF ttI == agSel AND ttJ == agSelJ THEN
+      ag_TType();
+    ELSE
+      agSel := ttI; agSelJ := ttJ;
+      agInfo := ag_TNm(ttI, ttJ) + ": A said " + agCN(ttI) + ", B said " + agCN(ttJ);
+    END;
+    RETURN 0;
+  END;
+  // header numbers: the category's name
+  IF agTapY >= 20 AND agTapY < agGY0 AND agTapX >= agGX0 AND agTapX < agGX0 + agK*agCZ THEN
+    ttJ := IP((agTapX - agGX0)/agCZ) + 1;
+    agInfo := "column " + ag_I(ttJ) + " = B said " + agCN(ttJ);
+    RETURN 0;
+  END;
+  IF agTapX < agGX0 AND agTapY >= agGY0 AND agTapY < agGY0 + agK*agCZ THEN
+    ttI := IP((agTapY - agGY0)/agCZ) + 1;
+    agInfo := "row " + ag_I(ttI) + " = A said " + agCN(ttI);
+    RETURN 0;
+  END;
+  IF agTapX >= 196 AND agTOK == 1 THEN
+    ttS := "";
+    IF agTapY >= 32 AND agTapY < 46 THEN ttS := "Observed agreement po: the share of the N items on the diagonal, where both raters chose the same category."; END;
+    IF agTapY >= 46 AND agTapY < 58 THEN ttS := "Chance agreement pe: the agreement expected if each rater chose at random at their own rates: sum of row share " + agTm + " column share."; END;
+    IF agTapY >= 58 AND agTapY < 78 THEN ttS := "kappa = (po - pe)/(1 - pe): the share of the possible agreement beyond chance that was reached. 1 perfect, 0 chance level."; END;
+    IF agTapY >= 78 AND agTapY < 102 THEN ttS := "95% CI: kappa " + agPM + " 1.96 SE, SE from Fleiss, Cohen & Everitt (1969). A large-sample interval: rough for small N."; END;
+    IF agTapY >= 102 AND agTapY < 114 THEN ttS := "kappa max: the largest kappa these row and column totals allow (Cohen 1960). Raters who use the categories at different rates cannot reach 1."; END;
+    IF agTapY >= 114 AND agTapY < 128 THEN ttS := "PABAK = (k po - 1)/(k - 1), Byrt, Bishop & Carlin (1993): po rescaled to run from -1 to 1, ignoring the margins."; END;
+    IF agTapY >= 128 AND agTapY < 154 THEN ttS := "z = kappa/SE" + agS0 + ", SE" + agS0 + " being the SE if kappa were 0. p = P(z this big | kappa = 0): better than chance is a low bar."; END;
+    IF DIM(ttS) > 0 THEN ag_Msg(ttS); END;
+    RETURN 0;
+  END;
+  IF agTapY >= 170 AND agTapY < 192 AND agTOK >= 1 THEN
+    ag_Msg("The bar runs from 0 to 1. Magenta: chance agreement pe. Green: agreement beyond it, up to po. kappa = green length / (1 - pe).");
+  END;
+  RETURN 0;
+END;
+
+// A tap on the weights page: what the tile's weight means.
+ag_TTapW()
+BEGIN
+  LOCAL twA, twI, twJ, twW;
+  twA := ag_TCell(agTapX, agTapY);
+  IF twA > 0 THEN
+    twI := IP((twA - 1)/agK) + 1; twJ := twA - (twI - 1)*agK;
+    twW := ag_Wt(twI, twJ, agK, agWt);
+    agInfo := ag_TNm(twI, twJ) + ": weight " + ag_Fx(twW, 3) + ", " + ag_I(ABS(twI - twJ)) + " categories apart";
+    ag_Msg(agInfo + ". A disagreement this far apart earns " + ag_Fx(100*twW, 0) + "% of the credit of an exact match.");
+  END;
+  RETURN 0;
+END;
+
+// Enter (or the Menu soft key): every action of the two-rater pages.
+ag_TMenu()
+BEGIN
+  LOCAL tmI;
+  tmI := 0;
+  CHOOSE(tmI, "Two raters", {
+    "Tiles: the table",
+    "Kappa: all the numbers",
+    "Null curve and CI",
+    "Weights: ordered categories",
+    "Switch linear / quadratic",
+    "Move one count to the diagonal",
+    "Move one count off the diagonal",
+    "Type a count in the selected tile",
+    "Clear the table (all 0)",
+    "Help",
+    "Back to the main menu"});
+  IF tmI >= 1 AND tmI <= 4 THEN RETURN tmI; END;
+  IF tmI == 5 THEN RETURN 12; END;
+  IF tmI == 6 THEN RETURN 7; END;
+  IF tmI == 7 THEN RETURN 8; END;
+  IF tmI == 8 THEN RETURN 9; END;
+  IF tmI == 9 THEN RETURN 13; END;
+  IF tmI == 10 THEN RETURN 5; END;
+  IF tmI == 11 THEN RETURN 11; END;
+  RETURN 0;
+END;
+
+// The two-rater pages.  Soft keys, page 1: Tiles, Kappa, Null, Wts,
+// Help, More; page 2: ToDiag, FromDg, Type, Menu, Back, More (the house
+// "More" key in slot 6).  Actions: 1-4 the pages, 5 help, 7 to the
+// diagonal, 8 from it, 9 type a count, 10 menu, 11 back, 12 switch the
+// weights, 13 clear the table.
+ag_TView(tvS)
+BEGIN
+  LOCAL tvK, tvA, tvGo, tvSl, tvI;
+  IF agTHas == 0 THEN
+    ag_Msg("No two-rater table yet: load a preset, use your data, or make a new table.");
+    RETURN 0;
+  END;
+  agScr := tvS; agSKP := 1; tvGo := 1;
+  ag_KDrain(); ag_Drain();
+  WHILE tvGo == 1 DO
+    ag_TDraw();
+    IF agSKP == 1 THEN
+      ag_Show({"Tiles", "Kappa", "Null", "Wts", "Help", "More"});
+    ELSE
+      ag_Show({"ToDiag", "FromDg", "Type", "Menu", "Back", "More"});
+    END;
+    tvK := ag_Poll();
+    tvA := 0;
+    IF tvK == -1 THEN
+      IF agTapY >= 218 THEN
+        tvSl := MIN(6, IP(agTapX/53.4) + 1);
+        IF tvSl == 6 THEN
+          agSKP := 3 - agSKP;
+        ELSE
+          IF agSKP == 1 THEN tvA := tvSl; ELSE tvA := tvSl + 6; END;
+          // "Wts" on the weights page switches the weights
+          IF tvA == 4 AND agScr == 4 THEN tvA := 12; END;
+        END;
+      ELSE
+        IF agScr == 1 THEN ag_TTap(); END;
+        IF agScr == 3 AND agTOK == 1 THEN
+          ag_Msg("Blue: kappa's spread if the raters agreed only by chance. Red: the observed kappa; shaded: the one-sided p. Green: 95% CI; grey: kappa max.");
+        END;
+        IF agScr == 4 THEN ag_TTapW(); END;
+      END;
+    ELSE
+      IF tvK == 4 THEN tvA := 11; END;
+      IF tvK == 30 THEN tvA := 10; END;
+      IF agScr == 1 THEN
+        IF tvK == 7 THEN agSelJ := MAX(1, agSelJ - 1); agInfo := ""; END;
+        IF tvK == 8 THEN agSelJ := MIN(agK, agSelJ + 1); agInfo := ""; END;
+        IF tvK == 2 THEN agSel := MAX(1, agSel - 1); agInfo := ""; END;
+        IF tvK == 12 THEN agSel := MIN(agK, agSel + 1); agInfo := ""; END;
+        IF tvK == 50 THEN ag_TAdd(1); END;
+        IF tvK == 45 THEN ag_TAdd(-1); END;
+      ELSE
+        IF agScr == 4 AND (tvK == 50 OR tvK == 45) THEN tvA := 12; END;
+        IF tvK == 7 THEN tvA := agScr - 1; IF tvA < 1 THEN tvA := 4; END; END;
+        IF tvK == 8 THEN tvA := agScr + 1; IF tvA > 4 THEN tvA := 1; END; END;
+      END;
+    END;
+    IF tvA == 10 THEN tvA := ag_TMenu(); END;
+    IF tvA >= 1 AND tvA <= 4 THEN agScr := tvA; END;
+    IF tvA == 5 THEN
+      tvI := 1;
+      IF agScr == 3 THEN tvI := 2; END;
+      IF agScr == 4 THEN tvI := 4; END;
+      ag_Help(tvI);
+    END;
+    IF tvA == 7 THEN agScr := 1; ag_TDiag(1); END;
+    IF tvA == 8 THEN agScr := 1; ag_TDiag(2); END;
+    IF tvA == 9 THEN agScr := 1; ag_TType(); END;
+    IF tvA == 12 THEN agWt := 3 - agWt; agScr := 4; END;
+    IF tvA == 13 THEN
+      agT := MAKELIST(0, tvI, 1, agK*agK);
+      ag_TCompute();
+      agTTtl := "Your table (" + ag_I(agK) + " " + agTm + " " + ag_I(agK) + ")";
+      agTSrc := "typed in"; agTIll := 0; agScr := 1; agTShort := ""; agTEd := 0;
+      agInfo := "Cleared: tap a tile, + adds 1, tap again to type.";
+    END;
+    IF tvA == 11 THEN tvGo := 0; END;
+  END;
+  IF agTOK == 1 THEN
+    agLast := "Cohen's kappa = " + ag_K3(agKa) + " (" + agTTtl + ")";
+    IF agTEd == 1 THEN agLast := agLast + ", " + agTSrc; END;
+  END;
+  ag_KDrain();
+  RETURN 0;
+END;
+
+// ============================================================
+// 8. MANY RATERS (Fleiss' kappa): pages and view
+// ============================================================
+
+// Page 1: Fleiss' kappa overall, with the bar of agreement vs chance.
+ag_FDrawK()
+BEGIN
+  LOCAL fkC;
+  ag_Band(agFTtl);
+  fkC := agGRAY;
+  IF agFIll == 1 THEN fkC := agRED; END;
+  ag_Tx("Data: " + agFSrc, 4, 22, fkC);
+  ag_Tx(ag_I(agFN) + " subjects, " + ag_I(agFM) + " ratings each, " + ag_I(agFQ) + " categories", 4, 34, #000000h);
+  IF agFOK <> 1 THEN
+    ag_Tx("Every rating is in one category: chance", 4, 58, agRED);
+    ag_Tx("agreement is 1, so kappa is undefined.", 4, 70, agRED);
+  ELSE
+    ag_Tx("mean subject agreement = " + ag_K3(agFPb) + " (green)", 4, 46, agGRN);
+    ag_Tx("chance Pe = sum of p" + agSq + " = " + ag_K3(agFPe) + " (magenta)", 4, 58, agMAG);
+    ag_Tx("kappa = (" + ag_K3(agFPb) + " - " + ag_K3(agFPe) + ")/(1 - " + ag_K3(agFPe) + ")", 4, 70, #000000h);
+    TEXTOUT_P("Fleiss' kappa = " + ag_K3(agFK), G1, 4, 84, 2, agRED, 312);
+    IF agFP >= 0 THEN
+      ag_Tx("SE under " + agH0 + ": " + ag_Fx(agFSE0, 4) + " (Fleiss, Nee & Landis 1979)", 4, 104, agBLUE);
+      ag_Tx("z = " + ag_Fx(agFZ, 2) + ", one-sided " + ag_PE(agFP) + " (" + agH1 + ": kappa > 0)", 4, 116, agBLUE);
+    END;
+    IF agFN < 30 THEN
+      ag_Tx("No CI (the SE holds at kappa = 0); N < 30: rough", 4, 128, agRED);
+    ELSE
+      ag_Tx("No CI: that SE holds only when kappa = 0.", 4, 128, agGRAY);
+    END;
+    ag_Tx("Landis & Koch 1977 (Biometrics 33:159-174):", 4, 142, agGRAY);
+    ag_Tx(CHAR(34) + ag_LK(agFK) + CHAR(34) + ": their convention, not a test", 4, 154, agGRAY);
+    ag_Bar(agFPb, agFPe, 172, "P", "Pe");
+  END;
+  IF DIM(agInfo) > 0 THEN ag_Tx(agInfo, 4, 194, agBLUE); END;
+  ag_Foot("tap = what is this, Ent = menu, Esc = back");
+END;
+
+// Page 2: kappa for each category (bars), tap one to read it.
+ag_FDrawC()
+BEGIN
+  LOCAL fcJ, fcW, fcX1, fcX2, fcY0, fcY;
+  LOCAL fcV, fcMn, fcS, fcTk;
+  ag_Band("Fleiss: kappa for each category");
+  agPL := 34; agPR := 310; agPT := 36; agPB := 156;
+  IF agFOK <> 1 THEN
+    ag_Tx("kappa is undefined for these data.", 4, 40, agRED);
+    ag_Foot("Ent = menu, Esc = back");
+    RETURN 0;
+  END;
+  fcMn := 0;
+  FOR fcJ FROM 1 TO agFQ DO
+    IF agFKj(fcJ) < 1.5 THEN fcMn := MIN(fcMn, agFKj(fcJ)); END;
+  END;
+  agYlo := MAX(-5, FLOOR(fcMn*5)/5); agYhi := 1;
+  // the y axis: ticks every 0.2 (0.5 or 1 when the range is wide)
+  fcS := 0.2;
+  IF agYhi - agYlo > 2 THEN fcS := 1; END;
+  LINE_P(G1, agPL, agPT, agPL, agPB, #000000h);
+  fcTk := agYlo;
+  WHILE fcTk <= agYhi + 0.000001 DO
+    fcY := ag_PY(fcTk);
+    LINE_P(G1, agPL - 3, fcY, agPL, fcY, agGRAY);
+    ag_Tx(ag_Fx(fcTk, 1), 4, fcY - 6, agGRAY);
+    fcTk := fcTk + fcS;
+  END;
+  fcY0 := ag_PY(0);
+  LINE_P(G1, agPL, fcY0, agPR, fcY0, #000000h);
+  fcW := (agPR - agPL)/agFQ;
+  FOR fcJ FROM 1 TO agFQ DO
+    fcX1 := agPL + IP((fcJ - 1)*fcW) + 3; fcX2 := agPL + IP(fcJ*fcW) - 3;
+    fcV := agFKj(fcJ);
+    IF fcV > 1.5 THEN
+      ag_Tx("n/a", fcX1, fcY0 - 14, agGRAY);
+    ELSE
+      fcY := ag_PY(fcV);
+      IF fcY < fcY0 THEN
+        RECT_P(G1, fcX1, fcY, fcX2, fcY0, agGCol(fcJ), agGCol(fcJ));
+        ag_Tx(ag_Fx(fcV, 2), fcX1, MAX(agPT - 12, fcY - 12), agGCol(fcJ));
+      ELSE
+        IF fcY > fcY0 THEN RECT_P(G1, fcX1, fcY0, fcX2, fcY, agGCol(fcJ), agGCol(fcJ)); END;
+        ag_Tx(ag_Fx(fcV, 2), fcX1, MIN(agPB - 10, fcY + 2), agGCol(fcJ));
+      END;
+    END;
+    IF fcJ == agFSel THEN ag_Box(fcX1 - 2, agPT, fcX2 + 2, agPB, agRED); END;
+    ag_Tx(ag_I(fcJ), IP((fcX1 + fcX2)/2) - 3, agPB + 2, agGCol(fcJ));
+  END;
+  // the overall kappa as a dotted red line
+  ag_DotH(ag_PY(agFK), agPL, agPR, agRED);
+  IF agFSel >= 1 AND agFSel <= agFQ THEN
+    fcJ := agFSel;
+    ag_Tx(ag_I(fcJ) + " " + agFCN(fcJ) + ": share p = " + ag_K3(agFPj(fcJ)), 4, 170, agGCol(fcJ));
+    IF agFKj(fcJ) < 1.5 THEN
+      ag_Tx("kappa = " + ag_K3(agFKj(fcJ)) + ", z = " + ag_Fx(agFKj(fcJ)/agFSEj, 2) + ", one-sided " + ag_PE(NORMALD_CDF(0, 1, -agFKj(fcJ)/agFSEj)), 4, 182, agGCol(fcJ));
+    ELSE
+      ag_Tx("kappa undefined: no rating, or every rating, is here", 4, 182, agGRAY);
+    END;
+  ELSE
+    ag_Tx("Tap a bar (or +/-): that category's kappa.", 4, 170, agGRAY);
+    ag_Tx("red dots = overall kappa " + ag_K3(agFK) + "; SE" + agS0 + " each = " + ag_Fx(agFSEj, 4), 4, 182, agGRAY);
+  END;
+  ag_Foot("+/- = category, Ent = menu, Esc = back");
+  RETURN 0;
+END;
+
+// Page 3: each subject's m ratings as a stacked bar (colours =
+// categories), with that subject's agreement P_i underneath.
+ag_FDrawS()
+BEGIN
+  LOCAL fsI, fsJ, fsW, fsX1, fsX2, fsY;
+  LOCAL fsH, fsA, fsP, fsS, fsQ;
+  ag_Band("Fleiss: each subject's ratings");
+  agPL := 34; agPR := 310;
+  // the legend: colour, number, the name's first letters
+  fsQ := MAX(1, IP(276/agFQ));
+  FOR fsJ FROM 1 TO agFQ DO
+    RECT_P(G1, agPL + (fsJ - 1)*fsQ, 23, agPL + (fsJ - 1)*fsQ + 6, 29, agGCol(fsJ), agGCol(fsJ));
+    TEXTOUT_P(ag_I(fsJ) + LEFT(agFCN(fsJ), MAX(1, IP((fsQ - 18)/6.5))), G1, agPL + (fsJ - 1)*fsQ + 8, 21, 1, agGCol(fsJ), fsQ - 9);
+  END;
+  fsW := (agPR - agPL)/agFN;
+  ag_Tx(ag_I(agFM), 4, 36, agGRAY);
+  ag_Tx("0", 4, 132, agGRAY);
+  ag_Tx("P", 4, 150, agGRN);
+  FOR fsI FROM 1 TO agFN DO
+    fsX1 := agPL + IP((fsI - 1)*fsW); fsX2 := agPL + IP(fsI*fsW) - 1;
+    IF fsW >= 4 THEN fsX2 := fsX2 - 1; END;
+    fsX2 := MAX(fsX1, fsX2);
+    fsY := 140; fsA := 0;
+    FOR fsJ FROM 1 TO agFQ DO
+      fsA := fsA + agF((fsI - 1)*agFQ + fsJ);
+      fsH := 140 - IP(100*fsA/agFM + 0.5);
+      IF fsH < fsY THEN RECT_P(G1, fsX1, fsH, fsX2, fsY - 1, agGCol(fsJ), agGCol(fsJ)); END;
+      fsY := fsH;
+    END;
+    fsP := agFPi(fsI);
+    IF fsP > 0 THEN RECT_P(G1, fsX1, 168 - IP(20*fsP), fsX2, 168, agGRN, agGRN); END;
+    IF fsI == agFSub THEN ag_Box(fsX1 - 1, 39, fsX2 + 1, 169, agRED); END;
+  END;
+  LINE_P(G1, agPL, 141, agPR, 141, #000000h);
+  LINE_P(G1, agPL, 169, agPR, 169, agGRAY);
+  IF agFSub >= 1 AND agFSub <= agFN THEN
+    fsI := agFSub; fsS := ""; fsA := 0;
+    FOR fsJ FROM 1 TO agFQ DO
+      fsH := agF((fsI - 1)*agFQ + fsJ);
+      fsA := fsA + fsH*(fsH - 1)/2;
+      IF fsJ > 1 THEN fsS := fsS + ", "; END;
+      fsS := fsS + ag_I(fsH);
+    END;
+    ag_Tx("subject " + ag_I(fsI) + ": counts " + fsS, 4, 174, agRED);
+    ag_Tx(ag_I(fsA) + " of " + ag_I(agFM*(agFM - 1)/2) + " rater pairs agree: P = " + ag_K3(agFPi(fsI)), 4, 186, agGRN);
+  ELSE
+    ag_Tx("Tap a subject (or +/-): its counts and agreement.", 4, 174, agGRAY);
+    ag_Tx("green = P" + ", the share of its rater pairs that agree", 4, 186, agGRN);
+  END;
+  ag_Foot("+/- = subject, Ent = menu, Esc = back");
+END;
+
+ag_FDraw()
+BEGIN
+  IF agScr == 1 THEN ag_FDrawK(); END;
+  IF agScr == 2 THEN ag_FDrawC(); END;
+  IF agScr == 3 THEN ag_FDrawS(); END;
+  IF agFOK == 1 THEN AG_K := agFK; AG_SE := agFSE0; AG_P := agFP; END;
+END;
+
+ag_FMenu()
+BEGIN
+  LOCAL fmI;
+  fmI := 0;
+  CHOOSE(fmI, "Many raters: Fleiss' kappa", {
+    "Kappa: overall",
+    "Categories: kappa for each",
+    "Subjects: each one's ratings",
+    "Help",
+    "Back to the main menu"});
+  IF fmI >= 1 AND fmI <= 3 THEN RETURN fmI; END;
+  IF fmI == 4 THEN RETURN 4; END;
+  IF fmI == 5 THEN RETURN 6; END;
+  RETURN 0;
+END;
+
+// The Fleiss pages.  Soft keys: Kappa, Categ, Subj, Help, Menu, Back.
+ag_FView(fvS)
+BEGIN
+  LOCAL fvK, fvA, fvGo, fvSl, fvJ;
+  IF agFHas == 0 THEN ag_Msg("No many-rater data yet: load a preset or use your data."); RETURN 0; END;
+  agScr := fvS; fvGo := 1; agInfo := "";
+  ag_KDrain(); ag_Drain();
+  WHILE fvGo == 1 DO
+    ag_FDraw();
+    ag_Show({"Kappa", "Categ", "Subj", "Help", "Menu", "Back"});
+    fvK := ag_Poll();
+    fvA := 0;
+    IF fvK == -1 THEN
+      IF agTapY >= 218 THEN
+        fvSl := MIN(6, IP(agTapX/53.4) + 1);
+        fvA := fvSl;
+      ELSE
+        IF agScr == 1 AND agFOK == 1 THEN
+          IF agTapY >= 44 AND agTapY < 58 THEN ag_Msg("Subject agreement P: of the m(m-1)/2 pairs of raters who rated a subject, the share that agree; averaged over the subjects."); END;
+          IF agTapY >= 58 AND agTapY < 70 THEN ag_Msg("Chance Pe: the agreement expected if every rating fell in category j at its overall rate p, independently: the sum of p" + agSq + "."); END;
+          IF agTapY >= 70 AND agTapY < 102 THEN ag_Msg("Fleiss' kappa (1971) = (P - Pe)/(1 - Pe): agreement beyond chance as a share of what is possible. The raters need not be the same people for every subject."); END;
+          IF agTapY >= 102 AND agTapY < 140 THEN ag_Msg("The SE of Fleiss, Nee & Landis (1979) is right only when kappa = 0, so it gives a test of 'no better than chance' but no CI."); END;
+          IF agTapY >= 166 AND agTapY < 190 THEN ag_Msg("The bar runs from 0 to 1. Magenta: chance agreement Pe. Green: mean agreement P beyond it. kappa = green length / (1 - Pe)."); END;
+        END;
+        IF agScr == 2 AND agTapX >= agPL AND agTapX <= agPR AND agTapY >= agPT AND agTapY <= agPB + 12 THEN
+          agFSel := MAX(1, MIN(agFQ, IP((agTapX - agPL)/((agPR - agPL)/agFQ)) + 1));
+        END;
+        IF agScr == 3 AND agTapX >= agPL AND agTapX <= agPR AND agTapY >= 36 AND agTapY <= 172 THEN
+          agFSub := MAX(1, MIN(agFN, IP((agTapX - agPL)/((agPR - agPL)/agFN)) + 1));
+        END;
+      END;
+    ELSE
+      IF fvK == 4 THEN fvA := 6; END;
+      IF fvK == 30 THEN fvA := 5; END;
+      IF fvK == 7 THEN fvA := agScr - 1; IF fvA < 1 THEN fvA := 3; END; END;
+      IF fvK == 8 THEN fvA := agScr + 1; IF fvA > 3 THEN fvA := 1; END; END;
+      IF fvK == 50 OR fvK == 45 THEN
+        fvJ := 1;
+        IF fvK == 45 THEN fvJ := -1; END;
+        IF agScr == 2 THEN
+          agFSel := agFSel + fvJ;
+          IF agFSel > agFQ THEN agFSel := 1; END;
+          IF agFSel < 1 THEN agFSel := agFQ; END;
+        END;
+        IF agScr == 3 THEN
+          agFSub := agFSub + fvJ;
+          IF agFSub > agFN THEN agFSub := 1; END;
+          IF agFSub < 1 THEN agFSub := agFN; END;
+        END;
+      END;
+    END;
+    IF fvA == 5 THEN fvA := ag_FMenu(); END;
+    IF fvA >= 1 AND fvA <= 3 THEN agScr := fvA; END;
+    IF fvA == 4 THEN ag_Help(5); END;
+    IF fvA == 6 THEN fvGo := 0; END;
+  END;
+  IF agFOK == 1 THEN agLast := "Fleiss' kappa = " + ag_K3(agFK) + " (" + agFTtl + ")"; END;
+  ag_KDrain();
+  RETURN 0;
+END;
+
+// ============================================================
+// 9. CONTINUOUS RATINGS: ICC and Bland-Altman pages and view
+// ============================================================
+
+// The name of ICC form r (1-6).
+ag_IName(inR)
+BEGIN
+  IF inR <= 3 THEN RETURN "ICC(" + ag_I(inR) + ",1)"; END;
+  RETURN "ICC(" + ag_I(inR - 3) + ",k)";
+END;
+
+// Page 1: the six ICCs, each with its 95% CI, as a forest plot.
+ag_CDrawICC()
+BEGIN
+  LOCAL ciR, ciY, ciC, ciMn, ciX1, ciX2;
+  LOCAL ciV, ciS;
+  ag_Band("ICC: " + agYTtl);
+  IF agIOK <> 1 THEN
+    ag_Tx("ICCs not computed:", 4, 40, agRED);
+    ag_Tx(agICI, 4, 54, agRED);
+    ag_Foot("Ent = menu, Esc = back");
+    RETURN 0;
+  END;
+  ag_Tx("form", 4, 22, agGRAY); ag_Tx("ICC", 62, 22, agGRAY);
+  ag_Tx("95% CI (F-based)", 160, 22, agGRAY);
+  agPL := 112; agPR := 306;
+  ciMn := 0;
+  FOR ciR FROM 1 TO 6 DO
+    IF agIDf(ciR) == 1 THEN ciMn := MIN(ciMn, agIC(ciR)); END;
+    IF agICf(ciR) == 1 THEN ciMn := MIN(ciMn, agIL(ciR)); END;
+  END;
+  agXlo := MAX(-1, FLOOR(ciMn*5)/5); agXhi := 1;
+  IF agXlo > -0.2 THEN agXlo := MIN(agXlo, -0.2); END;
+  // 0 dotted, 1 grey
+  ag_DotV(ag_PX(0), 34, 150, agGRAY);
+  LINE_P(G1, ag_PX(1), 34, ag_PX(1), 150, agLGRY);
+  FOR ciR FROM 1 TO 6 DO
+    ciY := 38 + (ciR - 1)*19;
+    IF ciR == agISel THEN RECT_P(G1, 2, ciY - 2, 316, ciY + 14, agLORN, agLORN); END;
+    ciC := agBLUE;
+    IF ciR > 3 THEN ciC := agMAG; END;
+    ag_Tx(ag_IName(ciR), 4, ciY, ciC);
+    IF agIDf(ciR) == 1 THEN ag_Tx(ag_KS(agIC(ciR)), 62, ciY, ciC); ELSE ag_Tx("--", 62, ciY, agGRAY); END;
+    IF agICf(ciR) == 1 THEN
+      ciX1 := ag_PX(MAX(agXlo, agIL(ciR))); ciX2 := ag_PX(MAX(agXlo, MIN(1, agIU(ciR))));
+      LINE_P(G1, ciX1, ciY + 6, ciX2, ciY + 6, ciC);
+      LINE_P(G1, ciX1, ciY + 3, ciX1, ciY + 9, ciC);
+      LINE_P(G1, ciX2, ciY + 3, ciX2, ciY + 9, ciC);
+      IF agIL(ciR) < agXlo THEN ag_Tx("<", ciX1 - 7, ciY, ciC); END;
+    ELSE
+      ag_Tx(agINo(ciR), agPL, ciY, agGRAY);
+    END;
+    // the marker only for a defined value inside the axis (never off screen)
+    ciV := agIC(ciR);
+    IF agIDf(ciR) == 1 AND ciV >= agXlo AND ciV <= 1 THEN ag_Mark(ag_PX(ciV), ciY + 6, agRED); END;
+  END;
+  // tick labels
+  ciS := 0.2;
+  IF agXlo < -0.6 THEN ciS := 0.5; END;
+  ciV := CEILING(agXlo/ciS - 0.000001)*ciS;
+  WHILE ciV <= 1.000001 DO
+    ag_Tx(ag_Fx(ciV, 1), ag_PX(ciV) - 8, 152, agGRAY);
+    ciV := ciV + ciS;
+  END;
+  ag_Tx("n = " + ag_I(agYN) + " targets, k = " + ag_I(agYK) + " raters; MS: targets " + ag_Gn(agMS(1)) + ",", 4, 166, #000000h);
+  ag_Tx("raters " + ag_Gn(agMS(2)) + ", error " + ag_Gn(agMS(3)) + " (two-way ANOVA)", 4, 178, #000000h);
+  IF DIM(agInfo) > 0 THEN
+    ag_Tx(agInfo, 4, 192, agBLUE);
+  ELSE
+    ag_Tx("blue = one rating, magenta = mean of k; tap a row", 4, 192, agGRAY);
+  END;
+  ag_Foot("tap = what it asks, Ent = menu, Esc = back");
+  RETURN 0;
+END;
+
+// What ICC form r asks, for a message box.
+ag_IWhat(iwR)
+BEGIN
+  LOCAL iwS, iwT;
+  iwS := "";
+  IF iwR == 1 THEN iwS := "ICC(1,1): each target has its own random raters (one-way). Reliability of ONE rating."; END;
+  IF iwR == 2 THEN iwS := "ICC(2,1): the same random raters rate every target. ABSOLUTE agreement of one rating: a rater's offset counts as error."; END;
+  IF iwR == 3 THEN iwS := "ICC(3,1): these raters only. CONSISTENCY of one rating: a rater who is always 2 points high is not penalised."; END;
+  IF iwR == 4 THEN iwS := "ICC(1,k): as ICC(1,1), for the MEAN of k ratings."; END;
+  IF iwR == 5 THEN iwS := "ICC(2,k): as ICC(2,1), for the MEAN of the k raters' ratings."; END;
+  IF iwR == 6 THEN iwS := "ICC(3,k): as ICC(3,1), for the MEAN of k ratings (= Cronbach's alpha)."; END;
+  IF agIDf(iwR) == 0 THEN RETURN iwS + " Here it is undefined (denominator 0)."; END;
+  IF agIF(iwR) == -1 THEN RETURN iwS + " F is infinite (its denominator MS is 0)."; END;
+  iwT := " F = " + ag_Fx(agIF(iwR), 2) + " on " + ag_I(agID1(iwR)) + ", " + ag_I(agID2(iwR)) + " df, " + ag_PE(agIPv(iwR)) + " (" + agH0 + ": ICC = 0).";
+  RETURN iwS + iwT;
+END;
+
+// A CI bound: three decimals, or minus infinity (stored as -1E99).
+ag_KB(kbV)
+BEGIN
+  IF kbV < -1E90 THEN RETURN "-" + CHAR(8734); END;
+  RETURN ag_KS(kbV);
+END;
+
+// An ICC's value, or "undefined".
+ag_KV(kvR)
+BEGIN
+  IF agIDf(kvR) == 0 THEN RETURN "undefined"; END;
+  RETURN "= " + ag_KS(agIC(kvR));
+END;
+
+// One ICC with its 95% CI, for the line under the forest plot.
+ag_ICIs(isR)
+BEGIN
+  IF agIDf(isR) == 0 THEN RETURN ag_IName(isR) + ": undefined (denominator 0)"; END;
+  IF agICf(isR) == 1 THEN
+    RETURN ag_IName(isR) + " = " + ag_KS(agIC(isR)) + ", 95% CI " + ag_KB(agIL(isR)) + " to " + ag_KB(agIU(isR));
+  END;
+  RETURN ag_IName(isR) + " = " + ag_KS(agIC(isR)) + ", " + agINo(isR);
+END;
+
+// Page 2: the ratings, one coloured line per rater across the targets.
+ag_CDrawData()
+BEGIN
+  LOCAL cdI, cdJ, cdMn, cdMx, cdX, cdY;
+  LOCAL cdPx, cdPy, cdW;
+  // the axes are worked out every time (a tap reads them); the drawing is
+  // made ONCE into G2 and copied from there while the data stay the same
+  // (1500 values would cost seconds per tap on a G1; AnovaLab's Dots page
+  // does the same)
+  agPL := 34; agPR := 310; agPT := 38; agPB := 150;
+  cdMn := agY(1); cdMx := agY(1);
+  FOR cdI FROM 1 TO agYN*agYK DO cdMn := MIN(cdMn, agY(cdI)); cdMx := MAX(cdMx, agY(cdI)); END;
+  IF cdMx - cdMn <= 0 THEN cdMn := cdMn - 1; cdMx := cdMx + 1; END;
+  agYlo := cdMn - 0.05*(cdMx - cdMn); agYhi := cdMx + 0.05*(cdMx - cdMn);
+  IF agDCa == 1 THEN
+    BLIT_P(G1, 0, 0, G2);
+  ELSE
+  ag_Band("Ratings: " + agYTtl);
+  // the legend: one colour per rater
+  cdW := MAX(20, IP(276/agYK));
+  FOR cdJ FROM 1 TO agYK DO
+    TEXTOUT_P(agYRN(cdJ), G1, agPL + (cdJ - 1)*cdW, 22, 1, agGCol(cdJ), cdW - 4);
+  END;
+  ag_YAxis();
+  LINE_P(G1, agPL, agPB, agPR, agPB, #000000h);
+  FOR cdJ FROM 1 TO agYK DO
+    cdPx := -1;
+    FOR cdI FROM 1 TO agYN DO
+      cdX := agPL + IP((cdI - 0.5)/agYN*(agPR - agPL));
+      cdY := ag_PY(agY((cdI - 1)*agYK + cdJ));
+      IF cdPx >= 0 THEN LINE_P(G1, cdPx, cdPy, cdX, cdY, agGCol(cdJ)); END;
+      IF agYN <= 60 THEN ag_Mark(cdX, cdY, agGCol(cdJ)); END;
+      cdPx := cdX; cdPy := cdY;
+    END;
+  END;
+  IF agYN <= 30 THEN
+    FOR cdI FROM 1 TO agYN DO
+      cdX := agPL + IP((cdI - 0.5)/agYN*(agPR - agPL));
+      LINE_P(G1, cdX, agPB, cdX, agPB + 2, agGRAY);
+      IF agYN <= 15 OR cdI MOD 5 == 0 THEN ag_Tx(ag_I(cdI), cdX - 3, agPB + 3, agGRAY); END;
+    END;
+  END;
+  ag_Tx("targets " + CHAR(8594), 250, 164, agGRAY);
+  ag_Tx("Parallel lines: consistent raters (ICC 3).", 4, 172, agGRAY);
+  ag_Tx("Lines on top of each other: agreement (ICC 2).", 4, 183, agGRAY);
+  ag_Foot("tap = read a point, Ent = menu, Esc = back");
+    DIMGROB_P(G2, 320, 240, #FFFFFFh);
+    BLIT_P(G2, 0, 0, G1);
+    agDCa := 1;
+  END;
+  IF DIM(agInfo) > 0 THEN ag_Tx(agInfo, 4, 194, agBLUE); END;
+END;
+
+// Page 3: the Bland-Altman plot for raters agBA and agBB.
+ag_CDrawBA()
+BEGIN
+  LOCAL baI, baMn, baMx, baLo, baHi, baX;
+  LOCAL baY, baY1, baY2, baW;
+  IF agBOK <> 1 THEN
+    ag_Band("Bland-Altman: " + agYRN(agBA) + " - " + agYRN(agBB));
+    ag_Tx("No plot: " + agBWhy, 4, 40, agRED);
+    ag_Foot("+/- = pair, Ent = menu, Esc = back");
+    RETURN 0;
+  END;
+  agPL := 40; agPR := 310; agPT := 36; agPB := 150;
+  baMn := agBM(1); baMx := agBM(1);
+  FOR baI FROM 1 TO agBN DO baMn := MIN(baMn, agBM(baI)); baMx := MAX(baMx, agBM(baI)); END;
+  IF baMx - baMn <= 0 THEN baMn := baMn - 1; baMx := baMx + 1; END;
+  baW := baMx - baMn;
+  agXlo := baMn - 0.05*baW; agXhi := baMx + 0.05*baW;
+  baLo := MIN(0, agBLo - agBT*agBSL); baHi := MAX(0, agBHi + agBT*agBSL);
+  FOR baI FROM 1 TO agBN DO baLo := MIN(baLo, agBD(baI)); baHi := MAX(baHi, agBD(baI)); END;
+  IF baHi - baLo <= 0 THEN baLo := baLo - 1; baHi := baHi + 1; END;
+  agYlo := baLo - 0.05*(baHi - baLo); agYhi := baHi + 0.05*(baHi - baLo);
+  // drawn ONCE into G3 and copied while the pair and data stay the same;
+  // the selected point is drawn on top
+  IF agBCa == 1 THEN
+    BLIT_P(G1, 0, 0, G3);
+  ELSE
+  ag_Band("Bland-Altman: " + agYRN(agBA) + " - " + agYRN(agBB));
+  ag_Tx("bias " + ag_Gn(agBDb) + ", 95% limits " + ag_Gn(agBLo) + " to " + ag_Gn(agBHi) + agYU, 4, 22, #000000h);
+  // the CI bands first (light), then the lines, then the points
+  baY1 := ag_PY(agBDb + agBT*agBSeb); baY2 := ag_PY(agBDb - agBT*agBSeb);
+  RECT_P(G1, agPL + 1, baY1, agPR, baY2, agLGRN, agLGRN);
+  baY1 := ag_PY(agBLo + agBT*agBSL); baY2 := ag_PY(agBLo - agBT*agBSL);
+  RECT_P(G1, agPL + 1, baY1, agPR, baY2, agLRED, agLRED);
+  baY1 := ag_PY(agBHi + agBT*agBSL); baY2 := ag_PY(agBHi - agBT*agBSL);
+  RECT_P(G1, agPL + 1, baY1, agPR, baY2, agLRED, agLRED);
+  ag_YAxis();
+  ag_XAxis();
+  LINE_P(G1, agPL, ag_PY(0), agPR, ag_PY(0), agLGRY);
+  LINE_P(G1, agPL, ag_PY(agBDb), agPR, ag_PY(agBDb), agGRN);
+  ag_DotH(ag_PY(agBLo), agPL, agPR, agRED);
+  ag_DotH(ag_PY(agBHi), agPL, agPR, agRED);
+  // the trend line, by pixel columns so that it never leaves the plot box
+  IF agBSe1 >= 0 THEN
+    FOR baI FROM agPL + 1 TO agPR DO
+      baY := ag_PY(agB0 + agB1*(agXlo + (baI - agPL)/(agPR - agPL)*(agXhi - agXlo)));
+      IF baY >= agPT AND baY <= agPB THEN PIXON_P(G1, baI, baY, agMAG); END;
+    END;
+  END;
+  FOR baI FROM 1 TO agBN DO
+    baX := ag_PX(agBM(baI)); baY := ag_PY(agBD(baI));
+    IF agBN <= 200 THEN ag_Mark(baX, baY, agBLUE); ELSE PIXON_P(G1, baX, baY, agBLUE); END;
+  END;
+  ag_Tx("x = mean of the two, y = d = " + agYRN(agBA) + " - " + agYRN(agBB), 4, 166, agGRAY);
+  ag_Tx("green = bias, red = limits, bands: approx. CIs", 4, 177, agGRAY);
+  ag_Foot("+/- = pair, tap = read, Ent = menu, Esc = back");
+    DIMGROB_P(G3, 320, 240, #FFFFFFh);
+    BLIT_P(G3, 0, 0, G1);
+    agBCa := 1;
+  END;
+  IF agBSel >= 1 AND agBSel <= agBN THEN ag_Mark(ag_PX(agBM(agBSel)), ag_PY(agBD(agBSel)), agRED); END;
+  IF DIM(agInfo) > 0 THEN
+    ag_Tx(agInfo, 4, 192, agBLUE);
+  ELSE
+    ag_Tx("magenta = trend of d on the mean (Stats page)", 4, 188, agMAG);
+  END;
+  RETURN 0;
+END;
+
+// Page 4: the Bland-Altman numbers.
+ag_CDrawBS()
+BEGIN
+  LOCAL bsC;
+  ag_Band("Bland-Altman: the numbers");
+  IF agBOK <> 1 THEN
+    ag_Tx("Not computed: " + agBWhy, 4, 40, agRED);
+    ag_Foot("+/- = pair, Ent = menu, Esc = back");
+    RETURN 0;
+  END;
+  bsC := agGRAY;
+  IF agYIll == 1 THEN bsC := agRED; END;
+  ag_Tx("Data: " + agYSrc, 4, 22, bsC);
+  ag_Tx("d = " + agYRN(agBA) + " - " + agYRN(agBB) + " for each of " + ag_I(agBN) + " targets", 4, 33, #000000h);
+  ag_Tx("bias = mean d = " + ag_Gn(agBDb) + agYU + ", SD of d: s = " + ag_Gn(agBS), 4, 44, agGRN);
+  ag_Tx("95% CI for the bias: " + ag_Gn(agBDb - agBT*agBSeb) + " to " + ag_Gn(agBDb + agBT*agBSeb) + " (t = " + ag_Fx(agBT, 3) + ")", 4, 55, agGRN);
+  ag_Tx("limits = bias " + agPM + " 1.96 s: " + ag_Gn(agBLo) + " to " + ag_Gn(agBHi) + agYU, 4, 66, agRED);
+  // beta 1a (second review item 5): the limit CIs use Bland & Altman's
+  // approximate SE and say so; Help page 7 gives their simulated coverage
+  ag_Tx("approx. SE of a limit (B & A 1986) = " + ag_Gn(agBSL), 4, 77, #000000h);
+  ag_Tx("approx. 95% CI, lower limit: " + ag_Gn(agBLo - agBT*agBSL) + " to " + ag_Gn(agBLo + agBT*agBSL), 4, 88, agRED);
+  ag_Tx("approx. 95% CI, upper limit: " + ag_Gn(agBHi - agBT*agBSL) + " to " + ag_Gn(agBHi + agBT*agBSL), 4, 99, agRED);
+  IF agBN < 30 THEN ag_Tx("approximate: too narrow for small n (Help 7)", 4, 110, agRED); END;
+  ag_Tx("with 2s (as in 1986): " + ag_Gn(agBDb - 2*agBS) + " to " + ag_Gn(agBDb + 2*agBS), 4, 121, agGRAY);
+  IF agYPap == 1 THEN ag_Tx("the paper, rounding, prints -79.7 to 75.5", 4, 132, agGRAY); END;
+  IF agBSe1 >= 0 THEN
+    ag_Tx("Trend? d on the mean: slope " + ag_Fx(agB1, 4) + " (SE " + ag_Fx(agBSe1, 4) + ")", 4, 143, agMAG);
+    IF agBPb >= 0 THEN
+      ag_Tx("t = " + ag_Fx(agBTb, 2) + " on " + ag_I(agBN - 2) + " df, two-sided " + ag_PE(agBPb), 4, 154, agMAG);
+      IF agBPb < 0.05 THEN
+        ag_Tx("evidence that d changes with the size (" + agAl + " 0.05)", 4, 165, agMAG);
+      ELSE
+        ag_Tx("no evidence of a trend at " + agAl + " 0.05 (not proof of none)", 4, 165, agMAG);
+      END;
+    END;
+  ELSE
+    ag_Tx("No trend test: every mean is the same.", 4, 143, agGRAY);
+  END;
+  ag_Tx("Check: d roughly normal? spread even across x?", 4, 176, agGRAY);
+  ag_Tx("A high correlation is not agreement (B & A 1986).", 4, 187, agGRAY);
+  ag_Foot("+/- = pair, Ent = menu, Esc = back");
+  RETURN 0;
+END;
+
+ag_CDraw()
+BEGIN
+  IF agScr == 1 THEN ag_CDrawICC(); END;
+  IF agScr == 2 THEN ag_CDrawData(); END;
+  IF agScr == 3 THEN ag_CDrawBA(); END;
+  IF agScr == 4 THEN ag_CDrawBS(); END;
+END;
+
+// Step the Bland-Altman pair: +1 or -1 through every pair (a, b), a < b.
+ag_CPair(cpD)
+BEGIN
+  LOCAL cpA, cpB, cpN, cpI, cpL, cpM;
+  // list the pairs in order; find the current one; step
+  cpL := {}; cpM := {};
+  FOR cpA FROM 1 TO agYK - 1 DO
+    FOR cpB FROM cpA + 1 TO agYK DO
+      cpL := CONCAT(cpL, {cpA}); cpM := CONCAT(cpM, {cpB});
+    END;
+  END;
+  cpN := SIZE(cpL); cpI := 1;
+  FOR cpA FROM 1 TO cpN DO
+    IF cpL(cpA) == agBA AND cpM(cpA) == agBB THEN cpI := cpA; END;
+  END;
+  cpI := cpI + cpD;
+  IF cpI > cpN THEN cpI := 1; END;
+  IF cpI < 1 THEN cpI := cpN; END;
+  agBA := cpL(cpI); agBB := cpM(cpI); agBSel := 0;
+  ag_BCompute();
+  agInfo := "pair " + agYRN(agBA) + " vs " + agYRN(agBB);
+END;
+
+// A tap on the data or Bland-Altman plot: the nearest point within 10 px.
+ag_CTapPt()
+BEGIN
+  LOCAL ctI, ctJ, ctD, ctB, ctX, ctY;
+  LOCAL ctBi, ctBj;
+  ctB := 101; ctBi := 0; ctBj := 0;
+  IF agScr == 2 THEN
+    FOR ctI FROM 1 TO agYN DO
+      ctX := agPL + IP((ctI - 0.5)/agYN*(agPR - agPL));
+      FOR ctJ FROM 1 TO agYK DO
+        ctY := ag_PY(agY((ctI - 1)*agYK + ctJ));
+        ctD := (ctX - agTapX)^2 + (ctY - agTapY)^2;
+        IF ctD < ctB THEN ctB := ctD; ctBi := ctI; ctBj := ctJ; END;
+      END;
+    END;
+    IF ctBi > 0 THEN
+      agInfo := "target " + ag_I(ctBi) + ", " + agYRN(ctBj) + " = " + ag_Gn(agY((ctBi - 1)*agYK + ctBj)) + agYU;
+    END;
+  END;
+  IF agScr == 3 AND agBOK == 1 THEN
+    FOR ctI FROM 1 TO agBN DO
+      ctD := (ag_PX(agBM(ctI)) - agTapX)^2 + (ag_PY(agBD(ctI)) - agTapY)^2;
+      IF ctD < ctB THEN ctB := ctD; ctBi := ctI; END;
+    END;
+    IF ctBi > 0 THEN
+      agBSel := ctBi;
+      ctI := ctBi;
+      agInfo := "#" + ag_I(ctI) + ": " + ag_Gn(agY((ctI - 1)*agYK + agBA)) + " and " + ag_Gn(agY((ctI - 1)*agYK + agBB)) + ", mean " + ag_Gn(agBM(ctI)) + ", d = " + ag_Gn(agBD(ctI));
+    END;
+  END;
+  RETURN 0;
+END;
+
+ag_CMenu()
+BEGIN
+  LOCAL cmI;
+  cmI := 0;
+  CHOOSE(cmI, "Continuous: ICC, Bland-Altman", {
+    "ICC: the six forms, 95% CIs",
+    "Data: the ratings plotted",
+    "Bland-Altman plot",
+    "Bland-Altman numbers",
+    "Next pair of raters",
+    "Help: ICC",
+    "Help: Bland-Altman",
+    "Back to the main menu"});
+  IF cmI >= 1 AND cmI <= 4 THEN RETURN cmI; END;
+  IF cmI == 5 THEN RETURN 7; END;
+  IF cmI == 6 THEN RETURN 5; END;
+  IF cmI == 7 THEN RETURN 8; END;
+  IF cmI == 8 THEN RETURN 6; END;
+  RETURN 0;
+END;
+
+// The continuous pages.  Soft keys: ICC, Data, B-A, Stats, Help, Back.
+// Actions: 1-4 the pages, 5 help (ICC), 6 back, 7 next pair, 8 help
+// (Bland-Altman), 9 the menu.
+ag_CView(cvS)
+BEGIN
+  LOCAL cvK, cvA, cvGo, cvSl, cvR;
+  IF agYHas == 0 THEN ag_Msg("No continuous ratings yet: load a preset or use your data."); RETURN 0; END;
+  agScr := cvS; cvGo := 1; agInfo := "";
+  IF agIOK == -1 THEN ag_ICompute(); END;
+  ag_KDrain(); ag_Drain();
+  WHILE cvGo == 1 DO
+    ag_CDraw();
+    ag_Show({"ICC", "Data", "B-A", "Stats", "Help", "Back"});
+    cvK := ag_Poll();
+    cvA := 0;
+    IF cvK == -1 THEN
+      IF agTapY >= 218 THEN
+        cvSl := MIN(6, IP(agTapX/53.4) + 1);
+        cvA := cvSl;
+        IF cvSl == 5 AND agScr >= 3 THEN cvA := 8; END;
+        IF cvSl == 6 THEN cvA := 6; END;
+      ELSE
+        IF agScr == 1 AND agIOK == 1 AND agTapY >= 36 AND agTapY < 150 THEN
+          cvR := IP((agTapY - 36)/19) + 1;
+          IF cvR >= 1 AND cvR <= 6 THEN agISel := cvR; agInfo := ag_ICIs(cvR); ag_Msg(ag_IWhat(cvR)); END;
+        END;
+        IF agScr == 2 OR agScr == 3 THEN ag_CTapPt(); END;
+      END;
+    ELSE
+      IF cvK == 4 THEN cvA := 6; END;
+      IF cvK == 30 THEN cvA := 9; END;
+      IF cvK == 50 THEN cvA := 7; END;
+      IF cvK == 45 THEN ag_CPair(-1); END;
+      IF cvK == 7 THEN cvA := agScr - 1; IF cvA < 1 THEN cvA := 4; END; END;
+      IF cvK == 8 THEN cvA := agScr + 1; IF cvA > 4 THEN cvA := 1; END; END;
+      IF agScr == 1 AND (cvK == 2 OR cvK == 12) THEN
+        IF cvK == 12 THEN agISel := agISel + 1; ELSE agISel := agISel - 1; END;
+        IF agISel > 6 THEN agISel := 1; END;
+        IF agISel < 1 THEN agISel := 6; END;
+        IF agIOK == 1 THEN agInfo := ag_ICIs(agISel); END;
+      END;
+    END;
+    IF cvA == 9 THEN cvA := ag_CMenu(); END;
+    IF cvA >= 1 AND cvA <= 4 THEN
+      IF cvA <> agScr THEN agInfo := ""; END;
+      agScr := cvA;
+    END;
+    IF cvA == 5 THEN ag_Help(6); END;
+    IF cvA == 8 THEN ag_Help(7); END;
+    IF cvA == 7 THEN ag_CPair(1); END;
+    IF cvA == 6 THEN cvGo := 0; END;
+  END;
+  IF agIOK == 1 THEN agLast := ag_ICIs(2) + "; ICC(3,1) " + ag_KV(3) + " (" + agYTtl + ")"; END;
+  ag_KDrain();
+  RETURN 0;
+END;
+
+// ============================================================
+// 10. YOUR OWN DATA (the Statistics 1Var app's D1-D9), A NEW TABLE
+// ============================================================
+
+// List Di, or {} when it is empty, not a list, or not there yet (the
+// first read is inside IFERR: Di does not exist until the app has been
+// opened once).
+ag_ReadD(rdI)
+BEGIN
+  LOCAL rdL;
+  rdL := {};
+  IFERR
+    IF rdI == 1 THEN rdL := D1; END;
+    IF rdI == 2 THEN rdL := D2; END;
+    IF rdI == 3 THEN rdL := D3; END;
+    IF rdI == 4 THEN rdL := D4; END;
+    IF rdI == 5 THEN rdL := D5; END;
+    IF rdI == 6 THEN rdL := D6; END;
+    IF rdI == 7 THEN rdL := D7; END;
+    IF rdI == 8 THEN rdL := D8; END;
+    IF rdI == 9 THEN rdL := D9; END;
+  THEN
+    rdL := {};
+  END;
+  IF TYPE(rdL) <> 6 THEN rdL := {}; END;
+  RETURN rdL;
+END;
+
+// Two raters from D1 (rater A's codes) and D2 (rater B's): whole numbers
+// 1 to 6, one pair per item.  k = the largest code used (at least 2).
+ag_MyTwo()
+BEGIN
+  LOCAL mtA, mtB, mtN, mtI, mtK, mtV;
+  mtA := ag_ReadD(1); mtB := ag_ReadD(2);
+  mtN := SIZE(mtA);
+  IF mtN < 1 OR SIZE(mtB) <> mtN THEN
+    ag_Msg("Put rater A's codes in D1 and rater B's in D2 (Statistics 1Var): two lists of the same length.");
+    RETURN 0;
+  END;
+  mtK := 2;
+  FOR mtI FROM 1 TO mtN DO
+    mtV := mtA(mtI);
+    IF mtV < 1 OR mtV > 6 OR FP(mtV) <> 0 THEN ag_Msg("D1(" + ag_I(mtI) + ") is not a whole code 1 to 6."); RETURN 0; END;
+    mtK := MAX(mtK, mtV);
+    mtV := mtB(mtI);
+    IF mtV < 1 OR mtV > 6 OR FP(mtV) <> 0 THEN ag_Msg("D2(" + ag_I(mtI) + ") is not a whole code 1 to 6."); RETURN 0; END;
+    mtK := MAX(mtK, mtV);
+  END;
+  agK := mtK;
+  agT := MAKELIST(0, mtI, 1, mtK*mtK);
+  FOR mtI FROM 1 TO mtN DO
+    mtV := (mtA(mtI) - 1)*mtK + mtB(mtI);
+    agT(mtV) := agT(mtV) + 1;
+  END;
+  agCN := {};
+  FOR mtI FROM 1 TO mtK DO agCN := CONCAT(agCN, {"code " + ag_I(mtI)}); END;
+  agRA := "D1 (rater A)"; agRB := "D2 (rater B)";
+  ag_TSet("Your data: D1 vs D2", "Statistics 1Var lists D1, D2", 0, 1, "D1, D2");
+  RETURN 1;
+END;
+
+// Many raters from D1-D9: each non-empty list is a category, row i =
+// subject i (its count in that category).  Every row must add to the
+// same m (at least 2).
+ag_MyMany()
+BEGIN
+  LOCAL mmI, mmJ, mmL, mmC, mmN, mmQ;
+  LOCAL mmM, mmS, mmF, mmV;
+  mmC := {}; mmN := -1;
+  FOR mmI FROM 1 TO 9 DO
+    mmL := ag_ReadD(mmI);
+    IF SIZE(mmL) > 0 THEN
+      IF mmN < 0 THEN mmN := SIZE(mmL); END;
+      IF SIZE(mmL) <> mmN THEN
+        ag_Msg("Every list must have one value per subject: D" + ag_I(mmI) + " has a different length.");
+        RETURN 0;
+      END;
+      mmC := CONCAT(mmC, {mmI});
+    END;
+  END;
+  mmQ := SIZE(mmC);
+  IF mmQ < 2 OR mmN < 1 THEN
+    ag_Msg("Put each category's counts in its own list (D1-D9), one row per subject: at least 2 lists.");
+    RETURN 0;
+  END;
+  IF mmN > 200 THEN ag_Msg("More than 200 subjects: too many for this program."); RETURN 0; END;
+  mmF := MAKELIST(0, mmI, 1, mmN*mmQ);
+  FOR mmJ FROM 1 TO mmQ DO
+    mmL := ag_ReadD(mmC(mmJ));
+    FOR mmI FROM 1 TO mmN DO
+      mmV := mmL(mmI);
+      IF mmV < 0 OR FP(mmV) <> 0 THEN
+        ag_Msg("D" + ag_I(mmC(mmJ)) + "(" + ag_I(mmI) + ") is not a whole count of 0 or more.");
+        RETURN 0;
+      END;
+      mmF((mmI - 1)*mmQ + mmJ) := mmV;
+    END;
+  END;
+  mmM := -1;
+  FOR mmI FROM 1 TO mmN DO
+    mmS := 0;
+    FOR mmJ FROM 1 TO mmQ DO mmS := mmS + mmF((mmI - 1)*mmQ + mmJ); END;
+    IF mmM < 0 THEN mmM := mmS; END;
+    IF mmS <> mmM THEN
+      ag_Msg("Row " + ag_I(mmI) + " adds to " + ag_I(mmS) + ", row 1 to " + ag_I(mmM) + ": every subject needs the same number of ratings.");
+      RETURN 0;
+    END;
+  END;
+  IF mmM < 2 THEN ag_Msg("Each subject needs 2 or more ratings."); RETURN 0; END;
+  agF := mmF; agFN := mmN; agFQ := mmQ; agFM := mmM;
+  agFCN := {};
+  FOR mmI FROM 1 TO mmQ DO agFCN := CONCAT(agFCN, {"D" + ag_I(mmC(mmI))}); END;
+  agFTtl := "Your data (D1-D9)"; agFSrc := "Statistics 1Var lists";
+  agFIll := 0; agFHas := 1; agFSel := 0; agFSub := 0; agInfo := "";
+  ag_FCompute();
+  RETURN 1;
+END;
+
+// Continuous ratings from D1-D9: each non-empty list is a rater, row i =
+// target i.  At least 2 raters and 3 targets, at most 1500 values in all
+// (the ICC passes over every value three times; a G1 is slow).
+ag_MyCont()
+BEGIN
+  LOCAL mcI, mcJ, mcL, mcC, mcN, mcK;
+  LOCAL mcY;
+  mcC := {}; mcN := -1;
+  FOR mcI FROM 1 TO 9 DO
+    mcL := ag_ReadD(mcI);
+    IF SIZE(mcL) > 0 THEN
+      IF mcN < 0 THEN mcN := SIZE(mcL); END;
+      IF SIZE(mcL) <> mcN THEN
+        ag_Msg("Every rater's list needs one value per target: D" + ag_I(mcI) + " has a different length.");
+        RETURN 0;
+      END;
+      mcC := CONCAT(mcC, {mcI});
+    END;
+  END;
+  mcK := SIZE(mcC);
+  IF mcK < 2 OR mcN < 3 THEN
+    ag_Msg("Put each rater's values in its own list (D1-D9), one row per target: 2 or more lists of 3 or more.");
+    RETURN 0;
+  END;
+  IF mcN*mcK > 1500 THEN ag_Msg("More than 1500 values (targets " + agTm + " raters): too many for this program."); RETURN 0; END;
+  mcY := MAKELIST(0, mcI, 1, mcN*mcK);
+  FOR mcJ FROM 1 TO mcK DO
+    mcL := ag_ReadD(mcC(mcJ));
+    FOR mcI FROM 1 TO mcN DO mcY((mcI - 1)*mcK + mcJ) := mcL(mcI); END;
+  END;
+  agY := mcY; agYN := mcN; agYK := mcK;
+  agYRN := {};
+  FOR mcI FROM 1 TO mcK DO agYRN := CONCAT(agYRN, {"D" + ag_I(mcC(mcI))}); END;
+  agYTtl := "Your data (D1-D9)"; agYSrc := "Statistics 1Var lists"; agYU := ""; agYIll := 0;
+  ag_YSet();
+  RETURN 1;
+END;
+
+ag_MyData()
+BEGIN
+  LOCAL mdI;
+  mdI := 0;
+  CHOOSE(mdI, "Use my data (Statistics 1Var)", {
+    "Two raters: D1, D2 = codes 1-6",
+    "Many raters: D1-D9 = category counts",
+    "Continuous: D1-D9 = raters"});
+  IF mdI == 1 THEN IF ag_MyTwo() == 1 THEN ag_TView(1); END; END;
+  IF mdI == 2 THEN IF ag_MyMany() == 1 THEN ag_FView(1); END; END;
+  IF mdI == 3 THEN IF ag_MyCont() == 1 THEN ag_CView(1); END; END;
+END;
+
+// A new, empty k x k table to fill in on the tiles.
+ag_NewTable()
+BEGIN
+  LOCAL ntK, ntI;
+  ntK := 3;
+  IF INPUT({ntK}, "New two-rater table", {"k categories:"}, {"2 to 6; then fill the tiles"}) <> 1 THEN
+    ag_KDrain(); ag_Drain();
+    RETURN 0;
+  END;
+  ag_KDrain(); ag_Drain();
+  IF ntK < 2 OR ntK > 6 OR FP(ntK) <> 0 THEN ag_Msg("k must be a whole number from 2 to 6."); RETURN 0; END;
+  agK := ntK;
+  agT := MAKELIST(0, ntI, 1, ntK*ntK);
+  agCN := {};
+  FOR ntI FROM 1 TO ntK DO agCN := CONCAT(agCN, {"category " + ag_I(ntI)}); END;
+  agRA := "Rater A"; agRB := "Rater B";
+  ag_TSet("Your table (" + ag_I(ntK) + " " + agTm + " " + ag_I(ntK) + ")", "typed in", 0, 1, "");
+  agInfo := "Tap a tile, + adds 1, tap it again to type.";
+  ag_TView(1);
+  RETURN 1;
+END;
+
+// ============================================================
+// 11. PRESETS MENU, THE OPENING PAGE, THE MAIN MENU
+// ============================================================
+
+ag_Presets()
+BEGIN
+  LOCAL prI;
+  prI := 0;
+  CHOOSE(prI, "Load a preset", {
+    "MS diagnosis: Winnipeg patients",
+    "MS diagnosis: New Orleans patients",
+    "Paradox: lopsided (illustrative)",
+    "Paradox: balanced (illustrative)",
+    "Fleiss 1971: 6 raters, 30 patients",
+    "Peak flow: 2 meters (Bland-Altman)",
+    "Shrout-Fleiss: 4 judges, 6 targets"});
+  IF prI == 1 THEN ag_LdMSW(); ag_TView(1); END;
+  IF prI == 2 THEN ag_LdMSN(); ag_TView(1); END;
+  IF prI == 3 THEN ag_LdPar(1); ag_TView(1); END;
+  IF prI == 4 THEN ag_LdPar(2); ag_TView(1); END;
+  IF prI == 5 THEN ag_LdDiag(); ag_FView(1); END;
+  IF prI == 6 THEN ag_LdPEF(); ag_CView(3); END;
+  IF prI == 7 THEN ag_LdSF(); ag_CView(1); END;
+END;
+
+ag_Hello()
+BEGIN
+  ag_Band("AgreeLab - beta 1a");
+  ag_Tx("Do raters agree beyond chance? How well?", 10, 26, #000000h);
+  ag_Tx("Two raters: Cohen's kappa on touch tiles,", 10, 40, agBLUE);
+  ag_Tx("weighted kappa; many raters: Fleiss' kappa;", 10, 53, agBLUE);
+  ag_Tx("measurements: ICCs and Bland-Altman plots.", 10, 66, agBLUE);
+  ag_Tx("Presets: MS diagnoses (Landis & Koch),", 10, 82, agMAG);
+  ag_Tx("Fleiss's psychiatric data, peak flow meters,", 10, 95, agMAG);
+  ag_Tx("Shrout & Fleiss's judges; or D1-D9.", 10, 108, agMAG);
+  RECT_P(G1, 6, 122, 313, 174, agRED, agLRED);
+  ag_Tx("DISCLAIMER: a teaching and demonstration aid.", 12, 125, agRED);
+  ag_Tx("Not validated for forensic, clinical or legal", 12, 137, agRED);
+  ag_Tx("use; do not rely on its results for legal", 12, 149, agRED);
+  ag_Tx("purposes.", 12, 161, agRED);
+  ag_Tx("(C) 2026 Roger D Metcalf. Written with AI help.", 10, 180, agGRAY);
+  ag_Tx("Free for educational and personal use.", 10, 192, agGRAY);
+  ag_Foot("Any key or tap = menu");
+  BLIT_P(G0, 0, 0, G1);
+  ag_WaitAny();
+END;
+
+EXPORT AgreeLab()
+BEGIN
+  LOCAL mnI, mnRun;
+  ag_Init();
+  ag_LdMSW();
+  ag_LdDiag();
+  ag_LdPEF();
+  ag_Hello();
+  mnRun := 1;
+  WHILE mnRun == 1 DO
+    mnI := 0;
+    CHOOSE(mnI, "AgreeLab: agreement", {
+      "Two raters: categories",
+      "Two raters: ordered (weighted)",
+      "Many raters: Fleiss' kappa",
+      "Continuous: ICC, Bland-Altman",
+      "Load a preset",
+      "Use my data (D1-D9)",
+      "New two-rater table",
+      "Help",
+      "Quit"});
+    IF mnI == 0 OR mnI == 9 THEN mnRun := 0; END;
+    IF mnI == 1 THEN ag_TView(1); END;
+    IF mnI == 2 THEN ag_TView(4); END;
+    IF mnI == 3 THEN ag_FView(1); END;
+    IF mnI == 4 THEN ag_CView(1); END;
+    IF mnI == 5 THEN ag_Presets(); END;
+    IF mnI == 6 THEN ag_MyData(); END;
+    IF mnI == 7 THEN ag_NewTable(); END;
+    IF mnI == 8 THEN ag_Help(1); END;
+  END;
+  RETURN "AgreeLab: " + agLast;
+END;

@@ -1,0 +1,3723 @@
+#pragma mode( separator(.,;) integer(h32) )
+
+// (C) 2026 Roger D Metcalf
+// For academic use only - do not rely on results for anything important
+// Results have not been rigorously verified and/or validated
+//
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with the
+//   file and credit the author if you pass it on.  Not for sale or
+//   commercial redistribution.
+// DISCLAIMER: a teaching and demonstration aid. Not validated for
+//   forensic, clinical or legal use; do not rely on its results for
+//   legal purposes.
+// Written with AI assistance. The concept, direction, decisions and all
+// hardware testing are Roger D. Metcalf's; the code, drafting and
+// source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
+
+// RANKLAB - beta 1a  (21 Oct 2026)
+// The rank-based (nonparametric) tests in one program, with pictures.
+//   Run RankLab() from the Program Catalog: it takes no arguments and
+//   opens on a welcome page (with the disclaimer), then the main menu:
+//     Sign test (1 sample/paired)  - exact binomial p
+//     Wilcoxon signed-rank         - exact p by dynamic programming
+//                                    (ties handled), n <= 50
+//     Mann-Whitney (rank-sum)      - exact p by counting (no ties,
+//                                    n1 n2 <= 400), else normal + ties
+//     Kruskal-Wallis + Dunn        - H, epsilon-squared, Dunn pairs
+//                                    with Holm-adjusted p
+//     Friedman + Kendall's W       - blocks x treatments
+//     Rank correlation (rs, tau-b) - Spearman and Kendall tau-b
+//     Load a preset                - five real data sets, 7 presets
+//     Use my data (D1..D9)         - the Statistics 1Var columns
+//     Help, Quit
+//   Each test opens a view of three or four pages (Up / Down or the
+//   soft keys): Result (every number, exact p beside the normal
+//   approximation), a picture (the rank strip, group boxes, the
+//   Friedman rank grid or the rank scatter) and the null distribution
+//   (exact bars or the normal / chi-square / t curve, the observed
+//   statistic red, the p tail magenta); Kruskal-Wallis adds the Dunn
+//   pairs.  Tap anything to have it explained; every tap has a key.
+//   Soft keys: Result, Plot, Null, Exact/Normal (or the page's own
+//   toggle), Tails, More (Help, Dunn or Data, Menu).  Keys: Up / Down
+//   = page, Left / Right = pick, + = slot 4, - = Tails, 0 = Help,
+//   Enter = a menu of every action, Esc = back.
+//   Home exports after a run: RK_STAT (the statistic), RK_P (the p
+//   shown first: exact when there is one), RK_PN (the normal or
+//   chi-square approximation's p), RK_EFF (the effect size), RK_HL
+//   (Hodges-Lehmann estimate, or the median difference for the sign
+//   test), RK_RANKS (the midranks).  RK_EFF is the rank-biserial r
+//   (signed-rank, Mann-Whitney), the proportion of d > 0 (sign test),
+//   epsilon-squared (Kruskal-Wallis) or W (Friedman).  For rank
+//   correlation RK_STAT = rs, RK_P = Spearman's p (exact for n <= 7,
+//   else t; -1 = none), RK_PN = Kendall's p (exact without ties for
+//   n <= 30, else z) and RK_EFF = tau-b.  The judges' halo preset (W
+//   only) sets RK_P = RK_PN = -1.  Quit returns a one-line summary of
+//   the last test that ran.
+// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  beta 1a
+//   has NOT been run on hardware or the emulator, only in the PC harness.
+//
+// WHAT CHANGED in beta 1a (21 Oct 2026; the independent second review
+//   of beta 1, REVIEW2_RankLab_beta1.md; item numbers are the review's):
+//   (1) Rank correlation at small n: Spearman's p is EXACT for n <= 7
+//   (all n! orders of y by Heap's algorithm, ties allowed: rk_SpPerm),
+//   1/n! one side for a perfect order without ties above 7, else the t
+//   approximation with a red caution below n = 10; Kendall's p is
+//   EXACT without ties for n <= 30 (inversion counts, rk_KdNull), else
+//   z.  The Null page draws those exact nulls as bars on the rs or
+//   tau-b scale.  (2) The Quit summary is written after each run that
+//   worked (rkSumS), and a refused test puts the last one back, so a
+//   refusal can no longer relabel the previous test's numbers.  (3) The
+//   judges: 'US judges: 3 criteria' is a Friedman TEST with the 43
+//   judges as blocks and integrity / oral / written rulings as
+//   treatments; beta 1's 11-criteria design is kept as 'US judges: halo
+//   (W only)', W described, no p, and the page says why.  (4) "Esc =
+//   stop" is printed only by loops that read Esc: ranking, ordering,
+//   Friedman blocks, KW summaries, the Kendall merge and count, MW and
+//   signed-rank exact counts, Spearman orders, Hodges-Lehmann.  (5) A
+//   red caution when a KW group has n < 5 or Friedman has b < 10;
+//   Friedman refuses one block.  (6) sum(t^3 - t), not a superscript 3.
+//   (7) The mean Spearman between blocks is computed pair by pair (right
+//   with ties; "none" when a block is all tied); shorter lines; "1
+//   group"; m and H with subscript 0 in the one-sample form; HL lines
+//   say what they estimate; no magenta among the group colours (magenta
+//   is the p tail); curve tails shaded in the house blue; the Null page
+//   says when a sign test has too many bars to draw.
+// Sources:
+//   Midranks and tie corrections: Lehmann (1975) Nonparametrics:
+//     Statistical Methods Based on Ranks, ch. 1-3 (variances with
+//     ties: sum(t^3 - t)); Hollander, Wolfe & Chicken (2014)
+//     Nonparametric Statistical Methods, 3rd ed.
+//   Sign test: exact Binomial(n, 1/2) after zeros are dropped; two-
+//     sided p = min(1, 2 x the smaller tail) (Hollander et al. ch. 3).
+//   Wilcoxon signed-rank: Wilcoxon (1945) Biometrics Bull. 1:80; the
+//     exact null by the generating function prod (1 + q^(2 r_i)) on
+//     doubled midranks (Lehmann 1975 ch. 3; Hollander et al. ch. 3);
+//     mean n(n+1)/4, variance n(n+1)(2n+1)/24 - sum(t^3 - t)/48;
+//     continuity correction 0.5 (as R wilcox.test, SciPy wilcoxon).
+//     Rank-biserial r = (T+ - T-)/(n(n+1)/2) (Kerby 2014, Compr.
+//     Psychol. 3:11).  Hodges & Lehmann (1963) Ann. Math. Stat.
+//     34:598: the median of the Walsh averages.
+//   Mann-Whitney: Mann & Whitney (1947) Ann. Math. Stat. 18:50; the
+//     exact null of U is the Gaussian binomial [N choose m]_q =
+//     prod_{i=1..m} (1 - q^(n+i))/(1 - q^i) (Andrews 1976, The Theory
+//     of Partitions, ch. 3), counted in whole numbers; variance
+//     n1 n2/12 ((N+1) - sum(t^3 - t)/(N(N-1))).  Probability of
+//     superiority U1/(n1 n2) = P(X > Y) + P(X = Y)/2 (McGraw & Wong
+//     1992, Psychol. Bull. 111:361); rank-biserial (U1 - U2)/(n1 n2)
+//     (Kerby 2014).  Hodges-Lehmann shift: median of x_i - y_j.
+//   Kruskal-Wallis: Kruskal & Wallis (1952) JASA 47:583; H / (1 -
+//     sum(t^3 - t)/(N^3 - N)); epsilon-squared H/(N - 1) (Tomczak &
+//     Tomczak 2014, Trends Sport Sci. 1:19).  Dunn (1964)
+//     Technometrics 6:241, z with the tie-corrected variance
+//     (N(N+1)/12 - sum(t^3 - t)/(12(N-1)))(1/ni + 1/nj); Holm (1979)
+//     Scand. J. Stat. 6:65.
+//   Friedman (1937) JASA 32:675 with the tie correction 1 - sum(t^3 -
+//     t)/(b k (k^2 - 1)); Kendall's W = Q/(b(k - 1)) (Kendall & Babington
+//     Smith 1939, Ann. Math. Stat. 10:275); mean Spearman between
+//     blocks (bW - 1)/(b - 1).
+//   Spearman (1904): rs = Pearson's r on the midranks (right with
+//     ties, unlike 1 - 6 sum d^2/(n(n^2 - 1))); t = rs sqrt((n-2)/(1 -
+//     rs^2)) on n - 2 df (as SciPy spearmanr).  Kendall (1945)
+//     Biometrika 33:239 tau-b, counted by Knight's (1966) JASA 61:436
+//     sort-and-merge method; z with the tie-corrected variance (as
+//     SciPy kendalltau, method 'asymptotic').
+//   Chi-square upper tails for whole df as sums of positive terms
+//     (Abramowitz & Stegun 26.4.4-26.4.5), never 1 - CDF.
+// Data (the source line is shown on screen when a preset is loaded):
+//   Rossi recidivism: prio (prior convictions) of the 114 men arrested
+//     and the 318 not arrested in the first year - Rossi, Berk &
+//     Lenihan (1980) Money, Work, and Crime; data via Allison (1995) /
+//     R carData.
+//   1970 draft lottery: the priority number drawn for each birth date,
+//     Jan 1 to Dec 31 - Fienberg (1971) Science 171:255; Starr (1997)
+//     JSE 5(2); Triola, Elem. Stat. Using the TI-83/84 Plus 2nd ed.
+//     p. 747.
+//   Darwin's Zea mays: 15 pairs, crossed and self-fertilised heights
+//     (inches) - Darwin (1876); Fisher (1935) The Design of
+//     Experiments.
+//   USJudgeRatings: lawyers' mean ratings (1-10) of 43 Connecticut
+//     judges.  'US judges: 3 criteria': all 43 judges (blocks) on INTG,
+//     ORAL, WRIT (treatments).  'US judges: halo (W only)': the first 8
+//     judges on the 11 rating criteria INTG..RTEN (CONT, the number of
+//     contacts, is a count, not a rating, and is left out) -
+//     New Haven Register, 14 Jan 1977 (via Hartigan; R datasets).
+//   MockJury: Years of sentence by the defendant's attractiveness
+//     (Beautiful 39, Average 38, Unattractive 37) - Plaster (1989)
+//     M.A. thesis, East Carolina Univ.; data via R heplots (Friendly).
+// Replaces / reworks: the rank-test programs of Mario Triola's
+//   "Elementary Statistics Using the TI-83/84 Plus" CD, by Michael
+//   Lloyd: SRTEST, RSTEST, KWTEST, SRCORR and their ZZRANK midrank
+//   routine; and SRPVALUE / SRCV (exact signed-rank recursion),
+//   SIGNTEST, WSIGNTST, FRIEDMAN, KENDALLT, CONCORW, DIFFKWCV and
+//   COCHRANQ, read for ideas.  Their bugs NOT repeated here:
+//   RSTEST overwrites S (the total n) with the SD before the mean rank
+//   sum is computed, and its tie loop is bounded by N instead of S;
+//   the normal approximations have no tie and no continuity
+//   correction and no exact small-sample p; KWTEST (and ANOVA) treat
+//   a 0 as missing data; SRCORR's 1 - 6 sum d^2/(n(n^2-1)) is wrong
+//   with ties (here: Pearson on midranks); SIGNTEST passes a z into
+//   binomcdf for n > 25; WSIGNTST counts zero differences in n;
+//   SRPVALUE's right tail is P(T > t), not P(T >= t); SRCV picks the
+//   critical value nearest alpha, so the true alpha can exceed the
+//   nominal one (here every p is computed, not looked up); the TI-82
+//   versions lean on implied-multiplication precedence (the intent is
+//   ported, not the keystrokes).
+// File map: see the FILE MAP block just below the Home exports.
+
+// ============================================================
+// FILE MAP (line numbers of beta 1a)
+//     211-315    Home exports and the file-level state
+//     316-513    SMALL HELPERS
+//                  rk_Init, rk_Drain, rk_WaitAny, rk_Nice, rk_Fx, rk_Sg, rk_Num,
+//                  rk_PT, rk_TailW, rk_GCol, rk_Trunc, rk_Zeros, rk_Prog, rk_Esc,
+//                  rk_Grp
+//     514-631    RANKS
+//                  rk_Midrank, rk_Order, rk_Med, rk_Q7
+//     632-696    TAIL PROBABILITIES
+//                  rk_PZ, rk_CCZ, rk_ChiUp, rk_TUp
+//     697-1707   THE TESTS
+//                  rk_Diffs, rk_Fill, rk_Walsh, rk_Shift, rk_NullWin, rk_NSum,
+//                  rk_DoSign, rk_SRNull, rk_DoSR, rk_MWNull, rk_DoMW, rk_DoKW,
+//                  rk_DoFr, rk_FrRbar, rk_TieSums, rk_Kendall, rk_SpPerm,
+//                  rk_KdNull, rk_DoCorr, rk_CorrP, rk_CorNull, rk_Pick,
+//                  rk_Compute
+//    1708-2111   THE PRESETS
+//                  rk_DraftNo, rk_LdRossi, rk_LdDraftG, rk_LdDraftC, rk_LdDarwin,
+//                  rk_LdHalo, rk_LdJudges, rk_LdJury, rk_Preset, rk_ReadD,
+//                  rk_MyData, rk_ChooseG, rk_PickTwo, rk_Ensure
+//    2112-2423   DRAWING: frames, text, the result page
+//                  rk_Frame, rk_Box, rk_Ln, rk_Foot, rk_TName, rk_TSh, rk_SNm,
+//                  rk_Src, rk_TieTx, rk_PMain, rk_CKind, rk_Verd, rk_ExLine,
+//                  rk_MeanR, rk_PgRes
+//    2424-2584   THE RANK STRIP
+//                  rk_PgStrip, rk_StripInfo
+//    2585-2746   KRUSKAL-WALLIS: GROUP BOXES, DUNN PAIRS
+//                  rk_PgBox, rk_PgDunn
+//    2747-2811   FRIEDMAN: THE RANK GRID
+//                  rk_PgGrid
+//    2812-2871   RANK CORRELATION: THE SCATTER
+//                  rk_PgScat
+//    2872-3177   THE NULL DISTRIBUTION
+//                  rk_IsBars, rk_NNm, rk_InTail, rk_CvKind, rk_CvObs, rk_Dens,
+//                  rk_CvUp, rk_CvShade, rk_CvFit, rk_PgNull
+//    3178-3499   THE VIEW: pages, soft keys, keys and taps
+//                  rk_NPg, rk_K4, rk_K5, rk_Draw, rk_Pick1, rk_Tap, rk_Act,
+//                  rk_Menu, rk_View, rk_Open
+//    3500-3723   HELP, THE WELCOME PAGE, THE ENTRY POINT
+//                  rk_HPage, rk_Help, rk_Welcome, rk_Summary, RankLab
+// ============================================================
+
+// ---- Home exports (set after every computation) ----
+EXPORT RK_STAT, RK_P, RK_PN, RK_EFF, RK_HL, RK_RANKS;
+
+// ---- the house palette (rk_Init) ----
+LOCAL rkBLUE, rkMAG, rkRED, rkGRN, rkORNG, rkGRAY;
+LOCAL rkFOOT, rkGRID, rkSHD, rkLORN, rkLGRN, rkLRED;
+LOCAL rkLBLU, rkGC;
+//  rkGC: the 12 group colours, the same group always the same colour.
+
+// ---- glyphs, built with CHAR() so the source stays ASCII ----
+LOCAL rkLR, rkUD, rkH0, rkAl, rkLE, rkGE;
+LOCAL rkSQ, rkPM, rkTX, rkCHI, rkSIG, rkMuG;
+LOCAL rkNEQ;
+
+// ---- the data sets, one per kind of test ----
+LOCAL rkXA, rkXB, rkP1, rkM0, rkPSrc, rkPLab;
+LOCAL rkPHas, rkPNa, rkPNb;
+//  paired / one-sample: rkXA (and rkXB) the values; rkP1 = 1 for one
+//  sample against the median rkM0; d = rkXA - rkXB (or rkXA - rkM0).
+LOCAL rkGV, rkGG, rkGK, rkGNm, rkGSrc, rkGLab;
+LOCAL rkGHas, rkMa, rkMb;
+//  groups: values rkGV, group number rkGG (1..rkGK), names rkGNm;
+//  rkMa, rkMb the two groups Mann-Whitney compares (X and Y).
+LOCAL rkCX, rkCY, rkCNx, rkCNy, rkCSrc, rkCHas;
+LOCAL rkCLab;
+//  correlation: x, y, their names; rkCLab names one observation.
+LOCAL rkFM, rkFB, rkFK, rkFTn, rkFBn, rkFSrc;
+LOCAL rkFHas, rkFLab;
+//  Friedman: rkFM holds b rows of k values, row by row (block i,
+//  treatment j at (i-1) k + j); treatment and block names.
+
+// ---- the test now open and its results ----
+LOCAL rkTest, rkTail, rkMode, rkPg, rkSK, rkN;
+LOCAL rkSt, rkSt2, rkMu, rkSd, rkZL, rkZU;
+LOCAL rkZ2, rkPeL, rkPeU, rkEx, rkExWhy, rkPe;
+LOCAL rkPn, rkZ, rkEff, rkEff2, rkHLv, rkHLok;
+LOCAL rkHLWhy, rkZero, rkTieN, rkTieS, rkTieMx, rkTL;
+LOCAL rkTc, rkMed;
+//  rkTest 1 sign, 2 signed-rank, 3 Mann-Whitney, 4 Kruskal-Wallis,
+//  5 Friedman, 6 rank correlation.  rkTail 0 two-sided, 1 lower,
+//  2 upper.  rkMode 1 = exact (when there is one), 0 = normal.
+//  rkPeL / rkPeU the exact lower and upper tails (-1 = none);
+//  rkZL, rkZU, rkZ2 the continuity-corrected z for each tail choice.
+//  rkTL the tie sizes (t >= 2) of the last ranking, rkTc each value's
+//  tie count, rkTieS = sum(t^3 - t).
+
+// ---- the exact null distribution (counts) ----
+LOCAL rkNull, rkNLo, rkNSt, rkNDen, rkNOK, rkNSel;
+LOCAL rkDisL, rkDisH;
+//  P(stat = rkNLo + (j - 1) rkNSt) = rkNull(j) / rkNDen.  rkDisL ..
+//  rkDisH: the values the bars plot shows.  rkNSel: the value tapped.
+
+// ---- the rank strip (sign, signed-rank, Mann-Whitney) ----
+LOCAL rkV, rkVG, rkR, rkOrd, rkSNm, rkSCl;
+LOCAL rkSel, rkSelO, rkHX, rkHY, rkDv, rkAxLab;
+LOCAL rkSTc;
+//  rkV the value each dot sits at, rkVG its colour group, rkR its
+//  midrank ({} = none written), rkSTc its tie count, rkDv the signed
+//  difference (signed-rank), rkOrd the order of rkV, rkHX/rkHY the
+//  dot centres as drawn (for taps).
+
+// ---- Kruskal-Wallis and Dunn ----
+LOCAL rkKR, rkKn, rkKM, rkKQv, rkKQr, rkDf;
+LOCAL rkDI, rkDJ, rkDZ, rkDP, rkDH, rkDSel;
+LOCAL rkDTop, rkKRk, rkKSel, rkCf, rkDNs;
+//  rkKQv / rkKQr: per group min, Q1, median, Q3, max of the values /
+//  of the ranks (5 numbers each, group by group).  rkKRk 1 = the box
+//  plot shows ranks.  rkCf the tie-correction factor.  rkDNs the
+//  number of Dunn pairs with Holm p < 0.05.
+
+// ---- Friedman ----
+LOCAL rkFR, rkFRS, rkW, rkRbar, rkFVal, rkFSel;
+LOCAL rkFTop;
+
+// ---- rank correlation ----
+LOCAL rkRX, rkRY, rkRs, rkTt, rkTau, rkKz;
+LOCAL rkCDat, rkCSel, rkCWh, rkTXn, rkTYn;
+//  rkCWh 1 = the Spearman t is on the Null page, 2 = the Kendall z.
+//  rkCDat 1 = the scatter shows the data, 0 = the ranks.
+
+// ---- geometry and the curve cache ----
+LOCAL rkPL, rkPR, rkPT, rkPB, rkCvY, rkCvK;
+LOCAL rkCvA, rkCvB, rkCvM, rkWel, rkDone;
+// ---- beta 1a ----
+LOCAL rkStop, rkSumS, rkNObs, rkNMu, rkFNoP, rkRbOK;
+LOCAL rkSpK, rkSpL, rkSpU, rkKdK, rkKdL, rkKdU;
+LOCAL rkSNl, rkSLo, rkSSt, rkSDen, rkKNl, rkKLo;
+LOCAL rkKSt, rkKDen, rkKInv, rkPSp, rkPKd;
+//  rkStop = 1 when Esc stopped a ranking (the test is not opened).
+//  rkSumS: the Quit summary, written after every successful run (so a
+//  refused test can never relabel the last good one).  rkNObs, rkNMu:
+//  the observed value and the mean on the exact null's own scale
+//  (T+, U1, S+, or rs and tau-b for the correlation bars).  rkFNoP = 1:
+//  the Friedman preset whose W is descriptive only (no p).  rkRbOK = 0
+//  when a block ties every treatment (no mean Spearman).
+//  Correlation: rkSpK / rkKdK = how Spearman's / Kendall's p was found
+//  (0 none, 1 exact count, 2 approximation, 3 the perfect-order
+//  formula); rkSpL, rkSpU, rkKdL, rkKdU their exact tails; rkSNl ..
+//  rkSDen and rkKNl .. rkKDen their exact nulls (counts, first value,
+//  step, total); rkKInv the discordant pairs; rkPSp, rkPKd the p shown.
+//  the plot box; rkCvY the curve's height in every pixel column for
+//  the window rkCvA .. rkCvB (rkCvM its top), rebuilt only when
+//  rkCvK (what it was built for) changes.  rkWel: welcome page shown.
+//  rkDone = 1 once a test has run (for the Quit summary).
+
+
+// ============================================================
+// SMALL HELPERS
+// ============================================================
+
+// rk_Init: the palette, the glyphs, the empty data sets.
+rk_Init()
+BEGIN
+  rkBLUE := #003CC8h; rkMAG := #C800C8h; rkRED := #FF0000h;
+  rkGRN := #008C3Ch; rkORNG := #FF4500h; rkGRAY := #5A5A5Ah;
+  rkFOOT := #1E90FFh; rkGRID := #E1E4EBh; rkSHD := #AACDFFh;
+  rkLORN := #FFF0DCh; rkLGRN := #E8F6EBh; rkLRED := #FFEBEBh;
+  rkLBLU := #EBF2FFh;
+  // twelve group colours: blue, green, dark orange, teal, purple,
+  // brown, olive, sienna, steel blue, dark gold, slate, slate grey
+  // beta 1a: no magenta among them (magenta is the p tail)
+  rkGC := {#003CC8h, #008C3Ch, #E07800h, #00A0A0h, #6A0DADh, #8B4513h,
+           #808000h, #A0522Dh, #4682B4h, #B8860Bh, #2F4F4Fh, #708090h};
+  // glyphs: left-right and up-down arrows, H-sub-0, alpha, <=, >=,
+  // superscript 2, plus-minus, times, chi-square, sigma, mu, not-equal
+  rkLR := CHAR(8646); rkUD := CHAR(8645);
+  rkH0 := "H" + CHAR(8320); rkAl := CHAR(945);
+  rkLE := CHAR(8804); rkGE := CHAR(8805);
+  rkSQ := CHAR(178); rkPM := CHAR(177); rkTX := CHAR(215);
+  rkCHI := CHAR(967) + CHAR(178); rkSIG := CHAR(963); rkMuG := CHAR(956);
+  rkNEQ := CHAR(8800);
+  // the plot box shared by the drawing and the touch code
+  rkPL := 30; rkPR := 308; rkPT := 36; rkPB := 146;
+  rkPHas := 0; rkGHas := 0; rkCHas := 0; rkFHas := 0;
+  rkTest := 0; rkTail := 0; rkMode := 1; rkPg := 1; rkSK := 1;
+  rkKRk := 0; rkFVal := 0; rkCDat := 0; rkCWh := 1;
+  rkCvK := ""; rkCvY := {0}; rkWel := 0;
+  rkNull := {1}; rkNOK := 0; rkNSel := -1E99;
+  rkV := {}; rkR := {}; rkHX := {}; rkHY := {};
+  rkTL := {}; rkTc := {};
+  RK_STAT := 0; RK_P := 1; RK_PN := 1; RK_EFF := 0; RK_HL := 0;
+  RK_RANKS := {0};
+  rkStop := 0; rkSumS := ""; rkNObs := 0; rkNMu := 0; rkFNoP := 0; rkRbOK := 1;
+  rkSpK := 0; rkKdK := 0; rkPSp := -1; rkPKd := -1;
+END;
+
+// rk_Drain: wait for the finger to lift, never more than one second
+// (Lessons Learned section 7: a stuck touch must not freeze the program).
+rk_Drain()
+BEGIN
+  LOCAL drT;
+  drT := TICKS;
+  REPEAT UNTIL MOUSE(1) == -1 OR TICKS - drT > 1000;
+END;
+
+// rk_WaitAny: drain, wait for any key or tap, drain.  Returns the key
+// code, or -1 for a tap.
+rk_WaitAny()
+BEGIN
+  LOCAL waK, waM, waM1;
+  REPEAT waK := GETKEY; UNTIL waK == -1;
+  rk_Drain();
+  REPEAT
+    waK := GETKEY;
+    waM := MOUSE;
+    waM1 := waM(1);
+  UNTIL waK > -1 OR SIZE(waM1) > 0;
+  IF SIZE(waM1) > 0 THEN waK := -1; END;
+  rk_Drain();
+  REPEAT waM := GETKEY; UNTIL waM == -1;
+  RETURN waK;
+END;
+
+// rk_Nice: a 1, 2 or 5 times a power of ten at least as big as the
+// value (Heckbert), for axis ticks.
+rk_Nice(nnV)
+BEGIN
+  LOCAL nnE, nnF;
+  IF nnV <= 0 THEN RETURN 1; END;
+  nnE := FLOOR(LOG(nnV));
+  nnF := nnV / 10^nnE;
+  IF nnF <= 1 THEN RETURN 10^nnE; END;
+  IF nnF <= 2 THEN RETURN 2 * 10^nnE; END;
+  IF nnF <= 5 THEN RETURN 5 * 10^nnE; END;
+  RETURN 10^(nnE + 1);
+END;
+
+// rk_Fx: fixed decimals, rounded FIRST (STRING(x, 2, d) turns
+// scientific below 10^-d; Lessons Learned section 3).
+rk_Fx(fxV, fxD)
+BEGIN
+  RETURN STRING(ROUND(fxV, fxD), 2, fxD);
+END;
+
+// rk_Sg: a number with its sign, "+0.600" or "-0.600".
+rk_Sg(sgV, sgD)
+BEGIN
+  LOCAL sgR;
+  sgR := ROUND(sgV, sgD) + 0;
+  IF sgR >= 0 THEN RETURN "+" + STRING(sgR, 2, sgD); END;
+  RETURN STRING(sgR, 2, sgD);
+END;
+
+// rk_Num: a data value or a midrank as short as it can be: whole
+// numbers without a point, others to at most 4 decimals with the
+// trailing zeros dropped (only when there IS a point: Lessons
+// Learned section 3, ScatterLab's 140000000000).
+rk_Num(nmV)
+BEGIN
+  LOCAL nmS, nmR, nmGo;
+  IF nmV == IP(nmV) AND ABS(nmV) < 1E11 THEN RETURN STRING(nmV, 2, 0); END;
+  nmR := ROUND(nmV, 4);
+  nmS := STRING(nmR, 2, 4);
+  IF DIM(nmS) > 0 THEN
+    IF INSTRING(nmS, ".") > 0 THEN
+      nmGo := 1;
+      WHILE nmGo == 1 DO
+        nmGo := 0;
+        IF DIM(nmS) > 1 THEN
+          IF RIGHT(nmS, 1) == "0" THEN nmS := LEFT(nmS, DIM(nmS) - 1); nmGo := 1; END;
+        END;
+      END;
+      IF DIM(nmS) > 1 THEN
+        IF RIGHT(nmS, 1) == "." THEN nmS := LEFT(nmS, DIM(nmS) - 1); END;
+      END;
+    END;
+  END;
+  RETURN nmS;
+END;
+
+// rk_PT: a p-value as "p = 0.0413", or "p < 0.0001" below the last
+// digit shown.
+rk_PT(ptP)
+BEGIN
+  IF ptP < 0.0001 THEN RETURN "p < 0.0001"; END;
+  RETURN "p = " + rk_Fx(ptP, 4);
+END;
+
+// rk_TailW: the tail choice in words.
+rk_TailW()
+BEGIN
+  IF rkTest == 4 OR rkTest == 5 THEN RETURN "upper tail"; END;
+  IF rkTail == 1 THEN RETURN "lower tail"; END;
+  IF rkTail == 2 THEN RETURN "upper tail"; END;
+  RETURN "two-sided";
+END;
+
+// rk_GCol: the colour of group g (the 12 colours repeat after 12).
+rk_GCol(gcG)
+BEGIN
+  RETURN rkGC(((gcG - 1) MOD 12) + 1);
+END;
+
+// rk_Trunc: at most tcN characters of a name (names on plots).
+rk_Trunc(tcS, tcN)
+BEGIN
+  IF DIM(tcS) <= tcN THEN RETURN tcS; END;
+  IF tcN < 1 THEN RETURN ""; END;
+  RETURN LEFT(tcS, tcN);
+END;
+
+// rk_Zeros: a list of n zeros (MAKELIST with a LOCAL counter,
+// GfxProbe T19; n = 0 gives an empty list without calling MAKELIST).
+rk_Zeros(zrN)
+BEGIN
+  LOCAL zrI;
+  IF zrN < 1 THEN RETURN {}; END;
+  RETURN MAKELIST(0, zrI, 1, zrN, 1);
+END;
+
+// rk_Prog: a progress bar drawn straight on the screen while a long
+// count runs (Esc stops it; the caller polls GETKEY).
+rk_Prog(pgF, pgM, pgE)
+BEGIN
+  RECT_P(G0, 30, 92, 290, 150, rkORNG, rkLORN);
+  TEXTOUT_P(pgM, G0, 40, 98, 1, #000000h, 240);
+  RECT_P(G0, 40, 118, 280, 130, rkGRAY, #FFFFFFh);
+  RECT_P(G0, 41, 119, 41 + IP(238 * MAX(0, MIN(1, pgF))), 129, rkBLUE, rkBLUE);
+  // beta 1a: "Esc = stop" only where the loop really reads Esc (pgE is
+  // what Esc does there, or "" for nothing)
+  IF DIM(pgE) > 0 THEN TEXTOUT_P(pgE, G0, 40, 135, 1, rkFOOT, 240); END;
+END;
+
+// rk_Esc (beta 1a): was Esc pressed during a long loop?  Called right
+// after rk_Prog has redrawn the bar.  A pressed Esc is read here and
+// every key left behind is drained, so nothing reaches the next page.
+rk_Esc()
+BEGIN
+  LOCAL ekK;
+  IF GETKEY == 4 THEN
+    REPEAT ekK := GETKEY; UNTIL ekK == -1;
+    RETURN 1;
+  END;
+  RETURN 0;
+END;
+
+// rk_Grp (beta 1a): "1 group", "3 groups".
+rk_Grp(grN)
+BEGIN
+  IF grN == 1 THEN RETURN "1 group"; END;
+  RETURN STRING(grN, 2, 0) + " groups";
+END;
+
+
+// ============================================================
+// RANKS
+// ============================================================
+
+// rk_Midrank: the midranks of a list (ties get the average of the ranks
+// they span), by SORT and a lower-bound search: O(n log n), so 432
+// values take about 4,000 steps, not 186,000.  Also sets rkTL (each
+// tie size t >= 2), rkTc (each value's tie count), rkTieN (number of
+// tie groups), rkTieMx (the largest) and rkTieS = sum(t^3 - t).
+// This is ZZRANK's job, without its N-for-S loop bound.
+rk_Midrank(rnL)
+BEGIN
+  LOCAL rnN, rnSo, rnM, rnI, rnJ, rnK;
+  LOCAL rnLo, rnHi, rnMd, rnV, rnR, rnGo;
+  LOCAL rnT, rnCt;
+  rnN := SIZE(rnL);
+  rkTieN := 0; rkTieS := 0; rkTieMx := 1; rkTL := {}; rkTc := {};
+  IF rnN == 0 THEN RETURN {}; END;
+  rnSo := SORT(rnL);
+  rnM := rk_Zeros(rnN);              // midrank of each sorted position
+  rnCt := rk_Zeros(rnN);             // tie size of each sorted position
+  rnI := 1;
+  WHILE rnI <= rnN DO
+    rnJ := rnI;
+    rnGo := 1;
+    WHILE rnGo == 1 DO
+      rnGo := 0;
+      IF rnJ < rnN THEN
+        IF rnSo(rnJ + 1) == rnSo(rnI) THEN rnJ := rnJ + 1; rnGo := 1; END;
+      END;
+    END;
+    rnT := rnJ - rnI + 1;
+    FOR rnK FROM rnI TO rnJ DO
+      rnM(rnK) := (rnI + rnJ) / 2;   // the average of ranks rnI..rnJ
+      rnCt(rnK) := rnT;
+    END;
+    IF rnT > 1 THEN
+      rkTieN := rkTieN + 1;
+      rkTieS := rkTieS + rnT^3 - rnT;
+      rkTieMx := MAX(rkTieMx, rnT);
+      rkTL := CONCAT(rkTL, {rnT});
+    END;
+    rnI := rnJ + 1;
+  END;
+  rnR := rk_Zeros(rnN);
+  rkTc := rk_Zeros(rnN);
+  FOR rnI FROM 1 TO rnN DO
+    // beta 1a: a long ranking shows its progress and reads Esc
+    IF rnN > 150 AND FP(rnI / 50) == 0 THEN
+      rk_Prog(rnI / rnN, "Ranking " + STRING(rnN, 2, 0) + " values ...", "Esc = stop (back to the menu)");
+      IF rk_Esc() == 1 THEN rkStop := 1; RETURN rnR; END;
+    END;
+    rnV := rnL(rnI);
+    rnLo := 1; rnHi := rnN;
+    WHILE rnLo < rnHi DO
+      rnMd := IP((rnLo + rnHi) / 2);
+      IF rnSo(rnMd) < rnV THEN rnLo := rnMd + 1; ELSE rnHi := rnMd; END;
+    END;
+    rnR(rnI) := rnM(rnLo);
+    rkTc(rnI) := rnCt(rnLo);
+  END;
+  RETURN rnR;
+END;
+
+// rk_Order: the order of a list: o(1) is the index of the smallest
+// value, o(2) the next, ...; equal values keep their list order.
+rk_Order(odL)
+BEGIN
+  LOCAL odN, odS, odSn, odO, odI, odLo;
+  LOCAL odHi, odMd, odV, odP;
+  odN := SIZE(odL);
+  IF odN == 0 THEN RETURN {}; END;
+  odS := SORT(odL);
+  odSn := rk_Zeros(odN);
+  odO := rk_Zeros(odN);
+  FOR odI FROM 1 TO odN DO
+    IF odN > 150 AND FP(odI / 50) == 0 THEN
+      rk_Prog(odI / odN, "Ordering " + STRING(odN, 2, 0) + " values ...", "Esc = stop (back to the menu)");
+      IF rk_Esc() == 1 THEN rkStop := 1; RETURN odO; END;
+    END;
+    odV := odL(odI);
+    odLo := 1; odHi := odN;
+    WHILE odLo < odHi DO
+      odMd := IP((odLo + odHi) / 2);
+      IF odS(odMd) < odV THEN odLo := odMd + 1; ELSE odHi := odMd; END;
+    END;
+    odP := odLo + odSn(odLo);
+    odSn(odLo) := odSn(odLo) + 1;
+    odO(odP) := odI;
+  END;
+  RETURN odO;
+END;
+
+// rk_Med: the median of a SORTED list.
+rk_Med(mdS)
+BEGIN
+  LOCAL mdN;
+  mdN := SIZE(mdS);
+  IF mdN == 0 THEN RETURN 0; END;
+  IF FP(mdN / 2) <> 0 THEN RETURN mdS((mdN + 1) / 2); END;
+  RETURN (mdS(mdN / 2) + mdS(mdN / 2 + 1)) / 2;
+END;
+
+// rk_Q7: the p-quantile of a SORTED list, R's type 7 (Hyndman & Fan
+// 1996): h = (n - 1) p + 1, interpolate between the neighbours.
+rk_Q7(qsS, qsP)
+BEGIN
+  LOCAL qsN, qsH, qsLo;
+  qsN := SIZE(qsS);
+  IF qsN == 0 THEN RETURN 0; END;
+  IF qsN == 1 THEN RETURN qsS(1); END;
+  qsH := (qsN - 1) * qsP + 1;
+  qsLo := FLOOR(qsH);
+  IF qsLo >= qsN THEN RETURN qsS(qsN); END;
+  RETURN qsS(qsLo) + (qsH - qsLo) * (qsS(qsLo + 1) - qsS(qsLo));
+END;
+
+
+// ============================================================
+// TAIL PROBABILITIES (every upper tail computed as a lower tail)
+// ============================================================
+
+// rk_PZ: p from a z for the chosen tail: lower Phi(z), upper
+// Phi(-z), two-sided 2 Phi(-|z|).
+rk_PZ(pzZ, pzT)
+BEGIN
+  IF pzT == 1 THEN RETURN NORMALD_CDF(0, 1, pzZ); END;
+  IF pzT == 2 THEN RETURN NORMALD_CDF(0, 1, -pzZ); END;
+  RETURN MIN(1, 2 * NORMALD_CDF(0, 1, -ABS(pzZ)));
+END;
+
+// rk_CCZ: z with the continuity correction of 0.5 toward the mean,
+// for the tail asked (lower: S + 0.5; upper: S - 0.5; two-sided:
+// |S - mean| - 0.5, never below 0), as R and SciPy do.
+rk_CCZ(ccS, ccM, ccSd, ccT)
+BEGIN
+  LOCAL ccD;
+  IF ccSd <= 0 THEN RETURN 0; END;
+  IF ccT == 1 THEN RETURN (ccS - ccM + 0.5) / ccSd; END;
+  IF ccT == 2 THEN RETURN (ccS - ccM - 0.5) / ccSd; END;
+  ccD := MAX(0, ABS(ccS - ccM) - 0.5);
+  IF ccS < ccM THEN RETURN -ccD / ccSd; END;
+  RETURN ccD / ccSd;
+END;
+
+// rk_ChiUp: P(chi-square(df) >= x) for a whole df, as a sum of
+// positive terms (Abramowitz & Stegun 26.4.4, 26.4.5):
+//   even df: exp(-x/2) sum_{j=0}^{df/2-1} (x/2)^j / j!
+//   odd df:  2 Phi(-sqrt x) + exp(-x/2) sum_{j=0}^{(df-3)/2}
+//            (x/2)^(j+1/2) / Gamma(j + 3/2)
+// so a tiny p keeps its digits (1 - CHISQUARE_CDF is 0 below 5E-13).
+rk_ChiUp(cuDF, cuX)
+BEGIN
+  LOCAL cuH, cuT, cuS, cuJ;
+  IF cuX <= 0 THEN RETURN 1; END;
+  cuH := cuX / 2;
+  IF FP(cuDF / 2) == 0 THEN
+    cuT := EXP(-cuH);
+    cuS := cuT;
+    FOR cuJ FROM 1 TO cuDF / 2 - 1 DO
+      cuT := cuT * cuH / cuJ;
+      cuS := cuS + cuT;
+    END;
+  ELSE
+    cuS := 2 * NORMALD_CDF(0, 1, -(cuX^0.5));
+    // Gamma(3/2) = sqrt(pi)/2 = 0.886226925453
+    cuT := EXP(-cuH) * cuH^0.5 / 0.886226925453;
+    FOR cuJ FROM 0 TO (cuDF - 3) / 2 DO
+      cuS := cuS + cuT;
+      cuT := cuT * cuH / (cuJ + 1.5);
+    END;
+  END;
+  RETURN MIN(1, cuS);
+END;
+
+// rk_TUp: P(T >= t) for Student's t on df degrees of freedom, as a
+// lower tail (STUDENT_CDF takes any df).
+rk_TUp(tuDF, tuT)
+BEGIN
+  RETURN STUDENT_CDF(tuDF, -tuT);
+END;
+
+
+// ============================================================
+// THE TESTS
+// ============================================================
+
+// rk_Diffs: the paired differences a - b, or a - m0 for one sample.
+// ROUND(.., 10) keeps 0.3 - 0.1 equal to 0.2 so equal differences
+// tie (no effect on the Prime's decimal arithmetic).
+rk_Diffs()
+BEGIN
+  LOCAL dfI, dfD, dfN;
+  dfN := SIZE(rkXA);
+  dfD := rk_Zeros(dfN);
+  FOR dfI FROM 1 TO dfN DO
+    IF rkP1 == 1 THEN
+      dfD(dfI) := ROUND(rkXA(dfI) - rkM0, 10);
+    ELSE
+      dfD(dfI) := ROUND(rkXA(dfI) - rkXB(dfI), 10);
+    END;
+  END;
+  RETURN dfD;
+END;
+
+// rk_Fill: a list of n copies of a value.
+rk_Fill(flV, flN)
+BEGIN
+  LOCAL flL, flI;
+  flL := rk_Zeros(flN);
+  FOR flI FROM 1 TO flN DO flL(flI) := flV; END;
+  RETURN flL;
+END;
+
+// rk_Walsh: the Hodges-Lehmann estimate for one sample: the median of
+// the n(n+1)/2 Walsh averages (d_i + d_j)/2, i <= j (Hodges & Lehmann
+// 1963; R's wilcox.test estimate, zeros removed first as R does).
+// Only when n(n+1)/2 <= 5050 (n <= 100): the Prime's lists hold
+// 10,000 values and a G1 builds about 5,000 in a few seconds.
+rk_Walsh(wsD)
+BEGIN
+  LOCAL wsN, wsW, wsI, wsJ, wsK;
+  wsN := SIZE(wsD);
+  rkHLok := 0;
+  IF wsN == 0 THEN rkHLWhy := "no nonzero differences"; RETURN 0; END;
+  IF wsN * (wsN + 1) / 2 > 5050 THEN
+    rkHLWhy := "not for n > 100 (too many averages)";
+    RETURN 0;
+  END;
+  wsW := rk_Zeros(wsN * (wsN + 1) / 2);
+  wsK := 0;
+  FOR wsI FROM 1 TO wsN DO
+    IF wsN > 40 THEN
+      rk_Prog(wsI / wsN, "Hodges-Lehmann: Walsh averages ...", "Esc = stop (no estimate)");
+      IF rk_Esc() == 1 THEN rkHLWhy := "stopped by Esc"; RETURN 0; END;
+    END;
+    FOR wsJ FROM wsI TO wsN DO
+      wsK := wsK + 1;
+      wsW(wsK) := (wsD(wsI) + wsD(wsJ)) / 2;
+    END;
+  END;
+  rkHLok := 1;
+  RETURN rk_Med(SORT(wsW));
+END;
+
+// rk_Shift: the Hodges-Lehmann shift for two samples: the median of
+// the n1 n2 differences x_i - y_j; only when n1 n2 <= 5000.
+rk_Shift(shX, shY)
+BEGIN
+  LOCAL shN1, shN2, shW, shI, shJ, shK;
+  shN1 := SIZE(shX); shN2 := SIZE(shY);
+  rkHLok := 0;
+  IF shN1 * shN2 > 5000 THEN
+    rkHLWhy := "not for n" + CHAR(8321) + " " + rkTX + " n" + CHAR(8322) + " > 5,000 pairs";
+    RETURN 0;
+  END;
+  shW := rk_Zeros(shN1 * shN2);
+  shK := 0;
+  FOR shI FROM 1 TO shN1 DO
+    IF shN1 * shN2 > 1500 THEN
+      rk_Prog(shI / shN1, "Hodges-Lehmann: all x - y ...", "Esc = stop (no estimate)");
+      IF rk_Esc() == 1 THEN rkHLWhy := "stopped by Esc"; RETURN 0; END;
+    END;
+    FOR shJ FROM 1 TO shN2 DO
+      shK := shK + 1;
+      shW(shK) := shX(shI) - shY(shJ);
+    END;
+  END;
+  rkHLok := 1;
+  RETURN rk_Med(SORT(shW));
+END;
+
+// rk_NullWin: which values the bars plot shows: every value whose
+// count is at least 1E-5 of the largest, widened to take in the
+// observed statistic and its mirror image about the mean.
+rk_NullWin()
+BEGIN
+  LOCAL nwI, nwM, nwLo, nwHi, nwN, nwMir;
+  nwN := SIZE(rkNull);
+  nwM := MAX(rkNull);
+  nwLo := nwN; nwHi := 1;
+  FOR nwI FROM 1 TO nwN DO
+    IF rkNull(nwI) >= nwM * 1E-5 THEN
+      nwLo := MIN(nwLo, nwI);
+      nwHi := MAX(nwHi, nwI);
+    END;
+  END;
+  rkDisL := rkNLo + (nwLo - 1) * rkNSt;
+  rkDisH := rkNLo + (nwHi - 1) * rkNSt;
+  nwMir := 2 * rkNMu - rkNObs;
+  rkDisL := MAX(rkNLo, MIN(rkDisL, MIN(rkNObs, nwMir) - rkNSt));
+  rkDisH := MIN(rkNLo + (nwN - 1) * rkNSt, MAX(rkDisH, MAX(rkNObs, nwMir) + rkNSt));
+END;
+
+// rk_NSum: the exact P(stat <= v) (lw = 1) or P(stat >= v) (lw = 0)
+// from the counts: a plain sum of non-negative counts, never 1 - sum.
+rk_NSum(nsV, nsLw)
+BEGIN
+  LOCAL nsK, nsI, nsS, nsN;
+  nsN := SIZE(rkNull);
+  nsK := ROUND((nsV - rkNLo) / rkNSt, 0) + 1;   // the index of v
+  nsS := 0;
+  IF nsLw == 1 THEN
+    FOR nsI FROM 1 TO MIN(nsK, nsN) DO nsS := nsS + rkNull(nsI); END;
+  ELSE
+    FOR nsI FROM MAX(nsK, 1) TO nsN DO nsS := nsS + rkNull(nsI); END;
+  END;
+  RETURN MIN(1, nsS / rkNDen);
+END;
+
+// ---------------- 1. SIGN TEST ----------------
+// Count the positive and negative differences, drop the zeros (they
+// say nothing about the direction; WSIGNTST's mistake was to keep
+// them in n), and compare S+ with Binomial(n, 1/2), exactly:
+//   lower P(S+ <= s) = BINOMIAL_CDF(n, 1/2, s)
+//   upper P(S+ >= s) = BINOMIAL_CDF(n, 1/2, n - s)  (by symmetry: a
+//         lower tail, never 1 - CDF)
+//   two-sided min(1, 2 x the smaller).
+// The normal approximation beside it: mean n/2, SD sqrt(n)/2, with the
+// continuity correction (SIGNTEST put the z into binomcdf instead).
+rk_DoSign()
+BEGIN
+  LOCAL sgD, sgI, sgN, sgP, sgM, sgZ0;
+  LOCAL sgLo, sgHi, sgK, sgL;
+  sgD := rk_Diffs();
+  sgN := 0; sgP := 0; sgM := 0; sgZ0 := 0;
+  rkVG := rk_Zeros(SIZE(sgD));
+  FOR sgI FROM 1 TO SIZE(sgD) DO
+    IF sgD(sgI) > 0 THEN sgP := sgP + 1; rkVG(sgI) := 1; END;
+    IF sgD(sgI) < 0 THEN sgM := sgM + 1; rkVG(sgI) := 2; END;
+    IF sgD(sgI) == 0 THEN sgZ0 := sgZ0 + 1; rkVG(sgI) := 3; END;
+  END;
+  sgN := sgP + sgM;
+  IF sgN == 0 THEN
+    MSGBOX("Every difference is 0: the sign test has no signs to count.");
+    RETURN 0;
+  END;
+  rkN := sgN; rkSt := sgP; rkSt2 := sgM; rkZero := sgZ0;
+  rkMu := sgN / 2; rkSd := sgN^0.5 / 2;
+  rkPeL := BINOMIAL_CDF(sgN, 0.5, sgP);
+  rkPeU := BINOMIAL_CDF(sgN, 0.5, sgN - sgP);
+  rkEx := 1; rkExWhy := "";
+  rkZL := rk_CCZ(sgP, rkMu, rkSd, 1);
+  rkZU := rk_CCZ(sgP, rkMu, rkSd, 2);
+  rkZ2 := rk_CCZ(sgP, rkMu, rkSd, 0);
+  rkEff := sgP / sgN; rkEff2 := 0;
+  rkMed := rk_Med(SORT(sgD));
+  rkHLv := rkMed; rkHLok := 1; rkHLWhy := "";
+  rkTieN := 0; rkTieS := 0; rkTieMx := 1;
+  // the strip: every difference, coloured by its sign
+  rkV := sgD; rkR := {}; rkSTc := rk_Fill(1, SIZE(sgD)); rkDv := sgD;
+  rkSNm := {"d > 0", "d < 0", "d = 0"};
+  rkSCl := {rkBLUE, #E07800h, rkGRAY};
+  rkAxLab := rkPLab;
+  RK_RANKS := {0};
+  // the null: Binomial(n, 1/2) probabilities, from the mirror of the
+  // smaller tail to its mirror, at most 1,500 bars
+  sgLo := MAX(0, MIN(MIN(sgP, sgN - sgP), IP(sgN / 2 - 5 * rkSd)) - 1);
+  sgHi := sgN - sgLo;
+  rkNOK := 0;
+  rkNObs := rkSt; rkNMu := rkMu;
+  IF sgHi - sgLo + 1 <= 1500 THEN
+    sgL := rk_Zeros(sgHi - sgLo + 1);
+    FOR sgK FROM sgLo TO sgHi DO
+      sgL(sgK - sgLo + 1) := BINOMIAL(sgN, 0.5, sgK);
+    END;
+    rkNull := sgL; rkNLo := sgLo; rkNSt := 1; rkNDen := 1; rkNOK := 1;
+    rkDisL := sgLo; rkDisH := sgHi;
+  END;
+  RETURN 1;
+END;
+
+// ---------------- 2. WILCOXON SIGNED-RANK ----------------
+// rk_SRNull: the exact null distribution of T+ with ties.  Under H0
+// each |d| is equally likely to carry + or -, so 2T+ has the
+// generating function prod (1 + q^(2 r_i)) over the DOUBLED midranks
+// (whole numbers even with ties).  One pass per rank, from the top
+// down: c(s + a) := c(s + a) + c(s).  When every midrank is whole the
+// ranks themselves are used (half the work).  Counts are kept and
+// divided by 2^n at the end (rkNDen); every tail is a sum of counts.
+// n <= 50 (2,551 values at most); on a G1 about n^3/6 steps: a few
+// seconds at n = 30, longer at 50 -- the bar shows it, Esc stops it.
+rk_SRNull(snR)
+BEGIN
+  LOCAL snN, snSc, snA, snT, snC, snI;
+  LOCAL snJ, snS, snCur, snAi;
+  snN := SIZE(snR);
+  snSc := 1;
+  FOR snI FROM 1 TO snN DO
+    IF FP(snR(snI)) <> 0 THEN snSc := 2; END;
+  END;
+  snA := rk_Zeros(snN); snT := 0;
+  FOR snI FROM 1 TO snN DO
+    snA(snI) := ROUND(snR(snI) * snSc, 0);
+    snT := snT + snA(snI);
+  END;
+  snC := rk_Zeros(snT + 1);
+  snC(1) := 1;
+  snCur := 0;
+  FOR snI FROM 1 TO snN DO
+    IF snN > 20 THEN
+      rk_Prog(snI / snN, "Exact null of T+: rank " + STRING(snI, 2, 0) + " of " + STRING(snN, 2, 0), "Esc = stop (the normal approximation stays)");
+      IF rk_Esc() == 1 THEN rkExWhy := "stopped by Esc (normal used)"; RETURN 0; END;
+    END;
+    snAi := snA(snI);
+    FOR snJ FROM 0 TO snCur DO
+      snS := snCur - snJ + 1;              // the list index of sum snCur - snJ
+      IF snC(snS) <> 0 THEN snC(snS + snAi) := snC(snS + snAi) + snC(snS); END;
+    END;
+    snCur := snCur + snAi;
+  END;
+  rkNull := snC; rkNLo := 0; rkNSt := 1 / snSc; rkNDen := 2^snN;
+  RETURN 1;
+END;
+
+// rk_DoSR: Wilcoxon's signed-rank test.  Zeros dropped (n counts the
+// nonzero differences only), |d| ranked with midranks, T+ = the sum
+// of the ranks of the positive differences.  Normal approximation:
+// mean n(n+1)/4, variance n(n+1)(2n+1)/24 - sum(t^3 - t)/48, with the
+// continuity correction.  Exact p by rk_SRNull for n <= 50.
+rk_DoSR()
+BEGIN
+  LOCAL srD, srNz, srI, srN, srR, srTp;
+  LOCAL srVar, srAd, srZ0;
+  srD := rk_Diffs();
+  srNz := {}; srZ0 := 0;
+  FOR srI FROM 1 TO SIZE(srD) DO
+    IF srD(srI) <> 0 THEN srNz := CONCAT(srNz, {srD(srI)}); ELSE srZ0 := srZ0 + 1; END;
+  END;
+  srN := SIZE(srNz);
+  IF srN == 0 THEN
+    MSGBOX("Every difference is 0: there is nothing to rank.");
+    RETURN 0;
+  END;
+  srAd := rk_Zeros(srN);
+  FOR srI FROM 1 TO srN DO srAd(srI) := ABS(srNz(srI)); END;
+  srR := rk_Midrank(srAd);
+  IF rkStop == 1 THEN RETURN 0; END;
+  rkSTc := rkTc;
+  srTp := 0;
+  rkVG := rk_Zeros(srN);
+  FOR srI FROM 1 TO srN DO
+    IF srNz(srI) > 0 THEN srTp := srTp + srR(srI); rkVG(srI) := 1; ELSE rkVG(srI) := 2; END;
+  END;
+  rkN := srN; rkZero := srZ0;
+  rkSt := srTp; rkSt2 := srN * (srN + 1) / 2 - srTp;
+  rkMu := srN * (srN + 1) / 4;
+  srVar := srN * (srN + 1) * (2 * srN + 1) / 24 - rkTieS / 48;
+  rkSd := 0;
+  IF srVar > 0 THEN rkSd := srVar^0.5; END;
+  rkZL := rk_CCZ(srTp, rkMu, rkSd, 1);
+  rkZU := rk_CCZ(srTp, rkMu, rkSd, 2);
+  rkZ2 := rk_CCZ(srTp, rkMu, rkSd, 0);
+  rkEff := (rkSt - rkSt2) / (srN * (srN + 1) / 2);   // rank-biserial r
+  rkEff2 := 0;
+  // the strip: |d| on the axis, coloured by the sign of d
+  rkV := srAd; rkR := srR; rkDv := srNz;
+  rkSNm := {"d > 0", "d < 0"};
+  rkSCl := {rkBLUE, #E07800h};
+  rkAxLab := "|d|, " + rkPLab;
+  RK_RANKS := srR;
+  rkHLv := rk_Walsh(srNz);
+  rkMed := rk_Med(SORT(srD));
+  // the exact null
+  rkEx := 0; rkNOK := 0; rkPeL := -1; rkPeU := -1;
+  IF srN > 50 THEN
+    rkExWhy := "none for n > 50 (normal)";
+  ELSE
+    IF rk_SRNull(srR) == 1 THEN
+      rkPeL := rk_NSum(srTp, 1);
+      rkPeU := rk_NSum(srTp, 0);
+      rkEx := 1; rkNOK := 1; rkExWhy := "";
+      rkNObs := rkSt; rkNMu := rkMu;
+      rk_NullWin();
+    END;
+  END;
+  RETURN 1;
+END;
+
+// ---------------- 3. MANN-WHITNEY ----------------
+// rk_MWNull: the exact null distribution of U for samples of m and n
+// with no ties: the number of arrangements with U = u is the
+// coefficient of q^u in the Gaussian binomial
+//   [m+n choose m]_q = prod_{i=1..m} (1 - q^(n+i)) / (1 - q^i).
+// Stage i multiplies by (1 - q^(n+i)) (top down: c(s) - c(s - a)) and
+// divides by (1 - q^i) (bottom up: c(s) + c(s - i)), so it is
+// [n+i choose i]_q after stage i.  Whole numbers throughout, at most
+// 2 C(m+n, m) <= 2.8E11 when m n <= 400: exact in 12 digits.  About
+// m^2 n steps: 8,000 for 20 x 20.
+rk_MWNull(mwM, mwN)
+BEGIN
+  LOCAL mwC, mwI, mwA, mwNew, mwCur, mwS;
+  LOCAL mwJ;
+  mwC := rk_Zeros(mwM * mwN + 1);
+  mwC(1) := 1;
+  mwCur := 0;
+  FOR mwI FROM 1 TO mwM DO
+    IF mwM * mwN > 100 THEN
+      rk_Prog(mwI / mwM, "Exact null of U: stage " + STRING(mwI, 2, 0) + " of " + STRING(mwM, 2, 0), "Esc = stop (the normal approximation stays)");
+      IF rk_Esc() == 1 THEN rkExWhy := "stopped by Esc (normal used)"; RETURN 0; END;
+    END;
+    mwA := mwN + mwI;
+    mwNew := mwCur + mwN;
+    // times (1 - q^a), from the top down (index = power + 1)
+    FOR mwJ FROM 0 TO mwNew - mwA DO
+      mwS := mwNew - mwJ;
+      mwC(mwS + 1) := mwC(mwS + 1) - mwC(mwS - mwA + 1);
+    END;
+    // divided by (1 - q^i), from the bottom up
+    FOR mwS FROM mwI TO mwNew DO
+      mwC(mwS + 1) := mwC(mwS + 1) + mwC(mwS - mwI + 1);
+    END;
+    mwCur := mwNew;
+  END;
+  rkNull := mwC; rkNLo := 0; rkNSt := 1; rkNDen := COMB(mwM + mwN, mwM);
+  RETURN 1;
+END;
+
+// rk_DoMW: Mann-Whitney U for group rkMa (X) against rkMb (Y).  The
+// pooled values are ranked once (midranks); R1 = the rank sum of X,
+// U1 = R1 - n1(n1+1)/2 (the number of pairs with X > Y, ties half),
+// U2 = n1 n2 - U1.  Normal: mean n1 n2/2, variance n1 n2/12 ((N + 1)
+// - sum(t^3 - t)/(N(N - 1))), continuity correction.  RSTEST's
+// mistakes (S overwritten by the SD, a tie loop bounded by the wrong
+// n) cannot happen: N is never reused.
+rk_DoMW()
+BEGIN
+  LOCAL mwX, mwY, mwI, mwN1, mwN2, mwP;
+  LOCAL mwR, mwR1, mwU1, mwBN, mwVar, mwK;
+  mwX := {}; mwY := {};
+  FOR mwI FROM 1 TO SIZE(rkGV) DO
+    IF rkGG(mwI) == rkMa THEN mwX := CONCAT(mwX, {rkGV(mwI)}); END;
+    IF rkGG(mwI) == rkMb THEN mwY := CONCAT(mwY, {rkGV(mwI)}); END;
+  END;
+  mwN1 := SIZE(mwX); mwN2 := SIZE(mwY);
+  IF mwN1 == 0 OR mwN2 == 0 THEN
+    MSGBOX("Each group needs at least one value.");
+    RETURN 0;
+  END;
+  mwP := CONCAT(mwX, mwY);
+  mwR := rk_Midrank(mwP);
+  IF rkStop == 1 THEN RETURN 0; END;
+  rkSTc := rkTc;
+  mwBN := mwN1 + mwN2;
+  IF rkTieS == mwBN^3 - mwBN THEN
+    MSGBOX("Every value is the same: ranks cannot tell the groups apart.");
+    RETURN 0;
+  END;
+  mwR1 := 0;
+  FOR mwI FROM 1 TO mwN1 DO mwR1 := mwR1 + mwR(mwI); END;
+  mwU1 := mwR1 - mwN1 * (mwN1 + 1) / 2;
+  rkN := mwBN; rkSt := mwU1; rkSt2 := mwN1 * mwN2 - mwU1;
+  rkKn := {mwN1, mwN2}; rkKR := {mwR1, mwBN * (mwBN + 1) / 2 - mwR1};
+  rkMu := mwN1 * mwN2 / 2;
+  mwVar := mwN1 * mwN2 / 12 * ((mwBN + 1) - rkTieS / (mwBN * (mwBN - 1)));
+  rkSd := 0;
+  IF mwVar > 0 THEN rkSd := mwVar^0.5; END;
+  rkZL := rk_CCZ(mwU1, rkMu, rkSd, 1);
+  rkZU := rk_CCZ(mwU1, rkMu, rkSd, 2);
+  rkZ2 := rk_CCZ(mwU1, rkMu, rkSd, 0);
+  rkEff := (mwU1 - rkSt2) / (mwN1 * mwN2);     // rank-biserial r
+  rkEff2 := mwU1 / (mwN1 * mwN2);              // P(X > Y) + P(X = Y)/2
+  rkZero := 0;
+  // the strip: the pooled values in the two groups' colours
+  rkV := mwP; rkR := mwR; rkDv := mwP;
+  rkVG := CONCAT(rk_Fill(1, mwN1), rk_Fill(2, mwN2));
+  rkSNm := {rkGNm(rkMa), rkGNm(rkMb)};
+  rkSCl := {rk_GCol(rkMa), rk_GCol(rkMb)};
+  rkAxLab := rkGLab;
+  RK_RANKS := mwR;
+  rkHLv := rk_Shift(mwX, mwY);
+  // the exact null: no ties and n1 n2 <= 400
+  rkEx := 0; rkNOK := 0; rkPeL := -1; rkPeU := -1;
+  rkNObs := rkSt; rkNMu := rkMu;
+  IF rkTieN > 0 THEN
+    rkExWhy := "none with ties: normal used";
+  ELSE
+    IF mwN1 * mwN2 > 400 THEN
+      rkExWhy := "none for n" + CHAR(8321) + " " + rkTX + " n" + CHAR(8322) + " > 400 (normal)";
+    ELSE
+      IF rk_MWNull(MIN(mwN1, mwN2), MAX(mwN1, mwN2)) == 1 THEN
+        mwK := ROUND(mwU1, 0);
+        rkPeL := rk_NSum(mwK, 1);
+        rkPeU := rk_NSum(mwK, 0);
+        rkEx := 1; rkNOK := 1; rkExWhy := "";
+        rk_NullWin();
+      END;
+    END;
+  END;
+  RETURN 1;
+END;
+
+// ---------------- 4. KRUSKAL-WALLIS AND DUNN ----------------
+// H = 12/(N(N+1)) sum R_i^2/n_i - 3(N + 1), divided by the tie
+// correction C = 1 - sum(t^3 - t)/(N^3 - N); p = P(chi-square(k-1) >=
+// H) by rk_ChiUp.  A 0 is a value like any other (KWTEST read a 0 in
+// [A] as an empty cell).  Effect: epsilon-squared = H/(N - 1).
+// Dunn: z_ij = (Rbar_i - Rbar_j) / sqrt((N(N+1)/12 - sum(t^3 - t)/
+// (12(N - 1))) (1/n_i + 1/n_j)), two-sided p, then Holm's step-down
+// adjustment over the k(k-1)/2 pairs.
+rk_DoKW()
+BEGIN
+  LOCAL kwN, kwK, kwR, kwI, kwJ, kwG;
+  LOCAL kwH0, kwS2, kwM, kwO, kwRun, kwV;
+  LOCAL kwVs, kwRs, kwQ, kwP;
+  kwN := SIZE(rkGV); kwK := rkGK;
+  IF kwK < 2 THEN
+    MSGBOX("Kruskal-Wallis needs at least two groups.");
+    RETURN 0;
+  END;
+  rkKn := rk_Zeros(kwK); rkKR := rk_Zeros(kwK);
+  kwR := rk_Midrank(rkGV);
+  IF rkStop == 1 THEN RETURN 0; END;
+  IF rkTieS == kwN^3 - kwN THEN
+    MSGBOX("Every value is the same: ranks cannot tell the groups apart.");
+    RETURN 0;
+  END;
+  FOR kwI FROM 1 TO kwN DO
+    kwG := rkGG(kwI);
+    rkKn(kwG) := rkKn(kwG) + 1;
+    rkKR(kwG) := rkKR(kwG) + kwR(kwI);
+  END;
+  FOR kwG FROM 1 TO kwK DO
+    IF rkKn(kwG) == 0 THEN
+      MSGBOX("Group " + rkGNm(kwG) + " has no values.");
+      RETURN 0;
+    END;
+  END;
+  rkKM := rk_Zeros(kwK);
+  kwH0 := 0;
+  FOR kwG FROM 1 TO kwK DO
+    rkKM(kwG) := rkKR(kwG) / rkKn(kwG);
+    kwH0 := kwH0 + rkKR(kwG)^2 / rkKn(kwG);
+  END;
+  kwH0 := 12 / (kwN * (kwN + 1)) * kwH0 - 3 * (kwN + 1);
+  rkCf := 1 - rkTieS / (kwN^3 - kwN);
+  rkSt := kwH0 / rkCf;
+  rkN := kwN; rkDf := kwK - 1;
+  rkPn := rk_ChiUp(rkDf, rkSt);
+  rkEff := rkSt / (kwN - 1);                  // epsilon-squared
+  rkEx := 0; rkNOK := 0; rkExWhy := "chi-square approximation";
+  rkPeL := -1; rkPeU := -1; rkHLok := 0; rkHLv := 0; rkZero := 0;
+  RK_RANKS := kwR;
+  // five-number summaries of each group's values and ranks
+  rkKQv := rk_Zeros(5 * kwK); rkKQr := rk_Zeros(5 * kwK);
+  FOR kwG FROM 1 TO kwK DO
+    IF kwN > 150 THEN
+      rk_Prog(kwG / kwK, "Group summaries: " + STRING(kwG, 2, 0) + " of " + STRING(kwK, 2, 0), "Esc = stop (back to the menu)");
+      IF rk_Esc() == 1 THEN rkStop := 1; RETURN 0; END;
+    END;
+    kwVs := rk_Zeros(rkKn(kwG)); kwRs := rk_Zeros(rkKn(kwG));
+    kwJ := 0;
+    FOR kwI FROM 1 TO kwN DO
+      IF rkGG(kwI) == kwG THEN
+        kwJ := kwJ + 1; kwVs(kwJ) := rkGV(kwI); kwRs(kwJ) := kwR(kwI);
+      END;
+    END;
+    kwVs := SORT(kwVs); kwRs := SORT(kwRs);
+    FOR kwQ FROM 1 TO 5 DO
+      kwP := (kwQ - 1) / 4;
+      rkKQv(5 * (kwG - 1) + kwQ) := rk_Q7(kwVs, kwP);
+      rkKQr(5 * (kwG - 1) + kwQ) := rk_Q7(kwRs, kwP);
+    END;
+  END;
+  rkR := kwR;
+  // Dunn's pairs, then Holm
+  kwS2 := kwN * (kwN + 1) / 12 - rkTieS / (12 * (kwN - 1));
+  kwM := kwK * (kwK - 1) / 2;
+  rkDI := rk_Zeros(kwM); rkDJ := rk_Zeros(kwM);
+  rkDZ := rk_Zeros(kwM); rkDP := rk_Zeros(kwM); rkDH := rk_Zeros(kwM);
+  kwV := 0;
+  FOR kwI FROM 1 TO kwK - 1 DO
+    FOR kwJ FROM kwI + 1 TO kwK DO
+      kwV := kwV + 1;
+      rkDI(kwV) := kwI; rkDJ(kwV) := kwJ;
+      rkDZ(kwV) := (rkKM(kwI) - rkKM(kwJ)) / (kwS2 * (1 / rkKn(kwI) + 1 / rkKn(kwJ)))^0.5;
+      rkDP(kwV) := MIN(1, 2 * NORMALD_CDF(0, 1, -ABS(rkDZ(kwV))));
+    END;
+  END;
+  kwO := rk_Order(rkDP);
+  kwRun := 0; rkDNs := 0;
+  FOR kwI FROM 1 TO kwM DO
+    kwRun := MAX(kwRun, MIN(1, (kwM - kwI + 1) * rkDP(kwO(kwI))));
+    rkDH(kwO(kwI)) := kwRun;
+  END;
+  FOR kwI FROM 1 TO kwM DO
+    IF rkDH(kwI) < 0.05 THEN rkDNs := rkDNs + 1; END;
+  END;
+  rkDSel := kwO(1); rkDTop := 1; rkKSel := 1;   // start on the smallest p
+  RETURN 1;
+END;
+
+// ---------------- 5. FRIEDMAN AND KENDALL'S W ----------------
+// Rank within each block (row); R_j = treatment j's rank sum.
+// Q = (12/(b k (k+1)) sum R_j^2 - 3 b (k+1)) / C,
+// C = 1 - sum over blocks of sum(t^3 - t) / (b k (k^2 - 1));
+// p = P(chi-square(k - 1) >= Q).  Kendall's W = Q/(b(k - 1)) (0 = no
+// agreement among the blocks, 1 = they rank the treatments alike);
+// the mean Spearman correlation between blocks is (bW - 1)/(b - 1)
+// (CONCORW's last line).
+rk_DoFr()
+BEGIN
+  LOCAL frB, frK, frI, frJ, frRow, frRr;
+  LOCAL frTs, frQ0;
+  frB := rkFB; frK := rkFK;
+  IF frK < 2 OR frB < 2 THEN
+    MSGBOX("Friedman needs at least 2 treatments (columns) and 2 blocks (rows): one block has nothing to agree with.");
+    RETURN 0;
+  END;
+  rkFRS := rk_Zeros(frK); rkFR := rk_Zeros(frB * frK);
+  frTs := 0;
+  FOR frI FROM 1 TO frB DO
+    frRow := rk_Zeros(frK);
+    FOR frJ FROM 1 TO frK DO frRow(frJ) := rkFM((frI - 1) * frK + frJ); END;
+    IF frB * frK > 150 AND FP(frI / 5) == 0 THEN
+      rk_Prog(frI / frB, "Ranking block " + STRING(frI, 2, 0) + " of " + STRING(frB, 2, 0), "Esc = stop (back to the menu)");
+      IF rk_Esc() == 1 THEN rkStop := 1; RETURN 0; END;
+    END;
+    frRr := rk_Midrank(frRow);
+    frTs := frTs + rkTieS;
+    FOR frJ FROM 1 TO frK DO
+      rkFR((frI - 1) * frK + frJ) := frRr(frJ);
+      rkFRS(frJ) := rkFRS(frJ) + frRr(frJ);
+    END;
+  END;
+  rkCf := 1 - frTs / (frB * frK * (frK^2 - 1));
+  IF rkCf <= 0 THEN
+    MSGBOX("Every block ties all its treatments: there is no ranking to test.");
+    RETURN 0;
+  END;
+  frQ0 := 0;
+  FOR frJ FROM 1 TO frK DO frQ0 := frQ0 + rkFRS(frJ)^2; END;
+  frQ0 := 12 / (frB * frK * (frK + 1)) * frQ0 - 3 * frB * (frK + 1);
+  rkSt := frQ0 / rkCf;
+  rkTieS := frTs;
+  rkN := frB; rkDf := frK - 1;
+  rkPn := rk_ChiUp(rkDf, rkSt);
+  rkW := rkSt / (frB * (frK - 1));
+  rk_FrRbar();
+  IF rkStop == 1 THEN RETURN 0; END;
+  rkEff := rkW;
+  rkEx := 0; rkNOK := 0; rkExWhy := "chi-square approximation";
+  rkPeL := -1; rkPeU := -1; rkHLok := 0; rkHLv := 0; rkZero := 0;
+  RK_RANKS := rkFR;
+  rkFSel := 1; rkFTop := 1;
+  RETURN 1;
+END;
+
+// rk_FrRbar (beta 1a): the mean Spearman correlation between blocks,
+// computed pair by pair as Pearson's r of the within-block midranks
+// (beta 1's (bW - 1)/(b - 1) is exact only without ties).  A block that
+// ties every treatment has no Spearman r: then rkRbOK = 0.
+rk_FrRbar()
+BEGIN
+  LOCAL fbI, fbJ, fbT, fbM, fbSs, fbS;
+  LOCAL fbC, fbX, fbK;
+  fbK := rkFK; fbM := (fbK + 1) / 2;
+  fbSs := rk_Zeros(rkFB);
+  rkRbOK := 1; rkRbar := 0;
+  FOR fbI FROM 1 TO rkFB DO
+    FOR fbT FROM 1 TO fbK DO fbSs(fbI) := fbSs(fbI) + (rkFR((fbI - 1) * fbK + fbT) - fbM)^2; END;
+    IF fbSs(fbI) == 0 THEN rkRbOK := 0; END;
+  END;
+  IF rkRbOK == 0 THEN RETURN 0; END;
+  fbS := 0; fbC := 0;
+  FOR fbI FROM 1 TO rkFB - 1 DO
+    IF rkFB > 20 THEN
+      rk_Prog(fbI / rkFB, "Spearman r between blocks ...", "Esc = stop (back to the menu)");
+      IF rk_Esc() == 1 THEN rkStop := 1; RETURN 0; END;
+    END;
+    FOR fbJ FROM fbI + 1 TO rkFB DO
+      fbX := 0;
+      FOR fbT FROM 1 TO fbK DO
+        fbX := fbX + (rkFR((fbI - 1) * fbK + fbT) - fbM) * (rkFR((fbJ - 1) * fbK + fbT) - fbM);
+      END;
+      fbS := fbS + fbX / (fbSs(fbI) * fbSs(fbJ))^0.5;
+      fbC := fbC + 1;
+    END;
+  END;
+  rkRbar := fbS / fbC;
+  RETURN 1;
+END;
+
+// ---------------- 6. RANK CORRELATION ----------------
+// rk_TieSums: from a list of tie sizes, {sum t(t-1)/2, sum t(t-1)(t-2),
+// sum t(t-1)(2t+5)} (Kendall's variance with ties).
+rk_TieSums(tsL)
+BEGIN
+  LOCAL tsI, tsT, tsA, tsB, tsC;
+  tsA := 0; tsB := 0; tsC := 0;
+  FOR tsI FROM 1 TO SIZE(tsL) DO
+    tsT := tsL(tsI);
+    tsA := tsA + tsT * (tsT - 1) / 2;
+    tsB := tsB + tsT * (tsT - 1) * (tsT - 2);
+    tsC := tsC + tsT * (tsT - 1) * (2 * tsT + 5);
+  END;
+  RETURN {tsA, tsB, tsC};
+END;
+
+// rk_Kendall: Kendall's tau-b of the midranks kdX, kdY by Knight's
+// (1966) method: sort the pairs by (x, y) (one SORT of the whole-number
+// keys 2x (2n+1) + 2y), count the joint ties, then count the
+// discordant pairs as the strict inversions of y while a bottom-up
+// merge sort puts y in order: about n log2 n steps (3,300 for 366
+// pairs) where KENDALLT's double loop takes n^2/2 (67,000).
+//   S = nc - nd = n0 - n1 - n2 + n3 - 2 nd,  n0 = n(n-1)/2,
+//   tau-b = S / sqrt((n0 - n1)(n0 - n2)),
+//   var(S) = (v0 - vx - vy)/18 + 2 n1 n2/(n(n-1))
+//            + sum t(t-1)(t-2) sum u(u-1)(u-2) / (9 n(n-1)(n-2)).
+// Sets rkTau and rkKz (z = S/sqrt(var), no continuity correction).
+rk_Kendall(kdX, kdY, kdTx, kdTy)
+BEGIN
+  LOCAL kdN, kdM2, kdKy, kdI, kdJ, kdN3;
+  LOCAL kdSrc, kdDst, kdInv, kdW, kdLo, kdMid;
+  LOCAL kdHi, kdP, kdQ, kdO, kdTk, kdGo;
+  LOCAL kdN0, kdS, kdVar, kdMm, kdT;
+  kdN := SIZE(kdX);
+  kdM2 := 2 * kdN + 1;
+  kdKy := rk_Zeros(kdN);
+  FOR kdI FROM 1 TO kdN DO
+    kdKy(kdI) := ROUND(2 * kdX(kdI), 0) * kdM2 + ROUND(2 * kdY(kdI), 0);
+  END;
+  kdKy := SORT(kdKy);
+  // joint ties: runs of equal keys
+  kdN3 := 0; kdI := 1;
+  WHILE kdI <= kdN DO
+    kdJ := kdI; kdGo := 1;
+    WHILE kdGo == 1 DO
+      kdGo := 0;
+      IF kdJ < kdN THEN
+        IF kdKy(kdJ + 1) == kdKy(kdI) THEN kdJ := kdJ + 1; kdGo := 1; END;
+      END;
+    END;
+    kdT := kdJ - kdI + 1;
+    kdN3 := kdN3 + kdT * (kdT - 1) / 2;
+    kdI := kdJ + 1;
+  END;
+  // y in the (x, y) order
+  kdSrc := rk_Zeros(kdN);
+  FOR kdI FROM 1 TO kdN DO
+    kdSrc(kdI) := kdKy(kdI) - IP(kdKy(kdI) / kdM2) * kdM2;
+  END;
+  // bottom-up merge sort; a y taken from the right half jumps over
+  // every y still waiting in the left half: those pairs are discordant
+  kdDst := rk_Zeros(kdN);
+  kdInv := 0; kdW := 1;
+  WHILE kdW < kdN DO
+    IF kdN > 100 THEN
+      rk_Prog(LOG(2 * kdW) / LOG(2 * kdN), "Kendall tau-b: merging runs of " + STRING(kdW, 2, 0), "Esc = stop (back to the menu)");
+      IF rk_Esc() == 1 THEN rkStop := 1; RETURN 0; END;
+    END;
+    kdLo := 1;
+    WHILE kdLo <= kdN DO
+      kdMid := MIN(kdLo + kdW, kdN + 1);
+      kdHi := MIN(kdLo + 2 * kdW, kdN + 1);
+      kdP := kdLo; kdQ := kdMid; kdO := kdLo;
+      WHILE kdP < kdMid OR kdQ < kdHi DO
+        kdTk := 0;
+        IF kdQ >= kdHi THEN
+          kdTk := 1;
+        ELSE
+          IF kdP < kdMid THEN
+            IF kdSrc(kdP) <= kdSrc(kdQ) THEN kdTk := 1; END;
+          END;
+        END;
+        IF kdTk == 1 THEN
+          kdDst(kdO) := kdSrc(kdP); kdP := kdP + 1;
+        ELSE
+          kdDst(kdO) := kdSrc(kdQ); kdQ := kdQ + 1;
+          kdInv := kdInv + (kdMid - kdP);
+        END;
+        kdO := kdO + 1;
+      END;
+      kdLo := kdLo + 2 * kdW;
+    END;
+    kdSrc := kdDst;
+    kdW := 2 * kdW;
+  END;
+  kdN0 := kdN * (kdN - 1) / 2;
+  rkKInv := kdInv;
+  kdS := kdN0 - kdTx(1) - kdTy(1) + kdN3 - 2 * kdInv;
+  rkTau := kdS / ((kdN0 - kdTx(1)) * (kdN0 - kdTy(1)))^0.5;
+  kdMm := kdN * (kdN - 1);
+  kdVar := (kdMm * (2 * kdN + 5) - kdTx(3) - kdTy(3)) / 18 + 2 * kdTx(1) * kdTy(1) / kdMm;
+  IF kdN > 2 THEN kdVar := kdVar + kdTx(2) * kdTy(2) / (9 * kdMm * (kdN - 2)); END;
+  rkKz := 0;
+  IF kdVar > 0 THEN rkKz := kdS / kdVar^0.5; END;
+END;
+
+// rk_SpPerm (beta 1a): Spearman's EXACT permutation test for n <= 7.
+// Under H0 every one of the n! orders of y against x is equally
+// likely.  With the doubled midranks ax, ay (whole numbers, ties
+// allowed) rs is a straight line in T = sum ax(i) ay(pi(i)), so the
+// orders are walked by Heap's algorithm (one swap per order) and T is
+// updated by (ax(a) - ax(b)) (y(b) - y(a)) per swap: whole-number
+// arithmetic, exact comparisons.  Counts: rkSpL = P(rs <= observed),
+// rkSpU = P(rs >= observed); the histogram of T is the null shown as
+// bars on the rs scale.  7! = 5,040 orders: about 75,000 steps on a
+// G1 (roughly 10-20 s); 8! would be eight times that, so n <= 7.
+rk_SpPerm(ppX, ppY)
+BEGIN
+  LOCAL ppN, ppAx, ppAy, ppT, ppO, ppI;
+  LOCAL ppSx, ppSy, ppMx, ppMn, ppH, ppC;
+  LOCAL ppA, ppB, ppLo, ppUp, ppTot, ppV;
+  LOCAL ppMxA, ppMyA, ppD, ppSa, ppSb;
+  ppN := SIZE(ppX);
+  ppAx := rk_Zeros(ppN); ppAy := rk_Zeros(ppN);
+  FOR ppI FROM 1 TO ppN DO
+    ppAx(ppI) := ROUND(2 * ppX(ppI), 0); ppAy(ppI) := ROUND(2 * ppY(ppI), 0);
+  END;
+  ppO := 0;
+  FOR ppI FROM 1 TO ppN DO ppO := ppO + ppAx(ppI) * ppAy(ppI); END;
+  // the smallest and largest T: sorted against reverse-sorted, sorted
+  ppSx := SORT(ppAx); ppSy := SORT(ppAy);
+  ppMx := 0; ppMn := 0;
+  FOR ppI FROM 1 TO ppN DO
+    ppMx := ppMx + ppSx(ppI) * ppSy(ppI);
+    ppMn := ppMn + ppSx(ppI) * ppSy(ppN + 1 - ppI);
+  END;
+  ppH := rk_Zeros(ppMx - ppMn + 1);
+  ppV := ppAy; ppT := ppO;
+  ppH(ppT - ppMn + 1) := 1; ppLo := 1; ppUp := 1; ppTot := 1;
+  ppC := rk_Zeros(ppN);
+  ppI := 1;                                   // Heap's index, counted from 0
+  WHILE ppI < ppN DO
+    IF ppC(ppI + 1) < ppI THEN
+      ppA := 0;
+      IF FP(ppI / 2) <> 0 THEN ppA := ppC(ppI + 1); END;
+      ppB := ppI;
+      ppT := ppT + (ppAx(ppA + 1) - ppAx(ppB + 1)) * (ppV(ppB + 1) - ppV(ppA + 1));
+      ppD := ppV(ppA + 1); ppV(ppA + 1) := ppV(ppB + 1); ppV(ppB + 1) := ppD;
+      ppH(ppT - ppMn + 1) := ppH(ppT - ppMn + 1) + 1;
+      IF ppT <= ppO THEN ppLo := ppLo + 1; END;
+      IF ppT >= ppO THEN ppUp := ppUp + 1; END;
+      ppTot := ppTot + 1;
+      IF FP(ppTot / 500) == 0 THEN
+        rk_Prog(ppTot / 5040, "Exact Spearman: " + STRING(ppTot, 2, 0) + " orders", "Esc = stop (the t approximation stays)");
+        IF rk_Esc() == 1 THEN RETURN 0; END;
+      END;
+      ppC(ppI + 1) := ppC(ppI + 1) + 1;
+      ppI := 1;
+    ELSE
+      ppC(ppI + 1) := 0;
+      ppI := ppI + 1;
+    END;
+  END;
+  rkSpL := ppLo / ppTot; rkSpU := ppUp / ppTot;
+  // rs = (T - T0)/D, T0 = sum ax sum ay / n, D = sqrt(Sxx Syy)
+  ppMxA := 0; ppMyA := 0;
+  FOR ppI FROM 1 TO ppN DO ppMxA := ppMxA + ppAx(ppI); ppMyA := ppMyA + ppAy(ppI); END;
+  ppSa := 0; ppSb := 0;
+  FOR ppI FROM 1 TO ppN DO
+    ppSa := ppSa + (ppAx(ppI) - ppMxA / ppN)^2;
+    ppSb := ppSb + (ppAy(ppI) - ppMyA / ppN)^2;
+  END;
+  ppD := (ppSa * ppSb)^0.5;
+  rkSNl := ppH; rkSDen := ppTot;
+  rkSLo := (ppMn - ppMxA * ppMyA / ppN) / ppD; rkSSt := 1 / ppD;
+  RETURN 1;
+END;
+
+// rk_KdNull (beta 1a): Kendall's EXACT null without ties: the number of
+// orders of y with d discordant pairs is the coefficient of q^d in
+// prod_{i=2..n} (1 - q^i)/(1 - q) (the inversion numbers), counted the
+// way rk_MWNull counts U: times (1 - q^i) top down, divided by (1 - q)
+// bottom up.  Whole numbers up to n = 14; above, 12-digit relative
+// error below 1E-9 in every tail (checked in Python to n = 50).  The
+// list is symmetric, so entry j is also P(tau-b = -1 + 2(j - 1)/n0).
+// n <= 30: about n^3/3 steps (9,000 at n = 30).
+rk_KdNull(knN)
+BEGIN
+  LOCAL knC, knI, knJ, knS, knNew, knCur;
+  LOCAL knM, knF;
+  knM := knN * (knN - 1) / 2;
+  knC := rk_Zeros(knM + 1);
+  knC(1) := 1; knCur := 0; knF := 1;
+  FOR knI FROM 2 TO knN DO
+    IF knN > 15 THEN
+      rk_Prog(knI / knN, "Exact Kendall: stage " + STRING(knI, 2, 0) + " of " + STRING(knN, 2, 0), "Esc = stop (the normal approximation stays)");
+      IF rk_Esc() == 1 THEN RETURN 0; END;
+    END;
+    knNew := knCur + knI - 1;
+    knF := knF * knI;
+    FOR knJ FROM 0 TO knNew - knI DO
+      knS := knNew - knJ;
+      knC(knS + 1) := knC(knS + 1) - knC(knS - knI + 1);
+    END;
+    FOR knS FROM 1 TO knNew DO
+      knC(knS + 1) := knC(knS + 1) + knC(knS);
+    END;
+    knCur := knNew;
+  END;
+  rkKNl := knC; rkKDen := knF; rkKLo := -1; rkKSt := 2 / knM;
+  RETURN 1;
+END;
+
+// rk_DoCorr: Spearman's rs = Pearson's r of the midranks (SRCORR's
+// 1 - 6 sum d^2/(n(n^2-1)) is only right without ties), its t on
+// n - 2 df; and Kendall's tau-b.
+rk_DoCorr()
+BEGIN
+  LOCAL crN, crI, crMx, crMy, crSxy, crSxx;
+  LOCAL crSyy, crTx, crTy;
+  crN := SIZE(rkCX);
+  IF crN < 3 OR SIZE(rkCY) <> crN THEN
+    MSGBOX("Rank correlation needs at least 3 pairs (x and y the same length).");
+    RETURN 0;
+  END;
+  rkRX := rk_Midrank(rkCX); crTx := rk_TieSums(rkTL); rkTXn := rkTieN;
+  IF rkStop == 1 THEN RETURN 0; END;
+  IF rkTieS == crN^3 - crN THEN
+    MSGBOX("Every x is the same: there is nothing to correlate.");
+    RETURN 0;
+  END;
+  rkRY := rk_Midrank(rkCY); crTy := rk_TieSums(rkTL); rkTYn := rkTieN;
+  IF rkStop == 1 THEN RETURN 0; END;
+  IF rkTieS == crN^3 - crN THEN
+    MSGBOX("Every y is the same: there is nothing to correlate.");
+    RETURN 0;
+  END;
+  crMx := (crN + 1) / 2; crMy := crMx;       // midranks always average (n+1)/2
+  crSxy := 0; crSxx := 0; crSyy := 0;
+  FOR crI FROM 1 TO crN DO
+    crSxy := crSxy + (rkRX(crI) - crMx) * (rkRY(crI) - crMy);
+    crSxx := crSxx + (rkRX(crI) - crMx)^2;
+    crSyy := crSyy + (rkRY(crI) - crMy)^2;
+  END;
+  rkRs := crSxy / (crSxx * crSyy)^0.5;
+  rkRs := MAX(-1, MIN(1, rkRs));
+  rkDf := crN - 2;
+  rkTt := 0;
+  IF ABS(rkRs) < 1 THEN rkTt := rkRs * (rkDf / (1 - rkRs^2))^0.5; END;
+  IF crN > 9000 THEN
+    // the merge sort's lists would pass the 10,000-value limit
+    rkTau := 0; rkKz := 0;
+  ELSE
+    rk_Kendall(rkRX, rkRY, crTx, crTy);
+    IF rkStop == 1 THEN RETURN 0; END;
+  END;
+  rkN := crN; rkSt := rkRs; rkEff := rkTau;
+  // beta 1a: exact p where it can be counted.  Spearman: all n! orders
+  // for n <= 7 (ties allowed); a perfect order without ties: 1/n! one
+  // side; else the t approximation (rough below n = 10).  Kendall: the
+  // inversion count, no ties, n <= 30; else the normal z.
+  rkSpK := 2; rkKdK := 2;
+  IF ABS(rkRs) >= 1 THEN rkSpK := 0; END;
+  IF crN <= 7 THEN
+    IF rk_SpPerm(rkRX, rkRY) == 1 THEN rkSpK := 1; END;
+  ELSE
+    IF ABS(rkRs) >= 1 AND rkTXn == 0 AND rkTYn == 0 THEN
+      // only the one order reaches |rs| = 1
+      crSxy := 1;
+      FOR crI FROM 2 TO crN DO crSxy := crSxy / crI; END;
+      rkSpL := 1; rkSpU := 1;
+      IF rkRs > 0 THEN rkSpU := crSxy; ELSE rkSpL := crSxy; END;
+      rkSpK := 3;
+    END;
+  END;
+  IF rkTXn == 0 AND rkTYn == 0 AND crN <= 30 THEN
+    IF rk_KdNull(crN) == 1 THEN
+      // j = n0 - discordant + 1 on the tau-b scale (the list is symmetric)
+      crI := crN * (crN - 1) / 2 - rkKInv + 1;
+      rkKdL := 0; rkKdU := 0;
+      FOR crMx FROM 1 TO crI DO rkKdL := rkKdL + rkKNl(crMx); END;
+      FOR crMx FROM crI TO SIZE(rkKNl) DO rkKdU := rkKdU + rkKNl(crMx); END;
+      rkKdL := MIN(1, rkKdL / rkKDen); rkKdU := MIN(1, rkKdU / rkKDen);
+      rkKdK := 1;
+    END;
+  END;
+  rkEx := 0; rkNOK := 0; rkExWhy := "";
+  rkPeL := -1; rkPeU := -1; rkHLok := 0; rkHLv := 0; rkZero := 0;
+  RK_RANKS := rkRX;
+  rkCSel := 1;
+  RETURN 1;
+END;
+
+// rk_CorrP: Spearman's p (wh = 1) or Kendall's (wh = 2) for the tail
+// chosen; lower = a negative association.  beta 1a: the exact tails
+// when there are some (two-sided = min(1, 2 x the smaller), as
+// scipy.stats.permutation_test and kendalltau(method='exact')); -1 =
+// no p (a perfect Spearman order with ties, above n = 7).
+rk_CorrP(cpW)
+BEGIN
+  IF cpW == 2 THEN
+    IF rkKdK == 1 THEN
+      IF rkTail == 1 THEN RETURN rkKdL; END;
+      IF rkTail == 2 THEN RETURN rkKdU; END;
+      RETURN MIN(1, 2 * MIN(rkKdL, rkKdU));
+    END;
+    RETURN rk_PZ(rkKz, rkTail);
+  END;
+  IF rkSpK == 1 OR rkSpK == 3 THEN
+    IF rkTail == 1 THEN RETURN rkSpL; END;
+    IF rkTail == 2 THEN RETURN rkSpU; END;
+    RETURN MIN(1, 2 * MIN(rkSpL, rkSpU));
+  END;
+  IF rkSpK == 0 THEN RETURN -1; END;
+  IF rkTail == 1 THEN RETURN STUDENT_CDF(rkDf, rkTt); END;
+  IF rkTail == 2 THEN RETURN rk_TUp(rkDf, rkTt); END;
+  RETURN MIN(1, 2 * rk_TUp(rkDf, ABS(rkTt)));
+END;
+
+// rk_CorNull (beta 1a): put the exact null of the coefficient on the
+// Null page (rkCWh 1 = Spearman, 2 = Kendall) into the bars' lists,
+// on the coefficient's own scale; rkNOK = 0 when there is none.
+rk_CorNull()
+BEGIN
+  rkNOK := 0; rkNMu := 0;
+  IF rkCWh == 1 AND rkSpK == 1 THEN
+    rkNull := rkSNl; rkNLo := rkSLo; rkNSt := rkSSt; rkNDen := rkSDen;
+    rkNObs := rkRs; rkNOK := 1;
+  END;
+  IF rkCWh == 2 AND rkKdK == 1 THEN
+    rkNull := rkKNl; rkNLo := rkKLo; rkNSt := rkKSt; rkNDen := rkKDen;
+    rkNObs := rkTau; rkNOK := 1;
+  END;
+  IF rkNOK == 1 THEN rk_NullWin(); END;
+END;
+
+// rk_Pick: the p-values for the tail chosen, and the Home exports.
+rk_Pick()
+BEGIN
+  IF rkTest <= 3 THEN
+    rkZ := rkZ2;
+    IF rkTail == 1 THEN rkZ := rkZL; END;
+    IF rkTail == 2 THEN rkZ := rkZU; END;
+    rkPn := rk_PZ(rkZ, rkTail);
+    rkPe := -1;
+    IF rkEx == 1 THEN
+      rkPe := MIN(1, 2 * MIN(rkPeL, rkPeU));
+      IF rkTail == 1 THEN rkPe := rkPeL; END;
+      IF rkTail == 2 THEN rkPe := rkPeU; END;
+    END;
+    RK_P := rkPn;
+    IF rkEx == 1 AND rkMode == 1 THEN RK_P := rkPe; END;
+  END;
+  IF rkTest == 4 OR rkTest == 5 THEN
+    rkPe := -1; RK_P := rkPn;
+  END;
+  IF rkTest == 6 THEN
+    rkPe := rk_CorrP(1); rkPn := rk_CorrP(2);
+    rkPSp := rkPe; rkPKd := rkPn;
+    RK_P := rkPe;
+    rk_CorNull();
+  END;
+  IF rkTest == 5 AND rkFNoP == 1 THEN RK_P := -1; rkPn := -1; END;
+  RK_STAT := rkSt; RK_PN := rkPn; RK_EFF := rkEff;
+  RK_HL := 0;
+  IF rkHLok == 1 THEN RK_HL := rkHLv; END;
+  // beta 1a: the Quit summary is written HERE, after a run that worked
+  // (or a tail / mode change on it), never from a test that was refused
+  rkSumS := rk_Summary();
+END;
+
+// rk_Compute: run the test that is open; 1 = done, 0 = refused (a
+// message has said why).
+rk_Compute()
+BEGIN
+  LOCAL cmOK, cmN;
+  cmOK := 0;
+  rkCvK := "";
+  rkNSel := -1E99;
+  // a note on the screen while a big data set is ranked (a G1 runs PPL
+  // 30-100 times slower than a PC: Lessons Learned section 16)
+  cmN := 0;
+  IF rkTest <= 2 THEN cmN := SIZE(rkXA); END;
+  IF rkTest == 3 OR rkTest == 4 THEN cmN := SIZE(rkGV); END;
+  IF rkTest == 5 THEN cmN := SIZE(rkFM); END;
+  IF rkTest == 6 THEN cmN := 2 * SIZE(rkCX); END;
+  rkStop := 0;
+  // the first bar; the ranking loop itself redraws it and reads Esc
+  IF cmN > 150 THEN rk_Prog(0.02, "Ranking " + STRING(cmN, 2, 0) + " values ...", ""); END;
+  CASE
+    IF rkTest == 1 THEN cmOK := rk_DoSign(); END;
+    IF rkTest == 2 THEN cmOK := rk_DoSR(); END;
+    IF rkTest == 3 THEN cmOK := rk_DoMW(); END;
+    IF rkTest == 4 THEN cmOK := rk_DoKW(); END;
+    IF rkTest == 5 THEN cmOK := rk_DoFr(); END;
+    IF rkTest == 6 THEN cmOK := rk_DoCorr(); END;
+  END;
+  IF cmOK == 1 THEN
+    IF rkTest <= 3 THEN
+      rkOrd := rk_Order(rkV);
+      IF rkStop == 1 THEN cmOK := 0; END;
+      rkSelO := 1; rkSel := rkOrd(1);
+    END;
+  END;
+  IF cmOK == 1 THEN rk_Pick(); END;
+  IF cmOK == 0 AND rkStop == 1 THEN
+    MSGBOX("Stopped by Esc: nothing was computed.");
+  END;
+  RETURN cmOK;
+END;
+
+// ============================================================
+// THE PRESETS (data/DATASETS.md; values as published, not changed)
+// ============================================================
+
+// rk_DraftNo: the 1970 draft lottery priority numbers, birth date by
+// birth date, 1 Jan to 31 Dec (366 days; Fienberg 1971, Starr 1997,
+// Triola p. 747; the vcdExtra Draft1970 copy is identical).
+rk_DraftNo()
+BEGIN
+  RETURN {
+    305, 159, 251, 215, 101, 224, 306, 199, 194, 325, 329, 221, 318, 238, 17, 121, 235, 140, 58, 280,
+    186, 337, 118, 59, 52, 92, 355, 77, 349, 164, 211, 86, 144, 297, 210, 214, 347, 91, 181, 338,
+    216, 150, 68, 152, 4, 89, 212, 189, 292, 25, 302, 363, 290, 57, 236, 179, 365, 205, 299, 285,
+    108, 29, 267, 275, 293, 139, 122, 213, 317, 323, 136, 300, 259, 354, 169, 166, 33, 332, 200, 239,
+    334, 265, 256, 258, 343, 170, 268, 223, 362, 217, 30, 32, 271, 83, 81, 269, 253, 147, 312, 219,
+    218, 14, 346, 124, 231, 273, 148, 260, 90, 336, 345, 62, 316, 252, 2, 351, 340, 74, 262, 191,
+    208, 330, 298, 40, 276, 364, 155, 35, 321, 197, 65, 37, 133, 295, 178, 130, 55, 112, 278, 75,
+    183, 250, 326, 319, 31, 361, 357, 296, 308, 226, 103, 313, 249, 228, 301, 20, 28, 110, 85, 366,
+    335, 206, 134, 272, 69, 356, 180, 274, 73, 341, 104, 360, 60, 247, 109, 358, 137, 22, 64, 222,
+    353, 209, 93, 350, 115, 279, 188, 327, 50, 13, 277, 284, 248, 15, 42, 331, 322, 120, 98, 190,
+    227, 187, 27, 153, 172, 23, 67, 303, 289, 88, 270, 287, 193, 111, 45, 261, 145, 54, 114, 168,
+    48, 106, 21, 324, 142, 307, 198, 102, 44, 154, 141, 311, 344, 291, 339, 116, 36, 286, 245, 352,
+    167, 61, 333, 11, 225, 161, 49, 232, 82, 6, 8, 184, 263, 71, 158, 242, 175, 1, 113, 207,
+    255, 246, 177, 63, 204, 160, 119, 195, 149, 18, 233, 257, 151, 315, 359, 125, 244, 202, 24, 87,
+    234, 283, 342, 220, 237, 72, 138, 294, 171, 254, 288, 5, 241, 192, 243, 117, 201, 196, 176, 7,
+    264, 94, 229, 38, 79, 19, 34, 348, 266, 310, 76, 51, 97, 80, 282, 46, 66, 126, 127, 131,
+    107, 143, 146, 203, 185, 156, 9, 182, 230, 132, 309, 47, 281, 99, 174, 129, 328, 157, 165, 56,
+    10, 12, 105, 43, 41, 39, 314, 163, 26, 320, 96, 304, 128, 240, 135, 70, 53, 162, 95, 84,
+    173, 78, 123, 16, 3, 100};
+END;
+
+// rk_LdRossi: prior convictions of the 114 men arrested in the first
+// year and the 318 not arrested (Rossi, Berk & Lenihan 1980), as two
+// groups.  Heavy ties (17 distinct values for 432 men).
+rk_LdRossi()
+BEGIN
+  LOCAL lrA, lrB;
+  lrA := {
+    3, 8, 13, 0, 5, 3, 2, 7, 2, 2, 14, 5, 10, 6, 2, 3, 4, 3, 4, 10, 4, 4, 2, 2, 1, 0, 6, 1, 1, 5,
+    5, 11, 10, 2, 2, 1, 1, 3, 8, 3, 3, 5, 1, 5, 4, 0, 2, 3, 1, 6, 7, 4, 18, 5, 1, 3, 0, 4, 12, 2,
+    2, 1, 0, 5, 1, 3, 1, 1, 3, 1, 3, 0, 3, 1, 18, 3, 5, 3, 4, 8, 11, 1, 4, 0, 3, 2, 3, 1, 5, 4,
+    10, 4, 11, 1, 3, 2, 0, 2, 2, 2, 2, 0, 1, 4, 1, 0, 5, 1, 2, 2, 4, 3, 2, 2};
+  lrB := {
+    1, 3, 2, 4, 6, 0, 3, 2, 2, 2, 12, 1, 4, 0, 1, 0, 2, 1, 2, 3, 9, 3, 1, 0, 2, 3, 5, 2, 4, 3,
+    9, 1, 2, 2, 2, 15, 2, 0, 0, 1, 1, 1, 3, 1, 1, 0, 9, 2, 5, 11, 3, 1, 2, 4, 5, 0, 2, 4, 2, 1,
+    2, 2, 3, 10, 7, 1, 3, 4, 2, 4, 1, 2, 1, 2, 1, 3, 2, 1, 3, 1, 1, 1, 3, 6, 3, 2, 1, 0, 1, 3,
+    4, 1, 6, 2, 14, 2, 3, 1, 8, 2, 4, 2, 2, 2, 3, 4, 4, 5, 8, 0, 1, 4, 4, 0, 3, 1, 2, 0, 1, 1,
+    1, 4, 10, 8, 1, 8, 2, 3, 2, 6, 4, 3, 3, 5, 11, 2, 10, 1, 6, 2, 10, 7, 2, 0, 2, 1, 1, 13, 3, 2,
+    1, 1, 2, 0, 2, 1, 1, 2, 4, 4, 1, 0, 1, 2, 1, 1, 4, 4, 1, 7, 2, 4, 1, 2, 3, 1, 3, 2, 1, 3,
+    2, 5, 11, 1, 2, 1, 1, 3, 2, 1, 1, 8, 2, 1, 1, 2, 4, 8, 5, 2, 0, 1, 3, 1, 5, 1, 3, 1, 2, 1,
+    4, 0, 2, 1, 2, 2, 4, 5, 0, 2, 1, 2, 2, 0, 2, 9, 5, 2, 3, 2, 2, 1, 2, 2, 2, 1, 5, 3, 2, 0,
+    6, 4, 3, 2, 6, 1, 1, 1, 0, 1, 5, 2, 4, 1, 3, 2, 1, 1, 1, 2, 1, 1, 3, 1, 1, 1, 0, 2, 1, 1,
+    1, 4, 0, 3, 7, 4, 5, 9, 1, 1, 1, 0, 2, 3, 0, 1, 6, 5, 2, 0, 0, 2, 2, 2, 3, 0, 2, 2, 1, 5,
+    1, 2, 4, 1, 4, 4, 1, 1, 1, 1, 1, 3, 2, 3, 1, 1, 3, 1};
+  rkGV := CONCAT(lrA, lrB);
+  rkGG := CONCAT(rk_Fill(1, SIZE(lrA)), rk_Fill(2, SIZE(lrB)));
+  rkGK := 2; rkGNm := {"Arrested", "Not arrested"};
+  rkGLab := "prior convictions";
+  rkGSrc := "Rossi, Berk & Lenihan 1980 (via Allison 1995)";
+  rkMa := 1; rkMb := 2; rkGHas := 1;
+END;
+
+// rk_LdDraftG: the draft numbers grouped by birth month (12 groups).
+rk_LdDraftG()
+BEGIN
+  LOCAL ldL, ldI, ldM, ldC;
+  rkGV := rk_DraftNo();
+  ldL := {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+  rkGG := rk_Zeros(366);
+  ldM := 1; ldC := 0;
+  FOR ldI FROM 1 TO 366 DO
+    ldC := ldC + 1;
+    IF ldC > ldL(ldM) THEN ldM := ldM + 1; ldC := 1; END;
+    rkGG(ldI) := ldM;
+  END;
+  rkGK := 12;
+  rkGNm := {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+  rkGLab := "draft number (1 = called first)";
+  rkGSrc := "Fienberg 1971 Science 171:255; Starr 1997 JSE";
+  rkMa := 1; rkMb := 12; rkGHas := 1;
+END;
+
+// rk_LdDraftC: day of the year (1..366) against the draft number.
+rk_LdDraftC()
+BEGIN
+  LOCAL ldI;
+  rkCY := rk_DraftNo();
+  rkCX := MAKELIST(ldI, ldI, 1, 366, 1);
+  rkCNx := "day of year"; rkCNy := "draft number"; rkCLab := "Day";
+  rkCSrc := "Fienberg 1971 Science 171:255; Starr 1997 JSE";
+  rkCHas := 1;
+END;
+
+// rk_LdDarwin: Darwin's 15 pairs of Zea mays, crossed and self-
+// fertilised, heights in inches (d x 8 = Fisher's 49, -67, 8, 16, 6,
+// 23, 28, 41, 14, 29, 56, 24, 75, 60, -48).
+rk_LdDarwin()
+BEGIN
+  rkXA := {23.5, 12, 21, 22, 19.125, 21.5, 22.125, 20.375, 18.25, 21.625, 23.25, 21, 22.125, 23, 12};
+  rkXB := {17.375, 20.375, 20, 20, 18.375, 18.625, 18.625, 15.25, 16.5, 18, 16.25, 18, 12.75, 15.5, 18};
+  rkP1 := 0; rkM0 := 0;
+  rkPLab := "cross - self (inches)"; rkPNa := "cross"; rkPNb := "self";
+  rkPSrc := "Darwin 1876; Fisher 1935 Design of Experiments";
+  rkPHas := 1;
+END;
+
+// rk_LdHalo (beta 1a; beta 1's judges preset): lawyers' mean ratings
+// (1-10) of the first 8 judges, A to C, on the 11 rating criteria INTG
+// .. RTEN (rows = blocks, columns = the judges).  CONT (number of
+// contacts) is a count, not a rating, and is left out.  The criteria
+// are NOT independent raters (the same lawyers rated every criterion,
+// and a halo effect ties them together), so Kendall's W is shown as a
+// DESCRIPTION of how alike they order the judges, with no p-value
+// (rkFNoP = 1; second review, item 3).
+rk_LdHalo()
+BEGIN
+  rkFM := {
+    7.9, 8.9, 8.1, 8.8, 6.4, 8.8, 9, 5.9,
+    7.7, 8.8, 7.8, 8.5, 4.3, 8.7, 8.9, 4.9,
+    7.3, 8.5, 7.8, 8.8, 6.5, 8.5, 8.7, 5.1,
+    7.1, 7.8, 7.5, 8.3, 6, 7.9, 8.5, 5.4,
+    7.4, 8.1, 7.6, 8.5, 6.2, 8, 8.5, 5.9,
+    7.1, 8, 7.5, 8.7, 5.7, 8.1, 8.5, 4.8,
+    7.1, 8, 7.5, 8.7, 5.7, 8, 8.5, 5.1,
+    7.1, 7.8, 7.3, 8.4, 5.1, 8, 8.6, 4.7,
+    7, 7.9, 7.4, 8.5, 5.3, 8, 8.4, 4.9,
+    8.3, 8.5, 7.9, 8.8, 5.5, 8.6, 9.1, 6.8,
+    7.8, 8.7, 7.8, 8.7, 4.8, 8.6, 9, 5};
+  rkFB := 11; rkFK := 8;
+  rkFTn := {"Aaronson", "Alexander", "Armentano", "Berdon", "Bracken", "Burns", "Callahan", "Cohen"};
+  rkFBn := {"INTG", "DMNR", "DILG", "CFMG", "DECI", "PREP", "FAMI", "ORAL", "WRIT", "PHYS", "RTEN"};
+  rkFLab := "11 criteria (blocks) order 8 judges";
+  rkFSrc := "New Haven Register 14 Jan 1977 (R datasets)";
+  rkFHas := 1; rkFNoP := 1;
+END;
+
+// rk_LdJudges (beta 1a): a Friedman TEST with an honest design: the 43
+// judges are the blocks (each judge is rated on every criterion) and
+// three criteria are the treatments: integrity (INTG), sound oral
+// rulings (ORAL), sound written rulings (WRIT).  "Do lawyers rate the
+// same judges differently on integrity and on their rulings?"  Each
+// value is the lawyers' mean rating (1-10) of that judge.
+rk_LdJudges()
+BEGIN
+  rkFM := {
+      7.9, 7.1, 7, 8.9, 7.8, 7.9, 8.1, 7.3, 7.4, 8.8, 8.4, 8.5,
+      6.4, 5.1, 5.3, 8.8, 8, 8, 9, 8.6, 8.4, 5.9, 4.7, 4.9,
+      8.9, 8.4, 8.5, 7.9, 7.7, 7.8, 8, 7.1, 7.2, 8, 7, 7.1,
+      8.6, 7.2, 7.2, 7.5, 6.3, 6.6, 8.1, 7.8, 7.8, 8, 7.1, 7.2,
+      7.6, 6.4, 6.5, 7.7, 7.1, 7.3, 8.2, 7.5, 7.6, 6.9, 5.8, 5.8,
+      8.2, 6.8, 6.8, 7.3, 6.3, 6.3, 7.4, 5.2, 5.8, 8.3, 7.2, 7.3,
+      8.7, 8.4, 8.4, 8.9, 8.8, 8.9, 8.5, 7.8, 7.7, 9, 8.3, 8.3,
+      8.1, 8, 8.1, 9.2, 8.9, 9, 7.4, 7.7, 7.9, 8, 7.4, 7.4,
+      8.5, 8.1, 8.3, 8.9, 8.4, 8.4, 6.2, 5.3, 5.5, 8.3, 7.9, 8,
+      8.3, 7.6, 7.7, 8.2, 7.5, 7.6, 7.3, 6.7, 6.7, 8.2, 7.5, 7.7,
+      7, 6.5, 6.6, 8.4, 8, 8.1, 7.4, 6.9, 7};
+  rkFB := 43; rkFK := 3;
+  rkFTn := {"Integrity", "Oral rulings", "Written rulings"};
+  rkFBn := {
+      "Aaronson", "Alexander", "Armentano", "Berdon", "Bracken", "Burns", "Callahan",
+      "Cohen", "Daly", "Dannehy", "Dean", "Devita", "Driscoll", "Grillo",
+      "Hadden", "Hamill", "Healey", "Hull", "Levine", "Levister", "Martin",
+      "McGrath", "Mignone", "Missal", "Mulvey", "Naruk", "O'Brien", "O'Sullivan",
+      "Paskey", "Rubinow", "Saden", "Sataniello", "Shea D", "Shea J", "Sidor",
+      "Speziale", "Sponzo", "Stapleton", "Testo", "Tierney", "Wall", "Wright",
+      "Zarrilli"};
+  rkFLab := "Blocks: 43 judges; values = mean ratings";
+  rkFSrc := "New Haven Register 14 Jan 1977 (R datasets)";
+  rkFHas := 1; rkFNoP := 0;
+END;
+
+// rk_LdJury: Years of sentence given by the mock jurors, by the
+// defendant's attractiveness in the photograph.
+rk_LdJury()
+BEGIN
+  LOCAL ljA, ljB, ljC;
+  ljA := {
+    10, 3, 5, 1, 7, 7, 3, 7, 2, 3, 5, 1, 1, 1, 2, 2, 10, 10, 3, 4,
+    7, 1, 1, 2, 2, 3, 15, 4, 6, 2, 10, 3, 2, 3, 5, 10, 2, 2, 2};
+  ljB := {
+    5, 5, 4, 3, 6, 4, 9, 8, 3, 2, 10, 1, 1, 3, 1, 3, 5, 8, 3, 1,
+    1, 1, 2, 2, 1, 1, 2, 3, 4, 5, 3, 3, 3, 2, 7, 6, 12, 8};
+  ljC := {
+    1, 4, 3, 2, 8, 8, 1, 1, 5, 7, 1, 5, 2, 12, 10, 1, 6, 2, 5, 12,
+    6, 3, 8, 4, 10, 10, 15, 15, 3, 3, 3, 11, 12, 2, 1, 1, 12};
+  rkGV := CONCAT(CONCAT(ljA, ljB), ljC);
+  rkGG := CONCAT(CONCAT(rk_Fill(1, SIZE(ljA)), rk_Fill(2, SIZE(ljB))), rk_Fill(3, SIZE(ljC)));
+  rkGK := 3; rkGNm := {"Beautiful", "Average", "Unattractive"};
+  rkGLab := "years of sentence";
+  rkGSrc := "Plaster 1989 M.A. thesis (R heplots, Friendly)";
+  rkMa := 1; rkMb := 3; rkGHas := 1;
+END;
+
+// rk_Preset: the preset menu.  Loads one data set and returns the test
+// to open (0 = cancelled).
+rk_Preset()
+BEGIN
+  LOCAL prI;
+  prI := 0;
+  CHOOSE(prI, "Load a preset", {"Rossi: prior convictions", "Draft 1970: number by month", "Draft 1970: day vs number", "Darwin: Zea mays pairs", "US judges: 3 criteria", "Mock jury: years by looks", "US judges: halo (W only)"});
+  IF prI == 1 THEN rk_LdRossi(); RETURN 3; END;
+  IF prI == 2 THEN rk_LdDraftG(); RETURN 4; END;
+  IF prI == 3 THEN rk_LdDraftC(); RETURN 6; END;
+  IF prI == 4 THEN rk_LdDarwin(); RETURN 2; END;
+  IF prI == 5 THEN rk_LdJudges(); RETURN 5; END;
+  IF prI == 6 THEN rk_LdJury(); RETURN 4; END;
+  IF prI == 7 THEN rk_LdHalo(); RETURN 5; END;
+  RETURN 0;
+END;
+
+// rk_ReadD: list Dk of the Statistics 1Var app ({} if it is empty or
+// the app has never been opened: the first read is inside IFERR,
+// Lessons Learned section 10).
+rk_ReadD(rdK)
+BEGIN
+  LOCAL rdL;
+  rdL := {};
+  IFERR
+    CASE
+      IF rdK == 1 THEN rdL := D1; END;
+      IF rdK == 2 THEN rdL := D2; END;
+      IF rdK == 3 THEN rdL := D3; END;
+      IF rdK == 4 THEN rdL := D4; END;
+      IF rdK == 5 THEN rdL := D5; END;
+      IF rdK == 6 THEN rdL := D6; END;
+      IF rdK == 7 THEN rdL := D7; END;
+      IF rdK == 8 THEN rdL := D8; END;
+      IF rdK == 9 THEN rdL := D9; END;
+    END;
+  THEN
+    rdL := {};
+  END;
+  IF TYPE(rdL) <> 6 THEN rdL := {}; END;
+  RETURN rdL;
+END;
+
+// rk_MyData: read the student's own columns D1..D9 and return the
+// test to open (0 = nothing loaded).
+rk_MyData()
+BEGIN
+  LOCAL myI, myK, myL, myA, myB, myM;
+  LOCAL myC, myN, myOK;
+  myI := 0;
+  CHOOSE(myI, "Your data (Statistics 1Var)", {"Groups: D1, D2, D3 ...", "Paired: D1 - D2", "One sample: D1 vs median", "Correlation: D1 (x), D2 (y)", "Friedman: rows = blocks"});
+  IF myI == 0 THEN RETURN 0; END;
+  IF myI == 1 THEN
+    // every non-empty column is a group
+    rkGV := {}; rkGG := {}; rkGNm := {}; myK := 0;
+    FOR myC FROM 1 TO 9 DO
+      myL := rk_ReadD(myC);
+      IF SIZE(myL) > 0 THEN
+        myK := myK + 1;
+        rkGV := CONCAT(rkGV, myL);
+        rkGG := CONCAT(rkGG, rk_Fill(myK, SIZE(myL)));
+        rkGNm := CONCAT(rkGNm, {"D" + STRING(myC, 2, 0)});
+      END;
+    END;
+    IF myK < 2 THEN
+      MSGBOX("Put each group in its own column, D1, D2, ... of the Statistics 1Var app (at least two columns).");
+      RETURN 0;
+    END;
+    rkGK := myK; rkGLab := "your values"; rkGSrc := "your data: Statistics 1Var columns";
+    rkMa := 1; rkMb := 2; rkGHas := 1;
+    IF myK == 2 THEN RETURN 3; END;
+    RETURN 4;
+  END;
+  IF myI == 2 OR myI == 4 THEN
+    myA := rk_ReadD(1); myB := rk_ReadD(2);
+    IF SIZE(myA) == 0 OR SIZE(myA) <> SIZE(myB) THEN
+      MSGBOX("Put the pairs in D1 and D2 of the Statistics 1Var app: the same number of values in each.");
+      RETURN 0;
+    END;
+    IF myI == 2 THEN
+      rkXA := myA; rkXB := myB; rkP1 := 0; rkM0 := 0;
+      rkPLab := "D1 - D2"; rkPNa := "D1"; rkPNb := "D2";
+      rkPSrc := "your data: D1 and D2"; rkPHas := 1;
+      RETURN 2;
+    END;
+    rkCX := myA; rkCY := myB; rkCNx := "D1"; rkCNy := "D2"; rkCLab := "Pair";
+    rkCSrc := "your data: D1 (x) and D2 (y)"; rkCHas := 1;
+    RETURN 6;
+  END;
+  IF myI == 3 THEN
+    myA := rk_ReadD(1);
+    IF SIZE(myA) == 0 THEN
+      MSGBOX("Put your sample in D1 of the Statistics 1Var app first.");
+      RETURN 0;
+    END;
+    myM := 0;
+    // beta 1a: m-sub-0 and H-sub-0 built with CHAR(8320), label and
+    // help from string variables (the device-verified INPUT form)
+    myL := "m" + CHAR(8320) + " = ";
+    myC := rkH0 + ": the median of D1 is m" + CHAR(8320) + " (d = D1 - m" + CHAR(8320) + ")";
+    myOK := INPUT({myM}, "One sample", {myL}, {myC});
+    IF myOK == 0 THEN RETURN 0; END;
+    rkXA := myA; rkXB := {}; rkP1 := 1; rkM0 := myM;
+    rkPLab := "D1 - " + rk_Num(myM); rkPNa := "D1"; rkPNb := "m" + CHAR(8320);
+    rkPSrc := "your data: D1 against m" + CHAR(8320) + " = " + rk_Num(myM); rkPHas := 1;
+    RETURN 2;
+  END;
+  // Friedman: D1 .. Dk side by side, one row per block
+  myK := 0; myN := -1; myOK := 1;
+  FOR myC FROM 1 TO 9 DO
+    myL := rk_ReadD(myC);
+    IF SIZE(myL) > 0 THEN
+      IF myK == myC - 1 THEN
+        myK := myK + 1;
+        IF myN == -1 THEN myN := SIZE(myL); END;
+        IF SIZE(myL) <> myN THEN myOK := 0; END;
+      END;
+    END;
+  END;
+  IF myK < 2 OR myOK == 0 THEN
+    MSGBOX("Treatments in D1, D2, ... (side by side, no gap), one row per block, every column the same length.");
+    RETURN 0;
+  END;
+  rkFB := myN; rkFK := myK;
+  rkFM := rk_Zeros(myN * myK);
+  rkFTn := {}; rkFBn := {};
+  FOR myC FROM 1 TO myK DO
+    myL := rk_ReadD(myC);
+    FOR myI FROM 1 TO myN DO rkFM((myI - 1) * myK + myC) := myL(myI); END;
+    rkFTn := CONCAT(rkFTn, {"D" + STRING(myC, 2, 0)});
+  END;
+  FOR myI FROM 1 TO myN DO rkFBn := CONCAT(rkFBn, {"B" + STRING(myI, 2, 0)}); END;
+  rkFLab := "blocks = rows, treatments = D1..D" + STRING(myK, 2, 0);
+  rkFSrc := "your data: Statistics 1Var columns"; rkFHas := 1; rkFNoP := 0;
+  RETURN 5;
+END;
+
+// rk_ChooseG: pick one of the rkGK groups by name (a CHOOSE whose list
+// is written out, one line per group count, so it is always a list
+// literal); 0 = cancelled.
+rk_ChooseG(cgT)
+BEGIN
+  LOCAL cgI, cgN;
+  cgI := 0; cgN := rkGNm;
+  CASE
+    IF rkGK == 2 THEN CHOOSE(cgI, cgT, {cgN(1), cgN(2)}); END;
+    IF rkGK == 3 THEN CHOOSE(cgI, cgT, {cgN(1), cgN(2), cgN(3)}); END;
+    IF rkGK == 4 THEN CHOOSE(cgI, cgT, {cgN(1), cgN(2), cgN(3), cgN(4)}); END;
+    IF rkGK == 5 THEN CHOOSE(cgI, cgT, {cgN(1), cgN(2), cgN(3), cgN(4), cgN(5)}); END;
+    IF rkGK == 6 THEN CHOOSE(cgI, cgT, {cgN(1), cgN(2), cgN(3), cgN(4), cgN(5), cgN(6)}); END;
+    IF rkGK == 7 THEN CHOOSE(cgI, cgT, {cgN(1), cgN(2), cgN(3), cgN(4), cgN(5), cgN(6), cgN(7)}); END;
+    IF rkGK == 8 THEN CHOOSE(cgI, cgT, {cgN(1), cgN(2), cgN(3), cgN(4), cgN(5), cgN(6), cgN(7), cgN(8)}); END;
+    IF rkGK == 9 THEN CHOOSE(cgI, cgT, {cgN(1), cgN(2), cgN(3), cgN(4), cgN(5), cgN(6), cgN(7), cgN(8), cgN(9)}); END;
+    IF rkGK == 10 THEN CHOOSE(cgI, cgT, {cgN(1), cgN(2), cgN(3), cgN(4), cgN(5), cgN(6), cgN(7), cgN(8), cgN(9), cgN(10)}); END;
+    IF rkGK == 11 THEN CHOOSE(cgI, cgT, {cgN(1), cgN(2), cgN(3), cgN(4), cgN(5), cgN(6), cgN(7), cgN(8), cgN(9), cgN(10), cgN(11)}); END;
+    DEFAULT CHOOSE(cgI, cgT, {cgN(1), cgN(2), cgN(3), cgN(4), cgN(5), cgN(6), cgN(7), cgN(8), cgN(9), cgN(10), cgN(11), cgN(12)});
+  END;
+  RETURN cgI;
+END;
+
+// rk_PickTwo: which two groups Mann-Whitney compares, when there are
+// more than two (with two, X is group 1 and Y group 2).
+rk_PickTwo()
+BEGIN
+  LOCAL ptA, ptB;
+  IF rkGK == 2 THEN rkMa := 1; rkMb := 2; RETURN 1; END;
+  IF rkGK < 2 THEN
+    MSGBOX("Mann-Whitney needs two groups.");
+    RETURN 0;
+  END;
+  IF rkGK > 12 THEN rkMa := 1; rkMb := 2; RETURN 1; END;
+  ptA := rk_ChooseG("Mann-Whitney: group X");
+  IF ptA == 0 THEN RETURN 0; END;
+  ptB := rk_ChooseG("Group Y (not " + rkGNm(ptA) + ")");
+  IF ptB == 0 THEN RETURN 0; END;
+  IF ptB == ptA THEN
+    MSGBOX("Pick two different groups.");
+    RETURN 0;
+  END;
+  rkMa := ptA; rkMb := ptB;
+  RETURN 1;
+END;
+
+// rk_Ensure: if the test about to open has no data of its kind yet,
+// load its usual preset and say so.  Returns 1 when data are there.
+rk_Ensure(enT)
+BEGIN
+  IF enT <= 2 AND rkPHas == 0 THEN
+    rk_LdDarwin();
+    MSGBOX("No paired data yet: Darwin's Zea mays loaded. (Load a preset or Use my data to change it.)");
+  END;
+  IF enT == 3 AND rkGHas == 0 THEN
+    rk_LdRossi();
+    MSGBOX("No groups yet: the Rossi recidivism data loaded. (Load a preset or Use my data to change it.)");
+  END;
+  IF enT == 4 AND rkGHas == 0 THEN
+    rk_LdDraftG();
+    MSGBOX("No groups yet: the 1970 draft lottery by month loaded. (Load a preset or Use my data to change it.)");
+  END;
+  IF enT == 5 AND rkFHas == 0 THEN
+    rk_LdJudges();
+    MSGBOX("No blocks yet: the judges' ratings loaded. (Load a preset or Use my data to change it.)");
+  END;
+  IF enT == 6 AND rkCHas == 0 THEN
+    rk_LdDraftC();
+    MSGBOX("No pairs yet: the 1970 draft lottery, day vs number, loaded. (Load a preset or Use my data to change it.)");
+  END;
+  RETURN 1;
+END;
+
+
+// ============================================================
+// DRAWING: frames, text, the result page
+// ============================================================
+
+// rk_Frame: a white G1 with the orange title band (compose in G1,
+// blit once: Lessons Learned section 6).
+rk_Frame(frT)
+BEGIN
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 0, 0, 319, 18, rkORNG, rkORNG);
+  TEXTOUT_P(frT, G1, 4, 2, 2, #FFFFFFh, 312);
+END;
+
+// rk_Box: a rectangle's outline only (RECT_P with one colour FILLS:
+// Burr3's tail band uses it that way), four LINE_P.
+rk_Box(bbX1, bbY1, bbX2, bbY2, bbC)
+BEGIN
+  LINE_P(G1, bbX1, bbY1, bbX2, bbY1, bbC);
+  LINE_P(G1, bbX1, bbY2, bbX2, bbY2, bbC);
+  LINE_P(G1, bbX1, bbY1, bbX1, bbY2, bbC);
+  LINE_P(G1, bbX2, bbY1, bbX2, bbY2, bbC);
+END;
+
+// rk_Ln: one line of text on the result page: line ln (0 = top) at
+// y = 22 + 13 ln, font 1, at most 300 px wide.
+rk_Ln(lnI, lnS, lnC)
+BEGIN
+  TEXTOUT_P(lnS, G1, 8, 22 + 13 * lnI, 1, lnC, 304);
+END;
+
+// rk_Foot: the footer line, dodger blue (the house form).
+rk_Foot(ftS)
+BEGIN
+  TEXTOUT_P(ftS, G1, 4, 205, 1, rkFOOT, 312);
+END;
+
+// rk_TName: the open test's name.
+rk_TName()
+BEGIN
+  IF rkTest == 1 THEN RETURN "Sign test"; END;
+  IF rkTest == 2 THEN RETURN "Wilcoxon signed-rank"; END;
+  IF rkTest == 3 THEN RETURN "Mann-Whitney U"; END;
+  IF rkTest == 4 THEN RETURN "Kruskal-Wallis H"; END;
+  IF rkTest == 5 THEN RETURN "Friedman and Kendall's W"; END;
+  RETURN "Rank correlation";
+END;
+
+// rk_TSh: the open test's short name, for page titles.
+rk_TSh()
+BEGIN
+  IF rkTest == 1 THEN RETURN "Sign test"; END;
+  IF rkTest == 2 THEN RETURN "Signed-rank"; END;
+  IF rkTest == 3 THEN RETURN "Mann-Whitney"; END;
+  IF rkTest == 4 THEN RETURN "Kruskal-Wallis"; END;
+  IF rkTest == 5 THEN RETURN "Friedman"; END;
+  RETURN "Rank correlation";
+END;
+
+// rk_SNm: the statistic's name (S+, T+, U1, H, Q, t or z).
+rk_SNm()
+BEGIN
+  IF rkTest == 1 THEN RETURN "S+"; END;
+  IF rkTest == 2 THEN RETURN "T+"; END;
+  IF rkTest == 3 THEN RETURN "U" + CHAR(8321); END;
+  IF rkTest == 4 THEN RETURN "H"; END;
+  IF rkTest == 5 THEN RETURN "Q"; END;
+  IF rkCWh == 1 THEN RETURN "t"; END;
+  RETURN "z";
+END;
+
+// rk_Src: the data set's source line, as DATASETS.md asks.
+rk_Src()
+BEGIN
+  IF rkTest <= 2 THEN RETURN rkPSrc; END;
+  IF rkTest <= 4 THEN RETURN rkGSrc; END;
+  IF rkTest == 5 THEN RETURN rkFSrc; END;
+  RETURN rkCSrc;
+END;
+
+// rk_TieTx: "none", or "3 groups, largest 2" (midranks used).
+rk_TieTx()
+BEGIN
+  IF rkTieN == 0 THEN RETURN "none"; END;
+  RETURN rk_Grp(rkTieN) + ", largest " + STRING(rkTieMx, 2, 0) + " (midranks)";
+END;
+
+// rk_PMain: the p-value shown first: exact when there is one and
+// Exact is on, else the approximation.
+rk_PMain()
+BEGIN
+  IF rkTest <= 3 AND rkEx == 1 AND rkMode == 1 THEN RETURN rkPe; END;
+  IF rkTest == 6 THEN
+    // Spearman's p when it has one, else Kendall's
+    IF rkCWh == 1 AND rkPe >= 0 THEN RETURN rkPe; END;
+    RETURN rkPn;
+  END;
+  RETURN rkPn;
+END;
+
+// rk_CKind (beta 1a): how a correlation p was found: "exact ", "t " or
+// "normal " (wh = 1 Spearman, 2 Kendall).
+rk_CKind(ckW)
+BEGIN
+  IF ckW == 1 THEN
+    IF rkSpK == 1 OR rkSpK == 3 THEN RETURN "exact "; END;
+    RETURN "t ";
+  END;
+  IF rkKdK == 1 THEN RETURN "exact "; END;
+  RETURN "normal ";
+END;
+
+// rk_Verd: the verdict at alpha = 0.05, worded as Lessons Learned 12
+// asks: a p is P(data this extreme | H0); "no evidence of", never
+// "proves equal".
+rk_Verd(vdI, vdP)
+BEGIN
+  IF vdP < 0.05 THEN
+    rk_Ln(vdI, "p < 0.05: evidence against " + rkH0 + " (at " + rkAl + " = 0.05)", rkGRN);
+  ELSE
+    rk_Ln(vdI, "p " + rkGE + " 0.05: no evidence against " + rkH0 + " (not proof)", rkRED);
+  END;
+END;
+
+// rk_ExLine: the exact p line (or why there is none).
+rk_ExLine(exI)
+BEGIN
+  IF rkEx == 1 THEN
+    rk_Ln(exI, "Exact " + rk_PT(rkPe) + "  (" + rk_TailW() + ")", rkMAG);
+  ELSE
+    rk_Ln(exI, "Exact p: " + rkExWhy, rkGRAY);
+  END;
+END;
+
+// rk_MeanR: the mean ranks of the groups (Kruskal-Wallis) or the
+// treatments (Friedman), as many as fit, from line mrI on.
+rk_MeanR(mrI, mrNm, mrM, mrMax)
+BEGIN
+  LOCAL mrS, mrJ, mrT, mrL;
+  mrS := "Mean ranks: "; mrL := 0;
+  FOR mrJ FROM 1 TO SIZE(mrM) DO
+    mrT := rk_Trunc(mrNm(mrJ), 9) + " " + rk_Fx(mrM(mrJ), 1);
+    IF mrJ < SIZE(mrM) THEN mrT := mrT + ", "; END;
+    IF DIM(mrS) + DIM(mrT) > 46 THEN
+      IF mrL < mrMax THEN rk_Ln(mrI + mrL, mrS, #000000h); END;
+      mrL := mrL + 1;
+      mrS := "  ";
+    END;
+    mrS := mrS + mrT;
+  END;
+  IF mrL < mrMax THEN rk_Ln(mrI + mrL, mrS, #000000h); END;
+END;
+
+// rk_PgRes: page 1, every number of the test, the exact p beside the
+// normal approximation.
+rk_PgRes()
+BEGIN
+  LOCAL psN, psT, psJ, psM;
+  rk_Frame(rk_TName() + ": results");
+  rk_Ln(0, rk_Src(), rkGRAY);
+  IF rkTest == 1 THEN
+    rk_Ln(1, "d = " + rkPLab, #000000h);
+    rk_Ln(2, "n = " + STRING(rkN, 2, 0) + " nonzero d (zeros dropped = " + STRING(rkZero, 2, 0) + ")", #000000h);
+    rk_Ln(3, "S+ = " + STRING(rkSt, 2, 0) + " positive, " + STRING(rkSt2, 2, 0) + " negative", #000000h);
+    rk_Ln(4, rkH0 + ": median of d = 0  (" + rk_TailW() + ")", rkBLUE);
+    rk_ExLine(5);
+    rk_Ln(6, "Normal: z = " + rk_Sg(rkZ, 3) + ", " + rk_PT(rkPn) + " (cont. corr.)", rkBLUE);
+    rk_Ln(7, "Proportion of d > 0 = " + rk_Fx(rkEff, 3), #000000h);
+    rk_Ln(8, "Median of d = " + rk_Num(rkMed), #000000h);
+    rk_Verd(10, rk_PMain());
+    rk_Ln(11, "Exact: Binomial(" + STRING(rkN, 2, 0) + ", 1/2), no approximation.", rkGRAY);
+    rk_Ln(12, "Uses only the signs; assumes independent d.", rkGRAY);
+  END;
+  IF rkTest == 2 THEN
+    rk_Ln(1, "d = " + rkPLab, #000000h);
+    rk_Ln(2, "n = " + STRING(rkN, 2, 0) + " nonzero d (zeros dropped = " + STRING(rkZero, 2, 0) + ")", #000000h);
+    rk_Ln(3, "Ties among |d|: " + rk_TieTx(), #000000h);
+    rk_Ln(4, "T+ = " + rk_Num(rkSt) + ", T- = " + rk_Num(rkSt2) + "  (mean " + rk_Num(rkMu) + ", SD " + rk_Fx(rkSd, 2) + ")", #000000h);
+    rk_ExLine(5);
+    rk_Ln(6, "Normal: z = " + rk_Sg(rkZ, 3) + ", " + rk_PT(rkPn) + " (cont. corr.)", rkBLUE);
+    rk_Ln(7, "Rank-biserial r = " + rk_Sg(rkEff, 3), #000000h);
+    IF rkHLok == 1 THEN
+      rk_Ln(8, "HL estimate of the median d = " + rk_Num(rkHLv), #000000h);
+    ELSE
+      rk_Ln(8, "Hodges-Lehmann: " + rkHLWhy, rkGRAY);
+    END;
+    rk_Ln(9, rkH0 + ": median of d = 0  (" + rk_TailW() + ")", rkBLUE);
+    rk_Verd(10, rk_PMain());
+    rk_Ln(11, "Assumes: d symmetric about its median, pairs", rkGRAY);
+    rk_Ln(12, "independent.  Zeros are dropped, not counted.", rkGRAY);
+  END;
+  IF rkTest == 3 THEN
+    rk_Ln(1, "X = " + rk_Trunc(rkGNm(rkMa), 20) + ", n" + CHAR(8321) + " = " + STRING(rkKn(1), 2, 0) + " (" + rk_Trunc(rkGLab, 18) + ")", #000000h);
+    rk_Ln(2, "Y = " + rk_Trunc(rkGNm(rkMb), 20) + ", n" + CHAR(8322) + " = " + STRING(rkKn(2), 2, 0) + ";  ties: " + IFTE(rkTieN == 0, "none", rk_Grp(rkTieN)), #000000h);
+    rk_Ln(3, "R" + CHAR(8321) + " = " + rk_Num(rkKR(1)) + ", U" + CHAR(8321) + " = " + rk_Num(rkSt) + ", U" + CHAR(8322) + " = " + rk_Num(rkSt2), #000000h);
+    rk_Ln(4, "Mean of U = " + rk_Num(rkMu) + ", SD = " + rk_Fx(rkSd, 2) + IFTE(rkTieN > 0, " (ties)", ""), #000000h);
+    rk_ExLine(5);
+    rk_Ln(6, "Normal: z = " + rk_Sg(rkZ, 3) + ", " + rk_PT(rkPn) + " (cont. corr.)", rkBLUE);
+    rk_Ln(7, "Rank-biserial r = " + rk_Sg(rkEff, 3), #000000h);
+    rk_Ln(8, "P(X > Y) + half the ties = " + rk_Fx(rkEff2, 3), #000000h);
+    IF rkHLok == 1 THEN
+      rk_Ln(9, "HL estimate of the shift X - Y = " + rk_Num(rkHLv), #000000h);
+    ELSE
+      rk_Ln(9, "Hodges-Lehmann: " + rkHLWhy, rkGRAY);
+    END;
+    rk_Ln(10, rkH0 + ": X and Y same distribution (" + rk_TailW() + ")", rkBLUE);
+    rk_Verd(11, rk_PMain());
+    rk_Ln(12, "Assumes independent groups; reads as a shift", rkGRAY);
+    rk_Ln(13, "in the median only if the shapes match.", rkGRAY);
+  END;
+  IF rkTest == 4 THEN
+    rk_Ln(1, "Values: " + rkGLab, #000000h);
+    rk_Ln(2, "k = " + STRING(rkGK, 2, 0) + ", N = " + STRING(rkN, 2, 0) + ", df = " + STRING(rkDf, 2, 0) + ";  ties: " + IFTE(rkTieN == 0, "none", rk_Grp(rkTieN)), #000000h);
+    rk_Ln(3, "H = " + rk_Fx(rkSt, 3) + IFTE(rkTieN > 0, "  (divided by C = " + rk_Fx(rkCf, 4) + ")", ""), #000000h);
+    rk_Ln(4, rkCHI + " approximation: " + rk_PT(rkPn) + " (upper tail)", rkMAG);
+    rk_Ln(5, "Effect: epsilon" + rkSQ + " = H/(N - 1) = " + rk_Fx(rkEff, 3), #000000h);
+    rk_MeanR(6, rkGNm, rkKM, 4);
+    psM := rkGK * (rkGK - 1) / 2;
+    rk_Ln(10, "Dunn (Holm): " + STRING(rkDNs, 2, 0) + " of " + STRING(psM, 2, 0) + " pairs with p < 0.05", rkBLUE);
+    rk_Ln(11, rkH0 + ": every group the same distribution", rkBLUE);
+    rk_Verd(12, rkPn);
+    // beta 1a: the chi-square approximation needs about 5 per group
+    psM := rkKn(1);
+    FOR psJ FROM 2 TO rkGK DO psM := MIN(psM, rkKn(psJ)); END;
+    IF psM < 5 THEN
+      rk_Ln(13, "Caution: a group has n < 5: " + rkCHI + " p is rough.", rkRED);
+    ELSE
+      rk_Ln(13, "Assumes independent groups, similar shapes.", rkGRAY);
+    END;
+  END;
+  IF rkTest == 5 THEN
+    rk_Ln(1, rkFLab, #000000h);
+    rk_Ln(2, "b = " + STRING(rkFB, 2, 0) + " blocks, k = " + STRING(rkFK, 2, 0) + " treatments, df = " + STRING(rkDf, 2, 0), #000000h);
+    rk_Ln(3, "Ties within blocks: sum(t^3 - t) = " + STRING(rkTieS, 2, 0), #000000h);
+    IF rkFNoP == 1 THEN
+      // beta 1a: the criteria are not independent raters: W only
+      rk_Ln(4, "W = " + rk_Fx(rkW, 3) + " (0 = no agreement, 1 = full)", rkMAG);
+      IF rkRbOK == 1 THEN rk_Ln(5, "Mean Spearman rs between blocks = " + rk_Fx(rkRbar, 3), #000000h); END;
+      rk_Ln(6, "No p-value here, on purpose: the criteria", rkRED);
+      rk_Ln(7, "are not independent raters (the same lawyers", rkRED);
+      rk_Ln(8, "rated every criterion; a halo effect).  W only", rkRED);
+      rk_Ln(9, "describes how alike they order the judges.", rkRED);
+      rk_Ln(11, "For a test, load 'US judges: 3 criteria'", rkGRAY);
+      rk_Ln(12, "(judges as blocks, criteria as treatments).", rkGRAY);
+    ELSE
+      rk_Ln(4, "Friedman Q = " + rk_Fx(rkSt, 3) + IFTE(rkCf < 1, " (C = " + rk_Fx(rkCf, 4) + ")", ""), #000000h);
+      rk_Ln(5, rkCHI + " approximation: " + rk_PT(rkPn) + " (upper tail)", rkMAG);
+      rk_Ln(6, "Kendall's W = " + rk_Fx(rkW, 3) + " (0 none, 1 full agreement)", #000000h);
+      IF rkRbOK == 1 THEN
+        rk_Ln(7, "Mean Spearman rs between blocks = " + rk_Fx(rkRbar, 3), #000000h);
+      ELSE
+        rk_Ln(7, "Mean Spearman: none (a block is all tied)", rkGRAY);
+      END;
+      psN := rk_Zeros(rkFK);
+      FOR psJ FROM 1 TO rkFK DO psN(psJ) := rkFRS(psJ) / rkFB; END;
+      rk_MeanR(8, rkFTn, psN, 2);
+      rk_Ln(10, rkH0 + ": in each block all orders equally", rkBLUE);
+      rk_Ln(11, "likely (the treatments do not differ)", rkBLUE);
+      rk_Verd(12, rkPn);
+      IF rkFB < 10 THEN
+        rk_Ln(13, "Caution: b < 10 blocks: " + rkCHI + " p is rough.", rkRED);
+      ELSE
+        rk_Ln(13, "Assumes independent blocks (ranks within each).", rkGRAY);
+      END;
+    END;
+  END;
+  IF rkTest == 6 THEN
+    rk_Ln(1, "n = " + STRING(rkN, 2, 0) + ": x = " + rk_Trunc(rkCNx, 14) + ", y = " + rk_Trunc(rkCNy, 14), #000000h);
+    rk_Ln(2, "Ties: " + IFTE(rkTXn == 0, "none", rk_Grp(rkTXn)) + " in x, " + IFTE(rkTYn == 0, "none", rk_Grp(rkTYn)) + " in y (midranks)", #000000h);
+    psT := #000000h; IF rkCWh == 1 OR (rkCWh == 2 AND rkN > 9000) THEN psT := rkMAG; END;
+    rk_Ln(3, "Spearman rs = " + rk_Sg(rkRs, 4) + " (r of the midranks)", psT);
+    // beta 1a: the exact permutation p (n <= 7), the perfect-order
+    // formula, or the t approximation (rough below n = 10)
+    IF rkSpK == 1 THEN
+      rk_Ln(4, "   exact " + rk_PT(rkPe) + " (" + rk_TailW() + ", all n! orders)", psT);
+    END;
+    IF rkSpK == 3 THEN
+      rk_Ln(4, "   exact " + rk_PT(rkPe) + " (" + rk_TailW() + ", 1 order in n!)", psT);
+    END;
+    IF rkSpK == 2 THEN
+      rk_Ln(4, "   t = " + rk_Sg(rkTt, 3) + " (" + STRING(rkDf, 2, 0) + " df), " + rk_PT(rkPe) + " (" + rk_TailW() + ")", psT);
+    END;
+    IF rkSpK == 0 THEN
+      rk_Ln(4, "   p: none (perfect order with ties; see tau-b)", rkGRAY);
+    END;
+    psT := #000000h; IF rkCWh == 2 OR (rkCWh == 1 AND rkSpK == 0) THEN psT := rkMAG; END;
+    IF rkN > 9000 THEN
+      rk_Ln(5, "Kendall tau-b: n > 9,000, not computed", rkGRAY);
+    ELSE
+      rk_Ln(5, "Kendall tau-b = " + rk_Sg(rkTau, 4), psT);
+      IF rkKdK == 1 THEN
+        rk_Ln(6, "   exact " + rk_PT(rkPn) + " (" + rk_TailW() + ", all n! orders)", psT);
+      ELSE
+        rk_Ln(6, "   z = " + rk_Sg(rkKz, 3) + ", " + rk_PT(rkPn) + " (" + rk_TailW() + IFTE(rkTXn + rkTYn > 0, ", ties", "") + ")", psT);
+      END;
+    END;
+    rk_Ln(7, rkH0 + ": no monotone association", rkBLUE);
+    rk_Verd(8, rk_PMain());
+    rk_Ln(9, "(the verdict is from the p in magenta)", rkGRAY);
+    IF rkN < 10 AND (rkSpK == 2 OR rkKdK == 2) THEN
+      rk_Ln(10, "Caution: n < 10: an approximate p is rough;", rkRED);
+      rk_Ln(11, "exact p: Spearman n " + rkLE + " 7, Kendall without ties.", rkRED);
+    ELSE
+      rk_Ln(10, "rs on midranks is right with ties; the old", rkGRAY);
+      rk_Ln(11, "1 - 6 sum d" + rkSQ + "/(n(n" + rkSQ + " - 1)) is not.", rkGRAY);
+    END;
+    rk_Ln(12, "Kendall counts concordant minus discordant", rkGRAY);
+    rk_Ln(13, "pairs: tau-b adjusts for ties in x and y.", rkGRAY);
+  END;
+  rk_Foot(rkUD + " = page, Ent = menu, 0 = help, Esc = back");
+END;
+
+
+// ============================================================
+// THE RANK STRIP (sign test, signed-rank, Mann-Whitney)
+// ============================================================
+
+// rk_PgStrip: every observation as a dot on a number line, colour =
+// group (or the sign of d), stacked where values meet; the midrank is
+// written above each value (when the labels fit); an orange mark under
+// the axis = tied values (they share one midrank; the dots keep their
+// group colours); the picked dot is framed in red and explained in the
+// panel.
+rk_PgStrip()
+BEGIN
+  LOCAL stN, stLo, stHi, stSp, stNb, stBc;
+  LOCAL stBn, stPos, stI, stJ, stMx, stDh;
+  LOCAL stX1, stY1, stY2, stC, stT;
+  LOCAL stBy, stTop, stLx, stS, stW, stTk;
+  LOCAL stV, stFv, stSm, stTie, stSel, stR;
+  LOCAL stBw;
+  stN := SIZE(rkV);
+  rk_Frame(rk_TSh() + ": rank strip");
+  stBy := 145;                                // the stacks sit on this row
+  // bins 5 px wide; wider (bigger dots) when there are few values
+  stBw := 5;
+  IF stN <= 120 THEN stBw := 6; END;
+  IF stN <= 40 THEN stBw := 8; END;
+  stLo := rkV(rkOrd(1)); stHi := rkV(rkOrd(stN));
+  IF stHi == stLo THEN stLo := stLo - 1; stHi := stHi + 1; END;
+  stSp := stHi - stLo;
+  stLo := stLo - 0.03 * stSp; stHi := stHi + 0.03 * stSp;
+  stNb := IP((306 - 14) / stBw) + 1;
+  stBc := rk_Zeros(stNb); stFv := rk_Zeros(stNb); stSm := rk_Fill(1, stNb);
+  stTie := rk_Zeros(stNb); stR := rk_Zeros(stNb);
+  stBn := rk_Zeros(stN); stPos := rk_Zeros(stN);
+  FOR stJ FROM 1 TO stN DO
+    stI := rkOrd(stJ);
+    stT := IP((rkV(stI) - stLo) / (stHi - stLo) * (306 - 14) / stBw) + 1;
+    stT := MAX(1, MIN(stNb, stT));
+    stBn(stI) := stT;
+    stPos(stI) := stBc(stT);
+    IF stBc(stT) == 0 THEN
+      stFv(stT) := rkV(stI);
+      IF SIZE(rkR) > 0 THEN stR(stT) := rkR(stI); END;
+    ELSE
+      IF rkV(stI) <> stFv(stT) THEN stSm(stT) := 0; END;
+    END;
+    stBc(stT) := stBc(stT) + 1;
+    IF rkSTc(stI) > 1 THEN stTie(stT) := 1; END;
+  END;
+  stMx := MAX(stBc);
+  stDh := MAX(1, MIN(stBw, IP(80 / stMx)));
+  // legend
+  stX1 := 6;
+  FOR stJ FROM 1 TO SIZE(rkSNm) DO
+    stC := 0;
+    FOR stI FROM 1 TO stN DO IF rkVG(stI) == stJ THEN stC := stC + 1; END; END;
+    RECT_P(G1, stX1, 23, stX1 + 6, 29, rkSCl(stJ), rkSCl(stJ));
+    stX1 := TEXTOUT_P(rk_Trunc(rkSNm(stJ), 14) + " (" + STRING(stC, 2, 0) + ")", G1, stX1 + 9, 21, 1, rkSCl(stJ), 150) + 8;
+  END;
+  IF SIZE(rkR) > 0 THEN
+    TEXTOUT_P("midrank above each value; orange mark = tied", G1, 6, 33, 1, rkGRAY, 300);
+  ELSE
+    TEXTOUT_P("one dot per d; the sign test counts colours", G1, 6, 33, 1, rkGRAY, 300);
+  END;
+  // the zero line of the sign test
+  IF rkTest == 1 AND stLo < 0 AND stHi > 0 THEN
+    stX1 := 14 + IP((0 - stLo) / (stHi - stLo) * (306 - 14));
+    FOR stI FROM 48 TO stBy STEP 3 DO PIXON_P(G1, stX1, stI, rkGRAY); END;
+  END;
+  // the axis and its ticks
+  LINE_P(G1, 14, stBy + 1, 306, stBy + 1, #000000h);
+  stTk := rk_Nice((stHi - stLo) / 6);
+  stV := CEILING(stLo / stTk) * stTk;
+  WHILE stV <= stHi DO
+    stX1 := 14 + IP((stV - stLo) / (stHi - stLo) * (306 - 14));
+    LINE_P(G1, stX1, stBy + 1, stX1, stBy + 4, #000000h);
+    TEXTOUT_P(rk_Num(stV), G1, stX1 - 8, stBy + 5, 1, rkGRAY, 40);
+    stV := stV + stTk;
+  END;
+  // the axis name, under the tick labels at the right
+  TEXTOUT_P(rk_Trunc(rkAxLab, 40), G1, 306 - 6 * MIN(40, DIM(rkAxLab)), stBy + 17, 1, rkGRAY, 260);
+  // the dots
+  rkHX := rk_Zeros(stN); rkHY := rk_Zeros(stN);
+  FOR stI FROM 1 TO stN DO
+    stX1 := 14 + (stBn(stI) - 1) * stBw;
+    stY2 := stBy - stPos(stI) * stDh;
+    stY1 := stY2 - stDh + 1;
+    IF stDh >= 3 THEN stY1 := stY1 + 1; END;
+    stC := rkSCl(rkVG(stI));
+    RECT_P(G1, stX1, stY1, stX1 + stBw - 2, stY2, stC, stC);
+    rkHX(stI) := stX1 + IP(stBw / 2); rkHY(stI) := IP((stY1 + stY2) / 2);
+  END;
+  // tied values: an orange mark under the axis
+  FOR stJ FROM 1 TO stNb DO
+    IF stTie(stJ) == 1 THEN
+      RECT_P(G1, 14 + (stJ - 1) * stBw, stBy + 2, 14 + (stJ - 1) * stBw + stBw - 2, stBy + 3, rkORNG, rkORNG);
+    END;
+  END;
+  // midranks above the stacks, left to right, when they do not collide
+  IF SIZE(rkR) > 0 THEN
+    stLx := -100;
+    FOR stJ FROM 1 TO stNb DO
+      IF stBc(stJ) > 0 AND stSm(stJ) == 1 THEN
+        stS := rk_Num(stR(stJ));
+        stW := 6 * DIM(stS);
+        stX1 := 14 + (stJ - 1) * stBw + IP(stBw / 2) - IP(stW / 2);
+        IF stX1 > stLx + 3 THEN
+          stTop := stBy - stBc(stJ) * stDh - 11;
+          TEXTOUT_P(stS, G1, MAX(0, stX1), MAX(42, stTop), 1, #000000h, 40);
+          stLx := stX1 + stW;
+        END;
+      END;
+    END;
+  END;
+  // the picked dot
+  stSel := rkSel;
+  IF stSel >= 1 AND stSel <= stN THEN
+    stX1 := 14 + (stBn(stSel) - 1) * stBw;
+    stY2 := stBy - stPos(stSel) * stDh;
+    stY1 := stY2 - stDh + 1;
+    rk_Box(stX1 - 2, stY1 - 2, stX1 + stBw, stY2 + 2, rkRED);
+    RECT_P(G1, 0, 174, 319, 201, rkORNG, rkLORN);
+    rk_StripInfo(stSel);
+  END;
+  rk_Foot("tap a dot, " + rkLR + " = pick, " + rkUD + " = page, Esc = back");
+END;
+
+// rk_StripInfo: what the picked dot is: its value, group and midrank,
+// and for a tie, which ranks were averaged.
+rk_StripInfo(siI)
+BEGIN
+  LOCAL siR, siT, siLo, siHi, siS, siG;
+  siG := rkVG(siI);
+  IF rkTest == 1 THEN
+    siS := "d = " + rk_Num(rkDv(siI)) + " (" + rkSNm(siG) + ")";
+    TEXTOUT_P(siS, G1, 6, 176, 1, rkSCl(siG), 308);
+    IF siG == 3 THEN
+      siS := "a zero: dropped, it says nothing about the sign";
+    ELSE
+      siS := "counts as one " + IFTE(siG == 1, "+", "-") + " in S+ = " + STRING(rkSt, 2, 0) + " of n = " + STRING(rkN, 2, 0);
+    END;
+    TEXTOUT_P(siS, G1, 6, 189, 1, #000000h, 308);
+    RETURN 0;
+  END;
+  siR := rkR(siI); siT := rkSTc(siI);
+  IF rkTest == 2 THEN
+    siS := "d = " + rk_Num(rkDv(siI)) + ": |d| = " + rk_Num(rkV(siI)) + ", midrank " + rk_Num(siR) + ", in " + IFTE(siG == 1, "T+", "T-");
+  ELSE
+    siS := rk_Trunc(rkSNm(siG), 14) + ": value " + rk_Num(rkV(siI)) + ", midrank " + rk_Num(siR);
+  END;
+  TEXTOUT_P(siS, G1, 6, 176, 1, rkSCl(siG), 308);
+  IF siT > 1 THEN
+    siLo := siR - (siT - 1) / 2; siHi := siR + (siT - 1) / 2;
+    siS := "tied with " + STRING(siT - 1, 2, 0) + " other" + IFTE(siT == 2, "", "s") + ": ranks " + rk_Num(siLo) + " to " + rk_Num(siHi) + " averaged";
+  ELSE
+    siS := "no tie: its rank is " + rk_Num(siR);
+  END;
+  TEXTOUT_P(siS, G1, 6, 189, 1, #000000h, 308);
+  RETURN 0;
+END;
+
+
+// ============================================================
+// KRUSKAL-WALLIS: GROUP BOXES, DUNN PAIRS
+// ============================================================
+
+// rk_PgBox: one column per group: the observations as dots, the box
+// (Q1, median, Q3; whiskers to min and max), on the values or on the
+// ranks (slot 4).  The mean rank is written over each column and, on
+// the rank scale, drawn as a green bar; the dotted line is the mean
+// rank every group would have under H0, (N + 1)/2.
+rk_PgBox()
+BEGIN
+  LOCAL bxK, bxCw, bxG, bxCx, bxBw, bxQ;
+  LOCAL bxA, bxB, bxI, bxC, bxY, bxCnt;
+  LOCAL bxT, bxV, bxS, bxPT, bxPB, bxPL;
+  LOCAL bxPR, bxH, bxM;
+  bxK := rkGK;
+  bxPL := 34; bxPR := 310; bxPT := 36; bxPB := 158;
+  rk_Frame("Kruskal-Wallis: " + IFTE(rkKRk == 1, "rank", "value") + " scale");
+  bxCw := (bxPR - bxPL) / bxK;
+  bxBw := MAX(2, MIN(14, IP(bxCw / 2) - 3));
+  // the scale
+  IF rkKRk == 1 THEN
+    bxA := 0; bxB := rkN + 1;
+  ELSE
+    bxA := rkKQv(1); bxB := rkKQv(5);
+    FOR bxG FROM 1 TO bxK DO
+      bxA := MIN(bxA, rkKQv(5 * (bxG - 1) + 1));
+      bxB := MAX(bxB, rkKQv(5 * (bxG - 1) + 5));
+    END;
+    IF bxB == bxA THEN bxA := bxA - 1; bxB := bxB + 1; END;
+    bxH := bxB - bxA;
+    bxA := bxA - 0.05 * bxH; bxB := bxB + 0.05 * bxH;
+  END;
+  bxH := bxB - bxA;
+  RECT_P(G1, bxPL, bxPT, bxPR, bxPB, rkGRID, #FFFFFFh);
+  bxT := rk_Nice(bxH / 5);
+  bxV := CEILING(bxA / bxT) * bxT;
+  WHILE bxV <= bxB DO
+    bxY := bxPB - IP((bxV - bxA) / bxH * (bxPB - bxPT));
+    LINE_P(G1, bxPL, bxY, bxPR, bxY, rkGRID);
+    TEXTOUT_P(rk_Num(bxV), G1, 2, bxY - 5, 1, rkGRAY, 30);
+    bxV := bxV + bxT;
+  END;
+  IF rkKRk == 1 THEN
+    bxY := bxPB - IP(((rkN + 1) / 2 - bxA) / bxH * (bxPB - bxPT));
+    FOR bxI FROM bxPL TO bxPR STEP 3 DO PIXON_P(G1, bxI, bxY, rkGRN); END;
+  END;
+  FOR bxG FROM 1 TO bxK DO
+    bxCx := bxPL + IP((bxG - 0.5) * bxCw);
+    bxC := rk_GCol(bxG);
+    IF bxG == rkKSel THEN rk_Box(IP(bxPL + (bxG - 1) * bxCw) + 1, bxPT + 1, IP(bxPL + bxG * bxCw) - 1, bxPB - 1, rkRED); END;
+    // the five numbers on the screen's y
+    bxQ := rk_Zeros(5);
+    FOR bxI FROM 1 TO 5 DO
+      IF rkKRk == 1 THEN bxV := rkKQr(5 * (bxG - 1) + bxI); ELSE bxV := rkKQv(5 * (bxG - 1) + bxI); END;
+      bxQ(bxI) := bxPB - IP((bxV - bxA) / bxH * (bxPB - bxPT));
+    END;
+    LINE_P(G1, bxCx, bxQ(1), bxCx, bxQ(2), bxC);
+    LINE_P(G1, bxCx, bxQ(4), bxCx, bxQ(5), bxC);
+    LINE_P(G1, bxCx - 3, bxQ(1), bxCx + 3, bxQ(1), bxC);
+    LINE_P(G1, bxCx - 3, bxQ(5), bxCx + 3, bxQ(5), bxC);
+    RECT_P(G1, bxCx - bxBw, bxQ(4), bxCx + bxBw, bxQ(2), bxC, #FFFFFFh);
+  END;
+  // the observations, spread a little sideways: ONE pass over the data
+  // (not one per group), so 366 values cost 366 steps a frame
+  bxCnt := rk_Zeros(bxK);
+  FOR bxI FROM 1 TO rkN DO
+    bxG := rkGG(bxI);
+    bxCnt(bxG) := bxCnt(bxG) + 1;
+    IF rkKRk == 1 THEN bxV := rkR(bxI); ELSE bxV := rkGV(bxI); END;
+    bxY := bxPB - IP((bxV - bxA) / bxH * (bxPB - bxPT));
+    bxS := bxPL + IP((bxG - 0.5) * bxCw) + IP(((bxCnt(bxG) MOD 5) - 2) * bxBw / 3);
+    bxC := rk_GCol(bxG);
+    RECT_P(G1, bxS - 1, bxY - 1, bxS, bxY, bxC, bxC);
+  END;
+  // the medians, the mean ranks and the names, on top
+  FOR bxG FROM 1 TO bxK DO
+    bxCx := bxPL + IP((bxG - 0.5) * bxCw);
+    bxC := rk_GCol(bxG);
+    IF rkKRk == 1 THEN bxV := rkKQr(5 * (bxG - 1) + 3); ELSE bxV := rkKQv(5 * (bxG - 1) + 3); END;
+    bxY := bxPB - IP((bxV - bxA) / bxH * (bxPB - bxPT));
+    RECT_P(G1, bxCx - bxBw, bxY - 1, bxCx + bxBw, bxY, #000000h, #000000h);
+    // the mean rank: a green bar on the rank scale, a number on top
+    IF rkKRk == 1 THEN
+      bxY := bxPB - IP((rkKM(bxG) - bxA) / bxH * (bxPB - bxPT));
+      RECT_P(G1, bxCx - bxBw - 2, bxY - 1, bxCx + bxBw + 2, bxY, rkGRN, rkGRN);
+    END;
+    bxM := rk_Fx(rkKM(bxG), IFTE(bxCw >= 40, 1, 0));
+    TEXTOUT_P(bxM, G1, bxCx - 3 * DIM(bxM), 24, 1, rkGRN, IP(bxCw));
+    bxM := rk_Trunc(rkGNm(bxG), MAX(1, IP(bxCw / 6.5)));
+    TEXTOUT_P(bxM, G1, bxCx - 3 * DIM(bxM), bxPB + 3, 1, bxC, IP(bxCw) + 4);
+  END;
+  TEXTOUT_P("mean", G1, 2, 24, 1, rkGRN, 32);
+  // the picked group
+  RECT_P(G1, 0, 172, 319, 201, rkORNG, rkLORN);
+  bxG := rkKSel;
+  TEXTOUT_P(rk_Trunc(rkGNm(bxG), 14) + ": n = " + STRING(rkKn(bxG), 2, 0) + ", mean rank " + rk_Fx(rkKM(bxG), 2) + " (H" + CHAR(8320) + " " + rk_Num((rkN + 1) / 2) + ")", G1, 6, 175, 1, rk_GCol(bxG), 308);
+  TEXTOUT_P("median " + rk_Num(rkKQv(5 * (bxG - 1) + 3)) + ", Q1 " + rk_Num(rkKQv(5 * (bxG - 1) + 2)) + ", Q3 " + rk_Num(rkKQv(5 * (bxG - 1) + 4)) + ", range " + rk_Num(rkKQv(5 * (bxG - 1) + 1)) + "-" + rk_Num(rkKQv(5 * (bxG - 1) + 5)), G1, 6, 188, 1, #000000h, 308);
+  rk_Foot("tap a group, " + rkLR + " = pick, + = scale, Esc = back");
+END;
+
+// rk_PgDunn: Dunn's pairs.  Top: the mean ranks as bars (the two groups
+// of the picked pair framed in red); below: each pair's z, raw p and
+// Holm-adjusted p (green when the Holm p is below 0.05).
+rk_PgDunn()
+BEGIN
+  LOCAL dnK, dnM, dnG, dnX1, dnX2, dnY;
+  LOCAL dnW, dnI, dnR, dnC, dnS, dnTop;
+  LOCAL dnLo, dnHi, dnY0;
+  dnK := rkGK; dnM := SIZE(rkDP);
+  rk_Frame("Dunn pairs, Holm; dotted = H" + CHAR(8320) + " " + rk_Num((rkN + 1) / 2));
+  // the mean ranks as bars up or down from the level every group would
+  // share under H0, (N + 1)/2 (dotted green)
+  dnW := (308 - 34) / dnK;
+  RECT_P(G1, 34, 22, 308, 84, rkGRID, #FFFFFFh);
+  dnLo := (rkN + 1) / 2; dnHi := dnLo;
+  FOR dnG FROM 1 TO dnK DO dnLo := MIN(dnLo, rkKM(dnG)); dnHi := MAX(dnHi, rkKM(dnG)); END;
+  dnS := MAX(1, dnHi - dnLo);
+  dnLo := dnLo - 0.12 * dnS; dnHi := dnHi + 0.12 * dnS;
+  dnY0 := 82 - IP(((rkN + 1) / 2 - dnLo) / (dnHi - dnLo) * 58);
+  FOR dnI FROM 34 TO 308 STEP 3 DO PIXON_P(G1, dnI, dnY0, rkGRN); END;
+  TEXTOUT_P("mean", G1, 2, 24, 1, rkGRN, 30);
+  TEXTOUT_P("rank", G1, 2, 35, 1, rkGRN, 30);
+  FOR dnG FROM 1 TO dnK DO
+    dnX1 := 34 + IP((dnG - 1) * dnW) + 2;
+    dnX2 := 34 + IP(dnG * dnW) - 2;
+    dnY := 82 - IP((rkKM(dnG) - dnLo) / (dnHi - dnLo) * 58);
+    dnC := rk_GCol(dnG);
+    RECT_P(G1, dnX1, MIN(dnY, dnY0), dnX2, MAX(dnY, dnY0), dnC, dnC);
+    IF dnG == rkDI(rkDSel) OR dnG == rkDJ(rkDSel) THEN
+      rk_Box(dnX1 - 2, MIN(dnY, dnY0) - 2, dnX2 + 2, MAX(dnY, dnY0) + 2, rkRED);
+      rk_Box(dnX1 - 1, MIN(dnY, dnY0) - 1, dnX2 + 1, MAX(dnY, dnY0) + 1, rkRED);
+    END;
+    TEXTOUT_P(rk_Trunc(rkGNm(dnG), MAX(1, IP(dnW / 6.5))), G1, dnX1, 86, 1, dnC, IP(dnW));
+  END;
+  // the list
+  TEXTOUT_P("pair", G1, 6, 98, 1, rkGRAY, 80);
+  TEXTOUT_P("z", G1, 132, 98, 1, rkGRAY, 40);
+  TEXTOUT_P("p", G1, 190, 98, 1, rkGRAY, 40);
+  TEXTOUT_P("Holm p", G1, 250, 98, 1, rkGRAY, 60);
+  IF rkDSel < rkDTop THEN rkDTop := rkDSel; END;
+  IF rkDSel > rkDTop + 5 THEN rkDTop := rkDSel - 5; END;
+  dnTop := rkDTop;
+  FOR dnR FROM 0 TO 5 DO
+    dnI := dnTop + dnR;
+    IF dnI <= dnM THEN
+      dnY := 110 + 13 * dnR;
+      IF dnI == rkDSel THEN RECT_P(G1, 2, dnY - 1, 317, dnY + 11, rkLRED, rkLRED); END;
+      dnC := #000000h;
+      IF rkDH(dnI) < 0.05 THEN dnC := rkGRN; END;
+      dnS := rk_Trunc(rkGNm(rkDI(dnI)), 7) + " v " + rk_Trunc(rkGNm(rkDJ(dnI)), 7);
+      TEXTOUT_P(dnS, G1, 6, dnY, 1, dnC, 120);
+      TEXTOUT_P(rk_Sg(rkDZ(dnI), 2), G1, 126, dnY, 1, dnC, 60);
+      TEXTOUT_P(IFTE(rkDP(dnI) < 0.0001, "<0.0001", rk_Fx(rkDP(dnI), 4)), G1, 184, dnY, 1, dnC, 60);
+      TEXTOUT_P(IFTE(rkDH(dnI) < 0.0001, "<0.0001", rk_Fx(rkDH(dnI), 4)), G1, 250, dnY, 1, dnC, 60);
+    END;
+  END;
+  TEXTOUT_P("pair " + STRING(rkDSel, 2, 0) + " of " + STRING(dnM, 2, 0) + "; green = Holm p < 0.05", G1, 6, 193, 1, rkGRAY, 308);
+  rk_Foot("tap a pair, " + rkLR + " = pick, " + rkUD + " = page, Esc = back");
+END;
+
+
+// ============================================================
+// FRIEDMAN: THE RANK GRID
+// ============================================================
+
+// rk_PgGrid: one row per block, one column per treatment; each cell
+// shows the rank within its block (or the value, slot 4), shaded
+// darker for a higher rank; under the grid the rank sums R and the
+// mean ranks.
+rk_PgGrid()
+BEGIN
+  LOCAL grK, grB, grCw, grRh, grRows, grI;
+  LOCAL grJ, grX, grY, grR, grT, grF;
+  LOCAL grS, grBl, grTop, grSel;
+  grK := rkFK; grB := rkFB;
+  grCw := IP(274 / grK); grRh := 12;
+  grRows := MIN(grB, 9);
+  // keep the picked cell's row on the screen
+  grBl := IP((rkFSel - 1) / grK) + 1;
+  IF grBl < rkFTop THEN rkFTop := grBl; END;
+  IF grBl > rkFTop + grRows - 1 THEN rkFTop := grBl - grRows + 1; END;
+  grTop := rkFTop;
+  IF grB > grRows THEN
+    rk_Frame("Friedman: ranks within, blocks " + STRING(grTop, 2, 0) + "-" + STRING(grTop + grRows - 1, 2, 0) + "/" + STRING(grB, 2, 0));
+  ELSE
+    rk_Frame("Friedman: ranks within each block");
+  END;
+  FOR grJ FROM 1 TO grK DO
+    grX := 42 + (grJ - 1) * grCw;
+    TEXTOUT_P(rk_Trunc(rkFTn(grJ), MAX(1, IP((grCw - 2) / 6.5))), G1, grX + 1, 22, 1, rk_GCol(grJ), grCw);
+  END;
+  FOR grI FROM 0 TO grRows - 1 DO
+    grBl := grTop + grI;
+    grY := 34 + grI * grRh;
+    TEXTOUT_P(rk_Trunc(rkFBn(grBl), 6), G1, 2, grY, 1, rkGRAY, 40);
+    FOR grJ FROM 1 TO grK DO
+      grX := 42 + (grJ - 1) * grCw;
+      grR := rkFR((grBl - 1) * grK + grJ);
+      grT := (grR - 1) / MAX(1, grK - 1);
+      grF := RGB(255 - IP(150 * grT), 255 - IP(110 * grT), 255);
+      RECT_P(G1, grX, grY - 1, grX + grCw - 1, grY + grRh - 2, #FFFFFFh, grF);
+      IF rkFVal == 1 THEN grS := rk_Num(rkFM((grBl - 1) * grK + grJ)); ELSE grS := rk_Num(grR); END;
+      TEXTOUT_P(grS, G1, grX + 2, grY, 1, #000000h, grCw - 2);
+      IF (grBl - 1) * grK + grJ == rkFSel THEN
+        rk_Box(grX, grY - 1, grX + grCw - 1, grY + grRh - 2, rkRED);
+      END;
+    END;
+  END;
+  grY := 34 + grRows * grRh + 2;
+  TEXTOUT_P("R", G1, 2, grY, 1, rkMAG, 40);
+  TEXTOUT_P("mean", G1, 2, grY + 12, 1, rkGRN, 40);
+  FOR grJ FROM 1 TO grK DO
+    grX := 42 + (grJ - 1) * grCw;
+    TEXTOUT_P(rk_Num(rkFRS(grJ)), G1, grX + 2, grY, 1, rkMAG, grCw - 2);
+    TEXTOUT_P(rk_Fx(rkFRS(grJ) / grB, 2), G1, grX + 2, grY + 12, 1, rkGRN, grCw - 2);
+  END;
+  // the picked cell
+  RECT_P(G1, 0, 172, 319, 201, rkORNG, rkLORN);
+  grSel := rkFSel;
+  grBl := IP((grSel - 1) / grK) + 1; grJ := grSel - (grBl - 1) * grK;
+  TEXTOUT_P(rk_Trunc(rkFBn(grBl), 12) + ", " + rk_Trunc(rkFTn(grJ), 12) + ": value " + rk_Num(rkFM(grSel)) + ", rank " + rk_Num(rkFR(grSel)) + " of " + STRING(grK, 2, 0), G1, 6, 175, 1, rk_GCol(grJ), 308);
+  TEXTOUT_P("its rank sum " + rk_Num(rkFRS(grJ)) + ", mean rank " + rk_Fx(rkFRS(grJ) / grB, 2) + " (H" + CHAR(8320) + " " + rk_Num((grK + 1) / 2) + ")", G1, 6, 188, 1, #000000h, 308);
+  rk_Foot("tap a cell, " + rkLR + " = pick, + = values, Esc = back");
+END;
+
+
+// ============================================================
+// RANK CORRELATION: THE SCATTER
+// ============================================================
+
+// rk_PgScat: the ranks of x against the ranks of y (or, with Data on
+// page 2 of the soft keys, the data themselves); tap a point.
+rk_PgScat()
+BEGIN
+  LOCAL scN, scXa, scXb, scYa, scYb, scI;
+  LOCAL scX, scY, scT, scV, scPx, scPy;
+  LOCAL scS;
+  scN := rkN;
+  rk_Frame(IFTE(rkCDat == 1, "Data", "Ranks") + ": rs = " + rk_Sg(rkRs, 3) + ", tau-b = " + rk_Sg(rkTau, 3));
+  IF rkCDat == 1 THEN
+    scS := SORT(rkCX); scXa := scS(1); scXb := scS(scN);
+    scS := SORT(rkCY); scYa := scS(1); scYb := scS(scN);
+  ELSE
+    scXa := 1; scXb := scN; scYa := 1; scYb := scN;
+  END;
+  IF scXb == scXa THEN scXa := scXa - 1; scXb := scXb + 1; END;
+  IF scYb == scYa THEN scYa := scYa - 1; scYb := scYb + 1; END;
+  scT := (scXb - scXa) * 0.04; scXa := scXa - scT; scXb := scXb + scT;
+  scT := (scYb - scYa) * 0.05; scYa := scYa - scT; scYb := scYb + scT;
+  RECT_P(G1, 34, 34, 308, 152, rkGRID, #FFFFFFh);
+  scT := rk_Nice((scXb - scXa) / 5);
+  scV := CEILING(scXa / scT) * scT;
+  WHILE scV <= scXb DO
+    scPx := 34 + IP((scV - scXa) / (scXb - scXa) * 274);
+    LINE_P(G1, scPx, 34, scPx, 152, rkGRID);
+    TEXTOUT_P(rk_Num(scV), G1, scPx - 8, 154, 1, rkGRAY, 40);
+    scV := scV + scT;
+  END;
+  scT := rk_Nice((scYb - scYa) / 5);
+  scV := CEILING(scYa / scT) * scT;
+  WHILE scV <= scYb DO
+    scPy := 152 - IP((scV - scYa) / (scYb - scYa) * 118);
+    LINE_P(G1, 34, scPy, 308, scPy, rkGRID);
+    TEXTOUT_P(rk_Num(scV), G1, 2, scPy - 5, 1, rkGRAY, 30);
+    scV := scV + scT;
+  END;
+  TEXTOUT_P("y = " + rk_Trunc(rkCNy, 30) + IFTE(rkCDat == 1, "", " (its rank)"), G1, 4, 21, 1, rkMAG, 312);
+  TEXTOUT_P("x = " + rkCNx + IFTE(rkCDat == 1, "", " (rank)"), G1, 120, 165, 1, rkGRAY, 190);
+  rkHX := rk_Zeros(scN); rkHY := rk_Zeros(scN);
+  FOR scI FROM 1 TO scN DO
+    IF rkCDat == 1 THEN scX := rkCX(scI); scY := rkCY(scI); ELSE scX := rkRX(scI); scY := rkRY(scI); END;
+    scPx := 34 + IP((scX - scXa) / (scXb - scXa) * 274);
+    scPy := 152 - IP((scY - scYa) / (scYb - scYa) * 118);
+    rkHX(scI) := scPx; rkHY(scI) := scPy;
+    RECT_P(G1, scPx - 1, scPy - 1, scPx + 1, scPy + 1, rkBLUE, rkBLUE);
+  END;
+  scI := rkCSel;
+  rk_Box(rkHX(scI) - 3, rkHY(scI) - 3, rkHX(scI) + 3, rkHY(scI) + 3, rkRED);
+  RECT_P(G1, rkHX(scI) - 1, rkHY(scI) - 1, rkHX(scI) + 1, rkHY(scI) + 1, rkRED, rkRED);
+  RECT_P(G1, 0, 178, 319, 201, rkORNG, rkLORN);
+  TEXTOUT_P(rkCLab + " " + STRING(scI, 2, 0) + ": x = " + rk_Num(rkCX(scI)) + ", y = " + rk_Num(rkCY(scI)), G1, 6, 180, 1, rkRED, 308);
+  TEXTOUT_P("midranks: x " + rk_Num(rkRX(scI)) + ", y " + rk_Num(rkRY(scI)) + "  (d = " + rk_Num(rkRX(scI) - rkRY(scI)) + ")", G1, 6, 191, 1, #000000h, 308);
+  rk_Foot("tap a point, " + rkLR + " = pick, " + rkUD + " = page, Esc = back");
+END;
+
+
+// ============================================================
+// THE NULL DISTRIBUTION
+// ============================================================
+
+// rk_IsBars (beta 1a): does the Null page show exact bars?  Tests 1-3
+// in Exact mode, and rank correlation whenever the coefficient on the
+// page has an exact null (rk_CorNull).
+rk_IsBars()
+BEGIN
+  IF rkNOK <> 1 THEN RETURN 0; END;
+  IF rkTest <= 3 AND rkMode == 1 THEN RETURN 1; END;
+  IF rkTest == 6 THEN RETURN 1; END;
+  RETURN 0;
+END;
+
+// rk_NNm (beta 1a): the name on the Null page's axis.
+rk_NNm()
+BEGIN
+  IF rkTest == 6 AND rk_IsBars() == 1 THEN RETURN IFTE(rkCWh == 1, "rs", "tau-b"); END;
+  RETURN rk_SNm();
+END;
+
+// rk_InTail: is value v in the p tail(s) of the exact null?  lower
+// v <= S, upper v >= S, two-sided outside S and its mirror 2 mean - S.
+rk_InTail(itV)
+BEGIN
+  LOCAL itM;
+  IF rkTail == 1 THEN RETURN IFTE(itV <= rkNObs + 1E-9, 1, 0); END;
+  IF rkTail == 2 THEN RETURN IFTE(itV >= rkNObs - 1E-9, 1, 0); END;
+  itM := 2 * rkNMu - rkNObs;
+  IF itV <= MIN(rkNObs, itM) + 1E-9 THEN RETURN 1; END;
+  IF itV >= MAX(rkNObs, itM) - 1E-9 THEN RETURN 1; END;
+  RETURN 0;
+END;
+
+// rk_CvKind: which curve the Null page draws: 1 normal (mean rkMu, SD
+// rkSd, the statistic's own scale), 2 chi-square (df rkDf), 3 Student
+// t (df rkDf, Spearman), 4 standard normal (Kendall's z).
+rk_CvKind()
+BEGIN
+  IF rkTest <= 3 THEN RETURN 1; END;
+  IF rkTest <= 5 THEN RETURN 2; END;
+  IF rkCWh == 1 THEN RETURN 3; END;
+  RETURN 4;
+END;
+
+// rk_CvObs: the observed statistic on the curve's scale.
+rk_CvObs()
+BEGIN
+  IF rkTest <= 5 THEN RETURN rkSt; END;
+  IF rkCWh == 2 THEN RETURN rkKz; END;
+  IF ABS(rkRs) >= 1 THEN RETURN SIGN(rkRs) * 1E6; END;
+  RETURN rkTt;
+END;
+
+// rk_Dens: the curve's density at x.
+rk_Dens(dsK, dsX)
+BEGIN
+  IF dsK == 1 THEN RETURN NORMALD(rkMu, rkSd, dsX); END;
+  IF dsK == 2 THEN
+    IF dsX <= 0 THEN RETURN 0; END;
+    RETURN CHISQUARE(rkDf, dsX);
+  END;
+  IF dsK == 3 THEN RETURN STUDENT(rkDf, dsX); END;
+  RETURN NORMALD(0, 1, dsX);
+END;
+
+// rk_CvUp: P(X >= x) on the curve (the tap readout), as a lower tail.
+rk_CvUp(cuK, cuV)
+BEGIN
+  IF cuK == 1 THEN RETURN NORMALD_CDF(0, 1, (rkMu - cuV) / rkSd); END;
+  IF cuK == 2 THEN RETURN rk_ChiUp(rkDf, cuV); END;
+  IF cuK == 3 THEN RETURN STUDENT_CDF(rkDf, -cuV); END;
+  RETURN NORMALD_CDF(0, 1, -cuV);
+END;
+
+// rk_CvShade: is curve point x in the shaded p region?  The normal
+// approximation of a count shades from the continuity-corrected cut
+// (S - 0.5 or S + 0.5), as its p does.
+rk_CvShade(chK, chX, chO)
+BEGIN
+  LOCAL chD;
+  IF chK == 2 THEN RETURN IFTE(chX >= chO, 1, 0); END;
+  IF chK == 1 THEN
+    IF rkTail == 1 THEN RETURN IFTE(chX <= chO + 0.5, 1, 0); END;
+    IF rkTail == 2 THEN RETURN IFTE(chX >= chO - 0.5, 1, 0); END;
+    chD := MAX(0, ABS(chO - rkMu) - 0.5);
+    RETURN IFTE(ABS(chX - rkMu) >= chD, 1, 0);
+  END;
+  IF rkTail == 1 THEN RETURN IFTE(chX <= chO, 1, 0); END;
+  IF rkTail == 2 THEN RETURN IFTE(chX >= chO, 1, 0); END;
+  RETURN IFTE(ABS(chX) >= ABS(chO), 1, 0);
+END;
+
+// rk_CvFit: the curve's window and its height in every pixel column,
+// computed once per test and kind (rkCvK), never per frame.
+rk_CvFit(cfK)
+BEGIN
+  LOCAL cfO, cfW, cfI, cfX, cfY, cfL;
+  LOCAL cfKey;
+  cfKey := STRING(rkTest, 2, 0) + ":" + STRING(cfK, 2, 0);
+  IF cfKey == rkCvK THEN RETURN 0; END;
+  cfO := rk_CvObs();
+  IF cfK == 1 THEN
+    rkCvA := rkMu - 4 * rkSd; rkCvB := rkMu + 4 * rkSd;
+    rkCvA := MIN(rkCvA, MIN(cfO, 2 * rkMu - cfO) - 0.5 * rkSd);
+    rkCvB := MAX(rkCvB, MAX(cfO, 2 * rkMu - cfO) + 0.5 * rkSd);
+  END;
+  IF cfK == 2 THEN
+    rkCvA := 0;
+    rkCvB := MAX(rkDf + 4.5 * (2 * rkDf)^0.5, 1.1 * cfO);
+  END;
+  IF cfK >= 3 THEN
+    cfL := MAX(4, 1.15 * ABS(cfO));
+    IF ABS(cfO) >= 1E5 THEN cfL := 6; END;
+    rkCvA := -cfL; rkCvB := cfL;
+  END;
+  cfW := rkPR - rkPL;
+  rkCvY := rk_Zeros(cfW + 1);
+  rkCvM := 0;
+  FOR cfI FROM 0 TO cfW DO
+    cfX := rkCvA + (cfI + 0.5) / (cfW + 1) * (rkCvB - rkCvA);
+    cfY := rk_Dens(cfK, cfX);
+    rkCvY(cfI + 1) := cfY;
+    IF cfK <> 2 OR cfI >= IP(cfW / 25) THEN rkCvM := MAX(rkCvM, cfY); END;
+  END;
+  IF rkCvM <= 0 THEN rkCvM := 1; END;
+  rkCvK := cfKey;
+  RETURN 1;
+END;
+
+// rk_PgNull: page 3.  Exact: the null distribution as bars (magenta =
+// the bars in the p tail(s), red line = the observed statistic, green
+// = the mean).  Otherwise the approximating curve with the p region
+// shaded.  A tap (or Left / Right) reads one value off it.
+rk_PgNull()
+BEGIN
+  LOCAL nlBars, nlA, nlB, nlW, nlH, nlNv;
+  LOCAL nlJ, nlV, nlI, nlC, nlX1, nlX2;
+  LOCAL nlY, nlMx, nlBw, nlCol, nlK;
+  LOCAL nlO, nlPx, nlS, nlT, nlCm, nlCt;
+  nlW := rkPR - rkPL; nlH := rkPB - rkPT - 4;
+  nlBars := 0;
+  IF rkTest == 5 AND rkFNoP == 1 THEN
+    rk_Frame("Friedman: no null distribution here");
+    rk_Ln(1, "W = " + rk_Fx(rkW, 3) + " describes how alike the 11 criteria", rkMAG);
+    rk_Ln(2, "order the judges.  It gets no p-value: the", #000000h);
+    rk_Ln(3, "criteria are not independent raters (the same", #000000h);
+    rk_Ln(4, "lawyers rated every criterion), so the", #000000h);
+    rk_Ln(5, rkCHI + " null of Friedman's Q does not apply.", #000000h);
+    rk_Ln(7, "Load 'US judges: 3 criteria' for a test with", rkGRAY);
+    rk_Ln(8, "independent blocks (the 43 judges).", rkGRAY);
+    rk_Foot(rkUD + " = page, Ent = menu, Esc = back");
+    RETURN 0;
+  END;
+  nlBars := rk_IsBars();
+  rk_Frame(rk_TSh() + ": null distribution");
+  RECT_P(G1, rkPL, rkPT, rkPR, rkPB, rkGRID, #FFFFFFh);
+  IF nlBars == 1 THEN
+    nlA := rkDisL - rkNSt / 2; nlB := rkDisH + rkNSt / 2;
+    nlNv := ROUND((rkDisH - rkDisL) / rkNSt, 0) + 1;
+    nlMx := 0;
+    FOR nlJ FROM 1 TO nlNv DO
+      nlI := ROUND((rkDisL - rkNLo) / rkNSt, 0) + nlJ;
+      nlMx := MAX(nlMx, rkNull(nlI));
+    END;
+    IF nlMx <= 0 THEN nlMx := 1; END;
+    IF nlNv <= nlW / 2 THEN
+      // one bar per value
+      nlBw := nlW / nlNv;
+      FOR nlJ FROM 1 TO nlNv DO
+        nlV := rkDisL + (nlJ - 1) * rkNSt;
+        nlI := ROUND((nlV - rkNLo) / rkNSt, 0) + 1;
+        nlC := rkNull(nlI);
+        IF nlC > 0 THEN
+          nlX1 := rkPL + IP((nlJ - 1) * nlBw);
+          nlX2 := rkPL + IP(nlJ * nlBw) - 1;
+          IF nlBw >= 4 THEN nlX1 := nlX1 + 1; END;
+          IF nlX2 < nlX1 THEN nlX2 := nlX1; END;
+          nlY := rkPB - MAX(1, IP(nlC / nlMx * nlH));
+          nlCol := rkBLUE;
+          IF rk_InTail(nlV) == 1 THEN nlCol := rkMAG; END;
+          RECT_P(G1, nlX1, nlY, nlX2, rkPB - 1, nlCol, nlCol);
+          // a magenta mark under the axis, so a tail too thin to see shows
+          IF nlCol == rkMAG THEN RECT_P(G1, nlX1, rkPB + 1, nlX2, rkPB + 2, rkMAG, rkMAG); END;
+        END;
+      END;
+    ELSE
+      // more values than pixel pairs: each column shows its tallest
+      nlCm := rk_Zeros(nlW + 1); nlCt := rk_Zeros(nlW + 1);
+      FOR nlJ FROM 1 TO nlNv DO
+        nlV := rkDisL + (nlJ - 1) * rkNSt;
+        nlI := ROUND((nlV - rkNLo) / rkNSt, 0) + 1;
+        nlK := IP((nlV - nlA) / (nlB - nlA) * nlW) + 1;
+        nlK := MAX(1, MIN(nlW + 1, nlK));
+        nlCm(nlK) := MAX(nlCm(nlK), rkNull(nlI));
+        IF rk_InTail(nlV) == 1 THEN nlCt(nlK) := 1; END;
+      END;
+      FOR nlK FROM 1 TO nlW + 1 DO
+        IF nlCm(nlK) > 0 THEN
+          nlY := rkPB - MAX(1, IP(nlCm(nlK) / nlMx * nlH));
+          LINE_P(G1, rkPL + nlK - 1, nlY, rkPL + nlK - 1, rkPB - 1, IFTE(nlCt(nlK) == 1, rkMAG, rkBLUE));
+          IF nlCt(nlK) == 1 THEN LINE_P(G1, rkPL + nlK - 1, rkPB + 1, rkPL + nlK - 1, rkPB + 2, rkMAG); END;
+        END;
+      END;
+    END;
+    nlO := rkNObs;
+    IF rkTest == 6 THEN
+      nlS := "Exact null of " + rk_NNm() + ": all " + STRING(rkN, 2, 0) + "! orders of y";
+    END;
+    IF rkTest == 1 THEN
+      nlS := "Exact null: Binomial(" + STRING(rkN, 2, 0) + ", 1/2) for S+";
+    END;
+    IF rkTest == 2 THEN
+      nlS := "Exact null of T+: all 2^" + STRING(rkN, 2, 0) + " sign patterns";
+    END;
+    IF rkTest == 3 THEN
+      nlS := "Exact null of U" + CHAR(8321) + ": all C(" + STRING(rkN, 2, 0) + ", " + STRING(MIN(rkKn(1), rkKn(2)), 2, 0) + ") splits";
+    END;
+  ELSE
+    nlK := rk_CvKind();
+    rk_CvFit(nlK);
+    nlA := rkCvA; nlB := rkCvB;
+    nlO := rk_CvObs();
+    FOR nlI FROM 0 TO nlW DO
+      nlV := nlA + (nlI + 0.5) / (nlW + 1) * (nlB - nlA);
+      nlY := rkPB - IP(MIN(1, rkCvY(nlI + 1) / rkCvM) * nlH);
+      IF rk_CvShade(nlK, nlV, nlO) == 1 THEN
+        IF nlY < rkPB - 1 THEN LINE_P(G1, rkPL + nlI, nlY, rkPL + nlI, rkPB - 1, rkSHD); END;
+        LINE_P(G1, rkPL + nlI, rkPB + 1, rkPL + nlI, rkPB + 2, rkMAG);
+      END;
+    END;
+    FOR nlI FROM 1 TO nlW DO
+      LINE_P(G1, rkPL + nlI - 1, rkPB - IP(MIN(1, rkCvY(nlI) / rkCvM) * nlH), rkPL + nlI, rkPB - IP(MIN(1, rkCvY(nlI + 1) / rkCvM) * nlH), rkBLUE);
+    END;
+    IF nlK == 1 THEN nlS := "Normal approx. of " + rk_SNm() + ": mean " + rk_Num(rkMu) + ", SD " + rk_Fx(rkSd, 2); END;
+    IF nlK == 1 AND rkMode == 1 AND rkEx == 1 THEN nlS := "Too many bars: the normal curve (exact p on Result)"; END;
+    IF nlK == 2 THEN nlS := rkCHI + " curve, df = " + STRING(rkDf, 2, 0) + " (large-sample null of " + rk_SNm() + ")"; END;
+    IF nlK == 3 THEN nlS := "Student t, df = " + STRING(rkDf, 2, 0) + " (null of Spearman's t)"; END;
+    IF nlK == 4 THEN nlS := "Standard normal (null of Kendall's z)"; END;
+  END;
+  TEXTOUT_P(nlS, G1, 4, 22, 1, rkBLUE, 312);
+  // the x axis
+  nlT := rk_Nice((nlB - nlA) / 6);
+  nlV := CEILING(nlA / nlT) * nlT;
+  WHILE nlV <= nlB DO
+    nlPx := rkPL + IP((nlV - nlA) / (nlB - nlA) * nlW);
+    LINE_P(G1, nlPx, rkPB, nlPx, rkPB + 3, #000000h);
+    TEXTOUT_P(rk_Num(nlV), G1, nlPx - 8, rkPB + 4, 1, rkGRAY, 40);
+    nlV := nlV + nlT;
+  END;
+  // the mean (green), the observed statistic (red)
+  IF nlBars == 1 OR rk_CvKind() == 1 THEN
+    nlPx := rkPL + IP((IFTE(nlBars == 1, rkNMu, rkMu) - nlA) / (nlB - nlA) * nlW);
+    LINE_P(G1, nlPx, rkPB + 1, nlPx, rkPB + 6, rkGRN);
+  END;
+  nlPx := rkPL + IP((MAX(nlA, MIN(nlB, nlO)) - nlA) / (nlB - nlA) * nlW);
+  LINE_P(G1, nlPx, rkPT, nlPx, rkPB, rkRED);
+  nlS := rk_NNm() + " = " + IFTE(ABS(nlO) >= 1E5, "infinite", rk_Num(ROUND(nlO, 3)));
+  TEXTOUT_P(nlS, G1, MAX(rkPL + 2, MIN(rkPR - 6 * DIM(nlS) - 2, nlPx + 3)), rkPT + 2, 1, rkRED, 120);
+  // the tapped value
+  IF rkNSel > -1E98 THEN
+    nlPx := rkPL + IP((MAX(nlA, MIN(nlB, rkNSel)) - nlA) / (nlB - nlA) * nlW);
+    FOR nlI FROM rkPT TO rkPB STEP 3 DO PIXON_P(G1, nlPx, nlI, rkGRAY); END;
+  END;
+  // the panel
+  RECT_P(G1, 0, 165, 319, 202, rkORNG, rkLORN);
+  IF nlBars == 1 THEN
+    nlS := rk_NNm() + " = " + rk_Num(ROUND(rkNObs, 4)) + " (red): exact " + rk_PT(IFTE(rkTest == 6 AND rkCWh == 2, rkPn, rkPe)) + ", " + rk_TailW();
+  ELSE
+    IF rkTest <= 3 THEN
+      nlS := rk_SNm() + " = " + rk_Num(rkSt) + ": normal " + rk_PT(rkPn) + ", " + rk_TailW();
+    ELSE
+      IF rkTest == 6 THEN
+        nlS := rk_SNm() + " (red): " + IFTE(rkCWh == 1 AND rkPe < 0, "no p", rk_PT(IFTE(rkCWh == 1, rkPe, rkPn))) + ", " + rk_TailW() + IFTE(rkN < 10, " (rough, n < 10)", "");
+      ELSE
+        nlS := rk_SNm() + " = " + rk_Fx(rkSt, 3) + " (red): " + rk_PT(rkPn) + ", upper tail";
+      END;
+    END;
+  END;
+  TEXTOUT_P(nlS, G1, 6, 167, 1, rkRED, 308);
+  IF nlBars == 1 THEN
+    nlS := "magenta = the p tail(s), marked under the axis";
+    IF rkTest == 6 THEN nlS := "magenta = the p tail(s); bars = orders of y"; END;
+  ELSE
+    IF rk_CvKind() == 1 THEN
+      nlS := "shaded = p (continuity corrected: cut at " + rkPM + "0.5)";
+    ELSE
+      nlS := "shaded = p; the curve is the approximate null";
+    END;
+  END;
+  TEXTOUT_P(nlS, G1, 6, 178, 1, rkMAG, 308);
+  nlS := "tap the plot to read a probability";
+  IF rkNSel > -1E98 THEN
+    IF nlBars == 1 THEN
+      nlI := ROUND((rkNSel - rkNLo) / rkNSt, 0) + 1;
+      nlS := rk_NNm() + " = " + rk_Num(ROUND(rkNSel, 4)) + ": P(=) " + rk_Fx(rkNull(nlI) / rkNDen, 4) + ", P(" + rkLE + ") " + rk_Fx(rk_NSum(rkNSel, 1), 4);
+    ELSE
+      nlS := "at " + rk_Num(ROUND(rkNSel, 3)) + ": P(" + rk_SNm() + " " + rkGE + " " + rk_Num(ROUND(rkNSel, 3)) + ") = " + rk_Fx(rk_CvUp(rk_CvKind(), rkNSel), 4);
+    END;
+  END;
+  TEXTOUT_P(nlS, G1, 6, 189, 1, #000000h, 308);
+  rk_Foot("tap the plot, " + rkLR + " = move, " + rkUD + " = page, Esc = back");
+END;
+
+
+// ============================================================
+// THE VIEW: pages, soft keys, keys and taps
+// ============================================================
+
+// rk_NPg: how many pages the open test has (Kruskal-Wallis has Dunn).
+rk_NPg()
+BEGIN
+  IF rkTest == 4 THEN RETURN 4; END;
+  RETURN 3;
+END;
+
+// rk_K4: the label of soft key 4: what is on now (tap to switch).
+rk_K4()
+BEGIN
+  IF rkTest <= 3 THEN RETURN IFTE(rkMode == 1 AND rkEx == 1, "Exact", "Normal"); END;
+  IF rkTest == 4 THEN RETURN IFTE(rkKRk == 1, "Ranks", "Values"); END;
+  IF rkTest == 5 THEN RETURN IFTE(rkFVal == 1, "Values", "Ranks"); END;
+  RETURN IFTE(rkCWh == 1, "rs", "tau-b");
+END;
+
+// rk_K5: the label of soft key 5, the tail.
+rk_K5()
+BEGIN
+  IF rkTest == 4 OR rkTest == 5 THEN RETURN "Upper"; END;
+  IF rkTail == 1 THEN RETURN "Lower"; END;
+  IF rkTail == 2 THEN RETURN "Upper"; END;
+  RETURN "2-side";
+END;
+
+// rk_Draw: compose the page in G1, show it with one blit, then the
+// soft keys (DRAWMENU paints the screen, so it comes after the blit).
+rk_Draw()
+BEGIN
+  LOCAL dwA, dwB;
+  CASE
+    IF rkPg == 1 THEN rk_PgRes(); END;
+    IF rkPg == 2 THEN
+      IF rkTest <= 3 THEN rk_PgStrip(); END;
+      IF rkTest == 4 THEN rk_PgBox(); END;
+      IF rkTest == 5 THEN rk_PgGrid(); END;
+      IF rkTest == 6 THEN rk_PgScat(); END;
+    END;
+    IF rkPg == 3 THEN rk_PgNull(); END;
+    DEFAULT rk_PgDunn();
+  END;
+  BLIT_P(G0, 0, 0, G1);
+  IF rkSK == 1 THEN
+    dwA := rk_K4(); dwB := rk_K5();
+    DRAWMENU({"Result", "Plot", "Null", dwA, dwB, "More"});
+  ELSE
+    dwA := "";
+    IF rkTest == 4 THEN dwA := "Dunn"; END;
+    IF rkTest == 6 THEN dwA := IFTE(rkCDat == 1, "Data", "Ranks"); END;
+    DRAWMENU({"Help", dwA, "", "", "Menu", "More"});
+  END;
+END;
+
+// rk_Pick1: Left (-1) or Right (+1) on the page that is showing:
+// the next dot, group, cell, point, pair or read-out value.
+rk_Pick1(pkD)
+BEGIN
+  LOCAL pkS, pkN;
+  IF rkPg == 1 THEN
+    rkPg := rkPg + pkD;
+    IF rkPg < 1 THEN rkPg := rk_NPg(); END;
+    RETURN 0;
+  END;
+  IF rkPg == 2 THEN
+    IF rkTest <= 3 THEN
+      rkSelO := MAX(1, MIN(SIZE(rkOrd), rkSelO + pkD));
+      rkSel := rkOrd(rkSelO);
+    END;
+    IF rkTest == 4 THEN rkKSel := MAX(1, MIN(rkGK, rkKSel + pkD)); END;
+    IF rkTest == 5 THEN rkFSel := MAX(1, MIN(rkFB * rkFK, rkFSel + pkD)); END;
+    IF rkTest == 6 THEN rkCSel := MAX(1, MIN(rkN, rkCSel + pkD)); END;
+    RETURN 0;
+  END;
+  IF rkPg == 4 THEN
+    rkDSel := MAX(1, MIN(SIZE(rkDP), rkDSel + pkD));
+    RETURN 0;
+  END;
+  // the Null page: move the read-out line
+  IF rk_IsBars() == 1 THEN
+    IF rkNSel < -1E98 THEN rkNSel := rkNObs; ELSE rkNSel := rkNSel + pkD * rkNSt; END;
+    rkNSel := MAX(rkDisL, MIN(rkDisH, rkNSel));
+  ELSE
+    rk_CvFit(rk_CvKind());
+    pkS := (rkCvB - rkCvA) / 40;
+    IF rkNSel < -1E98 THEN
+      pkN := rk_CvObs();
+      IF ABS(pkN) >= 1E5 THEN pkN := rkCvB; END;
+      rkNSel := pkN;
+    ELSE
+      rkNSel := rkNSel + pkD * pkS;
+    END;
+    rkNSel := MAX(rkCvA, MIN(rkCvB, rkNSel));
+  END;
+  RETURN 0;
+END;
+
+// rk_Tap: a tap at (x, y) above the soft-key strip: pick the thing
+// under the finger on the page that is showing.
+rk_Tap(tpX, tpY)
+BEGIN
+  LOCAL tpI, tpB, tpD, tpBd, tpW, tpA;
+  LOCAL tpBb, tpR, tpC;
+  IF rkPg == 2 AND (rkTest <= 3 OR rkTest == 6) THEN
+    // the nearest dot or point
+    tpB := 0; tpBd := 1E99;
+    FOR tpI FROM 1 TO SIZE(rkHX) DO
+      tpD := (rkHX(tpI) - tpX)^2 + (rkHY(tpI) - tpY)^2;
+      IF tpD < tpBd THEN tpBd := tpD; tpB := tpI; END;
+    END;
+    IF tpB > 0 AND tpBd <= 400 THEN
+      IF rkTest == 6 THEN
+        rkCSel := tpB;
+      ELSE
+        rkSel := tpB;
+        FOR tpI FROM 1 TO SIZE(rkOrd) DO
+          IF rkOrd(tpI) == tpB THEN rkSelO := tpI; END;
+        END;
+      END;
+    END;
+    RETURN 0;
+  END;
+  IF rkPg == 2 AND rkTest == 4 THEN
+    IF tpX >= 34 AND tpX <= 310 AND tpY >= 20 AND tpY <= 172 THEN
+      rkKSel := MAX(1, MIN(rkGK, IP((tpX - 34) / ((310 - 34) / rkGK)) + 1));
+    END;
+    RETURN 0;
+  END;
+  IF rkPg == 2 AND rkTest == 5 THEN
+    tpW := IP(274 / rkFK);
+    tpC := IP((tpX - 42) / tpW) + 1;
+    tpR := IP((tpY - 33) / 12);
+    IF tpX >= 42 AND tpC >= 1 AND tpC <= rkFK AND tpR >= 0 AND tpR < MIN(rkFB, 9) THEN
+      tpBb := rkFTop + tpR;
+      IF tpBb <= rkFB THEN rkFSel := (tpBb - 1) * rkFK + tpC; END;
+    END;
+    RETURN 0;
+  END;
+  IF rkPg == 4 THEN
+    IF tpY >= 108 AND tpY < 108 + 6 * 13 THEN
+      tpI := rkDTop + IP((tpY - 108) / 13);
+      IF tpI <= SIZE(rkDP) THEN rkDSel := tpI; END;
+    END;
+    IF tpY >= 20 AND tpY <= 96 AND tpX >= 34 THEN
+      // a bar: pick the first pair that has this group
+      tpB := MAX(1, MIN(rkGK, IP((tpX - 34) / ((308 - 34) / rkGK)) + 1));
+      tpA := 0;
+      FOR tpI FROM 1 TO SIZE(rkDP) DO
+        IF tpA == 0 AND (rkDI(tpI) == tpB OR rkDJ(tpI) == tpB) THEN tpA := tpI; END;
+      END;
+      IF tpA > 0 THEN rkDSel := tpA; END;
+    END;
+    RETURN 0;
+  END;
+  IF rkPg == 3 THEN
+    IF tpX >= rkPL AND tpX <= rkPR AND tpY >= rkPT AND tpY <= rkPB + 12 THEN
+      IF rk_IsBars() == 1 THEN
+        tpA := (rkDisL - rkNSt / 2) + (tpX - rkPL) / (rkPR - rkPL) * (rkDisH - rkDisL + rkNSt);
+        tpA := rkNLo + ROUND((tpA - rkNLo) / rkNSt, 0) * rkNSt;
+        rkNSel := MAX(rkDisL, MIN(rkDisH, tpA));
+      ELSE
+        rk_CvFit(rk_CvKind());
+        rkNSel := rkCvA + (tpX - rkPL) / (rkPR - rkPL) * (rkCvB - rkCvA);
+      END;
+    END;
+    RETURN 0;
+  END;
+  RETURN 0;
+END;
+
+// rk_Act: one action, from a soft key, a key or the Enter menu.
+//   1 Result  2 Plot  3 Null  4 slot 4  5 Tails  6 More  7 Help
+//   8 Dunn / Data  9 back to the main menu  10 / 11 page up / down
+//   12 / 13 pick left / right  14 the Enter menu
+// Returns 0 to leave the view, 1 to stay.
+rk_Act(acA)
+BEGIN
+  IF acA == 9 THEN RETURN 0; END;
+  IF acA >= 1 AND acA <= 3 THEN rkPg := acA; END;
+  IF acA == 6 THEN rkSK := 3 - rkSK; END;
+  IF acA == 7 THEN rk_Help(); END;
+  IF acA == 10 THEN rkPg := rkPg - 1; IF rkPg < 1 THEN rkPg := rk_NPg(); END; END;
+  IF acA == 11 THEN rkPg := rkPg + 1; IF rkPg > rk_NPg() THEN rkPg := 1; END; END;
+  IF acA == 12 THEN rk_Pick1(-1); END;
+  IF acA == 13 THEN rk_Pick1(1); END;
+  IF acA == 4 THEN
+    IF rkTest <= 3 THEN
+      IF rkEx == 0 THEN
+        MSGBOX("No exact null here: " + rkExWhy + ".");
+      ELSE
+        rkMode := 1 - rkMode; rkNSel := -1E99; rk_Pick();
+      END;
+    END;
+    IF rkTest == 4 THEN rkKRk := 1 - rkKRk; rkPg := 2; END;
+    IF rkTest == 5 THEN rkFVal := 1 - rkFVal; rkPg := 2; END;
+    IF rkTest == 6 THEN rkCWh := 3 - rkCWh; rkNSel := -1E99; rk_Pick(); END;
+  END;
+  IF acA == 5 THEN
+    IF rkTest == 4 OR rkTest == 5 THEN
+      MSGBOX(rk_SNm() + " grows only when the groups differ, whichever way: its p is the upper tail only.");
+    ELSE
+      rkTail := rkTail + 1;
+      IF rkTail > 2 THEN rkTail := 0; END;
+      rk_Pick();
+    END;
+  END;
+  IF acA == 8 THEN
+    IF rkTest == 4 THEN rkPg := 4; END;
+    IF rkTest == 6 THEN rkCDat := 1 - rkCDat; rkPg := 2; END;
+  END;
+  IF acA == 14 THEN RETURN rk_Act(rk_Menu()); END;
+  RETURN 1;
+END;
+
+// rk_Menu: Enter's menu of every action (the key route to each soft
+// key and tap).  Returns the action number (0 = nothing).
+rk_Menu()
+BEGIN
+  LOCAL muI, muL;
+  muI := 0;
+  IF rkTest <= 3 THEN muL := "Exact / normal (now " + IFTE(rkMode == 1 AND rkEx == 1, "exact", "normal") + ")"; END;
+  IF rkTest == 4 THEN muL := "Boxes: ranks or values"; END;
+  IF rkTest == 5 THEN muL := "Grid: ranks or values"; END;
+  IF rkTest == 6 THEN muL := "Null page: Spearman/Kendall"; END;
+  IF rkTest == 4 OR rkTest == 6 THEN
+    CHOOSE(muI, rk_TName(), {"Result page", "Picture page", "Null distribution", muL, "Tails (now " + rk_TailW() + ")", IFTE(rkTest == 4, "Dunn pairs", "Scatter: data or ranks"), "Help", "Back to the main menu"});
+    IF muI >= 1 AND muI <= 5 THEN RETURN muI; END;
+    IF muI == 6 THEN RETURN 8; END;
+    IF muI == 7 THEN RETURN 7; END;
+    IF muI == 8 THEN RETURN 9; END;
+    RETURN 0;
+  END;
+  CHOOSE(muI, rk_TName(), {"Result page", "Picture page", "Null distribution", muL, "Tails (now " + rk_TailW() + ")", "Help", "Back to the main menu"});
+  IF muI >= 1 AND muI <= 5 THEN RETURN muI; END;
+  IF muI == 6 THEN RETURN 7; END;
+  IF muI == 7 THEN RETURN 9; END;
+  RETURN 0;
+END;
+
+// rk_View: the test's pages, polled the house way (GETKEY and MOUSE
+// together, ChiTable's loop): a tap at y >= 218 is soft key
+// MIN(6, IP(x/53.4) + 1); any other tap picks a thing on the page.
+rk_View()
+BEGIN
+  LOCAL vwK, vwM, vwM1, vwGo, vwSl, vwA;
+  vwGo := 1;
+  REPEAT vwK := GETKEY; UNTIL vwK == -1;
+  rk_Drain();
+  WHILE vwGo == 1 DO
+    rk_Draw();
+    REPEAT
+      vwK := GETKEY;
+      vwM := MOUSE;
+      vwM1 := vwM(1);
+    UNTIL vwK > -1 OR SIZE(vwM1) > 0;
+    vwA := 0;
+    IF SIZE(vwM1) > 0 THEN
+      IF vwM1(2) >= 218 THEN
+        vwSl := MIN(6, IP(vwM1(1) / 53.4) + 1);
+        IF rkSK == 1 THEN
+          vwA := vwSl;
+        ELSE
+          IF vwSl == 1 THEN vwA := 7; END;
+          IF vwSl == 2 THEN vwA := 8; END;
+          IF vwSl == 5 THEN vwA := 9; END;
+          IF vwSl == 6 THEN vwA := 6; END;
+        END;
+      ELSE
+        rk_Tap(vwM1(1), vwM1(2));
+      END;
+      rk_Drain();
+    ELSE
+      IF vwK == 2 THEN vwA := 10; END;          // Up
+      IF vwK == 12 THEN vwA := 11; END;         // Down
+      IF vwK == 7 THEN vwA := 12; END;          // Left
+      IF vwK == 8 THEN vwA := 13; END;          // Right
+      IF vwK == 50 THEN vwA := 4; END;          // +
+      IF vwK == 45 THEN vwA := 5; END;          // -
+      IF vwK == 42 THEN vwA := 7; END;          // 0
+      IF vwK == 30 THEN vwA := 14; END;         // Enter
+      IF vwK == 4 THEN vwA := 9; END;           // Esc
+      REPEAT vwK := GETKEY; UNTIL vwK == -1;
+    END;
+    IF vwA > 0 THEN
+      IF rk_Act(vwA) == 0 THEN vwGo := 0; END;
+    END;
+  END;
+  REPEAT vwK := GETKEY; UNTIL vwK == -1;
+END;
+
+// rk_Open: open test t: make sure it has data, ask for the two groups
+// (Mann-Whitney with more than two), compute, show the view.
+rk_Open(opT)
+BEGIN
+  LOCAL opT0, opL0, opM0;
+  rk_Ensure(opT);
+  // beta 1a: remember the last good test; a refused one puts it back
+  opT0 := rkTest; opL0 := rkTail; opM0 := rkMode;
+  rkTest := opT;
+  // a new test starts two-sided and exact: a one-sided test is chosen
+  // before the data are seen, for that test (Lessons Learned 12)
+  rkTail := 0; rkMode := 1;
+  IF opT == 3 THEN
+    IF rk_PickTwo() == 0 THEN
+      rkTest := opT0; rkTail := opL0; rkMode := opM0;
+      RETURN 0;
+    END;
+  END;
+  IF rk_Compute() == 1 THEN
+    rkDone := 1;
+    rkPg := 1; rkSK := 1;
+    rk_View();
+    RETURN 1;
+  END;
+  rkTest := opT0; rkTail := opL0; rkMode := opM0;
+  RETURN 0;
+END;
+
+
+// ============================================================
+// HELP, THE WELCOME PAGE, THE ENTRY POINT
+// ============================================================
+
+// rk_HPage: one help page of up to 13 lines (font 1, 46 characters);
+// returns the key that closed it.
+rk_HPage(hpT, hpL, hpN)
+BEGIN
+  LOCAL hpI, hpC;
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 2, 2, 317, 237, rkBLUE, rkLBLU);
+  TEXTOUT_P(hpT, G1, 10, 6, 2, rkBLUE, 300);
+  FOR hpI FROM 1 TO SIZE(hpL) DO
+    hpC := #000000h;
+    IF LEFT(hpL(hpI), 1) == "*" THEN hpC := rkMAG; END;
+    TEXTOUT_P(IFTE(hpC == rkMAG, MID(hpL(hpI), 2), hpL(hpI)), G1, 10, 13 + 13 * hpI, 1, hpC, 300);
+  END;
+  TEXTOUT_P("Page " + STRING(hpN, 2, 0) + "/7: key = next, " + CHAR(8592) + " = back, Esc = leave", G1, 10, 220, 1, rkFOOT, 300);
+  BLIT_P(G0, 0, 0, G1);
+  RETURN rk_WaitAny();
+END;
+
+// rk_Help: seven pages; Left goes back a page, Esc leaves.
+rk_Help()
+BEGIN
+  LOCAL hlP, hlK, hlT, hlL;
+  hlP := 1;
+  WHILE hlP >= 1 AND hlP <= 7 DO
+    IF hlP == 1 THEN
+      hlT := "RankLab: what it does";
+      hlL := {
+        "Rank tests replace each value by its rank,",
+        "so an outlier counts no more than the next",
+        "value, and no normal population is assumed.",
+        "*Tied values share the average of the ranks",
+        "*they span: the MIDRANK.  Every test here uses",
+        "*midranks and the tie-corrected variance.",
+        "Each test opens on its Result page.  " + rkUD + " turn",
+        "the pages: Result, a picture, the null",
+        "distribution (and Dunn pairs for Kruskal-",
+        "Wallis).  Soft keys: Result, Plot, Null,",
+        "slot 4 (Exact/Normal or the page's toggle),",
+        "Tails, More (Help, Dunn or Data, Menu)."};
+    END;
+    IF hlP == 2 THEN
+      hlT := "Keys and touch";
+      hlL := {
+        "Up / Down = the previous / next page",
+        "Left / Right = pick the next dot, group,",
+        "cell, point or pair (on the Null page: move",
+        "the read-out line); on Result: turn pages",
+        "+ = slot 4 (Exact/Normal, ranks/values, rs/",
+        "tau-b);  - = Tails: two-sided, lower, upper",
+        "0 = this help;  Enter = a menu of every action",
+        "Esc = back to the main menu (Quit is there)",
+        "*Tap a dot, group, cell, point, bar or pair:",
+        "*the panel says what it is, its value, group",
+        "*and midrank, and for a tie which ranks were",
+        "*averaged.  Slot 4 shows what is on now."};
+    END;
+    IF hlP == 3 THEN
+      hlT := "Sign test and signed-rank";
+      hlL := {
+        "Both test " + rkH0 + ": the median of d is 0.  Zeros",
+        "are dropped: n counts the nonzero d only.",
+        "*SIGN: S+ = number of d > 0, Binomial(n, 1/2)",
+        "*under " + rkH0 + "; exact p from BINOMIAL_CDF; two-",
+        "*sided = 2 " + rkTX + " the smaller tail (at most 1).",
+        "SIGNED-RANK: rank |d| (midranks); T+ = the",
+        "sum of the ranks of d > 0.  Under " + rkH0 + " each",
+        "sign is + or - with chance 1/2, 2^n patterns;",
+        "RankLab counts them all (ties too), n " + rkLE + " 50.",
+        "*Effect r = (T+ - T-)/(n(n+1)/2).  Estimate:",
+        "*Hodges-Lehmann = the median of all Walsh",
+        "*averages (d_i + d_j)/2, i " + rkLE + " j (n " + rkLE + " 100)."};
+    END;
+    IF hlP == 4 THEN
+      hlT := "Mann-Whitney, Kruskal-Wallis";
+      hlL := {
+        "MANN-WHITNEY: rank both groups together;",
+        "U" + CHAR(8321) + " = R" + CHAR(8321) + " - n" + CHAR(8321) + "(n" + CHAR(8321) + " + 1)/2 = the (X, Y) pairs with",
+        "X > Y (ties count 1/2).  Exact: every split",
+        "of the N ranks is equally likely; RankLab",
+        "counts them (no ties, n" + CHAR(8321) + " n" + CHAR(8322) + " " + rkLE + " 400).  Ties:",
+        "normal, tie-corrected, continuity corrected.",
+        "*P(X > Y) + ties/2 = U" + CHAR(8321) + "/(n" + CHAR(8321) + " n" + CHAR(8322) + "); rank-biserial",
+        "*r = (U" + CHAR(8321) + " - U" + CHAR(8322) + ")/(n" + CHAR(8321) + " n" + CHAR(8322) + ").  Hodges-Lehmann shift.",
+        "KRUSKAL-WALLIS: H compares the k mean ranks;",
+        "p from " + rkCHI + "(k - 1); epsilon" + rkSQ + " = H/(N - 1).",
+        "*DUNN: z for each pair of mean ranks, Holm-",
+        "*adjusted over the k(k - 1)/2 pairs."};
+    END;
+    IF hlP == 5 THEN
+      hlT := "Friedman, W, rank correlation";
+      hlL := {
+        "FRIEDMAN: rank within each block (row); Q",
+        "compares the treatments' rank sums, p from",
+        rkCHI + "(k - 1).  Kendall's W = Q/(b(k - 1)): 0 =",
+        "the blocks disagree, 1 = all rank alike.",
+        "Judges: 43 judges (blocks) x 3 criteria. Halo:",
+        "11 criteria order 8 judges, W only (no p).",
+        "*SPEARMAN rs = Pearson's r of the midranks;",
+        "*exact p over all n! orders for n " + rkLE + " 7, else t.",
+        "*KENDALL tau-b = (concordant - discordant)",
+        "*pairs / " + CHAR(8730) + "((n" + CHAR(8320) + " - n" + CHAR(8321) + ")(n" + CHAR(8320) + " - n" + CHAR(8322) + ")); exact p",
+        "*without ties (n " + rkLE + " 30), else z (tie-corrected).",
+        "Lower = a negative association."};
+    END;
+    IF hlP == 6 THEN
+      hlT := "Exact or normal; the p-value";
+      hlL := {
+        "EXACT: p from the statistic's whole null",
+        "distribution, counted.  NORMAL: z with the",
+        "continuity correction (0.5 toward the mean)",
+        "and, with ties, the tie-corrected variance.",
+        "They agree better as n grows: compare them.",
+        "*A p-value is P(a statistic this extreme | " + rkH0 + "),",
+        "*not the chance that " + rkH0 + " is true.  p " + rkGE + " 0.05",
+        "*is no evidence of a difference, not proof",
+        "*of none.",
+        "Two-sided: twice the smaller tail (max 1).",
+        "Lower / upper: one tail, chosen BEFORE the",
+        "data.  Kruskal-Wallis, Friedman: upper only."};
+    END;
+    IF hlP == 7 THEN
+      hlT := "Data, Home, credits";
+      hlL := {
+        "Presets (source on every page): Rossi",
+        "recidivism, the 1970 draft lottery, Darwin's",
+        "Zea mays, judges' ratings, a mock jury (KW",
+        "uses attractiveness only; Crime is ignored).",
+        "Your data: Statistics 1Var D1..D9; groups =",
+        "columns; paired D1 - D2; one sample D1 vs m" + CHAR(8320) + ";",
+        "correlation D1, D2; Friedman: rows = blocks.",
+        "*Home: RK_STAT, RK_P (exact when there is",
+        "*one), RK_PN, RK_EFF, RK_HL, RK_RANKS.",
+        "Reworks Michael Lloyd's TI-83/84 programs",
+        "for Triola (SRTEST, RSTEST, KWTEST, SRCORR,",
+        "ZZRANK) without their tie, zero, rs errors."};
+    END;
+    hlK := rk_HPage(hlT, hlL, hlP);
+    IF hlK == 4 THEN hlP := 0; ELSE
+      IF hlK == 7 THEN hlP := MAX(1, hlP - 1); ELSE hlP := hlP + 1; END;
+    END;
+  END;
+END;
+
+// rk_Welcome: the opening page, with the disclaimer.
+rk_Welcome()
+BEGIN
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 0, 0, 319, 24, rkORNG, rkORNG);
+  TEXTOUT_P("RankLab - rank tests, beta 1", G1, 8, 4, 3, #FFFFFFh, 304);
+  TEXTOUT_P("Sign, Wilcoxon signed-rank, Mann-Whitney,", G1, 10, 32, 1, rkBLUE, 300);
+  TEXTOUT_P("Kruskal-Wallis, Dunn, Friedman, Kendall's W,", G1, 10, 45, 1, rkBLUE, 300);
+  TEXTOUT_P("Spearman and Kendall rank correlation.", G1, 10, 58, 1, rkBLUE, 300);
+  TEXTOUT_P("Exact p-values where they can be counted,", G1, 10, 76, 1, #000000h, 300);
+  TEXTOUT_P("the normal approximation beside them, and", G1, 10, 89, 1, #000000h, 300);
+  TEXTOUT_P("a picture for every result: tap anything.", G1, 10, 102, 1, #000000h, 300);
+  RECT_P(G1, 6, 120, 313, 172, rkRED, rkLRED);
+  TEXTOUT_P("DISCLAIMER: a teaching and demonstration aid.", G1, 12, 124, 1, rkRED, 296);
+  TEXTOUT_P("Not validated for forensic, clinical or legal", G1, 12, 137, 1, rkRED, 296);
+  TEXTOUT_P("use; do not rely on its results for legal", G1, 12, 150, 1, rkRED, 296);
+  TEXTOUT_P("purposes.", G1, 12, 163, 1, rkRED, 296);
+  TEXTOUT_P("(C) 2026 Roger D Metcalf; free for educational", G1, 10, 180, 1, rkGRAY, 300);
+  TEXTOUT_P("use.  Written with AI assistance (Claude).", G1, 10, 193, 1, rkGRAY, 300);
+  TEXTOUT_P("Any key or tap = menu", G1, 10, 215, 1, rkFOOT, 300);
+  BLIT_P(G0, 0, 0, G1);
+  rk_WaitAny();
+END;
+
+// rk_Summary: the one line Quit hands back to Home.
+// beta 1a: built by rk_Pick after every successful run (rkSumS), so
+// Quit after a refused test still reports the last test that ran.
+rk_Summary()
+BEGIN
+  LOCAL suS, suP;
+  suP := rk_PMain();
+  suS := "RankLab: " + rk_TName() + ", n = " + STRING(rkN, 2, 0) + ", " + rk_SNm() + " = ";
+  IF rkTest == 6 THEN
+    suS := "RankLab: rank correlation, n = " + STRING(rkN, 2, 0) + ", rs = " + rk_Fx(rkRs, 4) + ", tau-b = " + rk_Fx(rkTau, 4);
+    IF rkCWh == 1 AND rkPe >= 0 THEN
+      RETURN suS + ", Spearman " + rk_CKind(1) + rk_PT(suP) + " (" + rk_TailW() + ")";
+    END;
+    RETURN suS + ", Kendall " + rk_CKind(2) + rk_PT(suP) + " (" + rk_TailW() + ")";
+  END;
+  IF rkTest == 5 AND rkFNoP == 1 THEN
+    RETURN "RankLab: Kendall's W = " + rk_Fx(rkW, 3) + " (descriptive, no p), b = " + STRING(rkFB, 2, 0) + ", k = " + STRING(rkFK, 2, 0);
+  END;
+  IF rkTest <= 3 THEN
+    suS := suS + rk_Num(rkSt) + ", " + IFTE(rkEx == 1 AND rkMode == 1, "exact ", "normal ");
+  ELSE
+    suS := suS + rk_Fx(rkSt, 3) + ", " + rkCHI + " ";
+  END;
+  RETURN suS + rk_PT(suP) + " (" + rk_TailW() + ")";
+END;
+
+EXPORT RankLab()
+BEGIN
+  LOCAL mnI, mnRun, mnT;
+  rk_Init();
+  rkDone := 0;
+  rk_Welcome();
+  mnRun := 1;
+  WHILE mnRun == 1 DO
+    mnI := 0;
+    CHOOSE(mnI, "RankLab: rank-based tests", {"Sign test (1 sample/paired)", "Wilcoxon signed-rank", "Mann-Whitney (rank-sum)", "Kruskal-Wallis + Dunn", "Friedman + Kendall's W", "Rank correlation (rs, tau-b)", "Load a preset", "Use my data (D1..D9)", "Help", "Quit"});
+    IF mnI == 0 OR mnI == 10 THEN mnRun := 0; END;
+    IF mnI >= 1 AND mnI <= 6 THEN rk_Open(mnI); END;
+    IF mnI == 7 THEN
+      mnT := rk_Preset();
+      IF mnT > 0 THEN rk_Open(mnT); END;
+    END;
+    IF mnI == 8 THEN
+      mnT := rk_MyData();
+      IF mnT > 0 THEN rk_Open(mnT); END;
+    END;
+    IF mnI == 9 THEN rk_Help(); END;
+  END;
+  // the summary goes back to Home (no Terminal is left open); the
+  // numbers stay in RK_STAT, RK_P, RK_PN, RK_EFF, RK_HL, RK_RANKS
+  IF DIM(rkSumS) > 0 THEN RETURN rkSumS; END;
+  RETURN "RankLab: no test run";
+END;

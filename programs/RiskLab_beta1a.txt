@@ -1,0 +1,3087 @@
+#pragma mode( separator(.,;) integer(h32) )
+
+// (C) 2026 Roger D Metcalf
+// For academic use only - do not rely on results for anything important
+// Results have not been rigorously verified and/or validated
+//
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with the
+//   file and credit the author if you pass it on.  Not for sale or
+//   commercial redistribution.
+// DISCLAIMER: a teaching and demonstration aid. Not validated for
+//   forensic, clinical or legal use; do not rely on its results for
+//   legal purposes.
+// Written with AI assistance. The concept, direction, decisions and all
+// hardware testing are Roger D. Metcalf's; the code, drafting and
+// source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
+
+// RISKLAB - beta 1a  (26 Oct 2026)
+// The statistics behind risk-assessment instruments in criminal justice
+//   (recidivism tools such as COMPAS, LSI-R and Static-99), for
+//   Statistics for Criminal Justice and research methods: logistic
+//   regression fitted by Newton-Raphson (IRLS) with Wald tests, odds
+//   ratios and their 95% CIs, the likelihood-ratio test and McFadden's
+//   pseudo-R squared; the ROC curve, the AUC (Mann-Whitney form) with
+//   DeLong's standard error, and a cut-off you drag along the curve
+//   with a live 2 x 2 table (sensitivity, specificity, PPV, NPV, false-
+//   positive rate, share flagged); calibration (predicted vs observed,
+//   the Hosmer-Lemeshow test); and fairness between two groups (base
+//   rates, AUC, calibration within groups, error rates, PPV), with the
+//   published result that equal calibration (PPV) and equal error rates
+//   cannot all hold when base rates differ, shown with the data's own
+//   numbers.  No verdict on any real tool beyond what the data show.
+// Launch: RiskLab from the Program Catalog (zero arguments, menu-first).
+//   It opens with ProPublica's COMPAS counts loaded.  Menu: Logistic
+//   regression; ROC and cut-off; Calibration; Fairness by group; Load a
+//   preset; Use my data (Statistics 1Var: D1 = outcome 0/1 and D2-D5
+//   predictors, or D1 = outcome, D2 = a score, D3 = group 1/2); Help;
+//   Quit.
+// Home exports: RL_B (coefficients, intercept first), RL_SE (their
+//   standard errors), RL_OR (odds ratios e^b of the predictors), RL_P
+//   (likelihood-ratio p of the model), RL_AUC ({AUC, DeLong SE}),
+//   RL_HL ({Hosmer-Lemeshow chi-square, df, p}), RL_CUT ({cut-off,
+//   sensitivity, specificity, PPV}); -1 where not computed.
+// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  beta 1 has
+//   NOT been run on hardware or the emulator, only in the PC harness.
+// WHAT CHANGED in beta 1a (second review, REVIEW2_RiskLab_beta1.md):
+//   (1) the routine rl_HL is now rl_HosLem: on the Prime it was one name
+//   with the Home export RL_HL (case is ignored); (2) Help page 7: the
+//   article's 44.9% / 23.5% FPRs come from all 7,214 rows of the same
+//   file, without ProPublica's date and charge filters; (3) separation is
+//   flagged only from the fit itself (no convergence in 25 steps, a
+//   singular information matrix after 3+ steps, or a linear predictor
+//   that orders Y perfectly), not from a fitted P near 0 or 1; (4) the
+//   opening page: "432 men released from Maryland state prisons" (only
+//   267 of them were on parole); (5) no zero-width
+//   AUC interval (SE = 0 says so) and a small-n caution; (6) the
+//   calibration page says pred is RiskLab's own fit for a score; (7)
+//   wording: progress page, "Y = 1: Y = 1", a constant x, the x10
+//   footers, Kleinberg et al., the fairness table's last lines.
+// Sources:
+//   Logistic regression, Newton-Raphson / IRLS, Wald and likelihood-
+//     ratio tests: Hosmer DW, Lemeshow S (2000) Applied Logistic
+//     Regression, 2nd ed., Wiley, ch. 1-2; Agresti A (2013) Categorical
+//     Data Analysis, 3rd ed., Wiley, sections 4.6 and 5.1 (pages not
+//     checked).  Checked against statsmodels Logit (params, bse, llf,
+//     llnull, llr).
+//   McFadden D (1974) Conditional logit analysis of qualitative choice
+//     behavior.  In Zarembka P (ed.) Frontiers in Econometrics, Academic
+//     Press, 105-142: R squared = 1 - lnL / lnL0.
+//   Separation: Albert A, Anderson JA (1984) Biometrika 71(1):1-10.
+//   ROC and AUC = the Mann-Whitney statistic / (n1 n0): Bamber D (1975)
+//     J Math Psychol 12:387-415; Hanley JA, McNeil BJ (1982) Radiology
+//     143:29-36 (their SE formula, and their worked example, AUC 0.893).
+//   DeLong ER, DeLong DM, Clarke-Pearson DL (1988) Comparing the areas
+//     under two or more correlated ROC curves: a nonparametric approach.
+//     Biometrics 44(3):837-845 (the SE shown; CI = AUC +/- 1.96 SE, cut
+//     at 0 and 1).
+//   Hosmer DW, Lemeshow S (1980) Commun Stat A 9:1043-1069; Hosmer DW,
+//     Hosmer T, le Cessie S, Lemeshow S (1997) A comparison of goodness-
+//     of-fit tests for the logistic regression model.  Stat Med 16:965-
+//     980 (the test's dependence on the grouping).
+//   Fairness: Kleinberg J, Mullainathan S, Raghavan M (2016) Inherent
+//     trade-offs in the fair determination of risk scores.  arXiv:
+//     1609.05807 (ITCS 2017); Chouldechova A (2017) Fair prediction with
+//     disparate impact: a study of bias in recidivism prediction
+//     instruments.  Big Data 5(2):153-163 (the identity FPR = p/(1-p)
+//     (1-PPV)/PPV (1-FNR); page not checked).
+//   Angwin J, Larson J, Mattu S, Kirchner L (2016) Machine Bias.
+//     ProPublica, 23 May 2016; Larson J et al. (2016) How we analyzed the
+//     COMPAS recidivism algorithm, ProPublica; Dieterich W, Mendoza C,
+//     Brennan T (2016) COMPAS Risk Scales: Demonstrating Accuracy Equity
+//     and Predictive Parity.  Northpointe Inc.
+//   Cautions on screen: Peduzzi P, Concato J, Kemper E, Holford TR,
+//     Feinstein AR (1996) J Clin Epidemiol 49(12):1373-1379 (fewer than
+//     10 events per predictor); Cochran WG (1954) Biometrics 10:417-451
+//     (a chi-square approximation with expected counts below 5).
+//   Chi-square upper tails as finite sums of positive terms (Lessons
+//     Learned 11; TrendTest's trUpper).
+// Data (data/DATASETS.md and data/DATASETS_RISK.md):
+//   Rossi: "Rossi, Berk & Lenihan 1980 (via Allison 1995)": 432 men
+//     released from Maryland state prisons, followed 52 weeks; arrest 1/0
+//     (arrested within the 52 weeks), age at release, prio = prior
+//     convictions, fin 1 = received financial aid (randomised), wexp 1 =
+//     full-time work experience before prison (R carData codebook).
+//   COMPAS: "ProPublica, Angwin et al. 2016 (Broward County, FL)":
+//     compas-scores-two-years.csv filtered as in ProPublica's notebook
+//     (|days_b_screening_arrest| <= 30, is_recid <> -1, c_charge_degree
+//     <> "O", score_text <> "N/A"): 6,172 defendants (their N), 2,809
+//     re-arrested within two years (two_year_recid).  Stored as counts
+//     by decile score 1-10 for the two largest groups in the file,
+//     labelled there "African-American" (3,175) and "Caucasian" (2,103).
+// Replaces / reworks: no Triola program does this.  The TI-83/84 LOGIT
+//   program (logit.zip, ref/triola_ti_programs/LOGIT__257.txt) fits a
+//   one-predictor logistic model to grouped counts by weighted least
+//   squares; RiskLab fits any 1-4 predictors by full Newton-Raphson to
+//   convergence, gives SEs, tests and odds ratios, and detects
+//   separation, none of which LOGIT does.
+// File map: header 1-124; state and exports 125-218; small helpers 219-476;
+//   Rossi data 477-585; the fit engine 586-887; levels, ROC, AUC
+//   888-1057; calibration and HL 1058-1200; view 1 table 1201-1412;
+//   view 2 curve 1413-1681; view 3 ROC 1682-1995; view 4 calibration
+//   1996-2171; view 5 fairness 2172-2507; presets, your data, help,
+//   main 2508-3087.
+// ============================================================================
+
+EXPORT RL_B, RL_SE, RL_OR, RL_P;
+EXPORT RL_AUC, RL_HL, RL_CUT;
+
+// ---- the data ----
+LOCAL rlMode, rlN, rlK, rlY, rlXv, rlXNm;
+LOCAL rlYNm, rlLbl, rlShort, rlSrc, rlInS, rlEvW;
+//  rlMode 1 = rows (outcome rlY and k predictors in rlXv, row by row,
+//  names rlXNm), 2 = a score (the levels below, counts only).  rlYNm the
+//  outcome's short name ("arrested"), rlLbl / rlShort the data set's
+//  names, rlSrc its source line, rlInS 1 when the score is the model's
+//  own fitted P on the same data (an in-sample ROC), rlEvW the event in
+//  words ("re-arrested").
+LOCAL rlScNm, rlNG, rlGNm, rlGSh, rlPrb, rlIsC;
+//  rlScNm the score's name, rlNG 1 or 2 groups, rlGNm / rlGSh the group
+//  names (long, short), rlPrb 1 if the score is a probability, rlIsC
+//  which preset is loaded: 1 COMPAS, 2 Rossi, 0 your data.
+
+// ---- the score levels (sorted, ascending) and their counts ----
+LOCAL rlLv, rlA1, rlB1, rlA2, rlB2, rlM;
+LOCAL rlLA, rlLB, rlCA, rlCB, rlN1, rlN0;
+LOCAL rlCA1, rlCB1, rlCA2, rlCB2, rlLvI, rlLP;
+//  rlLv the m = rlM distinct scores; at level l, rlA1(l) people of group
+//  1 with the event (Y = 1) and rlB1(l) without (Y = 0), rlA2 / rlB2 the
+//  same for group 2; rlLA / rlLB both groups.  rlCA(t) / rlCB(t): events
+//  / non-events with a score at level t or above (t = 1..m+1; m+1 =
+//  nobody), so a cut-off at level t flags rlCA(t) + rlCB(t) people;
+//  rlCA1 ... for each group.  rlN1 / rlN0 all events / non-events.
+//  rlLvI 1 when every level is a whole number.  rlLP the model's
+//  predicted P at each level (calibration).
+
+// ---- the Rossi columns (rl_RData) ----
+LOCAL rlRar, rlRage, rlRpri, rlRfin, rlRwx, rlRok;
+
+// ---- the logistic fit ----
+LOCAL rlDX, rlDM, rlDY, rlR, rlP, rlB;
+LOCAL rlSE, rlInv, rlH, rlGr, rlLL, rlLL0;
+LOCAL rlIt, rlConv, rlSep, rlSing, rlFitOK, rlStop;
+LOCAL rlEta, rlPh, rlXm, rlFitW, rlLRc, rlLRp;
+LOCAL rlNear;
+//  The fit works on "design rows": rlR rows, each with rlK predictor
+//  values (rlDX, row by row), rlDM trials and rlDY events (rows of
+//  your data: 1 trial each; a score's levels: all the people at that
+//  level).  rlP = rlK + 1 parameters, rlB the coefficients (intercept
+//  first), rlSE their SEs, rlInv the inverse information matrix (p x p,
+//  row by row), rlH the information, rlGr the score vector, rlLL and
+//  rlLL0 the log-likelihood of the model and of the intercept-only
+//  model, rlIt Newton steps, rlConv 1 = converged, rlSep 1 = separation
+//  suspected, rlSing 1 = information singular (collinear), rlFitOK 1 =
+//  fit valid, 0 = not yet, -1 = cannot be fitted (outcome all 0 or all
+//  1); rlStop 1 = stopped with Esc; rlEta the largest |linear
+//  predictor|; rlPh the fitted P of each design row; rlXm the
+//  predictors' means; rlFitW why a fit failed (text); rlNear 1 =
+//  converged but a fitted P within ~3E-7 of 0 or 1 (a note); rlLRc / rlLRp
+//  the likelihood-ratio chi-square 2(lnL - lnL0) and its p.
+
+// ---- ROC, calibration, fairness ----
+LOCAL rlAUC, rlSEd, rlSEh, rlCutT, rlCalG, rlFPg;
+LOCAL rlHLv, rlHLdf, rlHLp, rlGk, rlGlo, rlGhi;
+LOCAL rlGn, rlGo, rlGe, rlGx, rlOvl, rlGAU;
+LOCAL rlFlo, rlFhi, rlFk, rlFsel, rlRPx, rlRPy;
+//  rlAUC, rlSEd (DeLong), rlSEh (Hanley-McNeil) of the pooled score;
+//  rlCutT the cut-off's level (flag "high risk" = score >= rlLv(t));
+//  rlCalG the calibration grouping (1 = default, 2 = the other);
+//  rlFPg the fairness page; Hosmer-Lemeshow rlHLv, df, p; rlGk groups,
+//  each the levels rlGlo..rlGhi, with rlGn people, rlGo observed and
+//  rlGe expected events, rlGx mean predicted P; rlOvl 1 = the ROC page
+//  shows each group's curve; rlGAU each group's {AUC, DeLong SE}.
+//  Fairness page: score bins rlFlo..rlFhi (rlFk of them), the selected
+//  bin rlFsel.  rlRPx / rlRPy: the ROC points in pixels (taps).
+
+// ---- the fitted-curve page ----
+LOCAL rlVar, rlCurX, rlBnN, rlBnE, rlBnX, rlBnLo;
+LOCAL rlBnHi, rlBnK, rlXcol;
+//  rlVar the predictor shown, rlCurX the cursor's x; bins: count,
+//  events, mean x, x range, how many; rlXcol that predictor's column.
+
+// ---- views and plot geometry (the drawing AND the touch code) ----
+LOCAL rlInfo, rlInfC, rlSKP, rlTapX, rlTapY, rlDirty;
+LOCAL rlPL, rlPR, rlPT, rlPB, rlXlo, rlXhi;
+LOCAL rlYlo, rlYhi, rlXs, rlYs;
+
+// ---- house colours (Lessons Learned 13) ----
+LOCAL rlBLUE, rlMAG, rlRED, rlGRN, rlORNG, rlGRAY;
+LOCAL rlFOOT, rlGRID, rlLBLU, rlLRED, rlLGRN, rlLORN;
+LOCAL rlSHD, rlBLK, rlPALE;
+
+// ---- glyphs, built with CHAR() so the source stays ASCII ----
+LOCAL rlCHI, rlGEQ, rlLEQ, rlPM, rlTIM, rlARL;
+LOCAL rlARR, rlSQ, rlAL, rlNEQ, rlRT, rlSUB0;
+LOCAL rlZ, rlPI;
+//  rlZ = 1.95996398454 = -NORMALD_ICDF(0, 1, 0.025); rlPI = 3.14159265359
+//  (the Prime's 12 digits; ASCII code, Lessons Learned 5).
+
+
+// ============================================================================
+// SMALL HELPERS
+// ============================================================================
+
+// Wait for the finger to lift -- never for more than one second, so a
+// stuck touch reading cannot freeze the program (Lessons Learned 7).
+rl_Drain()
+BEGIN
+  LOCAL drT;
+  drT := TICKS;
+  REPEAT UNTIL MOUSE(1) == -1 OR TICKS - drT > 1000;
+END;
+
+// Drain, wait for a key OR a tap, drain.  Returns the key code, or -1
+// for a tap (its x and y are left in rlTapX, rlTapY).  TouchKit v3.
+rl_WaitAny()
+BEGIN
+  LOCAL waK, waM, waM1, waK2;
+  REPEAT waK := GETKEY; UNTIL waK == -1;
+  rl_Drain();
+  REPEAT
+    waK := GETKEY;
+    waM := MOUSE;
+    waM1 := waM(1);
+  UNTIL waK > -1 OR SIZE(waM1) > 0;
+  rlTapX := -1; rlTapY := -1;
+  IF SIZE(waM1) > 0 THEN
+    rlTapX := waM1(1); rlTapY := waM1(2); waK := -1;
+  END;
+  rl_Drain();
+  REPEAT waK2 := GETKEY; UNTIL waK2 == -1;
+  RETURN waK;
+END;
+
+// A MSGBOX, then drain the key that closed it (Lessons Learned 7: a key
+// left behind would satisfy the next wait).  At most 5 lines.
+rl_Msg(msS)
+BEGIN
+  LOCAL msK;
+  MSGBOX(msS);
+  REPEAT msK := GETKEY; UNTIL msK == -1;
+  rl_Drain();
+END;
+
+// A "nice" step: 1, 2 or 5 times a power of ten, at least the value
+// handed in (Heckbert) -- for axis ticks.
+rl_Nice(nnV)
+BEGIN
+  LOCAL nnE, nnF;
+  IF nnV <= 0 THEN RETURN 1; END;
+  nnE := FLOOR(LOG(nnV));
+  nnF := nnV / 10^nnE;
+  IF nnF <= 1 THEN RETURN 10^nnE; END;
+  IF nnF <= 2 THEN RETURN 2 * 10^nnE; END;
+  IF nnF <= 5 THEN RETURN 5 * 10^nnE; END;
+  RETURN 10^(nnE + 1);
+END;
+
+// A number with d fixed decimals.  Rounded first: STRING(x, 2, d) turns
+// scientific when 0 < |x| < 10^-d (Lessons Learned 3).  "+ 0" turns a
+// rounded -0 into 0.
+rl_F(fxV, fxD)
+BEGIN
+  RETURN STRING(ROUND(fxV, fxD) + 0, 2, fxD);
+END;
+
+// A whole number (a count).
+rl_I(fiV)
+BEGIN
+  RETURN STRING(ROUND(fiV, 0), 2, 0);
+END;
+
+// A signed number, "+0.106" or "-0.406".
+rl_Sg(sgV, sgD)
+BEGIN
+  LOCAL sgR;
+  sgR := ROUND(sgV, sgD) + 0;
+  IF sgR >= 0 THEN RETURN "+" + STRING(sgR, 2, sgD); END;
+  RETURN STRING(sgR, 2, sgD);
+END;
+
+// A p-value: "p = 0.0036", "p < 0.0001".
+rl_PS(psP)
+BEGIN
+  IF psP < 0.0001 THEN RETURN "p < 0.0001"; END;
+  RETURN "p = " + rl_F(psP, 4);
+END;
+
+// A p-value for a narrow table column: "0.0036", "<.0001".
+rl_PC(pcP)
+BEGIN
+  IF pcP < 0.0001 THEN RETURN "<.0001"; END;
+  RETURN rl_F(pcP, 4);
+END;
+
+// A proportion as a percentage with one decimal, "42.3%".
+rl_Pct(ptV)
+BEGIN
+  RETURN rl_F(100 * ptV, 1) + "%";
+END;
+
+// A ratio a/b with 3 decimals, or "n/a" when b = 0.
+rl_R3(r3A, r3B)
+BEGIN
+  IF r3B == 0 THEN RETURN "n/a"; END;
+  RETURN rl_F(r3A / r3B, 3);
+END;
+
+// A score value: whole numbers as they are, others with 4 decimals
+// (fitted P can differ in the 4th decimal from one level to the next).
+rl_SV(svV)
+BEGIN
+  IF rlLvI == 1 THEN RETURN rl_I(svV); END;
+  RETURN rl_F(svV, 4);
+END;
+
+// The logistic function 1/(1 + e^-u), written so EXP never sees a big
+// positive argument.
+rl_Lgt(lgU)
+BEGIN
+  LOCAL lgE;
+  IF lgU >= 0 THEN RETURN 1 / (1 + EXP(-lgU)); END;
+  lgE := EXP(lgU);
+  RETURN lgE / (1 + lgE);
+END;
+
+// A white page with an orange title band (drawn on G1 by name).
+rl_Frame(frT)
+BEGIN
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 0, 0, 319, 18, rlORNG);
+  TEXTOUT_P(frT, G1, 4, 2, 2, #FFFFFFh, 312);
+END;
+
+// A "working" page for the slow steps (a G1 runs PPL 30-100 times
+// slower than a PC).
+rl_Busy(buS)
+BEGIN
+  rl_Frame("RiskLab: working");
+  TEXTOUT_P(buS, G1, 10, 100, 2, rlBLUE, 300);
+  BLIT_P(G0, 0, 0, G1);
+END;
+
+// Dotted lines (LINE_P has no dashes, Lessons Learned 6).
+rl_DotH(dhX1, dhX2, dhY, dhC)
+BEGIN
+  LOCAL dhI;
+  FOR dhI FROM dhX1 TO dhX2 STEP 3 DO
+    PIXON_P(G1, dhI, dhY, dhC);
+  END;
+END;
+
+rl_DotV(dvX, dvY1, dvY2, dvC)
+BEGIN
+  LOCAL dvI;
+  FOR dvI FROM dvY1 TO dvY2 STEP 3 DO
+    PIXON_P(G1, dvX, dvI, dvC);
+  END;
+END;
+
+// A box outline (a one-colour RECT_P fills, Lessons Learned 6).
+rl_Out(olL, olT, olR, olB, olC)
+BEGIN
+  LINE_P(G1, olL, olT, olR, olT, olC);
+  LINE_P(G1, olL, olB, olR, olB, olC);
+  LINE_P(G1, olL, olT, olL, olB, olC);
+  LINE_P(G1, olR, olT, olR, olB, olC);
+END;
+
+// A small filled square of half-width r, outlined.
+rl_Dot(doX, doY, doR, doC, doF)
+BEGIN
+  RECT_P(G1, doX - doR, doY - doR, doX + doR, doY + doR, doC, doF);
+END;
+
+// The plot box and its window.  Every page sets its own before drawing.
+rl_Box(bxL, bxT, bxR, bxB)
+BEGIN
+  rlPL := bxL; rlPT := bxT; rlPR := bxR; rlPB := bxB;
+END;
+
+// Value -> pixel column / row, clamped to the box.
+rl_XP(xpV)
+BEGIN
+  LOCAL xpX;
+  xpX := rlPL + (xpV - rlXlo) / (rlXhi - rlXlo) * (rlPR - rlPL);
+  IF xpX < rlPL THEN RETURN rlPL; END;
+  IF xpX > rlPR THEN RETURN rlPR; END;
+  RETURN IP(xpX + 0.5);
+END;
+
+rl_YP(ypV)
+BEGIN
+  LOCAL ypY;
+  ypY := rlPB - (ypV - rlYlo) / (rlYhi - rlYlo) * (rlPB - rlPT);
+  IF ypY < rlPT THEN RETURN rlPT; END;
+  IF ypY > rlPB THEN RETURN rlPB; END;
+  RETURN IP(ypY + 0.5);
+END;
+
+// Grid lines and tick labels for the current window: x ticks every
+// rlXs, y ticks every rlYs (both nice steps), labels with d decimals.
+rl_Grid(gdXd, gdYd)
+BEGIN
+  LOCAL gdV, gdP, gdS;
+  RECT_P(G1, rlPL, rlPT, rlPR, rlPB, rlGRID, #FFFFFFh);
+  gdV := CEILING(rlXlo / rlXs - 0.000001) * rlXs;
+  WHILE gdV <= rlXhi + rlXs * 0.000001 DO
+    gdP := rl_XP(gdV);
+    LINE_P(G1, gdP, rlPT, gdP, rlPB, rlGRID);
+    LINE_P(G1, gdP, rlPB, gdP, rlPB + 2, rlGRAY);
+    gdS := rl_F(gdV, gdXd);
+    TEXTOUT_P(gdS, G1, gdP - 3 * DIM(gdS), rlPB + 3, 1, rlGRAY, 7 * DIM(gdS));
+    gdV := gdV + rlXs;
+  END;
+  gdV := CEILING(rlYlo / rlYs - 0.000001) * rlYs;
+  WHILE gdV <= rlYhi + rlYs * 0.000001 DO
+    gdP := rl_YP(gdV);
+    LINE_P(G1, rlPL, gdP, rlPR, gdP, rlGRID);
+    gdS := rl_F(gdV, gdYd);
+    TEXTOUT_P(gdS, G1, rlPL - 2 - 7 * DIM(gdS), gdP - 5, 1, rlGRAY, 7 * DIM(gdS));
+    gdV := gdV + rlYs;
+  END;
+  rl_Out(rlPL, rlPT, rlPR, rlPB, rlGRAY);
+END;
+
+// Chi-square upper tail P(X >= x) for whole-number df, as a finite sum
+// of positive terms (Lessons Learned 11; TrendTest's trUpper), so a
+// tiny p keeps its digits:
+//   even df: e^(-x/2) * sum_{j < df/2} (x/2)^j / j!
+//   odd df:  2 Phi(-sqrt x) + sqrt(2x/pi) e^(-x/2) *
+//            sum_{j = 1..(df-1)/2} x^(j-1) / (2j - 1)!!
+rl_ChiUp(cuD, cuX)
+BEGIN
+  LOCAL cuS, cuT, cuJ, cuH;
+  IF cuX <= 0 THEN RETURN 1; END;
+  IF FP(cuD / 2) == 0 THEN
+    cuH := cuX / 2; cuT := 1; cuS := 1;
+    FOR cuJ FROM 1 TO cuD / 2 - 1 DO
+      cuT := cuT * cuH / cuJ; cuS := cuS + cuT;
+    END;
+    RETURN MIN(1, EXP(-cuH) * cuS);
+  END;
+  cuS := 0; cuT := 1;
+  FOR cuJ FROM 1 TO (cuD - 1) / 2 DO
+    cuS := cuS + cuT;
+    cuT := cuT * cuX / (2 * cuJ + 1);
+  END;
+  RETURN MIN(1, 2 * NORMALD_CDF(0, 1, -SQRT(cuX)) + SQRT(2 * cuX / rlPI) * EXP(-cuX / 2) * cuS);
+END;
+
+// Two-sided normal p for z: 2 Phi(-|z|), a lower tail (Lessons 3).
+rl_P2(p2Z)
+BEGIN
+  RETURN MIN(1, 2 * NORMALD_CDF(0, 1, -ABS(p2Z)));
+END;
+
+
+// ============================================================================
+// THE ROSSI DATA (Rossi, Berk & Lenihan 1980, via Allison 1995 and R
+// carData).  Row order as in carData::Rossi.  arrest 1 = arrested within
+// the 52 weeks after release, age at release, prio = number of prior
+// convictions, fin 1 = received financial aid (assigned at random),
+// wexp 1 = full-time work experience before prison.  Typed once from
+// data/rossi.csv by a script; do not change a value.
+// ============================================================================
+rl_RData()
+BEGIN
+  rlRar := {
+    1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1,
+    0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0,
+    0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1,
+    0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
+    0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1,
+    0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0,
+    0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1,
+    0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0,
+    0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+    0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
+    0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0,
+    1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
+    0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0,
+    0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0};
+  rlRage := {
+    27, 18, 19, 23, 19, 24, 25, 21, 22, 20, 26, 40, 17, 37, 20, 22, 19, 20, 25, 24, 23, 44, 29, 28,
+    21, 19, 33, 19, 19, 23, 23, 19, 42, 23, 24, 20, 22, 27, 19, 28, 33, 24, 21, 22, 19, 22, 22, 23,
+    32, 27, 36, 22, 32, 19, 28, 32, 33, 26, 20, 42, 19, 22, 22, 36, 23, 27, 21, 22, 35, 21, 25, 18,
+    26, 30, 20, 43, 23, 42, 21, 19, 29, 30, 21, 20, 19, 22, 25, 22, 22, 24, 39, 21, 20, 24, 25, 21,
+    20, 19, 24, 24, 44, 32, 23, 19, 20, 27, 19, 21, 20, 25, 20, 23, 20, 30, 25, 22, 24, 18, 40, 22,
+    23, 21, 24, 24, 38, 26, 29, 21, 21, 22, 23, 27, 18, 23, 24, 21, 20, 27, 20, 29, 19, 20, 18, 19,
+    24, 28, 26, 17, 21, 34, 26, 43, 20, 20, 32, 25, 22, 31, 42, 32, 20, 20, 36, 34, 28, 21, 18, 20,
+    17, 44, 30, 22, 30, 23, 20, 19, 21, 22, 19, 21, 38, 24, 39, 30, 37, 23, 21, 31, 24, 31, 24, 24,
+    21, 22, 20, 21, 24, 25, 19, 20, 20, 24, 18, 28, 19, 19, 25, 19, 25, 24, 20, 30, 29, 28, 36, 23,
+    23, 24, 29, 26, 39, 20, 23, 21, 21, 20, 20, 27, 18, 25, 20, 20, 20, 24, 23, 28, 21, 25, 24, 29,
+    22, 28, 19, 20, 20, 22, 20, 21, 21, 19, 26, 23, 22, 24, 40, 32, 38, 26, 27, 29, 20, 22, 22, 19,
+    22, 19, 32, 25, 21, 36, 40, 20, 19, 18, 28, 22, 25, 28, 25, 20, 24, 24, 36, 34, 19, 23, 19, 40,
+    31, 23, 42, 26, 20, 27, 24, 25, 22, 20, 20, 22, 18, 20, 20, 22, 30, 36, 25, 29, 19, 24, 21, 35,
+    19, 20, 22, 23, 19, 18, 38, 18, 22, 21, 21, 21, 17, 22, 23, 19, 21, 35, 23, 22, 25, 20, 19, 20,
+    41, 23, 26, 26, 38, 27, 19, 25, 30, 42, 20, 23, 21, 20, 17, 26, 24, 37, 28, 33, 22, 25, 20, 20,
+    24, 26, 26, 25, 26, 23, 28, 27, 23, 17, 20, 20, 20, 22, 31, 43, 29, 21, 24, 30, 22, 26, 20, 23,
+    25, 40, 30, 22, 18, 18, 24, 25, 19, 24, 24, 18, 18, 23, 20, 18, 23, 20, 23, 23, 23, 20, 26, 30,
+    36, 43, 20, 24, 22, 20, 21, 18, 18, 33, 19, 21, 21, 21, 22, 18, 18, 24, 22, 31, 20, 20, 29, 24};
+  rlRpri := {
+    3, 8, 13, 1, 3, 2, 0, 4, 6, 0, 3, 2, 5, 2, 3, 2, 7, 2, 12, 1, 4, 0, 2, 1,
+    0, 2, 1, 2, 3, 9, 3, 1, 0, 2, 3, 2, 5, 2, 4, 3, 9, 1, 14, 2, 2, 2, 15, 5,
+    2, 0, 0, 1, 1, 10, 1, 3, 1, 1, 0, 9, 6, 2, 5, 11, 2, 3, 1, 2, 3, 4, 5, 0,
+    2, 4, 2, 1, 4, 2, 2, 3, 4, 3, 10, 7, 10, 1, 3, 4, 4, 2, 4, 1, 2, 1, 2, 4,
+    1, 3, 2, 1, 2, 2, 3, 1, 1, 0, 6, 1, 1, 3, 6, 3, 2, 1, 0, 1, 3, 4, 1, 1,
+    6, 1, 2, 14, 2, 3, 1, 8, 2, 4, 5, 2, 2, 5, 2, 3, 4, 4, 11, 5, 10, 8, 0, 2,
+    1, 4, 4, 0, 3, 2, 1, 2, 0, 1, 1, 1, 1, 1, 4, 10, 8, 1, 8, 2, 3, 2, 6, 4,
+    3, 3, 5, 11, 3, 8, 2, 10, 1, 6, 2, 10, 3, 7, 2, 3, 0, 2, 1, 1, 13, 3, 2, 1,
+    1, 2, 5, 0, 2, 1, 1, 2, 4, 1, 4, 5, 4, 1, 0, 1, 2, 0, 1, 1, 4, 4, 1, 7,
+    2, 4, 1, 2, 3, 1, 3, 2, 1, 2, 3, 2, 3, 1, 6, 5, 7, 11, 1, 4, 2, 1, 1, 3,
+    2, 18, 1, 1, 5, 1, 8, 2, 1, 3, 1, 2, 4, 8, 5, 2, 0, 1, 0, 3, 4, 1, 5, 12,
+    1, 3, 1, 2, 2, 1, 2, 1, 0, 4, 0, 2, 1, 2, 2, 4, 5, 0, 2, 1, 5, 1, 3, 2,
+    2, 0, 2, 1, 9, 1, 5, 2, 3, 2, 2, 3, 1, 2, 1, 2, 2, 1, 5, 3, 3, 2, 0, 6,
+    4, 0, 3, 1, 18, 3, 2, 6, 1, 3, 1, 5, 3, 1, 0, 4, 1, 5, 8, 2, 11, 4, 1, 1,
+    3, 4, 0, 2, 1, 1, 3, 1, 2, 1, 2, 1, 3, 3, 1, 5, 1, 1, 1, 0, 4, 2, 10, 1,
+    4, 11, 1, 1, 1, 3, 4, 0, 3, 7, 4, 5, 9, 2, 1, 1, 1, 0, 2, 3, 0, 1, 0, 6,
+    5, 2, 0, 2, 2, 0, 2, 2, 2, 2, 2, 3, 0, 0, 2, 1, 2, 1, 5, 1, 2, 4, 4, 1,
+    4, 4, 1, 1, 1, 1, 0, 5, 1, 2, 2, 1, 1, 4, 3, 3, 2, 2, 2, 3, 1, 1, 3, 1};
+  rlRfin := {
+    0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1,
+    1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1,
+    0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0,
+    1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1,
+    1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0,
+    1, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1,
+    1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1,
+    0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1,
+    1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1,
+    1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1,
+    0, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1,
+    1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1,
+    1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0,
+    1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0,
+    1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0,
+    0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1,
+    1, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1};
+  rlRwx := {
+    0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1,
+    1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0,
+    1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 1,
+    0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0,
+    0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0,
+    1, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0,
+    0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1,
+    1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1,
+    0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1,
+    1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1,
+    1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1,
+    1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1,
+    1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0,
+    1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0,
+    1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0,
+    1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1};
+  rlRok := 1;
+END;
+
+
+// ============================================================================
+// THE ENGINE: logistic regression by Newton-Raphson (IRLS)
+// ============================================================================
+
+// The progress page of a fitting pass, drawn once per pass: which
+// pass, an empty bar.
+rl_Prog(pgS)
+BEGIN
+  rl_Frame("RiskLab: fitting the model");
+  TEXTOUT_P("Newton-Raphson (IRLS), pass " + rl_I(pgS), G1, 10, 60, 2, rlBLUE, 300);
+  TEXTOUT_P("row 0 of " + rl_I(rlR), G1, 10, 84, 2, rlBLUE, 300);
+  RECT_P(G1, 20, 110, 300, 126, rlGRAY, #FFFFFFh);
+  IF rlIsC == 2 THEN
+    TEXTOUT_P("Rossi's fit takes 7 passes.  Esc = stop", G1, 10, 140, 1, rlFOOT, 300);
+  ELSE
+    TEXTOUT_P("Esc = stop", G1, 10, 140, 1, rlFOOT, 300);
+  END;
+  BLIT_P(G0, 0, 0, G1);
+END;
+
+// The bar and the row count, drawn straight on the screen (a few small
+// shapes: far cheaper than composing and blitting a whole page).
+rl_ProgBar(pbI)
+BEGIN
+  LOCAL pbW;
+  pbW := IP(280 * pbI / rlR);
+  IF pbW > 0 THEN RECT_P(G0, 20, 110, 20 + pbW, 126, rlBLUE, rlLBLU); END;
+  RECT_P(G0, 10, 84, 300, 104, #FFFFFFh);
+  TEXTOUT_P("row " + rl_I(pbI) + " of " + rl_I(rlR), G0, 10, 84, 2, rlBLUE, 290);
+END;
+
+// The design rows: what the fit works on.
+//   rows of data (mode 1): one row per person, 1 trial, y = 0 or 1;
+//   a score (mode 2): one row per score level, x = the score, trials =
+//   everyone at that level, events = those with Y = 1.  The grouped
+//   log-likelihood (no binomial constants) equals the person-by-person
+//   one, so -2 lnL, the LR test and McFadden's R squared are the same as
+//   for the people one by one.
+// rlDX always holds 4 values per row, unused predictors as 0, so the
+// pass below can be written out without inner loops (speed on a G1).
+rl_Design()
+BEGIN
+  LOCAL dsI, dsJ;
+  IF rlMode == 1 THEN
+    rlR := rlN;
+    rlDX := MAKELIST(0, dsI, 1, 4 * rlN);
+    FOR dsI FROM 1 TO rlN DO
+      FOR dsJ FROM 1 TO rlK DO
+        rlDX(4 * dsI - 4 + dsJ) := rlXv((dsI - 1) * rlK + dsJ);
+      END;
+    END;
+    rlDM := MAKELIST(1, dsI, 1, rlN);
+    rlDY := rlY;
+  ELSE
+    rlK := 1;
+    rlR := rlM;
+    rlDX := MAKELIST(0, dsI, 1, 4 * rlM);
+    FOR dsI FROM 1 TO rlM DO rlDX(4 * dsI - 3) := rlLv(dsI); END;
+    rlDM := MAKELIST(rlLA(dsI) + rlLB(dsI), dsI, 1, rlM);
+    rlDY := rlLA;
+  END;
+  rlP := rlK + 1;
+END;
+
+// One pass over the design rows at the current coefficients rlB:
+//   linear predictor eta = b1 + b2 x1 + ... + b5 x4 (unused x = 0);
+//   mu = 1/(1 + e^-eta);
+//   log-likelihood  lnL = sum [ y eta - m ln(1 + e^eta) ];
+//   score vector    U = X'(y - m mu);
+//   information     I = X' W X, W = m mu (1 - mu)
+// (Hosmer & Lemeshow 2000, ch. 1-2; Agresti 2013, 5.1).  The 15 sums of
+// the upper triangle of I (for up to 5 parameters) and the 5 of U are
+// kept in plain variables and written out, no inner loops: about 42
+// statements per row, so a G1 is not kept waiting longer than it must.
+// The p x p block in use is copied to rlH at the end.  Stores mu of each
+// row in rlPh.  With more than 60 rows: a progress page per pass, its
+// bar moved and Esc read every 24 rows.  Returns 1, or 0 if Esc was
+// pressed.
+rl_Pass(paS)
+BEGIN
+  LOCAL paI, paBs, paE, paQ, paL, paMu;
+  LOCAL paW, paR, paY, paM, paX1, paX2;
+  LOCAL paX3, paX4, paW1, paW2, paW3, paW4;
+  LOCAL pH11, pH12, pH13, pH14, pH15, pH22;
+  LOCAL pH23, pH24, pH25, pH33, pH34, pH35;
+  LOCAL pH44, pH45, pH55, pU1, pU2, pU3;
+  LOCAL pU4, pU5, paB1, paB2, paB3, paB4;
+  LOCAL paB5, paHf, paJ, paK;
+  paB1 := rlB(1); paB2 := rlB(2); paB3 := 0; paB4 := 0; paB5 := 0;
+  IF rlP >= 3 THEN paB3 := rlB(3); END;
+  IF rlP >= 4 THEN paB4 := rlB(4); END;
+  IF rlP >= 5 THEN paB5 := rlB(5); END;
+  pH11 := 0; pH12 := 0; pH13 := 0; pH14 := 0; pH15 := 0; pH22 := 0;
+  pH23 := 0; pH24 := 0; pH25 := 0; pH33 := 0; pH34 := 0; pH35 := 0;
+  pH44 := 0; pH45 := 0; pH55 := 0;
+  pU1 := 0; pU2 := 0; pU3 := 0; pU4 := 0; pU5 := 0;
+  rlLL := 0; rlEta := 0;
+  IF rlR > 60 THEN rl_Prog(paS); END;
+  FOR paI FROM 1 TO rlR DO
+    paBs := 4 * paI - 4;
+    paX1 := rlDX(paBs + 1); paX2 := rlDX(paBs + 2);
+    paX3 := rlDX(paBs + 3); paX4 := rlDX(paBs + 4);
+    paE := paB1 + paB2 * paX1 + paB3 * paX2 + paB4 * paX3 + paB5 * paX4;
+    IF ABS(paE) > rlEta THEN rlEta := ABS(paE); END;
+    paY := rlDY(paI); paM := rlDM(paI);
+    // ln(1 + e^eta) and mu without EXP of a large positive number
+    IF paE > 0 THEN
+      paQ := EXP(-paE);
+      paL := paE + LN(1 + paQ);
+      paMu := 1 / (1 + paQ);
+    ELSE
+      paQ := EXP(paE);
+      paL := LN(1 + paQ);
+      paMu := paQ / (1 + paQ);
+    END;
+    rlLL := rlLL + paY * paE - paM * paL;
+    rlPh(paI) := paMu;
+    paW := paM * paMu * (1 - paMu);
+    paR := paY - paM * paMu;
+    paW1 := paW * paX1; paW2 := paW * paX2; paW3 := paW * paX3; paW4 := paW * paX4;
+    pU1 := pU1 + paR; pU2 := pU2 + paR * paX1; pU3 := pU3 + paR * paX2;
+    pU4 := pU4 + paR * paX3; pU5 := pU5 + paR * paX4;
+    pH11 := pH11 + paW; pH12 := pH12 + paW1; pH13 := pH13 + paW2;
+    pH14 := pH14 + paW3; pH15 := pH15 + paW4;
+    pH22 := pH22 + paW1 * paX1; pH23 := pH23 + paW1 * paX2;
+    pH24 := pH24 + paW1 * paX3; pH25 := pH25 + paW1 * paX4;
+    pH33 := pH33 + paW2 * paX2; pH34 := pH34 + paW2 * paX3;
+    pH35 := pH35 + paW2 * paX4;
+    pH44 := pH44 + paW3 * paX3; pH45 := pH45 + paW3 * paX4;
+    pH55 := pH55 + paW4 * paX4;
+    IF rlR > 60 THEN
+      IF FP(paI / 24) == 0 THEN
+        IF GETKEY == 4 THEN RETURN 0; END;
+        rl_ProgBar(paI);
+      END;
+    END;
+  END;
+  // the full 5 x 5 information and score, then the p x p block in use
+  paHf := {pH11, pH12, pH13, pH14, pH15, pH12, pH22, pH23, pH24, pH25,
+    pH13, pH23, pH33, pH34, pH35, pH14, pH24, pH34, pH44, pH45,
+    pH15, pH25, pH35, pH45, pH55};
+  rlH := MAKELIST(0, paJ, 1, rlP * rlP);
+  FOR paJ FROM 1 TO rlP DO
+    FOR paK FROM 1 TO rlP DO
+      rlH((paJ - 1) * rlP + paK) := paHf(5 * paJ - 5 + paK);
+    END;
+  END;
+  rlGr := {pU1, pU2, pU3, pU4, pU5};
+  RETURN 1;
+END;
+
+// The inverse of the information matrix rlH (p x p, symmetric, positive
+// semi-definite) into rlInv, by Gauss-Jordan elimination without row
+// exchanges (safe for a positive definite matrix).  The k-th pivot is
+// the part of column k not explained by the columns before it; if it is
+// below 1E-10 of the column's own diagonal, the predictors are collinear
+// (or every weight is near 0, as under separation): return 0.
+rl_Inv()
+BEGIN
+  LOCAL ivA, ivI, ivJ, ivK, ivN, ivT;
+  LOCAL ivF, ivD;
+  ivN := rlP;
+  ivA := rlH;
+  ivD := MAKELIST(rlH((ivI - 1) * ivN + ivI), ivI, 1, ivN);
+  rlInv := MAKELIST(0, ivI, 1, ivN * ivN);
+  FOR ivI FROM 1 TO ivN DO rlInv((ivI - 1) * ivN + ivI) := 1; END;
+  FOR ivK FROM 1 TO ivN DO
+    ivT := ivA((ivK - 1) * ivN + ivK);
+    IF ivD(ivK) <= 0 THEN RETURN 0; END;
+    IF ivT <= 1E-10 * ivD(ivK) THEN RETURN 0; END;
+    FOR ivJ FROM 1 TO ivN DO
+      ivA((ivK - 1) * ivN + ivJ) := ivA((ivK - 1) * ivN + ivJ) / ivT;
+      rlInv((ivK - 1) * ivN + ivJ) := rlInv((ivK - 1) * ivN + ivJ) / ivT;
+    END;
+    FOR ivI FROM 1 TO ivN DO
+      IF ivI <> ivK THEN
+        ivF := ivA((ivI - 1) * ivN + ivK);
+        IF ivF <> 0 THEN
+          FOR ivJ FROM 1 TO ivN DO
+            ivA((ivI - 1) * ivN + ivJ) := ivA((ivI - 1) * ivN + ivJ) - ivF * ivA((ivK - 1) * ivN + ivJ);
+            rlInv((ivI - 1) * ivN + ivJ) := rlInv((ivI - 1) * ivN + ivJ) - ivF * rlInv((ivK - 1) * ivN + ivJ);
+          END;
+        END;
+      END;
+    END;
+  END;
+  RETURN 1;
+END;
+
+// 1 if the linear predictor at rlB orders the outcome perfectly: every
+// row with a Y = 0 has eta at most the smallest eta of any row with a
+// Y = 1 (complete or quasi-complete separation; ties at the boundary
+// count), while not every eta is equal.  A grouped row holding both
+// outcomes counts on both sides.
+rl_Order()
+BEGIN
+  LOCAL orI, orE, orMx0, orMn1, orLo, orHi;
+  LOCAL orBs;
+  orMx0 := -1E99; orMn1 := 1E99; orLo := 1E99; orHi := -1E99;
+  FOR orI FROM 1 TO rlR DO
+    orBs := 4 * orI - 4;
+    orE := rlB(1) + rlB(2) * rlDX(orBs + 1);
+    IF rlP >= 3 THEN orE := orE + rlB(3) * rlDX(orBs + 2); END;
+    IF rlP >= 4 THEN orE := orE + rlB(4) * rlDX(orBs + 3); END;
+    IF rlP >= 5 THEN orE := orE + rlB(5) * rlDX(orBs + 4); END;
+    IF rlDY(orI) < rlDM(orI) THEN orMx0 := MAX(orMx0, orE); END;
+    IF rlDY(orI) > 0 THEN orMn1 := MIN(orMn1, orE); END;
+    orLo := MIN(orLo, orE); orHi := MAX(orHi, orE);
+  END;
+  IF orHi - orLo <= 1E-9 * (1 + ABS(orHi)) THEN RETURN 0; END;
+  IF orMx0 <= orMn1 + 1E-9 * (1 + ABS(orMn1)) THEN RETURN 1; END;
+  RETURN 0;
+END;
+
+// rl_Fit: the logistic regression of the outcome on the predictors.
+//   Start: every slope 0, intercept ln(Y/(M - Y)) (the null model's
+//   answer).  Newton-Raphson: b <- b + I^-1 U (for the logit link this
+//   is Fisher scoring and IRLS too).  Converged when every step is below
+//   1E-9 (1 + |b|); then one more pass gives lnL, I and the fitted P at
+//   the final b.  At most 25 steps.
+//   Null model: lnL0 = Y ln(Y/M) + (M - Y) ln(1 - Y/M).
+//   SE = sqrt(diagonal of I^-1); Wald z = b/SE; LR chi-square =
+//   2 (lnL - lnL0) on k df; McFadden R squared = 1 - lnL/lnL0.
+//   Separation (Albert & Anderson 1984): when a predictor (or a mix of
+//   them) splits the 0s from the 1s, lnL keeps rising as |b| grows and
+//   there is no finite estimate.  Flagged from the fit itself (beta 1a):
+//   no convergence in 25 steps (b keeps growing), an information matrix
+//   that turns singular after 3 or more steps (every weight ~0), or a
+//   linear predictor that orders Y perfectly (rl_Order).  A converged fit
+//   with some fitted P within 3E-7 of 0 or 1 (|eta| > 15, common with a
+//   wide-ranging x) only gets a note, rlNear.
+rl_Fit()
+BEGIN
+  LOCAL ftI, ftJ, ftYs, ftMs, ftD, ftMx;
+  LOCAL ftGo, ftLast;
+  rl_Design();
+  rlFitOK := 0; rlStop := 0; rlConv := 0; rlSep := 0; rlSing := 0;
+  rlIt := 0; rlFitW := ""; rlLRc := -1; rlLRp := -1;
+  ftYs := 0; ftMs := 0;
+  FOR ftI FROM 1 TO rlR DO
+    ftYs := ftYs + rlDY(ftI); ftMs := ftMs + rlDM(ftI);
+  END;
+  IF ftYs <= 0 OR ftYs >= ftMs THEN
+    rlFitOK := -1; rlFitW := "the outcome is all 0 or all 1";
+    RETURN;
+  END;
+  rlLL0 := ftYs * LN(ftYs / ftMs) + (ftMs - ftYs) * LN(1 - ftYs / ftMs);
+  rlB := MAKELIST(0, ftJ, 1, rlP);
+  rlB(1) := LN(ftYs / (ftMs - ftYs));
+  rlSE := MAKELIST(-1, ftJ, 1, rlP);
+  rlPh := MAKELIST(0, ftJ, 1, rlR);
+  ftGo := 1; ftLast := 0;
+  WHILE ftGo == 1 DO
+    IF rl_Pass(rlIt + 1) == 0 THEN
+      rlStop := 1; rlFitW := "stopped with Esc";
+      RETURN;
+    END;
+    IF rl_Inv() == 0 THEN
+      rlSing := 1; ftGo := 0;
+    ELSE
+      IF ftLast == 1 THEN
+        ftGo := 0;
+      ELSE
+        ftMx := 0;
+        FOR ftI FROM 1 TO rlP DO
+          ftD := 0;
+          FOR ftJ FROM 1 TO rlP DO
+            ftD := ftD + rlInv((ftI - 1) * rlP + ftJ) * rlGr(ftJ);
+          END;
+          rlB(ftI) := rlB(ftI) + ftD;
+          ftMx := MAX(ftMx, ABS(ftD) / (1 + ABS(rlB(ftI))));
+        END;
+        rlIt := rlIt + 1;
+        IF ftMx < 1E-9 THEN rlConv := 1; ftLast := 1; END;
+        IF rlIt >= 25 THEN ftLast := 1; END;
+      END;
+    END;
+  END;
+  rlNear := 0;
+  IF rlSing == 1 THEN
+    IF rlIt >= 3 OR rl_Order() == 1 THEN
+      rlSep := 1; rlFitW := "separation: no finite estimates";
+    ELSE
+      rlFitW := "an x is constant or a mix of others";
+    END;
+    rlFitOK := -2;
+    RETURN;
+  END;
+  FOR ftI FROM 1 TO rlP DO
+    rlSE(ftI) := SQRT(MAX(0, rlInv((ftI - 1) * rlP + ftI)));
+  END;
+  IF rlConv == 0 THEN rlSep := 1; END;
+  IF rlSep == 0 THEN
+    IF rl_Order() == 1 THEN rlSep := 1; END;
+  END;
+  IF rlSep == 0 AND rlEta > 15 THEN rlNear := 1; END;
+  rlLRc := MAX(0, 2 * (rlLL - rlLL0));
+  rlLRp := rl_ChiUp(rlK, rlLRc);
+  rlFitOK := 1;
+END;
+
+
+// ============================================================================
+// SCORE LEVELS, ROC AND AUC
+// ============================================================================
+
+// The level of score value v in rlLv (exact match; binary search).
+rl_Find(fdV)
+BEGIN
+  LOCAL fdLo, fdHi, fdMd;
+  fdLo := 1; fdHi := rlM;
+  WHILE fdLo < fdHi DO
+    fdMd := IP((fdLo + fdHi) / 2);
+    IF rlLv(fdMd) < fdV THEN fdLo := fdMd + 1; ELSE fdHi := fdMd; END;
+  END;
+  RETURN fdLo;
+END;
+
+// Build the levels from one score per person: lvS the scores, lvY the
+// outcomes 0/1, lvG the group codes 1/2 (or {} for one group).  The
+// distinct scores are found by one SORT; each person is then placed by a
+// binary search.  Ties are exact equality.
+rl_Levels(lvS, lvY, lvG)
+BEGIN
+  LOCAL lvN, lvT, lvI, lvJ, lvL, lvW;
+  lvN := SIZE(lvS);
+  lvT := SORT(lvS);
+  lvJ := 1;
+  FOR lvI FROM 2 TO lvN DO
+    IF lvT(lvI) <> lvT(lvI - 1) THEN lvJ := lvJ + 1; END;
+  END;
+  rlM := lvJ;
+  rlLv := MAKELIST(0, lvI, 1, rlM);
+  rlLv(1) := lvT(1); lvJ := 1;
+  FOR lvI FROM 2 TO lvN DO
+    IF lvT(lvI) <> lvT(lvI - 1) THEN lvJ := lvJ + 1; rlLv(lvJ) := lvT(lvI); END;
+  END;
+  rlA1 := MAKELIST(0, lvI, 1, rlM); rlB1 := MAKELIST(0, lvI, 1, rlM);
+  rlA2 := MAKELIST(0, lvI, 1, rlM); rlB2 := MAKELIST(0, lvI, 1, rlM);
+  FOR lvI FROM 1 TO lvN DO
+    lvL := rl_Find(lvS(lvI));
+    lvW := 1;
+    IF SIZE(lvG) > 0 THEN
+      IF lvG(lvI) == 2 THEN lvW := 2; END;
+    END;
+    IF lvW == 1 THEN
+      IF lvY(lvI) == 1 THEN rlA1(lvL) := rlA1(lvL) + 1; ELSE rlB1(lvL) := rlB1(lvL) + 1; END;
+    ELSE
+      IF lvY(lvI) == 1 THEN rlA2(lvL) := rlA2(lvL) + 1; ELSE rlB2(lvL) := rlB2(lvL) + 1; END;
+    END;
+  END;
+  rl_Pool();
+END;
+
+// Both groups together, and the counts at or above each level:
+// rlCA(t) = events with a score at level t or higher (t = m+1: none).
+rl_Pool()
+BEGIN
+  LOCAL plT, plM, plI;
+  plM := rlM;
+  rlLA := MAKELIST(rlA1(plT) + rlA2(plT), plT, 1, plM);
+  rlLB := MAKELIST(rlB1(plT) + rlB2(plT), plT, 1, plM);
+  rlCA := MAKELIST(0, plT, 1, plM + 1); rlCB := MAKELIST(0, plT, 1, plM + 1);
+  rlCA1 := MAKELIST(0, plT, 1, plM + 1); rlCB1 := MAKELIST(0, plT, 1, plM + 1);
+  rlCA2 := MAKELIST(0, plT, 1, plM + 1); rlCB2 := MAKELIST(0, plT, 1, plM + 1);
+  // from the top level down (t = m, m-1, ..., 1)
+  FOR plI FROM 1 TO plM DO
+    plT := plM + 1 - plI;
+    rlCA(plT) := rlCA(plT + 1) + rlLA(plT);
+    rlCB(plT) := rlCB(plT + 1) + rlLB(plT);
+    rlCA1(plT) := rlCA1(plT + 1) + rlA1(plT);
+    rlCB1(plT) := rlCB1(plT + 1) + rlB1(plT);
+    rlCA2(plT) := rlCA2(plT + 1) + rlA2(plT);
+    rlCB2(plT) := rlCB2(plT + 1) + rlB2(plT);
+  END;
+  rlN1 := rlCA(1); rlN0 := rlCB(1);
+  rlLvI := 1;
+  FOR plT FROM 1 TO plM DO
+    IF FP(rlLv(plT)) <> 0 THEN rlLvI := 0; END;
+  END;
+END;
+
+// AUC and its standard errors from counts at each level (auA events,
+// auB non-events, levels ascending).  Returns {AUC, DeLong SE,
+// Hanley-McNeil SE, n1, n0}; AUC = -1 if a class is empty, SE = -1 if
+// it cannot be computed.
+//   AUC = (number of (event, non-event) pairs where the event scores
+//   higher + 1/2 the tied pairs) / (n1 n0): the Mann-Whitney U / (n1 n0)
+//   (Bamber 1975; Hanley & McNeil 1982).
+//   DeLong et al. (1988): each event's V10 = its share of non-events
+//   scoring lower (ties 1/2), each non-event's V01 = its share of events
+//   scoring higher (ties 1/2); S10, S01 their variances (n - 1
+//   divisors); Var(AUC) = S10/n1 + S01/n0.
+//   Hanley & McNeil (1982): Q1 = A/(2 - A), Q2 = 2A^2/(1 + A),
+//   Var = [A(1-A) + (n1-1)(Q1-A^2) + (n0-1)(Q2-A^2)] / (n1 n0).
+rl_AUCof(auA, auB)
+BEGIN
+  LOCAL auN1, auN0, auL, auBl, auS, auAb;
+  LOCAL auS10, auS01, auQ1, auQ2, auC, auV;
+  LOCAL auSd, auSh, auM;
+  auM := SIZE(auA);
+  auN1 := 0; auN0 := 0;
+  FOR auL FROM 1 TO auM DO auN1 := auN1 + auA(auL); auN0 := auN0 + auB(auL); END;
+  IF auN1 == 0 OR auN0 == 0 THEN RETURN {-1, -1, -1, auN1, auN0}; END;
+  auBl := 0; auS := 0;
+  FOR auL FROM 1 TO auM DO
+    auS := auS + auA(auL) * (auBl + 0.5 * auB(auL));
+    auBl := auBl + auB(auL);
+  END;
+  auC := auS / (auN1 * auN0);
+  auBl := 0; auAb := auN1; auS10 := 0; auS01 := 0;
+  FOR auL FROM 1 TO auM DO
+    auAb := auAb - auA(auL);
+    IF auA(auL) > 0 THEN
+      auV := (auBl + 0.5 * auB(auL)) / auN0;
+      auS10 := auS10 + auA(auL) * (auV - auC)^2;
+    END;
+    IF auB(auL) > 0 THEN
+      auV := (auAb + 0.5 * auA(auL)) / auN1;
+      auS01 := auS01 + auB(auL) * (auV - auC)^2;
+    END;
+    auBl := auBl + auB(auL);
+  END;
+  auSd := -1;
+  IF auN1 > 1 AND auN0 > 1 THEN
+    auSd := SQRT(MAX(0, auS10 / (auN1 - 1) / auN1 + auS01 / (auN0 - 1) / auN0));
+  END;
+  auQ1 := auC / (2 - auC); auQ2 := 2 * auC^2 / (1 + auC);
+  auV := (auC * (1 - auC) + (auN1 - 1) * (auQ1 - auC^2) + (auN0 - 1) * (auQ2 - auC^2)) / (auN1 * auN0);
+  auSh := SQRT(MAX(0, auV));
+  RETURN {auC, auSd, auSh, auN1, auN0};
+END;
+
+// The AUCs of the current score: pooled, and each group's.
+rl_SetAUC()
+BEGIN
+  LOCAL saR, saG;
+  saR := rl_AUCof(rlLA, rlLB);
+  rlAUC := saR(1); rlSEd := saR(2); rlSEh := saR(3);
+  rlGAU := {-1, -1, -1, -1};
+  IF rlNG == 2 THEN
+    saG := rl_AUCof(rlA1, rlB1);
+    rlGAU(1) := saG(1); rlGAU(2) := saG(2);
+    saG := rl_AUCof(rlA2, rlB2);
+    rlGAU(3) := saG(1); rlGAU(4) := saG(2);
+  END;
+END;
+
+// The starting cut-off: COMPAS decile 5 and up ("medium" or "high",
+// ProPublica's split); otherwise the level that flags about as many
+// people as had the event (the base rate), the fewer-flagged one on a tie.
+rl_CutDef()
+BEGIN
+  LOCAL cdT, cdB, cdD, cdN, cdI;
+  cdN := rlN1 + rlN0;
+  IF rlIsC == 1 THEN rlCutT := rl_Find(5); RETURN; END;
+  rlCutT := rlM + 1; cdB := 2;
+  FOR cdI FROM 1 TO rlM + 1 DO
+    cdT := rlM + 2 - cdI;
+    cdD := ABS((rlCA(cdT) + rlCB(cdT)) / cdN - rlN1 / cdN);
+    IF cdD < cdB - 1E-12 THEN cdB := cdD; rlCutT := cdT; END;
+  END;
+END;
+
+// The cut-off in words: "high risk = decile score >= 5".
+rl_CutS()
+BEGIN
+  IF rlCutT > rlM THEN RETURN "cut-off above every score: nobody flagged"; END;
+  RETURN "high risk = " + rlScNm + " " + rlGEQ + " " + rl_SV(rlLv(rlCutT));
+END;
+
+
+// ============================================================================
+// CALIBRATION: groups of predicted risk, Hosmer-Lemeshow
+// ============================================================================
+
+// Groups of levels (ties kept together).  gpG = 0: one group per level;
+// gpG > 0: walk up the sorted levels, closing a group once its running
+// count reaches the next multiple of N/gpG (a level that passes several
+// such marks closes one group only); the last level closes the last
+// group.  Output: rlGk groups, levels rlGlo(g)..rlGhi(g).
+rl_Group(gpG)
+BEGIN
+  LOCAL gpN, gpC, gpL, gpS, gpQ, gpT;
+  gpN := rlN1 + rlN0;
+  rlGlo := {}; rlGhi := {};
+  gpC := 0; gpS := 1; gpQ := 1;
+  FOR gpL FROM 1 TO rlM DO
+    gpC := gpC + rlLA(gpL) + rlLB(gpL);
+    gpT := 0;
+    IF gpG == 0 OR gpL == rlM THEN
+      gpT := 1;
+    ELSE
+      IF gpC >= gpQ * gpN / gpG - 0.000001 THEN gpT := 1; END;
+    END;
+    IF gpT == 1 THEN
+      rlGlo := CONCAT(rlGlo, {gpS}); rlGhi := CONCAT(rlGhi, {gpL});
+      gpS := gpL + 1;
+      IF gpG > 0 THEN
+        WHILE gpQ * gpN / gpG <= gpC + 0.000001 DO gpQ := gpQ + 1; END;
+      END;
+    END;
+  END;
+  rlGk := SIZE(rlGlo);
+END;
+
+// The number of groups the calibration page uses: rows of data, 10
+// groups of predicted risk (or 5); a score with at most 12 levels, one
+// group per level (or 5).
+rl_CalN()
+BEGIN
+  IF rlCalG == 2 THEN RETURN 5; END;
+  IF rlMode == 2 AND rlM <= 12 THEN RETURN 0; END;
+  RETURN 10;
+END;
+
+// Observed and expected events per group, and the Hosmer-Lemeshow
+// statistic  HL = sum over groups of (O - E)^2 / (E (1 - E/n)),
+// E = sum of predicted P in the group; df = groups - 2 (Hosmer &
+// Lemeshow 1980; 2000, 5.2.2).  rlHLp = -1 when df < 1 or a group's
+// E (1 - E/n) is 0.
+rl_HosLem()
+BEGIN
+  LOCAL hlG, hlL, hlN, hlO, hlE, hlD;
+  LOCAL hlBad;
+  rl_Group(rl_CalN());
+  rlGn := MAKELIST(0, hlG, 1, rlGk); rlGo := MAKELIST(0, hlG, 1, rlGk);
+  rlGe := MAKELIST(0, hlG, 1, rlGk); rlGx := MAKELIST(0, hlG, 1, rlGk);
+  rlHLv := 0; hlBad := 0;
+  FOR hlG FROM 1 TO rlGk DO
+    hlN := 0; hlO := 0; hlE := 0;
+    FOR hlL FROM rlGlo(hlG) TO rlGhi(hlG) DO
+      hlN := hlN + rlLA(hlL) + rlLB(hlL);
+      hlO := hlO + rlLA(hlL);
+      hlE := hlE + rlLP(hlL) * (rlLA(hlL) + rlLB(hlL));
+    END;
+    rlGn(hlG) := hlN; rlGo(hlG) := hlO; rlGe(hlG) := hlE;
+    rlGx(hlG) := hlE / hlN;
+    hlD := hlE * (1 - hlE / hlN);
+    IF hlD > 1E-12 THEN
+      rlHLv := rlHLv + (hlO - hlE)^2 / hlD;
+    ELSE
+      hlBad := 1;
+    END;
+  END;
+  rlHLdf := rlGk - 2;
+  rlHLp := -1;
+  IF rlHLdf >= 1 AND hlBad == 0 THEN rlHLp := rl_ChiUp(rlHLdf, rlHLv); END;
+  IF hlBad == 1 THEN rlHLv := -1; END;
+END;
+
+// The model's predicted P at each score level: the fitted P itself for
+// rows of data; the logistic curve of the score for a score.
+rl_SetLP()
+BEGIN
+  LOCAL spL;
+  IF rlMode == 1 THEN
+    rlLP := rlLv;
+  ELSE
+    rlLP := MAKELIST(0, spL, 1, rlM);
+    FOR spL FROM 1 TO rlM DO rlLP(spL) := rl_Lgt(rlB(1) + rlB(2) * rlLv(spL)); END;
+  END;
+END;
+
+// After any change of data: fit, levels, AUC, cut-off, calibration,
+// exports.  Returns 1 if the pages can be shown.
+rl_Refit()
+BEGIN
+  IF rlMode == 2 THEN
+    rl_Fit();
+    rl_SetAUC();
+    rl_CutDef();
+    IF rlFitOK == 1 THEN rl_SetLP(); rl_HosLem(); END;
+  ELSE
+    rl_Fit();
+    IF rlFitOK == 1 THEN
+      rl_Levels(rlPh, rlY, {});
+      rl_SetLP();
+      rl_SetAUC();
+      rl_CutDef();
+      rl_HosLem();
+    END;
+  END;
+  rl_Export();
+  IF rlMode == 2 THEN RETURN 1; END;
+  IF rlFitOK == 1 THEN RETURN 1; END;
+  RETURN 0;
+END;
+
+// Home exports (-1 = not computed).
+rl_Export()
+BEGIN
+  LOCAL exJ, exT, exS, exC;
+  RL_B := -1; RL_SE := -1; RL_OR := -1; RL_P := -1;
+  RL_AUC := -1; RL_HL := -1; RL_CUT := -1;
+  IF rlFitOK == 1 THEN
+    RL_B := rlB; RL_SE := rlSE;
+    RL_OR := MAKELIST(EXP(MIN(700, rlB(exJ))), exJ, 2, rlP);
+    RL_P := rlLRp;
+    IF rlHLp >= 0 THEN RL_HL := {rlHLv, rlHLdf, rlHLp}; END;
+  END;
+  IF (rlMode == 2 OR rlFitOK == 1) AND rlAUC >= 0 THEN
+    RL_AUC := {rlAUC, rlSEd};
+    exT := rlCutT;
+    exS := -1; exC := -1;
+    IF rlN1 > 0 THEN exS := rlCA(exT) / rlN1; END;
+    IF rlN0 > 0 THEN exC := 1 - rlCB(exT) / rlN0; END;
+    IF exT <= rlM THEN
+      RL_CUT := {rlLv(exT), exS, exC, -1};
+      IF rlCA(exT) + rlCB(exT) > 0 THEN RL_CUT(4) := rlCA(exT) / (rlCA(exT) + rlCB(exT)); END;
+    END;
+  END;
+END;
+
+
+// ============================================================================
+// VIEW 1: THE LOGISTIC REGRESSION TABLE
+// ============================================================================
+
+// The Enter menu of any view.  Returns the view to go to (1 table,
+// 2 fitted curve, 3 ROC, 4 calibration, 5 fairness), 0 = main menu,
+// -1 = stay.
+rl_GoMenu()
+BEGIN
+  LOCAL gmI, gmK;
+  gmI := 0;
+  CHOOSE(gmI, "Go to", {"Logistic regression table", "Fitted curve", "ROC and cut-off", "Calibration", "Fairness by group", "Main menu"});
+  REPEAT gmK := GETKEY; UNTIL gmK == -1;
+  rl_Drain();
+  IF gmI == 0 THEN RETURN -1; END;
+  IF gmI == 6 THEN RETURN 0; END;
+  RETURN gmI;
+END;
+
+// A predictor's name (j = 1..k), or "const" for j = 0.
+rl_TNm(tnJ)
+BEGIN
+  IF tnJ == 0 THEN RETURN "const"; END;
+  RETURN rlXNm(tnJ);
+END;
+
+// 1 if predictor j holds only 0s and 1s.
+rl_Bin01(boJ)
+BEGIN
+  LOCAL boI, boV;
+  IF rlMode == 2 THEN RETURN 0; END;
+  FOR boI FROM 1 TO rlN DO
+    boV := rlXv((boI - 1) * rlK + boJ);
+    IF boV <> 0 AND boV <> 1 THEN RETURN 0; END;
+  END;
+  RETURN 1;
+END;
+
+// e^b as text, "huge" past 1E6 and "~0" below 1E-6.
+rl_ExpS(esB, esD)
+BEGIN
+  IF esB > 13.8 THEN RETURN "huge"; END;
+  IF esB < -13.8 THEN RETURN "~0"; END;
+  RETURN rl_F(EXP(esB), esD);
+END;
+
+// One line under the table explaining a tapped row.
+rl_TermInfo(tiJ)
+BEGIN
+  LOCAL tiS;
+  IF rlFitOK <> 1 THEN RETURN; END;
+  IF tiJ == 1 THEN
+    rlInfo := "const: log-odds when every x = 0 (odds " + rl_ExpS(rlB(1), 3) + ")";
+  ELSE
+    tiS := rl_TNm(tiJ - 1) + ": odds " + rlTIM + " " + rl_ExpS(rlB(tiJ), 3);
+    IF rl_Bin01(tiJ - 1) == 1 THEN
+      rlInfo := tiS + " for 1 vs 0 (others fixed)";
+    ELSE
+      rlInfo := tiS + " per +1 (others fixed)";
+    END;
+  END;
+  rlInfC := rlMAG;
+END;
+
+// A table number in at most 7 characters: d decimals, 1 decimal from
+// 100, ">999" / "<-999" from 1000 (only under separation); tfS = 1 adds
+// a "+" to a positive value.
+rl_TF(tfV, tfD, tfS)
+BEGIN
+  IF tfV >= 1000 THEN RETURN ">999"; END;
+  IF tfV <= -1000 THEN RETURN "<-999"; END;
+  IF ABS(tfV) >= 100 THEN tfD := 1; END;
+  IF tfS == 1 THEN RETURN rl_Sg(tfV, tfD); END;
+  RETURN rl_F(tfV, tfD);
+END;
+
+// The row of term j on the table page (j = 1 the intercept): each
+// predictor takes two lines, its b, SE, z, p, then its odds ratio and CI.
+rl_TRow(trJ)
+BEGIN
+  IF trJ <= 1 THEN RETURN 46; END;
+  RETURN 58 + 24 * (trJ - 2);
+END;
+
+// The table page.  Line 1 of a term: b, SE, z = b/SE, the Wald p;
+// line 2: OR = e^b and its 95% CI e^(b +/- 1.96 SE).
+rl_LogDraw()
+BEGIN
+  LOCAL ldJ, ldY, ldB, ldS, ldZ, ldC;
+  LOCAL ldT;
+  rl_Frame("Logistic regression: " + rlYNm);
+  ldT := "n = " + rl_I(rlN1 + rlN0) + ", " + rlEvW + " = " + rl_I(rlN1) + " (" + rl_Pct(rlN1 / (rlN1 + rlN0)) + ")";
+  TEXTOUT_P(ldT, G1, 4, 21, 1, #000000h, 314);
+  IF rlFitOK <> 1 AND rlFitOK <> -2 THEN
+    TEXTOUT_P("No model: " + rlFitW, G1, 4, 50, 1, rlRED, 314);
+    TEXTOUT_P("(Load a preset or check your data.)", G1, 4, 64, 1, rlGRAY, 314);
+  ELSE
+    ldC := rlGRAY;
+    TEXTOUT_P("term", G1, 4, 33, 1, ldC, 44);
+    TEXTOUT_P("b", G1, 50, 33, 1, ldC, 48);
+    TEXTOUT_P("SE", G1, 100, 33, 1, ldC, 46);
+    TEXTOUT_P("z", G1, 148, 33, 1, ldC, 42);
+    TEXTOUT_P("p (Wald)", G1, 192, 33, 1, ldC, 60);
+    LINE_P(G1, 2, 44, 317, 44, rlGRID);
+    FOR ldJ FROM 1 TO rlP DO
+      ldY := rl_TRow(ldJ);
+      ldB := rlB(ldJ);
+      IF ldJ == 1 THEN ldC := rlGRAY; ELSE ldC := rlBLUE; END;
+      TEXTOUT_P(rl_TNm(ldJ - 1), G1, 4, ldY, 1, ldC, 44);
+      TEXTOUT_P(rl_TF(ldB, 3, 1), G1, 50, ldY, 1, #000000h, 48);
+      IF rlFitOK == 1 AND rlSE(ldJ) > 0 THEN
+        ldS := rlSE(ldJ);
+        ldZ := ldB / ldS;
+        TEXTOUT_P(rl_TF(ldS, 3, 0), G1, 100, ldY, 1, #000000h, 46);
+        TEXTOUT_P(rl_TF(ldZ, 2, 0), G1, 148, ldY, 1, #000000h, 42);
+        TEXTOUT_P(rl_PC(rl_P2(ldZ)), G1, 192, ldY, 1, rlMAG, 42);
+        IF ldJ > 1 THEN
+          TEXTOUT_P("OR = " + rl_ExpS(ldB, 3) + ", 95% CI " + rl_ExpS(ldB - rlZ * ldS, 3) + " to " + rl_ExpS(ldB + rlZ * ldS, 3), G1, 50, ldY + 12, 1, rlMAG, 264);
+        END;
+      ELSE
+        TEXTOUT_P("SE n/a", G1, 100, ldY, 1, rlRED, 46);
+      END;
+    END;
+    ldY := 158;
+    IF rlFitOK == -2 THEN
+      TEXTOUT_P("No SEs: " + rlFitW, G1, 4, ldY, 1, rlRED, 314);
+      ldY := ldY + 12;
+    ELSE
+      TEXTOUT_P("-2 lnL = " + rl_F(-2 * rlLL, 2) + "  (no predictors: " + rl_F(-2 * rlLL0, 2) + ")", G1, 4, ldY, 1, #000000h, 314);
+      ldY := ldY + 12;
+      IF rlSep == 0 THEN
+        TEXTOUT_P("LR " + rlCHI + " = " + rl_F(rlLRc, 2) + ", df " + rl_I(rlK) + ", " + rl_PS(rlLRp) + " (vs none)", G1, 4, ldY, 1, rlMAG, 314);
+        TEXTOUT_P("McFadden R" + rlSQ + " = 1 - lnL/lnL" + rlSUB0 + " = " + rl_F(1 - rlLL / rlLL0, 3), G1, 4, ldY + 12, 1, rlMAG, 314);
+        IF MIN(rlN1, rlN0) < 10 * rlK THEN
+          // fewer than 10 of the rarer outcome per predictor (Peduzzi et
+          // al. 1996, J Clin Epidemiol 49:1373-1379)
+          TEXTOUT_P("< 10 events per x (Peduzzi 1996): p, CI rough", G1, 4, ldY + 24, 1, rlRED, 314);
+        ELSE
+          IF rlNear == 1 THEN
+            TEXTOUT_P("converged (" + rl_I(rlIt) + " steps); a fitted P is ~0 or ~1", G1, 4, ldY + 24, 1, rlGRAY, 314);
+          ELSE
+            TEXTOUT_P("Newton-Raphson converged in " + rl_I(rlIt) + " steps", G1, 4, ldY + 24, 1, rlGRN, 314);
+          END;
+        END;
+      END;
+    END;
+    IF rlSep == 1 THEN
+      TEXTOUT_P("SEPARATION suspected: some x splits the 0s", G1, 4, ldY, 1, rlRED, 314);
+      TEXTOUT_P("from the 1s (almost) perfectly; b runs off", G1, 4, ldY + 12, 1, rlRED, 314);
+      TEXTOUT_P("to " + rlPM + CHAR(8734) + ": b, SE, p, OR above are NOT valid.", G1, 4, ldY + 24, 1, rlRED, 314);
+    END;
+  END;
+  IF DIM(rlInfo) > 0 THEN
+    TEXTOUT_P(rlInfo, G1, 4, 206, 1, rlInfC, 314);
+  ELSE
+    TEXTOUT_P("tap a row = meaning, Ent = menu, Esc = back", G1, 4, 206, 1, rlFOOT, 314);
+  END;
+  BLIT_P(G0, 0, 0, G1);
+  DRAWMENU({"Curve", "ROC", "Calib", "Fair", "Back", ""});
+END;
+
+// The table view.  Returns the next view (0 = main menu).
+rl_LogView()
+BEGIN
+  LOCAL lvK, lvM, lvM1, lvGo, lvNx, lvSl;
+  LOCAL lvX, lvY, lvJ;
+  rlInfo := "";
+  lvGo := 1; lvNx := 0;
+  REPEAT lvK := GETKEY; UNTIL lvK == -1;
+  rl_Drain();
+  WHILE lvGo == 1 DO
+    rl_LogDraw();
+    REPEAT
+      lvK := GETKEY;
+      lvM := MOUSE;
+      lvM1 := lvM(1);
+    UNTIL lvK > -1 OR SIZE(lvM1) > 0;
+    IF SIZE(lvM1) > 0 THEN
+      lvX := lvM1(1); lvY := lvM1(2);
+      rl_Drain();
+      IF lvY >= 218 THEN
+        lvSl := MIN(6, IP(lvX / 53.4) + 1);
+        IF lvSl == 1 THEN lvNx := 2; lvGo := 0; END;
+        IF lvSl == 2 THEN lvNx := 3; lvGo := 0; END;
+        IF lvSl == 3 THEN lvNx := 4; lvGo := 0; END;
+        IF lvSl == 4 THEN lvNx := 5; lvGo := 0; END;
+        IF lvSl == 5 THEN lvNx := 0; lvGo := 0; END;
+      ELSE
+        rlInfo := "";
+        // which term's two lines the finger is on
+        FOR lvJ FROM 1 TO rlP DO
+          IF lvY >= rl_TRow(lvJ) - 1 AND lvY < rl_TRow(lvJ) + IFTE(lvJ == 1, 12, 24) - 1 THEN rl_TermInfo(lvJ); END;
+        END;
+        IF lvY >= 154 AND lvY < 200 AND rlFitOK == 1 THEN
+          rlInfo := "OR = e^b: odds " + rlTIM + " OR per +1 in x, others fixed";
+          rlInfC := rlGRAY;
+        END;
+      END;
+    ELSE
+      IF lvK == 4 THEN lvNx := 0; lvGo := 0; END;
+      IF lvK == 30 THEN
+        lvNx := rl_GoMenu();
+        IF lvNx >= 0 THEN lvGo := 0; END;
+      END;
+      REPEAT lvK := GETKEY; UNTIL lvK == -1;
+    END;
+  END;
+  rlInfo := "";
+  RETURN lvNx;
+END;
+
+
+// ============================================================================
+// VIEW 2: THE FITTED CURVE FOR ONE PREDICTOR
+// ============================================================================
+
+// The column of predictor rlVar, its range, and bins of it: one bin per
+// value when it takes at most 8 values (a score: at most 12 levels),
+// else 8 bins of equal width.  Each bin: people, events, mean x.
+rl_CurveSetup()
+BEGIN
+  LOCAL csI, csJ, csV, csMn, csMx, csU;
+  LOCAL csW, csB, csNv, csT, csM;
+  csJ := rlVar;
+  IF rlMode == 1 THEN
+    rlXcol := MAKELIST(rlXv((csI - 1) * rlK + csJ), csI, 1, rlN);
+    csM := rlN;
+  ELSE
+    rlXcol := rlLv;
+    csM := rlM;
+  END;
+  csMn := MIN(rlXcol); csMx := MAX(rlXcol);
+  // the distinct values, up to 13 of them
+  csT := SORT(rlXcol); csU := {csT(1)}; csNv := 1;
+  FOR csI FROM 2 TO csM DO
+    IF csT(csI) <> csT(csI - 1) AND csNv <= 12 THEN
+      csNv := csNv + 1; csU := CONCAT(csU, {csT(csI)});
+    END;
+  END;
+  IF csNv <= 8 OR (rlMode == 2 AND csNv <= 12) THEN
+    rlBnK := csNv; rlBnLo := csU; rlBnHi := csU;
+  ELSE
+    rlBnK := 8;
+    csW := (csMx - csMn) / 8;
+    rlBnLo := MAKELIST(csMn + (csI - 1) * csW, csI, 1, 8);
+    rlBnHi := MAKELIST(csMn + csI * csW, csI, 1, 8);
+  END;
+  rlBnN := MAKELIST(0, csI, 1, rlBnK); rlBnE := MAKELIST(0, csI, 1, rlBnK);
+  rlBnX := MAKELIST(0, csI, 1, rlBnK);
+  FOR csI FROM 1 TO csM DO
+    csV := rlXcol(csI);
+    IF rlBnK == csNv AND rlBnLo(1) == rlBnHi(1) THEN
+      csB := 1;
+      WHILE rlBnLo(csB) <> csV DO csB := csB + 1; END;
+    ELSE
+      csB := MIN(8, IP((csV - csMn) / csW) + 1);
+    END;
+    IF rlMode == 1 THEN
+      rlBnN(csB) := rlBnN(csB) + 1;
+      rlBnE(csB) := rlBnE(csB) + rlY(csI);
+      rlBnX(csB) := rlBnX(csB) + csV;
+    ELSE
+      rlBnN(csB) := rlBnN(csB) + rlLA(csI) + rlLB(csI);
+      rlBnE(csB) := rlBnE(csB) + rlLA(csI);
+      rlBnX(csB) := rlBnX(csB) + csV * (rlLA(csI) + rlLB(csI));
+    END;
+  END;
+  FOR csI FROM 1 TO rlBnK DO
+    IF rlBnN(csI) > 0 THEN rlBnX(csI) := rlBnX(csI) / rlBnN(csI); END;
+  END;
+  // the window: the data's range plus a margin
+  csW := csMx - csMn;
+  IF csW <= 0 THEN csW := 1; END;
+  rlXlo := csMn - 0.06 * csW; rlXhi := csMx + 0.06 * csW;
+  rlXs := rl_Nice(csW / 6);
+  rlYlo := 0; rlYhi := 1; rlYs := 0.25;
+  rlCurX := rlXm(csJ);
+  IF rlMode == 2 THEN rlCurX := rlLv(IP((rlM + 1) / 2)); END;
+END;
+
+// The fitted P at x for predictor rlVar, the others at their means.
+rl_CurveP(cpX)
+BEGIN
+  LOCAL cpE, cpI;
+  cpE := rlB(1) + rlB(rlVar + 1) * cpX;
+  FOR cpI FROM 1 TO rlK DO
+    IF cpI <> rlVar THEN cpE := cpE + rlB(cpI + 1) * rlXm(cpI); END;
+  END;
+  RETURN rl_Lgt(cpE);
+END;
+
+// The fixed part of the plot, drawn once into G2: grid, each person as
+// a dot (Y = 1 near the top, Y = 0 near the bottom, spread by a fixed
+// pattern so they do not hide each other), the share with Y = 1 in each
+// bin (green squares), the fitted curve (magenta).
+rl_CurveBase()
+BEGIN
+  LOCAL cbI, cbX, cbY, cbPx, cbPy, cbQx;
+  LOCAL cbQy, cbJx, cbJy, cbD;
+  rl_Frame("Fitted P(" + rlYNm + ") vs " + rl_TNm(rlVar));
+  rl_Box(34, 26, 312, 164);
+  cbD := MAX(0, -FLOOR(LOG(rlXs) + 0.000001));
+  rl_Grid(cbD, 2);
+  IF rlMode == 1 THEN
+    FOR cbI FROM 1 TO rlN DO
+      cbJx := (cbI * 53) MOD 5 - 2;
+      cbJy := (cbI * 37) MOD 7;
+      cbX := rl_XP(rlXcol(cbI)) + cbJx;
+      IF rlY(cbI) == 1 THEN
+        cbY := rlPT + 2 + cbJy;
+        RECT_P(G1, cbX, cbY, cbX + 1, cbY + 1, rlBLUE);
+      ELSE
+        cbY := rlPB - 3 - cbJy;
+        RECT_P(G1, cbX, cbY, cbX + 1, cbY + 1, rlGRAY);
+      END;
+    END;
+  END;
+  // the fitted curve, one segment per pixel column, 2 px thick
+  cbQx := -1; cbQy := 0;
+  FOR cbPx FROM rlPL TO rlPR DO
+    cbX := rlXlo + (cbPx - rlPL) / (rlPR - rlPL) * (rlXhi - rlXlo);
+    cbPy := rl_YP(rl_CurveP(cbX));
+    IF cbQx >= 0 THEN
+      LINE_P(G1, cbQx, cbQy, cbPx, cbPy, rlMAG);
+      LINE_P(G1, cbQx, cbQy + 1, cbPx, cbPy + 1, rlMAG);
+    END;
+    cbQx := cbPx; cbQy := cbPy;
+  END;
+  FOR cbI FROM 1 TO rlBnK DO
+    IF rlBnN(cbI) > 0 THEN
+      rl_Dot(rl_XP(rlBnX(cbI)), rl_YP(rlBnE(cbI) / rlBnN(cbI)), 3, rlGRN, rlLGRN);
+    END;
+  END;
+  BLIT_P(G2, 0, 0, G1);
+END;
+
+// The bin that holds x (0 if none).
+rl_BinOf(bfX)
+BEGIN
+  LOCAL bfI, bfB, bfD;
+  bfB := 0; bfD := 1E99;
+  FOR bfI FROM 1 TO rlBnK DO
+    IF rlBnN(bfI) > 0 THEN
+      IF bfX >= rlBnLo(bfI) - 0.000001 AND bfX <= rlBnHi(bfI) + 0.000001 THEN RETURN bfI; END;
+      IF ABS(bfX - rlBnX(bfI)) < bfD THEN bfD := ABS(bfX - rlBnX(bfI)); bfB := bfI; END;
+    END;
+  END;
+  IF rlBnLo(1) == rlBnHi(1) THEN RETURN bfB; END;
+  RETURN 0;
+END;
+
+// An x value: a whole number as it is, else two decimals.
+rl_XS(xsV)
+BEGIN
+  IF ABS(xsV - ROUND(xsV, 0)) < 0.000001 THEN RETURN rl_I(xsV); END;
+  RETURN rl_F(xsV, 2);
+END;
+
+// One frame: the cached plot, the cursor, the readout.
+rl_CurveFrame()
+BEGIN
+  LOCAL cfX, cfP, cfB, cfS;
+  BLIT_P(G1, 0, 0, G2);
+  cfX := rl_XP(rlCurX);
+  rl_DotV(cfX, rlPT, rlPB, rlRED);
+  cfP := rl_CurveP(rlCurX);
+  rl_Dot(cfX, rl_YP(cfP), 2, rlRED, rlRED);
+  cfS := rl_TNm(rlVar) + " = " + rl_XS(rlCurX) + ": fitted P = " + rl_F(cfP, 3);
+  IF rlK > 1 THEN cfS := cfS + " (others at means)"; END;
+  RECT_P(G1, 0, 178, 319, 216, #FFFFFFh);
+  TEXTOUT_P(cfS, G1, 4, 179, 1, rlRED, 314);
+  cfB := rl_BinOf(rlCurX);
+  IF cfB > 0 THEN
+    IF rlBnLo(1) == rlBnHi(1) THEN
+      cfS := "at " + rl_TNm(rlVar) + " = " + rl_XS(rlBnLo(cfB)) + ": ";
+    ELSE
+      cfS := "bin " + rl_F(rlBnLo(cfB), 1) + " to " + rl_F(rlBnHi(cfB), 1) + ": ";
+    END;
+    cfS := cfS + rl_I(rlBnE(cfB)) + " of " + rl_I(rlBnN(cfB)) + " " + rlEvW + " = " + rl_F(rlBnE(cfB) / rlBnN(cfB), 3);
+    TEXTOUT_P(cfS, G1, 4, 191, 1, rlGRN, 314);
+  END;
+  IF DIM(rlInfo) > 0 THEN
+    TEXTOUT_P(rlInfo, G1, 4, 205, 1, rlInfC, 314);
+  ELSE
+    TEXTOUT_P(rlARL + rlARR + " = move, tap = read, Ent = menu, Esc = back", G1, 4, 205, 1, rlFOOT, 314);
+  END;
+  BLIT_P(G0, 0, 0, G1);
+  DRAWMENU({"Prev x", "Next x", "Table", "ROC", "Back", ""});
+END;
+
+// The fitted-curve view.  Returns the next view (0 = main menu).
+rl_CurveView()
+BEGIN
+  LOCAL cvK, cvM, cvM1, cvGo, cvNx, cvSl;
+  LOCAL cvX, cvY, cvDg, cvSt;
+  IF rlFitOK <> 1 THEN
+    rl_Msg("No fitted model to draw:" + CHAR(10) + rlFitW);
+    RETURN 1;
+  END;
+  IF rlVar < 1 OR rlVar > rlK THEN rlVar := 1; END;
+  rl_Busy("Drawing ...");
+  rl_CurveSetup(); rl_CurveBase();
+  rlInfo := "";
+  cvGo := 1; cvNx := 0;
+  REPEAT cvK := GETKEY; UNTIL cvK == -1;
+  rl_Drain();
+  WHILE cvGo == 1 DO
+    rl_CurveFrame();
+    REPEAT
+      cvK := GETKEY;
+      cvM := MOUSE;
+      cvM1 := cvM(1);
+    UNTIL cvK > -1 OR SIZE(cvM1) > 0;
+    cvSt := rl_Nice((rlXhi - rlXlo) / 40);
+    // a predictor with few values: one value per press
+    IF rlBnLo(1) == rlBnHi(1) AND rlBnK > 1 THEN cvSt := (MAX(rlXcol) - MIN(rlXcol)) / (rlBnK - 1); END;
+    IF SIZE(cvM1) > 0 THEN
+      cvX := cvM1(1); cvY := cvM1(2);
+      IF cvY >= 218 THEN
+        rl_Drain();
+        cvSl := MIN(6, IP(cvX / 53.4) + 1);
+        IF cvSl == 1 OR cvSl == 2 THEN
+          IF rlK == 1 THEN
+            rlInfo := "One predictor only"; rlInfC := rlGRAY;
+          ELSE
+            IF cvSl == 1 THEN rlVar := rlVar - 1; ELSE rlVar := rlVar + 1; END;
+            IF rlVar < 1 THEN rlVar := rlK; END;
+            IF rlVar > rlK THEN rlVar := 1; END;
+            rlInfo := "";
+            rl_Busy("Drawing ...");
+            rl_CurveSetup(); rl_CurveBase();
+          END;
+        END;
+        IF cvSl == 3 THEN cvNx := 1; cvGo := 0; END;
+        IF cvSl == 4 THEN cvNx := 3; cvGo := 0; END;
+        IF cvSl == 5 THEN cvNx := 0; cvGo := 0; END;
+      ELSE
+        IF cvY >= rlPT - 6 AND cvY <= rlPB + 3 THEN
+          // the cursor follows the finger while it stays down
+          rlInfo := "";
+          cvDg := 1;
+          WHILE cvDg == 1 DO
+            rlCurX := rlXlo + (MAX(rlPL, MIN(rlPR, cvX)) - rlPL) / (rlPR - rlPL) * (rlXhi - rlXlo);
+            rl_CurveFrame();
+            cvK := GETKEY;
+            cvM := MOUSE;
+            cvM1 := cvM(1);
+            IF cvK > -1 OR SIZE(cvM1) == 0 THEN
+              cvDg := 0;
+            ELSE
+              cvX := cvM1(1);
+            END;
+          END;
+          IF cvK > -1 THEN REPEAT cvK := GETKEY; UNTIL cvK == -1; END;
+          rl_Drain();
+        ELSE
+          rl_Drain();
+          IF rlMode == 1 THEN
+            rlInfo := "dots = people (Y=1 top); green = bin share";
+          ELSE
+            rlInfo := "green = share with Y = 1 at each score";
+          END;
+          rlInfC := #000000h;
+        END;
+      END;
+    ELSE
+      IF cvK == 7 THEN rlInfo := ""; rlCurX := MAX(rlXlo, rlCurX - cvSt); END;
+      IF cvK == 8 THEN rlInfo := ""; rlCurX := MIN(rlXhi, rlCurX + cvSt); END;
+      IF cvK == 4 THEN cvNx := 0; cvGo := 0; END;
+      IF cvK == 30 THEN
+        cvNx := rl_GoMenu();
+        IF cvNx >= 0 THEN cvGo := 0; END;
+      END;
+      REPEAT cvK := GETKEY; UNTIL cvK == -1;
+    END;
+  END;
+  rlInfo := "";
+  RETURN cvNx;
+END;
+
+
+// ============================================================================
+// VIEW 3: THE ROC CURVE AND THE CUT-OFF
+// ============================================================================
+
+// A point of an ROC curve: flag everyone with a score at level t or
+// above; FPR = flagged non-events / all non-events, TPR = flagged
+// events / all events.  sel = 0 everyone, 1 group 1, 2 group 2 (the
+// cumulative counts rlCA, rlCA1, rlCA2 ...; read by name, not passed,
+// so no list is copied per call).
+rl_CumA(cqS, cqT)
+BEGIN
+  IF cqS == 1 THEN RETURN rlCA1(cqT); END;
+  IF cqS == 2 THEN RETURN rlCA2(cqT); END;
+  RETURN rlCA(cqT);
+END;
+
+rl_CumB(cbS, cbT)
+BEGIN
+  IF cbS == 1 THEN RETURN rlCB1(cbT); END;
+  IF cbS == 2 THEN RETURN rlCB2(cbT); END;
+  RETURN rlCB(cbT);
+END;
+
+rl_RocX(rxS, rxT)
+BEGIN
+  LOCAL rxN;
+  rxN := rl_CumB(rxS, 1);
+  IF rxN == 0 THEN RETURN 0; END;
+  RETURN rl_CumB(rxS, rxT) / rxN;
+END;
+
+rl_RocY(ryS, ryT)
+BEGIN
+  LOCAL ryN;
+  ryN := rl_CumA(ryS, 1);
+  IF ryN == 0 THEN RETURN 0; END;
+  RETURN rl_CumA(ryS, ryT) / ryN;
+END;
+
+// Draw one ROC curve (2 px) from (0,0) (t = m+1) to (1,1) (t = 1):
+// straight segments between the points.  A level holding only events
+// gives a vertical step, only non-events a horizontal one, both a
+// diagonal (the tie counts 1/2, as in the AUC).  With rcS = 1 the area
+// under it is shaded first, one pixel column at a time.
+rl_RocCurve(rcW, rcC, rcS)
+BEGIN
+  LOCAL rcT, rcX0, rcY0, rcX1, rcY1, rcPx;
+  LOCAL rcF, rcP, rcTp, rcN, rcGo;
+  rcN := rlM;
+  IF rcS == 1 THEN
+    rcP := rcN + 1;
+    FOR rcPx FROM rlPL TO rlPR DO
+      rcF := (rcPx - rlPL) / (rlPR - rlPL);
+      // the last point with FPR <= this column's FPR (no index 0 is
+      // ever read: AND is not relied on to skip its right side)
+      rcGo := 1;
+      WHILE rcGo == 1 DO
+        rcGo := 0;
+        IF rcP > 1 THEN
+          IF rl_RocX(rcW, rcP - 1) <= rcF + 0.0000001 THEN rcP := rcP - 1; rcGo := 1; END;
+        END;
+      END;
+      rcX0 := rl_RocX(rcW, rcP); rcY0 := rl_RocY(rcW, rcP);
+      rcTp := rcY0;
+      IF rcP > 1 THEN
+        rcX1 := rl_RocX(rcW, rcP - 1); rcY1 := rl_RocY(rcW, rcP - 1);
+        IF rcX1 > rcX0 THEN rcTp := rcY0 + (rcY1 - rcY0) * (rcF - rcX0) / (rcX1 - rcX0); END;
+      END;
+      IF rl_YP(rcTp) < rlPB - 1 THEN LINE_P(G1, rcPx, rlPB - 1, rcPx, rl_YP(rcTp), rlSHD); END;
+    END;
+  END;
+  FOR rcT FROM 1 TO rcN DO
+    rcX0 := rl_XP(rl_RocX(rcW, rcT + 1)); rcY0 := rl_YP(rl_RocY(rcW, rcT + 1));
+    rcX1 := rl_XP(rl_RocX(rcW, rcT)); rcY1 := rl_YP(rl_RocY(rcW, rcT));
+    LINE_P(G1, rcX0, rcY0, rcX1, rcY1, rcC);
+    LINE_P(G1, rcX0 + 1, rcY0, rcX1 + 1, rcY1, rcC);
+  END;
+END;
+
+// The fixed part of the ROC page (cached in G2): grid, chance diagonal,
+// the curve (shaded) or, with rlOvl = 1, each group's curve.
+rl_RocBase()
+BEGIN
+  LOCAL rbI;
+  rl_Frame("ROC: " + rlScNm + ", " + rlShort);
+  rl_Box(26, 30, 166, 166);
+  rlXlo := 0; rlXhi := 1; rlYlo := 0; rlYhi := 1; rlXs := 0.5; rlYs := 0.5;
+  rl_Grid(1, 1);
+  IF rlOvl == 1 AND rlNG == 2 THEN
+    rl_RocCurve(0, rlGRAY, 0);
+    rl_RocCurve(1, rlBLUE, 0);
+    rl_RocCurve(2, rlMAG, 0);
+  ELSE
+    rl_RocCurve(0, rlBLUE, 1);
+  END;
+  FOR rbI FROM 0 TO rlPR - rlPL STEP 3 DO
+    PIXON_P(G1, rlPL + rbI, rlPB - rbI, rlGRAY);
+  END;
+  TEXTOUT_P("TPR", G1, rlPL + 3, rlPT + 2, 1, rlGRAY, 24);
+  TEXTOUT_P("FPR", G1, rlPR - 22, rlPB - 12, 1, rlGRAY, 24);
+  rl_Out(rlPL, rlPT, rlPR, rlPB, rlGRAY);
+  BLIT_P(G2, 0, 0, G1);
+  // the pooled curve's points in pixels, once, for the finger search
+  rlRPx := MAKELIST(0, rbI, 1, rlM + 1); rlRPy := MAKELIST(0, rbI, 1, rlM + 1);
+  FOR rbI FROM 1 TO rlM + 1 DO
+    rlRPx(rbI) := rl_XP(rl_RocX(0, rbI)); rlRPy(rbI) := rl_YP(rl_RocY(0, rbI));
+  END;
+END;
+
+// The red cut-off point(s) and the live 2 x 2 table.
+rl_RocFrame()
+BEGIN
+  LOCAL rfT, rfTP, rfFP, rfFN, rfTN;
+  LOCAL rfY, rfS, rfN, rfC;
+  BLIT_P(G1, 0, 0, G2);
+  rfT := rlCutT;
+  IF rlOvl == 1 AND rlNG == 2 THEN
+    rl_Dot(rl_XP(rl_RocX(1, rfT)), rl_YP(rl_RocY(1, rfT)), 3, rlBLUE, rlRED);
+    rl_Dot(rl_XP(rl_RocX(2, rfT)), rl_YP(rl_RocY(2, rfT)), 3, rlMAG, rlRED);
+  ELSE
+    rl_Dot(rl_XP(rl_RocX(0, rfT)), rl_YP(rl_RocY(0, rfT)), 3, rlRED, rlRED);
+  END;
+  TEXTOUT_P(rl_CutS(), G1, 4, 20, 1, rlRED, 314);
+  rfTP := rlCA(rfT); rfFP := rlCB(rfT);
+  rfFN := rlN1 - rfTP; rfTN := rlN0 - rfFP;
+  rfN := rlN1 + rlN0;
+  // the 2 x 2 table
+  RECT_P(G1, 170, 32, 318, 84, rlORNG, rlLORN);
+  TEXTOUT_P("Y = 1", G1, 224, 34, 1, rlORNG, 44);
+  TEXTOUT_P("Y = 0", G1, 270, 34, 1, rlORNG, 44);
+  TEXTOUT_P("flagged", G1, 174, 47, 1, rlRED, 50);
+  TEXTOUT_P(rl_I(rfTP), G1, 224, 47, 1, rlGRN, 44);
+  TEXTOUT_P(rl_I(rfFP), G1, 270, 47, 1, rlRED, 44);
+  TEXTOUT_P("not", G1, 174, 59, 1, #000000h, 50);
+  TEXTOUT_P(rl_I(rfFN), G1, 224, 59, 1, rlRED, 44);
+  TEXTOUT_P(rl_I(rfTN), G1, 270, 59, 1, rlGRN, 44);
+  TEXTOUT_P("total", G1, 174, 71, 1, rlGRAY, 50);
+  TEXTOUT_P(rl_I(rlN1), G1, 224, 71, 1, rlGRAY, 44);
+  TEXTOUT_P(rl_I(rlN0), G1, 270, 71, 1, rlGRAY, 44);
+  IF rlEvW <> "Y = 1" THEN TEXTOUT_P("Y = 1: " + rlEvW, G1, 172, 87, 1, rlGRAY, 146); END;
+  rfY := 101;
+  TEXTOUT_P("sensitivity", G1, 174, rfY, 1, #000000h, 92);
+  TEXTOUT_P(rl_R3(rfTP, rlN1), G1, 272, rfY, 1, rlMAG, 46);
+  TEXTOUT_P("specificity", G1, 174, rfY + 12, 1, #000000h, 92);
+  TEXTOUT_P(rl_R3(rfTN, rlN0), G1, 272, rfY + 12, 1, rlMAG, 46);
+  TEXTOUT_P("PPV", G1, 174, rfY + 24, 1, #000000h, 92);
+  TEXTOUT_P(rl_R3(rfTP, rfTP + rfFP), G1, 272, rfY + 24, 1, rlMAG, 46);
+  TEXTOUT_P("NPV", G1, 174, rfY + 36, 1, #000000h, 92);
+  TEXTOUT_P(rl_R3(rfTN, rfTN + rfFN), G1, 272, rfY + 36, 1, rlMAG, 46);
+  TEXTOUT_P("FPR (1 - spec)", G1, 174, rfY + 48, 1, #000000h, 96);
+  TEXTOUT_P(rl_R3(rfFP, rlN0), G1, 272, rfY + 48, 1, rlMAG, 46);
+  TEXTOUT_P("flagged high", G1, 174, rfY + 60, 1, #000000h, 92);
+  TEXTOUT_P(rl_Pct((rfTP + rfFP) / rfN), G1, 272, rfY + 60, 1, rlMAG, 46);
+  // the AUC
+  // the DeLong CI: none when SE = 0 (one score level, or AUC = 1 or 0);
+  // rough (a red caution) when a class has fewer than 20 people or a
+  // bound is cut at 0 or 1 (a Wald interval, as Stata's roctab)
+  rfC := 0;
+  IF rlAUC >= 0 THEN
+    rfS := "AUC = " + rl_F(rlAUC, 3);
+    IF rlSEd > 0 THEN
+      rfS := rfS + ", 95% CI " + rl_F(MAX(0, rlAUC - rlZ * rlSEd), 3) + " to " + rl_F(MIN(1, rlAUC + rlZ * rlSEd), 3) + " (DeLong)";
+      IF MIN(rlN1, rlN0) < 20 OR rlAUC - rlZ * rlSEd < 0 OR rlAUC + rlZ * rlSEd > 1 THEN rfC := 1; END;
+    ELSE
+      IF rlM == 1 THEN rfS := rfS + " (one score level: no interval)"; ELSE rfS := rfS + " (SE = 0: no interval)"; END;
+    END;
+    TEXTOUT_P(rfS, G1, 4, 180, 1, rlBLUE, 314);
+  END;
+  IF rlOvl == 1 AND rlNG == 2 THEN
+    rfS := "AUC: " + rlGSh(1) + " " + rl_F(rlGAU(1), 3) + ", " + rlGSh(2) + " " + rl_F(rlGAU(3), 3);
+    TEXTOUT_P(rfS, G1, 4, 192, 1, rlMAG, 314);
+  ELSE
+    IF rfC == 1 THEN
+      IF rlInS == 1 THEN
+        TEXTOUT_P("small n: CI rough; in-sample AUC optimistic", G1, 4, 192, 1, rlRED, 314);
+      ELSE
+        TEXTOUT_P("small n or a bound cut at 0/1: the CI is rough", G1, 4, 192, 1, rlRED, 314);
+      END;
+    ELSE
+    IF rlInS == 1 THEN
+      TEXTOUT_P("in-sample: P fitted to these same people", G1, 4, 192, 1, rlRED, 314);
+    ELSE
+      TEXTOUT_P("AUC = shaded area; dotted = chance (0.5)", G1, 4, 192, 1, rlGRAY, 314);
+    END;
+    END;
+  END;
+  IF DIM(rlInfo) > 0 THEN
+    TEXTOUT_P(rlInfo, G1, 4, 205, 1, rlInfC, 314);
+  ELSE
+    TEXTOUT_P(rlARL + rlARR + " = cut, +/- = " + rlTIM + "10, Ent = menu, Esc = back", G1, 4, 205, 1, rlFOOT, 314);
+  END;
+  BLIT_P(G0, 0, 0, G1);
+  DRAWMENU({"Groups", "Table", "Calib", "Fair", "Back", ""});
+END;
+
+// The ROC point nearest a tap at (x, y), as a cut-off level t.
+rl_RocNear(rnX, rnY)
+BEGIN
+  LOCAL rnT, rnB, rnD, rnBest;
+  rnBest := 1E99; rnB := rlCutT;
+  FOR rnT FROM 1 TO rlM + 1 DO
+    rnD := (rlRPx(rnT) - rnX)^2 + (rlRPy(rnT) - rnY)^2;
+    IF rnD < rnBest THEN rnBest := rnD; rnB := rnT; END;
+  END;
+  RETURN rnB;
+END;
+
+// What a tap on the right-hand panel or the AUC line means.
+rl_RocTap(rtX, rtY)
+BEGIN
+  rlInfo := ""; rlInfC := #000000h;
+  IF rtY < 30 THEN rlInfo := "flag high risk if the score is at the cut or above"; END;
+  IF rtX >= 170 AND rtY >= 44 AND rtY < 56 THEN
+    IF rtX < 268 THEN rlInfo := "TP: flagged and Y = 1 (true positive)"; ELSE rlInfo := "FP: flagged but Y = 0 (false positive)"; END;
+  END;
+  IF rtX >= 170 AND rtY >= 56 AND rtY < 68 THEN
+    IF rtX < 268 THEN rlInfo := "FN: not flagged but Y = 1 (false negative)"; ELSE rlInfo := "TN: not flagged and Y = 0 (true negative)"; END;
+  END;
+  IF rtX >= 170 AND rtY >= 98 AND rtY < 110 THEN rlInfo := "sensitivity = TP/(TP+FN): Y=1 who are flagged"; END;
+  IF rtX >= 170 AND rtY >= 110 AND rtY < 122 THEN rlInfo := "specificity = TN/(TN+FP): Y=0 not flagged"; END;
+  IF rtX >= 170 AND rtY >= 122 AND rtY < 134 THEN rlInfo := "PPV = TP/(TP+FP): flagged who had Y = 1"; END;
+  IF rtX >= 170 AND rtY >= 134 AND rtY < 146 THEN rlInfo := "NPV = TN/(TN+FN): unflagged who had Y = 0"; END;
+  IF rtX >= 170 AND rtY >= 146 AND rtY < 158 THEN rlInfo := "FPR = FP/(FP+TN): Y=0 wrongly flagged"; END;
+  IF rtX >= 170 AND rtY >= 158 AND rtY < 172 THEN rlInfo := "share of everyone flagged high risk"; END;
+  IF rtY >= 176 AND rtY < 190 THEN
+    IF rlSEh >= 0 AND rlSEd >= 0 THEN rlInfo := "SE: DeLong " + rl_F(rlSEd, 4) + ", Hanley-McNeil " + rl_F(rlSEh, 4); END;
+  END;
+  IF rtY >= 190 AND rtY < 204 THEN rlInfo := "AUC = P(a random Y=1 outscores a Y=0), ties 1/2"; END;
+END;
+
+// The ROC view.  Returns the next view (0 = main menu).
+rl_RocView()
+BEGIN
+  LOCAL rvK, rvM, rvM1, rvGo, rvNx, rvSl;
+  LOCAL rvX, rvY, rvDg, rvT;
+  IF rlMode == 1 AND rlFitOK <> 1 THEN
+    rl_Msg("ROC needs the fitted P of a" + CHAR(10) + "model.  No model here:" + CHAR(10) + rlFitW);
+    RETURN 0;
+  END;
+  IF rlAUC < 0 THEN
+    rl_Msg("ROC needs both Y = 1 and" + CHAR(10) + "Y = 0 in the data.");
+    RETURN 0;
+  END;
+  rl_RocBase();
+  rlInfo := "";
+  rvGo := 1; rvNx := 0;
+  REPEAT rvK := GETKEY; UNTIL rvK == -1;
+  rl_Drain();
+  WHILE rvGo == 1 DO
+    rl_RocFrame();
+    REPEAT
+      rvK := GETKEY;
+      rvM := MOUSE;
+      rvM1 := rvM(1);
+    UNTIL rvK > -1 OR SIZE(rvM1) > 0;
+    IF SIZE(rvM1) > 0 THEN
+      rvX := rvM1(1); rvY := rvM1(2);
+      IF rvY >= 218 THEN
+        rl_Drain();
+        rvSl := MIN(6, IP(rvX / 53.4) + 1);
+        IF rvSl == 1 THEN
+          IF rlNG == 2 THEN
+            rlOvl := 1 - rlOvl; rl_RocBase(); rlInfo := "";
+          ELSE
+            rlInfo := "One group only: no group curves"; rlInfC := rlGRAY;
+          END;
+        END;
+        IF rvSl == 2 THEN rvNx := 1; rvGo := 0; END;
+        IF rvSl == 3 THEN rvNx := 4; rvGo := 0; END;
+        IF rvSl == 4 THEN rvNx := 5; rvGo := 0; END;
+        IF rvSl == 5 THEN rvNx := 0; rvGo := 0; END;
+      ELSE
+        IF rvX <= rlPR + 4 AND rvY >= rlPT - 4 AND rvY <= rlPB + 4 THEN
+          // the cut-off follows the finger along the curve
+          rlInfo := "";
+          rvDg := 1;
+          WHILE rvDg == 1 DO
+            rvT := rl_RocNear(rvX, rvY);
+            IF rvT <> rlCutT THEN rlCutT := rvT; rl_RocFrame(); END;
+            rvK := GETKEY;
+            rvM := MOUSE;
+            rvM1 := rvM(1);
+            IF rvK > -1 OR SIZE(rvM1) == 0 THEN
+              rvDg := 0;
+            ELSE
+              rvX := rvM1(1); rvY := rvM1(2);
+            END;
+          END;
+          IF rvK > -1 THEN REPEAT rvK := GETKEY; UNTIL rvK == -1; END;
+          rl_Drain();
+        ELSE
+          rl_Drain();
+          rl_RocTap(rvX, rvY);
+        END;
+      END;
+    ELSE
+      IF rvK == 7 THEN rlInfo := ""; rlCutT := MIN(rlM + 1, rlCutT + 1); END;
+      IF rvK == 8 THEN rlInfo := ""; rlCutT := MAX(1, rlCutT - 1); END;
+      IF rvK == 45 THEN rlInfo := ""; rlCutT := MIN(rlM + 1, rlCutT + 10); END;
+      IF rvK == 50 THEN rlInfo := ""; rlCutT := MAX(1, rlCutT - 10); END;
+      IF rvK == 4 THEN rvNx := 0; rvGo := 0; END;
+      IF rvK == 30 THEN
+        rvNx := rl_GoMenu();
+        IF rvNx >= 0 THEN rvGo := 0; END;
+      END;
+      REPEAT rvK := GETKEY; UNTIL rvK == -1;
+    END;
+  END;
+  rlInfo := "";
+  rl_Export();
+  RETURN rvNx;
+END;
+
+
+// ============================================================================
+// VIEW 4: CALIBRATION
+// ============================================================================
+
+// The calibration page: each group's observed share (o/n, blue) against
+// its mean predicted P, the 45-degree line (perfect calibration, green),
+// and a grey bar at each group: pred +/- 1.96 sqrt(pred (1 - pred)/n),
+// roughly where o/n would fall 95% of the time if the model were right
+// (a normal approximation, RiskLab's own aid, not a test).
+rl_CalDraw(cdSel)
+BEGIN
+  LOCAL cdG, cdX, cdY, cdS, cdAx, cdH;
+  LOCAL cdC, cdT, cdW;
+  IF rlMode == 2 THEN
+    rl_Frame("Calibration: " + rlShort + " (RiskLab's fit)");
+  ELSE
+    rl_Frame("Calibration: " + rlShort);
+  END;
+  rl_Box(32, 28, 166, 162);
+  cdAx := 0.1;
+  FOR cdG FROM 1 TO rlGk DO
+    cdAx := MAX(cdAx, MAX(rlGx(cdG), rlGo(cdG) / rlGn(cdG)));
+  END;
+  cdAx := MIN(1, CEILING(cdAx * 10 + 0.000001) / 10);
+  rlXlo := 0; rlXhi := cdAx; rlYlo := 0; rlYhi := cdAx;
+  rlXs := rl_Nice(cdAx / 4); rlYs := rlXs;
+  rl_Grid(MAX(1, -FLOOR(LOG(rlXs) + 0.000001)), MAX(1, -FLOOR(LOG(rlXs) + 0.000001)));
+  LINE_P(G1, rl_XP(0), rl_YP(0), rl_XP(cdAx), rl_YP(cdAx), rlGRN);
+  FOR cdG FROM 1 TO rlGk DO
+    cdX := rl_XP(rlGx(cdG));
+    cdH := rlZ * SQRT(rlGx(cdG) * (1 - rlGx(cdG)) / rlGn(cdG));
+    LINE_P(G1, cdX, rl_YP(MAX(0, rlGx(cdG) - cdH)), cdX, rl_YP(MIN(1, rlGx(cdG) + cdH)), rlGRAY);
+  END;
+  FOR cdG FROM 1 TO rlGk DO
+    cdX := rl_XP(rlGx(cdG)); cdY := rl_YP(rlGo(cdG) / rlGn(cdG));
+    IF cdG == cdSel THEN
+      rl_Dot(cdX, cdY, 3, rlRED, rlRED);
+    ELSE
+      rl_Dot(cdX, cdY, 3, rlBLUE, rlLBLU);
+    END;
+  END;
+  TEXTOUT_P("obs", G1, rlPL + 3, rlPT + 2, 1, rlGRAY, 24);
+  TEXTOUT_P("pred", G1, rlPR - 28, rlPB - 12, 1, rlGRAY, 28);
+  // the table: group, n, mean predicted, observed share
+  TEXTOUT_P("grp", G1, 172, 26, 1, rlGRAY, 24);
+  TEXTOUT_P("n", G1, 200, 26, 1, rlGRAY, 30);
+  TEXTOUT_P("pred", G1, 236, 26, 1, rlGRAY, 36);
+  TEXTOUT_P("obs", G1, 276, 26, 1, rlGRAY, 36);
+  FOR cdG FROM 1 TO MIN(rlGk, 12) DO
+    cdY := 26 + 12 * cdG;
+    IF cdG == cdSel THEN cdC := rlRED; ELSE cdC := #000000h; END;
+    IF rl_CalN() == 0 THEN cdT := rl_SV(rlLv(rlGlo(cdG))); ELSE cdT := rl_I(cdG); END;
+    TEXTOUT_P(cdT, G1, 172, cdY, 1, cdC, 28);
+    TEXTOUT_P(rl_I(rlGn(cdG)), G1, 200, cdY, 1, cdC, 34);
+    TEXTOUT_P(rl_F(rlGx(cdG), 3), G1, 236, cdY, 1, rlMAG, 38);
+    TEXTOUT_P(rl_F(rlGo(cdG) / rlGn(cdG), 3), G1, 276, cdY, 1, rlBLUE, 38);
+  END;
+  IF rlHLp >= 0 THEN
+    cdS := "Hosmer-Lemeshow " + rlCHI + " = " + rl_F(rlHLv, 2) + ", df " + rl_I(rlHLdf) + ", " + rl_PS(rlHLp);
+    TEXTOUT_P(cdS, G1, 4, 174, 1, rlMAG, 314);
+  ELSE
+    TEXTOUT_P("Hosmer-Lemeshow: needs 3 or more groups", G1, 4, 174, 1, rlGRAY, 314);
+  END;
+  // a chi-square approximation is rough when a cell expects fewer than
+  // 5 (Cochran 1954, Biometrics 10:417-451)
+  cdW := 0;
+  FOR cdG FROM 1 TO rlGk DO
+    IF rlGe(cdG) < 5 OR rlGn(cdG) - rlGe(cdG) < 5 THEN cdW := 1; END;
+  END;
+  IF cdW == 1 AND rlHLp >= 0 THEN
+    TEXTOUT_P("a group expects < 5 (Cochran 1954): p is rough", G1, 4, 196, 1, rlRED, 314);
+  END;
+  cdT := rl_CalN();
+  IF rlMode == 2 THEN
+    // a score is not a probability: pred is RiskLab's logistic of Y on
+    // the score, fitted to these same people (in-sample)
+    cdS := "pred: RiskLab's logistic of Y on the score";
+  ELSE
+  IF cdT == 0 THEN
+    cdS := rl_I(rlGk) + " groups: one per score level";
+  ELSE
+    cdS := rl_I(rlGk) + " groups by predicted P (aim " + rl_I(cdT) + "; ties kept)";
+  END;
+  END;
+  TEXTOUT_P(cdS, G1, 4, 185, 1, rlGRAY, 314);
+  IF DIM(rlInfo) > 0 THEN
+    TEXTOUT_P(rlInfo, G1, 4, 207, 1, rlInfC, 314);
+  ELSE
+    TEXTOUT_P("tap a dot or row = read, Ent = menu, Esc = back", G1, 4, 207, 1, rlFOOT, 314);
+  END;
+  BLIT_P(G0, 0, 0, G1);
+  DRAWMENU({"Groups", "ROC", "Table", "Fair", "Back", ""});
+END;
+
+// The group a tap picks: a table row, or the dot nearest the finger.
+rl_CalPick(cpX, cpY)
+BEGIN
+  LOCAL cpG, cpD, cpB, cpBest;
+  IF cpX >= 170 AND cpY >= 38 AND cpY < 38 + 12 * MIN(rlGk, 12) THEN
+    RETURN IP((cpY - 38) / 12) + 1;
+  END;
+  IF cpX > rlPR + 3 OR cpY > rlPB + 3 OR cpY < rlPT - 3 THEN RETURN 0; END;
+  cpBest := 1E99; cpB := 0;
+  FOR cpG FROM 1 TO rlGk DO
+    cpD := (rl_XP(rlGx(cpG)) - cpX)^2 + (rl_YP(rlGo(cpG) / rlGn(cpG)) - cpY)^2;
+    IF cpD < cpBest THEN cpBest := cpD; cpB := cpG; END;
+  END;
+  IF cpBest > 400 THEN RETURN 0; END;
+  RETURN cpB;
+END;
+
+// The calibration view.  Returns the next view (0 = main menu).
+rl_CalView()
+BEGIN
+  LOCAL clK, clM, clM1, clGo, clNx, clSl;
+  LOCAL clX, clY, clSel, clG;
+  IF rlFitOK <> 1 THEN
+    rl_Msg("Calibration needs a fitted" + CHAR(10) + "model.  No model here:" + CHAR(10) + rlFitW);
+    RETURN 0;
+  END;
+  rlInfo := ""; clSel := 0;
+  clGo := 1; clNx := 0;
+  REPEAT clK := GETKEY; UNTIL clK == -1;
+  rl_Drain();
+  WHILE clGo == 1 DO
+    rl_CalDraw(clSel);
+    REPEAT
+      clK := GETKEY;
+      clM := MOUSE;
+      clM1 := clM(1);
+    UNTIL clK > -1 OR SIZE(clM1) > 0;
+    IF SIZE(clM1) > 0 THEN
+      clX := clM1(1); clY := clM1(2);
+      rl_Drain();
+      IF clY >= 218 THEN
+        clSl := MIN(6, IP(clX / 53.4) + 1);
+        IF clSl == 1 THEN
+          rlCalG := 3 - rlCalG; rl_HosLem(); rl_Export(); clSel := 0; rlInfo := "";
+        END;
+        IF clSl == 2 THEN clNx := 3; clGo := 0; END;
+        IF clSl == 3 THEN clNx := 1; clGo := 0; END;
+        IF clSl == 4 THEN clNx := 5; clGo := 0; END;
+        IF clSl == 5 THEN clNx := 0; clGo := 0; END;
+      ELSE
+        rlInfo := "";
+        clG := rl_CalPick(clX, clY);
+        IF clG > 0 THEN
+          clSel := clG;
+          rlInfo := "grp " + rl_I(clG) + ": Y = 1 in " + rl_I(rlGo(clG)) + " of " + rl_I(rlGn(clG)) + ", expected " + rl_F(rlGe(clG), 1);
+          rlInfC := rlRED;
+        ELSE
+          IF clY >= 172 AND clY < 184 THEN
+            rlInfo := "HL depends on the grouping: try Groups (Help)";
+            rlInfC := #000000h;
+          END;
+          IF clY >= 184 AND clY < 196 THEN
+            rlInfo := "in-sample: sum of P = sum of Y (forced by fit)";
+            IF rlMode == 2 THEN rlInfo := "in-sample fit to these people, not COMPAS's"; END;
+            rlInfC := #000000h;
+          END;
+        END;
+      END;
+    ELSE
+      IF clK == 4 THEN clNx := 0; clGo := 0; END;
+      IF clK == 30 THEN
+        clNx := rl_GoMenu();
+        IF clNx >= 0 THEN clGo := 0; END;
+      END;
+      REPEAT clK := GETKEY; UNTIL clK == -1;
+    END;
+  END;
+  rlInfo := "";
+  RETURN clNx;
+END;
+
+
+// ============================================================================
+// VIEW 5: FAIRNESS BY GROUP
+// ============================================================================
+
+// One group's 2 x 2 table at cut-off level t: {n, n1, n0, TP, FP, FN, TN}
+// (n1 = with Y = 1, n0 = with Y = 0; flagged = score at level t or up).
+rl_GStat(gsG, gsT)
+BEGIN
+  LOCAL gsA, gsB, gsTP, gsFP;
+  gsA := rl_CumA(gsG, 1); gsB := rl_CumB(gsG, 1);
+  gsTP := rl_CumA(gsG, gsT); gsFP := rl_CumB(gsG, gsT);
+  RETURN {gsA + gsB, gsA, gsB, gsTP, gsFP, gsA - gsTP, gsB - gsFP};
+END;
+
+// The score bins of the fairness calibration page: one per level when
+// there are at most 12 levels, else about 10 groups of the pooled score
+// (rl_Group, ties kept together).  The calibration page's own groups
+// are then rebuilt.
+rl_FairSetup()
+BEGIN
+  IF rlM <= 12 THEN rl_Group(0); ELSE rl_Group(10); END;
+  rlFlo := rlGlo; rlFhi := rlGhi; rlFk := rlGk;
+  IF rlFitOK == 1 THEN rl_HosLem(); END;
+  rlFsel := MAX(1, MIN(rlFk, IP((rlFk + 1) / 2)));
+END;
+
+// Bin b's people, events and mean score for group g (0 = both).
+rl_FBin(fbG, fbB)
+BEGIN
+  LOCAL fbL, fbN, fbO, fbS, fbA, fbC;
+  fbN := 0; fbO := 0; fbS := 0;
+  FOR fbL FROM rlFlo(fbB) TO rlFhi(fbB) DO
+    IF fbG == 1 THEN fbA := rlA1(fbL); fbC := rlB1(fbL); END;
+    IF fbG == 2 THEN fbA := rlA2(fbL); fbC := rlB2(fbL); END;
+    IF fbG == 0 THEN fbA := rlLA(fbL); fbC := rlLB(fbL); END;
+    fbN := fbN + fbA + fbC; fbO := fbO + fbA; fbS := fbS + rlLv(fbL) * (fbA + fbC);
+  END;
+  IF fbN > 0 THEN fbS := fbS / fbN; END;
+  RETURN {fbN, fbO, fbS};
+END;
+
+// The top of every fairness page: title, the cut-off, the legend.
+rl_FairTop(ftT)
+BEGIN
+  rl_Frame("Fairness: " + ftT);
+  TEXTOUT_P(rl_CutS(), G1, 4, 20, 1, rlRED, 314);
+  TEXTOUT_P(rlGNm(1), G1, 4, 32, 1, rlBLUE, 150);
+  TEXTOUT_P(rlGNm(2), G1, 160, 32, 1, rlMAG, 150);
+END;
+
+// Page 1: the two groups side by side.
+rl_FairTab()
+BEGIN
+  LOCAL ftG, ftY, ftX, ftC, ftR;
+  LOCAL ftV, ftD, ftI;
+  rl_FairTop("the two groups");
+  TEXTOUT_P(rlGSh(1), G1, 166, 46, 1, rlBLUE, 76);
+  TEXTOUT_P(rlGSh(2), G1, 246, 46, 1, rlMAG, 72);
+  LINE_P(G1, 2, 57, 317, 57, rlGRID);
+  ftR := {"people", "base rate (Y = 1)", "AUC of the score", "flagged high risk", "FPR: Y = 0 flagged", "FNR: Y = 1 not flagged", "PPV: flagged with Y = 1", "NPV: others with Y = 0"};
+  ftV := MAKELIST(0, ftI, 1, 16);
+  FOR ftG FROM 1 TO 2 DO
+    ftC := rl_GStat(ftG, rlCutT);
+    ftV(8 * ftG - 7) := ftC(1);
+    ftV(8 * ftG - 6) := -1; IF ftC(1) > 0 THEN ftV(8 * ftG - 6) := ftC(2) / ftC(1); END;
+    ftV(8 * ftG - 5) := rlGAU(2 * ftG - 1);
+    ftV(8 * ftG - 4) := -1; IF ftC(1) > 0 THEN ftV(8 * ftG - 4) := (ftC(4) + ftC(5)) / ftC(1); END;
+    ftV(8 * ftG - 3) := -1; IF ftC(3) > 0 THEN ftV(8 * ftG - 3) := ftC(5) / ftC(3); END;
+    ftV(8 * ftG - 2) := -1; IF ftC(2) > 0 THEN ftV(8 * ftG - 2) := ftC(6) / ftC(2); END;
+    ftV(8 * ftG - 1) := -1; IF ftC(4) + ftC(5) > 0 THEN ftV(8 * ftG - 1) := ftC(4) / (ftC(4) + ftC(5)); END;
+    ftV(8 * ftG) := -1; IF ftC(6) + ftC(7) > 0 THEN ftV(8 * ftG) := ftC(7) / (ftC(6) + ftC(7)); END;
+  END;
+  FOR ftI FROM 1 TO 8 DO
+    ftY := 48 + 12 * ftI;
+    TEXTOUT_P(ftR(ftI), G1, 4, ftY, 1, #000000h, 160);
+    FOR ftG FROM 1 TO 2 DO
+      ftX := 166 + 80 * (ftG - 1);
+      IF ftG == 1 THEN ftC := rlBLUE; ELSE ftC := rlMAG; END;
+      ftD := ftV(8 * (ftG - 1) + ftI);
+      IF ftI == 1 THEN
+        TEXTOUT_P(rl_I(ftD), G1, ftX, ftY, 1, ftC, 70);
+      ELSE
+        IF ftD < 0 THEN
+          TEXTOUT_P("n/a", G1, ftX, ftY, 1, rlGRAY, 70);
+        ELSE
+          TEXTOUT_P(rl_F(ftD, 3), G1, ftX, ftY, 1, ftC, 70);
+        END;
+      END;
+    END;
+  END;
+  ftY := 160;
+  TEXTOUT_P("Differences: base rate " + rl_F(ABS(ftV(2) - ftV(10)), 3) + ", AUC " + rl_F(ABS(ftV(3) - ftV(11)), 3), G1, 4, ftY, 1, #000000h, 314);
+  IF ftV(7) >= 0 AND ftV(15) >= 0 AND ftV(5) >= 0 AND ftV(13) >= 0 AND ftV(6) >= 0 AND ftV(14) >= 0 THEN
+    TEXTOUT_P("PPV " + rl_F(ABS(ftV(7) - ftV(15)), 3) + ", FPR " + rl_F(ABS(ftV(5) - ftV(13)), 3) + ", FNR " + rl_F(ABS(ftV(6) - ftV(14)), 3), G1, 4, ftY + 12, 1, #000000h, 314);
+  END;
+  TEXTOUT_P("PPV, FPR and FNR cannot all be equal when base", G1, 4, ftY + 26, 1, rlGRAY, 314);
+  TEXTOUT_P("rates differ (unless perfect): see Why.", G1, 4, ftY + 38, 1, rlGRAY, 314);
+END;
+
+// Page 2: calibration within groups -- the share with Y = 1 at each
+// score (or score bin), one line per group.  Same score, same share in
+// both groups = calibrated within groups.
+rl_FairCal()
+BEGIN
+  LOCAL fcB, fcG, fcR, fcX, fcY, fcQx;
+  LOCAL fcQy, fcC, fcLo, fcHi, fcW, fcS;
+  rl_FairTop("share with Y = 1 by score");
+  rl_Box(32, 46, 312, 156);
+  fcLo := rl_FBin(0, 1); fcHi := rl_FBin(0, rlFk);
+  IF rlPrb == 1 THEN
+    rlXlo := 0; rlXhi := 1; rlXs := 0.25;
+  ELSE
+    fcW := (fcHi(3) - fcLo(3)) / MAX(1, rlFk - 1);
+    IF fcW <= 0 THEN fcW := 1; END;
+    rlXlo := fcLo(3) - fcW / 2; rlXhi := fcHi(3) + fcW / 2;
+    rlXs := rl_Nice((rlXhi - rlXlo) / 8);
+  END;
+  rlYlo := 0; rlYhi := 1; rlYs := 0.25;
+  rl_Grid(MAX(0, -FLOOR(LOG(rlXs) + 0.000001)), 2);
+  IF rlPrb == 1 THEN LINE_P(G1, rl_XP(0), rl_YP(0), rl_XP(1), rl_YP(1), rlGRN); END;
+  FOR fcG FROM 1 TO 2 DO
+    IF fcG == 1 THEN fcC := rlBLUE; ELSE fcC := rlMAG; END;
+    fcQx := -1;
+    FOR fcB FROM 1 TO rlFk DO
+      fcR := rl_FBin(fcG, fcB);
+      IF fcR(1) > 0 THEN
+        fcS := rl_FBin(0, fcB);
+        fcX := rl_XP(fcS(3));
+        fcY := rl_YP(fcR(2) / fcR(1));
+        IF fcQx >= 0 THEN LINE_P(G1, fcQx, fcQy, fcX, fcY, fcC); END;
+        IF fcB == rlFsel THEN rl_Dot(fcX, fcY, 3, fcC, rlRED); ELSE rl_Dot(fcX, fcY, 2, fcC, fcC); END;
+        fcQx := fcX; fcQy := fcY;
+      END;
+    END;
+  END;
+  fcS := rl_FBin(0, rlFsel);
+  rl_DotV(rl_XP(fcS(3)), rlPT, rlPB, rlRED);
+  fcS := rlScNm + " " + rl_SV(rlLv(rlFlo(rlFsel)));
+  IF rlFhi(rlFsel) > rlFlo(rlFsel) THEN fcS := fcS + " to " + rl_SV(rlLv(rlFhi(rlFsel))); END;
+  TEXTOUT_P(fcS + ":", G1, 4, 168, 1, rlRED, 314);
+  FOR fcG FROM 1 TO 2 DO
+    IF fcG == 1 THEN fcC := rlBLUE; ELSE fcC := rlMAG; END;
+    fcR := rl_FBin(fcG, rlFsel);
+    IF fcR(1) > 0 THEN
+      fcS := rlGSh(fcG) + ": " + rl_I(fcR(2)) + " of " + rl_I(fcR(1)) + " had Y = 1 = " + rl_F(fcR(2) / fcR(1), 3);
+    ELSE
+      fcS := rlGSh(fcG) + ": nobody at this score";
+    END;
+    TEXTOUT_P(fcS, G1, 4, 168 + 12 * fcG, 1, fcC, 314);
+  END;
+END;
+
+// Page 3: the error rates and PPV at the cut-off as bars, two per
+// measure (group 1 blue, group 2 magenta).
+rl_FairErr()
+BEGIN
+  LOCAL feS, feK, feG, feV, feX, feC;
+  LOCAL feF, feL, feW, feY, feT;
+  rl_FairTop("error rates at the cut-off");
+  rl_Box(32, 50, 312, 166);
+  rlXlo := 0; rlXhi := 1; rlXs := 2; rlYlo := 0; rlYhi := 1; rlYs := 0.25;
+  RECT_P(G1, rlPL, rlPT, rlPR, rlPB, rlGRID, #FFFFFFh);
+  FOR feK FROM 0 TO 4 DO
+    feY := rl_YP(feK / 4);
+    LINE_P(G1, rlPL, feY, rlPR, feY, rlGRID);
+    TEXTOUT_P(rl_F(feK / 4, 2), G1, 4, feY - 5, 1, rlGRAY, 26);
+  END;
+  feL := {"flagged", "FPR", "FNR", "PPV"};
+  feW := (rlPR - rlPL) / 4;
+  FOR feG FROM 1 TO 2 DO
+    feS := rl_GStat(feG, rlCutT);
+    IF feG == 1 THEN feC := rlBLUE; feF := rlLBLU; ELSE feC := rlMAG; feF := rlPALE; END;
+    FOR feK FROM 1 TO 4 DO
+      feV := -1;
+      IF feK == 1 AND feS(1) > 0 THEN feV := (feS(4) + feS(5)) / feS(1); END;
+      IF feK == 2 AND feS(3) > 0 THEN feV := feS(5) / feS(3); END;
+      IF feK == 3 AND feS(2) > 0 THEN feV := feS(6) / feS(2); END;
+      IF feK == 4 AND feS(4) + feS(5) > 0 THEN feV := feS(4) / (feS(4) + feS(5)); END;
+      feX := IP(rlPL + (feK - 1) * feW + feW / 2 - 26 + (feG - 1) * 27);
+      IF feV >= 0 THEN
+        feY := rl_YP(feV);
+        IF feY < rlPB THEN RECT_P(G1, feX, feY, feX + 24, rlPB, feC, feF); END;
+        TEXTOUT_P(rl_F(feV, 2), G1, feX, feY - 11, 1, feC, 28);
+      ELSE
+        TEXTOUT_P("n/a", G1, feX, rlPB - 12, 1, rlGRAY, 28);
+      END;
+    END;
+  END;
+  rl_Out(rlPL, rlPT, rlPR, rlPB, rlGRAY);
+  FOR feK FROM 1 TO 4 DO
+    feT := feL(feK);
+    TEXTOUT_P(feT, G1, IP(rlPL + (feK - 1) * feW + feW / 2 - 3 * DIM(feT)), rlPB + 3, 1, #000000h, 7 * DIM(feT));
+  END;
+  TEXTOUT_P("FPR = Y=0 flagged, FNR = Y=1 not flagged,", G1, 4, 180, 1, rlGRAY, 314);
+  TEXTOUT_P("PPV = flagged who had Y = 1 (" + rlARL + rlARR + " moves the cut)", G1, 4, 192, 1, rlGRAY, 314);
+END;
+
+// Page 4: why the definitions collide, with this data's own numbers
+// (Chouldechova 2017: FPR = p/(1-p) (1-PPV)/PPV (1-FNR) holds in every
+// 2 x 2 table, p = the base rate).
+rl_FairWhy()
+BEGIN
+  LOCAL fwS1, fwS2, fwA, fwB, fwC, fwG;
+  LOCAL fwY, fwOk, fwS, fwF, fwK;
+  rl_FairTop("why they collide");
+  fwS1 := rl_GStat(1, rlCutT); fwS2 := rl_GStat(2, rlCutT);
+  fwOk := 1;
+  IF fwS1(4) == 0 OR fwS2(4) == 0 OR fwS1(2) == 0 OR fwS2(2) == 0 OR fwS1(3) == 0 OR fwS2(3) == 0 THEN fwOk := 0; END;
+  fwY := 46;
+  TEXTOUT_P("Chouldechova (2017): in every 2" + rlTIM + "2 table", G1, 4, fwY, 1, #000000h, 314);
+  TEXTOUT_P("FPR = p/(1-p) " + rlTIM + " (1-PPV)/PPV " + rlTIM + " (1-FNR),", G1, 4, fwY + 12, 1, rlMAG, 314);
+  TEXTOUT_P("p = base rate.  With these data, here:", G1, 4, fwY + 24, 1, #000000h, 314);
+  IF fwOk == 0 THEN
+    TEXTOUT_P("A group has no TP, no Y = 1 or no Y = 0 at", G1, 4, fwY + 40, 1, rlRED, 314);
+    TEXTOUT_P("this cut-off: move it (" + rlARL + rlARR + ").", G1, 4, fwY + 52, 1, rlRED, 314);
+  ELSE
+    FOR fwG FROM 1 TO 2 DO
+      IF fwG == 1 THEN fwS := fwS1; fwK := rlBLUE; ELSE fwS := fwS2; fwK := rlMAG; END;
+      fwA := fwS(2) / fwS(3);
+      fwB := fwS(5) / fwS(4);
+      fwC := fwS(4) / fwS(2);
+      TEXTOUT_P(rlGSh(fwG) + ": " + rl_F(fwA, 3) + " " + rlTIM + " " + rl_F(fwB, 3) + " " + rlTIM + " " + rl_F(fwC, 3) + " = " + rl_F(fwA * fwB * fwC, 3), G1, 4, fwY + 26 + 12 * fwG, 1, fwK, 314);
+    END;
+    // group 2 given group 1's PPV and FNR, with its own base rate
+    fwF := (fwS2(2) / fwS2(3)) * (fwS1(5) / fwS1(4)) * (fwS1(4) / fwS1(2));
+    TEXTOUT_P("Give " + rlGSh(2) + " the PPV and FNR of " + rlGSh(1) + ":", G1, 4, fwY + 66, 1, #000000h, 314);
+    TEXTOUT_P("then its FPR = " + rl_F(fwS2(2) / fwS2(3), 3) + " " + rlTIM + " " + rl_F(fwS1(5) / fwS1(4), 3) + " " + rlTIM + " " + rl_F(fwS1(4) / fwS1(2), 3) + " = " + rl_F(fwF, 3), G1, 4, fwY + 78, 1, rlMAG, 314);
+    TEXTOUT_P("(" + rlGSh(1) + "'s FPR: " + rl_F((fwS1(5) / fwS1(3)), 3) + ")", G1, 4, fwY + 90, 1, rlBLUE, 314);
+  END;
+  fwY := fwY + 106;
+  TEXTOUT_P("So if base rates differ, equal PPV (predictive", G1, 4, fwY, 1, #000000h, 314);
+  TEXTOUT_P("parity) and equal FPR and FNR (error-rate", G1, 4, fwY + 12, 1, #000000h, 314);
+  TEXTOUT_P("balance) cannot all hold unless prediction is", G1, 4, fwY + 24, 1, #000000h, 314);
+  TEXTOUT_P("perfect.  Help has Kleinberg et al. (2016).", G1, 4, fwY + 36, 1, #000000h, 314);
+END;
+
+// One fairness frame: the page, the footer, the soft keys.
+rl_FairDraw()
+BEGIN
+  IF rlFPg == 1 THEN rl_FairTab(); END;
+  IF rlFPg == 2 THEN rl_FairCal(); END;
+  IF rlFPg == 3 THEN rl_FairErr(); END;
+  IF rlFPg == 4 THEN rl_FairWhy(); END;
+  IF DIM(rlInfo) > 0 THEN
+    TEXTOUT_P(rlInfo, G1, 4, 205, 1, rlInfC, 314);
+  ELSE
+    IF rlFPg == 2 THEN
+      TEXTOUT_P(rlARL + rlARR + " = score, tap = read, Ent = menu, Esc = back", G1, 4, 205, 1, rlFOOT, 314);
+    ELSE
+      TEXTOUT_P(rlARL + rlARR + " = cut, +/- = " + rlTIM + "10, Ent = menu, Esc = back", G1, 4, 205, 1, rlFOOT, 314);
+    END;
+  END;
+  BLIT_P(G0, 0, 0, G1);
+  DRAWMENU({"Table", "Calib", "Errors", "Why", "Back", "ROC"});
+END;
+
+// The fairness view.  Returns the next view (0 = main menu).
+rl_FairView()
+BEGIN
+  LOCAL fvK, fvM, fvM1, fvGo, fvNx, fvSl;
+  LOCAL fvX, fvY, fvB, fvD, fvBest, fvI;
+  IF rlNG <> 2 THEN
+    rl_Msg("Fairness needs two groups:" + CHAR(10) + "load the COMPAS preset, or" + CHAR(10) + "your data with D3 = group 1/2.");
+    RETURN 0;
+  END;
+  rl_FairSetup();
+  rlInfo := "";
+  fvGo := 1; fvNx := 0;
+  REPEAT fvK := GETKEY; UNTIL fvK == -1;
+  rl_Drain();
+  WHILE fvGo == 1 DO
+    rl_FairDraw();
+    REPEAT
+      fvK := GETKEY;
+      fvM := MOUSE;
+      fvM1 := fvM(1);
+    UNTIL fvK > -1 OR SIZE(fvM1) > 0;
+    IF SIZE(fvM1) > 0 THEN
+      fvX := fvM1(1); fvY := fvM1(2);
+      rl_Drain();
+      rlInfo := "";
+      IF fvY >= 218 THEN
+        fvSl := MIN(6, IP(fvX / 53.4) + 1);
+        IF fvSl <= 4 THEN rlFPg := fvSl; END;
+        IF fvSl == 5 THEN fvNx := 0; fvGo := 0; END;
+        IF fvSl == 6 THEN fvNx := 3; fvGo := 0; END;
+      ELSE
+        IF rlFPg == 2 AND fvY >= rlPT - 4 AND fvY <= rlPB + 4 THEN
+          // the nearest score bin to the finger
+          fvBest := 1E99; fvB := rlFsel;
+          FOR fvI FROM 1 TO rlFk DO
+            fvD := rl_FBin(0, fvI);
+            fvD := ABS(rl_XP(fvD(3)) - fvX);
+            IF fvD < fvBest THEN fvBest := fvD; fvB := fvI; END;
+          END;
+          rlFsel := fvB;
+        ELSE
+          IF rlFPg == 1 AND fvY >= 56 AND fvY < 156 THEN
+            fvI := IP((fvY - 58) / 12) + 1;
+            IF fvI == 3 THEN rlInfo := "DeLong SE: " + rl_F(rlGAU(2), 4) + " and " + rl_F(rlGAU(4), 4); END;
+            IF fvI == 5 THEN rlInfo := "ProPublica compared FPR (and FNR) by group"; END;
+            IF fvI == 6 THEN rlInfo := "FNR = FN/(FN+TP): Y = 1 called low risk"; END;
+            IF fvI == 7 THEN rlInfo := "Northpointe compared PPV (and AUC) by group"; END;
+            IF fvI == 2 THEN rlInfo := "base rate = share with Y = 1 in the group"; END;
+            rlInfC := #000000h;
+          ELSE
+            rlInfo := "Help (main menu) explains each definition";
+            rlInfC := rlGRAY;
+          END;
+        END;
+      END;
+    ELSE
+      IF rlFPg == 2 THEN
+        IF fvK == 7 THEN rlFsel := MAX(1, rlFsel - 1); END;
+        IF fvK == 8 THEN rlFsel := MIN(rlFk, rlFsel + 1); END;
+      ELSE
+        IF fvK == 7 THEN rlCutT := MIN(rlM + 1, rlCutT + 1); END;
+        IF fvK == 8 THEN rlCutT := MAX(1, rlCutT - 1); END;
+        IF fvK == 45 THEN rlCutT := MIN(rlM + 1, rlCutT + 10); END;
+        IF fvK == 50 THEN rlCutT := MAX(1, rlCutT - 10); END;
+      END;
+      rlInfo := "";
+      IF fvK == 4 THEN fvNx := 0; fvGo := 0; END;
+      IF fvK == 30 THEN
+        fvNx := rl_GoMenu();
+        IF fvNx >= 0 THEN fvGo := 0; END;
+      END;
+      REPEAT fvK := GETKEY; UNTIL fvK == -1;
+    END;
+  END;
+  rlInfo := "";
+  rl_Export();
+  RETURN fvNx;
+END;
+
+
+// ============================================================================
+// PRESETS, YOUR DATA, HELP, MAIN
+// ============================================================================
+
+// Rossi: arrest within 52 weeks on age, prio, fin (lrK = 3) and wexp
+// (lrK = 4).  One row per man; the fit runs here (progress page, Esc).
+rl_LoadRossi(lrK)
+BEGIN
+  LOCAL lrI, lrB, lrJ;
+  IF rlRok <> 1 THEN rl_RData(); END;
+  rlMode := 1; rlIsC := 2; rlN := 432; rlK := lrK;
+  rlY := rlRar;
+  rlXv := MAKELIST(0, lrI, 1, 432 * lrK);
+  FOR lrI FROM 1 TO 432 DO
+    lrB := (lrI - 1) * lrK;
+    rlXv(lrB + 1) := rlRage(lrI);
+    rlXv(lrB + 2) := rlRpri(lrI);
+    rlXv(lrB + 3) := rlRfin(lrI);
+    IF lrK == 4 THEN rlXv(lrB + 4) := rlRwx(lrI); END;
+  END;
+  IF lrK == 4 THEN rlXNm := {"age", "prio", "fin", "wexp"}; ELSE rlXNm := {"age", "prio", "fin"}; END;
+  rlXm := MAKELIST(0, lrJ, 1, lrK);
+  rlN1 := 0;
+  FOR lrI FROM 1 TO 432 DO
+    rlN1 := rlN1 + rlY(lrI);
+    FOR lrJ FROM 1 TO lrK DO
+      rlXm(lrJ) := rlXm(lrJ) + rlXv((lrI - 1) * lrK + lrJ) / 432;
+    END;
+  END;
+  rlN0 := 432 - rlN1;
+  rlYNm := "arrested"; rlEvW := "arrested";
+  rlLbl := "Rossi: arrest on " + IFTE(lrK == 4, "4", "3") + " predictors";
+  rlShort := "Rossi";
+  rlSrc := "Rossi, Berk & Lenihan 1980 (via Allison 1995)";
+  rlScNm := "fitted P"; rlNG := 1; rlGNm := {"everyone", ""}; rlGSh := {"all", ""};
+  rlPrb := 1; rlInS := 1; rlVar := 1; rlCalG := 1; rlOvl := 0;
+  rlAUC := -1; rlHLp := -1;
+  rl_Refit();
+END;
+
+// COMPAS: counts by decile score and group, from ProPublica's
+// compas-scores-two-years.csv with ProPublica's own filters (header;
+// data/DATASETS_RISK.md).  cmN people, cmE re-arrested within two
+// years (two_year_recid = 1), deciles 1..10.
+rl_LoadCompas()
+BEGIN
+  LOCAL cmN1, cmE1, cmN2, cmE2, cmL, cmS;
+  cmN1 := {365, 346, 298, 337, 323, 318, 343, 301, 317, 227};
+  cmE1 := {85, 105, 125, 158, 158, 187, 209, 215, 229, 190};
+  cmN2 := {605, 321, 238, 243, 200, 160, 113, 96, 77, 50};
+  cmE2 := {128, 100, 82, 98, 91, 93, 68, 72, 55, 35};
+  rlMode := 2; rlIsC := 1; rlM := 10;
+  rlLv := MAKELIST(cmL, cmL, 1, 10);
+  rlA1 := cmE1; rlA2 := cmE2;
+  rlB1 := MAKELIST(cmN1(cmL) - cmE1(cmL), cmL, 1, 10);
+  rlB2 := MAKELIST(cmN2(cmL) - cmE2(cmL), cmL, 1, 10);
+  rl_Pool();
+  rlN := rlN1 + rlN0;
+  cmS := 0;
+  FOR cmL FROM 1 TO 10 DO cmS := cmS + cmL * (cmN1(cmL) + cmN2(cmL)); END;
+  rlK := 1; rlXNm := {"decile"}; rlXm := {cmS / rlN};
+  rlNG := 2; rlGNm := {"African-American", "Caucasian"};
+  rlGSh := {"African-Am.", "Caucasian"};
+  rlYNm := "re-arrested"; rlEvW := "re-arrested";
+  rlScNm := "decile score";
+  rlLbl := "COMPAS, Broward County, FL"; rlShort := "COMPAS";
+  rlSrc := "ProPublica (Angwin et al. 2016), Broward, FL";
+  rlPrb := 0; rlInS := 0; rlVar := 1; rlCalG := 1; rlOvl := 0;
+  rl_Refit();
+END;
+
+// The page after a load: what the data are, a picture, the source.
+rl_LoadInfo()
+BEGIN
+  LOCAL liY, liL, liH, liX, liMx, liG;
+  LOCAL liNn, liC;
+  rl_Frame("Loaded: " + rlLbl);
+  liY := 22;
+  IF rlIsC == 1 THEN
+    TEXTOUT_P("ProPublica's COMPAS file, Broward County, FL,", G1, 4, liY, 1, #000000h, 314);
+    TEXTOUT_P("6,172 people after their filters.  Here the two", G1, 4, liY + 12, 1, #000000h, 314);
+    TEXTOUT_P("largest groups, as the file labels them:", G1, 4, liY + 24, 1, #000000h, 314);
+    TEXTOUT_P(rlGNm(1) + " " + rl_I(rlCA1(1) + rlCB1(1)) + ", base rate " + rl_F(rlCA1(1) / (rlCA1(1) + rlCB1(1)), 3), G1, 4, liY + 36, 1, rlBLUE, 314);
+    TEXTOUT_P(rlGNm(2) + " " + rl_I(rlCA2(1) + rlCB2(1)) + ", base rate " + rl_F(rlCA2(1) / (rlCA2(1) + rlCB2(1)), 3), G1, 4, liY + 48, 1, rlMAG, 314);
+    TEXTOUT_P("Y = 1: a new arrest within two years.", G1, 4, liY + 60, 1, #000000h, 314);
+    TEXTOUT_P("Score: COMPAS decile 1-10 (people per decile):", G1, 4, liY + 72, 1, #000000h, 314);
+    // people per decile, the two groups side by side
+    liMx := MAX(MAX(MAKELIST(rlA1(liL) + rlB1(liL), liL, 1, 10)), MAX(MAKELIST(rlA2(liL) + rlB2(liL), liL, 1, 10)));
+    liH := 62;
+    FOR liL FROM 1 TO 10 DO
+      liX := 30 + 27 * (liL - 1);
+      FOR liG FROM 1 TO 2 DO
+        IF liG == 1 THEN liNn := rlA1(liL) + rlB1(liL); liC := rlBLUE; ELSE liNn := rlA2(liL) + rlB2(liL); liC := rlMAG; END;
+        RECT_P(G1, liX + 11 * (liG - 1), 176 - IP(liH * liNn / liMx), liX + 11 * (liG - 1) + 9, 176, liC, liC);
+      END;
+      TEXTOUT_P(rl_I(liL), G1, liX + 4, 178, 1, rlGRAY, 18);
+    END;
+  ELSE
+    IF rlIsC == 2 THEN
+      TEXTOUT_P("432 men released from Maryland state prisons,", G1, 4, liY, 1, #000000h, 314);
+      TEXTOUT_P("followed 52 weeks; Y = 1: arrested (" + rl_I(rlN1) + ").", G1, 4, liY + 12, 1, #000000h, 314);
+      TEXTOUT_P("age at release; prio = prior convictions;", G1, 4, liY + 26, 1, rlBLUE, 314);
+      TEXTOUT_P("fin = 1: financial aid (assigned at random)", G1, 4, liY + 38, 1, rlBLUE, 314);
+      IF rlK == 4 THEN TEXTOUT_P("wexp = 1: full-time work before prison", G1, 4, liY + 50, 1, rlBLUE, 314); END;
+    ELSE
+      TEXTOUT_P("n = " + rl_I(rlN1 + rlN0) + ", Y = 1 in " + rl_I(rlN1), G1, 4, liY, 1, #000000h, 314);
+      IF rlMode == 1 THEN
+        TEXTOUT_P("predictors: " + rl_I(rlK) + " (D2 to D" + rl_I(rlK + 1) + ")", G1, 4, liY + 12, 1, rlBLUE, 314);
+      ELSE
+        TEXTOUT_P("score D2: " + rl_I(rlM) + " distinct values; groups: " + rl_I(rlNG), G1, 4, liY + 12, 1, rlBLUE, 314);
+      END;
+    END;
+    liY := 100;
+    IF rlFitOK == 1 THEN
+      TEXTOUT_P("Logistic fit: LR " + rlCHI + " = " + rl_F(rlLRc, 2) + ", df " + rl_I(rlK) + ", " + rl_PS(rlLRp), G1, 4, liY, 1, rlMAG, 314);
+      IF rlSep == 1 THEN TEXTOUT_P("Separation suspected: see the table", G1, 4, liY + 12, 1, rlRED, 314); END;
+    ELSE
+      IF rlMode == 1 THEN TEXTOUT_P("No fit: " + rlFitW, G1, 4, liY, 1, rlRED, 314); END;
+    END;
+    IF rlAUC >= 0 AND (rlMode == 2 OR rlFitOK == 1) THEN
+      TEXTOUT_P("AUC of the " + rlScNm + " = " + rl_F(rlAUC, 3), G1, 4, liY + 26, 1, rlBLUE, 314);
+    END;
+  END;
+  TEXTOUT_P(rlSrc, G1, 4, 192, 1, rlFOOT, 314);
+  TEXTOUT_P("Any key or tap = menu", G1, 4, 205, 1, rlFOOT, 314);
+  BLIT_P(G0, 0, 0, G1);
+  rl_WaitAny();
+END;
+
+rl_PresetMenu()
+BEGIN
+  LOCAL pmI, pmK;
+  pmI := 0;
+  CHOOSE(pmI, "Load a preset", {"COMPAS, Broward County (ProPublica)", "Rossi: age, prio, fin", "Rossi: age, prio, fin, wexp"});
+  REPEAT pmK := GETKEY; UNTIL pmK == -1;
+  rl_Drain();
+  IF pmI == 0 THEN RETURN; END;
+  IF pmI == 1 THEN rl_Busy("Loading COMPAS ..."); rl_LoadCompas(); END;
+  IF pmI == 2 THEN rl_Busy("Loading Rossi ..."); rl_LoadRossi(3); END;
+  IF pmI == 3 THEN rl_Busy("Loading Rossi ..."); rl_LoadRossi(4); END;
+  rl_LoadInfo();
+END;
+
+// Your data, type 1: D1 = outcome 0/1, D2 .. D5 = 1 to 4 predictors (in
+// order; the first empty column ends the list).  Up to 500 rows.  The
+// columns exist only once the Statistics 1Var app has been opened, so
+// each first read is inside IFERR.  Nothing changes unless all is valid.
+rl_MyRows()
+BEGIN
+  LOCAL mrN, mrS, mrK, mrI, mrJ, mrV;
+  LOCAL mrX, mrY, mrC;
+  mrN := 0;
+  IFERR mrN := SIZE(D1); THEN mrN := 0; END;
+  IF mrN < 10 THEN
+    rl_Msg("D1 needs at least 10 rows" + CHAR(10) + "(outcome 0/1).  Open" + CHAR(10) + "Statistics 1Var (Apps): D1 = Y," + CHAR(10) + "D2-D5 = predictors.");
+    RETURN 0;
+  END;
+  IF mrN > 500 THEN
+    rl_Msg("At most 500 rows here" + CHAR(10) + "(a fit is about 10 passes" + CHAR(10) + "over them); D1 has " + rl_I(mrN) + ".");
+    RETURN 0;
+  END;
+  mrS := {0, 0, 0, 0};
+  IFERR mrS(1) := SIZE(D2); THEN mrS(1) := 0; END;
+  IFERR mrS(2) := SIZE(D3); THEN mrS(2) := 0; END;
+  IFERR mrS(3) := SIZE(D4); THEN mrS(3) := 0; END;
+  IFERR mrS(4) := SIZE(D5); THEN mrS(4) := 0; END;
+  mrK := 0;
+  FOR mrJ FROM 1 TO 4 DO
+    IF mrK == mrJ - 1 AND mrS(mrJ) == mrN THEN mrK := mrJ; END;
+  END;
+  IF mrK == 0 THEN
+    rl_Msg("D2 must hold a predictor," + CHAR(10) + "one value per row of D1" + CHAR(10) + "(D1 has " + rl_I(mrN) + ", D2 has " + rl_I(mrS(1)) + ").");
+    RETURN 0;
+  END;
+  IF mrK < 4 THEN
+    IF mrS(mrK + 1) > 0 THEN
+      rl_Msg("D" + rl_I(mrK + 2) + " has " + rl_I(mrS(mrK + 1)) + " values, D1 has " + rl_I(mrN) + "." + CHAR(10) + "Give every row a value," + CHAR(10) + "or clear that column.");
+      RETURN 0;
+    END;
+  END;
+  mrY := MAKELIST(0, mrI, 1, mrN);
+  FOR mrI FROM 1 TO mrN DO
+    mrV := D1(mrI);
+    IF mrV <> 0 AND mrV <> 1 THEN
+      rl_Msg("Row " + rl_I(mrI) + " of D1: the outcome" + CHAR(10) + "must be 0 or 1.");
+      RETURN 0;
+    END;
+    mrY(mrI) := mrV;
+  END;
+  rl_Busy("Reading " + rl_I(mrN) + " rows ...");
+  mrX := MAKELIST(0, mrI, 1, mrN * mrK);
+  FOR mrJ FROM 1 TO mrK DO
+    IF mrJ == 1 THEN mrC := D2; END;
+    IF mrJ == 2 THEN mrC := D3; END;
+    IF mrJ == 3 THEN mrC := D4; END;
+    IF mrJ == 4 THEN mrC := D5; END;
+    FOR mrI FROM 1 TO mrN DO
+      mrV := mrC(mrI);
+      IF ABS(mrV) > 1E6 THEN
+        rl_Msg("Row " + rl_I(mrI) + " of D" + rl_I(mrJ + 1) + ": keep values" + CHAR(10) + "within " + rlPM + "1,000,000" + CHAR(10) + "(change the unit).");
+        RETURN 0;
+      END;
+      mrX((mrI - 1) * mrK + mrJ) := mrV;
+    END;
+  END;
+  rlMode := 1; rlIsC := 0; rlN := mrN; rlK := mrK;
+  rlY := mrY; rlXv := mrX;
+  rlXNm := {};
+  FOR mrJ FROM 1 TO mrK DO rlXNm := CONCAT(rlXNm, {"D" + rl_I(mrJ + 1)}); END;
+  rlXm := MAKELIST(0, mrJ, 1, mrK);
+  rlN1 := 0;
+  FOR mrI FROM 1 TO mrN DO
+    rlN1 := rlN1 + mrY(mrI);
+    FOR mrJ FROM 1 TO mrK DO rlXm(mrJ) := rlXm(mrJ) + mrX((mrI - 1) * mrK + mrJ) / mrN; END;
+  END;
+  rlN0 := mrN - rlN1;
+  rlYNm := "Y"; rlEvW := "Y = 1";
+  rlLbl := "your data (D1-D" + rl_I(mrK + 1) + ")"; rlShort := "your data";
+  rlSrc := "Statistics 1Var: Y in D1, predictors D2-D" + rl_I(mrK + 1);
+  rlScNm := "fitted P"; rlNG := 1; rlGNm := {"everyone", ""}; rlGSh := {"all", ""};
+  rlPrb := 1; rlInS := 1; rlVar := 1; rlCalG := 1; rlOvl := 0;
+  rlAUC := -1; rlHLp := -1;
+  rl_Refit();
+  rl_LoadInfo();
+  RETURN 1;
+END;
+
+// Your data, type 2: D1 = outcome 0/1, D2 = a score (any numbers; a
+// higher score = higher risk), D3 = group 1 or 2 (optional).  Up to
+// 2000 rows: only the counts at each score level are kept.
+rl_MyScore()
+BEGIN
+  LOCAL msN, ms2, ms3, msI, msV, msG;
+  LOCAL msY, msS, msP, msH1, msH2;
+  msN := 0;
+  IFERR msN := SIZE(D1); THEN msN := 0; END;
+  IF msN < 10 THEN
+    rl_Msg("D1 needs at least 10 rows" + CHAR(10) + "(outcome 0/1).  Open" + CHAR(10) + "Statistics 1Var: D1 = Y," + CHAR(10) + "D2 = score, D3 = group 1/2.");
+    RETURN 0;
+  END;
+  IF msN > 2000 THEN
+    rl_Msg("At most 2000 rows here;" + CHAR(10) + "D1 has " + rl_I(msN) + ".");
+    RETURN 0;
+  END;
+  ms2 := 0; ms3 := 0;
+  IFERR ms2 := SIZE(D2); THEN ms2 := 0; END;
+  IFERR ms3 := SIZE(D3); THEN ms3 := 0; END;
+  IF ms2 <> msN THEN
+    rl_Msg("D2 must hold one score per" + CHAR(10) + "row of D1 (D1 has " + rl_I(msN) + "," + CHAR(10) + "D2 has " + rl_I(ms2) + ").");
+    RETURN 0;
+  END;
+  IF ms3 > 0 AND ms3 <> msN THEN
+    rl_Msg("D3 has " + rl_I(ms3) + " values, D1 has " + rl_I(msN) + "." + CHAR(10) + "Give every row a group" + CHAR(10) + "(1 or 2), or clear D3.");
+    RETURN 0;
+  END;
+  rl_Busy("Reading " + rl_I(msN) + " rows ...");
+  msY := MAKELIST(0, msI, 1, msN); msS := MAKELIST(0, msI, 1, msN);
+  msG := {}; IF ms3 > 0 THEN msG := MAKELIST(1, msI, 1, msN); END;
+  msP := 1; msH1 := 0; msH2 := 0;
+  FOR msI FROM 1 TO msN DO
+    msV := D1(msI);
+    IF msV <> 0 AND msV <> 1 THEN
+      rl_Msg("Row " + rl_I(msI) + " of D1: the outcome" + CHAR(10) + "must be 0 or 1.");
+      RETURN 0;
+    END;
+    msY(msI) := msV;
+    msV := D2(msI);
+    IF ABS(msV) > 1E6 THEN
+      rl_Msg("Row " + rl_I(msI) + " of D2: keep scores" + CHAR(10) + "within " + rlPM + "1,000,000.");
+      RETURN 0;
+    END;
+    IF msV < 0 OR msV > 1 THEN msP := 0; END;
+    msS(msI) := msV;
+    IF ms3 > 0 THEN
+      msV := D3(msI);
+      IF msV <> 1 AND msV <> 2 THEN
+        rl_Msg("Row " + rl_I(msI) + " of D3: the group" + CHAR(10) + "must be 1 or 2.");
+        RETURN 0;
+      END;
+      msG(msI) := msV;
+      IF msV == 1 THEN msH1 := 1; ELSE msH2 := 1; END;
+    END;
+  END;
+  rlMode := 2; rlIsC := 0;
+  rl_Levels(msS, msY, msG);
+  rlN := msN;
+  rlNG := 1; IF msH1 == 1 AND msH2 == 1 THEN rlNG := 2; END;
+  rlGNm := {"group 1 (D3 = 1)", "group 2 (D3 = 2)"}; rlGSh := {"group 1", "group 2"};
+  rlK := 1; rlXNm := {"score"};
+  msV := 0;
+  FOR msI FROM 1 TO msN DO msV := msV + msS(msI); END;
+  rlXm := {msV / msN};
+  rlYNm := "Y"; rlEvW := "Y = 1"; rlScNm := "score";
+  rlLbl := "your scores (D1-D3)"; rlShort := "your scores";
+  rlSrc := "Statistics 1Var: Y in D1, score D2, group D3";
+  rlPrb := msP; rlInS := 0; rlVar := 1; rlCalG := 1; rlOvl := 0;
+  rl_Refit();
+  rl_LoadInfo();
+  RETURN 1;
+END;
+
+rl_MyData()
+BEGIN
+  LOCAL mdI, mdK;
+  mdI := 0;
+  CHOOSE(mdI, "Use my data (Statistics 1Var)", {"D1 = Y 0/1, D2-D5 = predictors", "D1 = Y 0/1, D2 = score, D3 = group"});
+  REPEAT mdK := GETKEY; UNTIL mdK == -1;
+  rl_Drain();
+  IF mdI == 1 THEN rl_MyRows(); END;
+  IF mdI == 2 THEN rl_MyScore(); END;
+END;
+
+// Help: one page of text; any key or tap turns the page, Esc leaves.
+rl_HPage(hpT, hpL, hpC, hpF)
+BEGIN
+  LOCAL hpI, hpY;
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 4, 4, 315, 235, rlBLUE, rlLBLU);
+  TEXTOUT_P(hpT, G1, 12, 8, 2, rlBLUE, 296);
+  hpY := 30;
+  FOR hpI FROM 1 TO SIZE(hpL) DO
+    TEXTOUT_P(hpL(hpI), G1, 12, hpY, 1, hpC(hpI), 302);
+    hpY := hpY + 13;
+  END;
+  TEXTOUT_P(hpF, G1, 12, 220, 1, rlFOOT, 296);
+  BLIT_P(G0, 0, 0, G1);
+  RETURN rl_WaitAny();
+END;
+
+rl_Help()
+BEGIN
+  LOCAL hK, hB, hM, hR, hG, hY;
+  hB := #000000h; hM := rlMAG; hR := rlRED; hG := rlGRAY; hY := rlBLUE;
+  hK := rl_HPage("Risk tools, logistic regression", {
+    "A risk tool turns facts about a person into a",
+    "score that predicts an outcome Y (1 = re-",
+    "arrested, 0 = not).  Logistic regression:",
+    "  ln(P/(1 - P)) = b" + rlSUB0 + " + b" + CHAR(8321) + "x" + CHAR(8321) + " + ... + bk xk",
+    "odds = P/(1 - P); OR = e^b multiplies the odds",
+    "for +1 in x, the other x held fixed.",
+    "Fit: Newton-Raphson (IRLS), b " + rlARR + " b + I^-1 U,",
+    "U = X'(y - " + CHAR(956) + "), I = X'WX, W = " + CHAR(956) + "(1 - " + CHAR(956) + "),",
+    "until each step < 1E-9 (Hosmer & Lemeshow",
+    "2000; Agresti 2013).  SE = " + rlRT + "(diag. of I^-1).",
+    "Wald z = b/SE.  LR " + rlCHI + " = 2(lnL - lnL" + rlSUB0 + "), df k.",
+    "McFadden R" + rlSQ + " = 1 - lnL/lnL" + rlSUB0 + " (McFadden 1974):",
+    "not a share of variance explained."},
+    {hB, hB, hB, hY, hB, hB, hM, hM, hM, hM, hM, hM, hG},
+    "Page 1/8, any key = next, Esc = leave");
+  IF hK == 4 THEN RETURN; END;
+  hK := rl_HPage("Separation, collinearity, speed", {
+    "If some x (or a mix of x) puts every Y = 1",
+    "above every Y = 0, the likelihood keeps rising",
+    "as |b| grows: no finite estimate",
+    "(Albert & Anderson 1984).  RiskLab warns when",
+    "the fit has not converged in 25 steps, the",
+    "fitted line orders Y perfectly, or I turns",
+    "singular.  Remedies: drop or merge that x, or",
+    "a penalised (Firth) fit, not offered here.",
+    "Collinear x (one a mix of the others) make I",
+    "singular too: no SEs.",
+    "Speed: each pass touches every row; Rossi's",
+    "432 rows need about 7 passes.  On a G1 that is",
+    "slow (a progress bar shows it; Esc stops it)."},
+    {hB, hB, hB, hB, hR, hR, hB, hB, hB, hB, hG, hG, hG},
+    "Page 2/8, any key = next, Esc = leave");
+  IF hK == 4 THEN RETURN; END;
+  hK := rl_HPage("The ROC curve and the AUC", {
+    "Flag 'high risk' if the score " + rlGEQ + " a cut-off.",
+    "TPR (sensitivity) = flagged share of Y = 1;",
+    "FPR = 1 - specificity = flagged share of Y=0.",
+    "Moving the cut-off from high to low traces the",
+    "ROC curve from (0, 0) to (1, 1); tied scores",
+    "make a diagonal step.  AUC = area under it =",
+    "P(a random Y = 1 scores above a random Y = 0),",
+    "ties 1/2: the Mann-Whitney U/(n" + CHAR(8321) + " n" + rlSUB0 + ").",
+    "0.5 = chance, 1 = perfect.  SE: DeLong et al.",
+    "(1988); CI = AUC " + rlPM + " 1.96 SE, cut at 0 and 1.",
+    "Tap the AUC line: Hanley-McNeil's SE (1982),",
+    "which assumes a shape; DeLong's does not.",
+    "A model's AUC on its own data is optimistic."},
+    {hB, hB, hB, hB, hB, hY, hY, hY, hM, hM, hG, hG, hR},
+    "Page 3/8, any key = next, Esc = leave");
+  IF hK == 4 THEN RETURN; END;
+  hK := rl_HPage("Cut-offs and their trade-offs", {
+    "A lower cut-off flags more people: more TP",
+    "(sensitivity up) and more FP (specificity",
+    "down).  No cut-off avoids both errors.",
+    "PPV = TP/(TP + FP): of those flagged, the",
+    "share with Y = 1.  It depends on the base",
+    "rate: the same sensitivity and specificity",
+    "give a lower PPV where Y = 1 is rarer.",
+    "NPV = TN/(TN + FN).",
+    "Choosing a cut-off chooses which error costs",
+    "more: the statistics show the trade, they do",
+    "not set the price.",
+    "COMPAS deciles: 1-4 low, 5-7 medium, 8-10",
+    "high; ProPublica took 5 and up as high risk."},
+    {hB, hB, hB, hM, hM, hM, hM, hM, hR, hR, hR, hG, hG},
+    "Page 4/8, any key = next, Esc = leave");
+  IF hK == 4 THEN RETURN; END;
+  hK := rl_HPage("Calibration, Hosmer-Lemeshow", {
+    "Calibrated: of people given P = 0.3, about",
+    "30% have Y = 1.  RiskLab sorts by predicted P",
+    "into 10 groups (ties kept together), or one",
+    "group per score level, and compares observed",
+    "O with expected E = sum of P in each group:",
+    "HL = sum of (O - E)" + rlSQ + "/(E(1 - E/n)), df = groups",
+    "- 2 (Hosmer & Lemeshow 1980).  Weaknesses: it",
+    "depends on the number of groups and on how",
+    "ties are cut (software differs); it has low",
+    "power with small n, and with large n a tiny",
+    "misfit is 'significant' (Hosmer et al. 1997).",
+    "A large p is no proof of good calibration.",
+    "Grey bars: pred " + rlPM + " 1.96 SE, a rough guide.",
+    "A score (COMPAS): pred = RiskLab's own fit."},
+    {hB, hB, hB, hB, hB, hM, hM, hR, hR, hR, hR, hR, hG, hG},
+    "Page 5/8, any key = next, Esc = leave");
+  IF hK == 4 THEN RETURN; END;
+  hK := rl_HPage("Fairness: competing definitions", {
+    "Predictive parity: the same score means the",
+    "same risk in both groups, so PPV is equal",
+    "(Northpointe: Dieterich et al. 2016, with",
+    "equal AUC, 'accuracy equity').",
+    "Error-rate balance: equal FPR and equal FNR",
+    "in both groups (ProPublica: Angwin et al.",
+    "2016).  When base rates differ and prediction",
+    "is not perfect, these cannot all hold at once:",
+    "Chouldechova (2017) for PPV, FPR and FNR;",
+    "Kleinberg, Mullainathan & Raghavan (2016) for",
+    "calibration vs equal average scores among Y=1",
+    "and among Y=0.  Both sides' numbers can be",
+    "right at once: different questions."},
+    {hY, hY, hY, hY, hM, hM, hB, hB, hB, hB, hB, hB, hG, hG},
+    "Page 6/8, any key = next, Esc = leave");
+  IF hK == 4 THEN RETURN; END;
+  hK := rl_HPage("The data", {
+    "Rossi, Berk & Lenihan 1980 (via Allison 1995):",
+    "432 men released from Maryland prisons; Y =",
+    "arrested within 52 weeks.  age, prio (prior",
+    "convictions), fin (1 = financial aid, given",
+    "at random), wexp (1 = full-time work before).",
+    "COMPAS: ProPublica (Angwin et al. 2016), file",
+    "compas-scores-two-years.csv, Broward County,",
+    "FL, their filters: N = 6,172.  Here the two",
+    "largest groups, labelled in the file African-",
+    "American (3,175) and Caucasian (2,103).",
+    "Y = 1: a new arrest within two years.  Their",
+    "article's FPRs, 44.9% and 23.5%, count all",
+    "7,214 people (no date or charge filters).",
+    "After the filters: 42.3% and 22.0%."},
+    {hY, hY, hY, hY, hY, hM, hM, hM, hM, hM, hB, hG, hG, hG},
+    "Page 7/8, any key = next, Esc = leave");
+  IF hK == 4 THEN RETURN; END;
+  hK := rl_HPage("Keys, your data, Home", {
+    "Every view: Ent = go to another view, Esc =",
+    "back.  ROC: drag along the curve, or " + rlARL + rlARR + ", to",
+    "move the cut-off (+/- = 10 levels).  Tap a",
+    "number to read what it is.",
+    "Your data (Statistics 1Var): D1 = Y (0/1) and",
+    "D2-D5 = 1 to 4 predictors (up to 500 rows),",
+    "or D1 = Y, D2 = a score (higher = riskier),",
+    "D3 = group 1/2 (optional; up to 2000 rows).",
+    "Home: RL_B, RL_SE, RL_OR (coefficients, SEs,",
+    "odds ratios), RL_P (LR test p), RL_AUC (AUC,",
+    "SE), RL_HL (HL, df, p), RL_CUT (cut-off,",
+    "sensitivity, specificity, PPV); -1 = none."},
+    {hY, hY, hY, hY, hB, hB, hB, hB, hM, hM, hM, hM},
+    "Page 8/8, any key = menu");
+END;
+
+// The opening page: what this is, the data, the disclaimer.
+rl_Open()
+BEGIN
+  rl_Frame("RiskLab: risk tools in criminal justice");
+  TEXTOUT_P("The statistics behind recidivism risk tools:", G1, 6, 24, 1, #000000h, 310);
+  TEXTOUT_P("logistic regression, the ROC curve and AUC,", G1, 6, 36, 1, #000000h, 310);
+  TEXTOUT_P("cut-offs and their trade-offs, calibration,", G1, 6, 48, 1, #000000h, 310);
+  TEXTOUT_P("and what 'fair' can mean for two groups.", G1, 6, 60, 1, #000000h, 310);
+  TEXTOUT_P("Loaded: ProPublica's COMPAS counts (Broward", G1, 6, 75, 1, rlBLUE, 310);
+  TEXTOUT_P("County, FL).  Also in Load a preset: Rossi's", G1, 6, 86, 1, rlBLUE, 310);
+  TEXTOUT_P("432 men released from Maryland state prisons.", G1, 6, 97, 1, rlBLUE, 310);
+  TEXTOUT_P("No verdict on any real tool here.", G1, 6, 108, 1, rlBLUE, 310);
+  RECT_P(G1, 4, 120, 315, 176, rlORNG, rlLORN);
+  TEXTOUT_P("DISCLAIMER: a teaching and demonstration aid.", G1, 10, 124, 1, rlORNG, 300);
+  TEXTOUT_P("Not validated for forensic, clinical or legal", G1, 10, 136, 1, rlORNG, 300);
+  TEXTOUT_P("use; do not rely on its results for legal", G1, 10, 148, 1, rlORNG, 300);
+  TEXTOUT_P("purposes.", G1, 10, 160, 1, rlORNG, 300);
+  TEXTOUT_P("beta 1a, 26 Oct 2026.  Help is in the menu.", G1, 6, 184, 1, rlGRAY, 310);
+  TEXTOUT_P("Any key or tap = menu", G1, 6, 205, 1, rlFOOT, 310);
+  BLIT_P(G0, 0, 0, G1);
+END;
+
+rl_Init()
+BEGIN
+  rlBLUE := #003CC8h; rlMAG := #C800C8h; rlRED := #FF0000h;
+  rlGRN := #008C3Ch; rlORNG := #FF4500h; rlGRAY := #5A5A5Ah;
+  rlFOOT := #1E90FFh; rlGRID := #E1E4EBh; rlLBLU := #EBF2FFh;
+  rlLRED := #FFEBEBh; rlLGRN := #E8F6EBh; rlLORN := #FFF0DCh;
+  rlSHD := #AACDFFh; rlBLK := #000000h; rlPALE := #F3C8F3h;
+  // glyphs: chi-square, >=, <=, +/-, times, arrows, ^2, alpha, not
+  // equal, root, subscript 0
+  rlCHI := CHAR(967) + CHAR(178); rlGEQ := CHAR(8805); rlLEQ := CHAR(8804);
+  rlPM := CHAR(177); rlTIM := CHAR(215); rlARL := CHAR(8592);
+  rlARR := CHAR(8594); rlSQ := CHAR(178); rlAL := CHAR(945);
+  rlNEQ := CHAR(8800); rlRT := CHAR(8730); rlSUB0 := CHAR(8320);
+  rlZ := -NORMALD_ICDF(0, 1, 0.025);
+  rlPI := 3.14159265359;
+  rlInfo := ""; rlInfC := #000000h; rlSKP := 1; rlDirty := 1;
+  rlRok := 0; rlFitOK := 0; rlFitW := "not fitted yet"; rlAUC := -1;
+  rlSEd := -1; rlSEh := -1; rlHLp := -1; rlHLv := -1; rlHLdf := 0;
+  rlCalG := 1; rlFPg := 1; rlOvl := 0; rlVar := 1; rlSep := 0;
+  rlGAU := {-1, -1, -1, -1}; rlGk := 0; rlFk := 0; rlFsel := 1;
+  rlLRc := -1; rlLRp := -1; rlIt := 0; rlNear := 0;
+  rl_Box(34, 26, 312, 164);
+  rlXlo := 0; rlXhi := 1; rlYlo := 0; rlYhi := 1; rlXs := 0.25; rlYs := 0.25;
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  DIMGROB_P(G2, 320, 240, #FFFFFFh);
+END;
+
+// Run views until one returns 0 (the main menu).
+rl_View(vwN)
+BEGIN
+  LOCAL vwV;
+  vwV := vwN;
+  WHILE vwV > 0 DO
+    IF rlMode == 1 AND rlFitOK == 0 THEN
+      // a fit stopped with Esc: try again before any view
+      rl_Refit();
+      IF rlFitOK == 0 THEN vwV := 0; END;
+    END;
+    IF vwV > 0 THEN
+      CASE
+        IF vwV == 1 THEN vwV := rl_LogView(); END;
+        IF vwV == 2 THEN vwV := rl_CurveView(); END;
+        IF vwV == 3 THEN vwV := rl_RocView(); END;
+        IF vwV == 4 THEN vwV := rl_CalView(); END;
+        DEFAULT vwV := rl_FairView();
+      END;
+    END;
+  END;
+END;
+
+EXPORT RiskLab()
+BEGIN
+  LOCAL mnI, mnRun, mnS;
+  rl_Init();
+  rl_Open();
+  rl_LoadCompas();
+  rl_WaitAny();
+  mnRun := 1;
+  WHILE mnRun == 1 DO
+    mnI := 0;
+    CHOOSE(mnI, "RiskLab: " + rlShort, {"Logistic regression", "ROC and cut-off", "Calibration", "Fairness by group", "Load a preset", "Use my data (Stat 1Var)", "Help", "Quit"});
+    REPEAT mnS := GETKEY; UNTIL mnS == -1;
+    rl_Drain();
+    CASE
+      IF mnI == 0 OR mnI == 8 THEN mnRun := 0; END;
+      IF mnI == 1 THEN rl_View(1); END;
+      IF mnI == 2 THEN rl_View(3); END;
+      IF mnI == 3 THEN rl_View(4); END;
+      IF mnI == 4 THEN rl_View(5); END;
+      IF mnI == 5 THEN rl_PresetMenu(); END;
+      IF mnI == 6 THEN rl_MyData(); END;
+      IF mnI == 7 THEN rl_Help(); END;
+    END;
+  END;
+  // The summary goes back to Home; the numbers stay in RL_B ... RL_CUT.
+  mnS := "RiskLab: " + rlShort;
+  IF rlFitOK == 1 AND rlMode == 1 THEN
+    mnS := mnS + ", LR " + rlCHI + " = " + rl_F(rlLRc, 2) + " (df " + rl_I(rlK) + "), " + rl_PS(rlLRp);
+  END;
+  IF rlAUC >= 0 AND (rlMode == 2 OR rlFitOK == 1) THEN
+    mnS := mnS + ", AUC = " + rl_F(rlAUC, 3);
+    IF rlCutT <= rlM THEN
+      mnS := mnS + ", " + rlGEQ + " " + rl_SV(rlLv(rlCutT)) + ": sens " + rl_R3(rlCA(rlCutT), rlN1) + ", spec " + rl_R3(rlN0 - rlCB(rlCutT), rlN0);
+    END;
+  END;
+  RETURN mnS;
+END;

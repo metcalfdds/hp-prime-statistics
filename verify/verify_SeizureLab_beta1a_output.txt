@@ -1,0 +1,54 @@
+
+======================================================================
+A  the numerics, called directly in the harness
+======================================================================
+A1 lnGamma worst relative error 1.78e-15
+A2 hypergeometric: 349 cases, worst relative error 4.03e-09
+A3 beta-binomial: 211 cases, worst relative error 1.58e-11
+A4 binomial: 156 cases, worst relative error 1.47e-10
+A5 incomplete beta worst relative error 2.13e-12
+A6 Kr checked; e.g. N=100 p0=0.90 -> Kr=90, K0=89; N=15 p0=0.90 -> Kr=14
+A7 hypergeometric least n, exact brute force: 3672 cases, 20 at an exact tie
+A8 binomial least n: e.g. c=0.95 p0=0.9 d=0,1,2 -> [29.0, 46.0, 61.0]
+A9 lower bound: 288 exact cases
+A10 Bayesian P: 264 cases; N=100, n=x=23 -> 0.957961 (closed form 0.957961)
+A11 Bayesian least n: 2820 finite-N grid cases, 0 non-monotone
+A13 positive-term sums and large-N calls checked
+Part A: 147.8 s
+
+======================================================================
+B  every menu path in the harness
+======================================================================
+B6 OC final state n = 36, d = 0
+B10 N = 10000: 34 pages, 2.1 s
+B10 N = 1: 28 pages, 1.4 s
+B10 N = 2: 30 pages, 1.6 s
+B10 N = 13: 31 pages, 1.2 s
+
+======================================================================
+R  the second review, item by item (beta 1a)
+======================================================================
+R1 N=10000 c=0.9999 p0=0.999 prior (1, 1): n = 5668, 25 sums, 0.04 s in the harness (beta 1 stepped)
+R1 N=10000 c=0.9999 p0=0.999 prior (0.5, 0.5): n = 5046, 27 sums, 0.04 s in the harness (beta 1 stepped)
+R1 N=10000 c=0.9999 p0=0.999 prior (0.1, 100): n = 9746, 20 sums, 0.03 s in the harness (beta 1 stepped)
+R1 N=10000 c=0.99 p0=0.99 prior (0.5, 0.5): n = 323, 17 sums, 0.06 s in the harness (beta 1 stepped)
+R1 N=10000 c=0.95 p0=0.9 prior (1, 100): n = 957, 21 sums, 0.25 s in the harness (beta 1 stepped)
+R1 N=10000 c=0.95 p0=0.9 prior (1, 10): n = 142, 15 sums, 0.34 s in the harness (beta 1 stepped)
+R1 N=10000 c=0.95 p0=0.9 prior (0.5, 0.5): n = 18, 9 sums, 0.20 s in the harness (beta 1 stepped)
+R4 12-digit emulation N= 5000: P = 0.0500000046777, exact 0.05, met with 1E-9: False, with 1E-6: True
+R4 12-digit emulation N=10000: P = 0.0499999986777, exact 0.05, met with 1E-9: True, with 1E-6: True
+R4 12-digit emulation N= 1000: P = 0.0499999999777, exact 0.05, met with 1E-9: True, with 1E-6: True
+R4 12-digit emulation N= 2000: P = 0.0499999980277, exact 0.05, met with 1E-9: True, with 1E-6: True
+R4 12-digit emulation N=   10: P = 0.0999999999894, exact 0.1, met with 1E-9: True, with 1E-6: True
+R12 ENFSI tables: 427 cells, mismatches [('T2', 90, '0.99', '0.7', 2, 22.0, 21)]
+G changed: sz_BayDraw, sz_BayMin, sz_BayMinL, sz_BinDraw, sz_BinTap, sz_Busy, sz_Ge, sz_Help, sz_HypDraw, sz_Init, sz_Le, sz_NStr, sz_OCDraw, sz_OCFit, sz_OCPage, sz_Open, sz_PrName, sz_PrNext, sz_Recalc, sz_Setup, sz_TabCalc, sz_TabDraw, sz_TabPlot, sz_WtCalc, sz_WtDraw
+G added: sz_BayOK, sz_BaySrch, sz_DragOn, sz_EscHit, sz_Fit
+Part R: 25.3 s
+B11 606 pages, 283 with soft keys; scientific strings: 0
+Part B: 46.7 s
+
+======================================================================
+C  static
+======================================================================
+
+17991 checks, 0 failures

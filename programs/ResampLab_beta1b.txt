@@ -1,0 +1,2925 @@
+#pragma mode( separator(.,;) integer(h32) )
+
+// (C) 2026 Roger D Metcalf
+// For academic use only - do not rely on results for anything important
+// Results have not been rigorously verified and/or validated
+//
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with the
+//   file and credit the author if you pass it on.  Not for sale or
+//   commercial redistribution.
+// DISCLAIMER: a teaching and demonstration aid. Not validated for
+//   forensic, clinical or legal use; do not rely on its results for
+//   legal purposes.
+// Written with AI assistance. The concept, direction, decisions and all
+// hardware testing are Roger D. Metcalf's; the code, drafting and
+// source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
+
+// RESAMPLAB - beta 1b  (26 Oct 2026)
+// The permutation test and the bootstrap, shown working so a student can
+//   SEE them: "discover it yourself" simulation for an intro or criminal
+//   justice statistics class.  Launch ResampLab from the Program Catalog
+//   (it takes no arguments and opens on its title page, then the menu):
+//     Permutation test: 2 groups   shuffle the group labels; difference
+//                                  of means or of medians; Ha two-sided,
+//                                  A > B or A < B; EXACT (every split)
+//                                  when C(n1 + n2, n1) <= 2,000
+//     Permutation test: paired     random sign flips of the differences;
+//                                  EXACT (every sign pattern) by counting
+//                                  when the data sit on a grid, or for
+//                                  n <= 12
+//     Bootstrap CI: one sample     mean, median, SD or 10% trimmed mean;
+//                                  percentile, basic and BCa intervals side
+//                                  by side, and the t-interval for the mean
+//     Bootstrap CI: two groups     difference of means or medians,
+//                                  percentile interval (+ Welch t for means)
+//     Load a preset / Use my data (D1 = group A or the sample, D2 = group B)
+//     Seed, confidence level / Help / Quit
+//   On every lab page: Once (one shuffle or resample, animated), x10,
+//   x100, x1000 (a progress bar; Esc stops), Reset, and a second page of
+//   soft keys behind More.  Tap anything to be told what it is.
+//   Home exports after a run: RS_P (Monte Carlo p, plus-one form), RS_PX
+//   (exact p, or -1), RS_NB (shuffles / resamples), RS_OBS (the observed
+//   statistic), RS_PCT and RS_BCA (bootstrap interval ends), RS_STAR (the
+//   bootstrap statistics).
+// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  Neither beta
+//   1, 1a nor 1b has been run on hardware or the emulator, only in the PC
+//   harness.
+// beta 1b (26 Oct 2026): ONE change.  The plotting routine rs_PX is now
+//   rs_Pix: the Prime reads names without regard to case, so rs_PX and
+//   the Home export RS_PX were one name (a case-insensitive name scan of
+//   the fleet found it; the gate and harness do not catch this).
+// beta 1a (21 Oct 2026): the independent second review's findings
+//   (REVIEW2_ResampLab_beta1.md; numbers are its items).  (1) The lab page
+//   drains keys AND the finger after every action, so the Enter that closes
+//   a MSGBOX no longer opens the Actions menu.  (2) The jackknife for BCa is
+//   one pass (closed forms, prefix sums) instead of n sorted lists, with a
+//   progress bar and Esc above n = 300.  (3) The split count is built term
+//   by term and stops past the limit (rs_Splits), never COMB, which
+//   overflowed at about 835 v 835; its size from logs ("about 10^600").
+//   (4) A bulk run's redraw no longer recomputes the intervals; the 60 s
+//   cap is re-checked at every redraw on the time used, in hundreds.
+//   (5) Tie tolerances are relative to the data's spread (beta 1 tied
+//   everything on a 1E-10 scale), and rs_Grid no longer takes 1E-10 for
+//   the whole number 0.  (6) Darwin: "15 pairs in 4 pots".  (7) No "= <":
+//   "p = 2/32,768 (p < 0.0001)", "plus-one p < 0.0001".  (8) Paragraphs
+//   stop above the footer; shorter status, tap, INPUT and MSGBOX texts; the
+//   paired page says it flips signs; no "picked 0 times" after a bulk run;
+//   the one-sample bootstrap names its data (Darwin's differences, and
+//   D1 - D2 for equal-length lists, as Darwin); (9) counting by sums is
+//   limited by its work (n x sum <= 20,000) and reads Esc to the end; the
+//   CIs page says "pct", the menu title is the short name, a key legend on
+//   the two permutation pages, "worked this test" for Fisher, Help's level
+//   follows Level, and the exact limit is 2,000 splits.
+// Sources:
+//   Fisher RA (1935) The Design of Experiments, ch. III sec. 21 (Darwin's
+//     Zea mays, the test by counting all 2^15 sign patterns).
+//   Pitman EJG (1937) Significance tests which may be applied to samples
+//     from any populations, JRSS Suppl 4:119-130 (the two-sample
+//     permutation test).
+//   Ernst MD (2004) Permutation methods: a basis for exact inference,
+//     Statistical Science 19(4):676-685 (exact vs random permutations).
+//   Phipson B, Smyth GK (2010) Permutation p-values should never be zero,
+//     Stat Appl Genet Mol Biol 9(1) art. 39: p = (count + 1) / (B + 1).
+//   Efron B (1979) Bootstrap methods: another look at the jackknife, Ann
+//     Stat 7:1-26.  Efron B (1987) Better bootstrap confidence intervals,
+//     JASA 82:171-185 (BCa).  Efron B, Tibshirani RJ (1993) An
+//     Introduction to the Bootstrap, ch. 13 (percentile) and 14 (BCa:
+//     z0 from the share of bootstrap values below the estimate; the
+//     acceleration a = sum (J. - Ji)^3 / (6 [sum (J. - Ji)^2]^1.5) from
+//     the jackknife values Ji).  Davison AC, Hinkley DV (1997) Bootstrap
+//     Methods and their Application, ch. 5 (the basic interval).
+//   Hesterberg TC (2015) What teachers should know about the bootstrap,
+//     The American Statistician 69(4):371-386.
+//   The formulas were checked against SciPy 1.18 (scipy.stats.bootstrap,
+//     permutation_test, t) and exact enumeration (itertools) before
+//     delivery; see verify_ResampLab_beta1a.py.
+// Data (data/DATASETS.md, 21 Oct 2026; values unchanged):
+//   MockJury: Plaster (1989) M.A. thesis, East Carolina Univ.; data via R
+//     heplots (Friendly).  Years of sentence by the defendant's
+//     attractiveness (Unattractive 37, Average 38, Beautiful 39).
+//   Rossi: Rossi, Berk & Lenihan (1980) Money, Work, and Crime; data via
+//     Allison (1995) / R carData.  Week of first arrest for the 114 men
+//     arrested, by financial aid (aid 48, no aid 66).
+//   Darwin: Darwin (1876); Fisher (1935) The Design of Experiments.  15
+//     pairs (in 4 pots) of crossed and selfed maize plants (inches).
+//   BJS: BJS, Prison Sentences and Time Served for Violence, NCJ-153858
+//     (1995), via R crimedatasets.  Months served by 41 prisoners
+//     convicted of a homicide offence.
+//   5 v 5: ILLUSTRATIVE NUMBERS made up for the exact demo, not data.
+// Replaces / reworks:
+//   Triola, Elementary Statistics Using the TI-83/84 Plus, 2nd ed., the
+//     bootstrap confidence-interval project (about p. 393, unchecked).
+//   BOOT (TI-83 library, boot.zip): percentile and BCa bootstrap.  Its BCa
+//     arithmetic is sound and is kept (Efron's jackknife acceleration and
+//     the adjusted percentiles).  Not repeated here: (1) its z0 counts
+//     boot values <= the estimate, which biases z0 when values tie the
+//     estimate (a median); here ties count half, as SciPy does; (2) its
+//     While loop reads past the end of the list when every boot value is
+//     <= the estimate (ERR:INVALID DIM), and invNorm(0) fails when none
+//     is; here BCa is refused with a message instead; (3) a = E / (6
+//     F^1.5) divides by zero when every jackknife value is equal (a
+//     median with ties); refused with a message here; (4) the rounding
+//     digits come from log(abs(theta)), an error when the estimate is 0;
+//     (5) it asks for the list by typed name and DelVars it afterwards.
+//   RANDSAMP (statfun83): sampling without replacement by sorting random
+//     keys; here a partial Fisher-Yates shuffle does the same job in
+//     O(n) with no sort.
+//   The TI "Resampling" activity named in the brief (not in ref/; not seen;
+//     a permutation test by shuffling labels): the two-group page here.
+// File map (beta 1a):
+//   state, palette, geometry ..................... 135-240
+//   small helpers (format, statistics, grid) ..... 241-579
+//   bins; split count; the permutation engines ... 580-958
+//   the two-group bootstrap, intervals, exports .. 959-1198
+//   drawing (rows, pairs, samples, histogram) .... 1199-1656
+//   exact counts, progress, jackknife, runs ...... 1657-2121
+//   text pages, the lab page loop and actions .... 2122-2676
+//   presets, my data, settings, init, main ....... 2677-2921
+
+EXPORT RS_P, RS_PX, RS_NB, RS_OBS, RS_PCT, RS_BCA;
+EXPORT RS_STAR;
+
+// ---- the data ----
+LOCAL rsA, rsGB, rsNA, rsNB, rsLA, rsLB;
+LOCAL rsUnit, rsName, rsSrc, rsSrc2, rsKind, rsNote;
+LOCAL rsPair, rsDf, rsNd, rsLD, rsPre, rsBoot1;
+//  rsA, rsGB: group A (or the one sample) and group B, as given; rsNA,
+//  rsNB their sizes; rsLA, rsLB short names.  rsKind: 0 no data, 1 one
+//  sample, 2 two groups.  rsPair = 1 when differences exist (rsDf, size
+//  rsNd, named rsLD).  rsName / rsSrc / rsSrc2: the data set and its
+//  source lines (shown on screen); rsNote: a caveat for the Info page;
+//  rsPre: which preset (0 = the student's own data).
+
+// ---- the settings ----
+LOCAL rsSeed, rsLev, rsHa, rsSt, rsExLim, rsMaxB;
+LOCAL rsSdOK;
+//  rsSeed: 0 = fresh random numbers; a whole number = RANDSEED(seed) at
+//  every Reset, so a class can repeat a run.  rsLev: confidence level.
+//  rsHa: 0 two-sided, 1 A > B (upper tail), 2 A < B (lower tail).
+//  rsSt: 1 mean, 2 median, 3 SD, 4 10% trimmed mean.  rsExLim: the
+//  biggest number of splits enumerated exactly; rsMaxB: the most
+//  bootstrap values kept.  rsSdOK: 0 if RANDSEED raised an error.
+
+// ---- the engine ----
+LOCAL rsMode, rsObs, rsB, rsNU, rsNL, rsNAb;
+LOCAL rsEps, rsBC0, rsBW, rsNBn, rsH, rsHU;
+LOCAL rsHL, rsHAb, rsClL, rsClR, rsLast, rsDec;
+LOCAL rsV, rsN, rsK, rsKA, rsTot, rsW;
+LOCAL rsMem, rsMOld, rsOrig, rsSE, rsDlt, rsF;
+LOCAL rsBMid, rsBR, rsBM0, rsBR0, rsBzT, rsSum;
+//  rsMode: 1 two-group permutation, 2 paired, 3 bootstrap one sample,
+//  4 bootstrap two groups.  rsObs: the observed statistic.  rsB: shuffles
+//  or resamples so far; rsNU, rsNL, rsNAb: how many were >= obs, <= obs,
+//  and |t| >= |obs| (a tolerance rsEps absorbs rounding).
+//  The histogram: bin k is centred at rsBC0 + (k - 1) rsBW, rsNBn bins;
+//  rsH all counts, rsHU / rsHL / rsHAb the ones in each tail; rsClL / rsClR
+//  values beyond the ends (drawn in the end bins).  rsBMid / rsBR: the
+//  centre and half-width the bins were built for.
+//  Two groups: rsV = the pooled values SORTED, rsN of them, rsOrig(i) =
+//  the group value i came from (1 = A, 2 = B), rsMem(i) = the group it is
+//  in now (rsMOld before the last shuffle).  rsK values are drawn into
+//  one group (the smaller; rsKA = 1 if that is A); rsTot = their sum;
+//  rsW the working permutation.  rsSE: the standard error that sets the
+//  plot range; rsDlt: the lattice step of the statistic (0 = none);
+//  rsF: the factor that makes the data whole numbers (0 = none).
+
+// ---- exact distributions ----
+LOCAL rsXOK, rsXC, rsXU, rsXL, rsXA, rsXWhy;
+LOCAL rsEH, rsEHU, rsEHL, rsEHA, rsView, rsXKnd;
+//  rsXOK: 0 not possible (rsXWhy says why), 1 possible, 2 done, 3
+//  stopped by Esc.  rsXC: the number of splits / sign patterns; rsXU,
+//  rsXL, rsXA the exact tail counts; rsEH.. the exact histogram.  rsView:
+//  0 shows the random shuffles, 1 the exact distribution.  rsXKnd: 1
+//  every split, 2 counting by sums, 3 every sign pattern (Gray code).
+
+// ---- paired ----
+LOCAL rsD, rsSg, rsSgO, rsUo;
+//  rsD: the differences; rsSg the current signs (+1 kept, -1 flipped),
+//  rsSgO the signs before the last flip.
+
+// ---- bootstrap ----
+LOCAL rsX, rsNX, rsX2, rsNX2, rsTh, rsJk;
+LOCAL rsAcc, rsAcOK, rsZ0, rsP0, rsAl1, rsAl2;
+LOCAL rsCI, rsCIok, rsCIB, rsMlA, rsMlB, rsSEs;
+LOCAL rsRefit, rsBcaW, rsNLT, rsNLE, rsMl, rsShP;
+LOCAL rsBusy, rsJkW, rsBLb, rsXCs, rsShort;
+//  beta 1a: rsBusy = 1 during a bulk run (the redraw then skips the
+//  intervals); rsJkW why the jackknife gave no a; rsBLb names the data
+//  the one-sample bootstrap resamples; rsXCs the split count as text;
+//  rsShort the data set's short name (menu title).
+//  rsX (rsNX values) the sample sorted; rsX2 (rsNX2) group B sorted;
+//  rsTh the bootstrap values (rsB of them); rsJk the jackknife values;
+//  rsAcc the acceleration (rsAcOK = 1 if it exists); rsZ0, rsP0 the
+//  bias correction and the share below the estimate; rsAl1, rsAl2 the
+//  BCa percentiles.  rsCI = {pct L, U, basic L, U, BCa L, U, t L, U};
+//  rsCIok = {pct, basic, BCa, t} 1 = shown; rsCIB = the B they belong to.
+//  rsMlA / rsMlB: how often each value was picked in the last resample.
+//  rsSEs: the SD of the bootstrap values.  rsRefit = 1 when a value fell
+//  outside the histogram.  rsBcaW: why BCa is not shown.  rsNLT / rsNLE:
+//  bootstrap values below / at most the estimate.
+
+// ---- display ----
+LOCAL rsSK, rsSKP, rsTapM, rsCapM, rsMsg, rsVLo;
+LOCAL rsVHi, rsTX, rsTY, rsDrop, rsGo;
+//  rsSK the soft-key pages, rsSKP the page showing; rsTapM the "what is
+//  this" line of the last tap; rsCapM, rsMsg one-line notes; rsVLo /
+//  rsVHi the value axis of the top panel; rsTX, rsTY the last tap;
+//  rsDrop: 1 while the last shuffle's dot is to be ringed.
+
+// ---- palette and glyphs (set in rs_Init) ----
+LOCAL rsBLUE, rsMAG, rsRED, rsGRN, rsORNG, rsGRAY;
+LOCAL rsFOOT, rsGRID, rsSHD, rsLRED, rsLGRN, rsLBLU;
+LOCAL rsLORN, rsCOLA, rsCOLB, rsLGRY, rsLCA, rsLCB;
+LOCAL rsXB, rsGE, rsLE, rsNE, rsPM, rsTIM;
+LOCAL rsTHT, rsALF, rsH0, rsH1, rsSIG, rsMU;
+LOCAL rsSQ, rsARR;
+
+// ---- geometry (rs_Init): the drawing AND the touch code read these ----
+LOCAL rsPL, rsPR, rsYA, rsYB, rsRH, rsHT;
+LOCAL rsHB, rsTY1;
+//  plot x from rsPL to rsPR; row A's baseline rsYA, row B's rsYB, each
+//  rsRH tall; the histogram from rsHT (top) to rsHB (baseline); the
+//  status lines start at rsTY1.
+
+
+// ------------------------------------------------------------
+// SMALL HELPERS
+// ------------------------------------------------------------
+
+// Wait for the finger to lift, but never for more than a second (a stuck
+// touch reading must not freeze the program; Lessons Learned section 7).
+rs_Drain()
+BEGIN
+  LOCAL drT;
+  drT := TICKS;
+  REPEAT UNTIL MOUSE(1) == -1 OR TICKS - drT > 1000;
+END;
+
+// Drain, wait for a key OR a tap, drain.  Returns the key code, or -1
+// for a tap (its x, y are left in rsTX, rsTY).
+rs_WaitAny()
+BEGIN
+  LOCAL waK, waM, waM1, waK2;
+  REPEAT waK := GETKEY; UNTIL waK == -1;
+  rs_Drain();
+  REPEAT
+    waK := GETKEY;
+    waM := MOUSE;
+    waM1 := waM(1);
+  UNTIL waK > -1 OR SIZE(waM1) > 0;
+  rsTX := -1; rsTY := -1;
+  IF SIZE(waM1) > 0 THEN
+    rsTX := waM1(1); rsTY := waM1(2); waK := -1;
+  END;
+  rs_Drain();
+  REPEAT waK2 := GETKEY; UNTIL waK2 == -1;
+  RETURN waK;
+END;
+
+// A "nice" step at least as big as v: 1, 2 or 5 times a power of ten
+// (Heckbert's rule), for axis ticks.
+rs_Nice(niV)
+BEGIN
+  LOCAL niE, niF;
+  IF niV <= 0 THEN RETURN 1; END;
+  niE := FLOOR(LOG(niV));
+  niF := niV / 10^niE;
+  IF niF <= 1 THEN RETURN 10^niE; END;
+  IF niF <= 2 THEN RETURN 2 * 10^niE; END;
+  IF niF <= 5 THEN RETURN 5 * 10^niE; END;
+  RETURN 10^(niE + 1);
+END;
+
+// v with d decimals.  Rounded FIRST: STRING(x, 2, d) turns scientific
+// when 0 < |x| < 10^-d (Lessons Learned section 3).
+rs_Fmt(fmV, fmD)
+BEGIN
+  RETURN STRING(ROUND(fmV, fmD) + 0, 2, fmD);
+END;
+
+// v with its sign: "+1.48" or "-0.39" (a value that rounds to 0 reads "0").
+rs_FmtS(fsV, fsD)
+BEGIN
+  LOCAL fsR;
+  fsR := ROUND(fsV, fsD) + 0;
+  IF fsR > 0 THEN RETURN "+" + STRING(fsR, 2, fsD); END;
+  RETURN STRING(fsR, 2, fsD);
+END;
+
+// A whole number with thousands commas: 32768 -> "32,768".
+rs_Int(ivV)
+BEGIN
+  LOCAL ivS, ivO;
+  ivS := STRING(ROUND(ABS(ivV), 0), 2, 0);
+  ivO := "";
+  WHILE DIM(ivS) > 3 DO
+    ivO := "," + RIGHT(ivS, 3) + ivO;
+    ivS := LEFT(ivS, DIM(ivS) - 3);
+  END;
+  IF ivV < 0 THEN RETURN "-" + ivS + ivO; END;
+  RETURN ivS + ivO;
+END;
+
+// A probability with 4 decimals, or "< 0.0001" below its last digit.
+rs_PStr(prP)
+BEGIN
+  IF prP < 0.0001 THEN RETURN "< 0.0001"; END;
+  RETURN STRING(ROUND(prP, 4), 2, 4);
+END;
+
+// The confidence level as a percentage: "95", or "99.5" when it needs a
+// decimal.
+rs_LevS()
+BEGIN
+  LOCAL lvP;
+  lvP := ROUND(100 * rsLev, 1);
+  IF FP(lvP) == 0 THEN RETURN rs_Fmt(lvP, 0); END;
+  RETURN rs_Fmt(lvP, 1);
+END;
+
+// A Monte Carlo p = c/n: "0" when no shuffle was as extreme (it is a
+// count, not a tiny probability), else rs_PStr.
+rs_PCnt(pcC, pcN)
+BEGIN
+  IF pcC == 0 THEN RETURN "0"; END;
+  RETURN rs_PStr(pcC / pcN);
+END;
+
+// A p-value the fleet's way: "p = 0.0476", or "p < 0.0001" below its
+// last shown digit -- never "= < 0.0001" (the fleet's 18 Oct rule).
+rs_PEq(peP)
+BEGIN
+  IF peP < 0.0001 THEN RETURN "p < 0.0001"; END;
+  RETURN "p = " + STRING(ROUND(peP, 4), 2, 4);
+END;
+
+// p as a count over a count: "p = 12/252 = 0.0476", "p = 2/32,768
+// (p < 0.0001)", or "p = 0/1,000" when none was as extreme.
+rs_PFr(pfC, pfN)
+BEGIN
+  LOCAL pfS;
+  pfS := "p = " + rs_Int(pfC) + "/" + rs_Int(pfN);
+  IF pfC == 0 THEN RETURN pfS; END;
+  IF pfC / pfN < 0.0001 THEN RETURN pfS + " (p < 0.0001)"; END;
+  RETURN pfS + " = " + STRING(ROUND(pfC / pfN, 4), 2, 4);
+END;
+
+// "1 shuffle", "100 shuffles".
+rs_Shuf(shN)
+BEGIN
+  IF shN == 1 THEN RETURN "1 shuffle"; END;
+  RETURN rs_Int(shN) + " shuffles";
+END;
+
+// How many decimals to show for a statistic whose spread is about se:
+// two more than the first significant digit of se, 0 to 6.
+rs_Dec(deS)
+BEGIN
+  IF deS <= 0 THEN RETURN 2; END;
+  RETURN MAX(0, MIN(6, 2 - FLOOR(LOG(deS))));
+END;
+
+// Greatest common divisor of two whole numbers (Euclid).
+rs_Gcd(gcA, gcB)
+BEGIN
+  LOCAL gcT, gcU, gcW;
+  gcU := ABS(gcA); gcW := ABS(gcB);
+  WHILE gcW > 0 DO
+    gcT := gcU MOD gcW;
+    gcU := gcW; gcW := gcT;
+  END;
+  RETURN gcU;
+END;
+
+// The median of a SORTED list of n values.
+rs_Med(mdS, mdN)
+BEGIN
+  IF mdN MOD 2 == 1 THEN RETURN mdS((mdN + 1) / 2); END;
+  RETURN (mdS(mdN / 2) + mdS(mdN / 2 + 1)) / 2;
+END;
+
+// The p-quantile of a SORTED list of n values, "linear" interpolation:
+// position h = (n - 1) p + 1, between the values either side (Hyndman
+// and Fan type 7 -- numpy's default and what scipy.stats.bootstrap uses).
+rs_Q(qsS, qsN, qsP)
+BEGIN
+  LOCAL qsH, qsL;
+  qsH := (qsN - 1) * qsP + 1;
+  qsL := FLOOR(qsH);
+  IF qsL < 1 THEN RETURN qsS(1); END;
+  IF qsL >= qsN THEN RETURN qsS(qsN); END;
+  RETURN qsS(qsL) + (qsH - qsL) * (qsS(qsL + 1) - qsS(qsL));
+END;
+
+// A statistic of the first n values of a list:
+//   w = 1 the mean, 2 the median, 3 the SD (n - 1 divisor, two passes so
+//   12-digit arithmetic loses nothing), 4 the 10% trimmed mean (IP(n/10)
+//   values cut from each end, as scipy.stats.trim_mean(x, 0.1)).
+rs_Stat(stL, stN, stW)
+BEGIN
+  LOCAL stI, stU, stM, stG, stQ;
+  IF stW == 1 OR stW == 3 THEN
+    stU := 0;
+    FOR stI FROM 1 TO stN DO stU := stU + stL(stI); END;
+    stM := stU / stN;
+    IF stW == 1 THEN RETURN stM; END;
+    IF stN < 2 THEN RETURN 0; END;
+    stQ := 0;
+    FOR stI FROM 1 TO stN DO stQ := stQ + (stL(stI) - stM)^2; END;
+    RETURN (stQ / (stN - 1))^0.5;
+  END;
+  stQ := SORT(stL);
+  IF stW == 2 THEN RETURN rs_Med(stQ, stN); END;
+  stG := IP(stN / 10);
+  stU := 0;
+  FOR stI FROM stG + 1 TO stN - stG DO stU := stU + stQ(stI); END;
+  RETURN stU / (stN - 2 * stG);
+END;
+
+// The smallest factor f (1, 2, 4, 5, 8, 10 ... 1000) that makes every
+// value a whole number, or 0 if none does.  Statistics of such data sit
+// on a lattice; the histogram bins are lined up with it so no bin is
+// empty by accident, and the paired exact test counts with it.
+rs_Grid(gdL, gdN)
+BEGIN
+  LOCAL gdF, gdI, gdOK, gdK, gdV;
+  gdF := {1, 2, 4, 5, 8, 10, 16, 20, 25, 40, 50, 100, 200, 1000};
+  gdK := 1;
+  WHILE gdK <= 14 DO
+    gdOK := 1; gdI := 1;
+    WHILE gdOK == 1 AND gdI <= gdN DO
+      gdV := gdL(gdI) * gdF(gdK);
+      // beta 1a: relative, and a nonzero value that rounds to 0 is not
+      // whole (beta 1 took 1E-10 as the whole number 0)
+      IF ABS(gdV - ROUND(gdV, 0)) > 0.000001 * MAX(1, ABS(gdV)) THEN gdOK := 0; END;
+      IF gdV <> 0 AND ROUND(gdV, 0) == 0 THEN gdOK := 0; END;
+      gdI := gdI + 1;
+    END;
+    IF gdOK == 1 THEN RETURN gdF(gdK); END;
+    gdK := gdK + 1;
+  END;
+  RETURN 0;
+END;
+
+// The statistic's name and its short symbol, for the screens.
+rs_StName(snW)
+BEGIN
+  IF snW == 1 THEN RETURN "mean"; END;
+  IF snW == 2 THEN RETURN "median"; END;
+  IF snW == 3 THEN RETURN "SD"; END;
+  RETURN "10% trimmed mean";
+END;
+
+rs_StSym(syW)
+BEGIN
+  IF syW == 1 THEN RETURN rsXB; END;
+  IF syW == 2 THEN RETURN "med"; END;
+  IF syW == 3 THEN RETURN "s"; END;
+  RETURN "tr";
+END;
+
+// The tail in words, for the status line: |d| >= |obs| and so on.
+rs_HaTxt()
+BEGIN
+  IF rsHa == 1 THEN RETURN "A > B"; END;
+  IF rsHa == 2 THEN RETURN "A < B"; END;
+  RETURN "A " + rsNE + " B";
+END;
+
+// The Monte Carlo count that the current alternative uses.
+rs_Cnt()
+BEGIN
+  IF rsHa == 1 THEN RETURN rsNU; END;
+  IF rsHa == 2 THEN RETURN rsNL; END;
+  RETURN rsNAb;
+END;
+
+// The exact count that the current alternative uses.
+rs_XCnt()
+BEGIN
+  IF rsHa == 1 THEN RETURN rsXU; END;
+  IF rsHa == 2 THEN RETURN rsXL; END;
+  RETURN rsXA;
+END;
+
+// A round dot (5 x 5, two RECT_P bars: ARC_P rings leave holes,
+// Lessons Learned section 6).
+rs_Dot(dtX, dtY, dtC)
+BEGIN
+  RECT_P(G1, dtX - 1, dtY - 2, dtX + 1, dtY + 2, dtC);
+  RECT_P(G1, dtX - 2, dtY - 1, dtX + 2, dtY + 1, dtC);
+END;
+
+// A dotted vertical line (LINE_P has no dash style).
+rs_DotV(dvX, dvY1, dvY2, dvC)
+BEGIN
+  LOCAL dvI;
+  FOR dvI FROM dvY1 TO dvY2 STEP 3 DO
+    PIXON_P(G1, dvX, dvI, dvC);
+  END;
+END;
+
+// A value -> a pixel column of the plot, for the window lo .. hi.
+rs_Pix(pxV, pxLo, pxHi)
+BEGIN
+  RETURN rsPL + IP((pxV - pxLo) / (pxHi - pxLo) * (rsPR - rsPL) + 0.5);
+END;
+
+// Nice ticks and labels along a horizontal axis at y, for lo .. hi.
+// Labels closer than 30 px to the last one are skipped.
+rs_Axis(axLo, axHi, axY)
+BEGIN
+  LOCAL axS, axD, axV, axX, axT, axLast;
+  axS := rs_Nice((axHi - axLo) / 5);
+  axD := MAX(0, -FLOOR(LOG(axS) + 0.000001));
+  axV := CEILING(axLo / axS - 0.000001) * axS;
+  axLast := -100;
+  LINE_P(G1, rsPL, axY, rsPR, axY, rsGRAY);
+  WHILE axV <= axHi + axS * 0.000001 DO
+    axX := rs_Pix(axV, axLo, axHi);
+    LINE_P(G1, axX, axY, axX, axY + 2, rsGRAY);
+    axT := rs_Fmt(axV, axD);
+    IF axX - axLast >= 30 THEN
+      TEXTOUT_P(axT, G1, MAX(0, MIN(318 - 7 * DIM(axT), axX - 3 * DIM(axT))), axY + 3, 1, rsGRAY);
+      axLast := axX;
+    END;
+    axV := axV + axS;
+  END;
+END;
+
+// The k-th smallest index NOT in the sorted index list c (its first k
+// entries): walk up past every member of c at or below the candidate.
+rs_CompAt(caC, caK, caM)
+BEGIN
+  LOCAL caI, caZ;
+  caZ := caM;
+  FOR caI FROM 1 TO caK DO
+    IF caC(caI) <= caZ THEN caZ := caZ + 1; END;
+  END;
+  RETURN caZ;
+END;
+
+// Seed the random numbers when the class asked for a repeatable run.
+// RANDSEED is in the built-in list and hp-prime-kit measured on the
+// emulator that the same seed gives the same RANDOM; it has NOT been
+// run on our G1 or G2 (the device checklist asks for it).
+rs_Seed()
+BEGIN
+  IF rsSeed > 0 THEN
+    IFERR RANDSEED(rsSeed); THEN rsSdOK := 0; END;
+  END;
+END;
+
+// A big whole number for the screen: "252", "32,768", or "1.3x10^21".
+rs_Big(bgV)
+BEGIN
+  LOCAL bgE, bgM;
+  IF bgV < 1000000000000 THEN RETURN rs_Int(bgV); END;
+  bgE := FLOOR(LOG(bgV));
+  bgM := bgV / 10^bgE;
+  IF bgM >= 9.95 THEN bgM := bgM / 10; bgE := bgE + 1; END;
+  RETURN rs_Fmt(bgM, 1) + rsTIM + "10^" + STRING(bgE, 2, 0);
+END;
+
+
+// ------------------------------------------------------------
+// THE HISTOGRAM'S BINS
+// Bins are centred on the observed value c, so the observed statistic
+// sits in the middle of a bin, and cover mid - R .. mid + R.  When the
+// statistic can only take values on a lattice of step D (whole-number
+// data), the bin width is an ODD number of lattice steps: then no
+// possible value lies on a bin edge, and no bin is empty just because
+// of where the edges fall.
+// ------------------------------------------------------------
+rs_BinSet(bnC, bnM, bnR, bnD)
+BEGIN
+  LOCAL bnW0, bnMm, bnW, bnLo, bnHi, bnRR;
+  bnRR := bnR;
+  IF bnRR <= 0 THEN bnRR := MAX(1, ABS(bnM)) * 0.1; END;
+  bnW0 := 2 * bnRR / 56;
+  IF bnD > 0 THEN
+    bnMm := MAX(1, CEILING(bnW0 / bnD - 0.000001));
+    IF bnMm MOD 2 == 0 THEN bnMm := bnMm + 1; END;
+    bnW := bnMm * bnD;
+  ELSE
+    bnW := bnW0;
+  END;
+  bnLo := FLOOR((bnM - bnRR - bnC) / bnW + 0.5);
+  bnHi := FLOOR((bnM + bnRR - bnC) / bnW + 0.5);
+  rsBC0 := bnC + bnLo * bnW;
+  rsBW := bnW;
+  rsNBn := MAX(1, bnHi - bnLo + 1);
+  rsBMid := bnM; rsBR := bnRR;
+END;
+
+// The bin of a value, 1 .. rsNBn.  A value beyond the ends goes in the
+// end bin; rs_BinOut says which side (-1 left, 1 right, 0 inside).
+rs_BinK(bkV)
+BEGIN
+  LOCAL bkK;
+  bkK := FLOOR((bkV - rsBC0) / rsBW + 0.5) + 1;
+  IF bkK < 1 THEN RETURN 1; END;
+  IF bkK > rsNBn THEN RETURN rsNBn; END;
+  RETURN bkK;
+END;
+
+rs_BinOut(boV)
+BEGIN
+  LOCAL boK;
+  boK := FLOOR((boV - rsBC0) / rsBW + 0.5) + 1;
+  IF boK < 1 THEN RETURN -1; END;
+  IF boK > rsNBn THEN RETURN 1; END;
+  RETURN 0;
+END;
+
+// Empty counters and histogram, the working arrangement back to the
+// data as observed, and the seed (if any) set again: a Reset.
+rs_Reset()
+BEGIN
+  LOCAL rzI;
+  rs_BinSet(rsObs, rsBM0, rsBR0, rsDlt);
+  rsB := 0; rsNU := 0; rsNL := 0; rsNAb := 0;
+  rsClL := 0; rsClR := 0;
+  rsH := MAKELIST(0, rzI, 1, rsNBn);
+  rsHU := rsH; rsHL := rsH; rsHAb := rsH;
+  rsLast := rsObs; rsDrop := 0;
+  rsTapM := ""; rsCapM := ""; rsMsg := "";
+  rsView := 0;
+  IF rsMode == 1 THEN
+    rsW := MAKELIST(rzI, rzI, 1, rsN);
+    rsMem := rsOrig; rsMOld := rsOrig;
+  END;
+  IF rsMode == 2 THEN
+    rsSg := MAKELIST(1, rzI, 1, rsNd); rsSgO := rsSg;
+  END;
+  IF rsMode >= 3 THEN
+    rsTh := MAKELIST(0, rzI, 1, rsMaxB);
+    rsCIB := -1; rsRefit := 0; rsShP := 0;
+    rsMlA := MAKELIST(0, rzI, 1, rsNX);
+    rsMlB := {0};
+    IF rsMode == 4 THEN rsMlB := MAKELIST(0, rzI, 1, rsNX2); END;
+    rsCI := {0, 0, 0, 0, 0, 0, 0, 0}; rsCIok := {0, 0, 0, 0};
+  END;
+  rs_Seed();
+END;
+
+
+// ------------------------------------------------------------
+// TWO-GROUP PERMUTATION TEST (Pitman 1937; Ernst 2004)
+// H0: the labels A and B do not matter, so every way of dealing the N
+// pooled values into a group of nA and a group of nB was equally likely.
+// A shuffle deals them again at random and computes d = stat(A) -
+// stat(B).  Cost per shuffle: only the SMALLER group is drawn (a partial
+// Fisher-Yates shuffle, O(k)), and for the mean only its sum is needed,
+// because the total is fixed: d = S_A / nA - (Tot - S_A) / nB.
+// ------------------------------------------------------------
+
+// d for the split whose group-A sum is pmSA.
+rs_TMean(tmSA)
+BEGIN
+  RETURN tmSA / rsNA - (rsTot - tmSA) / rsNB;
+END;
+
+// d = median(A) - median(B) for the split whose DRAWN group holds the
+// pooled indices tcC (sorted, rsK of them).  rsV is sorted, so the
+// drawn group's values are already in order; the other group's are
+// found with rs_CompAt.
+rs_TMedC(tcC)
+BEGIN
+  LOCAL tcK, tcM, tcA, tcB;
+  tcK := rsK;
+  IF tcK MOD 2 == 1 THEN
+    tcA := rsV(tcC((tcK + 1) / 2));
+  ELSE
+    tcA := (rsV(tcC(tcK / 2)) + rsV(tcC(tcK / 2 + 1))) / 2;
+  END;
+  tcM := rsN - tcK;
+  IF tcM MOD 2 == 1 THEN
+    tcB := rsV(rs_CompAt(tcC, tcK, (tcM + 1) / 2));
+  ELSE
+    tcB := (rsV(rs_CompAt(tcC, tcK, tcM / 2)) + rsV(rs_CompAt(tcC, tcK, tcM / 2 + 1))) / 2;
+  END;
+  IF rsKA == 1 THEN RETURN tcA - tcB; END;
+  RETURN tcB - tcA;
+END;
+
+// beta 1a: how many splits there are, C(N, k), WITHOUT forming a number
+// that can overflow (C(2000, 1000) is about 10^600; the Prime's reals stop
+// near 1E500 and an overflow is +infinity, not an error -- Lessons 3).
+// The product C(N-k+j, j) = C(N-k+j-1, j-1) (N-k+j)/j is a whole number at
+// every step and stops as soon as it passes rsExLim.  Returns the count,
+// or -1 when it is bigger; rsXCs is the count as text ("3,432", or
+// "about 10^21" from a sum of logs).
+rs_Splits(spN, spK)
+BEGIN
+  LOCAL spC, spJ, spL;
+  spC := 1; spJ := 1;
+  WHILE spJ <= spK AND spC <= rsExLim DO
+    spC := spC * (spN - spK + spJ) / spJ;
+    spJ := spJ + 1;
+  END;
+  IF spC <= rsExLim THEN rsXCs := rs_Int(spC); RETURN spC; END;
+  spL := 0;
+  FOR spJ FROM 1 TO spK DO spL := spL + LOG((spN - spK + spJ) / spJ); END;
+  IF spL < 9 THEN
+    spC := 1;
+    FOR spJ FROM 1 TO spK DO spC := spC * (spN - spK + spJ) / spJ; END;
+    rsXCs := rs_Int(ROUND(spC, 0));
+  ELSE
+    rsXCs := "about 10^" + STRING(FLOOR(spL), 2, 0);
+  END;
+  RETURN -1;
+END;
+
+// Set up the two-group test on the current data.  Returns 1, or 0 with
+// a message when the data cannot be used.
+rs_PmStart()
+BEGIN
+  LOCAL psA, psB, pzI, psJ, psQ, psU;
+  LOCAL psM, psVr, psHi, psLo, psR, psC;
+  LOCAL psRm;
+  IF rsKind < 2 THEN
+    MSGBOX("Needs two groups: load MockJury, Rossi or 5 v 5, or put group B in D2.");
+    RETURN 0;
+  END;
+  IF rsNA < 2 OR rsNB < 2 THEN
+    MSGBOX("Each group needs at least 2 values.");
+    RETURN 0;
+  END;
+  IF rsSt > 2 THEN rsSt := 1; END;
+  psA := SORT(rsA); psB := SORT(rsGB);
+  rsN := rsNA + rsNB;
+  // merge the two sorted groups: rsV sorted, rsOrig remembers the group
+  rsV := MAKELIST(0, pzI, 1, rsN); rsOrig := rsV;
+  pzI := 1; psJ := 1;
+  FOR psQ FROM 1 TO rsN DO
+    psU := 1;
+    IF pzI > rsNA THEN
+      psU := 2;
+    ELSE
+      IF psJ <= rsNB THEN
+        IF psB(psJ) < psA(pzI) THEN psU := 2; END;
+      END;
+    END;
+    IF psU == 1 THEN
+      rsV(psQ) := psA(pzI); rsOrig(psQ) := 1; pzI := pzI + 1;
+    ELSE
+      rsV(psQ) := psB(psJ); rsOrig(psQ) := 2; psJ := psJ + 1;
+    END;
+  END;
+  rsTot := 0;
+  FOR psQ FROM 1 TO rsN DO rsTot := rsTot + rsV(psQ); END;
+  // the drawn group is the smaller one (fewer random numbers per shuffle)
+  rsK := MIN(rsNA, rsNB);
+  rsKA := 0;
+  IF rsNA <= rsNB THEN rsKA := 1; END;
+  // the observed statistic, computed exactly as a shuffle computes it
+  psC := MAKELIST(0, pzI, 1, rsK);
+  psJ := 0; psU := 0;
+  FOR psQ FROM 1 TO rsN DO
+    IF rsOrig(psQ) == 2 - rsKA THEN
+      psJ := psJ + 1; psC(psJ) := psQ; psU := psU + rsV(psQ);
+    END;
+  END;
+  IF rsSt == 1 THEN
+    IF rsKA == 1 THEN rsObs := rs_TMean(psU); ELSE rsObs := rs_TMean(rsTot - psU); END;
+  ELSE
+    rsObs := rs_TMedC(psC);
+  END;
+  // the SD of d over all splits (sampling without replacement):
+  // sigma^2 N^2 / (nA nB (N - 1)), sigma^2 the pooled values' variance
+  // with divisor N.  It only sets the plot's range.
+  psM := rsTot / rsN; psVr := 0;
+  FOR psQ FROM 1 TO rsN DO psVr := psVr + (rsV(psQ) - psM)^2; END;
+  psVr := psVr / rsN;
+  rsSE := (psVr * rsN^2 / (rsNA * rsNB * (rsN - 1)))^0.5;
+  IF rsSE <= 0 THEN
+    MSGBOX("Every value is the same, so every shuffle gives d = 0: there is nothing to test.");
+    RETURN 0;
+  END;
+  // the widest d any split can give, so the plot never wastes room
+  IF rsSt == 1 THEN
+    psHi := 0; psLo := 0;
+    FOR psQ FROM 1 TO rsNA DO
+      psHi := psHi + rsV(rsN - psQ + 1);
+      psLo := psLo + rsV(psQ);
+    END;
+    psRm := MAX(ABS(rs_TMean(psHi)), ABS(rs_TMean(psLo)));
+    psR := MAX(4.5 * rsSE, 1.15 * ABS(rsObs));
+  ELSE
+    psRm := rsV(rsN) - rsV(1);
+    psR := MAX(6 * rsSE, 1.15 * ABS(rsObs));
+  END;
+  psR := MIN(psR, psRm);
+  // the lattice d lives on when the data are whole numbers (after x f)
+  rsF := rs_Grid(rsV, rsN);
+  rsDlt := 0;
+  IF rsF > 0 THEN
+    IF rsSt == 1 THEN rsDlt := (1 / rsNA + 1 / rsNB) / rsF; ELSE rsDlt := 0.5 / rsF; END;
+  END;
+  // beta 1a: the tie tolerance is RELATIVE to the data's spread (beta 1
+  // added 1, so data on a 1E-10 scale tied everything: p = 1)
+  rsEps := 0.000000001 * (rsV(rsN) - rsV(1));
+  rsBM0 := 0; rsBR0 := psR;
+  rsDec := rs_Dec(rsSE);
+  // exact when the splits are few enough to list
+  // beta 1a: counted with rs_Splits, never COMB (overflow for big groups)
+  rsXC := rs_Splits(rsN, rsK);
+  rsXOK := 0; rsXKnd := 1;
+  rsXWhy := "C(" + STRING(rsN, 2, 0) + ", " + STRING(rsK, 2, 0) + ") = " + rsXCs + " splits: too many to list (limit " + rs_Int(rsExLim) + "); random shuffles are used.";
+  IF rsXC > 0 THEN rsXOK := 1; rsXWhy := ""; END;
+  rs_Reset();
+  RETURN 1;
+END;
+
+// One shuffle: deal rsK of the pooled values into the drawn group with a
+// partial Fisher-Yates shuffle of rsW, and return d.  With poSh = 1 the
+// new memberships are kept for the picture (rsMOld = before).
+// MIN(..) keeps the index in range even if RANDOM ever returned 1.
+rs_PmOne(pmSh)
+BEGIN
+  LOCAL pmI, pmJ, pmT, pmU, pmN, pmK;
+  LOCAL pmC, pmG, pmO;
+  pmN := rsN; pmK := rsK; pmU := 0;
+  FOR pmI FROM 1 TO pmK DO
+    pmJ := pmI + MIN(pmN - pmI, IP(RANDOM * (pmN - pmI + 1)));
+    pmT := rsW(pmJ); rsW(pmJ) := rsW(pmI); rsW(pmI) := pmT;
+    pmU := pmU + rsV(pmT);
+  END;
+  IF pmSh == 1 THEN
+    rsMOld := rsMem;
+    pmG := 2; pmO := 1;
+    IF rsKA == 1 THEN pmG := 1; pmO := 2; END;
+    rsMem := MAKELIST(pmO, pmI, 1, pmN);
+    FOR pmI FROM 1 TO pmK DO rsMem(rsW(pmI)) := pmG; END;
+  END;
+  IF rsSt == 1 THEN
+    IF rsKA == 1 THEN RETURN rs_TMean(pmU); END;
+    RETURN rs_TMean(rsTot - pmU);
+  END;
+  pmC := SORT(MAKELIST(rsW(pmI), pmI, 1, pmK));
+  RETURN rs_TMedC(pmC);
+END;
+
+// Count one shuffle (modes 1, 2) or keep one bootstrap value (3, 4).
+rs_Add(adT)
+BEGIN
+  LOCAL adK, adO;
+  rsB := rsB + 1;
+  rsLast := adT;
+  adK := rs_BinK(adT);
+  adO := rs_BinOut(adT);
+  rsH(adK) := rsH(adK) + 1;
+  IF rsMode >= 3 THEN
+    rsTh(rsB) := adT;
+    IF adO <> 0 THEN rsRefit := 1; END;
+    RETURN;
+  END;
+  IF adO < 0 THEN rsClL := rsClL + 1; END;
+  IF adO > 0 THEN rsClR := rsClR + 1; END;
+  IF adT >= rsObs - rsEps THEN rsNU := rsNU + 1; rsHU(adK) := rsHU(adK) + 1; END;
+  IF adT <= rsObs + rsEps THEN rsNL := rsNL + 1; rsHL(adK) := rsHL(adK) + 1; END;
+  IF ABS(adT) >= ABS(rsObs) - rsEps THEN rsNAb := rsNAb + 1; rsHAb(adK) := rsHAb(adK) + 1; END;
+END;
+
+
+// ------------------------------------------------------------
+// PAIRED PERMUTATION TEST (Fisher 1935, sec. 21)
+// H0: within each pair the two labels could be swapped, so each
+// difference was as likely to come out with the other sign.  A "shuffle"
+// flips each sign with probability 1/2 and computes the mean difference.
+// ------------------------------------------------------------
+rs_PdStart()
+BEGIN
+  LOCAL pdI, pdS, pdQ, pdR, pdRm, pdT;
+  LOCAL pdA;
+  IF rsPair == 0 OR rsNd < 2 THEN
+    MSGBOX("Needs differences: load Darwin, or equal-length lists in D1 and D2 (or the differences in D1).");
+    RETURN 0;
+  END;
+  rsD := rsDf;
+  pdS := 0; pdQ := 0; pdT := 0;
+  FOR pdI FROM 1 TO rsNd DO
+    pdS := pdS + rsD(pdI);
+    pdQ := pdQ + rsD(pdI)^2;
+    pdT := pdT + ABS(rsD(pdI));
+  END;
+  rsObs := pdS / rsNd;
+  // the SD of the mean over all sign patterns: sqrt(sum d^2) / n
+  rsSE := pdQ^0.5 / rsNd;
+  IF rsSE <= 0 THEN
+    MSGBOX("Every difference is 0: every sign pattern gives the same mean.");
+    RETURN 0;
+  END;
+  pdRm := pdT / rsNd;
+  pdR := MIN(MAX(4.5 * rsSE, 1.15 * ABS(rsObs)), pdRm);
+  pdA := MAKELIST(ABS(rsD(pdI)), pdI, 1, rsNd);
+  rsF := rs_Grid(pdA, rsNd);
+  rsDlt := 0;
+  IF rsF > 0 THEN rsDlt := 2 / (rsNd * rsF); END;
+  rsEps := 0.000000001 * pdT / rsNd;
+  rsBM0 := 0; rsBR0 := pdR;
+  rsDec := rs_Dec(rsSE);
+  rsXC := 2^rsNd;
+  rsXCs := rs_Big(rsXC);
+  rsXOK := 0; rsXWhy := "";
+  // beta 1a: counting by sums is limited by its WORK, n x sum, to 20,000
+  // (Darwin: 15 x 544 = 8,160); beta 1 allowed 39 x 9,998
+  IF rsF > 0 AND rsNd <= 39 THEN
+    IF ROUND(pdT * rsF, 0) <= 9998 AND rsNd * ROUND(pdT * rsF, 0) <= 20000 THEN rsXOK := 1; rsXKnd := 2; END;
+  END;
+  IF rsXOK == 0 AND rsNd <= 12 THEN rsXOK := 1; rsXKnd := 3; END;
+  IF rsXOK == 0 THEN
+    rsXWhy := "2^" + STRING(rsNd, 2, 0) + " = " + rsXCs + " sign patterns, too many to count here: random flips are used.";
+  END;
+  rs_Reset();
+  RETURN 1;
+END;
+
+// One random sign pattern: each difference keeps or flips its sign with
+// probability 1/2.  Returns the mean of the signed differences.
+rs_PdOne(pfSh)
+BEGIN
+  LOCAL pfI, pfU;
+  pfU := 0;
+  IF pfSh == 1 THEN
+    rsSgO := rsSg;
+    FOR pfI FROM 1 TO rsNd DO
+      IF RANDOM < 0.5 THEN
+        rsSg(pfI) := -1; pfU := pfU - rsD(pfI);
+      ELSE
+        rsSg(pfI) := 1; pfU := pfU + rsD(pfI);
+      END;
+    END;
+  ELSE
+    FOR pfI FROM 1 TO rsNd DO
+      IF RANDOM < 0.5 THEN pfU := pfU - rsD(pfI); ELSE pfU := pfU + rsD(pfI); END;
+    END;
+  END;
+  RETURN pfU / rsNd;
+END;
+
+
+
+// ------------------------------------------------------------
+// THE BOOTSTRAP (Efron 1979; Efron & Tibshirani 1993)
+// Treat the sample as the population: draw n values from it WITH
+// replacement (some values come up twice or more, some not at all),
+// compute the statistic, and repeat.  The spread of those values shows
+// how much the statistic would vary from sample to sample.
+// ------------------------------------------------------------
+
+// Set up the two-group bootstrap: each group is resampled from itself.
+rs_B2Start()
+BEGIN
+  LOCAL btA, btB, btG, btL, btF;
+  IF rsKind < 2 OR rsNA < 2 OR rsNB < 2 THEN
+    MSGBOX("Needs two groups of 2 or more: load MockJury, Rossi or 5 v 5, or use D1 and D2.");
+    RETURN 0;
+  END;
+  IF rsSt > 2 THEN rsSt := 1; END;
+  rsX := SORT(rsA); rsNX := rsNA;
+  rsX2 := SORT(rsGB); rsNX2 := rsNB;
+  rsObs := rs_Stat(rsX, rsNX, rsSt) - rs_Stat(rsX2, rsNX2, rsSt);
+  btA := rs_Stat(rsX, rsNX, 3); btB := rs_Stat(rsX2, rsNX2, 3);
+  btG := (btA^2 / rsNX + btB^2 / rsNX2)^0.5;
+  IF btG <= 0 THEN
+    MSGBOX("Every value in both groups is the same: every resample is the same.");
+    RETURN 0;
+  END;
+  IF rsSt == 2 THEN btG := 1.3 * btG; END;
+  rsSE := btG;
+  btF := rs_Grid(CONCAT(rsX, rsX2), rsNX + rsNX2);
+  rsF := btF;
+  rsDlt := 0;
+  IF btF > 0 THEN
+    IF rsSt == 2 THEN
+      rsDlt := 0.5 / btF;
+    ELSE
+      // x-bar_A - x-bar_B lives on steps of 1 / (f lcm(nA, nB))
+      btL := rsNX * rsNX2 / rs_Gcd(rsNX, rsNX2);
+      IF btL <= 100000 THEN rsDlt := 1 / (btF * btL); END;
+    END;
+  END;
+  rsEps := 0.000000001 * (MAX(MAX(ABS(rsX(1)), ABS(rsX(rsNX))), MAX(ABS(rsX2(1)), ABS(rsX2(rsNX2)))) + 1);
+  rsBM0 := rsObs; rsBR0 := 4.5 * btG;
+  rsDec := rs_Dec(btG);
+  rsXOK := 0;
+  rs_Reset();
+  RETURN 1;
+END;
+
+// One resample of n from the n values of the SORTED list reL (with
+// replacement): n random indices, drawn in order, MIN(..) keeping each in
+// range even if RANDOM ever returned 1.  With reSh = 1 the indices are
+// kept and counted (how often each value was picked: rsMl) for the
+// picture.  Without it the mean is summed straight from the draws (no
+// lists: the bulk runs are about twice as fast), and the other statistics
+// take one MAKELIST of the drawn values.  The random numbers are used in
+// the same order either way.
+rs_ReS(reL, reN, reSh)
+BEGIN
+  LOCAL reI, reJ, reV, reU;
+  IF reSh == 1 THEN
+    reI := MAKELIST(MIN(reN, 1 + IP(RANDOM * reN)), reJ, 1, reN);
+    rsMl := MAKELIST(0, reJ, 1, reN);
+    FOR reJ FROM 1 TO reN DO rsMl(reI(reJ)) := rsMl(reI(reJ)) + 1; END;
+    reV := MAKELIST(reL(reI(reJ)), reJ, 1, reN);
+    RETURN rs_Stat(reV, reN, rsSt);
+  END;
+  IF rsSt == 1 THEN
+    reU := 0;
+    FOR reJ FROM 1 TO reN DO reU := reU + reL(MIN(reN, 1 + IP(RANDOM * reN))); END;
+    RETURN reU / reN;
+  END;
+  reV := MAKELIST(reL(MIN(reN, 1 + IP(RANDOM * reN))), reJ, 1, reN);
+  RETURN rs_Stat(reV, reN, rsSt);
+END;
+
+// One bootstrap value for the one-sample page.
+rs_BtOne(boSh)
+BEGIN
+  LOCAL boT;
+  boT := rs_ReS(rsX, rsNX, boSh);
+  IF boSh == 1 THEN rsMlA := rsMl; END;
+  RETURN boT;
+END;
+
+// One resample of each group (A first, then B), and the difference.
+rs_B2One(b2Sh)
+BEGIN
+  LOCAL b2T;
+  b2T := rs_ReS(rsX, rsNX, b2Sh);
+  IF b2Sh == 1 THEN rsMlA := rsMl; END;
+  b2T := b2T - rs_ReS(rsX2, rsNX2, b2Sh);
+  IF b2Sh == 1 THEN rsMlB := rsMl; END;
+  RETURN b2T;
+END;
+
+// How many of the first n values of a SORTED list are below v (cbE = 0)
+// or at most v (cbE = 1): a binary search, about 13 steps for 9,000.
+rs_CntBel(cbS, cbN, cbV, cbE)
+BEGIN
+  LOCAL cbLo, cbHi, cbMd, cbIn;
+  cbLo := 0; cbHi := cbN;
+  WHILE cbLo < cbHi DO
+    cbMd := IP((cbLo + cbHi + 1) / 2);
+    cbIn := 0;
+    IF cbE == 0 THEN
+      IF cbS(cbMd) < cbV THEN cbIn := 1; END;
+    ELSE
+      IF cbS(cbMd) <= cbV THEN cbIn := 1; END;
+    END;
+    IF cbIn == 1 THEN cbLo := cbMd; ELSE cbHi := cbMd - 1; END;
+  END;
+  RETURN cbLo;
+END;
+
+// The intervals from the B bootstrap values (cached: only when B changed).
+//   percentile:  the alpha/2 and 1 - alpha/2 quantiles of the values
+//                (Efron & Tibshirani 1993, ch. 13)
+//   basic:       2 theta - those two, swapped (Davison & Hinkley 1997,
+//                ch. 5): the percentile interval reflected about theta
+//   BCa:         the quantiles at a1 = PHI(z0 + (z0 + z)/(1 - a(z0 + z)))
+//                and a2 the same with -z, z = PHI^-1(alpha/2); z0 =
+//                PHI^-1(share of values below theta, ties counted half
+//                as SciPy does); a from the jackknife (rs_BtStart)
+//   t:           x-bar -/+ t(n - 1) s / sqrt n (the mean only); for two
+//                groups the Welch interval.
+// Quantiles are "linear" (rs_Q), as scipy.stats.bootstrap's.
+rs_BtCI()
+BEGIN
+  LOCAL ciS, ciB, ciA, ciL, ciU, ciM;
+  LOCAL ciQ, ciI, ciZa, ciN1, ciN2, ciD1;
+  LOCAL ciD2, ciT, ciSA, ciSB, ciDf, ciSe;
+  IF rsCIB == rsB THEN RETURN; END;
+  rsCIB := rsB;
+  rsCI := {0, 0, 0, 0, 0, 0, 0, 0}; rsCIok := {0, 0, 0, 0};
+  rsBcaW := "";
+  ciB := rsB;
+  IF ciB < 2 THEN RETURN; END;
+  ciS := SORT(MAKELIST(rsTh(ciI), ciI, 1, ciB));
+  ciA := 1 - rsLev;
+  ciM := 0;
+  FOR ciI FROM 1 TO ciB DO ciM := ciM + ciS(ciI); END;
+  ciM := ciM / ciB;
+  ciQ := 0;
+  FOR ciI FROM 1 TO ciB DO ciQ := ciQ + (ciS(ciI) - ciM)^2; END;
+  rsSEs := (ciQ / (ciB - 1))^0.5;
+  ciL := rs_Q(ciS, ciB, ciA / 2);
+  ciU := rs_Q(ciS, ciB, 1 - ciA / 2);
+  rsCI(1) := ciL; rsCI(2) := ciU; rsCIok(1) := 1;
+  rsCI(3) := 2 * rsObs - ciU; rsCI(4) := 2 * rsObs - ciL; rsCIok(2) := 1;
+  IF rsMode == 3 THEN
+    rsNLT := rs_CntBel(ciS, ciB, rsObs, 0);
+    rsNLE := rs_CntBel(ciS, ciB, rsObs, 1);
+    rsP0 := (rsNLT + rsNLE) / (2 * ciB);
+    IF rsAcOK == 0 THEN
+      rsBcaW := rsJkW;
+    ELSE
+      IF rsP0 <= 0 OR rsP0 >= 1 THEN
+        rsBcaW := "BCa: estimate outside all B values";
+      ELSE
+        rsZ0 := NORMALD_ICDF(0, 1, rsP0);
+        ciZa := NORMALD_ICDF(0, 1, ciA / 2);
+        ciN1 := rsZ0 + ciZa; ciN2 := rsZ0 - ciZa;
+        ciD1 := 1 - rsAcc * ciN1; ciD2 := 1 - rsAcc * ciN2;
+        IF ciD1 <= 0 OR ciD2 <= 0 THEN
+          rsBcaW := "BCa: a too large for the formula";
+        ELSE
+          rsAl1 := NORMALD_CDF(0, 1, rsZ0 + ciN1 / ciD1);
+          rsAl2 := NORMALD_CDF(0, 1, rsZ0 + ciN2 / ciD2);
+          rsCI(5) := rs_Q(ciS, ciB, rsAl1);
+          rsCI(6) := rs_Q(ciS, ciB, rsAl2);
+          rsCIok(3) := 1;
+        END;
+      END;
+    END;
+    IF rsSt == 1 THEN
+      ciSe := rs_Stat(rsX, rsNX, 3) / rsNX^0.5;
+      ciT := -STUDENT_ICDF(rsNX - 1, ciA / 2);
+      rsCI(7) := rsObs - ciT * ciSe; rsCI(8) := rsObs + ciT * ciSe;
+      rsCIok(4) := 1;
+    END;
+  ELSE
+    IF rsSt == 1 THEN
+      ciSA := rs_Stat(rsX, rsNX, 3)^2 / rsNX;
+      ciSB := rs_Stat(rsX2, rsNX2, 3)^2 / rsNX2;
+      ciSe := (ciSA + ciSB)^0.5;
+      IF ciSe > 0 THEN
+        ciDf := (ciSA + ciSB)^2 / (ciSA^2 / (rsNX - 1) + ciSB^2 / (rsNX2 - 1));
+        ciT := -STUDENT_ICDF(ciDf, ciA / 2);
+        rsCI(7) := rsObs - ciT * ciSe; rsCI(8) := rsObs + ciT * ciSe;
+        rsCIok(4) := 1;
+      END;
+    END;
+  END;
+END;
+
+// The bins again from every value kept, when one fell off the plot.
+rs_Rebin()
+BEGIN
+  LOCAL rbI, rbLo, rbHi, rbK;
+  rbLo := rsObs; rbHi := rsObs;
+  FOR rbI FROM 1 TO rsB DO
+    rbLo := MIN(rbLo, rsTh(rbI)); rbHi := MAX(rbHi, rsTh(rbI));
+  END;
+  rs_BinSet(rsObs, rsObs, 1.1 * MAX(rsObs - rbLo, rbHi - rsObs), rsDlt);
+  rsH := MAKELIST(0, rbI, 1, rsNBn);
+  FOR rbI FROM 1 TO rsB DO
+    rbK := rs_BinK(rsTh(rbI));
+    rsH(rbK) := rsH(rbK) + 1;
+  END;
+  rsRefit := 0;
+END;
+
+// Home exports for the page in front.
+rs_Export()
+BEGIN
+  LOCAL eiC, eiI;
+  RS_NB := rsB;
+  RS_OBS := rsObs;
+  IF rsMode <= 2 THEN
+    RS_P := -1;
+    IF rsB > 0 THEN
+      eiC := rs_Cnt();
+      RS_P := (eiC + 1) / (rsB + 1);
+    END;
+    RS_PX := -1;
+    IF rsXOK == 2 THEN RS_PX := rs_XCnt() / rsXC; END;
+    RS_STAR := {};
+  ELSE
+    RS_STAR := {};
+    IF rsB > 0 THEN RS_STAR := MAKELIST(rsTh(eiI), eiI, 1, rsB); END;
+    RS_PCT := {}; RS_BCA := {};
+    IF rsB >= 2 THEN
+      rs_BtCI();
+      RS_PCT := {rsCI(1), rsCI(2)};
+      IF rsCIok(3) == 1 THEN RS_BCA := {rsCI(5), rsCI(6)}; END;
+    END;
+  END;
+END;
+
+
+// ------------------------------------------------------------
+// DRAWING.  Every frame is composed in G1 and shown by ONE blit; the
+// soft keys (DRAWMENU) are drawn after the blit (Lessons Learned 6).
+// ------------------------------------------------------------
+
+// A white page with the orange title band (and the seed, if one is set).
+rs_Frame(frT)
+BEGIN
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 0, 0, 319, 14, rsORNG);
+  TEXTOUT_P(frT, G1, 3, 2, 1, #FFFFFFh, 246);
+  IF rsSeed > 0 THEN
+    TEXTOUT_P("seed " + STRING(rsSeed, 2, 0), G1, 252, 2, 1, #FFFFFFh, 66);
+  END;
+END;
+
+// The page title for the mode in front.
+rs_Title()
+BEGIN
+  IF rsMode == 1 THEN RETURN "Permutation test: " + rs_StName(rsSt) + "s, A vs B"; END;
+  IF rsMode == 2 THEN RETURN "Paired permutation: sign flips"; END;
+  IF rsMode == 3 THEN RETURN "Bootstrap: the " + rs_StName(rsSt); END;
+  RETURN "Bootstrap: " + rs_StName(rsSt) + " A - " + rs_StName(rsSt) + " B";
+END;
+
+// The value axis of the top panel, from the data with a 5% margin.
+rs_VAxis(vaL, vaN, vaL2, vaN2)
+BEGIN
+  LOCAL vaLo, vaHi, vaR;
+  vaLo := vaL(1); vaHi := vaL(vaN);
+  IF vaN2 > 0 THEN
+    vaLo := MIN(vaLo, vaL2(1)); vaHi := MAX(vaHi, vaL2(vaN2));
+  END;
+  vaR := vaHi - vaLo;
+  IF vaR <= 0 THEN vaR := MAX(1, ABS(vaLo)); END;
+  rsVLo := vaLo - 0.05 * vaR;
+  rsVHi := vaHi + 0.05 * vaR;
+END;
+
+// The 4-px column a value falls in on the top panel (0 .. 68).
+rs_Col(clV)
+BEGIN
+  RETURN MAX(0, MIN(68, IP((rs_Pix(clV, rsVLo, rsVHi) - rsPL) / 4)));
+END;
+
+// Stack positions for the two-group rows: for membership list rmM, the
+// place (1, 2, ...) of each pooled value in its column's stack.  The
+// tallest stack is returned in the last element.
+rs_Stack(skM)
+BEGIN
+  LOCAL skHA, skHB, skI, skC, skP, skMx;
+  skHA := MAKELIST(0, skI, 1, 70); skHB := skHA;
+  skP := MAKELIST(0, skI, 1, rsN + 1);
+  skMx := 1;
+  FOR skI FROM 1 TO rsN DO
+    skC := rs_Col(rsV(skI)) + 1;
+    IF skM(skI) == 1 THEN
+      skHA(skC) := skHA(skC) + 1; skP(skI) := skHA(skC);
+    ELSE
+      skHB(skC) := skHB(skC) + 1; skP(skI) := skHB(skC);
+    END;
+    skMx := MAX(skMx, skP(skI));
+  END;
+  skP(rsN + 1) := skMx;
+  RETURN skP;
+END;
+
+// The dot pitch that fits a stack of mx dots in a row rsRH tall.
+rs_Pitch(ptM)
+BEGIN
+  RETURN MAX(1, MIN(5, IP((rsRH - 4) / ptM)));
+END;
+
+// One dot of a stack: round when there is room, a block when not.
+rs_SDot(sdX, sdY, sdP, sdC)
+BEGIN
+  IF sdP >= 5 THEN
+    rs_Dot(sdX, sdY, sdC);
+  ELSE
+    RECT_P(G1, sdX - 1, sdY - MAX(0, sdP - 2), sdX + 1, sdY, sdC);
+  END;
+END;
+
+// The statistic of row g as the rows stand now (for the green markers).
+rs_RowStat(rwG)
+BEGIN
+  LOCAL rwL, rwI, rwN;
+  rwL := MAKELIST(0, rwI, 1, rsN);
+  rwN := 0;
+  FOR rwI FROM 1 TO rsN DO
+    IF rsMem(rwI) == rwG THEN rwN := rwN + 1; rwL(rwN) := rsV(rwI); END;
+  END;
+  IF rwN == 0 THEN RETURN 0; END;
+  rwL := MAKELIST(rwL(rwI), rwI, 1, rwN);
+  RETURN rs_Stat(rwL, rwN, rsSt);
+END;
+
+// The two rows of the two-group page.  dgF = 0 .. 1 is how far the dots
+// have moved from their old rows (rsMOld) to their new ones (rsMem): the
+// animation of "Once" draws 1/3, 2/3 and 1.
+rs_DrawRows(dgF)
+BEGIN
+  LOCAL dgP0, dgP1, dgPt, dgI, dgX, dgY0;
+  LOCAL dgY1, dgY, dgC, dgSA, dgSB, dgT;
+  dgP1 := rs_Stack(rsMem);
+  dgP0 := dgP1;
+  IF dgF < 1 THEN dgP0 := rs_Stack(rsMOld); END;
+  dgPt := rs_Pitch(MAX(dgP0(rsN + 1), dgP1(rsN + 1)));
+  // row frames and labels
+  LINE_P(G1, rsPL, rsYA, rsPR, rsYA, rsGRID);
+  LINE_P(G1, rsPL, rsYB, rsPR, rsYB, rsGRID);
+  TEXTOUT_P("A", G1, 3, rsYA - 26, 2, rsCOLA);
+  TEXTOUT_P(rsLA, G1, 2, rsYA - 12, 1, rsCOLA, 40);
+  TEXTOUT_P("B", G1, 3, rsYB - 26, 2, rsCOLB);
+  TEXTOUT_P(rsLB, G1, 2, rsYB - 12, 1, rsCOLB, 40);
+  FOR dgI FROM 1 TO rsN DO
+    dgX := rsPL + 4 * rs_Col(rsV(dgI)) + 2;
+    dgY0 := rsYA; IF rsMOld(dgI) == 2 THEN dgY0 := rsYB; END;
+    dgY1 := rsYA; IF rsMem(dgI) == 2 THEN dgY1 := rsYB; END;
+    dgY0 := dgY0 - 3 - dgPt * (dgP0(dgI) - 1);
+    dgY1 := dgY1 - 3 - dgPt * (dgP1(dgI) - 1);
+    dgY := IP(dgY0 + (dgY1 - dgY0) * dgF + 0.5);
+    dgC := rsCOLA; IF rsOrig(dgI) == 2 THEN dgC := rsCOLB; END;
+    rs_SDot(dgX, dgY, dgPt, dgC);
+  END;
+  // each row's statistic as it stands, in green, once the dots have landed
+  IF dgF >= 1 THEN
+    dgSA := rs_RowStat(1); dgSB := rs_RowStat(2);
+    dgX := rs_Pix(dgSA, rsVLo, rsVHi);
+    RECT_P(G1, dgX - 1, rsYA + 1, dgX + 1, rsYA + 3, rsGRN);
+    dgX := rs_Pix(dgSB, rsVLo, rsVHi);
+    RECT_P(G1, dgX - 1, rsYB + 1, dgX + 1, rsYB + 3, rsGRN);
+    dgT := rs_StSym(rsSt);
+    TEXTOUT_P(dgT + " = " + rs_Fmt(dgSA, rsDec), G1, 232, rsYA - 27, 1, rsGRN, 84);
+    TEXTOUT_P(dgT + " = " + rs_Fmt(dgSB, rsDec), G1, 232, rsYB - 27, 1, rsGRN, 84);
+  END;
+  rs_Axis(rsVLo, rsVHi, rsYB + 2);
+END;
+
+// The paired page: one lollipop per pair, from 0 to the signed difference
+// (blue = the sign as observed, amber = flipped).  dpF animates the flip.
+// With more than 19 pairs the signed differences are drawn as one dot plot.
+rs_DrawPairs(dpF)
+BEGIN
+  LOCAL dpM, dpI, dpPt, dpY, dpX0, dpX1;
+  LOCAL dpX, dpZ, dpC, dpS, dpH, dpK;
+  dpM := 0;
+  FOR dpI FROM 1 TO rsNd DO dpM := MAX(dpM, ABS(rsD(dpI))); END;
+  rsVLo := -1.1 * dpM; rsVHi := 1.1 * dpM;
+  dpZ := rs_Pix(0, rsVLo, rsVHi);
+  LINE_P(G1, dpZ, 17, dpZ, rsYB, rsGRAY);
+  dpS := 0;
+  IF rsNd <= 19 THEN
+    dpPt := MIN(6, IP(58 / rsNd));
+    FOR dpI FROM 1 TO rsNd DO
+      dpY := 20 + dpPt * (dpI - 1);
+      dpX0 := rs_Pix(rsSgO(dpI) * rsD(dpI), rsVLo, rsVHi);
+      dpX1 := rs_Pix(rsSg(dpI) * rsD(dpI), rsVLo, rsVHi);
+      dpX := IP(dpX0 + (dpX1 - dpX0) * dpF + 0.5);
+      dpC := rsCOLA; IF rsSg(dpI) == -1 THEN dpC := rsCOLB; END;
+      LINE_P(G1, dpZ, dpY, dpX, dpY, rsGRID);
+      IF dpPt >= 5 THEN rs_Dot(dpX, dpY, dpC); ELSE RECT_P(G1, dpX - 1, dpY - 1, dpX + 1, dpY + 1, dpC); END;
+      dpS := dpS + rsSg(dpI) * rsD(dpI);
+    END;
+  ELSE
+    dpH := MAKELIST(0, dpI, 1, 70);
+    FOR dpI FROM 1 TO rsNd DO
+      dpK := rs_Col(rsSg(dpI) * rsD(dpI)) + 1;
+      dpH(dpK) := dpH(dpK) + 1;
+      dpPt := 2;
+      dpC := rsCOLA; IF rsSg(dpI) == -1 THEN dpC := rsCOLB; END;
+      RECT_P(G1, rsPL + 4 * (dpK - 1) + 1, rsYB - 2 * dpH(dpK), rsPL + 4 * (dpK - 1) + 3, rsYB - 2 * dpH(dpK) + 1, dpC);
+      dpS := dpS + rsSg(dpI) * rsD(dpI);
+    END;
+  END;
+  IF dpF >= 1 THEN
+    dpX := rs_Pix(dpS / rsNd, rsVLo, rsVHi);
+    RECT_P(G1, dpX - 1, rsYB + 1, dpX + 1, rsYB + 3, rsGRN);
+    TEXTOUT_P("mean", G1, 3, 18, 1, rsGRN, 38);
+    TEXTOUT_P(rs_Fmt(dpS / rsNd, rsDec), G1, 2, 30, 1, rsGRN, 40);
+  END;
+  TEXTOUT_P("kept", G1, 3, 50, 1, rsCOLA, 38);
+  TEXTOUT_P("flip", G1, 3, 62, 1, rsCOLB, 38);
+  rs_Axis(rsVLo, rsVHi, rsYB + 2);
+END;
+
+// A bootstrap row: the sample's values as grey ticks on the baseline,
+// and the last resample above them -- a value picked k times is a stack
+// of k dots.  srL sorted values (srN), srM the pick counts, srY the
+// baseline, srC the colour, srLb the row's label.
+rs_SampRow(srL, srN, srM, srY, srC, srLb)
+BEGIN
+  LOCAL srH, srI, srK, srX, srPt, srMx;
+  LOCAL srPk, srNo, srJ;
+  srH := MAKELIST(0, srI, 1, 70);
+  srMx := 1; srPk := 0; srNo := 0;
+  FOR srI FROM 1 TO srN DO
+    srK := rs_Col(srL(srI)) + 1;
+    srH(srK) := srH(srK) + srM(srI);
+    srMx := MAX(srMx, srH(srK));
+    IF srM(srI) > 0 THEN srPk := srPk + 1; ELSE srNo := srNo + 1; END;
+  END;
+  srPt := rs_Pitch(srMx);
+  srH := MAKELIST(0, srI, 1, 70);
+  LINE_P(G1, rsPL, srY, rsPR, srY, rsGRID);
+  FOR srI FROM 1 TO srN DO
+    srK := rs_Col(srL(srI)) + 1;
+    srX := rsPL + 4 * (srK - 1) + 2;
+    LINE_P(G1, srX, srY + 1, srX, srY + 3, rsGRAY);
+    FOR srJ FROM 1 TO srM(srI) DO
+      srH(srK) := srH(srK) + 1;
+      rs_SDot(srX, srY - 3 - srPt * (srH(srK) - 1), srPt, srC);
+    END;
+  END;
+  TEXTOUT_P(srLb, G1, 3, srY - 26, 2, srC);
+  RETURN srNo;
+END;
+
+// The top panel of the bootstrap pages.  After "Once" it shows that
+// resample (rsShP = 1); otherwise -- before any resample and after a bulk
+// run, which keeps no picks -- the sample itself, every value once.
+rs_DrawSamp()
+BEGIN
+  LOCAL dsM, dsI, dsT, dsNo, dsN2;
+  IF rsMode == 3 THEN
+    dsM := rsMlA;
+    IF rsShP == 0 THEN dsM := MAKELIST(1, dsI, 1, rsNX); END;
+    dsNo := rs_SampRow(rsX, rsNX, dsM, rsYB, rsCOLA, "");
+    IF rsShP == 0 THEN
+      TEXTOUT_P("n = " + STRING(rsNX, 2, 0) + "; Once = one resample", G1, 3, 17, 1, rsCOLA, 226);
+    ELSE
+      TEXTOUT_P("last resample: " + STRING(dsNo, 2, 0) + " of " + STRING(rsNX, 2, 0) + " not picked", G1, 3, 17, 1, rsMAG, 226);
+    END;
+    IF rsB > 0 THEN
+      dsT := rs_StSym(rsSt);
+      TEXTOUT_P(dsT + "* = " + rs_Fmt(rsLast, rsDec), G1, 230, 17, 1, rsMAG, 86);
+    END;
+  ELSE
+    dsM := rsMlA;
+    IF rsShP == 0 THEN dsM := MAKELIST(1, dsI, 1, rsNX); END;
+    dsNo := rs_SampRow(rsX, rsNX, dsM, rsYA, rsCOLA, "A");
+    dsM := rsMlB;
+    IF rsShP == 0 THEN dsM := MAKELIST(1, dsI, 1, rsNX2); END;
+    dsN2 := rs_SampRow(rsX2, rsNX2, dsM, rsYB, rsCOLB, "B");
+    IF rsShP == 1 THEN
+      TEXTOUT_P("out " + STRING(dsNo, 2, 0), G1, 2, rsYA - 12, 1, rsGRAY, 40);
+      TEXTOUT_P("out " + STRING(dsN2, 2, 0), G1, 2, rsYB - 12, 1, rsGRAY, 40);
+    END;
+    IF rsB > 0 THEN
+      RECT_P(G1, 228, 16, 317, 27, #FFFFFFh);
+      TEXTOUT_P("diff* = " + rs_Fmt(rsLast, rsDec), G1, 230, 17, 1, rsMAG, 86);
+    END;
+  END;
+  rs_Axis(rsVLo, rsVHi, rsYB + 2);
+END;
+
+// The histogram: the shuffles (or resamples) so far, or the exact
+// distribution (hgX = 1).  Dots while every bin holds 15 or fewer, bars
+// after that; the part of each bin in the tail is red.  The observed
+// value is the red line (its mirror image dotted, for a two-sided test);
+// on the bootstrap pages the interval ends are vertical bars.
+rs_DrawHist(hgX)
+BEGIN
+  LOCAL hgLo, hgHi, hgH, hgR, hgMx, hgK;
+  LOCAL hgX1, hgX2, hgC, hgRc, hgJ, hgY;
+  LOCAL hgDot, hgXc, hgHt, hgHr, hgTop, hgS;
+  hgLo := rsBC0 - rsBW / 2;
+  hgHi := hgLo + rsNBn * rsBW;
+  hgH := rsH; hgR := rsHAb;
+  IF rsHa == 1 THEN hgR := rsHU; END;
+  IF rsHa == 2 THEN hgR := rsHL; END;
+  IF hgX == 1 THEN
+    hgH := rsEH; hgR := rsEHA;
+    IF rsHa == 1 THEN hgR := rsEHU; END;
+    IF rsHa == 2 THEN hgR := rsEHL; END;
+  END;
+  IF rsMode >= 3 THEN hgR := MAKELIST(0, hgK, 1, rsNBn); END;
+  hgMx := MAX(hgH);
+  hgTop := rsHB - rsHT - 4;
+  hgDot := 0;
+  IF hgX == 0 AND hgMx <= IP(hgTop / 4) THEN hgDot := 1; END;
+  FOR hgK FROM 1 TO rsNBn DO
+    hgC := hgH(hgK);
+    IF hgC > 0 THEN
+      hgX1 := rs_Pix(hgLo + (hgK - 1) * rsBW, hgLo, hgHi);
+      hgX2 := MAX(hgX1, rs_Pix(hgLo + hgK * rsBW, hgLo, hgHi) - 1);
+      hgRc := hgR(hgK);
+      IF hgDot == 1 THEN
+        hgXc := IP((hgX1 + hgX2) / 2);
+        FOR hgJ FROM 1 TO hgC DO
+          hgY := rsHB - 2 - 4 * (hgJ - 1);
+          IF hgJ <= hgRc THEN
+            RECT_P(G1, hgXc - 1, hgY - 1, hgXc + 1, hgY + 1, rsRED);
+          ELSE
+            RECT_P(G1, hgXc - 1, hgY - 1, hgXc + 1, hgY + 1, rsBLUE);
+          END;
+        END;
+      ELSE
+        hgHt := MAX(1, IP(hgC / hgMx * hgTop + 0.5));
+        RECT_P(G1, hgX1, rsHB - hgHt, hgX2, rsHB - 1, rsBLUE, rsSHD);
+        IF hgRc > 0 THEN
+          hgHr := MAX(1, IP(hgRc / hgMx * hgTop + 0.5));
+          RECT_P(G1, hgX1, rsHB - hgHr, hgX2, rsHB - 1, rsRED, rsLRED);
+        END;
+      END;
+    END;
+  END;
+  // the last shuffle's dot or bar gets a green mark above it
+  IF rsDrop == 1 AND hgX == 0 AND rsB > 0 THEN
+    hgK := rs_BinK(rsLast);
+    hgXc := IP((rs_Pix(hgLo + (hgK - 1) * rsBW, hgLo, hgHi) + rs_Pix(hgLo + hgK * rsBW, hgLo, hgHi)) / 2);
+    IF hgDot == 1 THEN hgY := rsHB - 2 - 4 * (hgH(hgK) - 1) - 4;
+    ELSE hgY := rsHB - MAX(1, IP(hgH(hgK) / hgMx * hgTop + 0.5)) - 3; END;
+    LINE_P(G1, hgXc - 3, hgY - 4, hgXc, hgY, rsGRN);
+    LINE_P(G1, hgXc + 3, hgY - 4, hgXc, hgY, rsGRN);
+  END;
+  // values that fell beyond the ends are in the end bins: say so
+  IF hgX == 0 AND rsMode <= 2 THEN
+    IF rsClL > 0 THEN TEXTOUT_P("<", G1, rsPL - 8, rsHB - 12, 1, rsGRAY); END;
+    IF rsClR > 0 THEN TEXTOUT_P(">", G1, rsPR + 2, rsHB - 12, 1, rsGRAY); END;
+  END;
+  // the observed statistic
+  hgX1 := rs_Pix(rsObs, hgLo, hgHi);
+  IF hgX1 >= rsPL AND hgX1 <= rsPR THEN
+    RECT_P(G1, hgX1, rsHT, hgX1 + 1, rsHB, rsRED);
+  END;
+  IF rsMode <= 2 AND rsHa == 0 AND ABS(rsObs) > rsEps THEN
+    hgX2 := rs_Pix(-rsObs, hgLo, hgHi);
+    IF hgX2 >= rsPL AND hgX2 <= rsPR THEN rs_DotV(hgX2, rsHT, rsHB, rsRED); END;
+  END;
+  // the bootstrap intervals: percentile magenta, BCa green (beta 1a: not
+  // during a bulk run -- sorting every value at every redraw broke the cap)
+  IF rsMode >= 3 AND rsB >= 100 AND rsBusy == 0 THEN
+    rs_BtCI();
+    FOR hgJ FROM 1 TO 2 DO
+      hgX1 := rs_Pix(rsCI(hgJ), hgLo, hgHi);
+      IF hgX1 >= rsPL AND hgX1 <= rsPR THEN RECT_P(G1, hgX1, rsHT + 6, hgX1, rsHB, rsMAG); END;
+    END;
+    IF rsCIok(3) == 1 THEN
+      FOR hgJ FROM 5 TO 6 DO
+        hgX1 := rs_Pix(rsCI(hgJ), hgLo, hgHi);
+        IF hgX1 >= rsPL AND hgX1 <= rsPR THEN rs_DotV(hgX1, rsHT, rsHB, rsGRN); rs_DotV(hgX1 + 1, rsHT + 1, rsHB, rsGRN); END;
+      END;
+    END;
+  END;
+  // the scale: the tallest bin's count (or its share for the exact view)
+  IF hgMx > 0 THEN
+    hgS := rs_Int(hgMx);
+    IF hgX == 1 THEN hgS := rs_Fmt(100 * hgMx / rsXC, 1) + "%"; END;
+    IF hgDot == 0 THEN TEXTOUT_P(hgS, G1, 2, rsHT + 2, 1, rsGRAY, 38); END;
+  ELSE
+    TEXTOUT_P("Tap Once, x10, x100 or x1000.", G1, 90, rsHT + 22, 1, rsGRAY, 220);
+  END;
+  rs_Axis(hgLo, hgHi, rsHB);
+END;
+
+// The status lines under the histogram.
+rs_DrawStat()
+BEGIN
+  LOCAL dsY, dsC, dsO, dsN, dsT, dsS;
+  dsY := rsTY1;
+  IF rsMode <= 2 THEN
+    dsN := rsXB + "A - " + rsXB + "B";
+    IF rsSt == 2 THEN dsN := "medA - medB"; END;
+    IF rsMode == 2 THEN dsN := "mean d"; END;
+    TEXTOUT_P("observed " + dsN + " = " + rs_FmtS(rsObs, rsDec) + ",  Ha: " + rs_HaTxt(), G1, 4, dsY, 1, rsRED, 312);
+    dsO := rs_Fmt(ABS(rsObs), rsDec);
+    dsT := "|d| " + rsGE + " " + dsO;
+    IF rsHa == 1 THEN dsT := "d " + rsGE + " " + rs_FmtS(rsObs, rsDec); END;
+    IF rsHa == 2 THEN dsT := "d " + rsLE + " " + rs_FmtS(rsObs, rsDec); END;
+    IF rsView == 1 THEN
+      dsC := rs_XCnt();
+      TEXTOUT_P("exact: " + rs_Int(dsC) + " of all " + rs_Int(rsXC) + " with " + dsT, G1, 4, dsY + 12, 1, rsMAG, 312);
+      TEXTOUT_P("exact " + rs_PFr(dsC, rsXC), G1, 4, dsY + 24, 1, rsMAG, 312);
+      dsS := "random shuffles so far: B = " + rs_Int(rsB);
+      IF rsB > 0 THEN dsS := "random so far: " + rs_PFr(rs_Cnt(), rsB); END;
+      TEXTOUT_P(dsS, G1, 4, dsY + 36, 1, rsGRAY, 312);
+    ELSE
+      IF rsB == 0 THEN
+        IF rsMode == 1 THEN
+          TEXTOUT_P("No shuffles yet.  Each shuffle deals the labels", G1, 4, dsY + 12, 1, #000000h, 312);
+          TEXTOUT_P("again at random, as if " + rsH0 + " were true.", G1, 4, dsY + 24, 1, #000000h, 312);
+        ELSE
+          TEXTOUT_P("No shuffles yet.  Each shuffle flips each", G1, 4, dsY + 12, 1, #000000h, 312);
+          TEXTOUT_P("pair's sign at random, as if " + rsH0 + " were true.", G1, 4, dsY + 24, 1, #000000h, 312);
+        END;
+      ELSE
+        dsC := rs_Cnt();
+        TEXTOUT_P("random " + rs_Shuf(rsB) + ": " + rs_Int(dsC) + " with " + dsT, G1, 4, dsY + 12, 1, #000000h, 312);
+        TEXTOUT_P(rs_PFr(dsC, rsB) + ",  plus-one " + rs_PEq((dsC + 1) / (rsB + 1)), G1, 4, dsY + 24, 1, rsBLUE, 312);
+      END;
+      dsS := "";
+      IF rsXOK == 2 THEN dsS := "exact " + rs_PFr(rs_XCnt(), rsXC); END;
+      IF rsXOK == 1 OR rsXOK == 3 THEN dsS := "small design: Exact (on More) lists all " + rs_Int(rsXC); END;
+      IF DIM(rsCapM) > 0 THEN dsS := rsCapM; END;
+      IF DIM(rsMsg) > 0 THEN dsS := rsMsg; END;
+      IF DIM(dsS) == 0 THEN
+        TEXTOUT_P("+ = Once, Enter = actions, Esc = back", G1, 4, dsY + 36, 1, rsFOOT, 312);
+      ELSE
+        TEXTOUT_P(dsS, G1, 4, dsY + 36, 1, rsGRAY, 312);
+      END;
+    END;
+  ELSE
+    dsN := rs_StName(rsSt);
+    IF rsMode == 3 THEN
+      dsS := dsN + " of " + rsBLb + " = " + rs_Fmt(rsObs, rsDec) + ", n = " + STRING(rsNX, 2, 0);
+    ELSE
+      dsS := rs_StSym(rsSt) + "A - " + rs_StSym(rsSt) + "B = " + rs_FmtS(rsObs, rsDec);
+    END;
+    TEXTOUT_P(dsS, G1, 4, dsY, 1, rsRED, 312);
+    IF rsBusy == 1 THEN
+      TEXTOUT_P("B = " + rs_Int(rsB) + " so far; intervals at the end", G1, 4, dsY + 12, 1, #000000h, 312);
+    END;
+    IF rsB < 100 AND rsBusy == 0 THEN
+      TEXTOUT_P("B = " + rs_Int(rsB) + " resamples.  The intervals appear at", G1, 4, dsY + 12, 1, #000000h, 312);
+      TEXTOUT_P("B " + rsGE + " 100 (use 1,000 or more for BCa).", G1, 4, dsY + 24, 1, #000000h, 312);
+    END;
+    IF rsB >= 100 AND rsBusy == 0 THEN
+      rs_BtCI();
+      dsT := rs_LevS() + "% ";
+      TEXTOUT_P("B = " + rs_Int(rsB) + ",  SE* = " + rs_Fmt(rsSEs, rsDec) + " (SD of the B values)", G1, 4, dsY + 12, 1, #000000h, 312);
+      TEXTOUT_P(dsT + "percentile (" + rs_Fmt(rsCI(1), rsDec) + ", " + rs_Fmt(rsCI(2), rsDec) + ")", G1, 4, dsY + 24, 1, rsMAG, 312);
+      IF rsMode == 3 THEN
+        IF rsCIok(3) == 1 THEN
+          TEXTOUT_P(dsT + "BCa (" + rs_Fmt(rsCI(5), rsDec) + ", " + rs_Fmt(rsCI(6), rsDec) + ")", G1, 4, dsY + 36, 1, rsGRN, 312);
+        ELSE
+          TEXTOUT_P(rsBcaW, G1, 4, dsY + 36, 1, rsGRAY, 312);
+        END;
+      ELSE
+        IF rsCIok(4) == 1 THEN
+          TEXTOUT_P(dsT + "Welch t (" + rs_Fmt(rsCI(7), rsDec) + ", " + rs_Fmt(rsCI(8), rsDec) + ")", G1, 4, dsY + 36, 1, rsBLUE, 312);
+        END;
+      END;
+    END;
+    IF DIM(rsCapM) > 0 THEN TEXTOUT_P(rsCapM, G1, 4, dsY + 36, 1, rsGRAY, 312); END;
+    IF DIM(rsMsg) > 0 THEN TEXTOUT_P(rsMsg, G1, 4, dsY + 36, 1, rsGRAY, 312); END;
+  END;
+END;
+
+// A whole lab page: title, top panel (animation fraction lpF), histogram,
+// status lines, the tap note, then the blit and the soft keys.
+rs_DrawLab(lpF)
+BEGIN
+  IF rsMode >= 3 AND rsRefit == 1 THEN rs_Rebin(); END;
+  rs_Frame(rs_Title());
+  IF rsMode == 1 THEN rs_DrawRows(lpF); END;
+  IF rsMode == 2 THEN rs_DrawPairs(lpF); END;
+  IF rsMode >= 3 THEN rs_DrawSamp(); END;
+  rs_DrawHist(rsView);
+  rs_DrawStat();
+  IF DIM(rsTapM) > 0 THEN
+    RECT_P(G1, 44, rsHT, 316, rsHT + 13, rsORNG, rsLORN);
+    TEXTOUT_P(rsTapM, G1, 48, rsHT + 1, 1, #000000h, 266);
+  END;
+  BLIT_P(G0, 0, 0, G1);
+  DRAWMENU(rsSK(rsSKP));
+END;
+
+// ------------------------------------------------------------
+// EXACT DISTRIBUTIONS
+// rs_XAdd adds w splits / sign patterns with statistic t to the exact
+// histogram and to the tail counts the caller flags.
+// ------------------------------------------------------------
+rs_XAdd(xaT, xaW, xaU, xaL, xaA)
+BEGIN
+  LOCAL xaK;
+  xaK := rs_BinK(xaT);
+  rsEH(xaK) := rsEH(xaK) + xaW;
+  IF xaU == 1 THEN rsXU := rsXU + xaW; rsEHU(xaK) := rsEHU(xaK) + xaW; END;
+  IF xaL == 1 THEN rsXL := rsXL + xaW; rsEHL(xaK) := rsEHL(xaK) + xaW; END;
+  IF xaA == 1 THEN rsXA := rsXA + xaW; rsEHA(xaK) := rsEHA(xaK) + xaW; END;
+END;
+
+rs_XZero()
+BEGIN
+  LOCAL xzI;
+  rsEH := MAKELIST(0, xzI, 1, rsNBn);
+  rsEHU := rsEH; rsEHL := rsEH; rsEHA := rsEH;
+  rsXU := 0; rsXL := 0; rsXA := 0;
+END;
+
+// The progress panel: composed in G1 (the histogram so far and the
+// status lines below it), then the bar grows on G0 between frames.
+rs_Busy(bzW, bzD, bzT)
+BEGIN
+  rs_Frame(bzW + " ...");
+  rs_DrawHist(0);
+  rs_DrawStat();
+  RECT_P(G1, 20, 22, 300, 88, rsORNG, rsLORN);
+  TEXTOUT_P(bzW, G1, 30, 28, 2, rsORNG, 260);
+  RECT_P(G1, 30, 50, 290, 60, rsGRAY, #FFFFFFh);
+  IF bzD > 0 THEN RECT_P(G1, 31, 51, 31 + IP(258 * bzD / bzT), 59, rsBLUE); END;
+  TEXTOUT_P(rs_Int(bzD) + " of " + rs_Int(bzT), G1, 30, 64, 1, #000000h, 260);
+  IF rsMode <= 2 AND DIM(bzW) > 9 THEN
+    IF LEFT(bzW, 5) <> "Shuff" THEN
+      TEXTOUT_P("Esc = stop (then the count is not used)", G1, 30, 76, 1, rsFOOT, 260);
+    ELSE
+      TEXTOUT_P("Esc = stop; what is done is kept", G1, 30, 76, 1, rsFOOT, 260);
+    END;
+  ELSE
+    TEXTOUT_P("Esc = stop; what is done is kept", G1, 30, 76, 1, rsFOOT, 260);
+  END;
+  BLIT_P(G0, 0, 0, G1);
+  rsBzT := TICKS;
+END;
+
+// Between frames: the bar on G0 (one RECT_P), and once a second the
+// count and the time left.
+rs_BusyTk(btD, btT, btT0, btNow)
+BEGIN
+  LOCAL btS;
+  RECT_P(G0, 31, 51, 31 + IP(258 * btD / btT), 59, rsBLUE);
+  IF btNow - rsBzT >= 1000 THEN
+    rsBzT := btNow;
+    btS := "";
+    IF btD > 0 AND btD < btT THEN
+      btS := ", about " + rs_Int(CEILING((btNow - btT0) / btD * (btT - btD) / 1000)) + " s left";
+    END;
+    RECT_P(G0, 26, 63, 294, 74, rsLORN);
+    TEXTOUT_P(rs_Int(btD) + " of " + rs_Int(btT) + btS, G0, 30, 64, 1, #000000h, 260);
+  END;
+END;
+
+// beta 1a: THE JACKKNIFE IN ONE PASS (review 2, item 2: beta 1 built and
+// sorted a list of n - 1 for every i, O(n^2): 19 s for n = 999 in the PC
+// harness, minutes on a G1).  rsX is sorted, so with value i left out:
+//   mean      J_i = (S - x_i)/(n - 1), S = sum x
+//   SD        SS_i = SS - n/(n - 1) (x_i - mean)^2 (the downdate of the
+//             sum of squares SS), J_i = sqrt(SS_i/(n - 2))
+//   median    the middle of the n - 1 left: position p of what is left is
+//             x(p) below i and x(p + 1) from i on
+//   trimmed   the same position rule, with prefix sums P(j) = x(1) + .. +
+//             x(j), so each J_i is two differences of P
+// A progress bar and Esc for n over 300 (Esc: BCa is not offered).
+// Returns 1, or 0 when stopped.
+rs_Jack()
+BEGIN
+  LOCAL jkN, jkI, jkS, jkM, jkSS, jkP;
+  LOCAL jkG, jkA, jkB, jkU, jkK, jkT0;
+  LOCAL jkL, jkH;
+  jkN := rsNX; rsJkW := "";
+  rsJk := MAKELIST(0, jkI, 1, jkN);
+  jkS := 0;
+  FOR jkI FROM 1 TO jkN DO jkS := jkS + rsX(jkI); END;
+  jkM := jkS / jkN;
+  jkSS := 0;
+  FOR jkI FROM 1 TO jkN DO jkSS := jkSS + (rsX(jkI) - jkM)^2; END;
+  jkP := MAKELIST(0, jkI, 1, jkN + 1);
+  FOR jkI FROM 1 TO jkN DO jkP(jkI + 1) := jkP(jkI) + rsX(jkI); END;
+  jkG := IP((jkN - 1) / 10);
+  jkA := jkG + 1; jkB := jkN - 1 - jkG;
+  jkK := jkN - 1;
+  IF jkN > 300 THEN
+    rs_Frame("Jackknife for BCa ...");
+    RECT_P(G1, 20, 22, 300, 88, rsORNG, rsLORN);
+    TEXTOUT_P("Jackknife: n = " + STRING(jkN, 2, 0), G1, 30, 28, 2, rsORNG, 260);
+    RECT_P(G1, 30, 50, 290, 60, rsGRAY, #FFFFFFh);
+    TEXTOUT_P("Esc = stop (then no BCa)", G1, 30, 76, 1, rsFOOT, 260);
+    BLIT_P(G0, 0, 0, G1);
+    rsBzT := TICKS;
+  END;
+  jkT0 := TICKS;
+  FOR jkI FROM 1 TO jkN DO
+    IF rsSt == 1 THEN rsJk(jkI) := (jkS - rsX(jkI)) / jkK; END;
+    IF rsSt == 3 THEN
+      rsJk(jkI) := (MAX(0, jkSS - jkN / jkK * (rsX(jkI) - jkM)^2) / (jkN - 2))^0.5;
+    END;
+    IF rsSt == 2 THEN
+      IF jkK MOD 2 == 1 THEN
+        jkL := (jkK + 1) / 2;
+        IF jkL >= jkI THEN jkL := jkL + 1; END;
+        rsJk(jkI) := rsX(jkL);
+      ELSE
+        jkL := jkK / 2; jkH := jkL + 1;
+        IF jkL >= jkI THEN jkL := jkL + 1; END;
+        IF jkH >= jkI THEN jkH := jkH + 1; END;
+        rsJk(jkI) := (rsX(jkL) + rsX(jkH)) / 2;
+      END;
+    END;
+    IF rsSt == 4 THEN
+      jkU := 0;
+      IF MIN(jkB, jkI - 1) >= jkA THEN jkU := jkP(MIN(jkB, jkI - 1) + 1) - jkP(jkA); END;
+      IF MAX(jkA, jkI) <= jkB THEN jkU := jkU + jkP(jkB + 2) - jkP(MAX(jkA, jkI) + 1); END;
+      rsJk(jkI) := jkU / (jkK - 2 * jkG);
+    END;
+    IF jkN > 300 AND jkI MOD 50 == 0 THEN
+      IF GETKEY == 4 THEN
+        rsJkW := "BCa: jackknife stopped by Esc";
+        RETURN 0;
+      END;
+      rs_BusyTk(jkI, jkN, jkT0, TICKS);
+    END;
+  END;
+  RETURN 1;
+END;
+
+// Set up the one-sample bootstrap.  The sample is the differences for a
+// paired preset (rsBoot1 = 1), otherwise group A (or D1).  The jackknife
+// values (each value left out in turn) and the acceleration a are
+// computed here, once, for BCa.
+rs_BtStart()
+BEGIN
+  LOCAL bsL, bsN, bsI, bsM;
+  LOCAL bsSd, bsG, bsNm, bsDn, bsE;
+  IF rsKind == 0 THEN
+    MSGBOX("No data yet: load a preset, or put your sample in D1 (Use my data).");
+    RETURN 0;
+  END;
+  IF rsBoot1 == 1 AND rsPair == 1 THEN
+    bsL := rsDf; bsN := rsNd; rsBLb := "differences " + rsLD;
+  ELSE
+    bsL := rsA; bsN := rsNA; rsBLb := "group A (" + rsLA + ")";
+    IF rsNB == 0 THEN rsBLb := rsLA; END;
+  END;
+  IF bsN < 3 THEN
+    MSGBOX("The bootstrap needs at least 3 values.");
+    RETURN 0;
+  END;
+  rsX := SORT(bsL); rsNX := bsN;
+  rsObs := rs_Stat(rsX, rsNX, rsSt);
+  bsSd := rs_Stat(rsX, rsNX, 3);
+  IF bsSd <= 0 THEN
+    MSGBOX("Every value is the same, so every resample is the same.");
+    RETURN 0;
+  END;
+  // the jackknife: the statistic with value i left out, i = 1 .. n
+  // (beta 1a: one pass, rs_Jack; beta 1 rebuilt and re-sorted n lists)
+  IF rs_Jack() == 0 THEN rsJk := MAKELIST(0, bsI, 1, rsNX); END;
+  // the acceleration (Efron 1987; Efron & Tibshirani 1993 eq. 14.15):
+  // a = sum (J. - Ji)^3 / (6 [sum (J. - Ji)^2]^(3/2)), J. their mean
+  bsM := 0;
+  FOR bsI FROM 1 TO rsNX DO bsM := bsM + rsJk(bsI); END;
+  bsM := bsM / rsNX;
+  bsNm := 0; bsDn := 0;
+  FOR bsI FROM 1 TO rsNX DO
+    bsE := bsM - rsJk(bsI);
+    bsNm := bsNm + bsE^3;
+    bsDn := bsDn + bsE^2;
+  END;
+  rsAcOK := 0; rsAcc := 0;
+  IF bsDn > 0 AND DIM(rsJkW) == 0 THEN rsAcc := bsNm / (6 * bsDn^1.5); rsAcOK := 1; END;
+  IF bsDn <= 0 AND DIM(rsJkW) == 0 THEN rsJkW := "BCa: a = 0/0 (jackknife all equal)"; END;
+  // a guess at the bootstrap SE, only to set the plot's range
+  bsG := bsSd / rsNX^0.5;
+  IF rsSt == 2 THEN bsG := 1.3 * bsG; END;
+  IF rsSt == 3 THEN bsG := 0.75 * bsG; END;
+  IF rsSt == 4 THEN bsG := 1.1 * bsG; END;
+  rsSE := bsG;
+  rsF := rs_Grid(rsX, rsNX);
+  rsDlt := 0;
+  IF rsF > 0 THEN
+    IF rsSt == 1 THEN rsDlt := 1 / (rsNX * rsF); END;
+    IF rsSt == 2 THEN rsDlt := 0.5 / rsF; END;
+    IF rsSt == 4 THEN rsDlt := 1 / ((rsNX - 2 * IP(rsNX / 10)) * rsF); END;
+  END;
+  rsEps := 0.000000001 * (MAX(ABS(rsX(1)), ABS(rsX(rsNX))) + 1);
+  rsBM0 := rsObs; rsBR0 := 4.5 * bsG;
+  rsDec := rs_Dec(bsG);
+  rsXOK := 0;
+  rs_Reset();
+  RETURN 1;
+END;
+
+// EVERY SPLIT of the pooled values, one after another in lexicographic
+// order of the drawn group's indices (the sum is updated, not rebuilt).
+// C(N, k) <= rsExLim splits.  Esc stops (the result is then marked
+// incomplete and not used).
+rs_PmExact()
+BEGIN
+  LOCAL exC, exS, exI, exJ, exT, exN;
+  LOCAL exK, exM, exT0, exKy, exStp, exCt;
+  LOCAL exU, exL, exA;
+  exN := rsN; exK := rsK; exM := rsXC;
+  rs_XZero();
+  exC := MAKELIST(exI, exI, 1, exK);
+  exS := 0;
+  FOR exI FROM 1 TO exK DO exS := exS + rsV(exI); END;
+  rs_Busy("Listing every split", 0, exM);
+  exT0 := TICKS; exStp := 0; exCt := 0;
+  WHILE exCt < exM AND exStp == 0 DO
+    exCt := exCt + 1;
+    IF rsSt == 1 THEN
+      IF rsKA == 1 THEN exT := rs_TMean(exS); ELSE exT := rs_TMean(rsTot - exS); END;
+    ELSE
+      exT := rs_TMedC(exC);
+    END;
+    exU := 0; exL := 0; exA := 0;
+    IF exT >= rsObs - rsEps THEN exU := 1; END;
+    IF exT <= rsObs + rsEps THEN exL := 1; END;
+    IF ABS(exT) >= ABS(rsObs) - rsEps THEN exA := 1; END;
+    rs_XAdd(exT, 1, exU, exL, exA);
+    IF exCt < exM THEN
+      // the next split: the last index that can still move moves up one,
+      // and every index after it follows on (never reaches index 0: the
+      // last split is not followed)
+      exI := exK;
+      WHILE exC(exI) == exN - exK + exI DO exI := exI - 1; END;
+      exS := exS - rsV(exC(exI));
+      exC(exI) := exC(exI) + 1;
+      exS := exS + rsV(exC(exI));
+      FOR exJ FROM exI + 1 TO exK DO
+        exS := exS - rsV(exC(exJ));
+        exC(exJ) := exC(exI) + exJ - exI;
+        exS := exS + rsV(exC(exJ));
+      END;
+    END;
+    IF exCt MOD 25 == 0 THEN
+      exKy := GETKEY;
+      IF exKy == 4 THEN exStp := 1; END;
+      rs_BusyTk(exCt, exM, exT0, TICKS);
+    END;
+  END;
+  IF exStp == 1 THEN rsXOK := 3; ELSE rsXOK := 2; END;
+END;
+
+// EVERY SIGN PATTERN, counted two ways.
+// rsXKnd = 2 (the differences are whole numbers after x rsF): count the
+//   patterns by their total.  With a_i = |d_i| rsF and U = the sum of a_i
+//   over the flipped pairs, the signed total is A - 2U (A = sum a_i), so
+//   it is enough to count how many patterns give each U -- the subset-sum
+//   recursion, one pair at a time, cnt(U + a) += cnt(U), U counted DOWN
+//   so each pair is used once.  2^15 = 32,768 patterns cost about 4,000
+//   additions for Darwin's data instead of 32,768 x 15.
+// rsXKnd = 3 (n <= 12, any data): visit all 2^n patterns in Gray-code
+//   order, flipping ONE sign per step, so the total changes by -2 s_b d_b.
+rs_PdExact()
+BEGIN
+  LOCAL eqA, eqT, eqU, eqI, eqC, eqCu;
+  LOCAL eqSo, eqSv, eqT0, eqKy, eqStp, eqG;
+  LOCAL eqB, eqS, eqSg, eqM, eqAi, eqTt;
+  rs_XZero();
+  eqStp := 0;
+  rs_Busy("Counting every sign pattern", 0, rsXC);
+  eqT0 := TICKS;
+  IF rsXKnd == 2 THEN
+    eqA := MAKELIST(ROUND(ABS(rsD(eqI)) * rsF, 0), eqI, 1, rsNd);
+    eqT := 0; eqU := 0;
+    FOR eqI FROM 1 TO rsNd DO
+      eqT := eqT + eqA(eqI);
+      IF rsD(eqI) < 0 THEN eqU := eqU + eqA(eqI); END;
+    END;
+    rsUo := eqU;
+    eqSo := eqT - 2 * eqU;
+    eqC := MAKELIST(0, eqI, 1, eqT + 1);
+    eqC(1) := 1; eqCu := 0;
+    eqI := 1;
+    WHILE eqI <= rsNd AND eqStp == 0 DO
+      eqAi := eqA(eqI);
+      IF eqAi == 0 THEN
+        FOR eqM FROM 1 TO eqCu + 1 DO eqC(eqM) := 2 * eqC(eqM); END;
+      ELSE
+        eqM := eqCu;
+        WHILE eqM >= 0 DO
+          eqC(eqM + eqAi + 1) := eqC(eqM + eqAi + 1) + eqC(eqM + 1);
+          eqM := eqM - 1;
+        END;
+        eqCu := eqCu + eqAi;
+      END;
+      eqKy := GETKEY;
+      IF eqKy == 4 THEN eqStp := 1; END;
+      rs_BusyTk(IP(rsXC * eqI / rsNd), rsXC, eqT0, TICKS);
+      eqI := eqI + 1;
+    END;
+    // the counts into the histogram and the tails (beta 1a: Esc is read
+    // here too, every 200 sums)
+    eqM := 0;
+    WHILE eqM <= eqT AND eqStp == 0 DO
+      IF eqC(eqM + 1) > 0 THEN
+        eqSv := eqT - 2 * eqM;
+        rs_XAdd(eqSv / (rsF * rsNd), eqC(eqM + 1), eqSv >= eqSo, eqSv <= eqSo, ABS(eqSv) >= ABS(eqSo));
+      END;
+      IF eqM MOD 200 == 199 THEN
+        eqKy := GETKEY;
+        IF eqKy == 4 THEN eqStp := 1; END;
+        rs_BusyTk(rsXC, rsXC, eqT0, TICKS);
+      END;
+      eqM := eqM + 1;
+    END;
+  ELSE
+    eqSg := MAKELIST(1, eqI, 1, rsNd);
+    eqS := 0;
+    FOR eqI FROM 1 TO rsNd DO eqS := eqS + rsD(eqI); END;
+    eqG := 0;
+    WHILE eqG < rsXC AND eqStp == 0 DO
+      IF eqG > 0 THEN
+        // the sign to flip: the lowest set bit of eqG
+        eqTt := eqG; eqB := 1;
+        WHILE eqTt MOD 2 == 0 DO eqTt := eqTt / 2; eqB := eqB + 1; END;
+        eqS := eqS - 2 * eqSg(eqB) * rsD(eqB);
+        eqSg(eqB) := -eqSg(eqB);
+      END;
+      eqSv := eqS / rsNd;
+      rs_XAdd(eqSv, 1, eqSv >= rsObs - rsEps, eqSv <= rsObs + rsEps, ABS(eqSv) >= ABS(rsObs) - rsEps);
+      eqG := eqG + 1;
+      IF eqG MOD 32 == 0 THEN
+        eqKy := GETKEY;
+        IF eqKy == 4 THEN eqStp := 1; END;
+        rs_BusyTk(eqG, rsXC, eqT0, TICKS);
+      END;
+    END;
+  END;
+  IF eqStp == 1 THEN rsXOK := 3; ELSE rsXOK := 2; END;
+END;
+
+// The exact distribution for the page in front: compute it once, then
+// toggle between it and the random shuffles.
+rs_Exact()
+BEGIN
+  LOCAL xxK;
+  IF rsXOK == 0 THEN
+    MSGBOX(rsXWhy);
+    RETURN;
+  END;
+  IF rsXOK == 2 THEN
+    rsView := 1 - rsView;
+    RETURN;
+  END;
+  IF rsMode == 1 THEN rs_PmExact(); ELSE rs_PdExact(); END;
+  REPEAT xxK := GETKEY; UNTIL xxK == -1;
+  IF rsXOK == 2 THEN
+    rsView := 1;
+    rsMsg := "";
+  ELSE
+    rsView := 0;
+    rsMsg := "exact count stopped by Esc: not used";
+  END;
+  rs_Export();
+END;
+
+
+// ------------------------------------------------------------
+// RUNNING SHUFFLES AND RESAMPLES
+// ------------------------------------------------------------
+
+// Many at once (x10, x100, x1000): only the histogram is redrawn (every
+// 2 s), the bar grows in between, Esc stops.  After the first 20 the run
+// is timed with TICKS: if all of it would take more than about 75 s on
+// THIS calculator it is capped at what fits in about 60 s, and the page
+// says so (a G1 runs PPL 30-100 times slower than the PC).
+rs_Run(ruN)
+BEGIN
+  LOCAL ruI, ruT0, ruTH, ruK, ruStp, ruD;
+  LOCAL ruC, ruV, ruNow, ruTot, ruChk, ruW;
+  ruTot := ruN;
+  IF rsMode >= 3 THEN
+    ruTot := MIN(ruN, rsMaxB - rsB);
+    IF ruTot <= 0 THEN
+      MSGBOX("This page keeps at most " + rs_Int(rsMaxB) + " resamples: Reset to start again.");
+      RETURN;
+    END;
+  END;
+  rsCapM := ""; rsMsg := ""; rsTapM := ""; rsDrop := 0; rsView := 0; rsShP := 0;
+  ruW := "Shuffling";
+  IF rsMode >= 3 THEN ruW := "Resampling"; END;
+  rsBusy := 1;
+  rs_Busy(ruW, 0, ruTot);
+  ruT0 := TICKS; ruTH := ruT0;
+  ruD := 0; ruStp := 0; ruChk := 0;
+  WHILE ruD < ruTot AND ruStp == 0 DO
+    ruC := MIN(10, ruTot - ruD);
+    FOR ruI FROM 1 TO ruC DO
+      IF rsMode == 1 THEN ruV := rs_PmOne(0); END;
+      IF rsMode == 2 THEN ruV := rs_PdOne(0); END;
+      IF rsMode == 3 THEN ruV := rs_BtOne(0); END;
+      IF rsMode == 4 THEN ruV := rs_B2One(0); END;
+      rs_Add(ruV);
+    END;
+    ruD := ruD + ruC;
+    ruK := GETKEY;
+    IF ruK == 4 THEN ruStp := 1; END;
+    ruNow := TICKS;
+    // beta 1a: the time check after the first 20 AND at every redraw, on
+    // the time actually used (redraws included), so the cap holds even if
+    // the run slows down; a cap is a whole number of hundreds, so a class's
+    // seeded run stops at the same B on calculators of similar speed
+    IF (ruChk == 0 AND ruD >= 20) OR (ruChk == 1 AND ruNow - ruTH >= 2000) THEN
+      ruChk := 1;
+      IF ruN >= 100 AND ruNow > ruT0 THEN
+        IF (ruNow - ruT0) / ruD * ruTot > 75000 THEN
+          ruTot := MAX(ruD, 100 * IP(60000 * ruD / (ruNow - ruT0) / 100));
+          rsCapM := "capped at " + rs_Int(ruTot) + ": about 60 s on this calculator";
+        END;
+      END;
+    END;
+    IF ruNow - ruTH >= 2000 THEN
+      rs_Busy(ruW, ruD, ruTot);
+      ruTH := TICKS;
+    ELSE
+      rs_BusyTk(ruD, ruTot, ruT0, ruNow);
+    END;
+  END;
+  rsBusy := 0;
+  REPEAT ruK := GETKEY; UNTIL ruK == -1;
+  IF ruStp == 1 THEN rsMsg := "stopped by Esc after " + rs_Int(ruD); END;
+  rsDrop := 0;
+  rs_Export();
+END;
+
+// One shuffle or resample, shown: the dots move to their new rows (or
+// signs) in two in-between frames, then the statistic joins the
+// histogram with a green mark over it.
+rs_Once()
+BEGIN
+  LOCAL onT, onF;
+  IF rsMode >= 3 AND rsB >= rsMaxB THEN
+    MSGBOX("This page keeps at most " + rs_Int(rsMaxB) + " resamples: Reset to start again.");
+    RETURN;
+  END;
+  rsTapM := ""; rsMsg := ""; rsCapM := ""; rsView := 0; rsDrop := 0;
+  IF rsMode == 1 THEN onT := rs_PmOne(1); END;
+  IF rsMode == 2 THEN onT := rs_PdOne(1); END;
+  IF rsMode == 3 THEN onT := rs_BtOne(1); END;
+  IF rsMode == 4 THEN onT := rs_B2One(1); END;
+  IF (rsMode == 1 AND rsN <= 160) OR (rsMode == 2 AND rsNd <= 160) THEN
+    FOR onF FROM 1 TO 2 DO rs_DrawLab(onF / 3); END;
+  END;
+  rs_Add(onT);
+  rsDrop := 1;
+  IF rsMode >= 3 THEN rsShP := 1; END;
+  IF rsMode <= 2 THEN rs_Export(); END;
+END;
+
+
+// ------------------------------------------------------------
+// TEXT PAGES
+// ------------------------------------------------------------
+
+// A text page: white with a blue panel and a title.
+rs_PgTop(ptT)
+BEGIN
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 4, 4, 315, 235, rsBLUE, rsLBLU);
+  TEXTOUT_P(ptT, G1, 12, 8, 2, rsBLUE, 296);
+END;
+
+// One line of a text page (font 1, at most 46 characters).
+rs_Ln(lnS, lnY, lnC)
+BEGIN
+  TEXTOUT_P(lnS, G1, 12, lnY, 1, lnC, 296);
+END;
+
+// The footer, the blit and a wait for any key or tap.
+rs_PgEnd(peS)
+BEGIN
+  TEXTOUT_P(peS, G1, 12, 222, 1, rsFOOT, 296);
+  BLIT_P(G0, 0, 0, G1);
+  rs_WaitAny();
+END;
+
+// A paragraph on a text page from y down, wrapped on spaces at 45
+// characters (about 292 px in font 1, ChiTable's measure); returns the y
+// below its last line.  A word longer than a line is cut.
+rs_Para(paS, paY, paC)
+BEGIN
+  LOCAL paT, paK, paZ;
+  paT := paS; paZ := paY;
+  WHILE DIM(paT) > 45 AND paZ <= 208 DO
+    paK := 46;
+    WHILE paK > 1 AND MID(paT, paK, 1) <> " " DO paK := paK - 1; END;
+    IF paK <= 1 THEN
+      rs_Ln(LEFT(paT, 45), paZ, paC);
+      paT := MID(paT, 46);
+    ELSE
+      rs_Ln(LEFT(paT, paK - 1), paZ, paC);
+      paT := MID(paT, paK + 1);
+    END;
+    // a double space after a full stop: no space at the start of a line
+    paK := 1;
+    WHILE paK == 1 DO
+      paK := 0;
+      IF DIM(paT) > 0 THEN
+        IF LEFT(paT, 1) == " " THEN paT := MID(paT, 2); paK := 1; END;
+      END;
+    END;
+    paZ := paZ + 12;
+  END;
+  // beta 1a: never into the footer (y 222): a paragraph stops at y 208
+  IF DIM(paT) > 0 AND paZ <= 208 THEN rs_Ln(paT, paZ, paC); paZ := paZ + 12; END;
+  RETURN paZ;
+END;
+
+// The permutation test in words (Info on the second soft-key page).
+rs_InfoPerm()
+BEGIN
+  LOCAL ipC, ipP, ipS, ipU, ipY;
+  ipU := "splits";
+  IF rsMode == 2 THEN ipU := "sign patterns"; END;
+  rs_PgTop("What the shuffles show");
+  IF rsMode == 1 THEN
+    ipY := rs_Para(rsH0 + ": the labels do not matter: every split of the " + STRING(rsN, 2, 0) + " values into " + STRING(rsNA, 2, 0) + " and " + STRING(rsNB, 2, 0) + " was as likely as the one seen.  A = " + rsLA + ", B = " + rsLB + ".", 28, #000000h);
+    ipY := rs_Para("d = " + rs_StSym(rsSt) + "A - " + rs_StSym(rsSt) + "B = " + rs_FmtS(rsObs, rsDec) + " observed; Ha: " + rs_HaTxt(), ipY + 3, rsRED);
+  ELSE
+    ipY := rs_Para(rsH0 + ": within each pair the labels could be swapped, so each difference (" + rsLD + ") was as likely to have the other sign.", 28, #000000h);
+    ipY := rs_Para("d = the mean difference = " + rs_FmtS(rsObs, rsDec) + " observed; Ha: " + rs_HaTxt(), ipY + 3, rsRED);
+  END;
+  ipP := 0;
+  IF rsB > 0 THEN
+    ipC := rs_Cnt(); ipP := ipC / rsB;
+    ipS := "= " + rs_PStr((ipP * (1 - ipP) / rsB)^0.5);
+    IF ipC == 0 OR ipC == rsB THEN ipS := "= 0"; END;
+    IF LEFT(ipS, 3) == "= <" THEN ipS := MID(ipS, 3); END;
+    ipY := rs_Para("Random: " + rs_Int(ipC) + " of " + rs_Shuf(rsB) + " as extreme, " + rs_PFr(ipC, rsB) + ", give or take " + rsSQ + "(p(1 - p)/B) " + ipS + ".  Plus-one: (" + rs_Int(ipC) + " + 1)/(" + rs_Int(rsB) + " + 1), " + rs_PEq((ipC + 1) / (rsB + 1)) + ".", ipY + 3, rsBLUE);
+  ELSE
+    ipY := rs_Para("No random shuffles yet.", ipY + 3, rsBLUE);
+  END;
+  IF rsXOK == 2 THEN
+    ipC := rs_XCnt();
+    ipY := rs_Para("Exact: all " + rs_Int(rsXC) + " " + ipU + " listed; " + rs_Int(ipC) + " as extreme, " + rs_PFr(ipC, rsXC) + ".", ipY + 3, rsMAG);
+  ELSE
+    IF rsXOK == 0 THEN
+      ipY := rs_Para("Exact: not here (" + rsXCs + " " + ipU + "): random shuffles estimate p.", ipY + 3, rsMAG);
+    ELSE
+      ipY := rs_Para("Exact is possible: More, then Exact, lists all " + rs_Int(rsXC) + " " + ipU + ".", ipY + 3, rsMAG);
+    END;
+  END;
+  IF rsB > 0 OR rsXOK == 2 THEN
+    ipP := 0;
+    IF rsB > 0 THEN ipP := rs_Cnt() / rsB; END;
+    IF rsXOK == 2 THEN ipP := rs_XCnt() / rsXC; END;
+    ipS := "about " + STRING(ROUND(ipP, 4), 2, 4) + " of the time";
+    IF ipP < 0.0001 THEN ipS := "less than once in 10,000"; END;
+    ipY := rs_Para("If " + rsH0 + " were true, a d this extreme would turn up " + ipS + ".  Small p: evidence against " + rsH0 + "; large p: no evidence of a difference.", ipY + 3, rsGRN);
+  END;
+  rs_PgEnd("Any key = page 2");
+
+  rs_PgTop("The data, and the plus-one rule");
+  ipY := rs_Para(rsName, 28, #000000h);
+  ipY := rs_Para(rsSrc + " " + rsSrc2, ipY, rsGRAY);
+  ipY := rs_Para(rsNote, ipY, rsORNG);
+  ipY := rs_Para("Plus-one: p = 0/B would claim the impossible, since the observed split is itself a possible split.  Counting it gives (count + 1)/(B + 1): never 0, a valid test (Phipson & Smyth 2010).", ipY + 4, rsBLUE);
+  IF rsPre == 4 AND rsMode == 2 THEN
+    IF rsXOK == 2 THEN
+      ipY := rs_Para("Fisher (1935, sec. 21) worked this test on these data.  Here: " + rs_Int(rsXA) + " of " + rs_Int(rsXC) + " with |d| " + rsGE + " obs, " + rs_Int(rsXU) + " with d " + rsGE + " obs; his figures: the book (not checked here).", ipY + 4, rsMAG);
+    ELSE
+      ipY := rs_Para("Fisher (1935, sec. 21) worked this test on these data.  Exact (on More) counts all 32,768 here; his figures: the book (not checked here).", ipY + 4, rsMAG);
+    END;
+  ELSE
+    ipY := rs_Para("Ha: two-sided counts |d| " + rsGE + " |obs|; A > B counts d " + rsGE + " obs; A < B counts d " + rsLE + " obs.  Choose it before looking at the data.", ipY + 4, rsMAG);
+  END;
+  rs_PgEnd("Any key = back");
+END;
+
+// All the intervals side by side, with a picture.
+rs_CIPage()
+BEGIN
+  LOCAL cpLo, cpHi, cpI, cpY, cpX1, cpX2;
+  LOCAL cpL, cpC, cpN, cpS, cpW, cpS2;
+  IF rsB < 100 THEN
+    MSGBOX("Run at least 100 resamples first (x100).");
+    RETURN;
+  END;
+  rs_BtCI();
+  cpS := rs_LevS() + "%";
+  rs_PgTop(cpS + " intervals, B = " + rs_Int(rsB));
+  rs_Ln("the " + rs_StName(rsSt) + ": estimate = " + rs_Fmt(rsObs, rsDec), 28, rsRED);
+  cpL := {"percentile", "basic", "BCa", "t"};
+  IF rsMode == 4 THEN cpL(4) := "Welch t"; END;
+  cpC := {rsMAG, rsORNG, rsGRN, rsBLUE};
+  cpS2 := {"pct", "basic", "BCa", "t"};
+  cpLo := rsObs; cpHi := rsObs;
+  FOR cpI FROM 1 TO 4 DO
+    IF rsCIok(cpI) == 1 THEN
+      cpLo := MIN(cpLo, rsCI(2 * cpI - 1)); cpHi := MAX(cpHi, rsCI(2 * cpI));
+    END;
+  END;
+  cpW := cpHi - cpLo;
+  IF cpW <= 0 THEN cpW := 1; END;
+  cpLo := cpLo - 0.08 * cpW; cpHi := cpHi + 0.08 * cpW;
+  FOR cpI FROM 1 TO 4 DO
+    cpY := 42 + 13 * (cpI - 1);
+    IF rsCIok(cpI) == 1 THEN
+      rs_Ln(cpL(cpI) + ": (" + rs_Fmt(rsCI(2 * cpI - 1), rsDec) + ", " + rs_Fmt(rsCI(2 * cpI), rsDec) + "), width " + rs_Fmt(rsCI(2 * cpI) - rsCI(2 * cpI - 1), rsDec), cpY, cpC(cpI));
+    ELSE
+      IF cpI == 3 THEN
+        cpN := "not shown: see the BCa page";
+        IF rsMode == 4 THEN cpN := "on the one-sample page only"; END;
+      ELSE
+        cpN := "for the mean only";
+      END;
+      rs_Ln(cpL(cpI) + ": " + cpN, cpY, rsGRAY);
+    END;
+  END;
+  // the picture: one bar per interval on a shared axis, the estimate red
+  FOR cpI FROM 1 TO 4 DO
+    IF rsCIok(cpI) == 1 THEN
+      cpY := 100 + 12 * (cpI - 1);
+      cpX1 := rs_Pix(rsCI(2 * cpI - 1), cpLo, cpHi);
+      cpX2 := rs_Pix(rsCI(2 * cpI), cpLo, cpHi);
+      RECT_P(G1, cpX1, cpY, cpX2, cpY + 5, cpC(cpI));
+      TEXTOUT_P(cpS2(cpI), G1, 8, cpY - 2, 1, cpC(cpI), 34);
+    END;
+  END;
+  cpX1 := rs_Pix(rsObs, cpLo, cpHi);
+  RECT_P(G1, cpX1, 96, cpX1 + 1, 148, rsRED);
+  rs_Axis(cpLo, cpHi, 150);
+  rs_Ln("percentile: the middle " + cpS + " of the B values;", 166, rsMAG);
+  rs_Ln("basic: the ends reflected about the estimate", 179, rsORNG);
+  rs_Ln("BCa: moved for bias (z" + CHAR(8320) + ") and skew (a)", 192, rsGRN);
+  rs_Ln("If they differ a lot: skew or lumps", 205, rsGRAY);
+  rs_PgEnd("Any key = back");
+END;
+
+// How BCa moved the ends: z0, a, and the two percentiles it used.
+rs_BCaPage()
+BEGIN
+  LOCAL bpZa, bpS, bpLo, bpHi, bpI, bpY;
+  IF rsMode <> 3 THEN RETURN; END;
+  IF rsB < 100 THEN
+    MSGBOX("Run at least 100 resamples first (x100).");
+    RETURN;
+  END;
+  rs_BtCI();
+  bpS := rs_LevS() + "%";
+  rs_PgTop("BCa: bias and acceleration");
+  bpY := rs_Para("estimate = " + rs_Fmt(rsObs, rsDec) + ", B = " + rs_Int(rsB) + ": " + rs_Int(rsNLT) + " below it, " + rs_Int(rsNLE - rsNLT) + " equal", 28, #000000h);
+  bpY := rs_Para("share = (below + half the ties)/B = " + rs_Fmt(rsP0, 4), bpY, #000000h);
+  IF rsP0 > 0 AND rsP0 < 1 THEN
+    bpY := rs_Para("z" + CHAR(8320) + " = the normal quantile of the share = " + rs_FmtS(rsZ0, 4) + " (0 = no bias)", bpY, #000000h);
+  END;
+  bpLo := rsJk(1); bpHi := rsJk(1);
+  FOR bpI FROM 1 TO rsNX DO bpLo := MIN(bpLo, rsJk(bpI)); bpHi := MAX(bpHi, rsJk(bpI)); END;
+  bpY := rs_Para("Jackknife: leave each value out in turn: Ji from " + rs_Fmt(bpLo, rsDec) + " to " + rs_Fmt(bpHi, rsDec) + ", J. = their mean.", bpY + 3, rsBLUE);
+  IF rsAcOK == 1 THEN
+    bpY := rs_Para("a = sum (J. - Ji)^3 / (6 [sum (J. - Ji)^2]^1.5) = " + rs_FmtS(rsAcc, 4), bpY, rsBLUE);
+  ELSE
+    bpY := rs_Para("a: every Ji is equal, so a = 0/0: no BCa.", bpY, rsBLUE);
+  END;
+  IF rsCIok(3) == 1 THEN
+    bpZa := NORMALD_ICDF(0, 1, (1 - rsLev) / 2);
+    bpY := rs_Para("z = " + rs_FmtS(bpZa, 3) + ": " + rsALF + CHAR(8321) + " = normal area left of z" + CHAR(8320) + " + (z" + CHAR(8320) + " + z)/(1 - a(z" + CHAR(8320) + " + z)) = " + rs_Fmt(rsAl1, 4) + "; " + rsALF + CHAR(8322) + " (with -z) = " + rs_Fmt(rsAl2, 4), bpY + 3, rsGRN);
+    bpY := rs_Para("BCa " + bpS + " = those quantiles of the B values: (" + rs_Fmt(rsCI(5), rsDec) + ", " + rs_Fmt(rsCI(6), rsDec) + ")", bpY, rsGRN);
+  ELSE
+    bpY := rs_Para(rsBcaW, bpY + 4, rsRED);
+  END;
+  bpY := rs_Para("Ties count half (as SciPy); TI BOOT did not.", bpY + 2, rsGRAY);
+  rs_PgEnd("Any key = back");
+END;
+
+// Help: five pages.
+rs_Help()
+BEGIN
+  LOCAL hpY;
+  rs_PgTop("ResampLab: shuffling labels");
+  hpY := rs_Para("A permutation test asks: if the group labels did not matter (" + rsH0 + "), how often would chance alone give a difference as big as the one we saw?", 28, #000000h);
+  hpY := rs_Para("Once: the pooled values are dealt again into groups of the same sizes, and their difference d drops onto the histogram.  Red line: the observed d; red dots: shuffles at least as extreme.", hpY + 4, rsBLUE);
+  hpY := rs_Para("p = (as extreme)/(shuffles).  Small p: the labels seem to matter.  Large p: no evidence that they do (not proof that they don't).", hpY + 4, rsMAG);
+  hpY := rs_Para("Assumes: under " + rsH0 + " the labels are exchangeable (random assignment).", hpY + 4, rsRED);
+  rs_PgEnd("Any key = page 2");
+
+  rs_PgTop("Exact, random, paired");
+  hpY := rs_Para("EXACT: with few values every split is listed: C(10, 5) = 252 for two groups of 5, all counted, so p is exact.  More, then Exact, shows it.  The limit is " + rs_Int(rsExLim) + " splits.", 28, #000000h);
+  hpY := rs_Para("RANDOM: otherwise a random sample of B shuffles estimates p, give or take " + rsSQ + "(p(1 - p)/B), and (count + 1)/(B + 1), the plus-one p, is shown too: never 0, and a valid test.", hpY + 4, rsBLUE);
+  hpY := rs_Para("PAIRED: each pair's difference keeps or flips its sign at random (blue kept, amber flipped).  Darwin's 15 pairs: all 2^15 = 32,768 sign patterns are counted exactly, by their sums.", hpY + 4, rsMAG);
+  hpY := rs_Para("Ha (on More): " + rsNE + ", A > B or A < B.  Decide it first.", hpY + 4, rsGRAY);
+  rs_PgEnd("Any key = page 3");
+
+  rs_PgTop("The bootstrap");
+  hpY := rs_Para("Treat the sample as the population: draw n values WITH replacement (a stack = picked more than once) and compute the statistic.  Repeat B times: their spread estimates its SE.", 28, #000000h);
+  hpY := rs_Para("Percentile: the middle " + rs_LevS() + "% of the B values.  Basic: those ends reflected about the estimate.  BCa: corrected for bias (z" + CHAR(8320) + ") and skew (a); use B " + rsGE + " 1,000.  t: " + rsXB + " " + rsPM + " t s/" + rsSQ + "n, to compare.", hpY + 4, rsMAG);
+  hpY := rs_Para("Two groups: each resampled from itself; percentile, and Welch's t for means.", hpY + 4, #000000h);
+  hpY := rs_Para("Small samples give too narrow intervals: n " + rsGE + " 15 or so.", hpY + 4, rsRED);
+  rs_PgEnd("Any key = page 4");
+
+  rs_PgTop("Keys, touch, seed");
+  hpY := rs_Para("Soft keys: Once, x10, x100, x1000, Reset, More.  More: Ha, Stat, Exact, Info, CIs, BCa, Level (90/95/99%), Help.  Keys: + = Once, Enter = a menu of every action, Esc = back (it also stops a long run).", 28, #000000h);
+  hpY := rs_Para("Tap a dot, a bar or the red line to be told what it is; tap the lines at the bottom for the details.", hpY + 4, rsBLUE);
+  hpY := rs_Para("Seed (main menu): a whole number makes every Reset start the same random numbers (RANDSEED), so a class pressing the same keys sees the same run, unless the 60 s cap cuts a run on a slower calculator.", hpY + 4, rsMAG);
+  hpY := rs_Para("A long run is timed: if x1000 would take much over a minute on this calculator, it is cut to about 60 s and the page says so.", hpY + 4, rsGRAY);
+  rs_PgEnd("Any key = page 5");
+
+  rs_PgTop("Home, sources, disclaimer");
+  hpY := rs_Para("Home: RS_P (plus-one p), RS_PX (exact p or -1), RS_NB (B), RS_OBS (observed), RS_PCT and RS_BCA (interval ends), RS_STAR (the bootstrap values).", 28, #000000h);
+  hpY := rs_Para("Fisher 1935; Pitman 1937; Ernst 2004; Phipson & Smyth 2010; Efron 1979, 1987; Efron & Tibshirani 1993; Davison & Hinkley 1997; Hesterberg 2015.  Reworks Triola's TI bootstrap project and the TI BOOT program.", hpY + 4, rsBLUE);
+  hpY := rs_Para("DISCLAIMER: a teaching and demonstration aid. Not validated for forensic, clinical or legal use; do not rely on its results for legal purposes.", hpY + 4, rsRED);
+  rs_PgEnd("Any key = back");
+END;
+
+
+// ------------------------------------------------------------
+// THE LAB PAGE: one loop for all four modes
+// ------------------------------------------------------------
+
+// The soft-key pages and the actions behind them, for the mode in front.
+rs_Keys()
+BEGIN
+  rsSKP := 1;
+  IF rsMode == 1 THEN rsSK := {{"Once", "x10", "x100", "x1000", "Reset", "More"}, {"Ha", "Stat", "Exact", "Info", "Help", "More"}}; END;
+  IF rsMode == 2 THEN rsSK := {{"Once", "x10", "x100", "x1000", "Reset", "More"}, {"Ha", "", "Exact", "Info", "Help", "More"}}; END;
+  IF rsMode == 3 THEN rsSK := {{"Once", "x10", "x100", "x1000", "Reset", "More"}, {"Stat", "CIs", "BCa", "Level", "Help", "More"}}; END;
+  IF rsMode == 4 THEN rsSK := {{"Once", "x10", "x100", "x1000", "Reset", "More"}, {"Stat", "CIs", "", "Level", "Help", "More"}}; END;
+END;
+
+// The action behind soft key sl on the page showing.
+rs_SKAct(slS)
+BEGIN
+  IF slS == 6 THEN RETURN "more"; END;
+  IF rsSKP == 1 THEN
+    IF slS == 1 THEN RETURN "once"; END;
+    IF slS == 2 THEN RETURN "x10"; END;
+    IF slS == 3 THEN RETURN "x100"; END;
+    IF slS == 4 THEN RETURN "x1000"; END;
+    RETURN "reset";
+  END;
+  IF slS == 5 THEN RETURN "help"; END;
+  IF rsMode <= 2 THEN
+    IF slS == 1 THEN RETURN "ha"; END;
+    IF slS == 2 AND rsMode == 1 THEN RETURN "stat"; END;
+    IF slS == 3 THEN RETURN "exact"; END;
+    IF slS == 4 THEN RETURN "info"; END;
+    RETURN "";
+  END;
+  IF slS == 1 THEN RETURN "stat"; END;
+  IF slS == 2 THEN RETURN "ci"; END;
+  IF slS == 3 AND rsMode == 3 THEN RETURN "bca"; END;
+  IF slS == 4 THEN RETURN "level"; END;
+  RETURN "";
+END;
+
+// Enter: every action as a menu, for working from the keys alone.
+rs_KeyMenu()
+BEGIN
+  LOCAL kmI, kmL;
+  kmI := 0;
+  IF rsMode <= 2 THEN
+    CHOOSE(kmI, "Actions", {"Shuffle once", "10 shuffles", "100 shuffles", "1000 shuffles", "Reset", "Alternative Ha", "Mean or median", "Exact distribution", "Details", "Help", "Back to the menu"});
+    IF kmI == 0 THEN RETURN ""; END;
+    kmL := {"once", "x10", "x100", "x1000", "reset", "ha", "stat", "exact", "info", "help", "quit"};
+    RETURN kmL(kmI);
+  END;
+  CHOOSE(kmI, "Actions", {"Resample once", "10 resamples", "100 resamples", "1000 resamples", "Reset", "Statistic", "All intervals", "BCa details", "Confidence level", "Help", "Back to the menu"});
+  IF kmI == 0 THEN RETURN ""; END;
+  kmL := {"once", "x10", "x100", "x1000", "reset", "stat", "ci", "bca", "level", "help", "quit"};
+  RETURN kmL(kmI);
+END;
+
+// Start (or restart) the engine of the mode in front.
+rs_Start()
+BEGIN
+  LOCAL stOK;
+  stOK := 0;
+  IF rsMode == 1 THEN stOK := rs_PmStart(); END;
+  IF rsMode == 2 THEN stOK := rs_PdStart(); END;
+  IF rsMode == 3 THEN stOK := rs_BtStart(); END;
+  IF rsMode == 4 THEN stOK := rs_B2Start(); END;
+  IF stOK == 1 THEN
+    IF rsMode == 1 THEN rs_VAxis(rsV, rsN, {0}, 0); END;
+    IF rsMode == 3 THEN rs_VAxis(rsX, rsNX, {0}, 0); END;
+    IF rsMode == 4 THEN rs_VAxis(rsX, rsNX, rsX2, rsNX2); END;
+    rs_Export();
+  END;
+  RETURN stOK;
+END;
+
+// How many decimals the data values need (from the grid factor rsF):
+// 1 -> 0, 2 or 5 or 10 -> 1, 4 or 20 or 25 ... -> 2, 8 -> 3; 3 if none.
+rs_VDec()
+BEGIN
+  LOCAL vdD;
+  IF rsF <= 0 THEN RETURN 3; END;
+  vdD := 0;
+  WHILE vdD < 4 AND FP(10^vdD / rsF) <> 0 DO vdD := vdD + 1; END;
+  RETURN vdD;
+END;
+
+// What a tap shows: a note about the dot, bin or line under the finger.
+// Returns an action when the tap opens a page ("info" or "ci").
+rs_TapAct(taX, taY)
+BEGIN
+  LOCAL taLo, taHi, taK, taE1, taE2, taS;
+  LOCAL taI, taB, taD, taR, taV, taC;
+  rsTapM := "";
+  IF taY >= rsTY1 - 2 THEN
+    IF rsMode <= 2 THEN RETURN "info"; END;
+    RETURN "ci";
+  END;
+  IF taY < 15 THEN RETURN ""; END;
+  IF taY >= rsHT THEN
+    taLo := rsBC0 - rsBW / 2; taHi := taLo + rsNBn * rsBW;
+    IF ABS(taX - rs_Pix(rsObs, taLo, taHi)) <= 2 THEN
+      rsTapM := "red line: the observed value, " + rs_FmtS(rsObs, rsDec);
+      RETURN "";
+    END;
+    taK := FLOOR((taX - rsPL) / (rsPR - rsPL) * rsNBn) + 1;
+    taK := MAX(1, MIN(rsNBn, taK));
+    taE1 := rs_Fmt(taLo + (taK - 1) * rsBW, rsDec);
+    taE2 := rs_Fmt(taLo + taK * rsBW, rsDec);
+    IF rsMode >= 3 THEN
+      rsTapM := taE1 + ".." + taE2 + ": " + rs_Int(rsH(taK)) + " of " + rs_Int(rsB);
+    ELSE
+      IF rsView == 1 THEN
+        taR := rsEHA(taK);
+        IF rsHa == 1 THEN taR := rsEHU(taK); END;
+        IF rsHa == 2 THEN taR := rsEHL(taK); END;
+        rsTapM := taE1 + ".." + taE2 + ": " + rs_Int(rsEH(taK)) + " of " + rs_Int(rsXC) + " (" + rs_Int(taR) + " in tail)";
+      ELSE
+        taR := rsHAb(taK);
+        IF rsHa == 1 THEN taR := rsHU(taK); END;
+        IF rsHa == 2 THEN taR := rsHL(taK); END;
+        rsTapM := taE1 + ".." + taE2 + ": " + rs_Int(rsH(taK)) + " (" + rs_Int(taR) + " in tail)";
+      END;
+    END;
+    RETURN "";
+  END;
+  IF taY > rsYB + 2 THEN
+    rsTapM := "the axis of the data values";
+    IF DIM(rsUnit) > 0 THEN rsTapM := rsTapM + " (" + rsUnit + ")"; END;
+    RETURN "";
+  END;
+  // the top panel: the nearest dot in the row tapped
+  taV := rsVLo + (taX - rsPL) / (rsPR - rsPL) * (rsVHi - rsVLo);
+  IF rsMode == 1 THEN
+    taB := 1; IF taY > rsYA + 1 THEN taB := 2; END;
+    taI := 0; taD := 1E99;
+    FOR taC FROM 1 TO rsN DO
+      IF rsMem(taC) == taB AND ABS(rsV(taC) - taV) < taD THEN taD := ABS(rsV(taC) - taV); taI := taC; END;
+    END;
+    IF taI > 0 THEN
+      taS := rsLA; IF rsOrig(taI) == 2 THEN taS := rsLB; END;
+      rsTapM := rs_Fmt(rsV(taI), rs_VDec()) + " " + rsUnit + ": now in " + IFTE(taB == 1, "A", "B") + ", came from " + taS;
+    END;
+    RETURN "";
+  END;
+  IF rsMode == 2 THEN
+    IF rsNd <= 19 THEN
+      taI := MAX(1, MIN(rsNd, ROUND((taY - 20) / MIN(6, IP(58 / rsNd)), 0) + 1));
+      taS := "kept"; IF rsSg(taI) == -1 THEN taS := "flipped"; END;
+      rsTapM := "pair " + STRING(taI, 2, 0) + ": d = " + rs_FmtS(rsD(taI), rs_VDec()) + ", " + taS + ": " + rs_FmtS(rsSg(taI) * rsD(taI), rs_VDec());
+    ELSE
+      rsTapM := "signed differences: blue kept, amber flipped";
+    END;
+    RETURN "";
+  END;
+  // bootstrap rows
+  taB := 1;
+  IF rsMode == 4 AND taY > rsYA + 1 THEN taB := 2; END;
+  taI := 0; taD := 1E99;
+  IF taB == 1 THEN
+    FOR taC FROM 1 TO rsNX DO
+      IF ABS(rsX(taC) - taV) < taD THEN taD := ABS(rsX(taC) - taV); taI := taC; END;
+    END;
+    IF taI > 0 THEN
+      taR := 0; IF rsB > 0 THEN taR := rsMlA(taI); END;
+      rsTapM := rs_Fmt(rsX(taI), rs_VDec()) + " " + rsUnit + ": picked " + STRING(taR, 2, 0) + " times";
+      IF rsShP == 0 THEN rsTapM := rs_Fmt(rsX(taI), rs_VDec()) + " " + rsUnit + " (a value in the sample)"; END;
+    END;
+  ELSE
+    FOR taC FROM 1 TO rsNX2 DO
+      IF ABS(rsX2(taC) - taV) < taD THEN taD := ABS(rsX2(taC) - taV); taI := taC; END;
+    END;
+    IF taI > 0 THEN
+      taR := 0; IF rsB > 0 THEN taR := rsMlB(taI); END;
+      rsTapM := rs_Fmt(rsX2(taI), rs_VDec()) + " " + rsUnit + ": picked " + STRING(taR, 2, 0) + " times";
+      IF rsShP == 0 THEN rsTapM := rs_Fmt(rsX2(taI), rs_VDec()) + " " + rsUnit + " (a value in group B)"; END;
+    END;
+  END;
+  RETURN "";
+END;
+
+// One action, by name.
+rs_Do(doA)
+BEGIN
+  LOCAL doK;
+  IF doA == "once" THEN rs_Once(); END;
+  IF doA == "x10" THEN rs_Run(10); END;
+  IF doA == "x100" THEN rs_Run(100); END;
+  IF doA == "x1000" THEN rs_Run(1000); END;
+  IF doA == "reset" THEN rs_Reset(); rs_Export(); END;
+  IF doA == "more" THEN
+    rsSKP := rsSKP + 1;
+    IF rsSKP > SIZE(rsSK) THEN rsSKP := 1; END;
+  END;
+  IF doA == "ha" THEN
+    rsHa := rsHa + 1;
+    IF rsHa > 2 THEN rsHa := 0; END;
+    rsTapM := "Ha is now " + rs_HaTxt() + " (counts kept)";
+    rs_Export();
+  END;
+  IF doA == "stat" AND rsMode == 2 THEN
+    rsTapM := "the paired test uses the mean difference";
+  END;
+  IF doA == "stat" AND rsMode <> 2 THEN
+    IF rsMode == 3 THEN
+      rsSt := rsSt + 1;
+      IF rsSt > 4 THEN rsSt := 1; END;
+    ELSE
+      rsSt := 3 - rsSt;
+    END;
+    IF rs_Start() == 0 THEN rsSt := 1; doK := rs_Start(); END;
+    rsTapM := "now: the " + rs_StName(rsSt) + " (counts reset)";
+  END;
+  IF doA == "exact" THEN rs_Exact(); END;
+  IF doA == "info" THEN rs_InfoPerm(); END;
+  IF doA == "ci" THEN rs_CIPage(); END;
+  IF doA == "bca" THEN rs_BCaPage(); END;
+  IF doA == "level" THEN
+    IF rsLev < 0.925 THEN
+      rsLev := 0.95;
+    ELSE
+      IF rsLev < 0.97 THEN rsLev := 0.99; ELSE rsLev := 0.90; END;
+    END;
+    rsCIB := -1;
+    rsTapM := "confidence level " + rs_LevS() + "%";
+    rs_Export();
+  END;
+  IF doA == "help" THEN rs_Help(); END;
+END;
+
+// The summary line handed to Home when the program ends.
+rs_Sum()
+BEGIN
+  LOCAL smS;
+  IF rsMode <= 2 THEN
+    smS := rs_Title() + ": observed " + rs_FmtS(rsObs, rsDec);
+    IF rsB > 0 THEN smS := smS + ", plus-one " + rs_PEq((rs_Cnt() + 1) / (rsB + 1)) + " (B = " + rs_Int(rsB) + ")"; END;
+    IF rsXOK == 2 THEN smS := smS + ", exact " + rs_PFr(rs_XCnt(), rsXC); END;
+  ELSE
+    smS := rs_Title() + ": estimate " + rs_Fmt(rsObs, rsDec);
+    IF rsB >= 100 THEN
+      rs_BtCI();
+      smS := smS + ", " + rs_LevS() + "% percentile (" + rs_Fmt(rsCI(1), rsDec) + ", " + rs_Fmt(rsCI(2), rsDec) + "), B = " + rs_Int(rsB);
+    END;
+  END;
+  rsSum := smS;
+END;
+
+// The lab page for mode lbM (1 two groups, 2 paired, 3 bootstrap, 4 two-
+// group bootstrap): GETKEY + MOUSE polling, soft keys read from a tap with
+// y >= 218 (ChiTable's verified shape).
+rs_Lab(lbM)
+BEGIN
+  LOCAL lbGo, lbK, lbMs, lbM1, lbSl, lbA;
+  rsMode := lbM;
+  IF rs_Start() == 0 THEN RETURN; END;
+  rs_Keys();
+  lbGo := 1;
+  REPEAT lbK := GETKEY; UNTIL lbK == -1;
+  rs_Drain();
+  WHILE lbGo == 1 DO
+    rs_DrawLab(1);
+    REPEAT
+      lbK := GETKEY;
+      lbMs := MOUSE;
+      lbM1 := lbMs(1);
+    UNTIL lbK > -1 OR SIZE(lbM1) > 0;
+    lbA := "";
+    IF SIZE(lbM1) > 0 THEN
+      rsTX := lbM1(1); rsTY := lbM1(2);
+      rs_Drain();
+      IF rsTY >= 218 THEN
+        lbSl := MIN(6, IP(rsTX / 53.4) + 1);
+        lbA := rs_SKAct(lbSl);
+        IF lbA <> "more" THEN rsTapM := ""; END;
+      ELSE
+        lbA := rs_TapAct(rsTX, rsTY);
+      END;
+    ELSE
+      IF lbK == 4 THEN lbA := "quit"; END;
+      IF lbK == 50 THEN lbA := "once"; END;
+      IF lbK == 30 THEN lbA := rs_KeyMenu(); END;
+      REPEAT lbK := GETKEY; UNTIL lbK == -1;
+    END;
+    IF lbA == "quit" THEN
+      lbGo := 0;
+    ELSE
+      IF DIM(lbA) > 0 THEN rs_Do(lbA); END;
+    END;
+    // beta 1a (review 2, item 1): drain keys AND the finger after EVERY
+    // action, so the Enter that closed a MSGBOX (or a finger still down)
+    // is not read as the next action
+    REPEAT lbK := GETKEY; UNTIL lbK == -1;
+    rs_Drain();
+  END;
+  rs_Export();
+  rs_Sum();
+END;
+
+
+
+// ------------------------------------------------------------
+// DATA: presets (data/DATASETS.md only), the student's own, the data page
+// ------------------------------------------------------------
+
+// Store two groups (and their differences when both have the same size
+// and dsPr = 1).  All values are kept exactly as given.
+rs_SetTwo(dsA, dsB, dsLA, dsLB, dsNm, dsU, dsS1, dsS2, dsNt)
+BEGIN
+  rsA := dsA; rsGB := dsB; rsNA := SIZE(dsA); rsNB := SIZE(dsB);
+  rsLA := dsLA; rsLB := dsLB; rsName := dsNm; rsUnit := dsU;
+  rsSrc := dsS1; rsSrc2 := dsS2; rsNote := dsNt;
+  // the menu title's short name: the part before the colon
+  rsShort := dsNm;
+  IF INSTRING(dsNm, ":") > 1 THEN rsShort := LEFT(dsNm, INSTRING(dsNm, ":") - 1); END;
+  rsKind := 2; rsPair := 0; rsDf := {0}; rsNd := 0; rsLD := "";
+  rsBoot1 := 0;
+  IF rsNB == 0 THEN rsKind := 1; END;
+END;
+
+// Every preset comes from data/DATASETS.md, values unchanged, and shows
+// its source on the data page.  Returns the lab page it suits (0 = none).
+rs_Preset()
+BEGIN
+  LOCAL prI, prA, prB, prJ;
+  prI := 0;
+  CHOOSE(prI, "Load a preset", {"MockJury: Unattr. v Beaut.", "MockJury: Unattr. v Avg.", "Rossi: weeks to arrest", "Darwin: Zea mays pairs", "BJS: months served (41)", "5 v 5 illustrative numbers"});
+  IF prI == 0 THEN RETURN 0; END;
+  rsPre := prI;
+  IF prI == 1 OR prI == 2 THEN
+    prA := {1, 4, 3, 2, 8, 8, 1, 1, 5, 7, 1, 5, 2, 12, 10, 1, 6, 2, 5, 12, 6, 3, 8, 4, 10, 10, 15, 15, 3, 3, 3, 11, 12, 2, 1, 1, 12};
+    IF prI == 1 THEN
+      prB := {10, 3, 5, 1, 7, 7, 3, 7, 2, 3, 5, 1, 1, 1, 2, 2, 10, 10, 3, 4, 7, 1, 1, 2, 2, 3, 15, 4, 6, 2, 10, 3, 2, 3, 5, 10, 2, 2, 2};
+      rs_SetTwo(prA, prB, "Unattr", "Beaut.", "MockJury: years, Unattractive v Beautiful", "years", "Plaster (1989) M.A. thesis, East Carolina", "Univ.; data via R heplots (Friendly).", "114 inmates as mock jurors; one crime each.");
+    ELSE
+      prB := {5, 5, 4, 3, 6, 4, 9, 8, 3, 2, 10, 1, 1, 3, 1, 3, 5, 8, 3, 1, 1, 1, 2, 2, 1, 1, 2, 3, 4, 5, 3, 3, 3, 2, 7, 6, 12, 8};
+      rs_SetTwo(prA, prB, "Unattr", "Avg.", "MockJury: years, Unattractive v Average", "years", "Plaster (1989) M.A. thesis, East Carolina", "Univ.; data via R heplots (Friendly).", "114 inmates as mock jurors; one crime each.");
+    END;
+    RETURN 1;
+  END;
+  IF prI == 3 THEN
+    prA := {46, 24, 50, 20, 50, 22, 24, 49, 8, 8, 11, 9, 16, 15, 7, 46, 40, 37, 12, 14, 20, 32, 20, 42, 46, 36, 18, 34, 35, 9, 34, 35, 39, 19, 48, 37, 20, 36, 30, 42, 35, 49, 49, 45, 36, 8, 15, 12};
+    prB := {20, 17, 25, 23, 37, 25, 28, 10, 6, 52, 49, 43, 5, 27, 18, 2, 26, 21, 48, 49, 8, 13, 33, 37, 44, 52, 17, 16, 3, 45, 28, 14, 43, 14, 8, 25, 17, 32, 18, 38, 24, 31, 40, 26, 47, 40, 21, 1, 43, 24, 11, 33, 50, 39, 44, 30, 43, 26, 40, 46, 35, 27, 52, 4, 52, 19};
+    rs_SetTwo(prA, prB, "aid", "no aid", "Rossi: week of first arrest, aid v no aid", "weeks", "Rossi, Berk & Lenihan (1980) Money, Work,", "and Crime; data via Allison (1995), R carData.", "Only the 114 arrested: timing, not WHETHER.");
+    RETURN 1;
+  END;
+  IF prI == 4 THEN
+    prA := {23.5, 12, 21, 22, 19.125, 21.5, 22.125, 20.375, 18.25, 21.625, 23.25, 21, 22.125, 23, 12};
+    prB := {17.375, 20.375, 20, 20, 18.375, 18.625, 18.625, 15.25, 16.5, 18, 16.25, 18, 12.75, 15.5, 18};
+    rs_SetTwo(prA, prB, "cross", "self", "Darwin: maize heights, crossed v selfed", "inches", "Darwin (1876); Fisher (1935) The Design of", "Experiments, sec. 21 (15 pairs in 4 pots).", "Paired: the two plants of a pair grew in the same pot.");
+    rsDf := MAKELIST(prA(prJ) - prB(prJ), prJ, 1, 15);
+    rsNd := 15; rsPair := 1; rsLD := "cross - self"; rsBoot1 := 1;
+    RETURN 2;
+  END;
+  IF prI == 5 THEN
+    prA := {117, 188, 172, 145, 173, 159, 123, 136, 115, 190, 158, 147, 117, 196, 169, 160, 135, 163, 176, 155, 126, 133, 150, 146, 157, 137, 180, 134, 135, 128, 209, 144, 164, 185, 168, 121, 195, 149, 148, 216, 139};
+    rs_SetTwo(prA, {}, "months", "", "BJS: months served, 41 homicide prisoners", "months", "BJS, Prison Sentences and Time Served for", "Violence, NCJ-153858 (1995); R crimedatasets.", "Compare the percentile, BCa and t intervals.");
+    RETURN 3;
+  END;
+  prA := {14, 18, 12, 16, 15};
+  prB := {10, 13, 9, 14, 11};
+  rs_SetTwo(prA, prB, "A", "B", "5 v 5: ILLUSTRATIVE NUMBERS (not data)", "", "Illustrative numbers made up for the exact", "demo: C(10, 5) = 252 splits.", "Not real data: for practice only.");
+  RETURN 1;
+END;
+
+// The student's own data: D1 = group A (or the one sample, or the
+// differences), D2 = group B.  The first read of each is inside IFERR:
+// D1 does not exist until the Statistics 1Var app has been opened once.
+rs_Mine()
+BEGIN
+  LOCAL myA, myB, myNA, myNB, myI;
+  IFERR myA := D1; THEN myA := {}; END;
+  IFERR myB := D2; THEN myB := {}; END;
+  IFERR myNA := SIZE(myA); THEN myNA := 0; END;
+  IFERR myNB := SIZE(myB); THEN myNB := 0; END;
+  IF myNA < 2 THEN
+    MSGBOX("Put your data in D1 of the Statistics 1Var app (group B in D2), then try again.");
+    RETURN 0;
+  END;
+  IF myNA > 1000 OR myNB > 1000 THEN
+    MSGBOX("At most 1,000 values in each list, please.");
+    RETURN 0;
+  END;
+  rsPre := 0;
+  rs_SetTwo(myA, myB, "D1", "D2", "My data: D1 (A) and D2 (B)", "", "Your own data, read from lists D1 and D2", "of the Statistics 1Var app.", "Check the values in D1 and D2 before you test.");
+  IF myNB == 0 THEN
+    rsName := "My data: one sample in D1";
+    rsDf := myA; rsNd := myNA; rsPair := 1; rsLD := "D1";
+  END;
+  IF myNB == myNA THEN
+    rsDf := MAKELIST(myA(myI) - myB(myI), myI, 1, myNA);
+    rsNd := myNA; rsPair := 1; rsLD := "D1 - D2"; rsBoot1 := 1;
+  END;
+  RETURN 1;
+END;
+
+// The data page: what was loaded, its summaries, and its source.
+rs_DataPage()
+BEGIN
+  LOCAL dpS, dpY, dpL, dpI, dpLo, dpHi;
+  LOCAL dpX, dpD;
+  rs_PgTop("Data loaded");
+  dpY := rs_Para(rsName, 28, #000000h);
+  dpY := rs_Para(rsSrc + " " + rsSrc2, dpY, rsGRAY);
+  dpD := 2;
+  IF rs_Grid(rsA, rsNA) == 1 THEN dpD := 1; END;
+  dpS := "A (" + rsLA + "): n = " + STRING(rsNA, 2, 0) + ", " + rsXB + " = " + rs_Fmt(rs_Stat(rsA, rsNA, 1), dpD) + ", s = " + rs_Fmt(rs_Stat(rsA, rsNA, 3), dpD);
+  dpY := rs_Para(dpS, dpY + 3, rsCOLA);
+  IF rsNB > 0 THEN
+    dpS := "B (" + rsLB + "): n = " + STRING(rsNB, 2, 0) + ", " + rsXB + " = " + rs_Fmt(rs_Stat(rsGB, rsNB, 1), dpD) + ", s = " + rs_Fmt(rs_Stat(rsGB, rsNB, 3), dpD);
+    dpY := rs_Para(dpS, dpY, rsCOLB);
+  END;
+  IF rsPair == 1 AND rsNB > 0 THEN
+    dpY := rs_Para("differences (" + rsLD + "): mean = " + rs_Fmt(rs_Stat(rsDf, rsNd, 1), 3), dpY, rsMAG);
+  END;
+  dpY := rs_Para(rsNote, dpY, rsORNG);
+  // a strip of each group on one axis, below the text
+  dpY := MAX(dpY + 4, 140);
+  dpL := SORT(rsA); dpLo := dpL(1); dpHi := dpL(rsNA);
+  IF rsNB > 0 THEN dpL := SORT(rsGB); dpLo := MIN(dpLo, dpL(1)); dpHi := MAX(dpHi, dpL(rsNB)); END;
+  IF dpHi <= dpLo THEN dpHi := dpLo + 1; END;
+  rsVLo := dpLo - 0.05 * (dpHi - dpLo); rsVHi := dpHi + 0.05 * (dpHi - dpLo);
+  FOR dpI FROM 1 TO rsNA DO
+    dpX := rs_Pix(rsA(dpI), rsVLo, rsVHi);
+    LINE_P(G1, dpX, dpY, dpX, dpY + 10, rsCOLA);
+  END;
+  FOR dpI FROM 1 TO rsNB DO
+    dpX := rs_Pix(rsGB(dpI), rsVLo, rsVHi);
+    LINE_P(G1, dpX, dpY + 16, dpX, dpY + 26, rsCOLB);
+  END;
+  TEXTOUT_P("A", G1, 14, dpY, 1, rsCOLA);
+  IF rsNB > 0 THEN TEXTOUT_P("B", G1, 14, dpY + 16, 1, rsCOLB); END;
+  rs_Axis(rsVLo, rsVHi, dpY + 30);
+  rs_PgEnd("Any key = continue");
+END;
+
+// Seed and confidence level.
+rs_Settings()
+BEGIN
+  LOCAL seS, seL, seOK;
+  seS := rsSeed; seL := rsLev;
+  seOK := INPUT({seS, seL}, "Seed and confidence level", {"Seed:", "Level:"}, {"0 = fresh; a whole number repeats a run", "0.5 to 0.999 (0.95 = 95%)"});
+  IF seOK == 0 THEN RETURN; END;
+  IF seS < 0 OR seS <> ROUND(seS, 0) OR seS > 999999999 THEN
+    MSGBOX("The seed is 0 or a whole number up to 999,999,999.");
+    RETURN;
+  END;
+  IF seL < 0.5 OR seL > 0.999 THEN
+    MSGBOX("The level must be between 0.5 and 0.999 (0.95 = 95%).");
+    RETURN;
+  END;
+  rsSeed := seS; rsLev := seL; rsCIB := -1;
+  rsSdOK := 1;
+  rs_Seed();
+  IF rsSdOK == 0 THEN MSGBOX("RANDSEED did not work on this calculator: runs will not repeat."); END;
+END;
+
+// The opening page (with the disclaimer, as the house style asks).
+rs_Splash()
+BEGIN
+  LOCAL spY;
+  rs_PgTop("ResampLab: shuffle and resample");
+  spY := rs_Para("See a permutation test and a bootstrap work: tap Once to deal the data again and watch where its statistic lands; x1000 builds the whole picture.  p and the intervals update as you go.", 28, #000000h);
+  spY := rs_Para("Presets: mock jury sentences (Plaster 1989), Rossi's re-arrests, Darwin's maize (Fisher 1935), BJS months served, and a 5 v 5 exact demo.  Your own data: lists D1 and D2 (Statistics 1Var).", spY + 4, rsBLUE);
+  spY := rs_Para("DISCLAIMER: a teaching and demonstration aid. Not validated for forensic, clinical or legal use; do not rely on its results for legal purposes.", spY + 4, rsRED);
+  rs_Ln("(C) 2026 Roger D Metcalf; beta 1b 26 Oct 2026", 205, rsGRAY);
+  rs_PgEnd("Any key = menu");
+END;
+
+
+// ------------------------------------------------------------
+// INIT AND MAIN
+// ------------------------------------------------------------
+rs_Init()
+BEGIN
+  rsBLUE := #003CC8h; rsMAG := #C800C8h; rsRED := #FF0000h;
+  rsGRN := #008C3Ch; rsORNG := #FF4500h; rsGRAY := #5A5A5Ah;
+  rsFOOT := #1E90FFh; rsGRID := #E1E4EBh; rsSHD := #AACDFFh;
+  rsLRED := #FFEBEBh; rsLGRN := #E8F6EBh; rsLBLU := #EBF2FFh;
+  rsLORN := #FFF0DCh; rsLGRY := #F0F0F0h;
+  // the two groups: teal for A, amber for B (kept on every page)
+  rsCOLA := #008CAAh; rsCOLB := #E67800h;
+  rsLCA := #D2EEF4h; rsLCB := #FCE6CCh;
+  // glyphs, built with CHAR() so the source stays ASCII (all verified on
+  // the 2026-09-09 firmware, Lessons Learned section 5)
+  rsXB := CHAR(57344); rsGE := CHAR(8805); rsLE := CHAR(8804);
+  rsNE := CHAR(8800); rsPM := CHAR(177); rsTIM := CHAR(215);
+  rsTHT := CHAR(952); rsALF := CHAR(945); rsSIG := CHAR(963);
+  rsMU := CHAR(956); rsSQ := CHAR(8730); rsARR := CHAR(8594);
+  rsH0 := "H" + CHAR(8320); rsH1 := "H" + CHAR(8321);
+  // geometry
+  rsPL := 42; rsPR := 314;
+  rsYA := 45; rsYB := 77; rsRH := 28;
+  rsHT := 96; rsHB := 156; rsTY1 := 171;
+  // settings
+  rsSeed := 0; rsSdOK := 1; rsLev := 0.95; rsHa := 0; rsSt := 1;
+  rsExLim := 2000; rsMaxB := 9000;
+  // no data yet
+  rsKind := 0; rsPair := 0; rsPre := 0; rsBoot1 := 0;
+  rsA := {0}; rsGB := {}; rsNA := 0; rsNB := 0; rsDf := {0}; rsNd := 0;
+  rsName := "no data yet"; rsSrc := ""; rsSrc2 := ""; rsNote := "";
+  rsShort := "no data"; rsBusy := 0; rsJkW := ""; rsBLb := ""; rsXCs := "";
+  rsLA := "A"; rsLB := "B"; rsUnit := ""; rsLD := "";
+  rsMode := 1; rsB := 0; rsObs := 0; rsXOK := 0; rsXC := 1;
+  rsSK := {{"", "", "", "", "", ""}}; rsSKP := 1;
+  rsTapM := ""; rsCapM := ""; rsMsg := ""; rsSum := "no test run";
+  rsBzT := 0; rsShP := 0;
+  RS_P := -1; RS_PX := -1; RS_NB := 0; RS_OBS := 0;
+  RS_PCT := {}; RS_BCA := {}; RS_STAR := {};
+END;
+
+EXPORT ResampLab()
+BEGIN
+  LOCAL mnI, mnRun, mnM;
+  rs_Init();
+  rs_Splash();
+  mnRun := 1;
+  WHILE mnRun == 1 DO
+    mnI := 0;
+    CHOOSE(mnI, "ResampLab: " + rsShort, {"Permutation test: 2 groups", "Permutation test: paired", "Bootstrap CI: one sample", "Bootstrap CI: two groups", "Load a preset", "Use my data (D1, D2)", "Seed, confidence level", "Help", "Quit"});
+    // CHOOSE numbers the items itself; the index is tested, never the
+    // return value; Cancel (Esc) leaves it 0, which quits.
+    CASE
+      IF mnI == 0 OR mnI == 9 THEN mnRun := 0; END;
+      IF mnI >= 1 AND mnI <= 4 THEN
+        IF rsKind == 0 THEN
+          MSGBOX("No data yet: Load a preset, or Use my data (D1, D2).");
+        ELSE
+          rs_Lab(mnI);
+        END;
+      END;
+      IF mnI == 5 THEN
+        mnM := rs_Preset();
+        IF mnM > 0 THEN rs_DataPage(); rs_Lab(mnM); END;
+      END;
+      IF mnI == 6 THEN
+        IF rs_Mine() == 1 THEN rs_DataPage(); END;
+      END;
+      IF mnI == 7 THEN rs_Settings(); END;
+      IF mnI == 8 THEN rs_Help(); END;
+    END;
+  END;
+  RETURN "ResampLab: " + rsSum;
+END;
+

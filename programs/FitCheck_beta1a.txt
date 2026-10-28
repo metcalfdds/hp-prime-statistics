@@ -1,0 +1,3231 @@
+#pragma mode( separator(.,;) integer(h32) )
+
+// (C) 2026 Roger D Metcalf
+// For academic use only - do not rely on results for anything important
+// Results have not been rigorously verified and/or validated
+//
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with the
+//   file and credit the author if you pass it on.  Not for sale or
+//   commercial redistribution.
+// DISCLAIMER: a teaching and demonstration aid. Not validated for
+//   forensic, clinical or legal use; do not rely on its results for
+//   legal purposes.
+// Written with AI assistance. The concept, direction, decisions and all
+// hardware testing are Roger D. Metcalf's; the code, drafting and
+// source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
+
+// FITCHECK - beta 1a  (21 Oct 2026)
+// beta 1a: the fixes of the independent second review (REVIEW2_FitCheck_beta1.md;
+//   build/FitCheck/FitCheck_beta1a_CHANGES.md has one line per item):
+//   (1) Bars after Unmrg on a normal fit on bins no longer reads the merged
+//   groups (a run-time error); (2) the draft lottery is a 2 x 2 table, with
+//   Pearson's chi-square and Fisher's exact (hypergeometric) p -- the
+//   numbers were drawn without replacement -- and the fixed-share
+//   goodness-of-fit test is the teaching point; (3) Lilliefors' p only for
+//   n >= 5 ("p not available for n < 5", grey); (4) the first-two-digits
+//   Benford test leaves out numbers below 10 and says how many; (5)
+//   Castaneda's footnote 17 cited 430 U.S. at 496-497 n.17, paraphrased
+//   with one short quotation; (6) Esc and a progress count while a large
+//   sample loads, sums in standardised units (no overflow), every source
+//   line under 250 characters, INPUT labels built in variables first,
+//   wording, footers, palette.
+// Goodness of fit and normality, with courtroom and crime data.  Does a
+//   set of counts follow the proportions a hypothesis predicts (chi-square
+//   goodness of fit, Benford's law, a Poisson or binomial model), and could
+//   a sample of measurements have come from a normal distribution (Q-Q
+//   plot, Shapiro-Wilk W, Anderson-Darling A^2, Lilliefors D, chi-square
+//   on bins)?  Plus the exact binomial test for one proportion, for the
+//   grand-jury case Castaneda v. Partida.
+// Launch: FitCheck from the Program Catalog (no arguments; it opens on a
+//   title page, then the menu).  Menu: Chi-square goodness of fit;
+//   Benford's law; Poisson fit; Binomial fit; Normality: Q-Q, W, A^2, D;
+//   Normality: chi-square on bins; Exact binomial test; Load a preset;
+//   Use my data (D1, D2); Help; Quit.
+// Every result has pictures you can touch: observed vs expected bars with
+//   each cell's chi-square contribution in a strip below (tap a cell for O,
+//   E, (O-E)^2/E and (O-E)/sqrt(E)); the Benford curve over the observed
+//   first digits; a table of the cells; the chi-square curve with the
+//   statistic marked and its tail shaded; a normal Q-Q plot (tap a point
+//   for its value and normal score); the ECDF against the fitted normal CDF
+//   with the largest gap D marked; the binomial distribution with the
+//   observed count and the p-value region, on a scale of SDs.
+// Home exports (after a run): FC_X2, FC_DF, FC_P (the last chi-square fit),
+//   FC_O, FC_E (its observed and expected counts, as shown), FC_W, FC_PW
+//   (Shapiro-Wilk), FC_A2, FC_PA (Anderson-Darling: A^2 uncorrected, and p),
+//   FC_D, FC_PD (Lilliefors; FC_PD = -1: p > 0.10, -2: n < 5), FC_BP (the exact
+//   binomial test's two-sided p).
+// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  beta 1a has
+//   NOT been run on hardware or the emulator, only in the PC harness.
+// Sources:
+//   chi-square goodness of fit: Pearson (1900); the expected-count rules:
+//     every E >= 5, or Cochran's (1954, Biometrics 10:417) "at most 20% of
+//     the E below 5 and none below 1"; df = k - 1 - (parameters estimated)
+//     (Fisher 1924).  Upper tail: 2 Phi(-sqrt x) for df 1, e^(-x/2) for
+//     df 2, else the regularized upper incomplete gamma Q(df/2, x/2) by its
+//     series or continued fraction (Press et al., Numerical Recipes, 2nd ed.,
+//     section 6.2), so a tiny p keeps its digits (Lessons Learned 3).
+//   Benford's law: P(first digit d) = log10(1 + 1/d); first two digits
+//     P(ab) = log10(1 + 1/(10a + b)) (Benford 1938; Nigrini, "Forensic
+//     Analytics", 2011 and 2020).  Mean absolute deviation MAD = (1/K) sum
+//     |actual - expected proportion| (Nigrini).  Nigrini's MAD conformity
+//     ranges are NOT shown: no file we can read here states them, so the
+//     program shows the MAD and says why the ranges are missing.
+//   Normal Q-Q plot: Blom (1958) positions (i - 3/8)/(n + 1/4).
+//   Shapiro-Wilk W and its p: Royston (1995) Applied Statistics 44:547,
+//     algorithm AS R94 (the coefficients of Royston 1992), as in R's and
+//     SciPy's swilk; valid for 3 <= n <= 5000.
+//   Anderson-Darling A^2, the estimated-parameter correction A*^2 =
+//     A^2 (1 + 0.75/n + 2.25/n^2) and its p-value: D'Agostino & Stephens
+//     (1986) Goodness-of-Fit Techniques, Table 4.9 and its p formulas, as in
+//     statsmodels' normal_ad (A*^2 above 13 is reported as p < 0.0001).
+//   Lilliefors (1967) D (K-S with the mean and SD estimated); p from the
+//     Dallal & Wilkinson (1986) approximation, which holds for p < 0.10;
+//     above that the program says "p > 0.10" (statsmodels' "approx").
+//   Exact binomial test: two-sided p = the sum of every outcome no more
+//     probable than the one observed (the "minlike" rule of R's binom.test
+//     and SciPy's binomtest), in logs, so 10^-145 is still a number.
+//   log-gamma: Lanczos (1964), g = 7, nine coefficients.
+// Data (only from data/DATASETS.md; the source line shows on screen):
+//   Arizona v. Nelson: 23 cheque amounts; State of Arizona v. Wayne James
+//     Nelson; Triola, Elementary Statistics Using the TI-83/84 Plus, 2nd ed.,
+//     p. 653 (the merge 1 / 2-5 / 6-9 is Triola's suggestion there).
+//   Castaneda v. Partida, 430 U.S. 482, 495-496 (1977): 339 of 870 grand
+//     jurors Mexican-American; 79.1% of the county; footnote 17 at 496-497
+//     (read 21 Oct 2026, data/DATASETS.md).
+//   Richmond homicides 1991 (days with 0-3: 268, 79, 17, 1): Richards,
+//     Mathematics and Computer Education; Triola p. 245.
+//   Prussian cavalry horse kicks (corps-years with 0-4 deaths: 144, 91,
+//     32, 11, 2): Bortkiewicz (1898); Triola p. 245.
+//   crimtab: heights of 3,000 criminals in 2.54-cm bins (summed over the
+//     finger lengths): Macdonell (1902) Biometrika 1:177; R datasets.
+//   Rossi ages at release (432 men): Rossi, Berk & Lenihan (1980) Money,
+//     Work, and Crime; data via Allison (1995) / R carData.
+//   1970 draft lottery (the number drawn for each of 366 birth dates):
+//     Fienberg (1971) Science 171:255; Starr (1997) JSE 5(2).  Tested as a
+//     2 x 2 table (Jan-Jun / Jul-Dec x numbers 1-183 / 184-366): Pearson
+//     chi-square and Fisher's exact test (hypergeometric, without replacement).
+//   Binomial fit example: illustrative numbers (made up), labelled so.
+// Replaces / reworks (decoded in ref/triola_ti_programs/; credit to their
+//   authors -- Triola's TI-83/84 CD and the TI program libraries):
+//   X2GOF, ZSTCHISQ, GOFARB, GOFBIN, GOFPOISS, GOFUNIFM, GOFNORML,
+//   X2NORM2, ZSTCHINO, CHITESTS, KOLSMIR, CVMTEST1, NMLPROB, NRMLPRPL,
+//   ZSTNORMP, BENFORD, and Erdeky's CHISQ.  Bugs NOT repeated here:
+//   X2NORM2 divided by the OBSERVED counts (here: (O - E)^2 / E);
+//   GOFPOISS kept df = k - 1 after estimating lambda and did not lump the
+//   tail (here: a ">= K" cell and df = k - 2); GOFBIN, GOFARB and GOFNORML
+//   reused the loop variable, so the E < 1 check saw only the first cell
+//   (here every cell is checked); CHITESTS applied the 20% rule to R + C
+//   cells (here: to the k cells); KOLSMIR used plain K-S p-values with
+//   estimated parameters (here: Lilliefors with Dallal-Wilkinson);
+//   CVMTEST1 ignored Stephens' correction for estimated parameters and
+//   guarded one line with its If (here: Anderson-Darling with the
+//   correction); NMLPROB and ZSKNPROB left the middle point untransformed
+//   for odd n (here every point gets its Blom score); Erdeky's CHISQ
+//   printed "INDEPENDENT" for a non-significant test (here: "no evidence
+//   of a departure", never "proves").
+// File map: (line numbers of this file)
+//   EXPORTs and file-level LOCALs ......................... 144-233
+//   small helpers: init, waits, progress, text, wrap ...... 235-538
+//   special functions: log-gamma, Phi, ln Phi, chi-square
+//     upper tail (incomplete gamma) ......................... 540-652
+//   the chi-square fit engine: cells, check, merging ....... 654-867
+//   fits: Benford, Poisson, binomial, normal on bins ....... 869-1086
+//   normality: W, A^2, D, loading a sample ................ 1088-1329
+//   exact binomial test (logs) 1331-1459; Fisher's exact 2 x 2 1461-1499
+//   pictures and pages: chi-square fit 1501-1978, normality
+//     1980-2357, binomial test 2359-2607
+//   presets 2609-2811; your own data, D1 and D2 2813-2961
+//   help and the title page 2963-3058; the menu items 3060-3178
+//   FitCheck(), the entry point ........................... 3180-end
+// Layout: font 1 is about 6.5 px a character, so text pages keep a line
+//   to 46 characters (fc_Wrap) and pass a width to every TEXTOUT_P.  Soft
+//   keys take y >= 218; everything else ends above it.
+
+EXPORT FC_X2, FC_DF, FC_P, FC_O;
+EXPORT FC_E, FC_W, FC_PW, FC_A2;
+EXPORT FC_PA, FC_D, FC_PD, FC_BP;
+
+// ---- the chi-square fit: the raw cells ----
+LOCAL fcK, fcO, fcPr, fcLab, fcNPar, fcKind;
+//  fcK cells; fcO observed counts; fcPr expected proportions (sum 1);
+//  fcLab the cells' labels; fcNPar parameters estimated from the data
+//  (0 none, 1 lambda or p, 2 mean and SD); fcKind: 1 counts and shares,
+//  2 Benford first digit, 3 Benford first two digits, 4 Poisson,
+//  5 binomial, 6 normal on bins.
+LOCAL fcTtl, fcSrc, fcPre, fcHasF, fcMrg, fcMS;
+//  fcTtl title; fcSrc the source line; fcPre which preset is loaded (0
+//  none, 1 Nelson, 2 Castaneda, 3 Richmond, 4 horse kicks, 5 crimtab,
+//  6 Rossi, 7 draft, 8 illustrative binomial); fcHasF 1 once a fit
+//  exists; fcMrg 1 = the merged view; fcMS, fcME first and last raw cell
+//  of each merged group.
+LOCAL fcME, fcFixG, fcN, fcVK, fcVO, fcVE;
+//  fcFixG 1 = the merge is a fixed grouping (Triola's 1 / 2-5 / 6-9 for
+//  Nelson), 0 = automatic; fcN total count; fcVK, fcVO, fcVE ... the
+//  cells AS SHOWN (merged or not): count, observed, expected.
+LOCAL fcVL, fcVC, fcVR, fcX2, fcDF, fcP;
+//  labels, contributions (O-E)^2/E, residuals (O-E)/sqrt(E); the test.
+LOCAL fcChk, fcN5, fcMinE, fcBad, fcMAD, fcSel;
+//  fcChk: 1 every E >= 5, 2 Cochran's rule holds, 0 it does not; fcN5
+//  cells with E below 5; fcMinE the smallest E; fcBad 1 = an expected
+//  count of 0; fcMAD Benford's mean absolute deviation; fcSel the cell
+//  selected on the pictures.
+LOCAL fcLmb, fcBn, fcBp, fcBEst, fcGxb, fcGsd;
+LOCAL fcMid;
+//  Poisson lambda-hat; binomial n, p and whether p was estimated; the
+//  mean and SD used by the normal fit on bins, and its bins' midpoints.
+LOCAL fcBenU, fcBenZ, fcNote, fcCrit, fcMrgN, fcLnP;
+LOCAL fcBenS, fcFshP, fcFshL, fcGx2, fcGp, fcAbort;
+LOCAL fcSc;
+//  Benford: values used, zeros skipped; fcNote an extra line for the
+//  fit's test page; fcCrit the 5% critical value; fcMrgN merged groups;
+//  fcLnP the natural log of p (so a p of 10^-186 can still be printed).
+//  beta 1a: fcBenS values below 10 left out of the first-two-digits test;
+//  fcFshP, fcFshL Fisher's exact p and its log (the draft lottery's 2 x 2);
+//  fcGx2, fcGp the fixed-share goodness-of-fit chi-square and p, kept as
+//  the teaching point; fcAbort 1 when Esc stopped a long computation; fcSc
+//  the scale (largest |x - x-bar|) the sample's sums are taken in.
+
+// ---- normality: the sample ----
+LOCAL fcX, fcNX, fcXb, fcSd, fcZq, fcHasN;
+//  fcX sorted values; fcNX n; fcXb mean; fcSd SD (n - 1); fcZq the Blom
+//  normal scores; fcHasN 1 once a sample is loaded.
+LOCAL fcW, fcPW, fcA2, fcA2s, fcPA, fcLD;
+LOCAL fcPD, fcLDi, fcSkw, fcKur, fcBin, fcBM;
+//  W and p; A^2, A*^2, p; Lilliefors D, p (-1 = above 0.10), and the
+//  sorted index where D occurs; skewness g1 and excess kurtosis g2;
+//  fcBin 1 = binned data (crimtab): fcBM midpoints, fcBF counts, fcBW
+//  bin width.
+LOCAL fcBF, fcBW, fcNTtl, fcNSrc, fcNSel, fcNPre;
+LOCAL fcQX, fcQY, fcQN, fcLDy, fcLnPW, fcLnPA;
+LOCAL fcLnPD, fcQZ, fcQV, fcQR, fcEa, fcEb;
+LOCAL fcEPx, fcTSrc;
+//  the Q-Q points as drawn (pixels) for tapping, and how many; fcLDy the
+//  ECDF's height where D occurs; ln p of W, A^2 and D (1 = not known);
+//  the Q-Q points (normal score, value, rank); the ECDF window (fcEa to
+//  fcEb) and the tapped column (-1 none); fcTSrc the binomial test's
+//  source line.
+
+// ---- the exact binomial test ----
+LOCAL fcTx, fcTn, fcTp0, fcTLC, fcTLp, fcTLq;
+//  x successes of n, p0; ln n!, ln p0, ln(1 - p0).
+LOCAL fcTlL, fcTlU, fcTl2, fcTp2, fcTkL, fcTkU;
+//  ln P(X <= x), ln P(X >= x), ln of the two-sided p, the p itself; the
+//  rejection region is k <= fcTkL together with k >= fcTkU.
+LOCAL fcTE, fcTSD, fcTz, fcHasT, fcTPre, fcTSel;
+//  E = n p0, SD, z; fcHasT 1 once a test exists; fcTPre 1 = Castaneda.
+LOCAL fcTLo, fcTHi, fcTCol;
+//  the plot window (k from fcTLo to fcTHi) and its cached column heights.
+
+// ---- the text pages (help, tests): lines and colours ----
+LOCAL fcTL, fcTC;
+
+// ---- the plot box, colours and glyphs ----
+LOCAL fcPL, fcPR, fcPT, fcPB, fcCvP, fcCvX;
+LOCAL fcBLUE, fcMAG, fcRED, fcGRN, fcORNG, fcGRAY;
+LOCAL fcFOOT, fcGRID, fcSHD, fcLBLU, fcLRED, fcLGRN;
+LOCAL fcLORN, fcPEXP;
+LOCAL fcX2S, fcSq, fcH0, fcH1, fcAl, fcGLm;
+LOCAL fcMu, fcSg, fcXbar, fcPh, fcGe, fcLe;
+LOCAL fcPm, fcTm, fcAr, fcRt, fcInf, fcNe;
+LOCAL fcUD, fcLR;
+//  chi-square, superscript 2, H0, H1, alpha, lambda, mu, sigma, x-bar,
+//  p-hat, >=, <=, +/-, times, arrow, sqrt, infinity, not-equal, and the
+//  up-down and left-right arrow pairs (fcUD, fcLR), all built with CHAR() in fc_Init so the source
+//  stays pure ASCII.
+
+// ============================================================
+// SMALL HELPERS
+// ============================================================
+
+// The house palette (Lessons Learned 13) and the glyphs, set once.
+fc_Init()
+BEGIN
+  fcBLUE := #003CC8h; fcMAG := #C800C8h; fcRED := #FF0000h;
+  fcGRN := #008C3Ch; fcORNG := #FF4500h; fcGRAY := #5A5A5Ah;
+  fcFOOT := #1E90FFh; fcGRID := #E1E4EBh; fcSHD := #AACDFFh;
+  fcLBLU := #EBF2FFh; fcLRED := #FFEBEBh; fcLGRN := #E8F6EBh;
+  fcLORN := #FFF0DCh; fcPEXP := #FFF0DCh;    // beta 1a: the house light orange
+  fcX2S := CHAR(967) + CHAR(178);      // chi-square
+  fcSq := CHAR(178);                   // superscript 2
+  fcH0 := "H" + CHAR(8320);            // H with subscript 0
+  fcH1 := "H" + CHAR(8321);
+  fcAl := CHAR(945);                   // alpha
+  fcGLm := CHAR(955);                  // lambda
+  fcMu := CHAR(956);                   // mu
+  fcSg := CHAR(963);                   // sigma
+  fcXbar := CHAR(57344);               // x-bar (HP private-use glyph)
+  fcPh := CHAR(57345);                 // p-hat
+  fcGe := CHAR(8805);                  // >=
+  fcLe := CHAR(8804);                  // <=
+  fcPm := CHAR(177);                   // +/-
+  fcTm := CHAR(215);                   // times
+  fcAr := CHAR(8594);                  // arrow
+  fcRt := CHAR(8730);                  // square root
+  fcInf := CHAR(8734);                 // infinity
+  fcNe := CHAR(8800);                  // not equal
+  fcUD := CHAR(8645); fcLR := CHAR(8646);   // the up-down and left-right arrow pairs
+  // the plot box: the drawing AND the touch code read these
+  fcPL := 34; fcPR := 312; fcPT := 52; fcPB := 150;
+  fcHasF := 0; fcHasN := 0; fcHasT := 0; fcPre := 0; fcNPre := 0; fcTPre := 0;
+  fcK := 0; fcVK := 0; fcSel := 1; fcNSel := 1; fcTSel := -1;
+  fcMrg := 0; fcFixG := 0; fcMrgN := 0; fcNote := "";
+  fcTL := {}; fcTC := {};
+  fcBenS := 0; fcFshP := -1; fcFshL := 1; fcGx2 := 0; fcGp := 1; fcAbort := 0; fcSc := 1;
+  fcQX := {0}; fcQY := {0}; fcQN := 0;
+  fcCvP := {0}; fcCvX := 1; fcMid := {0};
+  fcTCol := {0};
+END;
+
+// Wait for the finger to lift -- never more than one second (Lessons
+// Learned 7: a stuck touch reading must not freeze the program).
+fc_Drain()
+BEGIN
+  LOCAL drT;
+  drT := TICKS;
+  REPEAT UNTIL MOUSE(1) == -1 OR TICKS - drT > 1000;
+END;
+
+// Drain, wait for a key OR a tap, drain.  Returns the key code, or -1 for
+// a tap (whose y is then returned as -2 - y, so a page can tell where).
+fc_WaitAny()
+BEGIN
+  LOCAL waK, waM, waM1, waR;
+  REPEAT waK := GETKEY; UNTIL waK == -1;
+  fc_Drain();
+  REPEAT
+    waK := GETKEY;
+    waM := MOUSE;
+    waM1 := waM(1);
+  UNTIL waK > -1 OR SIZE(waM1) > 0;
+  waR := waK;
+  IF SIZE(waM1) > 0 THEN waR := -2 - waM1(2); END;
+  fc_Drain();
+  REPEAT waK := GETKEY; UNTIL waK == -1;
+  RETURN waR;
+END;
+
+// A "nice" step at least as big as the value: 1, 2 or 5 times a power of
+// ten (Heckbert), for axis ticks.
+fc_Nice(nnV)
+BEGIN
+  LOCAL nnE, nnF;
+  IF nnV <= 0 THEN RETURN 1; END;
+  nnE := FLOOR(LOG(nnV));
+  nnF := nnV / 10^nnE;
+  IF nnF <= 1 THEN RETURN 10^nnE; END;
+  IF nnF <= 2 THEN RETURN 2 * 10^nnE; END;
+  IF nnF <= 5 THEN RETURN 5 * 10^nnE; END;
+  RETURN 10^(nnE + 1);
+END;
+
+// The 1, 2 or 5 times a power of ten NEAREST the value (on a log scale):
+// the bin width for a sample's histogram bins.
+fc_NiceNear(nrV)
+BEGIN
+  LOCAL nrE, nrF;
+  IF nrV <= 0 THEN RETURN 1; END;
+  nrE := FLOOR(LOG(nrV));
+  nrF := nrV / 10^nrE;
+  // the boundaries are the geometric means: sqrt(2), sqrt(10), sqrt(50)
+  IF nrF < 1.41421356 THEN RETURN 10^nrE; END;
+  IF nrF < 3.16227766 THEN RETURN 2 * 10^nrE; END;
+  IF nrF < 7.07106781 THEN RETURN 5 * 10^nrE; END;
+  RETURN 10^(nrE + 1);
+END;
+
+// A number with d fixed decimals, rounded FIRST: STRING(x, 2, d) turns
+// scientific when 0 < |x| < 10^-d (Lessons Learned 3); "+ 0" turns a
+// rounded -0 into 0.
+fc_F(fxV, fxD)
+BEGIN
+  RETURN STRING(ROUND(fxV, fxD) + 0, 2, fxD);
+END;
+
+// A whole number as text.
+fc_I(fiV)
+BEGIN
+  RETURN STRING(ROUND(fiV, 0) + 0, 2, 0);
+END;
+
+// A number with its sign: "+1.67" or "-3.63".
+fc_Sgn(sgV, sgD)
+BEGIN
+  LOCAL sgR;
+  sgR := ROUND(sgV, sgD) + 0;
+  IF sgR >= 0 THEN RETURN "+" + STRING(sgR, 2, sgD); END;
+  RETURN STRING(sgR, 2, sgD);
+END;
+
+// A number with as few decimals as it needs, up to fnD: 17, 142.2, 0.25.
+fc_Num(fnV, fnD)
+BEGIN
+  LOCAL fnI, fnR;
+  FOR fnI FROM 0 TO fnD DO
+    fnR := ROUND(fnV, fnI);
+    IF ABS(fnV - fnR) < 0.0000001 * MAX(1, ABS(fnV)) THEN RETURN fc_F(fnV, fnI); END;
+  END;
+  RETURN fc_F(fnV, fnD);
+END;
+
+// A p-value as text: "p = 0.0123", or "p < 0.0001" below that (the house
+// style; the exact tiny value is shown separately by fc_Pow).
+fc_PStr(psP)
+BEGIN
+  IF psP < 0.0001 THEN RETURN "p < 0.0001"; END;
+  IF psP > 0.9999 THEN RETURN "p > 0.9999"; END;
+  RETURN "p = " + fc_F(psP, 4);
+END;
+
+// A positive number from its natural log, as "1.23 x 10^-186": works for
+// numbers far below the Prime's 1E-499, because only the log is used.
+fc_Pow(pwL)
+BEGIN
+  LOCAL pwT, pwE, pwM;
+  pwT := pwL / LN(10);
+  pwE := FLOOR(pwT);
+  pwM := ROUND(10^(pwT - pwE), 2);
+  IF pwM >= 10 THEN pwM := pwM / 10; pwE := pwE + 1; END;
+  RETURN fc_F(pwM, 2) + " " + fcTm + " 10^" + fc_I(pwE);
+END;
+
+// A p-value with its tiny value spelled out from its log (plL = LN(p))
+// when it is below 0.0001: "p = 0.0078", or "p = 1.60 x 10^-186".  plL >= 0
+// means "no log known" (then "p < 0.0001").
+fc_PLong(plP, plL)
+BEGIN
+  IF plP >= 0.0001 THEN RETURN fc_PStr(plP); END;
+  IF plL < 0 THEN RETURN "p = " + fc_Pow(plL); END;
+  RETURN "p < 0.0001";
+END;
+
+// Long text cut into lines of at most wrW characters, broken at a space
+// (BayesTree's bt_Wrap shape).  Returns a list of strings.
+fc_Wrap(wrS, wrW)
+BEGIN
+  LOCAL wrL, wrT, wrI, wrC;
+  wrL := {}; wrT := wrS;
+  WHILE DIM(wrT) > wrW DO
+    wrC := 0;
+    FOR wrI FROM IP(wrW / 2) TO wrW + 1 DO
+      IF MID(wrT, wrI, 1) == " " THEN wrC := wrI; END;
+    END;
+    IF wrC == 0 THEN wrC := wrW; END;
+    wrL := CONCAT(wrL, {MID(wrT, 1, wrC)});
+    wrT := MID(wrT, wrC + 1, DIM(wrT));
+  END;
+  RETURN CONCAT(wrL, {wrT});
+END;
+
+// Start a new text page list, and add a paragraph to it (wrapped to 46
+// characters, all in one colour).  fc_TLb adds an empty line.
+fc_TL0()
+BEGIN
+  fcTL := {}; fcTC := {};
+END;
+
+fc_TL(tlS, tlC)
+BEGIN
+  LOCAL tlW, tlI;
+  tlW := fc_Wrap(tlS, 46);
+  FOR tlI FROM 1 TO SIZE(tlW) DO
+    fcTL := CONCAT(fcTL, {tlW(tlI)});
+    fcTC := CONCAT(fcTC, {tlC});
+  END;
+END;
+
+fc_TLb()
+BEGIN
+  fcTL := CONCAT(fcTL, {""});
+  fcTC := CONCAT(fcTC, {0});
+END;
+
+// A white page on G1 with an orange title band (compose on G1, blit once).
+fc_Frame(frT)
+BEGIN
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 0, 0, 319, 18, fcORNG, fcORNG);
+  TEXTOUT_P(frT, G1, 4, 2, 2, #FFFFFFh, 312);
+END;
+
+// Show the frame, then the soft keys (DRAWMENU paints the screen, so it
+// comes after the blit, every frame).
+fc_Show(shK)
+BEGIN
+  BLIT_P(G0, 0, 0, G1);
+  DRAWMENU(shK);
+END;
+
+// Page lines pgP (14 to a page) of the text list, from y = 22.  pgF is the
+// footer drawn at y 205 in dodger blue ("" = none).
+fc_TextPage(pgT, pgP, pgF)
+BEGIN
+  LOCAL pgI, pgJ, pgC;
+  fc_Frame(pgT);
+  FOR pgI FROM 1 TO 14 DO
+    pgJ := (pgP - 1) * 14 + pgI;
+    IF pgJ <= SIZE(fcTL) THEN
+      pgC := fcTC(pgJ);
+      IF pgC == 0 THEN pgC := #000000h; END;
+      TEXTOUT_P(fcTL(pgJ), G1, 8, 9 + 13 * pgI, 1, pgC, 306);
+    END;
+  END;
+  IF DIM(pgF) > 0 THEN TEXTOUT_P(pgF, G1, 8, 205, 1, fcFOOT, 306); END;
+END;
+
+// How many 14-line pages the text list fills.
+fc_NPg()
+BEGIN
+  RETURN MAX(1, CEILING(SIZE(fcTL) / 14));
+END;
+
+// A small solid dot: three RECT_P bars (ARC_P rings leave holes, Lessons
+// Learned 6).  dtR = 1 (3 x 3) or 2 (5 x 5).
+fc_Dot(dtX, dtY, dtR, dtC)
+BEGIN
+  IF dtR >= 2 THEN
+    RECT_P(G1, dtX - 1, dtY - 2, dtX + 1, dtY + 2, dtC, dtC);
+    RECT_P(G1, dtX - 2, dtY - 1, dtX + 2, dtY + 1, dtC, dtC);
+  ELSE
+    RECT_P(G1, dtX - 1, dtY - 1, dtX + 1, dtY + 1, dtC, dtC);
+  END;
+END;
+
+// Dotted lines on G1 (LINE_P has no dash style).
+fc_DotV(dvX, dvY1, dvY2, dvC)
+BEGIN
+  LOCAL dvI;
+  FOR dvI FROM dvY1 TO dvY2 STEP 3 DO PIXON_P(G1, dvX, dvI, dvC); END;
+END;
+
+fc_DotH(dhX1, dhX2, dhY, dhC)
+BEGIN
+  LOCAL dhI;
+  FOR dhI FROM dhX1 TO dhX2 STEP 3 DO PIXON_P(G1, dhI, dhY, dhC); END;
+END;
+
+// A "please wait" box drawn straight on the screen, for work that takes
+// more than a second or two on a G1.
+fc_Busy(buS)
+BEGIN
+  RECT_P(G0, 30, 90, 290, 146, fcORNG, fcLORN);
+  TEXTOUT_P(buS, G0, 40, 96, 1, #000000h, 244);
+  TEXTOUT_P("Working ... (a G1 is slow at this)", G0, 40, 110, 1, fcGRAY, 244);
+END;
+
+// beta 1a (review 6): a progress count in the busy box every 250 steps,
+// and Esc stops the work (fcAbort := 1; the caller abandons it cleanly).
+fc_Prog(pgI, pgN, pgS)
+BEGIN
+  LOCAL pgK;
+  IF (pgI MOD 250) == 0 THEN
+    RECT_P(G0, 36, 126, 284, 140, fcLORN, fcLORN);
+    TEXTOUT_P(pgS + " " + fc_I(pgI) + " of " + fc_I(pgN) + ", Esc = stop", G0, 40, 128, 1, fcBLUE, 240);
+    pgK := GETKEY;
+    IF pgK == 4 THEN fcAbort := 1; END;
+  END;
+END;
+
+// A polynomial c(1) + c(2) x + c(3) x^2 + ... (Horner), for AS R94.
+fc_Poly(poC, poX)
+BEGIN
+  LOCAL poI, poR;
+  poR := 0;
+  poI := SIZE(poC);
+  WHILE poI >= 1 DO
+    poR := poR * poX + poC(poI);
+    poI := poI - 1;
+  END;
+  RETURN poR;
+END;
+
+// ============================================================
+// SPECIAL FUNCTIONS
+// ============================================================
+
+// e^v, or 0 when v is so negative that e^v would fall below the Prime's
+// range (1E-499; what the calculator does there has not been measured,
+// so it is never asked).
+fc_ExpG(egV)
+BEGIN
+  IF egV < -1100 THEN RETURN 0; END;
+  RETURN EXP(egV);
+END;
+
+// ln Gamma(z) for z >= 0.5: Lanczos (1964), g = 7, the nine coefficients
+// of Numerical Recipes (3rd ed.) / Godfrey, rounded to 12 digits.  There
+// is no LNGAMMA outside the CAS (Lessons Learned 3).
+//   Gamma(z) = sqrt(2 pi) t^(z - 1/2) e^-t A(z),  t = z + 6.5,
+//   A(z) = c0 + sum c_i / (z - 1 + i)
+fc_LnGam(lgZ)
+BEGIN
+  LOCAL lgC, lgX, lgT, lgI, lgW;
+  lgC := {1, 676.520368122, -1259.13921672, 771.323428778, -176.615029162,
+    12.5073432787, -0.138571095266, 9.98436957802E-6, 1.50563273515E-7};
+  lgW := lgZ - 1;
+  lgX := lgC(1);
+  FOR lgI FROM 1 TO 8 DO lgX := lgX + lgC(lgI + 1) / (lgW + lgI); END;
+  lgT := lgW + 7.5;
+  // 0.918938533205 = ln sqrt(2 pi)
+  RETURN 0.918938533205 + (lgW + 0.5) * LN(lgT) - lgT + LN(lgX);
+END;
+
+// Phi(z), the standard normal CDF, held at exactly 0 or 1 beyond
+// |z| = 37.5, where it is 0 or 1 to far more than 12 digits (the built-in
+// is never asked for a value that might underflow).
+fc_Phi(phZ)
+BEGIN
+  IF phZ < -37.5 THEN RETURN 0; END;
+  IF phZ > 37.5 THEN RETURN 1; END;
+  RETURN NORMALD_CDF(0, 1, phZ);
+END;
+
+// ln Phi(z).  Below z = -30 the asymptotic series of Mills' ratio:
+//   Phi(z) = phi(z) / |z| (1 - 1/z^2 + 3/z^4 - 15/z^6 ...)
+// (Abramowitz & Stegun 26.2.12), so ln Phi never meets a 0.
+fc_LnPhi(lpZ)
+BEGIN
+  LOCAL lpQ;
+  IF lpZ > -30 THEN RETURN LN(NORMALD_CDF(0, 1, lpZ)); END;
+  lpQ := 1 / (lpZ * lpZ);
+  RETURN -lpZ * lpZ / 2 - 0.918938533205 - LN(-lpZ) + LN(1 - lpQ + 3 * lpQ^2 - 15 * lpQ^3);
+END;
+
+// ln Q(a, x), the regularized UPPER incomplete gamma function, so that
+// P(chi-square with df > x) = Q(df/2, x/2).  Numerical Recipes (2nd ed.)
+// section 6.2: for x < a + 1 the series for P and Q = 1 - P (Q is not
+// small there); otherwise Lentz's continued fraction for Q itself, which
+// keeps every digit of a tiny tail (1 - CDF would be exactly 0 on the
+// Prime once the tail is below about 5E-13, Lessons Learned 3).
+fc_LnGamQ(gqA, gqX)
+BEGIN
+  LOCAL gqS, gqD, gqAp, gqN, gqLf, gqB;
+  LOCAL gqC, gqE, gqH, gqAn, gqDl, gqGo;
+  IF gqX <= 0 THEN RETURN 0; END;
+  // ln of x^a e^-x / Gamma(a), the common factor
+  gqLf := -gqX + gqA * LN(gqX) - fc_LnGam(gqA);
+  IF gqX < gqA + 1 THEN
+    gqAp := gqA; gqS := 1 / gqA; gqD := gqS; gqN := 0; gqGo := 1;
+    WHILE gqGo == 1 DO
+      gqAp := gqAp + 1;
+      gqD := gqD * gqX / gqAp;
+      gqS := gqS + gqD;
+      gqN := gqN + 1;
+      IF ABS(gqD) < ABS(gqS) * 2E-12 OR gqN > 1000 THEN gqGo := 0; END;
+    END;
+    gqS := 1 - gqS * EXP(gqLf);
+    IF gqS <= 0 THEN RETURN -1E99; END;
+    RETURN LN(gqS);
+  END;
+  gqB := gqX + 1 - gqA; gqC := 1E300; gqE := 1 / gqB; gqH := gqE;
+  gqN := 1; gqGo := 1;
+  WHILE gqGo == 1 DO
+    gqAn := -gqN * (gqN - gqA);
+    gqB := gqB + 2;
+    gqE := gqAn * gqE + gqB;
+    IF ABS(gqE) < 1E-300 THEN gqE := 1E-300; END;
+    gqC := gqB + gqAn / gqC;
+    IF ABS(gqC) < 1E-300 THEN gqC := 1E-300; END;
+    gqE := 1 / gqE;
+    gqDl := gqE * gqC;
+    gqH := gqH * gqDl;
+    gqN := gqN + 1;
+    // 2E-11: on 12-digit reals a ratio this close to 1 is 1 (or one step off)
+    IF ABS(gqDl - 1) < 2E-11 OR gqN > 1000 THEN gqGo := 0; END;
+  END;
+  RETURN gqLf + LN(gqH);
+END;
+
+// ln P(chi-square(df) > x), the upper tail, never as 1 - CDF:
+//   df 1: 2 Phi(-sqrt x);  df 2: e^(-x/2) exactly;  else ln Q(df/2, x/2).
+fc_LnChiUp(cuDF, cuX)
+BEGIN
+  IF cuX <= 0 THEN RETURN 0; END;
+  IF cuDF == 1 THEN RETURN LN(2) + fc_LnPhi(-(cuX^0.5)); END;
+  IF cuDF == 2 THEN RETURN -cuX / 2; END;
+  RETURN fc_LnGamQ(cuDF / 2, cuX / 2);
+END;
+
+// The upper tail itself (0 when it is below the Prime's range).
+fc_ChiUp(chDF, chX)
+BEGIN
+  RETURN MIN(1, fc_ExpG(fc_LnChiUp(chDF, chX)));
+END;
+
+
+// ============================================================
+// THE CHI-SQUARE FIT ENGINE
+//   raw cells fcO (observed), fcPr (expected proportions), fcLab;
+//   the cells SHOWN (merged or not) fcVO, fcVE, fcVL; for each:
+//     E = N x (its proportion),  contribution (O - E)^2 / E,
+//     residual (O - E) / sqrt(E)  (its square is the contribution);
+//   X2 = sum of the contributions,  df = k - 1 - m  (m = parameters
+//   estimated from the same data: Fisher 1924),  p = P(chi2(df) > X2).
+//   The check: every E >= 5; or Cochran's (1954) rule: at most 20% of
+//   the E below 5 and none below 1.  EVERY cell is checked (GOFBIN,
+//   GOFARB and GOFNORML looked at the first cell only).
+// ============================================================
+
+// The label of merged cells s..e: "6-9"; a Poisson group that takes the
+// tail cell is "at least s" (">=2").
+fc_GLab(glS, glE)
+BEGIN
+  IF glS == glE THEN RETURN fcLab(glS); END;
+  IF fcKind == 4 AND glE == fcK THEN RETURN fcGe + fcLab(glS); END;
+  RETURN fcLab(glS) + "-" + fcLab(glE);
+END;
+
+// Compute the cells as shown, the statistic, df, p and the check, and
+// put the results in Home's FC_ variables.
+fc_Calc()
+BEGIN
+  LOCAL ccG, ccI, ccO, ccQ, ccE, ccK;
+  LOCAL ccS, ccEd;
+  fcN := 0;
+  FOR ccI FROM 1 TO fcK DO fcN := fcN + fcO(ccI); END;
+  ccK := fcK;
+  IF fcMrg == 1 THEN ccK := SIZE(fcMS); END;
+  fcVK := ccK;
+  fcVO := MAKELIST(0, ccI, 1, ccK, 1);
+  fcVE := MAKELIST(0, ccI, 1, ccK, 1);
+  fcVC := MAKELIST(0, ccI, 1, ccK, 1);
+  fcVR := MAKELIST(0, ccI, 1, ccK, 1);
+  fcVL := {};
+  fcX2 := 0; fcBad := 0; fcN5 := 0; fcMinE := 1E300;
+  FOR ccG FROM 1 TO ccK DO
+    ccS := ccG; ccEd := ccG;
+    IF fcMrg == 1 THEN ccS := fcMS(ccG); ccEd := fcME(ccG); END;
+    ccO := 0; ccQ := 0;
+    FOR ccI FROM ccS TO ccEd DO
+      ccO := ccO + fcO(ccI);
+      ccQ := ccQ + fcPr(ccI);
+    END;
+    ccE := fcN * ccQ;
+    fcVO(ccG) := ccO; fcVE(ccG) := ccE;
+    fcVL := CONCAT(fcVL, {fc_GLab(ccS, ccEd)});
+    IF ccE <= 0 THEN
+      fcBad := 1;                        // an impossible cell: E = 0
+    ELSE
+      fcVC(ccG) := (ccO - ccE)^2 / ccE;
+      fcVR(ccG) := (ccO - ccE) / ccE^0.5;
+      fcX2 := fcX2 + fcVC(ccG);
+    END;
+    IF ccE < 5 THEN fcN5 := fcN5 + 1; END;
+    IF ccE < fcMinE THEN fcMinE := ccE; END;
+  END;
+  fcDF := ccK - 1 - fcNPar;
+  fcP := -1; fcLnP := 1; fcCrit := 0;
+  IF fcDF >= 1 AND fcBad == 0 THEN
+    fcLnP := fc_LnChiUp(fcDF, fcX2);
+    fcP := MIN(1, fc_ExpG(fcLnP));
+    fcCrit := CHISQUARE_ICDF(fcDF, 0.95);
+  END;
+  fcChk := 0;
+  IF fcN5 == 0 THEN
+    fcChk := 1;
+  ELSE
+    IF fcN5 <= 0.2 * ccK AND fcMinE >= 1 THEN fcChk := 2; END;
+  END;
+  IF fcSel > ccK OR fcSel < 1 THEN fcSel := 1; END;
+  FC_X2 := fcX2; FC_DF := fcDF; FC_P := fcP;
+  FC_O := fcVO; FC_E := fcVE;
+END;
+
+// A new fit from raw cells: O, proportions, labels, parameters estimated,
+// kind, title and source line.  The view starts unmerged.
+fc_SetFit(sfO, sfPr, sfLab, sfNP, sfKd, sfTt, sfSr)
+BEGIN
+  LOCAL sfI;
+  fcO := sfO; fcPr := sfPr; fcLab := sfLab;
+  fcK := SIZE(sfO); fcNPar := sfNP; fcKind := sfKd;
+  fcTtl := sfTt; fcSrc := sfSr;
+  fcMrg := 0; fcFixG := 0; fcNote := ""; fcSel := 1; fcHasF := 1;
+  fcMS := {}; fcME := {};
+  FOR sfI FROM 1 TO fcK DO
+    fcMS := CONCAT(fcMS, {sfI}); fcME := CONCAT(fcME, {sfI});
+  END;
+  fcMrgN := 0;
+  fc_Calc();
+END;
+
+// Automatic merging: while some expected count is below 5, the cell with
+// the SMALLEST E joins its neighbour with the smaller E (the left one on
+// a tie; an end cell joins its only neighbour), so only ADJACENT cells
+// are merged and an ordered scale stays ordered.  It stops early rather
+// than let df fall below 1.  The groups go to fcMS / fcME.
+fc_AutoMerge()
+BEGIN
+  LOCAL amS, amE, amX, amK, amI, amJ;
+  LOCAL amNb, amGo, amM, amLo;
+  amK := fcK;
+  amS := {}; amE := {}; amX := {};
+  FOR amI FROM 1 TO fcK DO
+    amS := CONCAT(amS, {amI}); amE := CONCAT(amE, {amI});
+    amX := CONCAT(amX, {fcN * fcPr(amI)});
+  END;
+  amGo := 1;
+  WHILE amGo == 1 DO
+    amGo := 0;
+    IF amK > fcNPar + 2 THEN
+      amJ := 0; amM := 5;
+      FOR amI FROM 1 TO amK DO
+        IF amX(amI) < amM THEN amM := amX(amI); amJ := amI; END;
+      END;
+      IF amJ > 0 THEN
+        IF amJ == 1 THEN
+          amNb := 2;
+        ELSE
+          IF amJ == amK THEN
+            amNb := amK - 1;
+          ELSE
+            amNb := amJ + 1;
+            IF amX(amJ - 1) <= amX(amJ + 1) THEN amNb := amJ - 1; END;
+          END;
+        END;
+        amLo := MIN(amJ, amNb);
+        amE(amLo) := amE(amLo + 1);
+        amX(amLo) := amX(amLo) + amX(amLo + 1);
+        // close the gap the merged cell leaves
+        FOR amI FROM amLo + 1 TO amK - 1 DO
+          amS(amI) := amS(amI + 1);
+          amE(amI) := amE(amI + 1);
+          amX(amI) := amX(amI + 1);
+        END;
+        amK := amK - 1;
+        amGo := 1;
+      END;
+    END;
+  END;
+  fcMS := {}; fcME := {};
+  FOR amI FROM 1 TO amK DO
+    fcMS := CONCAT(fcMS, {amS(amI)}); fcME := CONCAT(fcME, {amE(amI)});
+  END;
+END;
+
+// How many groups of the current grouping hold more than one cell.
+fc_NMerged()
+BEGIN
+  LOCAL nmI, nmC;
+  nmC := 0;
+  FOR nmI FROM 1 TO SIZE(fcMS) DO
+    IF fcME(nmI) > fcMS(nmI) THEN nmC := nmC + 1; END;
+  END;
+  RETURN nmC;
+END;
+
+// The Merge soft key: unmerged -> merged (Triola's grouping for the Nelson
+// preset, else fc_AutoMerge), merged -> back to every cell.  Says exactly
+// why when there is nothing it can merge.
+fc_ToggleMerge()
+BEGIN
+  IF fcKind == 7 THEN
+    MSGBOX("A 2 " + fcTm + " 2 table has nothing to merge.");
+    RETURN;
+  END;
+  IF fcMrg == 1 THEN
+    fcMrg := 0; fc_Calc();
+    RETURN;
+  END;
+  IF fcFixG == 0 THEN
+    fc_Calc();
+    fc_AutoMerge();
+  END;
+  fcMrgN := fc_NMerged();
+  IF fcMrgN == 0 THEN
+    IF fcN5 == 0 THEN
+      MSGBOX("Nothing to merge: every expected count is already 5 or more.");
+    ELSE
+      MSGBOX("Too few cells to merge: one more merge would leave df = 0.");
+    END;
+    RETURN;
+  END;
+  fcMrg := 1;
+  fc_Calc();
+END;
+
+// The merged groups, said exactly, as a paragraph of the text page:
+// "Merged: {6, 7, 8, 9} -> 6-9; {2, >=3} -> >=2."
+fc_MrgLines()
+BEGIN
+  LOCAL mlI, mlJ, mlS, mlG;
+  IF fcMrg == 0 THEN RETURN; END;
+  mlS := "Merged (neighbouring cells): ";
+  IF fcFixG == 1 THEN mlS := "Merged (Triola's grouping): "; END;
+  mlG := 0;
+  FOR mlI FROM 1 TO SIZE(fcMS) DO
+    IF fcME(mlI) > fcMS(mlI) THEN
+      IF mlG > 0 THEN mlS := mlS + "; "; END;
+      mlS := mlS + "{";
+      FOR mlJ FROM fcMS(mlI) TO fcME(mlI) DO
+        mlS := mlS + fcLab(mlJ);
+        IF mlJ < fcME(mlI) THEN mlS := mlS + ", "; END;
+      END;
+      mlS := mlS + "} " + fcAr + " " + fc_GLab(fcMS(mlI), fcME(mlI));
+      mlG := mlG + 1;
+    END;
+  END;
+  fc_TL(mlS + ".  Now " + fc_I(fcVK) + " cells (from " + fc_I(fcK) + ").", fcMAG);
+END;
+
+
+// ============================================================
+// THE FITS: Benford, Poisson, binomial, normal on bins
+// ============================================================
+
+// The leading digit (fdTwo = 0, 1..9) or the first two digits (fdTwo = 1,
+// 10..99) of a number's significand; 0 for a zero.  The ROUND guards a
+// 2.9999999999 from a division (the PC's binary arithmetic; the Prime's
+// decimal arithmetic gives 3 exactly): a number with ten or more 9s in a
+// row would be read one too high.
+fc_FirstDig(fdV, fdTwo)
+BEGIN
+  LOCAL fdA, fdE, fdM;
+  fdA := ABS(fdV);
+  IF fdA == 0 THEN RETURN 0; END;
+  fdE := FLOOR(LOG(fdA));
+  fdM := fdA / 10^fdE;
+  IF fdM >= 10 THEN fdM := fdM / 10; END;
+  IF fdM < 1 THEN fdM := fdM * 10; END;
+  IF fdTwo == 1 THEN
+    fdM := ROUND(fdM * 10, 8);
+    IF fdM >= 100 THEN fdM := 10; END;
+    RETURN IP(fdM);
+  END;
+  fdM := ROUND(fdM, 9);
+  IF fdM >= 10 THEN fdM := 1; END;
+  RETURN IP(fdM);
+END;
+
+// Benford's law for a list of numbers: first digit (bfTwo = 0, 9 cells,
+// P(d) = log10(1 + 1/d)) or first two digits (bfTwo = 1, 90 cells,
+// P(ab) = log10(1 + 1/(10a + b))).  Zeros are skipped and counted.  No
+// parameter is estimated: df = k - 1.  Also Nigrini's MAD = (1/K) sum
+// |actual proportion - Benford's proportion| over all K cells.
+// beta 1a (review 4): in the first-two-digits test a number below 10 has
+// no second digit (5 is not "50"), so it is left out and counted (fcBenS).
+// Returns 0 if no number was usable.
+fc_Benford(bfV, bfTwo, bfTt, bfSr)
+BEGIN
+  LOCAL bfO, bfPr, bfLab, bfI, bfD, bfK;
+  LOCAL bfOff;
+  bfK := 9; bfOff := 0;
+  IF bfTwo == 1 THEN bfK := 90; bfOff := 9; END;
+  bfO := MAKELIST(0, bfI, 1, bfK, 1);
+  bfPr := MAKELIST(0, bfI, 1, bfK, 1);
+  bfLab := {};
+  FOR bfI FROM 1 TO bfK DO
+    bfPr(bfI) := LOG(1 + 1 / (bfI + bfOff));
+    bfLab := CONCAT(bfLab, {fc_I(bfI + bfOff)});
+  END;
+  fcBenZ := 0; fcBenU := 0; fcBenS := 0;
+  FOR bfI FROM 1 TO SIZE(bfV) DO
+    bfD := fc_FirstDig(bfV(bfI), bfTwo);
+    IF bfTwo == 1 AND bfD > 0 AND ABS(bfV(bfI)) < 10 THEN
+      fcBenS := fcBenS + 1;
+      bfD := -1;
+    END;
+    IF bfD == 0 THEN
+      fcBenZ := fcBenZ + 1;
+    END;
+    IF bfD > 0 THEN
+      bfO(bfD - bfOff) := bfO(bfD - bfOff) + 1;
+      fcBenU := fcBenU + 1;
+    END;
+  END;
+  IF fcBenU == 0 THEN RETURN 0; END;
+  fc_SetFit(bfO, bfPr, bfLab, 0, 2 + bfTwo, bfTt, bfSr);
+  fcMAD := 0;
+  FOR bfI FROM 1 TO bfK DO
+    fcMAD := fcMAD + ABS(bfO(bfI) / fcN - bfPr(bfI));
+  END;
+  fcMAD := fcMAD / bfK;
+  RETURN 1;
+END;
+
+// A Poisson fit to counts: pfF(1) units saw 0 events, pfF(2) saw 1, ...
+// lambda-hat = (sum j f_j) / N.  Cells 0, 1, ..., K-1 and the TAIL
+// ">= K" (K = the largest count seen), whose E is N P(X >= K), a sum of
+// positive terms -- so the expected counts add up to N (GOFPOISS left the
+// tail out).  One parameter estimated: df = k - 2.  Returns 0 when there
+// is nothing to fit (no units, or no events at all).
+fc_PoisFit(pfF, pfTt, pfSr)
+BEGIN
+  LOCAL pfK, pfN, pfS, pfI, pfO, pfPr;
+  LOCAL pfLab, pfL, pfJ, pfGo, pfTl, pfLL;
+  pfK := SIZE(pfF);
+  WHILE pfK > 1 AND pfF(pfK) == 0 DO pfK := pfK - 1; END;
+  pfN := 0; pfS := 0;
+  FOR pfI FROM 1 TO pfK DO
+    pfN := pfN + pfF(pfI);
+    pfS := pfS + (pfI - 1) * pfF(pfI);
+  END;
+  IF pfN <= 0 OR pfS <= 0 OR pfK < 2 THEN RETURN 0; END;
+  fcLmb := pfS / pfN;
+  pfLL := LN(fcLmb);
+  pfO := MAKELIST(0, pfI, 1, pfK, 1);
+  pfPr := MAKELIST(0, pfI, 1, pfK, 1);
+  pfLab := {};
+  FOR pfI FROM 1 TO pfK DO
+    pfO(pfI) := pfF(pfI);
+    IF pfI < pfK THEN
+      // P(X = j), j = pfI - 1: e^-lambda lambda^j / j!, in logs
+      pfPr(pfI) := fc_ExpG(-fcLmb + (pfI - 1) * pfLL - fc_LnGam(pfI));
+      pfLab := CONCAT(pfLab, {fc_I(pfI - 1)});
+    ELSE
+      // P(X >= K): add terms from K upward until they no longer matter
+      pfTl := 0; pfJ := pfK - 1; pfGo := 1;
+      WHILE pfGo == 1 DO
+        pfL := fc_ExpG(-fcLmb + pfJ * pfLL - fc_LnGam(pfJ + 1));
+        pfTl := pfTl + pfL;
+        pfJ := pfJ + 1;
+        IF pfJ > fcLmb + 1 AND pfL <= 1E-15 * pfTl THEN pfGo := 0; END;
+        IF pfJ > pfK + 5000 THEN pfGo := 0; END;
+      END;
+      pfPr(pfI) := pfTl;
+      pfLab := CONCAT(pfLab, {fcGe + fc_I(pfK - 1)});
+    END;
+  END;
+  fc_SetFit(pfO, pfPr, pfLab, 1, 4, pfTt, pfSr);
+  RETURN 1;
+END;
+
+// A binomial fit: bnF(1) groups had 0 successes, ..., bnF(n + 1) had n.
+// bnP = p0 if typed (0 < p0 < 1: df = k - 1), or -1 to estimate it,
+// p-hat = (sum j f_j) / (n N) (one parameter: df = k - 2).
+// E_j = N BINOMIAL(n, p, j) (n, p, k: the order the Prime takes).
+// Returns 0 when p-hat is 0 or 1 (nothing varies) or there is no group.
+fc_BinFit(bnF, bnP, bnTt, bnSr)
+BEGIN
+  LOCAL bnN, bnS, bnI, bnPr, bnLab, bnNt;
+  bnNt := SIZE(bnF) - 1;
+  IF bnNt < 1 THEN RETURN 0; END;
+  bnN := 0; bnS := 0;
+  FOR bnI FROM 1 TO bnNt + 1 DO
+    bnN := bnN + bnF(bnI);
+    bnS := bnS + (bnI - 1) * bnF(bnI);
+  END;
+  IF bnN <= 0 THEN RETURN 0; END;
+  fcBEst := 0;
+  fcBp := bnP;
+  IF bnP < 0 THEN
+    fcBEst := 1;
+    fcBp := bnS / (bnNt * bnN);
+    IF fcBp <= 0 OR fcBp >= 1 THEN RETURN 0; END;
+  END;
+  fcBn := bnNt;
+  bnPr := MAKELIST(0, bnI, 1, bnNt + 1, 1);
+  bnLab := {};
+  FOR bnI FROM 1 TO bnNt + 1 DO
+    bnPr(bnI) := BINOMIAL(bnNt, fcBp, bnI - 1);
+    bnLab := CONCAT(bnLab, {fc_I(bnI - 1)});
+  END;
+  fc_SetFit(bnF, bnPr, bnLab, fcBEst, 5, bnTt, bnSr);
+  RETURN 1;
+END;
+
+// A normal fit to binned counts: midpoints nbM, counts nbF, bin width
+// nbW, and the mean and SD to use.  The END cells are open (the first
+// takes everything below its upper edge, the last everything above its
+// lower edge), so the proportions add to 1.  Each middle cell's
+// proportion is Phi(z_hi) - Phi(z_lo), or for a cell above the mean
+// Phi(-z_lo) - Phi(-z_hi), its mirror (no difference of two numbers near
+// 1).  Mean and SD estimated: df = k - 3.
+fc_NormBinFit(nbM, nbF, nbW, nbXb, nbSd, nbTt, nbSr)
+BEGIN
+  LOCAL nbK, nbI, nbPr, nbLab, nbZ, nbZo;
+  nbK := SIZE(nbM);
+  nbPr := MAKELIST(0, nbI, 1, nbK, 1);
+  nbLab := {};
+  nbZo := 0;
+  FOR nbI FROM 1 TO nbK DO
+    nbLab := CONCAT(nbLab, {fc_Num(nbM(nbI), 2)});
+    nbZ := (nbM(nbI) + nbW / 2 - nbXb) / nbSd;     // this cell's upper edge, as z
+    IF nbI == 1 THEN
+      nbPr(1) := fc_Phi(nbZ);
+    ELSE
+      IF nbI == nbK THEN
+        nbPr(nbI) := fc_Phi(-nbZo);
+      ELSE
+        IF nbZo >= 0 THEN
+          nbPr(nbI) := fc_Phi(-nbZo) - fc_Phi(-nbZ);
+        ELSE
+          nbPr(nbI) := fc_Phi(nbZ) - fc_Phi(nbZo);
+        END;
+      END;
+    END;
+    nbZo := nbZ;
+  END;
+  fc_SetFit(nbF, nbPr, nbLab, 2, 6, nbTt, nbSr);
+  fcGxb := nbXb; fcGsd := nbSd; fcMid := nbM;
+  RETURN 1;
+END;
+
+// The sample in fcX put into bins for the chi-square normal fit: about
+// Sturges' number of bins (log2 n + 1), a width that is 1, 2 or 5 times a
+// power of ten, bins (a, a + w] (a value on an edge goes to the LOWER
+// bin), and the mean and SD of the RAW values.
+fc_RawBins()
+BEGIN
+  LOCAL rbW, rbA, rbK, rbI, rbF, rbM;
+  LOCAL rbJ, rbK0;
+  rbK0 := CEILING(LN(fcNX) / LN(2)) + 1;
+  rbW := fc_NiceNear((fcX(fcNX) - fcX(1)) / rbK0);
+  rbA := FLOOR(ROUND(fcX(1) / rbW, 8)) * rbW;
+  IF ROUND((fcX(1) - rbA) / rbW, 8) == 0 THEN rbA := rbA - rbW; END;
+  rbK := MAX(1, CEILING(ROUND((fcX(fcNX) - rbA) / rbW, 8)));
+  rbF := MAKELIST(0, rbI, 1, rbK, 1);
+  rbM := MAKELIST(0, rbI, 1, rbK, 1);
+  FOR rbI FROM 1 TO rbK DO rbM(rbI) := rbA + (rbI - 0.5) * rbW; END;
+  FOR rbI FROM 1 TO fcNX DO
+    rbJ := CEILING(ROUND((fcX(rbI) - rbA) / rbW, 8));
+    rbJ := MAX(1, MIN(rbK, rbJ));
+    rbF(rbJ) := rbF(rbJ) + 1;
+  END;
+  fc_NormBinFit(rbM, rbF, rbW, fcXb, fcSd, fcNTtl + ": " + fcX2S + " on bins", fcNSrc);
+  fcNote := "Bins (a, a + " + fc_Num(rbW, 4) + "], labelled by their midpoints; the end cells are open.  " + fcXbar + " and s come from the " + fc_I(fcNX) + " raw values, so the true reference lies " +
+      "between " + fcX2S + "(k - 3) and " + fcX2S + "(k - 1) (Chernoff & Lehmann 1954); df = k - 3 is the usual textbook rule.";
+END;
+
+
+// ============================================================
+// NORMALITY: Blom scores, Shapiro-Wilk W, Anderson-Darling A^2,
+// Lilliefors D
+// ============================================================
+
+// Shapiro-Wilk W and p: Royston (1995), algorithm AS R94, exactly as
+// R's and SciPy's swilk compute it (checked against scipy.stats.shapiro
+// for n = 3 to 50 and up to 5000; build/FitCheck/verify).  With
+// m_i = Phi^-1((i - 3/8)/(n + 1/4)) (the Blom scores, fcZq), the
+// coefficients a_i of the largest two values come from Royston's (1992)
+// polynomials in 1/sqrt(n), the rest are m_i scaled so sum a^2 = 1, and
+//   W = (sum a_i (x(n+1-i) - x(i)))^2 / sum (x - x-bar)^2.
+// p: n = 3 exactly, p = (6/pi)(asin sqrt W - pi/3), written below as
+//   3 ASIN(sqrt W)/ASIN(1) - 2, which is the same in radians, degrees or
+//   grads; n = 4..11: y = -ln(gamma - ln(1 - W)), gamma = -2.273 + 0.459 n;
+//   n >= 12: y = ln(1 - W); then p = P(Z > (y - m)/s) with Royston's
+//   polynomials for m and s (computed as a lower tail).
+fc_SWcalc()
+BEGIN
+  LOCAL swN, swH, swI, swA, swS2, swSS;
+  LOCAL swRs, swA1, swA2, swFc, swI1, swNum;
+  LOCAL swSx, swW1, swY, swGm, swMu, swSg;
+  swN := fcNX; swH := IP(swN / 2);
+  swA := MAKELIST(0, swI, 1, swH, 1);
+  IF swN == 3 THEN
+    swA(1) := 0.5^0.5;
+  ELSE
+    swS2 := 0;
+    FOR swI FROM 1 TO swH DO swS2 := swS2 + fcZq(swI)^2; END;
+    swS2 := 2 * swS2;
+    swSS := swS2^0.5;
+    swRs := 1 / swN^0.5;
+    swA1 := fc_Poly({0, 0.221157, -0.147981, -2.07119, 4.434685, -2.706056}, swRs) - fcZq(1) / swSS;
+    IF swN > 5 THEN
+      swI1 := 3;
+      swA2 := -fcZq(2) / swSS + fc_Poly({0, 0.042981, -0.293762, -1.752461, 5.682633, -3.582633}, swRs);
+      swFc := ((swS2 - 2 * fcZq(1)^2 - 2 * fcZq(2)^2) / (1 - 2 * swA1^2 - 2 * swA2^2))^0.5;
+      swA(2) := swA2;
+    ELSE
+      swI1 := 2;
+      swFc := ((swS2 - 2 * fcZq(1)^2) / (1 - 2 * swA1^2))^0.5;
+    END;
+    swA(1) := swA1;
+    FOR swI FROM swI1 TO swH DO swA(swI) := -fcZq(swI) / swFc; END;
+  END;
+  swNum := 0; swSx := 0;
+  // beta 1a (review 8): both sums in units of fcSc (the largest |x - x-bar|),
+  // so a value near 1E300 cannot push a square past the Prime's 1E499
+  FOR swI FROM 1 TO swH DO
+    swNum := swNum + swA(swI) * ((fcX(swN + 1 - swI) - fcX(swI)) / fcSc);
+  END;
+  FOR swI FROM 1 TO swN DO swSx := swSx + ((fcX(swI) - fcXb) / fcSc)^2; END;
+  fcW := MIN(1, swNum^2 / swSx);
+  swW1 := 1 - fcW;
+  fcLnPW := 1;
+  IF swN == 3 THEN
+    fcPW := MAX(0, 3 * ASIN(fcW^0.5) / ASIN(1) - 2);
+    RETURN;
+  END;
+  IF swW1 <= 0 THEN fcPW := 1; RETURN; END;
+  swY := LN(swW1);
+  IF swN <= 11 THEN
+    swGm := -2.273 + 0.459 * swN;
+    IF swY >= swGm THEN fcPW := 1E-99; RETURN; END;   // AS R94: "obviously" tiny
+    swY := -LN(swGm - swY);
+    swMu := fc_Poly({0.544, -0.39978, 0.025054, -0.0006714}, swN);
+    swSg := EXP(fc_Poly({1.3822, -0.77857, 0.062767, -0.0020322}, swN));
+  ELSE
+    swMu := fc_Poly({-1.5861, -0.31082, -0.083751, 0.0038915}, LN(swN));
+    swSg := EXP(fc_Poly({-0.4803, -0.082676, 0.0030302}, LN(swN)));
+  END;
+  fcLnPW := fc_LnPhi(-(swY - swMu) / swSg);
+  fcPW := fc_ExpG(fcLnPW);
+END;
+
+// Anderson-Darling, mean and SD estimated (D'Agostino & Stephens 1986):
+//   A^2 = -n - (1/n) sum (2i - 1)[ln Phi(z(i)) + ln(1 - Phi(z(n+1-i)))],
+//   z = (x - x-bar)/s, and ln(1 - Phi(z)) = ln Phi(-z) (a lower tail);
+//   A*^2 = A^2 (1 + 0.75/n + 2.25/n^2), and p from their four formulas
+//   (as statsmodels' normal_ad; above A*^2 = 13 it says p = 0, which is
+//   below 5E-31: shown as "p < 0.0001").
+fc_ADcalc()
+BEGIN
+  LOCAL adI, adS, adN, adA;
+  adN := fcNX; adS := 0;
+  FOR adI FROM 1 TO adN DO
+    IF fcAbort == 0 THEN
+      adS := adS + (2 * adI - 1) * (fc_LnPhi((fcX(adI) - fcXb) / fcSd) + fc_LnPhi(-(fcX(adN + 1 - adI) - fcXb) / fcSd));
+      IF adN > 200 THEN fc_Prog(adI, adN, "A" + fcSq + ":"); END;
+    END;
+  END;
+  fcA2 := -adN - adS / adN;
+  fcA2s := fcA2 * (1 + 0.75 / adN + 2.25 / adN^2);
+  adA := fcA2s;
+  fcLnPA := 1;
+  IF adA < 0.2 THEN
+    fcPA := 1 - EXP(-13.436 + 101.14 * adA - 223.73 * adA^2);
+  ELSE
+    IF adA < 0.34 THEN
+      fcPA := 1 - EXP(-8.318 + 42.796 * adA - 59.938 * adA^2);
+    ELSE
+      IF adA < 0.6 THEN
+        fcPA := EXP(0.9177 - 4.279 * adA - 1.38 * adA^2);
+      ELSE
+        IF adA <= 13 THEN
+          fcLnPA := 1.2937 - 5.709 * adA + 0.0186 * adA^2;
+          fcPA := EXP(fcLnPA);
+        ELSE
+          fcPA := 0;
+        END;
+      END;
+    END;
+  END;
+  fcPA := MIN(1, MAX(0, fcPA));
+END;
+
+// Lilliefors (1967): the K-S distance between the ECDF and the normal
+// with the SAMPLE mean and SD,
+//   D = max over i of  max( i/n - Phi(z(i)),  Phi(z(i)) - (i-1)/n ),
+// and p from Dallal & Wilkinson's (1986) approximation (for n > 100,
+// D (n/100)^0.49 with n = 100), valid only for p < 0.10: above that the
+// pages say "p > 0.10" (fcPD = -1).  beta 1a (review 3): p is given only
+// for n >= 5, the start of Dallal & Wilkinson's range as implemented here;
+// for n = 3 or 4 fcPD = -2 and the pages say "p not available for n < 5"
+// (in grey, and the test is left out of the verdict).  KOLSMIR used the plain K-S p with
+// estimated parameters, which is far too large.
+fc_LFcalc()
+BEGIN
+  LOCAL lfI, lfF, lfDp, lfDm, lfN, lfK;
+  LOCAL lfNd;
+  lfN := fcNX; fcLD := 0; fcLDi := 1; fcLDy := 0;
+  FOR lfI FROM 1 TO lfN DO
+    IF lfN > 200 AND fcAbort == 0 THEN fc_Prog(lfI, lfN, "D:"); END;
+    lfF := fc_Phi((fcX(lfI) - fcXb) / fcSd);
+    lfDp := lfI / lfN - lfF;
+    lfDm := lfF - (lfI - 1) / lfN;
+    IF lfDp > fcLD THEN fcLD := lfDp; fcLDi := lfI; fcLDy := lfI / lfN; END;
+    IF lfDm > fcLD THEN fcLD := lfDm; fcLDi := lfI; fcLDy := (lfI - 1) / lfN; END;
+  END;
+  fcPD := -1; fcLnPD := 1;
+  IF lfN < 5 THEN fcPD := -2; END;
+  IF lfN >= 5 THEN
+    lfK := fcLD; lfNd := lfN;
+    IF lfN > 100 THEN lfK := fcLD * (lfN / 100)^0.49; lfNd := 100; END;
+    fcLnPD := -7.01256 * lfK^2 * (lfNd + 2.78019) + 2.99587 * lfK * (lfNd + 2.78019)^0.5 - 0.122119 + 0.974598 / lfNd^0.5 + 1.67997 / lfNd;
+    IF fcLnPD <= LN(0.1) THEN
+      fcPD := fc_ExpG(fcLnPD);
+    ELSE
+      fcLnPD := 1;
+    END;
+  END;
+END;
+
+// Load a sample for the normality tests: sorts it, mean, SD (n - 1,
+// two passes), skewness g1 and excess kurtosis g2 (moment forms), the
+// Blom scores (half computed, half mirrored: z(n+1-i) = -z(i), and the
+// middle of an odd n is exactly 0 -- NMLPROB left it out), then W, A^2
+// and D.  Returns 0 (with a message) for fewer than 3 values, more than
+// 5000, or no spread.
+fc_NormSet(nsV, nsTt, nsSr)
+BEGIN
+  LOCAL nsN, nsI, nsS, nsM2, nsM3, nsM4;
+  LOCAL nsD;
+  nsN := SIZE(nsV);
+  IF nsN < 3 THEN MSGBOX("The normality tests need at least 3 values."); RETURN 0; END;
+  IF nsN > 5000 THEN MSGBOX("At most 5000 values: Royston's W is defined up to n = 5000."); RETURN 0; END;
+  fcX := SORT(nsV); fcNX := nsN; fcBin := 0;
+  nsS := 0;
+  FOR nsI FROM 1 TO nsN DO nsS := nsS + fcX(nsI); END;
+  fcXb := nsS / nsN;
+  // beta 1a (review 8): the moments of (x - x-bar)/fcSc, fcSc = the largest
+  // |x - x-bar|, so no power can overflow; s, g1 and g2 are rescaled after
+  fcSc := 0;
+  FOR nsI FROM 1 TO nsN DO fcSc := MAX(fcSc, ABS(fcX(nsI) - fcXb)); END;
+  IF fcSc <= 0 THEN MSGBOX("Every value is the same: s = 0, so there is no shape to test."); RETURN 0; END;
+  nsM2 := 0; nsM3 := 0; nsM4 := 0;
+  FOR nsI FROM 1 TO nsN DO
+    nsD := (fcX(nsI) - fcXb) / fcSc;
+    nsM2 := nsM2 + nsD^2; nsM3 := nsM3 + nsD^3; nsM4 := nsM4 + nsD^4;
+  END;
+  IF nsM2 <= 0 THEN MSGBOX("Every value is the same: s = 0, so there is no shape to test."); RETURN 0; END;
+  fcSd := fcSc * (nsM2 / (nsN - 1))^0.5;
+  fcSkw := (nsM3 / nsN) / (nsM2 / nsN)^1.5;
+  fcKur := (nsM4 / nsN) / (nsM2 / nsN)^2 - 3;
+  fcAbort := 0;
+  IF nsN > 200 THEN fc_Busy("W, A" + fcSq + " and D for n = " + fc_I(nsN)); END;
+  fcZq := MAKELIST(0, nsI, 1, nsN, 1);
+  FOR nsI FROM 1 TO IP(nsN / 2) DO
+    IF fcAbort == 0 THEN
+      fcZq(nsI) := NORMALD_ICDF(0, 1, (nsI - 0.375) / (nsN + 0.25));
+      fcZq(nsN + 1 - nsI) := -fcZq(nsI);
+      IF nsN > 200 THEN fc_Prog(nsI, IP(nsN / 2), "scores:"); END;
+    END;
+  END;
+  IF fcAbort == 0 THEN fc_SWcalc(); END;
+  IF fcAbort == 0 THEN fc_ADcalc(); END;
+  IF fcAbort == 0 THEN fc_LFcalc(); END;
+  IF fcAbort == 1 THEN
+    // Esc: nothing half-computed is kept
+    fcHasN := 0; fcAbort := 0;
+    MSGBOX("Stopped (Esc): no sample is loaded.");
+    RETURN 0;
+  END;
+  fcNTtl := nsTt; fcNSrc := nsSr; fcHasN := 1; fcNSel := 1;
+  FC_W := fcW; FC_PW := fcPW; FC_A2 := fcA2; FC_PA := fcPA;
+  FC_D := fcLD; FC_PD := fcPD;
+  RETURN 1;
+END;
+
+// A BINNED sample (crimtab): midpoints, counts, width.  The mean and SD
+// come from the midpoints (no Sheppard correction).  W, A^2 and D are NOT
+// computed: thousands of tied values (every height rounded to its bin)
+// are not what those tests assume.  The Q-Q plot shows one point per
+// bin; the chi-square fit on bins is the test.
+fc_NormSetBin(sbM, sbF, sbW, sbTt, sbSr)
+BEGIN
+  LOCAL sbI, sbN, sbS, sbD, sbM2, sbM3;
+  LOCAL sbM4;
+  sbN := 0; sbS := 0;
+  FOR sbI FROM 1 TO SIZE(sbM) DO sbN := sbN + sbF(sbI); sbS := sbS + sbF(sbI) * sbM(sbI); END;
+  fcXb := sbS / sbN;
+  // beta 1a: in units of the largest |midpoint - x-bar|, as fc_NormSet
+  fcSc := 0;
+  FOR sbI FROM 1 TO SIZE(sbM) DO
+    IF sbF(sbI) > 0 THEN fcSc := MAX(fcSc, ABS(sbM(sbI) - fcXb)); END;
+  END;
+  sbM2 := 0; sbM3 := 0; sbM4 := 0;
+  FOR sbI FROM 1 TO SIZE(sbM) DO
+    sbD := (sbM(sbI) - fcXb) / fcSc;
+    sbM2 := sbM2 + sbF(sbI) * sbD^2; sbM3 := sbM3 + sbF(sbI) * sbD^3; sbM4 := sbM4 + sbF(sbI) * sbD^4;
+  END;
+  fcSd := fcSc * (sbM2 / (sbN - 1))^0.5;
+  fcSkw := (sbM3 / sbN) / (sbM2 / sbN)^1.5;
+  fcKur := (sbM4 / sbN) / (sbM2 / sbN)^2 - 3;
+  fcBin := 1; fcBM := sbM; fcBF := sbF; fcBW := sbW; fcNX := sbN;
+  fcX := {}; fcZq := {};
+  fcW := -1; fcPW := -1; fcA2 := -1; fcA2s := -1; fcPA := -1; fcLD := -1; fcPD := -1;
+  fcLnPW := 1; fcLnPA := 1; fcLnPD := 1;
+  fcNTtl := sbTt; fcNSrc := sbSr; fcHasN := 1; fcNSel := 1;
+  RETURN 1;
+END;
+
+
+// ============================================================
+// THE EXACT BINOMIAL TEST, in logs
+//   X ~ Binomial(n, p0);  ln P(X = k) = ln n! - ln k! - ln (n-k)!
+//     + k ln p0 + (n - k) ln(1 - p0);
+//   one-sided P(X <= x), P(X >= x), each summed from x AWAY from the mode
+//   (the terms shrink, so the sum stops once they no longer matter);
+//   two-sided p = the sum of P(X = k) over every k with P(X = k) <=
+//   P(X = x) (1 + 1E-7): R's binom.test and SciPy's binomtest ("minlike").
+//   Everything stays in logs, so p = 10^-186 is a number, not 0.
+// ============================================================
+
+fc_LPmf(lmK)
+BEGIN
+  RETURN fcTLC - fc_LnGam(lmK + 1) - fc_LnGam(fcTn - lmK + 1) + lmK * fcTLp + (fcTn - lmK) * fcTLq;
+END;
+
+// ln(e^a + e^b), without overflow or underflow.
+fc_LAdd(laA, laB)
+BEGIN
+  LOCAL laH, laL;
+  laH := MAX(laA, laB); laL := MIN(laA, laB);
+  IF laL - laH < -40 THEN RETURN laH; END;
+  RETURN laH + LN(1 + EXP(laL - laH));
+END;
+
+// ln of the sum of P(X = k) for k = tk0, tk0 + dir, tk0 + 2 dir, ... to 0
+// or n, starting on the side AWAY from the mode, so every next term is
+// smaller: a term below e^-40 of the first ends the sum.  Each term
+// comes from the one before: P(k + 1)/P(k) = (n - k)/(k + 1) p0/(1 - p0).
+fc_LTail(tkK0, tkDir)
+BEGIN
+  LOCAL tkK, tkL, tkL0, tkS, tkGo;
+  tkL0 := fc_LPmf(tkK0); tkL := tkL0; tkS := 1; tkK := tkK0; tkGo := 1;
+  WHILE tkGo == 1 DO
+    IF tkDir > 0 THEN
+      IF tkK >= fcTn THEN
+        tkGo := 0;
+      ELSE
+        tkL := tkL + LN((fcTn - tkK) / (tkK + 1)) + fcTLp - fcTLq;
+        tkK := tkK + 1;
+      END;
+    ELSE
+      IF tkK <= 0 THEN
+        tkGo := 0;
+      ELSE
+        tkL := tkL + LN(tkK / (fcTn - tkK + 1)) + fcTLq - fcTLp;
+        tkK := tkK - 1;
+      END;
+    END;
+    IF tkGo == 1 THEN
+      IF tkL - tkL0 < -40 THEN tkGo := 0; ELSE tkS := tkS + EXP(tkL - tkL0); END;
+    END;
+  END;
+  RETURN tkL0 + LN(tkS);
+END;
+
+// ln P(X <= k) and ln P(X >= k); -1E99 stands for ln 0.
+fc_LLo(loK)
+BEGIN
+  LOCAL loM;
+  IF loK < 0 THEN RETURN -1E99; END;
+  IF loK >= fcTn THEN RETURN 0; END;
+  loM := FLOOR((fcTn + 1) * fcTp0);                // the mode
+  IF loK <= loM THEN RETURN fc_LTail(loK, -1); END;
+  RETURN LN(MAX(1E-300, 1 - EXP(fc_LTail(loK + 1, 1))));
+END;
+
+fc_LHi(hiK)
+BEGIN
+  LOCAL hiM;
+  IF hiK <= 0 THEN RETURN 0; END;
+  IF hiK > fcTn THEN RETURN -1E99; END;
+  hiM := FLOOR((fcTn + 1) * fcTp0);
+  IF hiK >= hiM THEN RETURN fc_LTail(hiK, 1); END;
+  RETURN LN(MAX(1E-300, 1 - EXP(fc_LTail(hiK - 1, -1))));
+END;
+
+// The test for x successes in n trials against p0: E, SD, z, the
+// one-sided tails, the two-sided p and its rejection region (fcTkL,
+// fcTkU), and FC_BP.  The far side of the region is found by bisection:
+// on each side of the mode the probabilities are in order.
+fc_BTest(btX, btN, btP)
+BEGIN
+  LOCAL btD, btT, btA, btB, btM, btNP;
+  fcTx := btX; fcTn := btN; fcTp0 := btP;
+  fcTLC := fc_LnGam(btN + 1); fcTLp := LN(btP); fcTLq := LN(1 - btP);
+  btNP := btN * btP;
+  fcTE := btNP; fcTSD := (btN * btP * (1 - btP))^0.5;
+  fcTz := (btX - fcTE) / fcTSD;
+  fcTlL := fc_LLo(btX); fcTlU := fc_LHi(btX);
+  btD := fc_LPmf(btX);
+  btT := btD + LN(1 + 1E-7);                         // SciPy's relative tolerance
+  IF btX == btNP THEN
+    fcTl2 := 0; fcTkL := btN; fcTkU := 0;          // p = 1: every k counts
+  ELSE
+    IF btX < btNP THEN
+      // the other side: the first k >= ceil(n p0) with P(k) <= P(x)
+      fcTkL := btX;
+      IF fc_LPmf(btN) > btT THEN
+        fcTkU := btN + 1;
+      ELSE
+        btA := CEILING(btNP); btB := btN;
+        WHILE btA < btB DO
+          btM := IP((btA + btB) / 2);
+          IF fc_LPmf(btM) <= btT THEN btB := btM; ELSE btA := btM + 1; END;
+        END;
+        fcTkU := btA;
+      END;
+    ELSE
+      // the other side: the last k <= floor(n p0) with P(k) <= P(x)
+      fcTkU := btX;
+      IF fc_LPmf(0) > btT THEN
+        fcTkL := -1;
+      ELSE
+        btA := 0; btB := FLOOR(btNP);
+        WHILE btA < btB DO
+          btM := IP((btA + btB + 1) / 2);
+          IF fc_LPmf(btM) <= btT THEN btA := btM; ELSE btB := btM - 1; END;
+        END;
+        fcTkL := btA;
+      END;
+    END;
+    fcTl2 := fc_LAdd(fc_LLo(fcTkL), fc_LHi(fcTkU));
+  END;
+  fcTl2 := MIN(0, fcTl2);
+  fcTp2 := fc_ExpG(fcTl2);
+  fcHasT := 1; fcTSel := -1;
+  FC_BP := fcTp2;
+END;
+
+// ============================================================
+// beta 1a (review 2): FISHER'S EXACT TEST for a 2 x 2 table, in logs
+//   N items, K of them marked (the 183 low draft numbers among 366),
+//   n drawn (the 182 Jan-Jun birth dates), k marked among them (73).
+//   Drawn WITHOUT replacement, k is hypergeometric:
+//   P(k) = C(K, k) C(N - K, n - k) / C(N, n).
+//   Two-sided p = the sum of P(j) over every j with P(j) <= P(k) (1 + 1E-7),
+//   the "minlike" rule of R's fisher.test and SciPy's fisher_exact.
+//   Each P(j) comes from the one before:
+//   P(j + 1)/P(j) = (K - j)(n - j) / ((j + 1)(N - K - n + j + 1)).
+// ============================================================
+
+// ln P(j) for the hypergeometric (N, K, n).
+fc_LHyp(lhN, lhK, lhn, lhj)
+BEGIN
+  RETURN fc_LnGam(lhK + 1) - fc_LnGam(lhj + 1) - fc_LnGam(lhK - lhj + 1)
+    + fc_LnGam(lhN - lhK + 1) - fc_LnGam(lhn - lhj + 1) - fc_LnGam(lhN - lhK - lhn + lhj + 1)
+    - fc_LnGam(lhN + 1) + fc_LnGam(lhn + 1) + fc_LnGam(lhN - lhn + 1);
+END;
+
+// Fisher's two-sided p for k marked among n drawn: fcFshP, and its log
+// fcFshL (so a tiny p can still be printed).
+fc_Fisher(fhN, fhK, fhn, fhk)
+BEGIN
+  LOCAL fhJ, fhLo, fhHi, fhD, fhL, fhS;
+  fhLo := MAX(0, fhn + fhK - fhN); fhHi := MIN(fhn, fhK);
+  fhD := fc_LHyp(fhN, fhK, fhn, fhk) + LN(1 + 1E-7);
+  fhL := fc_LHyp(fhN, fhK, fhn, fhLo);
+  fhS := 0;
+  FOR fhJ FROM fhLo TO fhHi DO
+    IF fhL <= fhD AND fhL - fhD > -700 THEN fhS := fhS + EXP(fhL - fhD); END;
+    IF fhJ < fhHi THEN
+      fhL := fhL + LN((fhK - fhJ) * (fhn - fhJ)) - LN((fhJ + 1) * (fhN - fhK - fhn + fhJ + 1));
+    END;
+  END;
+  // fhS counts in units of P(k) (1 + 1E-7)
+  fcFshL := MIN(0, fhD + LN(fhS));
+  fcFshP := fc_ExpG(fcFshL);
+END;
+
+// ============================================================
+// PICTURES AND PAGES OF A CHI-SQUARE FIT
+//   Bars: observed (blue) beside expected (orange), or for many cells
+//     and for Benford the expected as a curve over the observed bars;
+//     each cell's contribution (O - E)^2 / E as a small magenta bar in a
+//     strip below; tap a cell (or Left / Right) for its numbers.
+//   Table: every cell, 12 to a page.  Curve: the chi-square density for
+//     df, the statistic marked, its tail shaded.  Test: the words.
+// ============================================================
+
+// beta 1a: a p with six decimals between 0.000001 and 0.001 (Fisher's
+// 0.000243 beside Pearson's 0.000168 would both read 0.0002), else as
+// fc_PLong.
+fc_P6(p6P, p6L)
+BEGIN
+  IF p6P < 0.001 AND p6P >= 0.000001 THEN RETURN "p = " + fc_F(p6P, 6); END;
+  RETURN fc_PLong(p6P, p6L);
+END;
+
+// The headline: "chi2 = 105.97, df = 8, p < 0.0001", and its colour (red
+// when p < 0.05, green when not, grey when there is no test).
+fc_VStr()
+BEGIN
+  IF fcBad == 1 THEN RETURN "An expected count is 0: no test"; END;
+  IF fcDF < 1 THEN RETURN fcX2S + " = " + fc_F(fcX2, 2) + ", df = " + fc_I(fcDF) + ": no test"; END;
+  RETURN fcX2S + " = " + fc_F(fcX2, 2) + ", df = " + fc_I(fcDF) + ", " + fc_PStr(fcP);
+END;
+
+fc_VCol()
+BEGIN
+  IF fcBad == 1 OR fcDF < 1 THEN RETURN fcGRAY; END;
+  IF fcP < 0.05 THEN RETURN fcRED; END;
+  RETURN fcGRN;
+END;
+
+// The expected-count check in a few words (the bars page), and its colour.
+fc_ChkStr()
+BEGIN
+  IF fcBad == 1 THEN RETURN "a cell has E = 0"; END;
+  IF fcKind == 7 THEN RETURN "Fisher exact " + fc_PStr(fcFshP); END;
+  IF fcChk == 1 THEN RETURN "every E " + fcGe + " 5"; END;
+  IF fcChk == 2 THEN RETURN fc_I(fcN5) + " of " + fc_I(fcVK) + " E < 5: Cochran OK"; END;
+  IF fcMrg == 1 THEN RETURN fc_I(fcN5) + " of " + fc_I(fcVK) + " E < 5 still"; END;
+  RETURN fc_I(fcN5) + " of " + fc_I(fcVK) + " E < 5: tap Merge";
+END;
+
+fc_ChkCol()
+BEGIN
+  IF fcKind == 7 THEN
+    IF fcFshP < 0.05 THEN RETURN fcRED; END;
+    RETURN fcGRN;
+  END;
+  IF fcChk == 0 OR fcBad == 1 THEN RETURN fcRED; END;
+  RETURN fcGRN;
+END;
+
+// The bars page.
+fc_DrawBars()
+BEGIN
+  LOCAL dbK, dbCw, dbI, dbMx, dbStp, dbYm;
+  LOCAL dbV, dbY, dbX0, dbBw, dbH, dbCx;
+  LOCAL dbCm, dbS, dbM, dbPair, dbN, dbDec;
+  LOCAL dbPx, dbPy, dbX;
+  dbK := fcVK; dbCw := (fcPR - fcPL) / dbK;
+  // side-by-side pairs for up to 12 cells (not Benford); otherwise one
+  // observed bar per cell and the expected values as a curve
+  dbPair := 0;
+  IF dbK <= 12 AND fcKind <> 2 AND fcKind <> 3 THEN dbPair := 1; END;
+  dbMx := 0;
+  FOR dbI FROM 1 TO dbK DO dbMx := MAX(dbMx, fcVO(dbI), fcVE(dbI)); END;
+  IF dbMx <= 0 THEN dbMx := 1; END;
+  dbStp := fc_Nice(dbMx / 4);
+  dbYm := CEILING(dbMx / dbStp) * dbStp;
+  IF dbYm <= dbMx THEN dbYm := dbYm + dbStp; END;
+  dbDec := MAX(0, -FLOOR(LOG(dbStp)));
+  dbCm := 0;
+  FOR dbI FROM 1 TO dbK DO dbCm := MAX(dbCm, fcVC(dbI)); END;
+  IF dbCm <= 0 THEN dbCm := 1; END;
+  fc_Frame(fcTtl);
+  TEXTOUT_P(fc_VStr(), G1, 6, 21, 1, fc_VCol(), 308);
+  TEXTOUT_P(fc_ChkStr(), G1, 6, 34, 1, fc_ChkCol(), 196);
+  // the legend: three colours, three words
+  dbX := TEXTOUT_P("O", G1, 206, 34, 1, fcBLUE, 12);
+  dbX := TEXTOUT_P("E", G1, 220, 34, 1, fcORNG, 12);
+  TEXTOUT_P("(O-E)" + fcSq + "/E", G1, 234, 34, 1, fcMAG, 78);
+  // grid and y ticks
+  dbV := 0; dbN := 0;
+  WHILE dbV <= dbYm + dbStp / 1000 AND dbN < 12 DO
+    dbY := fcPB - IP(dbV / dbYm * (fcPB - fcPT) + 0.5);
+    LINE_P(G1, fcPL, dbY, fcPR, dbY, fcGRID);
+    TEXTOUT_P(STRING(ROUND(dbV, dbDec), 2, dbDec), G1, 2, dbY - 5, 1, fcGRAY, 30);
+    dbV := dbV + dbStp; dbN := dbN + 1;
+  END;
+  // the cells
+  dbM := 1;
+  IF dbK > 12 THEN dbM := CEILING(dbK / 10); END;
+  IF fcKind == 3 AND fcMrg == 0 THEN dbM := 10; END;
+  FOR dbI FROM 1 TO dbK DO
+    dbX0 := fcPL + (dbI - 1) * dbCw;
+    dbCx := IP(dbX0 + dbCw / 2);
+    IF dbI == fcSel THEN
+      RECT_P(G1, IP(dbX0) + 1, fcPT, IP(dbX0 + dbCw) - 1, 186, fcLRED, fcLRED);
+    END;
+    dbH := MIN(fcPB - fcPT, IP(fcVO(dbI) / dbYm * (fcPB - fcPT) + 0.5));
+    IF dbPair == 1 THEN
+      dbBw := MAX(2, IP(dbCw / 2) - 3);
+      IF dbH > 0 THEN RECT_P(G1, dbCx - dbBw - 1, fcPB - dbH, dbCx - 1, fcPB - 1, fcBLUE, fcBLUE); END;
+      dbH := MIN(fcPB - fcPT, IP(fcVE(dbI) / dbYm * (fcPB - fcPT) + 0.5));
+      IF dbH > 0 THEN RECT_P(G1, dbCx + 1, fcPB - dbH, dbCx + 1 + dbBw, fcPB - 1, fcORNG, fcPEXP); END;
+    ELSE
+      dbBw := MAX(1, IP(dbCw * 0.6));
+      IF dbH > 0 THEN RECT_P(G1, dbCx - IP(dbBw / 2), fcPB - dbH, dbCx - IP(dbBw / 2) + dbBw - 1, fcPB - 1, fcBLUE, fcBLUE); END;
+    END;
+    // the contribution strip, 166 to 186
+    dbH := IP(fcVC(dbI) / dbCm * 18 + 0.5);
+    dbBw := MAX(1, IP(dbCw * 0.4));
+    IF dbH > 0 THEN RECT_P(G1, dbCx - IP(dbBw / 2), 186 - dbH, dbCx - IP(dbBw / 2) + dbBw - 1, 186, fcMAG, fcMAG); END;
+    // the label under the cell (every dbM-th one when they are crowded)
+    IF ((dbI - 1) MOD dbM) == 0 THEN
+      dbS := fcVL(dbI);
+      // bins of a normal fit: the group's middle, rounded, so it fits
+      // beta 1a: the merged groups are read ONLY in the merged view
+      // (after Unmrg fcMS still holds the shorter merged list: review 1)
+      IF fcKind == 6 THEN
+        IF fcMrg == 0 THEN
+          dbS := fc_I(fcMid(dbI));
+        ELSE
+          dbS := fc_I((fcMid(fcMS(dbI)) + fcMid(fcME(dbI))) / 2);
+        END;
+      END;
+      TEXTOUT_P(dbS, G1, MAX(fcPL - 6, dbCx - 3 * DIM(dbS)), 152, 1, #000000h, MIN(68, MAX(14, IP(dbCw * dbM) - 2)));
+    END;
+  END;
+  // the expected values as a curve, when they are not bars
+  IF dbPair == 0 THEN
+    FOR dbI FROM 1 TO dbK DO
+      dbPx := IP(fcPL + (dbI - 0.5) * dbCw);
+      dbPy := fcPB - MIN(fcPB - fcPT, IP(fcVE(dbI) / dbYm * (fcPB - fcPT) + 0.5));
+      IF dbI > 1 THEN
+        LINE_P(G1, dbX, dbY, dbPx, dbPy, fcORNG);
+        LINE_P(G1, dbX, dbY - 1, dbPx, dbPy - 1, fcORNG);
+      END;
+      IF dbK <= 30 THEN fc_Dot(dbPx, dbPy, 1, fcORNG); END;
+      dbX := dbPx; dbY := dbPy;
+    END;
+  END;
+  LINE_P(G1, fcPL, fcPT, fcPL, fcPB, #000000h);
+  LINE_P(G1, fcPL, fcPB, fcPR, fcPB, #000000h);
+  LINE_P(G1, fcPL, 186, fcPR, 186, fcGRAY);
+  TEXTOUT_P(fc_F(dbCm, 1), G1, 2, 166, 1, fcMAG, 30);
+  // the selected cell's numbers
+  dbI := fcSel;
+  TEXTOUT_P(fcVL(dbI) + ":  O = " + fc_Num(fcVO(dbI), 2) + ",  E = " + fc_F(fcVE(dbI), 2), G1, 6, 190, 1, #000000h, 308);
+  TEXTOUT_P("(O-E)" + fcSq + "/E = " + fc_F(fcVC(dbI), 3) + ",  (O-E)/" + fcRt + "E = " + fc_Sgn(fcVR(dbI), 2), G1, 6, 203, 1, fcMAG, 308);
+END;
+
+// The table page pg: 12 cells to a page.
+fc_DrawTable(tbPg)
+BEGIN
+  LOCAL tbI, tbY, tbC, tbA, tbB;
+  fc_Frame(fcTtl + ": cells");
+  TEXTOUT_P("cell", G1, 6, 22, 1, fcGRAY, 60);
+  TEXTOUT_P("O", G1, 78, 22, 1, fcBLUE, 30);
+  TEXTOUT_P("E", G1, 128, 22, 1, fcORNG, 30);
+  TEXTOUT_P("(O-E)" + fcSq + "/E", G1, 180, 22, 1, fcMAG, 70);
+  TEXTOUT_P("(O-E)/" + fcRt + "E", G1, 254, 22, 1, #000000h, 64);
+  LINE_P(G1, 2, 33, 317, 33, fcGRAY);
+  tbA := (tbPg - 1) * 12 + 1; tbB := MIN(fcVK, tbPg * 12);
+  FOR tbI FROM tbA TO tbB DO
+    tbY := 36 + (tbI - tbA) * 13;
+    IF tbI == fcSel THEN RECT_P(G1, 2, tbY - 1, 317, tbY + 11, fcLRED, fcLRED); END;
+    TEXTOUT_P(fcVL(tbI), G1, 6, tbY, 1, #000000h, 70);
+    TEXTOUT_P(fc_Num(fcVO(tbI), 2), G1, 78, tbY, 1, fcBLUE, 48);
+    TEXTOUT_P(fc_F(fcVE(tbI), 2), G1, 128, tbY, 1, fcORNG, 50);
+    TEXTOUT_P(fc_F(fcVC(tbI), 3), G1, 180, tbY, 1, fcMAG, 70);
+    tbC := #000000h;
+    IF ABS(fcVR(tbI)) >= 2 THEN tbC := fcRED; END;
+    TEXTOUT_P(fc_Sgn(fcVR(tbI), 2), G1, 254, tbY, 1, tbC, 60);
+  END;
+  LINE_P(G1, 2, 192, 317, 192, fcGRAY);
+  TEXTOUT_P("N = " + fc_Num(fcN, 2) + ",  " + fcX2S + " = sum = " + fc_F(fcX2, 3) + ";  red: |res| " + fcGe + " 2", G1, 6, 195, 1, #000000h, 308);
+  TEXTOUT_P("cells " + fc_I(tbA) + "-" + fc_I(tbB) + " of " + fc_I(fcVK) + ", " + fcUD + " = page, tap = pick", G1, 6, 207, 1, fcFOOT, 308);
+END;
+
+// The chi-square curve's window and its cache: one pixel row per column,
+// computed ONCE when the page opens (Lessons Learned 6).  The window
+// covers the 5% critical value and the statistic, unless the statistic
+// is far out (more than 2.5 times the window), which is then said on the
+// page instead of squashing the curve.
+fc_CurveFit()
+BEGIN
+  LOCAL cfR, cfS, cfI, cfXv, cfY, cfW;
+  IF fcDF < 1 OR fcBad == 1 THEN RETURN; END;
+  cfR := MAX(fcCrit * 1.4, fcDF + 4 * (2 * fcDF)^0.5, 3);
+  IF fcX2 <= 2.5 * cfR THEN cfR := MAX(cfR, fcX2 * 1.12); END;
+  cfS := fc_Nice(cfR / 5);
+  fcCvX := CEILING(cfR / cfS) * cfS;
+  // the y scale: df 1 rises without limit near 0 (clipped), df 2 starts
+  // at 0.5, larger df peak at x = df - 2
+  cfY := 0.6;
+  IF fcDF == 2 THEN cfY := 0.55; END;
+  IF fcDF > 2 THEN cfY := CHISQUARE(fcDF, fcDF - 2) * 1.15; END;
+  cfW := fcPR - fcPL;
+  fcCvP := MAKELIST(0, cfI, 1, cfW, 1);
+  FOR cfI FROM 1 TO cfW DO
+    cfXv := cfI / cfW * fcCvX;
+    fcCvP(cfI) := fcPB - IP(MIN(CHISQUARE(fcDF, cfXv) / cfY, 1) * (fcPB - fcPT));
+  END;
+END;
+
+// The curve page.
+fc_DrawCurve()
+BEGIN
+  LOCAL dcS, dcV, dcN, dcPx, dcX2, dcXc;
+  LOCAL dcLx, dcLast, dcPy, dcDec, dcOff;
+  fc_Frame(fcX2S + " curve, df = " + fc_I(MAX(0, fcDF)));
+  IF fcDF < 1 OR fcBad == 1 THEN
+    TEXTOUT_P(fc_VStr(), G1, 6, 40, 1, fcGRAY, 308);
+    TEXTOUT_P("df = k - 1 - m = " + fc_I(fcVK) + " - 1 - " + fc_I(fcNPar) + " = " + fc_I(fcDF) + ": too few cells", G1, 6, 60, 1, #000000h, 308);
+    TEXTOUT_P("for a test.  Unmerge, or fit fewer parameters.", G1, 6, 73, 1, #000000h, 308);
+    RETURN;
+  END;
+  TEXTOUT_P(fc_VStr(), G1, 6, 21, 1, fc_VCol(), 308);
+  TEXTOUT_P("5% critical value = " + fc_F(fcCrit, 2) + " (dotted red)", G1, 6, 34, 1, fcRED, 308);
+  dcS := fc_Nice(fcCvX / 5);
+  dcDec := MAX(0, -FLOOR(LOG(dcS)));
+  dcV := 0; dcN := 0;
+  WHILE dcV <= fcCvX + dcS / 1000 AND dcN < 14 DO
+    dcPx := fcPL + IP(dcV / fcCvX * (fcPR - fcPL) + 0.5);
+    LINE_P(G1, dcPx, fcPT, dcPx, fcPB, fcGRID);
+    LINE_P(G1, dcPx, fcPB, dcPx, fcPB + 3, #000000h);
+    TEXTOUT_P(STRING(ROUND(dcV, dcDec), 2, dcDec), G1, dcPx - 6, fcPB + 5, 1, fcGRAY, 36);
+    dcV := dcV + dcS; dcN := dcN + 1;
+  END;
+  // the p-value: the tail beyond the statistic, shaded column by column
+  dcOff := 0;
+  IF fcX2 > fcCvX THEN dcOff := 1; END;
+  IF dcOff == 0 THEN
+    dcX2 := fcPL + IP(fcX2 / fcCvX * (fcPR - fcPL) + 0.5);
+    FOR dcPx FROM MAX(dcX2, fcPL + 1) TO fcPR DO
+      dcPy := fcCvP(dcPx - fcPL);
+      IF dcPy < fcPB THEN LINE_P(G1, dcPx, fcPB - 1, dcPx, dcPy, fcSHD); END;
+    END;
+  END;
+  // the curve
+  dcLast := -1;
+  FOR dcPx FROM fcPL + 1 TO fcPR DO
+    dcPy := fcCvP(dcPx - fcPL);
+    IF dcLast >= 0 THEN LINE_P(G1, dcPx - 1, dcLast, dcPx, dcPy, fcBLUE); END;
+    dcLast := dcPy;
+  END;
+  LINE_P(G1, fcPL, fcPT, fcPL, fcPB, #000000h);
+  LINE_P(G1, fcPL, fcPB, fcPR, fcPB, #000000h);
+  // the 5% critical value
+  dcXc := MIN(fcPR, fcPL + IP(fcCrit / fcCvX * (fcPR - fcPL) + 0.5));
+  fc_DotV(dcXc, fcPT, fcPB, fcRED);
+  // the statistic
+  IF dcOff == 0 THEN
+    LINE_P(G1, dcX2, fcPT, dcX2, fcPB, fcMAG);
+    dcLx := dcX2 + 3;
+    IF dcX2 > fcPR - 80 THEN dcLx := dcX2 - 80; END;
+    TEXTOUT_P(fcX2S + " = " + fc_F(fcX2, 2), G1, dcLx, fcPT + 4, 1, fcMAG, 78);
+  ELSE
+    TEXTOUT_P(fcX2S + " = " + fc_F(fcX2, 1) + " " + fcAr, G1, 190, fcPT + 4, 1, fcMAG, 128);
+    TEXTOUT_P("(far off the chart)", G1, 190, fcPT + 17, 1, fcMAG, 128);
+  END;
+  TEXTOUT_P("Shaded tail = p-value: " + fc_PLong(fcP, fcLnP), G1, 6, 168, 1, fcMAG, 308);
+  IF fcP < 0.05 THEN
+    TEXTOUT_P(fcX2S + " is past the 5% critical value: reject " + fcH0, G1, 6, 181, 1, fcRED, 308);
+  ELSE
+    TEXTOUT_P(fcX2S + " is short of the 5% value: do not reject " + fcH0, G1, 6, 181, 1, fcGRN, 308);
+  END;
+  IF fcKind == 7 THEN
+    TEXTOUT_P("df = (2-1)(2-1) = 1,  Fisher exact " + fc_PLong(fcFshP, fcFshL), G1, 6, 194, 1, #000000h, 308);
+  ELSE
+    TEXTOUT_P("df = k - 1 - m = " + fc_I(fcVK) + " - 1 - " + fc_I(fcNPar) + " = " + fc_I(fcDF) + "  (m: fitted)", G1, 6, 194, 1, #000000h, 308);
+  END;
+  IF fcChk == 0 THEN TEXTOUT_P("E too small: do not trust this p (Merge).", G1, 6, 206, 1, fcRED, 308); END;
+END;
+
+// The Test page's lines: the hypothesis, the arithmetic, the decision in
+// words (never "proves"), the check, what was merged, and what belongs
+// to this kind of fit.
+fc_TestLines()
+BEGIN
+  LOCAL tsS, tsC;
+  fc_TL0();
+  tsS := fcH0 + ": the counts follow the expected proportions.";
+  IF fcKind == 2 OR fcKind == 3 THEN tsS := fcH0 + ": the leading digits follow Benford's law."; END;
+  IF fcKind == 4 THEN tsS := fcH0 + ": the counts come from a Poisson distribution (its " + fcGLm + " estimated from the data)."; END;
+  IF fcKind == 5 THEN
+    tsS := fcH0 + ": the counts come from a binomial distribution, n = " + fc_I(fcBn) + " trials per group";
+    IF fcBEst == 1 THEN tsS := tsS + " (p estimated)."; ELSE tsS := tsS + ", p = " + fc_Num(fcBp, 4) + "."; END;
+  END;
+  IF fcKind == 6 THEN tsS := fcH0 + ": the data come from a normal distribution (" + fcMu + " and " + fcSg + " estimated)."; END;
+  IF fcKind == 7 THEN tsS := fcH0 + ": birth date and draft number are unrelated, so the 183 low numbers (1 to 183) are spread over the two halves of the year at random."; END;
+  fc_TL(tsS, fcBLUE);
+  fc_TL("Data: " + fcSrc, fcGRAY);
+  IF fcKind == 7 THEN
+    fc_TL("A 2 " + fcTm + " 2 table: rows Jan-Jun / Jul-Dec birthdays, columns low (1-183) / high (184-366) numbers.  E = row total " + fcTm + " column total / N.", #000000h);
+  ELSE
+    fc_TL("N = " + fc_Num(fcN, 2) + ", k = " + fc_I(fcVK) + " cells.  E = N " + fcTm + " (the cell's proportion under " + fcH0 + ").", #000000h);
+  END;
+  fc_TL(fcX2S + " = sum of (O - E)" + fcSq + "/E = " + fc_F(fcX2, 3), #000000h);
+  IF fcKind == 7 THEN
+    fc_TL("df = (rows - 1)(columns - 1) = 1", #000000h);
+  ELSE
+    fc_TL("df = k - 1 - m = " + fc_I(fcVK) + " - 1 - " + fc_I(fcNPar) + " = " + fc_I(fcDF) + "   (m = parameters estimated from these data)", #000000h);
+  END;
+  IF fcBad == 1 THEN
+    fc_TL("A cell has expected count 0 (proportion 0): a count there is impossible under " + fcH0 + ", so no " + fcX2S + " can be computed.", fcRED);
+  ELSE
+    IF fcDF < 1 THEN
+      fc_TL("df < 1: too few cells for a test.  Unmerge, or fit fewer parameters.", fcRED);
+    ELSE
+      tsC := fcGRN; IF fcP < 0.05 THEN tsC := fcRED; END;
+      tsS := fc_PLong(fcP, fcLnP);
+      IF fcKind == 7 THEN tsS := fc_P6(fcP, fcLnP); END;
+      fc_TL("P(" + fcX2S + "(" + fc_I(fcDF) + ") " + fcGe + " " + fc_F(fcX2, 3) + ") : " + tsS, tsC);
+      IF fcKind == 7 THEN
+        IF fcP < 0.05 THEN
+          fc_TL("At " + fcAl + " = 0.05: reject " + fcH0 + ".  The data give evidence that birth date and draft number are related.", fcRED);
+        ELSE
+          fc_TL("At " + fcAl + " = 0.05: do not reject " + fcH0 + ".  No evidence of a relation -- which does not prove there is none.", fcGRN);
+        END;
+      ELSE
+      IF fcP < 0.05 THEN
+        fc_TL("At " + fcAl + " = 0.05: reject " + fcH0 + ".  The data give evidence that the counts do not follow these proportions.", fcRED);
+      ELSE
+        fc_TL("At " + fcAl + " = 0.05: do not reject " + fcH0 + ".  No evidence of a departure from these proportions -- which does not prove they are right.", fcGRN);
+      END;
+      END;
+    END;
+  END;
+  // the check, every cell
+  IF fcChk == 1 THEN
+    fc_TL("Expected counts: every E " + fcGe + " 5 (smallest " + fc_F(fcMinE, 2) + "): the " + fcX2S + " curve is a fair guide.", fcGRN);
+  ELSE
+    tsS := "Expected counts: " + fc_I(fcN5) + " of " + fc_I(fcVK) + " cells have E < 5 (" + fc_I(ROUND(100 * fcN5 / fcVK, 0)) + "%); smallest E = " + fc_F(fcMinE, 2) + ".";
+    IF fcChk == 2 THEN
+      fc_TL(tsS + "  Cochran's rule (at most 20% below 5, none below 1) holds.", fcGRN);
+    ELSE
+      fc_TL(tsS + "  That breaks Cochran's rule (at most 20% below 5, none below 1): the p-value is not trustworthy.  Merge neighbouring cells (Merge key).", fcRED);
+    END;
+  END;
+  fc_MrgLines();
+  // beta 1a (review 2): the draft lottery's exact test, and why the simple
+  // goodness-of-fit test with fixed shares understates the evidence
+  IF fcKind == 7 THEN
+    tsC := fcGRN; IF fcFshP < 0.05 THEN tsC := fcRED; END;
+    fc_TL("Fisher's exact test: the 183 low numbers were drawn WITHOUT replacement from 366, so the number landing on the 182 Jan-Jun dates is hypergeometric.  Two-sided " + fc_P6(fcFshP, fcFshL) + ".", tsC);
+    fc_TL("Why not a goodness-of-fit test with shares 182 : 184?  It treats the 183 low numbers as 183 independent draws and gives " + fcX2S + " = " + fc_F(fcGx2, 2) + ", " + fc_PStr(fcGp) + ".  But " +
+        "once a low number goes to a January date it cannot go to a July one: the counts vary only about half as much as that test assumes ((366 - 183)/365 = 0.50), so its " + fcX2S + " is about half " +
+            "of this one and it understates the evidence.", fcMAG);
+  END;
+  // what belongs to this kind of fit
+  IF fcKind == 2 OR fcKind == 3 THEN
+    tsS := "";
+    IF fcKind == 3 THEN tsS := "; below 10 left out, as they have no second digit: " + fc_I(fcBenS); END;
+    fc_TL("Numbers used: " + fc_I(fcBenU) + " (zeros skipped: " + fc_I(fcBenZ) + tsS + ").  Benford: P(d) = log" + CHAR(8321) + CHAR(8320) + "(1 + 1/d).", #000000h);
+    fc_TL("MAD = (1/K) sum |actual - Benford proportion| = " + fc_F(fcMAD, 4) + " over all K = " + fc_I(fcK) + " cells (Nigrini, Forensic Analytics, 2011 and 2020).", fcMAG);
+    fc_TL("Nigrini gives conformity ranges for the MAD; their values are not in any source this program could check, so none is shown.  Compare the MAD with his table yourself.", fcGRAY);
+  END;
+  IF fcKind == 4 THEN
+    fc_TL("estimated " + fcGLm + " = (sum of x f) / N = " + fc_F(fcLmb, 4) + ".  The last cell is the tail " + fcGe + " K, with E = N P(X " + fcGe + " K), so the E add up to N.  One parameter estimated: df = k - 2.", #000000h);
+  END;
+  IF fcKind == 5 THEN
+    IF fcBEst == 1 THEN
+      fc_TL(fcPh + " = (sum of x f) / (n N) = " + fc_F(fcBp, 4) + ": one parameter estimated, df = k - 2.", #000000h);
+    ELSE
+      fc_TL("p = " + fc_Num(fcBp, 6) + " was given, not estimated: df = k - 1.", #000000h);
+    END;
+  END;
+  IF fcKind == 6 THEN
+    fc_TL(fcXbar + " = " + fc_F(fcGxb, 3) + ", s = " + fc_F(fcGsd, 3) + ".  Each cell's E = N (normal CDF at its upper edge - at its lower edge); the end cells are open.  Two parameters estimated: df = k - 3.", #000000h);
+  END;
+  IF DIM(fcNote) > 0 THEN fc_TL(fcNote, fcGRAY); END;
+  // the presets' talking points
+  IF fcPre == 1 THEN
+    fc_TL("Triola: with all 9 digits most E are below 5, so combine 1 / 2-5 / 6-9 (Merge key) and test again.", fcBLUE);
+    fc_TL("Triola's question (p. 653, paraphrased): what argument could you make as the defendant's attorney?  Points a defence could raise (teaching points, not the trial record): only 23 cheques; " +
+        "Benford's law suits amounts spread over several powers of ten, but 21 of these 23 lie between 71,552.16 and 97,473.96, just under 100,000; and a poor fit shows the amounts are unusual, not " +
+            "who wrote them or why.", #000000h);
+  END;
+  IF fcPre == 2 THEN
+    fc_TL("Two cells: this " + fcX2S + " is z" + fcSq + " of the normal approximation, z = (339 - 688.2)/12.0.  The exact binomial test is the other menu item.", #000000h);
+  END;
+END;
+
+// The page that holds cell fcSel on the table.
+fc_SelPage()
+BEGIN
+  RETURN IP((fcSel - 1) / 12) + 1;
+END;
+
+// The chi-square fit's screens: 1 Bars, 2 Table, 3 Curve, 4 Test; the
+// soft keys move between them, Merge toggles the merged view, Menu (or
+// Esc, Enter) goes back to the main menu.
+fc_GofLoop(glScr)
+BEGIN
+  LOCAL glGo, glK, glM, glM1, glSl, glPg;
+  LOCAL glMx, glX, glY, glR, glMl;
+  glGo := 1; glPg := 1;
+  IF glScr == 2 THEN glPg := fc_SelPage(); END;
+  IF glScr == 3 THEN fc_CurveFit(); END;
+  IF glScr == 4 THEN fc_TestLines(); END;
+  REPEAT glK := GETKEY; UNTIL glK == -1;
+  fc_Drain();
+  WHILE glGo == 1 DO
+    CASE
+      IF glScr == 1 THEN fc_DrawBars(); END;
+      IF glScr == 2 THEN fc_DrawTable(glPg); END;
+      IF glScr == 3 THEN fc_DrawCurve(); END;
+      DEFAULT
+        fc_TextPage(fcTtl + ": test", glPg, "page " + fc_I(glPg) + " of " + fc_I(fc_NPg()) + ", " + fcUD + " or tap = page");
+    END;
+    glMl := "Merge";
+    IF fcMrg == 1 THEN glMl := "Unmrg"; END;
+    fc_Show({"Bars", "Table", "Curve", "Test", glMl, "Menu"});
+    REPEAT
+      glK := GETKEY;
+      glM := MOUSE;
+      glM1 := glM(1);
+    UNTIL glK > -1 OR SIZE(glM1) > 0;
+    IF SIZE(glM1) > 0 THEN
+      glX := glM1(1); glY := glM1(2);
+      fc_Drain();
+      IF glY >= 218 THEN
+        glSl := MIN(6, IP(glX / 53.4) + 1);
+        IF glSl <= 4 THEN
+          glScr := glSl; glPg := 1;
+          IF glScr == 2 THEN glPg := fc_SelPage(); END;
+          IF glScr == 3 THEN fc_CurveFit(); END;
+          IF glScr == 4 THEN fc_TestLines(); END;
+        END;
+        IF glSl == 5 THEN
+          fc_ToggleMerge();
+          glPg := 1;
+          IF glScr == 2 THEN glPg := fc_SelPage(); END;
+          IF glScr == 3 THEN fc_CurveFit(); END;
+          IF glScr == 4 THEN fc_TestLines(); END;
+        END;
+        IF glSl == 6 THEN glGo := 0; END;
+      ELSE
+        IF glScr == 1 AND glX >= fcPL AND glX <= fcPR AND glY >= fcPT AND glY <= 188 THEN
+          fcSel := MIN(fcVK, MAX(1, IP((glX - fcPL) / ((fcPR - fcPL) / fcVK)) + 1));
+        END;
+        IF glScr == 2 THEN
+          IF glY >= 34 AND glY < 190 THEN
+            glR := (glPg - 1) * 12 + IP((glY - 35) / 13) + 1;
+            IF glR >= 1 AND glR <= MIN(fcVK, glPg * 12) THEN fcSel := glR; END;
+          ELSE
+            glPg := glPg + 1;
+            IF glPg > CEILING(fcVK / 12) THEN glPg := 1; END;
+          END;
+        END;
+        IF glScr == 4 THEN
+          glPg := glPg + 1;
+          IF glPg > fc_NPg() THEN glPg := 1; END;
+        END;
+      END;
+    ELSE
+      IF glK == 4 OR glK == 30 THEN glGo := 0; END;
+      IF glK == 7 OR glK == 8 THEN
+        IF glK == 7 THEN fcSel := MAX(1, fcSel - 1); ELSE fcSel := MIN(fcVK, fcSel + 1); END;
+        IF glScr == 2 THEN glPg := fc_SelPage(); END;
+      END;
+      IF glK == 2 OR glK == 12 THEN
+        glMx := 1;
+        IF glScr == 2 THEN glMx := CEILING(fcVK / 12); END;
+        IF glScr == 4 THEN glMx := fc_NPg(); END;
+        IF glK == 2 THEN glPg := MAX(1, glPg - 1); ELSE glPg := MIN(glMx, glPg + 1); END;
+      END;
+      REPEAT glK := GETKEY; UNTIL glK == -1;
+    END;
+  END;
+  REPEAT glK := GETKEY; UNTIL glK == -1;
+END;
+
+// ============================================================
+// PICTURES AND PAGES OF THE NORMALITY TESTS
+//   Q-Q: each value against its normal score (Blom), with the line
+//     x-bar + s z; tap a point for its value, rank and z.  A binned
+//     sample shows one point per bin.
+//   ECDF: the sample's step function against the normal CDF with the
+//     sample's x-bar and s, the largest gap D marked in red.
+//   Tests: W, A^2, D, their p, the shape, the verdict in words.
+// ============================================================
+
+// The Q-Q points: for raw data (z(i), x(i)); for a binned sample one point
+// per non-empty bin: its midpoint against the Blom score of its MIDDLE
+// rank, ((c + (f + 1)/2) - 3/8) / (N + 1/4), c = the count below the bin.
+fc_QQPts()
+BEGIN
+  LOCAL qtI, qpC, qpR;
+  IF fcBin == 0 THEN
+    fcQZ := fcZq; fcQV := fcX;
+    fcQR := {};
+  ELSE
+    fcQZ := {}; fcQV := {}; fcQR := {};
+    qpC := 0;
+    FOR qtI FROM 1 TO SIZE(fcBM) DO
+      IF fcBF(qtI) > 0 THEN
+        qpR := qpC + (fcBF(qtI) + 1) / 2;
+        fcQZ := CONCAT(fcQZ, {NORMALD_ICDF(0, 1, (qpR - 0.375) / (fcNX + 0.25))});
+        fcQV := CONCAT(fcQV, {fcBM(qtI)});
+        fcQR := CONCAT(fcQR, {qtI});
+      END;
+      qpC := qpC + fcBF(qtI);
+    END;
+  END;
+  fcQN := SIZE(fcQZ);
+  IF fcNSel > fcQN OR fcNSel < 1 THEN fcNSel := 1; END;
+END;
+
+// The Q-Q page.  Box: x 44..312, y 52..158.
+fc_DrawQQ()
+BEGIN
+  LOCAL qqN, qqI, qqZa, qqZb, qqVa, qqVb;
+  LOCAL qqS, qqDc, qqV, qqP, qqC, qqT;
+  LOCAL qqX1, qqY1, qqX2, qqY2, qqZ, qqB;
+  qqN := fcQN;
+  qqZa := fcQZ(1); qqZb := fcQZ(qqN);
+  qqT := MAX(0.5, qqZb - qqZa);
+  qqZa := qqZa - 0.08 * qqT; qqZb := qqZb + 0.08 * qqT;
+  qqVa := fcQV(1); qqVb := fcQV(1);
+  FOR qqI FROM 1 TO qqN DO qqVa := MIN(qqVa, fcQV(qqI)); qqVb := MAX(qqVb, fcQV(qqI)); END;
+  qqT := qqVb - qqVa;
+  IF qqT <= 0 THEN qqT := MAX(1, ABS(qqVa)); END;
+  qqVa := qqVa - 0.06 * qqT; qqVb := qqVb + 0.06 * qqT;
+  fc_Frame("Q-Q: " + fcNTtl);
+  IF fcBin == 0 THEN
+    qqC := fcGRN; IF fcPW < 0.05 THEN qqC := fcRED; END;
+    TEXTOUT_P("n = " + fc_I(fcNX) + ",  W = " + fc_F(fcW, 4) + ",  " + fc_PLong(fcPW, fcLnPW), G1, 6, 21, 1, qqC, 308);
+  ELSE
+    TEXTOUT_P("n = " + fc_I(fcNX) + " in " + fc_I(SIZE(fcBM)) + " bins: one point per bin", G1, 6, 21, 1, fcBLUE, 308);
+  END;
+  TEXTOUT_P("x: normal score z;  y: value;  line: " + fcXbar + " + s z", G1, 6, 34, 1, fcGRAY, 308);
+  // x ticks (z)
+  qqS := fc_Nice((qqZb - qqZa) / 6);
+  qqDc := MAX(0, -FLOOR(LOG(qqS)));
+  qqV := CEILING(qqZa / qqS) * qqS;
+  WHILE qqV <= qqZb DO
+    qqP := 44 + IP((qqV - qqZa) / (qqZb - qqZa) * 268 + 0.5);
+    LINE_P(G1, qqP, 52, qqP, 158, fcGRID);
+    TEXTOUT_P(STRING(ROUND(qqV, qqDc), 2, qqDc), G1, qqP - 6, 161, 1, fcGRAY, 30);
+    qqV := qqV + qqS;
+  END;
+  // y ticks (values)
+  qqS := fc_Nice((qqVb - qqVa) / 5);
+  qqDc := MAX(0, -FLOOR(LOG(qqS)));
+  qqV := CEILING(qqVa / qqS) * qqS;
+  WHILE qqV <= qqVb DO
+    qqP := 158 - IP((qqV - qqVa) / (qqVb - qqVa) * 106 + 0.5);
+    LINE_P(G1, 44, qqP, 312, qqP, fcGRID);
+    TEXTOUT_P(STRING(ROUND(qqV, qqDc), 2, qqDc), G1, 2, qqP - 5, 1, fcGRAY, 40);
+    qqV := qqV + qqS;
+  END;
+  LINE_P(G1, 44, 52, 44, 158, #000000h);
+  LINE_P(G1, 44, 158, 312, 158, #000000h);
+  // the line x-bar + s z, clipped to the box
+  qqX1 := qqZa; qqY1 := fcXb + fcSd * qqZa;
+  qqX2 := qqZb; qqY2 := fcXb + fcSd * qqZb;
+  IF qqY1 < qqVa THEN qqX1 := (qqVa - fcXb) / fcSd; qqY1 := qqVa; END;
+  IF qqY2 > qqVb THEN qqX2 := (qqVb - fcXb) / fcSd; qqY2 := qqVb; END;
+  IF qqX1 < qqX2 THEN
+    LINE_P(G1, 44 + IP((qqX1 - qqZa) / (qqZb - qqZa) * 268), 158 - IP((qqY1 - qqVa) / (qqVb - qqVa) * 106),
+      44 + IP((qqX2 - qqZa) / (qqZb - qqZa) * 268), 158 - IP((qqY2 - qqVa) / (qqVb - qqVa) * 106), fcGRN);
+  END;
+  // the points, remembered in pixels for tapping
+  fcQX := MAKELIST(0, qqI, 1, qqN, 1);
+  fcQY := MAKELIST(0, qqI, 1, qqN, 1);
+  qqB := 1; IF fcBin == 1 THEN qqB := 2; END;
+  FOR qqI FROM 1 TO qqN DO
+    fcQX(qqI) := 44 + IP((fcQZ(qqI) - qqZa) / (qqZb - qqZa) * 268 + 0.5);
+    fcQY(qqI) := 158 - IP((fcQV(qqI) - qqVa) / (qqVb - qqVa) * 106 + 0.5);
+    fc_Dot(fcQX(qqI), fcQY(qqI), qqB, fcBLUE);
+  END;
+  qqI := fcNSel;
+  fc_Dot(fcQX(qqI), fcQY(qqI), 2, fcRED);
+  // the chosen point's numbers
+  qqZ := fcQZ(qqI);
+  IF fcBin == 0 THEN
+    TEXTOUT_P("x(" + fc_I(qqI) + ") = " + fc_Num(fcQV(qqI), 4) + ",  rank " + fc_I(qqI) + " of " + fc_I(fcNX) + ",  z = " + fc_Sgn(qqZ, 3), G1, 6, 176, 1, fcRED, 308);
+    TEXTOUT_P("z: N(0,1) quantile of (i - 3/8)/(n + 1/4), Blom", G1, 6, 189, 1, #000000h, 308);
+    TEXTOUT_P("line at this z: " + fcXbar + " + s z = " + fc_F(fcXb + fcSd * qqZ, 3), G1, 6, 202, 1, fcGRN, 308);
+  ELSE
+    qqT := fcQR(qqI);
+    TEXTOUT_P("bin " + fc_Num(fcBM(qqT), 2) + ": " + fc_I(fcBF(qqT)) + IFTE(fcBF(qqT) == 1, " value", " values") + ",  z = " + fc_Sgn(qqZ, 3), G1, 6, 176, 1, fcRED, 308);
+    TEXTOUT_P("One point per bin: its midpoint against the", G1, 6, 189, 1, #000000h, 308);
+    TEXTOUT_P("Blom score of the bin's middle rank.", G1, 6, 202, 1, #000000h, 308);
+  END;
+END;
+
+// The ECDF window (raw: the data's range; binned: the bins' edges, plus
+// 5%) and the normal CDF cached once per pixel column.
+fc_EcdfFit()
+BEGIN
+  LOCAL efI, efT, efV;
+  IF fcBin == 0 THEN
+    fcEa := fcX(1); fcEb := fcX(fcNX);
+  ELSE
+    fcEa := fcBM(1) - fcBW / 2; fcEb := fcBM(SIZE(fcBM)) + fcBW / 2;
+  END;
+  efT := MAX(fcEb - fcEa, 0.000001);
+  fcEa := fcEa - 0.05 * efT; fcEb := fcEb + 0.05 * efT;
+  fcCvP := MAKELIST(0, efI, 1, 268, 1);
+  FOR efI FROM 1 TO 268 DO
+    efV := fcEa + (efI - 0.5) / 268 * (fcEb - fcEa);
+    fcCvP(efI) := 158 - IP(fc_Phi((efV - fcXb) / fcSd) * 106 + 0.5);
+  END;
+  fcEPx := -1;
+END;
+
+// The ECDF at value ev: raw, the share of values <= ev; binned, the share
+// in bins whose upper edge is <= ev.
+fc_Ecdf(evV)
+BEGIN
+  LOCAL evI, evC;
+  evC := 0;
+  IF fcBin == 0 THEN
+    FOR evI FROM 1 TO fcNX DO
+      IF fcX(evI) <= evV THEN evC := evC + 1; END;
+    END;
+  ELSE
+    FOR evI FROM 1 TO SIZE(fcBM) DO
+      IF fcBM(evI) + fcBW / 2 <= evV + 0.0000001 THEN evC := evC + fcBF(evI); END;
+    END;
+  END;
+  RETURN evC / fcNX;
+END;
+
+// beta 1a (review 3): Lilliefors' p as text, and its colour.  -2 (n < 5):
+// "p not available for n < 5", grey -- never green for a p not computed.
+fc_LDStr()
+BEGIN
+  IF fcPD == -2 THEN RETURN "p not available for n < 5"; END;
+  IF fcPD == -1 THEN RETURN "p > 0.10"; END;
+  RETURN fc_PLong(fcPD, fcLnPD);
+END;
+
+fc_LDCol()
+BEGIN
+  IF fcPD == -2 THEN RETURN fcGRAY; END;
+  IF fcPD >= 0 AND fcPD < 0.05 THEN RETURN fcRED; END;
+  RETURN fcGRN;
+END;
+
+// The ECDF page.  Same box as the Q-Q plot.
+fc_DrawECDF()
+BEGIN
+  LOCAL ecI, ecJ, ecV, ecY, ecPy, ecS;
+  LOCAL ecDc, ecP, ecF, ecG, ecLast;
+  fc_Frame("ECDF vs normal: " + fcNTtl);
+  IF fcBin == 0 THEN
+    TEXTOUT_P("Lilliefors D = " + fc_F(fcLD, 4) + ",  " + fc_LDStr(), G1, 6, 21, 1, fc_LDCol(), 308);
+  ELSE
+    TEXTOUT_P("Binned: the steps are at the bin edges (no D)", G1, 6, 21, 1, fcBLUE, 308);
+  END;
+  TEXTOUT_P("ECDF (blue);  normal CDF with " + fcXbar + " and s (magenta)", G1, 6, 34, 1, fcGRAY, 308);
+  // y grid: 0, 0.25 ... 1
+  FOR ecI FROM 0 TO 4 DO
+    ecP := 158 - IP(ecI / 4 * 106 + 0.5);
+    LINE_P(G1, 44, ecP, 312, ecP, fcGRID);
+    TEXTOUT_P(fc_F(ecI / 4, 2), G1, 4, ecP - 5, 1, fcGRAY, 38);
+  END;
+  // x ticks
+  ecS := fc_Nice((fcEb - fcEa) / 5);
+  ecDc := MAX(0, -FLOOR(LOG(ecS)));
+  ecV := CEILING(fcEa / ecS) * ecS;
+  WHILE ecV <= fcEb DO
+    ecP := 44 + IP((ecV - fcEa) / (fcEb - fcEa) * 268 + 0.5);
+    LINE_P(G1, ecP, 52, ecP, 158, fcGRID);
+    TEXTOUT_P(STRING(ROUND(ecV, ecDc), 2, ecDc), G1, ecP - 8, 161, 1, fcGRAY, 40);
+    ecV := ecV + ecS;
+  END;
+  LINE_P(G1, 44, 52, 44, 158, #000000h);
+  LINE_P(G1, 44, 158, 312, 158, #000000h);
+  // the normal CDF, from the cache
+  FOR ecI FROM 2 TO 268 DO
+    LINE_P(G1, 43 + ecI, fcCvP(ecI - 1), 44 + ecI, fcCvP(ecI), fcMAG);
+  END;
+  // the ECDF, a staircase drawn column by column (raw data: one pass with
+  // a pointer through the sorted values)
+  ecJ := 0; ecLast := 158;
+  FOR ecI FROM 1 TO 268 DO
+    ecV := fcEa + (ecI - 0.5) / 268 * (fcEb - fcEa);
+    IF fcBin == 0 THEN
+      WHILE ecJ < fcNX AND fcX(MIN(fcNX, ecJ + 1)) <= ecV DO ecJ := ecJ + 1; END;
+      ecF := ecJ / fcNX;
+    ELSE
+      ecF := fc_Ecdf(ecV);
+    END;
+    ecPy := 158 - IP(ecF * 106 + 0.5);
+    LINE_P(G1, 44 + ecI, ecLast, 44 + ecI, ecPy, fcBLUE);
+    ecLast := ecPy;
+  END;
+  // D: the largest gap, in red, where it happens
+  IF fcBin == 0 THEN
+    ecP := 44 + IP((fcX(fcLDi) - fcEa) / (fcEb - fcEa) * 268 + 0.5);
+    ecY := 158 - IP(fcLDy * 106 + 0.5);
+    ecPy := 158 - IP(fc_Phi((fcX(fcLDi) - fcXb) / fcSd) * 106 + 0.5);
+    LINE_P(G1, ecP, ecY, ecP, ecPy, fcRED);
+    LINE_P(G1, ecP + 1, ecY, ecP + 1, ecPy, fcRED);
+    ecI := ecP + 4; IF ecP > 240 THEN ecI := ecP - 66; END;
+    TEXTOUT_P("D = " + fc_F(fcLD, 3), G1, ecI, IP((ecY + ecPy) / 2) - 5, 1, fcRED, 62);
+  END;
+  // the tapped column's numbers
+  IF fcEPx >= 0 THEN
+    ecV := fcEa + (fcEPx - 44 + 0.5) / 268 * (fcEb - fcEa);
+    LINE_P(G1, fcEPx, 52, fcEPx, 158, fcORNG);
+    ecF := fc_Ecdf(ecV);
+    ecG := fc_Phi((ecV - fcXb) / fcSd);
+    TEXTOUT_P("x = " + fc_Num(ROUND(ecV, 2), 2) + ":  ECDF = " + fc_F(ecF, 3) + ",  normal CDF = " + fc_F(ecG, 3), G1, 6, 176, 1, fcORNG, 308);
+    TEXTOUT_P("gap here = " + fc_F(ABS(ecF - ecG), 3), G1, 6, 189, 1, #000000h, 308);
+  ELSE
+    TEXTOUT_P("Tap the plot to read the two curves there.", G1, 6, 176, 1, fcFOOT, 308);
+  END;
+  IF fcBin == 0 THEN
+    TEXTOUT_P("D = largest gap = " + fc_F(fcLD, 4) + " at x = " + fc_Num(fcX(fcLDi), 4), G1, 6, 202, 1, fcRED, 308);
+  END;
+END;
+
+// The Tests page's lines.
+fc_NTestLines()
+BEGIN
+  LOCAL ntC, ntR, ntS, ntMd, ntT;
+  fc_TL0();
+  fc_TL(fcH0 + ": the data come from a normal distribution (" + fcMu + " and " + fcSg + " estimated from the data).", fcBLUE);
+  fc_TL("Data: " + fcNSrc, fcGRAY);
+  fc_TL("n = " + fc_I(fcNX) + ",  " + fcXbar + " = " + fc_F(fcXb, 3) + ",  s = " + fc_F(fcSd, 3) + " (n - 1)", #000000h);
+  IF fcBin == 0 THEN
+    ntR := 0; ntT := 3;
+    ntC := fcGRN; IF fcPW < 0.05 THEN ntC := fcRED; ntR := ntR + 1; END;
+    fc_TL("Shapiro-Wilk W = " + fc_F(fcW, 4) + ",  " + fc_PLong(fcPW, fcLnPW) + "  (Royston 1995, AS R94)", ntC);
+    ntC := fcGRN; IF fcPA < 0.05 THEN ntC := fcRED; ntR := ntR + 1; END;
+    ntS := fc_PLong(fcPA, fcLnPA);
+    IF fcPA <= 0 THEN ntS := "p < 0.0001"; END;
+    fc_TL("Anderson-Darling A" + fcSq + " = " + fc_F(fcA2, 4) + ";  A*" + fcSq + " = A" + fcSq + "(1 + 0.75/n + 2.25/n" + fcSq + ") = " + fc_F(fcA2s, 4) + ",  " + ntS + "  (D'Agostino & Stephens 1986)", ntC);
+    IF fcPD >= 0 AND fcPD < 0.05 THEN ntR := ntR + 1; END;
+    IF fcPD == -2 THEN ntT := 2; END;
+    fc_TL("Lilliefors D = " + fc_F(fcLD, 4) + ",  " + fc_LDStr() + "  (Dallal & Wilkinson 1986: p given for n " + fcGe + " 5, and only below 0.10)", fc_LDCol());
+    IF ntR == ntT THEN fc_TL("At " + fcAl + " = 0.05 all " + fc_I(ntT) + " tests with a p give evidence against normality.", fcRED); END;
+    IF ntR == 0 THEN fc_TL("At " + fcAl + " = 0.05 none of the tests with a p finds evidence of a departure from normality -- which does not prove the data are normal.", fcGRN); END;
+    IF ntR > 0 AND ntR < ntT THEN fc_TL("At " + fcAl + " = 0.05 the tests disagree: look at the Q-Q plot.", fcORNG); END;
+  ELSE
+    fc_TL("This sample is BINNED: " + fc_I(fcNX) + " values in " + fc_I(SIZE(fcBM)) + " bins " + fc_Num(fcBW, 3) + " wide.  W, A" + fcSq + " and D assume distinct raw values; thousands of ties break " +
+        "them.  Test with the " + fcX2S + " fit on the bins (Bins key) and look at the Q-Q plot.", fcRED);
+  END;
+  // the shape, from the moments
+  fc_TL("Skewness g" + CHAR(8321) + " = " + fc_Sgn(fcSkw, 3) + ",  excess kurtosis g" + CHAR(8322) + " = " + fc_Sgn(fcKur, 3), #000000h);
+  ntS := "No strong skew or tail weight: the Q-Q points should hug the line.";
+  IF fcKur > 1 THEN ntS := "Heavy tails: on the Q-Q plot the points fall below the line at the left end and rise above it at the right."; END;
+  IF fcKur < -1 THEN ntS := "Light tails: on the Q-Q plot the points sit above the line at the left end and below it at the right."; END;
+  IF fcSkw > 0.5 THEN ntS := "Right-skewed (a long right tail): on the Q-Q plot the points bend upward -- above the line at both ends, below it in the middle."; END;
+  IF fcSkw < -0.5 THEN ntS := "Left-skewed (a long left tail): on the Q-Q plot the points bend downward -- below the line at both ends."; END;
+  fc_TL(ntS, fcMAG);
+  IF fcBin == 0 AND fcSkw > 0.5 THEN
+    ntMd := fcX(IP((fcNX + 1) / 2));
+    IF (fcNX MOD 2) == 0 THEN ntMd := (fcX(fcNX / 2) + fcX(fcNX / 2 + 1)) / 2; END;
+    fc_TL("Median = " + fc_Num(ntMd, 3) + " < mean = " + fc_F(fcXb, 2) + ": the long right tail pulls the mean up.", fcMAG);
+  END;
+  IF fcNX > 200 THEN fc_TL("With n = " + fc_I(fcNX) + " even a small departure gives a tiny p.  The Q-Q plot shows how BIG it is, which matters more for a t test or a confidence interval.", fcGRAY); END;
+  IF fcNX < 20 THEN fc_TL("With only n = " + fc_I(fcNX) + " these tests have little power: a large p does not show the data are normal.", fcGRAY); END;
+  IF fcBin == 0 THEN fc_TL("Q-Q positions (Blom): z(i) = N(0,1) quantile at (i - 3/8)/(n + 1/4), every point, the middle one too.", fcGRAY); END;
+END;
+
+// The chi-square normal fit on bins, from the loaded sample, with the
+// sparse tails merged at once (the Test page names them; Unmrg shows
+// every bin).
+fc_NorBins()
+BEGIN
+  IF fcBin == 1 THEN
+    fc_NormBinFit(fcBM, fcBF, fcBW, fcXb, fcSd, fcNTtl + ": " + fcX2S + " on bins", fcNSrc);
+    fcNote := "Mean and SD from the bin midpoints (" + fc_I(fcNX) + " values in " + fc_I(SIZE(fcBM)) + " bins); the cells are the bins, so the estimates and the cells match and df = k - 3.";
+  ELSE
+    fc_RawBins();
+  END;
+  fcPre := fcNPre;
+  fc_AutoMerge();
+  IF fc_NMerged() > 0 THEN fcMrg := 1; fc_Calc(); END;
+  fc_GofLoop(1);
+END;
+
+// The normality screens: 1 Q-Q, 2 ECDF, 3 Tests; Bins opens the chi-square
+// fit on bins; Menu (or Esc, Enter) goes back.
+fc_NorLoop(nlScr)
+BEGIN
+  LOCAL nlGo, nlK, nlM, nlM1, nlSl, nlPg;
+  LOCAL nlX, nlY, nlI, nlB, nlD, nlJ;
+  nlGo := 1; nlPg := 1;
+  fc_QQPts();
+  IF nlScr == 2 THEN fc_EcdfFit(); END;
+  IF nlScr == 3 THEN fc_NTestLines(); END;
+  REPEAT nlK := GETKEY; UNTIL nlK == -1;
+  fc_Drain();
+  WHILE nlGo == 1 DO
+    CASE
+      IF nlScr == 1 THEN fc_DrawQQ(); END;
+      IF nlScr == 2 THEN fc_DrawECDF(); END;
+      DEFAULT
+        fc_TextPage("Normality: " + fcNTtl, nlPg, "page " + fc_I(nlPg) + " of " + fc_I(fc_NPg()) + ", " + fcUD + " or tap = page");
+    END;
+    fc_Show({"Q-Q", "ECDF", "Tests", "Bins", "", "Menu"});
+    REPEAT
+      nlK := GETKEY;
+      nlM := MOUSE;
+      nlM1 := nlM(1);
+    UNTIL nlK > -1 OR SIZE(nlM1) > 0;
+    IF SIZE(nlM1) > 0 THEN
+      nlX := nlM1(1); nlY := nlM1(2);
+      fc_Drain();
+      IF nlY >= 218 THEN
+        nlSl := MIN(6, IP(nlX / 53.4) + 1);
+        IF nlSl <= 3 THEN
+          nlScr := nlSl; nlPg := 1;
+          IF nlScr == 2 THEN fc_EcdfFit(); END;
+          IF nlScr == 3 THEN fc_NTestLines(); END;
+        END;
+        IF nlSl == 4 THEN fc_NorBins(); nlGo := 0; END;
+        IF nlSl == 6 THEN nlGo := 0; END;
+      ELSE
+        IF nlScr == 1 AND nlY >= 40 AND nlY <= 166 THEN
+          // the nearest point, if it is within 12 pixels
+          nlB := 0; nlD := 13;
+          FOR nlI FROM 1 TO fcQN DO
+            nlJ := ABS(fcQX(nlI) - nlX) + ABS(fcQY(nlI) - nlY);
+            IF nlJ < nlD THEN nlD := nlJ; nlB := nlI; END;
+          END;
+          IF nlB > 0 THEN fcNSel := nlB; END;
+        END;
+        IF nlScr == 2 AND nlX >= 45 AND nlX <= 312 AND nlY >= 40 AND nlY <= 166 THEN fcEPx := nlX; END;
+        IF nlScr == 3 THEN
+          nlPg := nlPg + 1;
+          IF nlPg > fc_NPg() THEN nlPg := 1; END;
+        END;
+      END;
+    ELSE
+      IF nlK == 4 OR nlK == 30 THEN nlGo := 0; END;
+      IF nlScr == 1 THEN
+        IF nlK == 7 THEN fcNSel := MAX(1, fcNSel - 1); END;
+        IF nlK == 8 THEN fcNSel := MIN(fcQN, fcNSel + 1); END;
+        IF nlK == 2 THEN fcNSel := MIN(fcQN, fcNSel + MAX(1, IP(fcQN / 20))); END;
+        IF nlK == 12 THEN fcNSel := MAX(1, fcNSel - MAX(1, IP(fcQN / 20))); END;
+      END;
+      IF nlScr == 2 AND (nlK == 7 OR nlK == 8) THEN
+        IF fcEPx < 0 THEN fcEPx := 178; END;
+        IF nlK == 7 THEN fcEPx := MAX(45, fcEPx - 4); ELSE fcEPx := MIN(312, fcEPx + 4); END;
+      END;
+      IF nlScr == 3 AND (nlK == 2 OR nlK == 12) THEN
+        IF nlK == 2 THEN nlPg := MAX(1, nlPg - 1); ELSE nlPg := MIN(fc_NPg(), nlPg + 1); END;
+      END;
+      REPEAT nlK := GETKEY; UNTIL nlK == -1;
+    END;
+  END;
+  REPEAT nlK := GETKEY; UNTIL nlK == -1;
+END;
+
+// ============================================================
+// PICTURES AND PAGES OF THE EXACT BINOMIAL TEST
+//   Plot: P(X = k) over a window that holds the bell (E +/- 4.5 SD) and
+//     the observed x however far out it is; red = x, magenta = every k no
+//     more likely than x (their total is the two-sided p), blue = the
+//     rest; a second axis counts SDs from E.  Tap a bar for P(X = k).
+//   Why: the reasoning in words (for Castaneda, the Court's SDs).
+// ============================================================
+
+// 1 when k is in the two-sided rejection region (no more likely than x).
+fc_InRej(irK)
+BEGIN
+  IF irK <= fcTkL OR irK >= fcTkU THEN RETURN 1; END;
+  RETURN 0;
+END;
+
+// A probability from its log: four decimals, or "1.23 x 10^-186".
+fc_ProbStr(prL)
+BEGIN
+  IF prL < -1E90 THEN RETURN "0"; END;
+  IF prL >= LN(0.0001) THEN RETURN fc_F(EXP(prL), 4); END;
+  RETURN fc_Pow(prL);
+END;
+
+// The k drawn in pixel column c (1..278) when there are more k than columns.
+fc_BtK(bkC)
+BEGIN
+  RETURN MIN(fcTHi, fcTLo + FLOOR((bkC - 0.5) / (fcPR - fcPL) * (fcTHi - fcTLo + 1)));
+END;
+
+// The pixel column (centre) of k.
+fc_BtPx(bpK)
+BEGIN
+  RETURN fcPL + IP((bpK - fcTLo + 0.5) / (fcTHi - fcTLo + 1) * (fcPR - fcPL));
+END;
+
+// The plot's window and its bar heights (relative to the mode), computed
+// once per test.  Up to 70 values of k: one bar each; more: one pixel
+// column each, at the k that column stands for.
+fc_BtFit()
+BEGIN
+  LOCAL bfLo, bfHi, bfMd, bfLm, bfI, bfNk;
+  bfLo := MAX(0, MIN(fcTx, FLOOR(fcTE - 4.5 * fcTSD)));
+  bfHi := MIN(fcTn, MAX(fcTx, CEILING(fcTE + 4.5 * fcTSD)));
+  IF bfHi - bfLo < 8 THEN bfLo := MAX(0, bfLo - 4); bfHi := MIN(fcTn, bfHi + 4); END;
+  fcTLo := bfLo; fcTHi := bfHi;
+  bfMd := MIN(fcTn, MAX(0, FLOOR((fcTn + 1) * fcTp0)));
+  bfLm := fc_LPmf(bfMd);
+  bfNk := bfHi - bfLo + 1;
+  IF bfNk <= 70 THEN
+    fcTCol := MAKELIST(0, bfI, 1, bfNk, 1);
+    FOR bfI FROM 1 TO bfNk DO fcTCol(bfI) := fc_ExpG(fc_LPmf(bfLo + bfI - 1) - bfLm); END;
+  ELSE
+    fcTCol := MAKELIST(0, bfI, 1, fcPR - fcPL, 1);
+    FOR bfI FROM 1 TO fcPR - fcPL DO fcTCol(bfI) := fc_ExpG(fc_LPmf(fc_BtK(bfI)) - bfLm); END;
+  END;
+END;
+
+// The plot page.  Box: x 34..312, y 46..146; the k axis under it, the
+// SD axis at y 160.
+fc_DrawBt()
+BEGIN
+  LOCAL dtNk, dtI, dtK, dtX1, dtX2, dtH;
+  LOCAL dtC, dtS, dtV, dtP, dtDc, dtZa;
+  LOCAL dtZb, dtLx, dtW;
+  dtNk := fcTHi - fcTLo + 1;
+  dtW := fcPR - fcPL;
+  IF fcTPre == 1 THEN fc_Frame("Castaneda v. Partida: exact test"); ELSE fc_Frame("Exact binomial test"); END;
+  dtC := fcGRN; IF fcTp2 < 0.05 THEN dtC := fcRED; END;
+  TEXTOUT_P("x = " + fc_I(fcTx) + " of " + fc_I(fcTn) + ":  two-sided " + fc_PLong(fcTp2, fcTl2), G1, 6, 21, 1, dtC, 308);
+  TEXTOUT_P("p" + CHAR(8320) + " = " + fc_Num(fcTp0, 4) + ";  red = x;  magenta = the p region", G1, 6, 34, 1, fcGRAY, 308);
+  // the k ticks
+  dtS := fc_Nice(dtNk / 6);
+  dtV := CEILING(fcTLo / dtS) * dtS;
+  WHILE dtV <= fcTHi DO
+    dtP := fc_BtPx(dtV);
+    LINE_P(G1, dtP, 146, dtP, 149, #000000h);
+    TEXTOUT_P(fc_I(dtV), G1, dtP - 8, 149, 1, fcGRAY, 40);
+    dtV := dtV + dtS;
+  END;
+  // the bars
+  IF dtNk <= 70 THEN
+    FOR dtI FROM 1 TO dtNk DO
+      dtK := fcTLo + dtI - 1;
+      dtX1 := fcPL + IP((dtI - 1) / dtNk * dtW) + 1;
+      dtX2 := MAX(dtX1, fcPL + IP(dtI / dtNk * dtW) - 1);
+      dtH := IP(fcTCol(dtI) * 76 + 0.5);
+      dtC := fcBLUE;
+      IF fc_InRej(dtK) == 1 THEN dtC := fcMAG; END;
+      IF dtK == fcTx THEN dtC := fcRED; END;
+      IF dtK == fcTSel THEN RECT_P(G1, dtX1 - 1, 46, dtX2 + 1, 146, fcLORN, fcLORN); END;
+      IF dtH > 0 THEN RECT_P(G1, dtX1, 146 - dtH, dtX2, 145, dtC, dtC); END;
+      IF fc_InRej(dtK) == 1 THEN LINE_P(G1, dtX1, 147, dtX2, 147, fcMAG); END;
+    END;
+  ELSE
+    FOR dtI FROM 1 TO dtW DO
+      dtK := fc_BtK(dtI);
+      dtH := IP(fcTCol(dtI) * 76 + 0.5);
+      dtC := fcBLUE;
+      IF fc_InRej(dtK) == 1 THEN dtC := fcMAG; PIXON_P(G1, fcPL + dtI, 147, fcMAG); END;
+      IF dtH > 0 THEN LINE_P(G1, fcPL + dtI, 145, fcPL + dtI, 146 - dtH, dtC); END;
+    END;
+  END;
+  LINE_P(G1, fcPL, 146, fcPR, 146, #000000h);
+  // the observed x, and E; the bars stop at y 70, so their labels sit
+  // above them, each on a white patch
+  dtP := fc_BtPx(fcTx);
+  LINE_P(G1, dtP, 48, dtP, 146, fcRED);
+  dtLx := dtP + 3; IF dtP > 240 THEN dtLx := dtP - 66; END;
+  RECT_P(G1, dtLx - 1, 48, dtLx + 62, 58, #FFFFFFh, #FFFFFFh);
+  TEXTOUT_P("x = " + fc_I(fcTx), G1, dtLx, 48, 1, fcRED, 62);
+  dtP := fc_BtPx(ROUND(fcTE, 0));
+  fc_DotV(dtP, 60, 146, fcGRN);
+  dtLx := dtP + 3; IF dtP > 240 THEN dtLx := dtP - 66; END;
+  RECT_P(G1, dtLx - 1, 59, dtLx + 62, 69, #FFFFFFh, #FFFFFFh);
+  TEXTOUT_P("E = " + fc_F(fcTE, 1), G1, dtLx, 59, 1, fcGRN, 62);
+  // the SD axis: z = (k - E)/SD
+  LINE_P(G1, fcPL, 162, fcPR, 162, fcGRAY);
+  TEXTOUT_P("SD", G1, 4, 159, 1, fcGRAY, 28);
+  dtZa := (fcTLo - 0.5 - fcTE) / fcTSD; dtZb := (fcTHi + 0.5 - fcTE) / fcTSD;
+  dtS := fc_Nice((dtZb - dtZa) / 7);
+  dtDc := MAX(0, -FLOOR(LOG(dtS)));
+  dtV := CEILING(dtZa / dtS) * dtS;
+  WHILE dtV <= dtZb DO
+    dtP := fcPL + IP((dtV - dtZa) / (dtZb - dtZa) * dtW + 0.5);
+    LINE_P(G1, dtP, 159, dtP, 165, fcGRAY);
+    IF ABS(dtV) < dtS / 1000 THEN
+      TEXTOUT_P("0", G1, dtP - 3, 166, 1, fcGRAY, 40);
+    ELSE
+      TEXTOUT_P(fc_Sgn(dtV, dtDc), G1, dtP - 8, 166, 1, fcGRAY, 40);
+    END;
+    dtV := dtV + dtS;
+  END;
+  // the readout: the tapped k, or the summary
+  IF fcTSel >= 0 THEN
+    TEXTOUT_P("k = " + fc_I(fcTSel) + ":  P(X = k) = " + fc_ProbStr(fc_LPmf(fcTSel)), G1, 6, 180, 1, fcORNG, 308);
+    TEXTOUT_P("z = (k - E)/SD = " + fc_Sgn((fcTSel - fcTE) / fcTSD, 2) + ";  in the p region: " + IFTE(fc_InRej(fcTSel) == 1, "yes", "no"), G1, 6, 193, 1, #000000h, 308);
+  ELSE
+    TEXTOUT_P("E = " + fc_F(fcTE, 2) + ",  SD = " + fcRt + "(n p" + CHAR(8320) + "(1 - p" + CHAR(8320) + ")) = " + fc_F(fcTSD, 3), G1, 6, 180, 1, #000000h, 308);
+    dtS := " below E";
+    IF fcTz > 0 THEN dtS := " above E"; END;
+    TEXTOUT_P("x is " + fc_F(ABS(fcTz), 2) + " SD" + dtS + ";  tap a bar for P(X = k)", G1, 6, 193, 1, fcRED, 308);
+  END;
+  TEXTOUT_P("P(X " + fcLe + " x) = " + fc_ProbStr(fcTlL) + ",  P(X " + fcGe + " x) = " + fc_ProbStr(fcTlU), G1, 6, 206, 1, fcMAG, 308);
+END;
+
+// The Why page's lines.
+fc_BtLines()
+BEGIN
+  LOCAL blC, blQ;
+  blQ := 1 - fcTp0;
+  fc_TL0();
+  IF fcTPre == 1 THEN
+    fc_TL("Castaneda v. Partida (1977): Hidalgo County, Texas grand juries over 11 years: 870 people summoned, 339 of them Mexican-American, in a county whose population was 79.1% Mexican-American.", fcBLUE);
+  END;
+  fc_TL("Source: " + fcTSrc, fcGRAY);
+  fc_TL(fcH0 + ": each person chosen is a 'success' with probability p" + CHAR(8320) + " = " + fc_Num(fcTp0, 6) + ", independently, so X ~ Binomial(n = " + fc_I(fcTn) + ", p" + CHAR(8320) + ").", #000000h);
+  fc_TL("Expected E = n p" + CHAR(8320) + " = " + fc_I(fcTn) + " " + fcTm + " " + fc_Num(fcTp0, 6) + " = " + fc_F(fcTE, 2), #000000h);
+  fc_TL("SD = " + fcRt + "(n p" + CHAR(8320) + " (1 - p" + CHAR(8320) + ")) = " + fcRt + "(" + fc_I(fcTn) + " " + fcTm + " " + fc_Num(fcTp0, 6) + " " + fcTm + " " + fc_Num(blQ, 6) + ") = " + fc_F(fcTSD, 3), #000000h);
+  fc_TL("Observed x = " + fc_I(fcTx) + ":  z = (x - E)/SD = (" + fc_I(fcTx) + " - " + fc_F(fcTE, 1) + ")/" + fc_F(fcTSD, 2) + " = " + fc_Sgn(fcTz, 2) + " SDs.", fcRED);
+  IF fcTPre == 1 THEN
+    // beta 1a (review 5): footnote 17 as read on 21 Oct 2026 (data/DATASETS.md),
+    // cited 430 U.S. at 496-497 n.17; paraphrase and one short quotation
+    fc_TL("The Court's reasoning (430 U.S. at 496-497 n.17): under a binomial model, about 688 expected with an SD of about 12, so the 11-year figures are " + CHAR(34) + "approximately 29 standard " +
+        "deviations" + CHAR(34) + " from the expected number.", fcMAG);
+    fc_TL("Its rule of thumb for large samples: a gap of more than two or three standard deviations would make random selection suspect to a social scientist.  It put the chance of so large a gap at " +
+        "less than 1 in 10^140; the exact two-sided binomial test here gives " + fc_PLong(fcTp2, fcTl2) + ".", fcMAG);
+    fc_TL("(Paraphrased, apart from the words in quotation marks.)", fcGRAY);
+  END;
+  fc_TL("Exact one-sided tails:  P(X " + fcLe + " " + fc_I(fcTx) + ") = " + fc_ProbStr(fcTlL) + ",  P(X " + fcGe + " " + fc_I(fcTx) + ") = " + fc_ProbStr(fcTlU), #000000h);
+  blC := fcGRN; IF fcTp2 < 0.05 THEN blC := fcRED; END;
+  fc_TL("Two-sided p = the sum of P(X = k) over every k no more likely than x (R's binom.test, SciPy's binomtest):  " + fc_PLong(fcTp2, fcTl2), blC);
+  IF fcTp2 < 0.05 THEN
+    fc_TL("At " + fcAl + " = 0.05: reject " + fcH0 + ".  A count this far from E would almost never come from chance selection alone.", fcRED);
+  ELSE
+    fc_TL("At " + fcAl + " = 0.05: do not reject " + fcH0 + ".  No evidence against p" + CHAR(8320) + " -- which does not prove p" + CHAR(8320) + " is right.", fcGRN);
+  END;
+  fc_TL("A p-value is P(data this extreme | " + fcH0 + "), not the probability that " + fcH0 + " is true; and the test measures the size of the gap, not its cause.", fcGRAY);
+  fc_TL("The " + fcX2S + " soft key asks the same question as a two-category " + fcX2S + " test: " + fcX2S + " = z" + fcSq + " = " + fc_F(fcTz^2, 2) + ", df = 1.", #000000h);
+END;
+
+// The two-category chi-square of the same question, on the fit pages.
+fc_BtChi()
+BEGIN
+  LOCAL bcL;
+  bcL := {"successes", "failures"};
+  IF fcTPre == 1 THEN bcL := {"Mex.-Am.", "others"}; END;
+  fc_SetFit({fcTx, fcTn - fcTx}, {fcTp0, 1 - fcTp0}, bcL, 0, 1, fcX2S + ": two categories", fcTSrc);
+  fcPre := 0;
+  IF fcTPre == 1 THEN fcPre := 2; END;
+  fc_GofLoop(1);
+END;
+
+// The test's screens: 1 the plot, 2 Why; the chi-square key opens the
+// two-category fit; Menu (or Esc, Enter) goes back.
+fc_BtLoop(btScr)
+BEGIN
+  LOCAL bpGo, bpK, bpM, bpM1, bpSl, bpPg;
+  LOCAL bpX, bpY, bpNk;
+  bpGo := 1; bpPg := 1;
+  fc_BtFit();
+  IF btScr == 2 THEN fc_BtLines(); END;
+  REPEAT bpK := GETKEY; UNTIL bpK == -1;
+  fc_Drain();
+  WHILE bpGo == 1 DO
+    IF btScr == 1 THEN
+      fc_DrawBt();
+    ELSE
+      fc_TextPage("Why: " + IFTE(fcTPre == 1, "Castaneda v. Partida", "exact binomial test"), bpPg, "page " + fc_I(bpPg) + " of " + fc_I(fc_NPg()) + ", " + fcUD + " or tap = page");
+    END;
+    fc_Show({"Plot", "Why", fcX2S, "", "", "Menu"});
+    REPEAT
+      bpK := GETKEY;
+      bpM := MOUSE;
+      bpM1 := bpM(1);
+    UNTIL bpK > -1 OR SIZE(bpM1) > 0;
+    IF SIZE(bpM1) > 0 THEN
+      bpX := bpM1(1); bpY := bpM1(2);
+      fc_Drain();
+      IF bpY >= 218 THEN
+        bpSl := MIN(6, IP(bpX / 53.4) + 1);
+        IF bpSl == 1 THEN btScr := 1; END;
+        IF bpSl == 2 THEN btScr := 2; bpPg := 1; fc_BtLines(); END;
+        IF bpSl == 3 THEN fc_BtChi(); bpGo := 0; END;
+        IF bpSl == 6 THEN bpGo := 0; END;
+      ELSE
+        IF btScr == 1 AND bpX >= fcPL AND bpX <= fcPR AND bpY >= 40 AND bpY <= 170 THEN
+          bpNk := fcTHi - fcTLo + 1;
+          fcTSel := MIN(fcTHi, fcTLo + FLOOR((bpX - fcPL) / (fcPR - fcPL) * bpNk));
+        END;
+        IF btScr == 2 THEN
+          bpPg := bpPg + 1;
+          IF bpPg > fc_NPg() THEN bpPg := 1; END;
+        END;
+      END;
+    ELSE
+      IF bpK == 4 OR bpK == 30 THEN bpGo := 0; END;
+      IF btScr == 1 AND (bpK == 7 OR bpK == 8) THEN
+        IF fcTSel < 0 THEN fcTSel := fcTx; END;
+        IF bpK == 7 THEN fcTSel := MAX(fcTLo, fcTSel - 1); ELSE fcTSel := MIN(fcTHi, fcTSel + 1); END;
+      END;
+      IF btScr == 2 AND (bpK == 2 OR bpK == 12) THEN
+        IF bpK == 2 THEN bpPg := MAX(1, bpPg - 1); ELSE bpPg := MIN(fc_NPg(), bpPg + 1); END;
+      END;
+      REPEAT bpK := GETKEY; UNTIL bpK == -1;
+    END;
+  END;
+  REPEAT bpK := GETKEY; UNTIL bpK == -1;
+END;
+
+// ============================================================
+// PRESETS (only data/DATASETS.md; the source shows when one loads)
+// ============================================================
+
+// A page that says what was loaded and where it comes from; any key or
+// tap goes on to the pictures.
+fc_SrcPage(spT, spS, spX)
+BEGIN
+  LOCAL spK;
+  fc_TL0();
+  fc_TL("Loaded: " + spT, fcBLUE);
+  fc_TLb();
+  fc_TL("Source: " + spS, #000000h);
+  fc_TLb();
+  IF DIM(spX) > 0 THEN fc_TL(spX, fcMAG); END;
+  fc_TextPage("FitCheck: preset", 1, "Any key or tap = the pictures");
+  BLIT_P(G0, 0, 0, G1);
+  spK := fc_WaitAny();
+END;
+
+// Arizona v. Nelson: the 23 cheque amounts, Benford's first digit.  The
+// view starts with all 9 digits; Merge gives Triola's 1 / 2-5 / 6-9.
+fc_PreNelson()
+BEGIN
+  LOCAL pnV, pnS;
+  pnV := {1927.48, 27902.31, 86241.90, 72117.46, 81321.75, 97473.96,
+    93249.11, 89658.16, 87776.89, 92105.83, 79949.16, 87602.93,
+    96879.27, 91806.47, 84991.67, 90831.83, 93766.67, 88336.72,
+    94639.49, 83709.26, 96412.21, 88432.86, 71552.16};
+  pnS := "State of Arizona v. Wayne James Nelson; Triola, Elem. Stat. Using the TI-83/84 Plus, 2nd ed., p. 653";
+  fc_Benford(pnV, 0, "Benford: Arizona v. Nelson", pnS);
+  fcPre := 1;
+  fcFixG := 1; fcMS := {1, 2, 6}; fcME := {1, 5, 9};
+  fc_SrcPage("23 cheque amounts written by the defendant, who was accused of issuing cheques to a vendor that did not really exist (Triola p. 653).", pnS, "First: all 9 digits (most E below 5).  Then " +
+      "Merge: Triola's 1 / 2-5 / 6-9.  The Test page has Triola's question for the defence.");
+END;
+
+// Castaneda v. Partida: 339 of 870 grand jurors, p0 = 0.791.
+fc_PreCast()
+BEGIN
+  fcTSrc := "Castaneda v. Partida, 430 U.S. 482, 495-496 (1977); n. 17 at 496-497";
+  fc_BTest(339, 870, 0.791);
+  fcTPre := 1;
+END;
+
+// The Castaneda preset's source page (beta 1a: shown on every route to it).
+fc_CastSrc()
+BEGIN
+  fc_SrcPage("Hidalgo County, Texas grand juries over 11 years: 870 summoned, 339 Mexican-American; 79.1% of the county.", fcTSrc,
+    "Exact binomial test; Why = the Court's SD reasoning; " + fcX2S + " = the two-category test.");
+END;
+
+// Richmond, Va., 1991: days with 0, 1, 2, 3 homicides.
+fc_PreRich()
+BEGIN
+  LOCAL prS;
+  prS := "Richards, a classroom note on homicidal deaths in Richmond, Va, 1991 (Math. and Computer Education); Triola p. 245";
+  fc_PoisFit({268, 79, 17, 1}, "Poisson: Richmond homicides 1991", prS);
+  fcPre := 3;
+  fc_SrcPage("Days in 1991 with 0, 1, 2 and 3 homicides in Richmond, Va: 268, 79, 17, 1 (365 days, 116 homicides).", prS, "The last cell is the tail, 3 or more.  Its E is small: see the check, then Merge.");
+END;
+
+// Bortkiewicz: Prussian cavalry corps-years with 0..4 deaths by horse kick.
+fc_PreHorse()
+BEGIN
+  LOCAL phS;
+  phS := "Bortkiewicz (1898); Triola p. 245";
+  fc_PoisFit({144, 91, 32, 11, 2}, "Poisson: horse-kick deaths", phS);
+  fcPre := 4;
+  fc_SrcPage("Prussian cavalry corps-years with 0, 1, 2, 3, 4 deaths by horse kick: 144, 91, 32, 11, 2 (280 corps-years, 196 deaths).", phS, "The last cell is the tail, 4 or more.");
+END;
+
+// crimtab: 3,000 criminals' heights in 2.54-cm bins (summed over the
+// finger-length column), midpoints 142.24 to 195.58 cm.
+fc_PreCrim()
+BEGIN
+  LOCAL pcM, pcF, pcI, pcS;
+  pcF := {1, 1, 6, 23, 48, 90, 175, 317, 393, 462, 458,
+    413, 264, 177, 97, 46, 17, 7, 4, 0, 0, 1};
+  pcM := {};
+  FOR pcI FROM 1 TO 22 DO pcM := CONCAT(pcM, {142.24 + 2.54 * (pcI - 1)}); END;
+  pcS := "Macdonell (1902) Biometrika 1:177 (used by 'Student', 1908); R datasets crimtab";
+  fc_NormSetBin(pcM, pcF, 2.54, "crimtab heights", pcS);
+  fcNPre := 5;
+  fc_SrcPage("Heights (cm) of 3,000 criminals, in 2.54-cm (1-inch) bins.", pcS, "Q-Q: one point per bin.  The test is the " + fcX2S + " fit on the bins (Bins key): the sparse tails are merged, df = k - 3.");
+END;
+
+// Rossi: the ages at release of 432 men (rebuilt from their frequencies,
+// ages 17 to 44: every value as in the data).
+fc_PreRossi()
+BEGIN
+  LOCAL prF, prV, prI, prJ, prS;
+  prF := {6, 21, 39, 61, 38, 41, 35, 37, 24, 18, 12, 13, 11, 12,
+    6, 8, 5, 3, 3, 8, 3, 5, 3, 6, 1, 6, 4, 3};
+  prV := MAKELIST(0, prI, 1, 432, 1);
+  prS := 0;
+  FOR prI FROM 1 TO 28 DO
+    FOR prJ FROM 1 TO prF(prI) DO prS := prS + 1; prV(prS) := 16 + prI; END;
+  END;
+  prS := "Rossi, Berk & Lenihan (1980) Money, Work, and Crime; via Allison (1995) / R carData";
+  IF fc_NormSet(prV, "Rossi ages", prS) == 1 THEN
+    fcNPre := 6;
+    fc_SrcPage("Ages at release of 432 men released from Maryland prisons.", prS, "Skewed: most were in their early twenties, a few much older.  Watch the Q-Q plot bend, and all three tests reject.");
+  END;
+END;
+
+// The 1970 draft lottery: the number drawn for each birth date, by month.
+// Are the 183 lowest numbers (the first priorities) spread over the two halves
+// of the year at random?  beta 1a (review 2): the numbers were drawn WITHOUT
+// replacement, so the test is the 2 x 2 table (half-year x low/high) --
+// Pearson's chi-square and Fisher's exact (hypergeometric) p -- and the
+// fixed-share goodness-of-fit test (beta 1's) is kept only as the teaching
+// point on the Test page: it understates the evidence by about half.
+fc_PreDraft()
+BEGIN
+  LOCAL pdL, pdM, pdI, pdJ, pdC, pdD;
+  LOCAL pdS, pdT, pdN, pdR;
+  LOCAL pdX, pdY;
+  pdL := {{305, 159, 251, 215, 101, 224, 306, 199, 194, 325, 329, 221, 318, 238, 17, 121, 235, 140, 58, 280, 186, 337, 118, 59, 52, 92, 355, 77, 349, 164, 211},
+    {86, 144, 297, 210, 214, 347, 91, 181, 338, 216, 150, 68, 152, 4, 89, 212, 189, 292, 25, 302, 363, 290, 57, 236, 179, 365, 205, 299, 285},
+    {108, 29, 267, 275, 293, 139, 122, 213, 317, 323, 136, 300, 259, 354, 169, 166, 33, 332, 200, 239, 334, 265, 256, 258, 343, 170, 268, 223, 362, 217, 30},
+    {32, 271, 83, 81, 269, 253, 147, 312, 219, 218, 14, 346, 124, 231, 273, 148, 260, 90, 336, 345, 62, 316, 252, 2, 351, 340, 74, 262, 191, 208},
+    {330, 298, 40, 276, 364, 155, 35, 321, 197, 65, 37, 133, 295, 178, 130, 55, 112, 278, 75, 183, 250, 326, 319, 31, 361, 357, 296, 308, 226, 103, 313},
+    {249, 228, 301, 20, 28, 110, 85, 366, 335, 206, 134, 272, 69, 356, 180, 274, 73, 341, 104, 360, 60, 247, 109, 358, 137, 22, 64, 222, 353, 209},
+    {93, 350, 115, 279, 188, 327, 50, 13, 277, 284, 248, 15, 42, 331, 322, 120, 98, 190, 227, 187, 27, 153, 172, 23, 67, 303, 289, 88, 270, 287, 193},
+    {111, 45, 261, 145, 54, 114, 168, 48, 106, 21, 324, 142, 307, 198, 102, 44, 154, 141, 311, 344, 291, 339, 116, 36, 286, 245, 352, 167, 61, 333, 11},
+    {225, 161, 49, 232, 82, 6, 8, 184, 263, 71, 158, 242, 175, 1, 113, 207, 255, 246, 177, 63, 204, 160, 119, 195, 149, 18, 233, 257, 151, 315},
+    {359, 125, 244, 202, 24, 87, 234, 283, 342, 220, 237, 72, 138, 294, 171, 254, 288, 5, 241, 192, 243, 117, 201, 196, 176, 7, 264, 94, 229, 38, 79},
+    {19, 34, 348, 266, 310, 76, 51, 97, 80, 282, 46, 66, 126, 127, 131, 107, 143, 146, 203, 185, 156, 9, 182, 230, 132, 309, 47, 281, 99, 174},
+    {129, 328, 157, 165, 56, 10, 12, 105, 43, 41, 39, 314, 163, 26, 320, 96, 304, 128, 240, 135, 70, 53, 162, 95, 84, 173, 78, 123, 16, 3, 100}};
+  pdM := {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+  pdC := {0, 0}; pdD := {0, 0};
+  pdT := "Low numbers (1 to 183) per month:";
+  pdN := 0;
+  FOR pdI FROM 1 TO 12 DO
+    pdJ := 1; IF pdI > 6 THEN pdJ := 2; END;
+    pdS := 0;
+    pdR := pdL(pdI);                         // this month's numbers
+    FOR pdN FROM 1 TO SIZE(pdR) DO
+      IF pdR(pdN) <= 183 THEN pdS := pdS + 1; END;
+    END;
+    pdC(pdJ) := pdC(pdJ) + pdS;
+    pdD(pdJ) := pdD(pdJ) + SIZE(pdR);
+    pdT := pdT + " " + pdM(pdI) + " " + fc_I(pdS);
+    IF pdI < 12 THEN pdT := pdT + ","; END;
+  END;
+  pdX := pdD(1) + pdD(2);                  // 366 dates
+  pdY := pdC(1) + pdC(2);                  // 183 low numbers
+  // the 2 x 2 cells: Jan-Jun low, Jan-Jun high, Jul-Dec low, Jul-Dec high;
+  // under H0 each cell's share is (row total)(column total) / N^2
+  fc_SetFit({pdC(1), pdD(1) - pdC(1), pdC(2), pdD(2) - pdC(2)},
+    {pdD(1) * pdY / pdX^2, pdD(1) * (pdX - pdY) / pdX^2, pdD(2) * pdY / pdX^2, pdD(2) * (pdX - pdY) / pdX^2},
+    {"Jan-Jun lo", "Jan-Jun hi", "Jul-Dec lo", "Jul-Dec hi"}, 2, 7, "Draft lottery 1970: 2 " + fcTm + " 2",
+    "Fienberg (1971) Science 171:255; Starr (1997) JSE 5(2)");
+  fcPre := 7;
+  fc_Fisher(pdX, pdY, pdD(1), pdC(1));
+  // the fixed-share goodness-of-fit test, for the teaching point only
+  pdS := pdY * pdD(1) / pdX; pdN := pdY * pdD(2) / pdX;
+  fcGx2 := (pdC(1) - pdS)^2 / pdS + (pdC(2) - pdN)^2 / pdN;
+  fcGp := fc_ChiUp(1, fcGx2);
+  fcNote := pdT + ".  If the drawing was fair, the " + fc_I(pdD(1)) + " Jan-Jun dates would hold " +
+    fc_I(pdD(1)) + " " + fcTm + " 183/366 = " + fc_F(183 * pdD(1) / 366, 1) + " low numbers on average, and the " + fc_I(pdD(2)) +
+    " Jul-Dec dates " + fc_F(183 * pdD(2) / 366, 1) + ".  The usual explanation of the gap (Fienberg 1971; not checked against the paper here):" +
+    " the capsules went into the drum month by month and were not mixed well.";
+  fc_SrcPage("1970 draft lottery: the priority number (1 to 366) drawn for each of the 366 birth dates.", fcSrc,
+    "A 2 " + fcTm + " 2 table: the Jan-Jun dates got " + fc_I(pdC(1)) + " low and " + fc_I(pdD(1) - pdC(1)) + " high numbers, Jul-Dec " +
+    fc_I(pdC(2)) + " low and " + fc_I(pdD(2) - pdC(2)) + " high.  The Test page has Fisher's exact test and why a simple goodness-of-fit test understates the evidence.");
+END;
+
+// Illustrative numbers (made up) for the binomial fit: 100 groups of 4.
+fc_PreBinIll()
+BEGIN
+  fc_BinFit({6, 27, 42, 20, 5}, -1, "Binomial fit (illustrative)", "illustrative numbers, made up for practice (not real data)");
+  fcPre := 8;
+  fc_SrcPage("Illustrative numbers: 100 groups of 4 trials; 6, 27, 42, 20 and 5 groups had 0, 1, 2, 3 and 4 successes.", fcSrc, "p is estimated from the data, so df = k - 2.");
+END;
+
+// The preset menu; each opens its pictures.
+fc_Presets()
+BEGIN
+  LOCAL prsI;
+  prsI := 0;
+  CHOOSE(prsI, "Load a preset", {
+    "Arizona v. Nelson: Benford",
+    "Castaneda v. Partida: jury",
+    "Richmond homicides: Poisson",
+    "Horse kicks: Poisson",
+    "crimtab heights: normal",
+    "Rossi ages: normality",
+    "Draft lottery 1970",
+    "Binomial (illustrative)"});
+  CASE
+    IF prsI == 1 THEN fc_PreNelson(); fc_GofLoop(1); END;
+    IF prsI == 2 THEN fc_PreCast(); fc_CastSrc(); fc_BtLoop(1); END;
+    IF prsI == 3 THEN fc_PreRich(); fc_GofLoop(1); END;
+    IF prsI == 4 THEN fc_PreHorse(); fc_GofLoop(1); END;
+    IF prsI == 5 THEN fc_PreCrim(); fc_NorLoop(1); END;
+    IF prsI == 6 THEN fc_PreRossi(); IF fcHasN == 1 THEN fc_NorLoop(1); END; END;
+    IF prsI == 7 THEN fc_PreDraft(); fc_GofLoop(1); END;
+    IF prsI == 8 THEN fc_PreBinIll(); fc_GofLoop(1); END;
+  END;
+END;
+
+
+// ============================================================
+// YOUR OWN DATA: D1 and D2 of the Statistics 1Var app
+// ============================================================
+
+// D1 and D2, or {} when the app has never been opened (wrap the FIRST
+// read in IFERR: the variable does not exist until then, Lessons 10).
+fc_ReadD1()
+BEGIN
+  LOCAL rdL;
+  rdL := {};
+  IFERR rdL := D1; THEN rdL := {}; END;
+  RETURN rdL;
+END;
+
+fc_ReadD2()
+BEGIN
+  LOCAL rdL;
+  rdL := {};
+  IFERR rdL := D2; THEN rdL := {}; END;
+  RETURN rdL;
+END;
+
+// 1 when every entry is a whole number >= 0 (a count), else 0.
+fc_IsCounts(icL)
+BEGIN
+  LOCAL icI;
+  FOR icI FROM 1 TO SIZE(icL) DO
+    IF icL(icI) < 0 OR FP(icL(icI)) <> 0 THEN RETURN 0; END;
+  END;
+  RETURN 1;
+END;
+
+// The routes from D1 (and D2):
+//   1 values: normality;  2 values: Benford first digit;  3 first two
+//   digits;  4 counts, equal shares;  5 counts with shares in D2;
+//   6 counts of 0, 1, 2 ... events: Poisson;  7 counts of 0..n
+//   successes: binomial (p estimated or typed).
+fc_MyD(mdR)
+BEGIN
+  LOCAL mdL, mdQ, mdI, mdS, mdLab, mdP;
+  LOCAL mdC, mdOK, mdPr, mdLb, mdHp;
+  mdL := fc_ReadD1();
+  IF SIZE(mdL) == 0 THEN
+    MSGBOX("List D1 is empty (or the Statistics 1Var app has never been opened).  Put your data in D1 first.");
+    RETURN;
+  END;
+  IF mdR <= 3 THEN
+    IF SIZE(mdL) > 5000 THEN MSGBOX("D1 has more than 5000 values; FitCheck takes at most 5000."); RETURN; END;
+    IF mdR == 1 THEN
+      IF fc_NormSet(mdL, "My data (D1)", "your own values, list D1") == 1 THEN fcNPre := 0; fc_NorLoop(1); END;
+      RETURN;
+    END;
+    IF fc_Benford(mdL, mdR - 2, "Benford: my data (D1)", "your own values, list D1") == 0 THEN
+      IF mdR == 3 THEN
+        MSGBOX("No value in D1 is 10 or more: the first-two-digits test needs two digits.");
+      ELSE
+        MSGBOX("Every value in D1 is 0: there are no leading digits.");
+      END;
+      RETURN;
+    END;
+    // beta 1a (review 4): say how many values the two-digit test left out
+    IF mdR == 3 AND fcBenS > 0 THEN
+      MSGBOX(fc_I(fcBenS) + " of the values are below 10: they have no second digit, so they are left out.");
+    END;
+    fcPre := 0;
+    fc_GofLoop(1);
+    RETURN;
+  END;
+  // the count routes
+  IF fc_IsCounts(mdL) == 0 THEN MSGBOX("D1 must hold counts: whole numbers, none negative."); RETURN; END;
+  IF SIZE(mdL) > 120 THEN MSGBOX("At most 120 cells in D1."); RETURN; END;
+  mdS := 0;
+  FOR mdI FROM 1 TO SIZE(mdL) DO mdS := mdS + mdL(mdI); END;
+  IF mdS == 0 THEN MSGBOX("Every count in D1 is 0: nothing to test."); RETURN; END;
+  IF mdR == 4 OR mdR == 5 THEN
+    IF SIZE(mdL) < 2 THEN MSGBOX("A goodness-of-fit test needs at least 2 cells."); RETURN; END;
+    mdLab := {}; mdPr := {};
+    FOR mdI FROM 1 TO SIZE(mdL) DO
+      mdLab := CONCAT(mdLab, {fc_I(mdI)});
+      mdPr := CONCAT(mdPr, {1 / SIZE(mdL)});
+    END;
+    IF mdR == 5 THEN
+      mdQ := fc_ReadD2();
+      IF SIZE(mdQ) <> SIZE(mdL) THEN MSGBOX("D2 must hold one expected share for each count in D1 (D1 has " + fc_I(SIZE(mdL)) + ", D2 has " + fc_I(SIZE(mdQ)) + ")."); RETURN; END;
+      mdC := 0; mdOK := 1;
+      FOR mdI FROM 1 TO SIZE(mdQ) DO
+        IF mdQ(mdI) <= 0 THEN mdOK := 0; END;
+        mdC := mdC + mdQ(mdI);
+      END;
+      IF mdOK == 0 THEN MSGBOX("Every share in D2 must be above 0 (a cell with share 0 would be impossible)."); RETURN; END;
+      FOR mdI FROM 1 TO SIZE(mdQ) DO mdPr(mdI) := mdQ(mdI) / mdC; END;
+      fc_SetFit(mdL, mdPr, mdLab, 0, 1, "My counts (D1), shares (D2)", "your counts, list D1; expected shares, list D2");
+      IF ABS(mdC - 1) > 0.000001 THEN fcNote := "The shares in D2 added up to " + fc_Num(mdC, 6) + "; each was divided by that, so they add to 1."; END;
+    ELSE
+      fc_SetFit(mdL, mdPr, mdLab, 0, 1, "My counts (D1), equal shares", "your counts, list D1; every cell equally likely");
+    END;
+    fcPre := 0;
+    fc_GofLoop(1);
+    RETURN;
+  END;
+  IF mdR == 6 THEN
+    IF fc_PoisFit(mdL, "Poisson: my counts (D1)", "your counts, list D1: D1(1) units with 0 events, D1(2) with 1, ...") == 0 THEN
+      MSGBOX("Nothing to fit: D1 needs units with 1 or more events (D1(2) onward).");
+      RETURN;
+    END;
+    fcPre := 0;
+    fc_GofLoop(1);
+    RETURN;
+  END;
+  // the binomial: estimate p, or type it
+  IF SIZE(mdL) < 2 THEN MSGBOX("D1 needs n + 1 counts: groups with 0, 1, ..., n successes."); RETURN; END;
+  mdI := 0;
+  CHOOSE(mdI, "Binomial: p", {"Estimate p from the data", "Type p" + CHAR(8320)});
+  IF mdI == 0 THEN RETURN; END;
+  mdP := -1;
+  IF mdI == 2 THEN
+    mdP := 0.5;
+    // beta 1a (review 10): the label built in a variable first, the verified form
+    mdLb := "p" + CHAR(8320) + ":";
+    mdHp := "The success probability under " + fcH0 + ", 0 < p" + CHAR(8320) + " < 1";
+    IF INPUT({mdP}, "Binomial fit", {mdLb}, {mdHp}) == 0 THEN RETURN; END;
+    IF mdP <= 0 OR mdP >= 1 THEN MSGBOX("p" + CHAR(8320) + " must be strictly between 0 and 1."); RETURN; END;
+  END;
+  IF fc_BinFit(mdL, mdP, "Binomial: my counts (D1)", "your counts, list D1: D1(1) groups with 0 successes, ..., D1(n+1) with n") == 0 THEN
+    MSGBOX("Nothing to fit: the estimated p is 0 or 1 (no group had any successes, or every trial succeeded).");
+    RETURN;
+  END;
+  fcPre := 0;
+  fc_GofLoop(1);
+END;
+
+// Typed numbers for the exact binomial test.
+fc_TypeBT()
+BEGIN
+  LOCAL tbX, tbN, tbP, tbL, tbH;
+  tbX := 0; tbN := 10; tbP := 0.5;
+  IF fcHasT == 1 THEN tbX := fcTx; tbN := fcTn; tbP := fcTp0; END;
+  tbL := "p" + CHAR(8320) + ":";
+  tbH := "The share under " + fcH0 + ": 0 < p" + CHAR(8320) + " < 1";
+  IF INPUT({tbX, tbN, tbP}, "Exact binomial test", {"x:", "n:", tbL}, {"Successes seen: a whole number from 0 to n", "Trials: a whole number from 1 to 100000", tbH}) == 0 THEN RETURN 0; END;
+  IF tbN < 1 OR tbN > 100000 OR FP(tbN) <> 0 THEN MSGBOX("n must be a whole number from 1 to 100000."); RETURN 0; END;
+  IF tbX < 0 OR tbX > tbN OR FP(tbX) <> 0 THEN MSGBOX("x must be a whole number from 0 to n."); RETURN 0; END;
+  IF tbP <= 0 OR tbP >= 1 THEN MSGBOX("p" + CHAR(8320) + " must be strictly between 0 and 1."); RETURN 0; END;
+  fcTSrc := "your numbers";
+  fc_BTest(tbX, tbN, tbP);
+  fcTPre := 0;
+  RETURN 1;
+END;
+
+
+// ============================================================
+// HELP AND THE TITLE PAGE
+// ============================================================
+
+// Show the text list as pages: any key or tap = the next page; Esc
+// leaves at once (from any page).
+fc_ShowPages(shT)
+BEGIN
+  LOCAL shP, shK, shN, shF;
+  shN := fc_NPg(); shP := 1;
+  WHILE shP <= shN DO
+    shF := "page " + fc_I(shP) + " of " + fc_I(shN) + ", any key or tap = next, Esc = menu";
+    IF shP == shN THEN shF := "page " + fc_I(shP) + " of " + fc_I(shN) + ", any key or tap = menu"; END;
+    fc_TextPage(shT, shP, shF);
+    BLIT_P(G0, 0, 0, G1);
+    shK := fc_WaitAny();
+    shP := shP + 1;
+    IF shK == 4 THEN shP := shN + 1; END;
+  END;
+END;
+
+// How to put your own data in D1 and D2.
+fc_HelpData()
+BEGIN
+  fc_TL0();
+  fc_TL("Your own data go in the Statistics 1Var app: open it (Apps), Num view, and type into the columns D1 and D2.  Then come back to FitCheck and pick the route in 'Use my data'.", #000000h);
+  fc_TLb();
+  fc_TL("Normality or Benford: D1 = the values themselves (up to 5000).", fcBLUE);
+  fc_TL("Counts with equal shares: D1 = the observed count of each category.", fcBLUE);
+  fc_TL("Counts with your shares: D1 = the counts, D2 = each category's expected share, in the same order (any positive numbers: FitCheck divides by their sum, and says so).", fcBLUE);
+  fc_TL("Poisson: D1(1) = how many units had 0 events, D1(2) = how many had 1, D1(3) = 2, and so on.", fcMAG);
+  fc_TL("Binomial: D1(1) = how many groups had 0 successes, ..., D1(n + 1) = how many had all n.  So D1 has n + 1 entries.", fcMAG);
+  fc_TLb();
+  fc_TL("Counts must be whole numbers, none negative.  Up to 120 cells.", fcGRAY);
+  fc_ShowPages("Help: your own data");
+END;
+
+fc_Help()
+BEGIN
+  fc_TL0();
+  fc_TL("FitCheck asks two questions.  GOODNESS OF FIT: do counts follow the proportions a hypothesis predicts (" + fcX2S + ", Benford, Poisson, binomial)?  NORMALITY: could a sample have come from a " +
+      "normal distribution (Q-Q plot, W, A" + fcSq + ", D, " + fcX2S + " on bins)?  And the exact binomial test for one proportion.", #000000h);
+  fc_TLb();
+  fc_TL(fcX2S + " GOODNESS OF FIT.  E = N " + fcTm + " (the cell's proportion under " + fcH0 + "): what the cell would hold if " + fcH0 + " were exactly right.  " + fcX2S + " = sum of (O - " +
+      "E)" + fcSq + "/E: big when the counts are far from E.  df = k - 1 - m, where m counts the parameters estimated from the same data (Poisson " + fcGLm + ": 1; binomial p: 1; normal " + fcMu + " " +
+          "and " + fcSg + ": 2).  p = the right tail of the " + fcX2S + " curve (Curve page).", fcBLUE);
+  fc_TL("The curve is only a fair guide when the E are not too small: every E " + fcGe + " 5, or Cochran's rule (at most 20% of the E below 5 and none below 1).  FitCheck checks EVERY cell.  If the " +
+      "rule fails, Merge joins neighbouring cells, the smallest E first, and the Test page names exactly which cells were merged (Unmrg undoes it).", fcRED);
+  fc_TL("Each cell's contribution (O - E)" + fcSq + "/E is the magenta strip under the bars; (O - E)/" + fcRt + "E is its signed square root: beyond " + fcPm + "2 the cell stands out.", fcMAG);
+  fc_TLb();
+  fc_TL("BENFORD'S LAW.  In many collections of amounts spread over several powers of ten the leading digit d turns up with probability log" + CHAR(8321) + CHAR(8320) + "(1 + 1/d): a 1 about 30.1% of " +
+      "the time, a 9 only 4.6%.  The first two digits: log" + CHAR(8321) + CHAR(8320) + "(1 + 1/(10a + b)).  In the two-digit test numbers below 10 are left out (they have no second digit).  Nigrini's " +
+          "MAD is the average gap between the actual and Benford's proportions.  The orange curve on the bars is Benford's law.", fcBLUE);
+  fc_TL("POISSON: " + fcGLm + " is estimated as the mean count; the last cell is the tail (K or more), so the E add up to N; df = k - 2.  BINOMIAL: p estimated (df = k - 2) or typed (df = k - 1).", fcMAG);
+  fc_TLb();
+  fc_TL("NORMALITY.  Q-Q plot: each value against its normal score z (Blom: the N(0,1) quantile at (i - 3/8)/(n + 1/4)); a normal sample hugs the line " + fcXbar + " + s z.  Shapiro-Wilk W (Royston " +
+      "1995): close to 1 for normal data.  Anderson-Darling A" + fcSq + " with the correction for estimated " + fcMu + " and " + fcSg + " (D'Agostino & Stephens 1986): weights the tails.  Lilliefors " +
+          "D: the largest gap between the ECDF and the fitted normal CDF (ECDF page), p by Dallal & Wilkinson (1986), given for n " + fcGe + " 5 and only below 0.10.  " + fcX2S + " on bins: df = k - 3.", fcBLUE);
+  fc_TL("A small p is evidence against normality; a large p is NOT proof of it.  With a big n, tiny departures give tiny p: the Q-Q plot shows how big the departure is.", fcRED);
+  fc_TLb();
+  fc_TL("EXACT BINOMIAL TEST.  X ~ Binomial(n, p" + CHAR(8320) + ").  The two-sided p adds P(X = k) over every k no more likely than the observed x (R's binom.test, SciPy's binomtest).  Everything is " +
+      "done in logs, so a p of 10^-145 (Castaneda) is still printed as a number.  The plot puts x on a scale of SDs from E (the Castaneda reasoning).", fcMAG);
+  fc_TLb();
+  fc_TL("KEYS.  Soft keys move between the pages of a result (Bars, Table, Curve, Test; Q-Q, ECDF, Tests, Bins; Plot, Why, " + fcX2S + ").  Tap a bar, a row or a point to read it; " + fcLR + " move " +
+      "the choice; " + fcUD + " turn text pages.  Esc or Enter = menu.", #000000h);
+  fc_TL("Presets: the data and their sources are in the program's header.  Your own data: 'Use my data', and its last item says how to fill D1 and D2.", #000000h);
+  fc_TLb();
+  fc_TL("HOME, after a run: FC_X2, FC_DF, FC_P, FC_O, FC_E (the last " + fcX2S + " fit, as shown), FC_W, FC_PW, FC_A2, FC_PA, FC_D, FC_PD (-1 = p > 0.10, -2 = n < 5), FC_BP (the exact test's two-sided p).", fcGRAY);
+  fc_TL("FitCheck reworks Triola's TI-83/84 goodness-of-fit and normality programs (X2GOF, GOFPOISS, GOFBIN, GOFNORML, X2NORM2, KOLSMIR, CVMTEST1, NMLPROB, BENFORD and others) without their bugs: the header lists them.", fcGRAY);
+  fc_TLb();
+  fc_TL("DISCLAIMER: a teaching and demonstration aid. Not validated for forensic, clinical or legal use; do not rely on its results for legal purposes.", fcRED);
+  fc_ShowPages("FitCheck help");
+END;
+
+// The title page, with the disclaimer on screen.
+fc_Opening()
+BEGIN
+  LOCAL opK;
+  fc_Frame("FitCheck - beta 1a");
+  TEXTOUT_P("Goodness of fit and normality,", G1, 12, 28, 2, fcBLUE, 300);
+  TEXTOUT_P("with courtroom and crime data", G1, 12, 46, 2, fcBLUE, 300);
+  TEXTOUT_P(fcX2S + " goodness of fit, Benford's law, Poisson and", G1, 12, 72, 1, #000000h, 300);
+  TEXTOUT_P("binomial fits;  normal Q-Q, Shapiro-Wilk W,", G1, 12, 85, 1, #000000h, 300);
+  TEXTOUT_P("Anderson-Darling A" + fcSq + ", Lilliefors D;  the exact", G1, 12, 98, 1, #000000h, 300);
+  TEXTOUT_P("binomial test (Castaneda v. Partida).", G1, 12, 111, 1, #000000h, 300);
+  TEXTOUT_P("(C) 2026 Roger D Metcalf.  Written with AI", G1, 12, 132, 1, fcGRAY, 300);
+  TEXTOUT_P("assistance (Claude, Anthropic).", G1, 12, 145, 1, fcGRAY, 300);
+  RECT_P(G1, 6, 160, 313, 212, fcRED, fcLRED);
+  TEXTOUT_P("DISCLAIMER: a teaching and demonstration aid.", G1, 12, 163, 1, fcRED, 298);
+  TEXTOUT_P("Not validated for forensic, clinical or legal", G1, 12, 175, 1, fcRED, 298);
+  TEXTOUT_P("use; do not rely on its results for legal", G1, 12, 187, 1, fcRED, 298);
+  TEXTOUT_P("purposes.", G1, 12, 199, 1, fcRED, 298);
+  TEXTOUT_P("Any key or tap = menu", G1, 12, 218, 1, fcFOOT, 300);
+  BLIT_P(G0, 0, 0, G1);
+  opK := fc_WaitAny();
+END;
+
+// ============================================================
+// THE MENU ITEMS
+// ============================================================
+
+// Chi-square goodness of fit: the last fit, your counts, or a preset.
+fc_MGof()
+BEGIN
+  LOCAL mgI;
+  mgI := 0;
+  IF fcHasF == 1 THEN
+    CHOOSE(mgI, fcX2S + " goodness of fit", {"The last fit again", "My counts D1, equal shares", "My counts D1, shares in D2", "Preset: draft lottery 1970", "Preset: Castaneda, 2 cells"});
+  ELSE
+    CHOOSE(mgI, fcX2S + " goodness of fit", {"My counts D1, equal shares", "My counts D1, shares in D2", "Preset: draft lottery 1970", "Preset: Castaneda, 2 cells"});
+    IF mgI > 0 THEN mgI := mgI + 1; END;
+  END;
+  CASE
+    IF mgI == 1 THEN fc_GofLoop(1); END;
+    IF mgI == 2 THEN fc_MyD(4); END;
+    IF mgI == 3 THEN fc_MyD(5); END;
+    IF mgI == 4 THEN fc_PreDraft(); fc_GofLoop(1); END;
+    IF mgI == 5 THEN fc_PreCast(); fc_CastSrc(); fc_BtChi(); END;
+  END;
+END;
+
+fc_MBen()
+BEGIN
+  LOCAL mbI;
+  mbI := 0;
+  CHOOSE(mbI, "Benford's law", {"Preset: Arizona v. Nelson", "My values D1: first digit", "My values D1: first 2 digits"});
+  CASE
+    IF mbI == 1 THEN fc_PreNelson(); fc_GofLoop(1); END;
+    IF mbI == 2 THEN fc_MyD(2); END;
+    IF mbI == 3 THEN fc_MyD(3); END;
+  END;
+END;
+
+fc_MPois()
+BEGIN
+  LOCAL mpI;
+  mpI := 0;
+  CHOOSE(mpI, "Poisson fit", {"Preset: Richmond homicides", "Preset: horse kicks", "My counts of 0, 1, 2 in D1"});
+  CASE
+    IF mpI == 1 THEN fc_PreRich(); fc_GofLoop(1); END;
+    IF mpI == 2 THEN fc_PreHorse(); fc_GofLoop(1); END;
+    IF mpI == 3 THEN fc_MyD(6); END;
+  END;
+END;
+
+fc_MBin()
+BEGIN
+  LOCAL miI;
+  miI := 0;
+  CHOOSE(miI, "Binomial fit", {"Illustrative numbers", "My counts of 0..n in D1"});
+  CASE
+    IF miI == 1 THEN fc_PreBinIll(); fc_GofLoop(1); END;
+    IF miI == 2 THEN fc_MyD(7); END;
+  END;
+END;
+
+fc_MNorm()
+BEGIN
+  LOCAL mnI;
+  mnI := 0;
+  IF fcHasN == 1 THEN
+    CHOOSE(mnI, "Normality", {"The last sample again", "Preset: Rossi ages", "Preset: crimtab heights", "My values in D1"});
+  ELSE
+    CHOOSE(mnI, "Normality", {"Preset: Rossi ages", "Preset: crimtab heights", "My values in D1"});
+    IF mnI > 0 THEN mnI := mnI + 1; END;
+  END;
+  CASE
+    IF mnI == 1 THEN fc_NorLoop(1); END;
+    IF mnI == 2 THEN fc_PreRossi(); IF fcHasN == 1 THEN fc_NorLoop(1); END; END;
+    IF mnI == 3 THEN fc_PreCrim(); fc_NorLoop(1); END;
+    IF mnI == 4 THEN fc_MyD(1); END;
+  END;
+END;
+
+fc_MNBin()
+BEGIN
+  IF fcHasN == 0 THEN
+    MSGBOX("Load a sample first: the Normality item, a preset (Rossi, crimtab) or your values in D1.");
+    RETURN;
+  END;
+  fc_NorBins();
+END;
+
+fc_MBTest()
+BEGIN
+  LOCAL mtI;
+  mtI := 0;
+  IF fcHasT == 1 THEN
+    CHOOSE(mtI, "Exact binomial test", {"The last test again", "Preset: Castaneda v. Partida", "Type x, n and p" + CHAR(8320)});
+  ELSE
+    CHOOSE(mtI, "Exact binomial test", {"Preset: Castaneda v. Partida", "Type x, n and p" + CHAR(8320)});
+    IF mtI > 0 THEN mtI := mtI + 1; END;
+  END;
+  CASE
+    IF mtI == 1 THEN fc_BtLoop(1); END;
+    IF mtI == 2 THEN fc_PreCast(); fc_CastSrc(); fc_BtLoop(1); END;
+    IF mtI == 3 THEN IF fc_TypeBT() == 1 THEN fc_BtLoop(1); END; END;
+  END;
+END;
+
+fc_MMy()
+BEGIN
+  LOCAL myI;
+  myI := 0;
+  CHOOSE(myI, "Use my data (D1, D2)", {
+    "D1 values: normality",
+    "D1 values: Benford, 1 digit",
+    "D1 values: Benford, 2 digits",
+    "D1 counts, equal shares",
+    "D1 counts, D2 shares",
+    "D1 counts of 0,1,2..: Poisson",
+    "D1 counts of 0..n: binomial",
+    "How to fill D1 and D2"});
+  IF myI >= 1 AND myI <= 7 THEN fc_MyD(myI); END;
+  IF myI == 8 THEN fc_HelpData(); END;
+END;
+
+// ============================================================
+// FitCheck(): the menu
+// ============================================================
+EXPORT FitCheck()
+BEGIN
+  LOCAL mnI, mnRun, mnS;
+  fc_Init();
+  fc_Opening();
+  mnRun := 1;
+  WHILE mnRun == 1 DO
+    mnI := 0;
+    // CHOOSE numbers the items itself (1-9, then A, B); the index is
+    // tested, never CHOOSE's return value
+    CHOOSE(mnI, "FitCheck: goodness of fit", {
+      fcX2S + " goodness of fit",
+      "Benford's law",
+      "Poisson fit",
+      "Binomial fit",
+      "Normality: Q-Q, W, A" + fcSq + ", D",
+      "Normality: " + fcX2S + " on bins",
+      "Exact binomial test",
+      "Load a preset",
+      "Use my data (D1, D2)",
+      "Help",
+      "Quit"});
+    CASE
+      IF mnI == 0 OR mnI == 11 THEN mnRun := 0; END;
+      IF mnI == 1 THEN fc_MGof(); END;
+      IF mnI == 2 THEN fc_MBen(); END;
+      IF mnI == 3 THEN fc_MPois(); END;
+      IF mnI == 4 THEN fc_MBin(); END;
+      IF mnI == 5 THEN fc_MNorm(); END;
+      IF mnI == 6 THEN fc_MNBin(); END;
+      IF mnI == 7 THEN fc_MBTest(); END;
+      IF mnI == 8 THEN fc_Presets(); END;
+      IF mnI == 9 THEN fc_MMy(); END;
+      IF mnI == 10 THEN fc_Help(); END;
+    END;
+  END;
+  // the summary goes back to Home as the program's value (no Terminal)
+  mnS := "FitCheck:";
+  IF fcHasF == 1 THEN
+    mnS := mnS + " " + fcX2S + "(" + fc_I(fcDF) + ") = " + fc_F(fcX2, 3);
+    IF fcDF >= 1 AND fcBad == 0 THEN mnS := mnS + ", " + fc_PStr(fcP); END;
+    mnS := mnS + ";";
+  END;
+  IF fcHasN == 1 AND fcBin == 0 THEN mnS := mnS + " W = " + fc_F(fcW, 4) + ", " + fc_PStr(fcPW) + ";"; END;
+  IF fcHasT == 1 THEN mnS := mnS + " binomial " + fc_PStr(fcTp2) + ";"; END;
+  IF mnS == "FitCheck:" THEN mnS := "FitCheck: nothing computed"; END;
+  RETURN mnS;
+END;

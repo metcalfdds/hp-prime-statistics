@@ -1,0 +1,51 @@
+=== Part A: the engine against statsmodels and the exact reference
+   note: random 2 (n=8) row 1 p=0.5: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: random 2 (n=8) row 2 p=0.2: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: random 2 (n=8) row 3 p=0.25: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: random 6 (n=5) row 2 p=0.5: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: random 6 (n=5) row 2 p=0.25: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: random 6 (n=5) row 3 p=0.2: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: random 8 (n=8) row 1 p=0.25: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: random 8 (n=8) row 2 p=0.5: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: random 8 (n=8) row 2 p=0.25: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: random 8 (n=8) row 3 p=0.25: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: random 11 (n=8) row 2 p=0.2: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: random 11 (n=8) row 3 p=0.25: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: random 16 (n=5) row 1 p=0.5: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: random 16 (n=5) row 1 p=0.25: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: random 16 (n=5) row 3 p=0.2: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: random 18 (n=8) row 1 p=0.5: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: random 19 (n=8) row 3 p=0.25: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: random 20 (n=12) row 1 p=0.2: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: random 20 (n=12) row 2 p=0.5: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: n = 2, both events row 3 p=0.5: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: everyone at risk fails at the end (n = d) row 1 p=0.25: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: everyone at risk fails at the end (n = d) row 3 p=0.25: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: S exactly 0.5 (median tie) row 1 p=0.5: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: S exactly 0.5 (median tie) row 1 p=0.25: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: S exactly 0.5 (median tie) row 3 p=0.5: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: S exactly 0.5 (median tie) row 3 p=0.25: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: huge times row 1 p=0.5: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: huge times row 2 p=0.5: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: huge times row 3 p=0.2: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: time 0 events row 2 p=0.5: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: no events in group 2 row 3 p=0.5: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: fractional times row 1 p=0.25: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: fractional times row 2 p=0.5: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: fractional times row 2 p=0.25: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: fractional times row 3 p=0.25: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: unequal groups row 2 p=0.5: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: unequal groups row 2 p=0.25: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: heavy ties row 1 p=0.5: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: heavy ties row 3 p=0.25: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+   note: one event row 2 p=0.5: S equals 1 - p exactly at an event time; statsmodels compared only to the exact rule
+=== Part B: every menu path, numbers on the pages
+=== Part C: pixel geometry of the cached Kaplan-Meier plot
+=== Part E: the second review (REVIEW2_SurvLab_beta1.md), item by item
+   statements: Rossi fit 17190, KM plot 6219; 500 rows (498 distinct times) fit 68756, KM plot 54280
+=== Part D: every run: errors, scientific numbers, text inside the screen
+   texts whose estimated width passes their width argument (estimate, a hint): 2
+      ('sv_LTab', '249999.75', 42.0, 50)
+      ('sv_LTab', '499999.5', 42.0, 44)
+
+5619 checks, 0 failures

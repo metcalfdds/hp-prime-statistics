@@ -2,13 +2,13 @@
 
 *HP Prime statistics: a one-page guide for first-time visitors. Version 1, 19 October 2026. Prepared for the HHC 2026 conference drive.*
 
-This repository holds **19 teaching programs** for the HP Prime, written in PPL with MicroPython where it helps. It also holds **a set of notes on how the Prime actually behaves**, found by testing and not by reading the manual. The programs were written for university statistics and forensic science courses. The notes are useful to anyone who writes PPL.
+This repository holds **27 teaching programs** for the HP Prime, written in PPL with MicroPython where it helps. It also holds **a set of notes on how the Prime actually behaves**, found by testing and not by reading the manual. The programs were written for university statistics and forensic science courses. The notes are useful to anyone who writes PPL.
 
 Everything here is free for educational and personal use ([LICENSE](LICENSE.txt)).
 
 ## If you have five minutes: read the notes
 
-[**docs/lessons-learned_v7q.md**](docs/lessons-learned_v7q.md) is the most useful file here, even if you never run a statistics program. It covers hard limits, commands that behave differently from the manual, touch and graphics idioms, `WAIT(-1)` and soft keys, the MicroPython bridge and how it fails silently, how to call the CAS from a program safely, numerical methods for 12-digit reals, and testing on the Virtual Calculator. Theories that turned out wrong are kept, marked as disproved.
+[**docs/lessons-learned_v7s.md**](docs/lessons-learned_v7s.md) is the most useful file here, even if you never run a statistics program. It covers hard limits, commands that behave differently from the manual, touch and graphics idioms, `WAIT(-1)` and soft keys, the MicroPython bridge and how it fails silently, how to call the CAS from a program safely, numerical methods for 12-digit reals, and testing on the Virtual Calculator. Theories that turned out wrong are kept, marked as disproved.
 
 Three findings that save the most time:
 
@@ -29,6 +29,8 @@ Install by pasting the `.txt` file into a new program in the HP Connectivity Kit
 | **BayesTree** | Slide the prevalence down and watch a 95 %-accurate test's positive predictive value collapse. |
 | **PowerViz** | Drag the H₁ curve; the α, β and power regions reshade as you move. |
 | **ScatterLab** | Fit a line by eye in Guess mode, then see least squares beat it. |
+| **AgreeLab** | Drag a count off the diagonal of the two neurologists' table and watch kappa fall. |
+| **RiskLab** | Drag the cut-off along the ROC curve and watch who gets flagged "high risk", group by group. |
 
 The full list of programs, with what each one does, is in the [README](README.md#the-programs).
 

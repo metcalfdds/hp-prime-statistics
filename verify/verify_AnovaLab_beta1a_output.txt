@@ -1,0 +1,32 @@
+-- A1 one-way presets (with Tukey)
+-- A2 one-way random and edge inputs
+-- A3 special functions
+-- A4 matrix inverse vs numpy
+-- A5 two-way Type III
+-- A6 randomized blocks
+-- A7 variances
+   part A: 31.6 s
+-- B pages
+-- C1 Tukey engine: the PPL equals its replica
+-- C2 Tukey accuracy grid (replica) vs scipy.stats.studentized_range
+   worst q crit rel error 2.18e-04 at (12, 3, 0.001)
+   worst tail rel error 6.66e-04 at (4, 100, 0.001)
+   worst pair p abs error 2.72e-06 at (12, 354, np.float64(2.25))
+   evaluations per q crit: 6 to 23 (median 13); 160 s
+-- C3 cost in statement counts: beta 1 vs beta 1a
+   jury   q crit: beta 1  19338 NORMALD_CDF;  beta 1a  3993 NORMALD_CDF +  585 interpolations (3.4 x fewer, an interpolation ~ 3 steps)
+   insect q crit: beta 1  41454 NORMALD_CDF;  beta 1a  5929 NORMALD_CDF +  845 interpolations (4.9 x fewer, an interpolation ~ 3 steps)
+   draft  q crit: beta 1  38269 NORMALD_CDF;  beta 1a  5929 NORMALD_CDF +  780 interpolations (4.6 x fewer, an interpolation ~ 3 steps)
+   draft q crit + 66 Tukey p: beta 1 248479 NORMALD_CDF;  beta 1a 5929 + 5070 interpolations (11.8 x fewer)
+-- C4 Tukey on request only; Not now; Esc inside the integration; honest steps
+-- C5 Cells page: 6 x 6 and 3 x 4 designs, nothing cut
+-- C6 interaction wording
+-- C7 one sigma at very large n
+-- C8 Checks page wording
+-- C9 large data: Working page, Esc, the Dots cache
+   harness time for C9: 2.3 s
+-- C10 small items
+   strict-width flags (6.4 px model): 0
+   total: 268.4 s
+
+8712 checks, 0 failures

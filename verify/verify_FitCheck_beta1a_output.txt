@@ -1,0 +1,27 @@
+A1 log-gamma
+A2 ln Phi
+A3 chi-square upper tail
+A4 Shapiro-Wilk
+   306 samples, largest difference from scipy.stats.shapiro (W or p): 2.09e-11
+A5 Anderson-Darling, A6 Lilliefors
+   n=1000 t3: statsmodels A2 = np.float64(inf), scipy 13.738408, FitCheck 13.738408
+   75 samples
+A7 chi-square goodness of fit
+A8 Benford
+A9 Poisson fit
+A10 binomial fit
+A11 normal fit on bins
+   crimtab merged: groups [[0, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7, 7], [8, 8], [9, 9], [10, 10], [11, 11], [12, 12], [13, 13], [14, 14], [15, 15], [16, 16], [17, 21]], X2 = 9.7688, df = 13, p = 0.712721
+A12 exact binomial test
+A13 edge inputs
+B  the menu paths
+   Nelson: 9 cells X2 = 129.9520 p = 2.89e-24; merged [np.int64(1), np.int64(1), np.int64(21)] E [ 6.924 10.974  5.103] X2 = 63.6634 p = 1.5e-14; MAD = 0.1685
+   Richmond: lambda 0.3178, X2 1.5176 df 2 p 0.4682, rule 0; merged [[0, 0], [1, 1], [2, 3]] X2 0.9885 df 1 p 0.3201
+   Horse: lambda 0.7000, X2 1.9790 df 3 p 0.5768, rule 2; merged [[0, 0], [1, 1], [2, 2], [3, 4]] X2 1.9518 df 2 p 0.3768
+   Rossi: W 0.8499 p 7.09e-20; A2 20.9405 p 0.0; D 0.1824 DW p 1.66e-39; skew 1.388
+   Rossi bins: width 2 from 16, 14 bins, merged [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7, 7], [8, 8], [9, 9], [10, 10], [11, 13]], X2 246.277 df 9 p 6.09e-48
+   draft 2x2 [[73, 109], [110, 74]]: Pearson X2 14.1644 p 0.000168; Fisher p 0.000243 (hypergeom sum 0.000243); fixed-share GOF 7.0822 p 0.00779
+R  the second review's items
+S  every run: scientific strings, errors
+
+3976 checks, 0 failures

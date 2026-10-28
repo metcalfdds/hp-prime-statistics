@@ -1,0 +1,17 @@
+
+=== A  the twin against SciPy and brute force
+  part A: 2800 checks so far
+
+=== B  the PPL routines in the harness
+  n = 50 exact DP runs: 2.4 s in the harness
+  part B done: 4634 checks so far
+
+=== C  RankLab() menu paths in the harness
+
+=== D  static checks of the source
+
+=== E  the second review, item by item
+
+=== F  every screen of every run above
+
+6064 checks, 0 failures

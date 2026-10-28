@@ -1,0 +1,2771 @@
+#pragma mode( separator(.,;) integer(h32) )
+
+// (C) 2026 Roger D Metcalf
+// For academic use only - do not rely on results for anything important
+// Results have not been rigorously verified and/or validated
+//
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with the
+//   file and credit the author if you pass it on.  Not for sale or
+//   commercial redistribution.
+// DISCLAIMER: a teaching and demonstration aid. Not validated for
+//   forensic, clinical or legal use; do not rely on its results for
+//   legal purposes.
+// Written with AI assistance. The concept, direction, decisions and all
+// hardware testing are Roger D. Metcalf's; the code, drafting and
+// source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
+
+// SEIZURELAB - beta 1a  (21 Oct 2026)
+// Representative sampling of a drug seizure, for a forensic-science or
+//   criminal-justice class.  A laboratory receives N similar units
+//   (packets, tablets) and cannot test them all.  How many must it test
+//   to support, at confidence c, the claim that AT LEAST a proportion p0
+//   of the N contain the drug?  And, from the weights of the units it
+//   did test, what is the total net weight of the seizure?
+// Launch: SeizureLab() from the Program Catalog (no arguments; it opens
+//   on a title page, then its menu).  Menu items:
+//     Set up: N, c, p0, prior     one INPUT form (N, c, p0, negatives
+//                                 allowed, prior a and b)
+//     Hypergeometric: n to test   the exact frequentist answer, the
+//                                 least n for 0, 1, 2 negatives, the
+//                                 lower confidence bound, a bar chart
+//     Binomial approximation      the large-N answer beside the exact
+//                                 one, and a plot of both against n
+//     Bayesian (beta prior)       Aitken's (1999) beta-binomial answer,
+//                                 prior and posterior densities
+//     OC curve: drag n            P(the claim is supported) against the
+//                                 TRUE proportion; drag n with a finger
+//     Weight: total net weight    t interval for the total with the
+//                                 finite-population correction
+//     Tables: n for N = 10 to inf the least n, computed live
+//     Enter a result: n and x     what was tested and what was found
+//     Help                        eight pages
+//   Home exports after a run: SZ_N (N), SZ_NMIN (least n, all positive,
+//   hypergeometric), SZ_P (P(X >= x | K0) for the result shown), SZ_LB
+//   (lower confidence bound for the proportion), SZ_PB (the Bayesian
+//   posterior probability of the claim), SZ_TOT and SZ_TLB (the total
+//   weight and its one-sided lower bound).
+// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  beta 1 has
+//   NOT been run on hardware or the emulator, only in the PC harness.
+// Sources: every formula below was derived here from first principles
+//   and checked numerically against SciPy (hypergeom, binom, betabinom,
+//   beta, t); no number in this file was taken from a paper.
+//   ENFSI Drugs Working Group (2009) Guidelines on Representative Drug
+//     Sampling, UNODC ST/NAR/38,
+//     https://www.unodc.org/documents/scientific/Drug_Sampling.pdf
+//     (READ for beta 1a, by the second review: its hypergeometric,
+//     binomial and Bayesian tables (1-5) agree with this program in 426
+//     of 427 cells, the one exception being the guideline's own misprint,
+//     see the NOTES; its Table 4 tabulates the Bayesian answer for a
+//     large seizure, "N >= 50" assumed, which is this program's N -> inf
+//     value; its section 7 gives the weight interval with the factor
+//     sqrt((N - n)/N), used here since beta 1a);
+//   Cochran WG (1977) Sampling Techniques, 3rd ed., Wiley (the variance of
+//     a mean under sampling without replacement);
+//   SWGDRUG Recommendations (sampling).
+//   Cited for the METHOD only and NOT checked against the papers here
+//   (their references match ENFSI's list):
+//   Aitken CGG (1999) Sampling - how big a sample?  J Forensic Sci
+//     44(4):750-760 (the beta prior and the beta-binomial for the
+//     untested units);
+//   Coulson SA et al. (2001) How many samples from a drug seizure need to
+//     be analyzed?  J Forensic Sci 46(6):1456-1461;
+//   Tzidony D, Ravreby M (1992) A statistical approach to drug sampling:
+//     a case study.  J Forensic Sci 37(6):1541-1549 (ENFSI's reference
+//     list also carries Stoel RD, Bolck A, "A correction to Tzidony and
+//     Ravreby (1992)", J Forensic Sci, in press in 2009; not read here);
+//   Frank RS et al. (1991) Representative sampling of drug seizures in
+//     multiple containers.  J Forensic Sci 36(2):350-357 (its multi-
+//     container method is not implemented);
+//   Lanczos log-gamma: the g = 7, 9-coefficient set (Godfrey), as in
+//     Press et al., Numerical Recipes (3rd ed., 6.1); the incomplete beta
+//     continued fraction: Numerical Recipes 6.4 (betacf).
+// Data: no data set from data/DATASETS.md fits (none is a drug seizure).
+//   The weight page's example is labelled on screen "illustrative
+//   numbers"; the student's own weights come from list D1 or a form.
+// Replaces / reworks: the Triola TI-83/84 programs OCBIN, OCHYPER and
+//   OCPOISSN (operating-characteristic curves; credited).  Their bugs are
+//   not repeated: OCBIN, OCHYPER and OCPOISSN draw the PMF (binompdf,
+//   one hypergeometric term, poissonpdf) where an OC curve needs the CDF
+//   (here the probability of acceptance sums every outcome with at most
+//   d negatives); OCHYPER's sample-size loop, "While abs(A-P) >= T",
+//   compares a probability with a target and can run for ever (here
+//   every search is a bisection or a bounded step on a monotone
+//   function, capped at N).
+// beta 1a (21 Oct 2026): the second review's findings (REVIEW2, items
+//   1-13; SeizureLab_beta1a_CHANGES.md has one line each).  The Bayesian
+//   least-n searches are bisections and Esc stops them, with a moving
+//   bar (1); the weight factor is sqrt((N - n)/N) (2, Roger's D1); the
+//   Bayesian page shows the finite-N and N -> inf least n side by side
+//   and says ENFSI's Table 4 is the second (3); the tie tolerance is 1E-6
+//   relative to 1 - c (4); the OC drags end on a key or an off-screen
+//   reading (5); the observed bar's outline is four LINE_P (6); no
+//   unverified arrow glyphs (7); every line within its width (8); each
+//   page's legend names its keys (9); the set-up form says what it
+//   clamped (10); the ENFSI guideline read and cited, the papers marked
+//   unchecked (11); a help page "Checking against ENFSI" (2, 3).
+// File map: (line ranges, beta 1a)
+//      1-  293  header, the arithmetic, Home exports, file-level LOCALs
+//    294-  537  small helpers: init, drains, waits, formats, frames, axes
+//    538-  995  numerics: log-gamma, sums of positive terms, searches
+//    996- 1148  the result in hand, recalculation, the two forms
+//   1149- 1330  page 1: hypergeometric
+//   1331- 1524  page 2: binomial approximation
+//   1525- 1720  page 3: Bayesian
+//   1721- 2087  page 4: OC curve
+//   2088- 2344  page 5: weight
+//   2345- 2532  page 6: tables and their plot
+//   2533- 2771  opening page, help, main
+//
+// THE ARITHMETIC (derived here; see the NOTES file for the checks)
+//   The seizure: N units, K of them contain the drug (unknown).  The
+//   CLAIM "at least a proportion p0 contain drug" is K/N >= p0, that is
+//   K >= Kr with Kr = ceiling(p0 N) (K is whole).  K0 = Kr - 1 is the
+//   LARGEST K for which the claim is false.  When p0 N is whole (N = 100,
+//   p0 = 0.90: Kr = 90, K0 = 89) the claim allows K = 90 exactly; when it
+//   is not (N = 15, p0 = 0.90: p0 N = 13.5, Kr = 14, K0 = 13) K = 13 is
+//   below 13.5 and is false.  p0 N is rounded to 6 decimals before the
+//   ceiling, so 0.07 x 100 is 7, not 8 (binary arithmetic on a PC).
+//
+//   1. HYPERGEOMETRIC.  Test n units chosen at random; X = the number
+//   positive.  Given K, X is hypergeometric:
+//     P(X = k) = C(K, k) C(N - K, n - k) / C(N, n).
+//   Observing x positive, the claim is SUPPORTED at confidence c when
+//     P(X >= x | N, n, K0) <= 1 - c.
+//   P(X >= x | K) grows with K (more positives in the seizure, more in the
+//   sample), so if the result is that rare at K0 it is rarer still for
+//   every K < K0: K0 is the worst false case.  This is a one-sided test of
+//   H0: K <= K0, and "supported" means H0 is rejected at level 1 - c.
+//   Least n with all positive (x = n): the smallest n with
+//     P(X = n | K0) = C(K0, n) / C(N, n) <= 1 - c;
+//   with d negatives allowed (x = n - d), the smallest n with
+//     P(X >= n - d | K0) = P(at most d negatives) <= 1 - c.
+//   P(at most d negatives) falls as n grows (each extra unit can only add
+//   a negative), so the search is a bisection on [d + 1, N]; at n = N the
+//   sample is the seizure, so a solution exists exactly when N - K0 > d.
+//   LOWER CONFIDENCE BOUND: the smallest K still consistent with what was
+//   seen, K_L = min{K : P(X >= x | K) > 1 - c}, K in [x, N - (n - x)]
+//   (bisection, the same monotonicity); the claim is supported exactly
+//   when Kr <= K_L.  K_L / N is a one-sided lower confidence bound at c
+//   for the proportion of drug units (the exact, Clopper-Pearson-style
+//   bound for sampling without replacement).
+//
+//   2. BINOMIAL.  For large N the units drawn hardly change what is left,
+//   so X is close to Binomial(n, p0), tested at p0 itself (the supremum
+//   over the false proportions below p0).  All positive: p0^n <= 1 - c,
+//   n >= ln(1 - c)/ln(p0).  With d negatives: P(at most d negatives) =
+//   sum_{j<=d} C(n, j)(1 - p0)^j p0^(n - j) <= 1 - c.  It does not depend
+//   on N; it is the hypergeometric's limit as N grows.
+//
+//   3. BAYESIAN (Aitken 1999; ENFSI 2009).  A prior Beta(a, b) on the
+//   proportion theta of drug units (uniform: a = b = 1; Jeffreys: a = b =
+//   0.5).  After n tested with x positive the posterior is
+//   Beta(a + x, b + n - x), and the number Y of positives among the
+//   m = N - n UNTESTED units is beta-binomial:
+//     P(Y = y) = C(m, y) B(y + a + x, m - y + b + n - x) / B(a + x, b + n - x).
+//   P(claim | data) = P(x + Y >= Kr) = P(Y >= Kr - x)  (1 if Kr <= x, 0 if
+//   Kr - x > m).  Least n with all positive: the smallest n with
+//   P(Y >= Kr - n | m = N - n, a + n, b) >= c (beta 1a: a bisection,
+//   bracketed by doubling steps from the large-N guess, bounded by 0 and
+//   min(N, Kr), where the probability is 1; the condition is monotone in
+//   n, checked on the verify grid).  Check (uniform prior, all positive): the posterior of K is
+//   proportional to C(K, n), so P(claim) = 1 - C(Kr, n + 1)/C(N + 1, n + 1)
+//   (the hockey-stick identity); the verify script compares.
+//   As N grows the claim becomes theta >= p0, with probability
+//     P(theta >= p0 | data) = I_{1-p0}(b + n - x, a + x)
+//   (the regularized incomplete beta; the shaded area of the posterior).
+//   This N -> inf form is what ENFSI's Table 4 tabulates ("a large
+//   seizure is assumed", N >= 50): 28 for a uniform prior, p0 = 0.90,
+//   c = 0.95; for N = 100 the beta-binomial above gives 22, because it
+//   counts only the untested units of this seizure.  The page shows both.
+//
+//   4. OC CURVE.  The plan "test n, support the claim if at most d are
+//   negative" supports it with probability
+//     OC(K) = P(X >= n - d | N, n, K)
+//   when K of the N are drug.  Drawn against the true proportion K/N; the
+//   red part (K <= K0) is the chance of supporting a FALSE claim, at most
+//   OC(K0), which is <= 1 - c when n is at least the least n.  The thin
+//   blue curve is the binomial OC, sum_{j<=d} C(n,j)(1-t)^j t^(n-j).
+//
+//   5. WEIGHT (ENFSI's second question).  From the net weights w of the n
+//   tested units: mean w-bar, SD s (n - 1 divisor).  Total T = N w-bar.
+//   SE(T) = N (s / sqrt n) sqrt((N - n)/N).
+//   (Derivation: without replacement Var(w-bar) = (S^2 / n)(N - n)/N with
+//   S^2 the population variance on N - 1 (Cochran); s^2 estimates S^2, so
+//   the unbiased factor is (N - n)/N.  beta 1 used (N - n)/(N - 1), which
+//   belongs to a variance with divisor N and overstates Var(T) by
+//   N/(N - 1); Roger's decision D1 (21 Oct 2026) and ENFSI section 7,
+//   whose example prints the factor 0.877 = sqrt(77/100), settle it; the
+//   second review's simulation agrees.)  Two-sided CI:
+//   T +/- t(n - 1, (1 + c)/2) SE; one-sided lower bound: T - t(n - 1, c) SE
+//   (the number a court may ask for: "at least ... g").
+//
+// NUMERICS
+//   ln Gamma by Lanczos (g = 7, 9 terms; relative error about 1E-15 in
+//   double, the Prime's 12 digits otherwise).  Every probability is a SUM
+//   OF POSITIVE TERMS: one term is computed from log-gammas at the LARGEST
+//   term of the range (the mode, clamped into it), the others by the
+//   ratio of neighbours, walking away from it in both directions and
+//   stopping when a term is below 1E-16 of the sum (terms only fall away
+//   from the mode).  Nothing is computed as 1 - (a sum), so nothing
+//   cancels (Lessons Learned 3); a log below -1100 is a probability
+//   below 1E-477, returned as 0 (no underflow, no overflow: N up to
+//   10,000 is allowed, and the sums were checked to N = 1,000,000).
+//   The beta-binomial is unimodal when a + b + n > 2, monotone at 2 and
+//   U-shaped below (Jeffreys with n = 0); a U-shaped sum starts at the
+//   larger end and is never cut short.  The incomplete beta uses the
+//   continued fraction (no alternating sum).
+//
+// HOME EXPORTS
+//   SZ_N, SZ_NMIN, SZ_P, SZ_LB, SZ_PB, SZ_TOT, SZ_TLB (see above).
+//
+// LAYOUT
+//   Font 1 is about 6.5 px per character: text lines are at most 46
+//   characters from x = 6, and every TEXTOUT_P is given a width.  Result
+//   pages: title band 0-17, text from y 20 every 12 px, the plot, a
+//   legend or tap line at y 192, the one-line disclaimer at y 204, the
+//   soft keys from y 220.
+//
+// SPEED (untested on a G1; see the NOTES checklist)
+//   The beta-binomial sum has up to N(1 - p0) terms; at N = 10,000 a
+//   Bayesian search (about 2 log2(N) sums at worst) can take a minute or
+//   more on a G1 (estimated from the PC harness at 30-100x; not timed on
+//   a G1), so the program says "Computing ..." with a moving bar and Esc
+//   stops it.  The OC curve keeps ln Gamma(K + 1) per pixel
+//   column for the current N, so one frame costs one ln Gamma per column;
+//   while a finger drags n it computes every fourth column and leaves
+//   the binomial curve out until the finger lifts.
+// ============================================================
+
+
+EXPORT SZ_N, SZ_NMIN, SZ_P, SZ_LB;
+EXPORT SZ_PB, SZ_TOT, SZ_TLB;
+
+// ---- the set-up (sz_Setup) ----
+LOCAL szN, szC, szP0, szD, szA, szB;
+//  szN units seized, szC the confidence c, szP0 the claimed proportion,
+//  szD the negatives allowed (0 to 20), szA, szB the beta prior.
+LOCAL szKr, szK0, szNt, szJ, szOP, szOLB;
+//  szKr = ceiling(p0 N) (the claim is K >= szKr), szK0 = szKr - 1 (the
+//  worst false case).  The result in hand: szNt units tested, szJ of them
+//  negative (x = szNt - szJ); szOP = P(X >= x | K0), szOLB = K_L.
+LOCAL szHm, szBm, szYm, szYmL, szHmD, szBmD;
+//  least n: szHm hypergeometric for 0, 1, 2 negatives, szBm binomial,
+//  szYm Bayesian (finite N), szYmL Bayesian as N grows; szHmD and szBmD
+//  for szD negatives.
+// ---- glyphs, built with CHAR() so the source stays ASCII ----
+LOCAL szGE, szLE, szTH, szPZ, szKZ, szINF;
+LOCAL szTMS, szXB, szRT, szPM, szAR, szDisc;
+// ---- house palette (Lessons Learned 13) ----
+LOCAL szBLUE, szMAG, szRED, szGRN, szORNG, szGRAY;
+LOCAL szFOOT, szGRID, szSHD, szLGRN, szLRED, szLBLU;
+LOCAL szLORN, szWRNG, szLc;
+//  szWRNG is the shade for "the claim would be wrongly supported";
+//  szLc holds the nine Lanczos coefficients.
+// ---- the plot box: the drawing and the touch code read the same ----
+LOCAL szPL, szPR, szPT, szPB, szInfo, szHyK1;
+LOCAL szHyNb, szHyBw, szHyL;
+//  szInfo: the line a tap writes (empty = show the key legend);
+//  szHyK1, szHyNb, szHyBw, szHyL: the hypergeometric bars on screen.
+// ---- page caches (computed once per parameter change) ----
+LOCAL szBnH, szBnB, szBnM, szBnKey, szBaPr, szBaPo;
+LOCAL szBaY, szBaKey, szBaP, szBaL, szOcN, szOcK;
+LOCAL szOcS, szOcH, szOcB, szOcT, szOcM, szOcL;
+LOCAL szOcLf, szDgX;
+//  binomial page: szBnH, szBnB the two curves for n = 1..szBnM;
+//  Bayesian page: szBaPr, szBaPo the densities per column, szBaY the
+//  y-top, szBaP and szBaL the two probabilities; OC page: szOcK, szOcS
+//  K and ln Gamma(K + 1) per column for N = szOcN, szOcH and szOcB the
+//  curves, szOcT the true proportion marked, szOcM the slider's top n,
+//  szOcL the left end of the x axis (0, or near p0 when zoomed) and
+//  szOcLf the one the columns were fitted for.
+// ---- weight ----
+LOCAL szWt, szWn, szWm, szWs, szWsrc, szWok;
+LOCAL szWr, szStop, szPrg;
+//  szWt the weights (empty when a summary was typed), szWn, szWm, szWs
+//  n, mean, SD; szWsrc where they came from; szWok = 1 once loaded;
+//  szWr the results {T, SE, t2, lo, hi, t1, lb, fpc}; szStop = 1 once
+//  Esc has stopped a long search (beta 1a).
+// ---- tables ----
+LOCAL szTbH9, szTbY9, szTbH5, szTbY5, szTbKey;
+//  least n for N = 10 ... 1000 and large (8 entries each), p0 = 0.90
+//  and 0.50, hypergeometric and Bayesian; szTbKey the prior they used.
+
+
+// ------------------------------------------------------------
+// SMALL HELPERS
+// ------------------------------------------------------------
+
+sz_Init()
+BEGIN
+  szBLUE := #003CC8h; szMAG := #C800C8h; szRED := #FF0000h;
+  szGRN := #008C3Ch; szORNG := #FF4500h; szGRAY := #5A5A5Ah;
+  szFOOT := #1E90FFh; szGRID := #E1E4EBh; szSHD := #AACDFFh;
+  szLGRN := #E8F6EBh; szLRED := #FFEBEBh; szLBLU := #EBF2FFh;
+  szLORN := #FFF0DCh; szWRNG := #FFBEBEh;
+  // szWRNG is a deliberately darker red than the house light red (255,
+  // 235, 235): the "wrongly supported" area of the OC curve must stand out
+  // beside the light green "rightly supported" area.
+  // the glyphs: >= <= theta, p and K with a subscript 0, infinity,
+  // times, x-bar, root, plus-minus, arrow (Lessons Learned 5)
+  szGE := CHAR(8805); szLE := CHAR(8804); szTH := CHAR(952);
+  szPZ := "p" + CHAR(8320); szKZ := "K" + CHAR(8320); szINF := CHAR(8734);
+  szTMS := CHAR(215); szXB := CHAR(57344); szRT := CHAR(8730);
+  szPM := CHAR(177); szAR := CHAR(8594);
+  szDisc := "Teaching aid; not a laboratory sampling plan.";
+  // Lanczos, g = 7, n = 9 (Godfrey's coefficients)
+  szLc := {0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+    771.32342877765313, -176.61502916214059, 12.507343278686905,
+    -0.13857109526572012, 0.0000099843695780195716, 0.00000015056327351493116};
+  // the teaching defaults
+  szN := 100; szC := 0.95; szP0 := 0.90; szD := 0; szA := 1; szB := 1;
+  szNt := 1; szJ := 0; szOP := 1; szOLB := 0;
+  szHm := {-1, -1, -1}; szBm := {-1, -1, -1};
+  szYm := -1; szYmL := -1; szHmD := -1; szBmD := -1;
+  szPL := 30; szPR := 312; szPT := 94; szPB := 170; szInfo := "";
+  szHyK1 := 0; szHyNb := 1; szHyBw := 1; szHyL := {0};
+  szBnH := {0}; szBnB := {0}; szBnM := 1; szBnKey := "";
+  szBaPr := {0}; szBaPo := {0}; szBaY := 1; szBaKey := "";
+  szBaP := 0; szBaL := 0;
+  szOcN := -1; szOcK := {0}; szOcS := {0}; szOcH := {0}; szOcB := {0};
+  szOcT := 0.8; szOcM := 40; szOcL := 0; szOcLf := -1; szDgX := 0;
+  szWt := {}; szWn := 0; szWm := 0; szWs := 0; szWsrc := ""; szWok := 0;
+  szWr := {0, 0, 0, 0, 0, 0, 0, 0}; szStop := 0; szPrg := 0;
+  szTbH9 := {0}; szTbY9 := {0}; szTbH5 := {0}; szTbY5 := {0}; szTbKey := "";
+END;
+
+// Wait for the finger to lift, never more than one second
+// (Lessons Learned 7: a stuck touch reading must not freeze the program).
+sz_Drain()
+BEGIN
+  LOCAL drT;
+  drT := TICKS;
+  REPEAT UNTIL MOUSE(1) == -1 OR TICKS - drT > 1000;
+END;
+
+// Drain, wait for a key OR a tap, drain.  Returns the key code, or -1
+// for a tap.
+sz_WaitAny()
+BEGIN
+  LOCAL waK, waM, waM1, waK2;
+  REPEAT waK := GETKEY; UNTIL waK == -1;
+  sz_Drain();
+  REPEAT
+    waK := GETKEY;
+    waM := MOUSE;
+    waM1 := waM(1);
+  UNTIL waK > -1 OR SIZE(waM1) > 0;
+  IF SIZE(waM1) > 0 THEN waK := -1; END;
+  sz_Drain();
+  REPEAT waK2 := GETKEY; UNTIL waK2 == -1;
+  RETURN waK;
+END;
+
+// A 1, 2 or 5 times a power of ten at least as big as v (Heckbert).
+sz_Nice(nvV)
+BEGIN
+  LOCAL nvE, nvF;
+  IF nvV <= 0 THEN RETURN 1; END;
+  nvE := FLOOR(LOG(nvV));
+  nvF := nvV / 10^nvE;
+  // a hair of slack: 0.2 / 0.1 is 2.0000000000000004 in binary
+  IF nvF <= 1.000001 THEN RETURN 10^nvE; END;
+  IF nvF <= 2.000001 THEN RETURN 2 * 10^nvE; END;
+  IF nvF <= 5.000001 THEN RETURN 5 * 10^nvE; END;
+  RETURN 10^(nvE + 1);
+END;
+
+// A whole number as text ("23").
+sz_I(ivV)
+BEGIN
+  RETURN STRING(ROUND(ivV, 0) + 0, 2, 0);
+END;
+
+// A number with d fixed decimals, rounded first, so it can never turn
+// scientific (Lessons Learned 3); "+ 0" turns a rounded -0 into 0.
+sz_F(fvV, fvD)
+BEGIN
+  RETURN STRING(ROUND(fvV, fvD) + 0, 2, fvD);
+END;
+
+// A short number with as few decimals as it needs, from dvMin up to 4
+// (0.9 with dvMin 2 is "0.90"; 23.5 with dvMin 0 is "23.5").
+sz_G(gvV, gvMin)
+BEGIN
+  LOCAL gvD;
+  FOR gvD FROM gvMin TO 4 DO
+    IF ABS(gvV - ROUND(gvV, gvD)) < 0.000000001 THEN RETURN sz_F(gvV, gvD); END;
+  END;
+  RETURN sz_F(gvV, 4);
+END;
+
+// A probability with its relation: "= 0.0402", "< 0.0001", "> 0.9999",
+// "= 0" (impossible), "= 1" (certain).
+sz_PStr(psP)
+BEGIN
+  IF psP <= 0 THEN RETURN "= 0"; END;
+  IF psP >= 1 THEN RETURN "= 1"; END;
+  IF psP < 0.0001 THEN RETURN "< 0.0001"; END;
+  IF psP > 0.9999 THEN RETURN "> 0.9999"; END;
+  RETURN "= " + sz_F(psP, 4);
+END;
+
+// A least n as text: "none" when no n works, "stopped" after Esc.
+sz_NStr(nsV)
+BEGIN
+  IF nsV == -2 THEN RETURN "stopped"; END;
+  IF nsV < 0 THEN RETURN "none"; END;
+  RETURN sz_I(nsV);
+END;
+
+// A weight with decimals that suit its size.
+sz_W(wfV)
+BEGIN
+  IF ABS(wfV) < 1 THEN RETURN sz_F(wfV, 4); END;
+  IF ABS(wfV) < 10 THEN RETURN sz_F(wfV, 3); END;
+  IF ABS(wfV) < 1000 THEN RETURN sz_F(wfV, 2); END;
+  IF ABS(wfV) < 100000 THEN RETURN sz_F(wfV, 1); END;
+  RETURN sz_F(wfV, 0);
+END;
+
+// The longer of two wordings that fits the 46-character budget of a
+// font-1 line in width 308 (about 6.5 px a character; beta 1a, second
+// review item 8): s1 if it fits, else the shorter s2.
+sz_Fit(ftA, ftB)
+BEGIN
+  IF DIM(ftA) <= 46 THEN RETURN ftA; END;
+  RETURN ftB;
+END;
+
+// A white page on G1 with the orange title band.  Everything is drawn
+// on G1 and shown by ONE blit (Lessons Learned 6).
+sz_Frame(frT)
+BEGIN
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 0, 0, 319, 17, szORNG, szORNG);
+  TEXTOUT_P(frT, G1, 4, 2, 2, #FFFFFFh, 312);
+END;
+
+// The bottom of every result page: the tap line (or the key legend) and
+// the one-line disclaimer, then the blit and the soft keys.
+sz_Show(shLeg, shKeys)
+BEGIN
+  IF DIM(szInfo) > 0 THEN
+    TEXTOUT_P(szInfo, G1, 6, 192, 1, #000000h, 308);
+  ELSE
+    TEXTOUT_P(shLeg, G1, 6, 192, 1, szFOOT, 308);
+  END;
+  TEXTOUT_P(szDisc, G1, 6, 204, 1, szGRAY, 308);
+  BLIT_P(G0, 0, 0, G1);
+  DRAWMENU(shKeys);
+END;
+
+// A dotted vertical / horizontal line (LINE_P has no dash style).
+sz_DotV(dvX, dvY1, dvY2, dvC)
+BEGIN
+  LOCAL dvI;
+  FOR dvI FROM dvY1 TO dvY2 STEP 3 DO PIXON_P(G1, dvX, dvI, dvC); END;
+END;
+
+sz_DotH(dhX1, dhX2, dhY, dhC)
+BEGIN
+  LOCAL dhI;
+  FOR dhI FROM dhX1 TO dhX2 STEP 3 DO PIXON_P(G1, dhI, dhY, dhC); END;
+END;
+
+// A solid dot of radius 2 from RECT_P bars (ARC_P rings leave holes).
+sz_Dot(dtX, dtY, dtC)
+BEGIN
+  RECT_P(G1, dtX - 1, dtY - 2, dtX + 1, dtY + 2, dtC, dtC);
+  RECT_P(G1, dtX - 2, dtY - 1, dtX + 2, dtY + 1, dtC, dtC);
+END;
+
+// The smallest value in a list (MAX on a list is device-verified, MIN on
+// a list is not, so this loops).
+sz_LMin(lmL)
+BEGIN
+  LOCAL lmI, lmV;
+  lmV := lmL(1);
+  FOR lmI FROM 2 TO SIZE(lmL) DO
+    IF lmL(lmI) < lmV THEN lmV := lmL(lmI); END;
+  END;
+  RETURN lmV;
+END;
+
+// A "Computing ..." page for anything that may take a while on a G1.
+sz_Busy(buT)
+BEGIN
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  // beta 1a: an honest note (second review, item 1): a large N or a
+  // strong prior can take a minute or more on a G1; Esc stops it.
+  RECT_P(G1, 30, 88, 290, 152, szORNG, szLORN);
+  TEXTOUT_P(buT, G1, 40, 94, 2, szORNG, 240);
+  TEXTOUT_P("Esc = stop. A large N or strong prior", G1, 40, 116, 1, szGRAY, 240);
+  TEXTOUT_P("can take a minute or more on a G1.", G1, 40, 129, 1, szGRAY, 240);
+  BLIT_P(G0, 0, 0, G1);
+END;
+
+// Axis ticks along y for a probability axis 0..ytop, labels at the left.
+sz_YAxis(yaTop)
+BEGIN
+  LOCAL yaS, yaV, yaY, yaD, yaN;
+  yaS := sz_Nice(yaTop / 4);
+  yaD := MAX(0, -FLOOR(LOG(yaS)));
+  yaV := 0; yaN := 0;
+  WHILE yaV <= yaTop * 1.0001 AND yaN < 12 DO
+    yaY := szPB - IP(yaV / yaTop * (szPB - szPT) + 0.5);
+    LINE_P(G1, szPL, yaY, szPR, yaY, szGRID);
+    TEXTOUT_P(sz_F(yaV, yaD), G1, 1, yaY - 5, 1, szGRAY, szPL - 2);
+    yaV := yaV + yaS; yaN := yaN + 1;
+  END;
+END;
+
+// Axis ticks along x for a value axis xa0..xa1 (labels under the box).
+sz_XAxis(xa0, xa1, xaS)
+BEGIN
+  LOCAL xaV, xaX, xaD, xaN, xaL;
+  xaD := MAX(0, -FLOOR(LOG(xaS)));
+  xaV := CEILING(xa0 / xaS - 0.000001) * xaS; xaN := 0;
+  WHILE xaV <= xa1 * 1.000001 + 0.000000001 AND xaN < 14 DO
+    xaX := szPL + IP((xaV - xa0) / (xa1 - xa0) * (szPR - szPL) + 0.5);
+    LINE_P(G1, xaX, szPB, xaX, szPB + 2, #000000h);
+    xaL := sz_F(xaV, xaD);
+    TEXTOUT_P(xaL, G1, MIN(xaX - 6, 316 - 6 * DIM(xaL)), szPB + 3, 1, szGRAY, 40);
+    xaV := xaV + xaS; xaN := xaN + 1;
+  END;
+END;
+
+
+// ------------------------------------------------------------
+// NUMERICS
+// ------------------------------------------------------------
+
+// ln Gamma(z), z > 0, by Lanczos (g = 7, nine terms):
+//   Gamma(z) = sqrt(2 pi) t^(z - 1/2) e^(-t) A(z),  t = z + 6.5,
+//   A(z) = c0 + sum_{i=1..8} c_i / (z - 1 + i).
+// Below 0.5 it steps up with ln Gamma(z) = ln Gamma(z + 1) - ln z.
+// LNGAMMA does not exist outside the CAS (Lessons Learned 3).
+sz_LnG(lgZ)
+BEGIN
+  LOCAL lgW, lgS, lgX, lgA, lgI, lgT;
+  IF lgZ <= 0 THEN RETURN 0; END;
+  lgW := lgZ; lgS := 0;
+  WHILE lgW < 0.5 DO
+    lgS := lgS - LN(lgW);
+    lgW := lgW + 1;
+  END;
+  lgX := lgW - 1;
+  lgA := szLc(1);
+  FOR lgI FROM 1 TO 8 DO
+    lgA := lgA + szLc(lgI + 1) / (lgX + lgI);
+  END;
+  lgT := lgX + 7.5;
+  RETURN lgS + 0.918938533204673 + (lgX + 0.5) * LN(lgT) - lgT + LN(lgA);
+END;
+
+// ln C(a, b) for whole 0 <= b <= a.
+sz_LnC(lcA, lcB)
+BEGIN
+  RETURN sz_LnG(lcA + 1) - sz_LnG(lcB + 1) - sz_LnG(lcA - lcB + 1);
+END;
+
+// ln B(p, q) = ln Gamma(p) + ln Gamma(q) - ln Gamma(p + q).
+sz_LnB(lbP, lbQ)
+BEGIN
+  RETURN sz_LnG(lbP) + sz_LnG(lbQ) - sz_LnG(lbP + lbQ);
+END;
+
+// P(lo <= X <= hi), X hypergeometric: the positives in a sample of hsSam
+// from hsPop units of which hsPos are positive.  The largest term in the
+// range (the mode, (n+1)(K+1)/(N+2) rounded down, clamped into it) comes
+// from log-gammas; the rest by
+//   P(k+1)/P(k) = (K - k)(n - k) / ((k + 1)(N - K - n + k + 1)),
+// walking away from it both ways; positive terms only.
+sz_HypS(hsPop, hsPos, hsSam, hsLo, hsHi)
+BEGIN
+  LOCAL hsL, hsH, hsM, hsA, hsLa, hsT0;
+  LOCAL hsS, hsT, hsK;
+  hsL := MAX(hsLo, MAX(0, hsSam - (hsPop - hsPos)));
+  hsH := MIN(hsHi, MIN(hsSam, hsPos));
+  IF hsL > hsH THEN RETURN 0; END;
+  hsM := FLOOR((hsSam + 1) * (hsPos + 1) / (hsPop + 2));
+  hsA := MIN(MAX(hsM, hsL), hsH);
+  hsLa := sz_LnC(hsPos, hsA) + sz_LnC(hsPop - hsPos, hsSam - hsA) - sz_LnC(hsPop, hsSam);
+  IF hsLa < -1100 THEN RETURN 0; END;
+  hsT0 := EXP(hsLa);
+  hsS := hsT0;
+  // upwards from the largest term
+  hsT := hsT0; hsK := hsA;
+  WHILE hsK < hsH DO
+    hsT := hsT * (hsPos - hsK) * (hsSam - hsK) / ((hsK + 1) * (hsPop - hsPos - hsSam + hsK + 1));
+    hsK := hsK + 1;
+    hsS := hsS + hsT;
+    IF hsT < 1E-16 * hsS THEN hsK := hsH; END;
+  END;
+  // downwards from it
+  hsT := hsT0; hsK := hsA;
+  WHILE hsK > hsL DO
+    hsT := hsT * hsK * (hsPop - hsPos - hsSam + hsK) / ((hsPos - hsK + 1) * (hsSam - hsK + 1));
+    hsK := hsK - 1;
+    hsS := hsS + hsT;
+    IF hsT < 1E-16 * hsS THEN hsK := hsL; END;
+  END;
+  RETURN MIN(hsS, 1);
+END;
+
+// The hypergeometric probabilities P(X = k) for k = hlK1..hlK2, as a
+// list (0 outside the possible range); same anchor and ratios.
+sz_HypL(hlPop, hlPos, hlSam, hlK1, hlK2)
+BEGIN
+  LOCAL hlL, hlH, hlA, hlT, hlK, hlOut;
+  LOCAL hlI;
+  hlOut := MAKELIST(0, hlI, 1, hlK2 - hlK1 + 1);
+  hlL := MAX(hlK1, MAX(0, hlSam - (hlPop - hlPos)));
+  hlH := MIN(hlK2, MIN(hlSam, hlPos));
+  IF hlL > hlH THEN RETURN hlOut; END;
+  hlA := MIN(MAX(FLOOR((hlSam + 1) * (hlPos + 1) / (hlPop + 2)), hlL), hlH);
+  hlT := sz_LnC(hlPos, hlA) + sz_LnC(hlPop - hlPos, hlSam - hlA) - sz_LnC(hlPop, hlSam);
+  IF hlT < -1100 THEN RETURN hlOut; END;
+  hlT := EXP(hlT);
+  hlOut(hlA - hlK1 + 1) := hlT;
+  hlK := hlA;
+  WHILE hlK < hlH DO
+    hlT := hlT * (hlPos - hlK) * (hlSam - hlK) / ((hlK + 1) * (hlPop - hlPos - hlSam + hlK + 1));
+    hlK := hlK + 1;
+    hlOut(hlK - hlK1 + 1) := hlT;
+  END;
+  hlT := hlOut(hlA - hlK1 + 1); hlK := hlA;
+  WHILE hlK > hlL DO
+    hlT := hlT * hlK * (hlPop - hlPos - hlSam + hlK) / ((hlPos - hlK + 1) * (hlSam - hlK + 1));
+    hlK := hlK - 1;
+    hlOut(hlK - hlK1 + 1) := hlT;
+  END;
+  RETURN hlOut;
+END;
+
+// ln P(Y = y), Y beta-binomial(m, al, be).
+sz_BBLp(blM, blAl, blBe, blY)
+BEGIN
+  RETURN sz_LnC(blM, blY) + sz_LnB(blY + blAl, blM - blY + blBe) - sz_LnB(blAl, blBe);
+END;
+
+// P(lo <= Y <= hi), Y beta-binomial(m, al, be), from positive terms:
+//   P(y+1)/P(y) = (m - y)(y + al) / ((y + 1)(m - y - 1 + be)).
+// That ratio is above 1 exactly while y < y* = (m(al - 1) + 1 - be) /
+// (al + be - 2) when al + be > 2 (one peak, at ceiling(y*)); with
+// al + be = 2 the terms only rise (al > 1) or only fall; below 2 they
+// fall and rise again (U-shape), so the sum starts at the larger end and
+// is never cut short.
+sz_BBS(bbM, bbAl, bbBe, bbLo, bbHi)
+BEGIN
+  LOCAL bbL, bbH, bbA, bbTr, bbYs, bbLa;
+  LOCAL bbT0, bbS, bbT, bbY;
+  bbL := MAX(bbLo, 0); bbH := MIN(bbHi, bbM);
+  IF bbL > bbH THEN RETURN 0; END;
+  bbTr := 1;
+  IF bbAl + bbBe > 2 THEN
+    bbYs := (bbM * (bbAl - 1) + 1 - bbBe) / (bbAl + bbBe - 2);
+    bbA := MIN(MAX(CEILING(bbYs), bbL), bbH);
+  ELSE
+    IF bbAl + bbBe < 2 THEN
+      bbTr := 0;
+      bbA := bbL;
+      IF sz_BBLp(bbM, bbAl, bbBe, bbH) > sz_BBLp(bbM, bbAl, bbBe, bbL) THEN bbA := bbH; END;
+    ELSE
+      bbA := bbL;
+      IF bbAl > 1 THEN bbA := bbH; END;
+    END;
+  END;
+  bbLa := sz_BBLp(bbM, bbAl, bbBe, bbA);
+  IF bbLa < -1100 THEN RETURN 0; END;
+  bbT0 := EXP(bbLa);
+  bbS := bbT0;
+  bbT := bbT0; bbY := bbA;
+  WHILE bbY < bbH DO
+    bbT := bbT * (bbM - bbY) * (bbY + bbAl) / ((bbY + 1) * (bbM - bbY - 1 + bbBe));
+    bbY := bbY + 1;
+    bbS := bbS + bbT;
+    IF bbTr == 1 THEN
+      IF bbT < 1E-16 * bbS THEN bbY := bbH; END;
+    END;
+  END;
+  bbT := bbT0; bbY := bbA;
+  WHILE bbY > bbL DO
+    bbT := bbT * bbY * (bbM - bbY + bbBe) / ((bbM - bbY + 1) * (bbY - 1 + bbAl));
+    bbY := bbY - 1;
+    bbS := bbS + bbT;
+    IF bbTr == 1 THEN
+      IF bbT < 1E-16 * bbS THEN bbY := bbL; END;
+    END;
+  END;
+  RETURN MIN(bbS, 1);
+END;
+
+// P(lo <= X <= hi), X binomial(n, p): the same anchor-and-ratio sum,
+//   P(k+1)/P(k) = (n - k)/(k + 1) * p/(1 - p).
+sz_BinS(bsSam, bsP, bsLo, bsHi)
+BEGIN
+  LOCAL bsL, bsH, bsQ, bsA, bsLa, bsT0;
+  LOCAL bsS, bsT, bsK;
+  bsL := MAX(bsLo, 0); bsH := MIN(bsHi, bsSam);
+  IF bsL > bsH THEN RETURN 0; END;
+  IF bsP <= 0 THEN
+    IF bsL == 0 THEN RETURN 1; END;
+    RETURN 0;
+  END;
+  IF bsP >= 1 THEN
+    IF bsH == bsSam THEN RETURN 1; END;
+    RETURN 0;
+  END;
+  bsQ := 1 - bsP;
+  bsA := MIN(MAX(MIN(FLOOR((bsSam + 1) * bsP), bsSam), bsL), bsH);
+  bsLa := sz_LnC(bsSam, bsA) + bsA * LN(bsP) + (bsSam - bsA) * LN(bsQ);
+  IF bsLa < -1100 THEN RETURN 0; END;
+  bsT0 := EXP(bsLa);
+  bsS := bsT0;
+  bsT := bsT0; bsK := bsA;
+  WHILE bsK < bsH DO
+    bsT := bsT * (bsSam - bsK) / (bsK + 1) * bsP / bsQ;
+    bsK := bsK + 1;
+    bsS := bsS + bsT;
+    IF bsT < 1E-16 * bsS THEN bsK := bsH; END;
+  END;
+  bsT := bsT0; bsK := bsA;
+  WHILE bsK > bsL DO
+    bsT := bsT * bsK / (bsSam - bsK + 1) * bsQ / bsP;
+    bsK := bsK - 1;
+    bsS := bsS + bsT;
+    IF bsT < 1E-16 * bsS THEN bsK := bsL; END;
+  END;
+  RETURN MIN(bsS, 1);
+END;
+
+// The continued fraction of the incomplete beta (Numerical Recipes
+// 6.4, betacf, modified Lentz), at most 300 steps.
+sz_BetaCF(cfA, cfB, cfX)
+BEGIN
+  LOCAL cfQb, cfQp, cfQm, cfC, cfD, cfH;
+  LOCAL cfM, cfM2, cfAa, cfDe, cfGo;
+  cfQb := cfA + cfB; cfQp := cfA + 1; cfQm := cfA - 1;
+  cfC := 1;
+  cfD := 1 - cfQb * cfX / cfQp;
+  IF ABS(cfD) < 1E-300 THEN cfD := 1E-300; END;
+  cfD := 1 / cfD;
+  cfH := cfD;
+  cfM := 1; cfGo := 1;
+  WHILE cfGo == 1 DO
+    cfM2 := 2 * cfM;
+    cfAa := cfM * (cfB - cfM) * cfX / ((cfQm + cfM2) * (cfA + cfM2));
+    cfD := 1 + cfAa * cfD;
+    IF ABS(cfD) < 1E-300 THEN cfD := 1E-300; END;
+    cfC := 1 + cfAa / cfC;
+    IF ABS(cfC) < 1E-300 THEN cfC := 1E-300; END;
+    cfD := 1 / cfD;
+    cfH := cfH * cfD * cfC;
+    cfAa := -(cfA + cfM) * (cfQb + cfM) * cfX / ((cfA + cfM2) * (cfQp + cfM2));
+    cfD := 1 + cfAa * cfD;
+    IF ABS(cfD) < 1E-300 THEN cfD := 1E-300; END;
+    cfC := 1 + cfAa / cfC;
+    IF ABS(cfC) < 1E-300 THEN cfC := 1E-300; END;
+    cfD := 1 / cfD;
+    cfDe := cfD * cfC;
+    cfH := cfH * cfDe;
+    IF ABS(cfDe - 1) < 1E-13 OR cfM >= 300 THEN cfGo := 0; END;
+    cfM := cfM + 1;
+  END;
+  RETURN cfH;
+END;
+
+// The regularized incomplete beta I_x(a, b) = P(Beta(a, b) <= x).
+// Below the mean the fraction converges fast and gives the small value
+// directly; above it, 1 - (the mirror), which is then at least about a
+// half, so the subtraction loses nothing.
+sz_IBeta(ibX, ibA, ibB)
+BEGIN
+  LOCAL ibLf;
+  IF ibX <= 0 THEN RETURN 0; END;
+  IF ibX >= 1 THEN RETURN 1; END;
+  ibLf := ibA * LN(ibX) + ibB * LN(1 - ibX) - sz_LnB(ibA, ibB);
+  IF ibX < (ibA + 1) / (ibA + ibB + 2) THEN
+    RETURN EXP(ibLf) * sz_BetaCF(ibA, ibB, ibX) / ibA;
+  END;
+  RETURN 1 - EXP(ibLf) * sz_BetaCF(ibB, ibA, 1 - ibX) / ibB;
+END;
+
+// The comparisons with 1 - c and with c.  An exact tie counts as met, as
+// in exact arithmetic: with N = 10, K0 = 9, n = 9 the probability is
+// exactly 1/10 and c = 0.90 makes 1 - c exactly 1/10, but the computed
+// value can come out a little high.  On the Prime every tail is EXP of a
+// difference of large ln-gammas held to 12 digits, so it is good to about
+// 2E-7 (relative) at N = 10,000 (second review, item 4: a 12-digit
+// emulation gave 0.0500000046777 for an exact 0.05 at N = 5000).  beta 1a
+// allows 1E-6 relative to 1 - c, the scale that matters (beta 1: 1E-9):
+// P <= (1 - c)(1 + 1E-6), and P >= c - 1E-6 (1 - c).  (Relative to c the
+// window would be 1% of 1 - c at c = 0.9999 and would move a least n:
+// 5665 instead of 5668 at N = 10000, p0 = 0.999, uniform prior.)  The
+// price: a probability up to 1E-6 (relative to 1 - c) on the wrong side
+// also counts as met; the pages show 4 decimals, so no displayed verdict
+// can contradict its number.
+sz_Le(leP, leA)
+BEGIN
+  IF leP <= leA + 0.000001 * leA THEN RETURN 1; END;
+  RETURN 0;
+END;
+
+sz_Ge(gePr, geC)
+BEGIN
+  IF gePr >= geC - 0.000001 * (1 - geC) THEN RETURN 1; END;
+  RETURN 0;
+END;
+
+// Kr = ceiling(p0 N): the claim is K >= Kr.  p0 N is rounded to six
+// decimals first (0.07 x 100 is 7.000000000000001 in binary).
+sz_KrOf(krPop, krP)
+BEGIN
+  RETURN CEILING(ROUND(krP * krPop, 6));
+END;
+
+// Least n (hypergeometric) with at most hmD negatives: the smallest n
+// with P(X >= n - d | N, n, K0) <= 1 - c, by bisection on [d + 1, N];
+// -1 when even n = N does not do it (N - K0 <= d).
+sz_HypMin(hmPop, hmC, hmP, hmD)
+BEGIN
+  LOCAL hmK0, hmA, hmLo, hmHi, hmMid;
+  hmK0 := sz_KrOf(hmPop, hmP) - 1;
+  hmA := 1 - hmC;
+  hmLo := hmD + 1;
+  IF hmLo > hmPop THEN RETURN -1; END;
+  IF sz_Le(sz_HypS(hmPop, hmK0, hmPop, hmPop - hmD, hmPop), hmA) == 0 THEN RETURN -1; END;
+  hmHi := hmPop;
+  WHILE hmLo < hmHi DO
+    hmMid := FLOOR((hmLo + hmHi) / 2);
+    IF sz_Le(sz_HypS(hmPop, hmK0, hmMid, hmMid - hmD, hmMid), hmA) == 1 THEN
+      hmHi := hmMid;
+    ELSE
+      hmLo := hmMid + 1;
+    END;
+  END;
+  RETURN hmLo;
+END;
+
+// Least n (binomial, any N) with at most bmD negatives: the smallest n
+// with P(Binomial(n, 1 - p0) <= d) <= 1 - c.  Doubling from the d = 0
+// answer, then bisection; -1 past 4,000,000.
+sz_BinMin(bmC, bmP, bmD)
+BEGIN
+  LOCAL bmA, bmLo, bmHi, bmMid;
+  bmA := 1 - bmC;
+  bmLo := bmD + 1;
+  bmHi := MAX(bmD + 1, CEILING(LN(bmA) / LN(bmP)));
+  WHILE sz_Le(sz_BinS(bmHi, 1 - bmP, 0, bmD), bmA) == 0 DO
+    bmLo := bmHi + 1;
+    bmHi := bmHi * 2;
+    IF bmHi > 4000000 THEN RETURN -1; END;
+  END;
+  WHILE bmLo < bmHi DO
+    bmMid := FLOOR((bmLo + bmHi) / 2);
+    IF sz_Le(sz_BinS(bmMid, 1 - bmP, 0, bmD), bmA) == 1 THEN bmHi := bmMid; ELSE bmLo := bmMid + 1; END;
+  END;
+  RETURN bmLo;
+END;
+
+// The lower confidence bound: the smallest K with P(X >= x | K) > 1 - c,
+// K from x to N - (n - x) (where the probability is 1).
+sz_LowB(lwPop, lwSam, lwX, lwC)
+BEGIN
+  LOCAL lwA, lwLo, lwHi, lwMid;
+  IF lwX <= 0 THEN RETURN 0; END;
+  lwA := 1 - lwC;
+  lwLo := lwX; lwHi := lwPop - (lwSam - lwX);
+  WHILE lwLo < lwHi DO
+    lwMid := FLOOR((lwLo + lwHi) / 2);
+    IF sz_Le(sz_HypS(lwPop, lwMid, lwSam, lwX, lwSam), lwA) == 0 THEN lwHi := lwMid; ELSE lwLo := lwMid + 1; END;
+  END;
+  RETURN lwLo;
+END;
+
+// The posterior probability of the claim, finite N:
+// P(Y >= Kr - x), Y beta-binomial(N - n, a + x, b + n - x).
+sz_BayP(bpPop, bpSam, bpX, bpP, bpA, bpB)
+BEGIN
+  LOCAL bpKr, bpT, bpM;
+  bpKr := sz_KrOf(bpPop, bpP);
+  bpT := bpKr - bpX; bpM := bpPop - bpSam;
+  IF bpT <= 0 THEN RETURN 1; END;
+  IF bpT > bpM THEN RETURN 0; END;
+  RETURN sz_BBS(bpM, bpA + bpX, bpB + bpSam - bpX, bpT, bpM);
+END;
+
+// The same as N grows: P(theta >= p0) under Beta(a + x, b + n - x)
+// = I_{1 - p0}(b + n - x, a + x).
+sz_BayL(blSam, blX, blP, blA, blB)
+BEGIN
+  RETURN sz_IBeta(1 - blP, blB + blSam - blX, blA + blX);
+END;
+
+// Between two sums of a long search: one more tick on the busy box's
+// progress strip (drawn straight on the screen, a 3-pixel block that
+// sweeps 40..280 and starts again), then GETKEY: Esc sets szStop, and
+// every search still running returns -2 ("stopped").  Callers set szStop
+// to 0 before they start.
+sz_EscHit()
+BEGIN
+  LOCAL ehX;
+  szPrg := szPrg + 1;
+  ehX := 40 + 4 * (szPrg - 60 * IP(szPrg / 60));
+  IF ehX == 40 THEN RECT_P(G0, 40, 145, 282, 148, szLORN, szLORN); END;
+  RECT_P(G0, ehX, 145, ehX + 2, 148, szORNG, szORNG);
+  IF GETKEY == 4 THEN szStop := 1; END;
+  RETURN szStop;
+END;
+
+// The Bayesian condition at n, all n positive: kind 1 = this N
+// (beta-binomial), kind 2 = N growing (incomplete beta).  1 = met.
+sz_BayOK(okK, okPop, okN, okP, okA, okB, okC)
+BEGIN
+  IF okK == 1 THEN RETURN sz_Ge(sz_BayP(okPop, okN, okN, okP, okA, okB), okC); END;
+  RETURN sz_Ge(sz_BayL(okN, okN, okP, okA, okB), okC);
+END;
+
+// Least n, all positive, for P(claim | data) >= c.  The condition is
+// monotone in n (more positives seen, fewer left to find; checked on the
+// verify grid and on the second review's 1,500 random priors), so this is
+// a bisection: from the large-N guess ln(1 - c)/ln(p0) - a the step doubles
+// outwards (1, 2, 4, ...) until the answer is bracketed, then halves.
+// Near the guess that is 3 or 4 sums; at worst about 2 log2(top) (beta 1
+// stepped one n at a time: thousands of sums for a strong prior; second
+// review, item 1).  top = Kr for a finite N (at n = Kr the claim is
+// certain), 1,000,000 as N grows (-1 if even that is not enough).
+// Esc between sums: -2.
+sz_BaySrch(bsK, bsPop, bsC, bsP, bsA, bsB)
+BEGIN
+  LOCAL bsTop, bsG, bsLo, bsHi, bsS, bsM;
+  bsTop := 1000000;
+  IF bsK == 1 THEN bsTop := MIN(bsPop, sz_KrOf(bsPop, bsP)); END;
+  bsG := MIN(MAX(CEILING(LN(1 - bsC) / LN(bsP) - bsA), 0), bsTop);
+  IF sz_EscHit() == 1 THEN RETURN -2; END;
+  IF sz_BayOK(bsK, bsPop, bsG, bsP, bsA, bsB, bsC) == 1 THEN
+    // met at the guess: double the step downwards until it fails
+    bsHi := bsG; bsLo := -1; bsS := 1;
+    WHILE bsLo < 0 DO
+      IF bsHi == 0 THEN RETURN 0; END;
+      IF sz_EscHit() == 1 THEN RETURN -2; END;
+      bsM := MAX(0, bsG - bsS);
+      IF sz_BayOK(bsK, bsPop, bsM, bsP, bsA, bsB, bsC) == 1 THEN
+        bsHi := bsM; bsS := bsS * 2;
+      ELSE
+        bsLo := bsM;
+      END;
+    END;
+  ELSE
+    // not met: double the step upwards until it is (top always is,
+    // for a finite N)
+    bsLo := bsG; bsHi := -1; bsS := 1;
+    WHILE bsHi < 0 DO
+      IF bsLo >= bsTop THEN RETURN -1; END;
+      IF sz_EscHit() == 1 THEN RETURN -2; END;
+      bsM := MIN(bsTop, bsG + bsS);
+      IF sz_BayOK(bsK, bsPop, bsM, bsP, bsA, bsB, bsC) == 1 THEN
+        bsHi := bsM;
+      ELSE
+        bsLo := bsM; bsS := bsS * 2;
+      END;
+    END;
+  END;
+  // not met at bsLo, met at bsHi: halve the gap
+  WHILE bsHi - bsLo > 1 DO
+    IF sz_EscHit() == 1 THEN RETURN -2; END;
+    bsM := FLOOR((bsLo + bsHi) / 2);
+    IF sz_BayOK(bsK, bsPop, bsM, bsP, bsA, bsB, bsC) == 1 THEN bsHi := bsM; ELSE bsLo := bsM; END;
+  END;
+  RETURN bsHi;
+END;
+
+// Least n, all positive, for P(claim | data) >= c, this N.
+sz_BayMin(byPop, byC, byP, byA, byB)
+BEGIN
+  RETURN sz_BaySrch(1, byPop, byC, byP, byA, byB);
+END;
+
+// The same as N grows (P(theta >= p0) >= c), up to 1,000,000.
+sz_BayMinL(bzC, bzP, bzA, bzB)
+BEGIN
+  RETURN sz_BaySrch(2, 1, bzC, bzP, bzA, bzB);
+END;
+
+
+// ------------------------------------------------------------
+// THE RESULT IN HAND, RECALCULATION, THE FORMS
+// ------------------------------------------------------------
+
+// P(X >= x | K0) and the lower bound for the result in hand (szNt
+// tested, szJ negative), and their Home exports.
+sz_ObsUpd()
+BEGIN
+  LOCAL ouX;
+  ouX := szNt - szJ;
+  szOP := sz_HypS(szN, szK0, szNt, ouX, szNt);
+  szOLB := sz_LowB(szN, szNt, ouX, szC);
+  SZ_P := szOP;
+  SZ_LB := szOLB / szN;
+END;
+
+// The tested count: whole, 1..N; the negatives stay <= n.
+sz_SetN(snV)
+BEGIN
+  szNt := MIN(MAX(ROUND(snV, 0), 1), szN);
+  szJ := MIN(szJ, szNt);
+  sz_ObsUpd();
+  szInfo := "";
+END;
+
+// The negatives found: whole, 0..n.
+sz_SetJ(sjV)
+BEGIN
+  szJ := MIN(MAX(ROUND(sjV, 0), 0), szNt);
+  sz_ObsUpd();
+  szInfo := "";
+END;
+
+// The least n for dnD negatives (from the list when 0, 1 or 2).
+sz_HmOf(dnD)
+BEGIN
+  IF dnD <= 2 THEN RETURN szHm(dnD + 1); END;
+  IF dnD == szD THEN RETURN szHmD; END;
+  RETURN sz_HypMin(szN, szC, szP0, dnD);
+END;
+
+// Everything that depends on the set-up.  The result in hand becomes the
+// hypergeometric plan: least n for szD negatives, szD of them negative.
+sz_Recalc()
+BEGIN
+  LOCAL rcI;
+  sz_Busy("Computing ...");
+  szStop := 0;
+  szKr := sz_KrOf(szN, szP0); szK0 := szKr - 1;
+  szHm := {-1, -1, -1}; szBm := {-1, -1, -1};
+  FOR rcI FROM 1 TO 3 DO
+    szHm(rcI) := sz_HypMin(szN, szC, szP0, rcI - 1);
+    szBm(rcI) := sz_BinMin(szC, szP0, rcI - 1);
+  END;
+  IF szD <= 2 THEN
+    szHmD := szHm(szD + 1); szBmD := szBm(szD + 1);
+  ELSE
+    szHmD := sz_HypMin(szN, szC, szP0, szD); szBmD := sz_BinMin(szC, szP0, szD);
+  END;
+  szYm := sz_BayMin(szN, szC, szP0, szA, szB);
+  szYmL := sz_BayMinL(szC, szP0, szA, szB);
+  IF szHmD > 0 THEN
+    szNt := szHmD; szJ := szD;
+  ELSE
+    szJ := 0;
+    IF szHm(1) > 0 THEN szNt := szHm(1); ELSE szNt := MIN(szN, 10); END;
+  END;
+  szBnKey := ""; szBaKey := ""; szOcN := -1; szInfo := "";
+  sz_ObsUpd();
+  SZ_N := szN; SZ_NMIN := szHm(1);
+END;
+
+// The set-up form.  Every field is checked; a value outside its range
+// is refused (or pulled in) with a message that says why.
+sz_Setup()
+BEGIN
+  LOCAL suN, suC, suP, suD, suPa, suPb;
+  LOCAL suOK, suLp, suMsg;
+  suN := szN; suC := szC; suP := szP0; suD := szD; suPa := szA; suPb := szB;
+  suLp := szPZ + ":";
+  suOK := INPUT({suN, suC, suP, suD, suPa, suPb}, "Seizure and claim",
+    {"N units:", "Confidence c:", suLp, "Negatives:", "Prior a:", "Prior b:"},
+    {"Units seized, a whole number 1 to 10000", "c strictly between 0 and 1, e.g. 0.95",
+     "Claim: at least this proportion contain drug", "Negatives allowed in the sample, 0 to 20",
+     "Beta prior: 1 = uniform, 0.5 = Jeffreys", "Beta prior: 1 = uniform, 0.5 = Jeffreys"});
+  IF suOK == 0 THEN RETURN 0; END;
+  suMsg := "";
+  suN := ROUND(suN, 0);
+  IF suN < 1 OR suN > 10000 THEN
+    MSGBOX("N must be a whole number from 1 to 10000.  Nothing was changed.");
+    RETURN 0;
+  END;
+  IF suC <= 0 OR suC >= 1 THEN
+    MSGBOX("c must be strictly between 0 and 1 (0.95 is usual).  Nothing was changed.");
+    RETURN 0;
+  END;
+  IF suP <= 0 OR suP >= 1 THEN
+    MSGBOX(szPZ + " must be strictly between 0 and 1 (0.90 is usual).  Nothing was changed.");
+    RETURN 0;
+  END;
+  IF suPa <= 0 OR suPb <= 0 THEN
+    MSGBOX("The prior's a and b must be positive (1 and 1 = uniform).  Nothing was changed.");
+    RETURN 0;
+  END;
+  IF suC < 0.5 THEN suC := 0.5; suMsg := suMsg + "c raised to 0.5.  "; END;
+  IF suC > 0.9999 THEN suC := 0.9999; suMsg := suMsg + "c lowered to 0.9999.  "; END;
+  IF suP < 0.001 THEN suP := 0.001; suMsg := suMsg + szPZ + " raised to 0.001.  "; END;
+  IF suP > 0.999 THEN suP := 0.999; suMsg := suMsg + szPZ + " lowered to 0.999.  "; END;
+  // beta 1a (second review, item 10): every change is said
+  IF ROUND(suD, 0) < 0 OR ROUND(suD, 0) > 20 THEN
+    suD := MIN(MAX(ROUND(suD, 0), 0), 20);
+    suMsg := suMsg + "Negatives set to " + sz_I(suD) + " (0 to 20).  ";
+  END;
+  suD := ROUND(suD, 0);
+  IF suPa < 0.1 OR suPa > 100 OR suPb < 0.1 OR suPb > 100 THEN
+    suPa := MIN(MAX(suPa, 0.1), 100); suPb := MIN(MAX(suPb, 0.1), 100);
+    suMsg := suMsg + "Prior a, b kept in 0.1 to 100.  ";
+  END;
+  // two decimals are enough for a prior, and keep the titles short
+  IF ROUND(suPa, 2) <> suPa OR ROUND(suPb, 2) <> suPb THEN
+    suPa := ROUND(suPa, 2); suPb := ROUND(suPb, 2);
+    suMsg := suMsg + "Prior a, b rounded to 2 decimals.  ";
+  END;
+  IF DIM(suMsg) > 0 THEN MSGBOX(suMsg); END;
+  szN := suN; szC := suC; szP0 := suP; szD := suD; szA := suPa; szB := suPb;
+  sz_Recalc();
+  RETURN 1;
+END;
+
+// What was tested and found.
+sz_Observed()
+BEGIN
+  LOCAL obN, obX, obOK;
+  obN := szNt; obX := szNt - szJ;
+  obOK := INPUT({obN, obX}, "Tested and found",
+    {"n tested:", "x positive:"},
+    {"Units analysed, 1 to N = " + sz_I(szN), "Of those, how many held the drug, 0 to n"});
+  IF obOK == 0 THEN RETURN 0; END;
+  obN := ROUND(obN, 0); obX := ROUND(obX, 0);
+  IF obN < 1 OR obN > szN THEN
+    MSGBOX("n must be a whole number from 1 to N = " + sz_I(szN) + ".");
+    RETURN 0;
+  END;
+  IF obX < 0 OR obX > obN THEN
+    MSGBOX("x must be a whole number from 0 to n = " + sz_I(obN) + ".");
+    RETURN 0;
+  END;
+  szNt := obN; szJ := obN - obX; szInfo := "";
+  sz_ObsUpd();
+  RETURN 1;
+END;
+
+
+// ------------------------------------------------------------
+// PAGE 1: HYPERGEOMETRIC
+// The bars: P(X = k), the positives in a sample of n, IF the claim were
+// just false (K = K0).  Red outline = the x found; magenta = the tail
+// P(X >= x), the probability the test compares with 1 - c.
+// ------------------------------------------------------------
+
+sz_HypDraw()
+BEGIN
+  LOCAL hdX, hdK1, hdK2, hdL, hdMx, hdI;
+  LOCAL hdV, hdX1, hdX2, hdY, hdCol, hdTop;
+  LOCAL hdS, hdStp, hdLb, hdNb, hdBw, hdFst;
+  hdX := szNt - szJ;
+  sz_Frame("Hypergeometric: claim K " + szGE + " " + sz_I(szKr) + " of " + sz_I(szN));
+  TEXTOUT_P(szPZ + " = " + sz_G(szP0, 2) + " (K " + szGE + " " + szPZ + "N), c = " + sz_G(szC, 2) + ", " + szKZ + " = " + sz_I(szK0), G1, 6, 20, 1, #000000h, 308);
+  TEXTOUT_P("Least n (0, 1, 2 negatives): " + sz_NStr(szHm(1)) + ", " + sz_NStr(szHm(2)) + ", " + sz_NStr(szHm(3)), G1, 6, 32, 1, szBLUE, 308);
+  TEXTOUT_P("Tested n = " + sz_I(szNt) + ": x = " + sz_I(hdX) + " positive, " + sz_I(szJ) + " neg", G1, 6, 44, 1, #000000h, 308);
+  TEXTOUT_P("If K = " + szKZ + " = " + sz_I(szK0) + ": P(X " + szGE + " " + sz_I(hdX) + ") " + sz_PStr(szOP), G1, 6, 56, 1, szMAG, 308);
+  IF sz_Le(szOP, 1 - szC) == 1 THEN
+    TEXTOUT_P(szLE + " 1 - c = " + sz_G(1 - szC, 2) + ": the claim is SUPPORTED", G1, 6, 68, 1, szGRN, 308);
+  ELSE
+    TEXTOUT_P("> 1 - c = " + sz_G(1 - szC, 2) + ": the claim is NOT supported", G1, 6, 68, 1, szRED, 308);
+  END;
+  hdS := " K " + szGE + " " + sz_I(szOLB) + " (" + sz_F(szOLB / szN * 100, 1) + "%)";
+  TEXTOUT_P(sz_Fit("Lower " + sz_G(szC * 100, 0) + "% confidence bound:" + hdS, "Lower " + sz_G(szC * 100, 0) + "% conf. bound:" + hdS), G1, 6, 80, 1, szORNG, 308);
+  // ---- the bars: the window ends at n; it starts where the bars become
+  // visible (1E-4 of the tallest), never after x, at most 200 bars ----
+  szPL := 30; szPR := 312; szPT := 98; szPB := 170;
+  hdK2 := szNt;
+  hdK1 := MAX(0, szNt - 199);
+  hdL := sz_HypL(szN, szK0, szNt, hdK1, hdK2);
+  hdMx := MAX(hdL);
+  hdFst := hdK2;
+  FOR hdI FROM 1 TO SIZE(hdL) DO
+    IF hdL(hdI) >= 0.0001 * hdMx AND hdK1 + hdI - 1 < hdFst THEN hdFst := hdK1 + hdI - 1; END;
+  END;
+  hdFst := MIN(hdFst, hdX);
+  IF hdFst > hdK1 THEN
+    hdL := sz_HypL(szN, szK0, szNt, MAX(hdFst, hdK1), hdK2);
+    hdK1 := MAX(hdFst, hdK1);
+  END;
+  hdNb := hdK2 - hdK1 + 1;
+  hdBw := MAX(1, IP((szPR - szPL) / hdNb));
+  szHyK1 := hdK1; szHyNb := hdNb; szHyBw := hdBw; szHyL := hdL;
+  IF hdMx <= 0 THEN
+    TEXTOUT_P("Every bar in view is 0 (X can be at most " + szKZ + ")", G1, 36, 130, 1, szRED, 270);
+  ELSE
+    // a quarter of the height spare above the tallest bar, for the caption
+    hdTop := sz_Nice(hdMx * 1.25 / 4);
+    hdTop := CEILING(hdMx * 1.25 / hdTop * 0.999999) * hdTop;
+    sz_YAxis(hdTop);
+    FOR hdI FROM 1 TO hdNb DO
+      hdV := hdL(hdI);
+      hdX1 := szPL + (hdI - 1) * hdBw + 1;
+      hdX2 := hdX1 + MAX(0, hdBw - 2);
+      IF hdBw < 4 THEN hdX2 := hdX1 + hdBw - 1; END;
+      hdY := szPB - IP(hdV / hdTop * (szPB - szPT) + 0.5);
+      hdCol := szSHD;
+      IF hdK1 + hdI - 1 >= hdX THEN hdCol := szMAG; END;
+      IF hdY < szPB THEN RECT_P(G1, hdX1, hdY, hdX2, szPB - 1, hdCol, hdCol); END;
+      IF hdK1 + hdI - 1 == hdX THEN
+        // the observed x: a red OUTLINE, four LINE_P (beta 1a, second
+        // review item 6: RECT_P with one colour fills the bar red)
+        hdY := MIN(hdY, szPB - 3) - 2;
+        LINE_P(G1, hdX1, hdY, hdX2, hdY, szRED);
+        LINE_P(G1, hdX1, hdY, hdX1, szPB - 1, szRED);
+        LINE_P(G1, hdX2, hdY, hdX2, szPB - 1, szRED);
+        LINE_P(G1, hdX1, szPB - 1, hdX2, szPB - 1, szRED);
+      END;
+    END;
+    // x labels: a few k values under the bars
+    hdStp := MAX(1, sz_Nice(hdNb / 6));
+    FOR hdI FROM 1 TO hdNb DO
+      hdS := hdK1 + hdI - 1;
+      IF hdS - hdStp * IP(hdS / hdStp) == 0 OR hdS == hdX THEN
+        hdX1 := szPL + (hdI - 1) * hdBw + IP(hdBw / 2);
+        IF hdS == hdX THEN
+          TEXTOUT_P(sz_I(hdS), G1, hdX1 - 6, szPB + 3, 1, szRED, 40);
+        ELSE
+          IF ABS(hdS - hdX) * hdBw > 18 THEN TEXTOUT_P(sz_I(hdS), G1, hdX1 - 6, szPB + 3, 1, szGRAY, 40); END;
+        END;
+      END;
+    END;
+  END;
+  LINE_P(G1, szPL, szPT, szPL, szPB, #000000h);
+  LINE_P(G1, szPL, szPB, szPR, szPB, #000000h);
+  TEXTOUT_P("P(X = k) if K = " + szKZ + ";  magenta = P(X " + szGE + " x)", G1, szPL + 4, szPT + 1, 1, szGRAY, 270);
+  hdLb := "+/- = n, Left/Right = x, Ent = menu";
+  sz_Show(hdLb, {"n -", "n +", "x -", "x +", "Min n", "Menu"});
+END;
+
+// A tap on the bars: which k, and its probabilities.
+sz_HypTap(htX, htY)
+BEGIN
+  LOCAL htI, htK;
+  IF htY < szPT OR htY > szPB + 12 OR htX < szPL OR htX > szPR THEN RETURN; END;
+  htI := IP((htX - szPL - 1) / szHyBw) + 1;
+  IF htI < 1 OR htI > szHyNb THEN RETURN; END;
+  htK := szHyK1 + htI - 1;
+  szInfo := "k = " + sz_I(htK) + ": P(X = k) " + sz_PStr(szHyL(htI)) + ", P(X " + szGE + " k) " + sz_PStr(sz_HypS(szN, szK0, szNt, htK, szNt));
+END;
+
+// "Min n": the least n for the negatives now shown.
+sz_MinN()
+BEGIN
+  LOCAL mnV;
+  mnV := sz_HmOf(szJ);
+  IF mnV > 0 THEN
+    szNt := mnV;
+    sz_ObsUpd();
+    szInfo := "";
+  ELSE
+    MSGBOX("No n works with " + sz_I(szJ) + " negatives: even testing all N cannot rule out K = " + sz_I(szK0) + ".");
+  END;
+END;
+
+// The page menu (the "Menu" soft key, or Enter): the page's other
+// actions and the way back; every soft key also has this key route.
+// Returns 0 to leave the page.  The tap or key that closed the list is
+// drained before the next frame (ChiTable's csResMenu).
+sz_HypMenu()
+BEGIN
+  LOCAL hmI, hmK;
+  hmI := 0;
+  CHOOSE(hmI, "Hypergeometric page", {
+    "Back to the page",
+    "Least n for these negatives",
+    "Type the result: n and x",
+    "Main menu"});
+  REPEAT hmK := GETKEY; UNTIL hmK == -1;
+  sz_Drain();
+  IF hmI == 2 THEN sz_MinN(); END;
+  IF hmI == 3 THEN hmK := sz_Observed(); END;
+  IF hmI == 4 THEN RETURN 0; END;
+  RETURN 1;
+END;
+
+sz_HypPage()
+BEGIN
+  LOCAL hpK, hpM, hpM1, hpGo, hpSl, hpX;
+  LOCAL hpY;
+  szInfo := "";
+  hpGo := 1;
+  REPEAT hpK := GETKEY; UNTIL hpK == -1;
+  sz_Drain();
+  WHILE hpGo == 1 DO
+    sz_HypDraw();
+    REPEAT
+      hpK := GETKEY;
+      hpM := MOUSE;
+      hpM1 := hpM(1);
+    UNTIL hpK > -1 OR SIZE(hpM1) > 0;
+    IF SIZE(hpM1) > 0 THEN
+      hpX := hpM1(1) + 0.0; hpY := hpM1(2) + 0.0;
+      sz_Drain();
+      IF hpY >= 218 THEN
+        hpSl := MIN(6, IP(hpX / 53.4) + 1);
+        IF hpSl == 1 THEN sz_SetN(szNt - 1); END;
+        IF hpSl == 2 THEN sz_SetN(szNt + 1); END;
+        IF hpSl == 3 THEN sz_SetJ(szJ + 1); END;
+        IF hpSl == 4 THEN sz_SetJ(szJ - 1); END;
+        IF hpSl == 5 THEN sz_MinN(); END;
+        IF hpSl == 6 THEN hpGo := sz_HypMenu(); END;
+      ELSE
+        sz_HypTap(hpX, hpY);
+      END;
+    ELSE
+      IF hpK == 45 THEN sz_SetN(szNt - 1); END;
+      IF hpK == 50 THEN sz_SetN(szNt + 1); END;
+      IF hpK == 7 THEN sz_SetJ(szJ + 1); END;
+      IF hpK == 8 THEN sz_SetJ(szJ - 1); END;
+      IF hpK == 2 THEN sz_SetN(szNt + 10); END;
+      IF hpK == 12 THEN sz_SetN(szNt - 10); END;
+      IF hpK == 30 THEN hpGo := sz_HypMenu(); END;
+      IF hpK == 4 THEN hpGo := 0; END;
+      REPEAT hpK := GETKEY; UNTIL hpK == -1;
+    END;
+  END;
+  szInfo := "";
+END;
+
+
+// ------------------------------------------------------------
+// PAGE 2: THE BINOMIAL APPROXIMATION
+// Both answers side by side, and P(at most d negatives) against n for
+// both models: hypergeometric (magenta, this N) and binomial (blue).
+// The least n is where a curve first drops to 1 - c (dotted red).
+// ------------------------------------------------------------
+
+// The two curves for n = 1 .. szBnM, once per set-up (cached by a key).
+sz_BinFit()
+BEGIN
+  LOCAL bfKey, bfI, bfM;
+  bfKey := sz_I(szN) + "," + sz_G(szP0, 2) + "," + sz_G(szC, 2) + "," + sz_I(szD);
+  IF bfKey == szBnKey THEN RETURN; END;
+  bfM := MAX(szHmD, szBmD);
+  bfM := MIN(150, MAX(20, CEILING(1.2 * bfM)));
+  szBnM := bfM;
+  szBnH := MAKELIST(-1, bfI, 1, bfM);
+  szBnB := MAKELIST(-1, bfI, 1, bfM);
+  FOR bfI FROM 1 TO bfM DO
+    IF bfI <= szN THEN szBnH(bfI) := sz_HypS(szN, szK0, bfI, bfI - szD, bfI); END;
+    szBnB(bfI) := sz_BinS(bfI, 1 - szP0, 0, szD);
+  END;
+  szBnKey := bfKey;
+END;
+
+sz_BinDraw()
+BEGIN
+  LOCAL bdX, bdPh, bdPb, bdI, bdPx, bdPy;
+  LOCAL bdLx, bdLy, bdDf, bdS, bdLg, bdTop;
+  sz_BinFit();
+  bdX := szNt - szJ;
+  sz_Frame("Binomial approximation, N = " + sz_I(szN));
+  TEXTOUT_P("Binomial(n, " + szPZ + "): as if each unit were put back", G1, 6, 20, 1, #000000h, 308);
+  TEXTOUT_P("Least n for 0, 1, 2 negatives, c = " + sz_G(szC, 2) + ":", G1, 6, 32, 1, #000000h, 308);
+  TEXTOUT_P("Hypergeometric (N = " + sz_I(szN) + "): " + sz_NStr(szHm(1)) + ", " + sz_NStr(szHm(2)) + ", " + sz_NStr(szHm(3)), G1, 6, 44, 1, szMAG, 308);
+  TEXTOUT_P("Binomial (N " + szAR + " " + szINF + "): " + sz_NStr(szBm(1)) + ", " + sz_NStr(szBm(2)) + ", " + sz_NStr(szBm(3)), G1, 6, 56, 1, szBLUE, 308);
+  bdPh := szOP;
+  bdPb := sz_BinS(szNt, szP0, bdX, szNt);
+  TEXTOUT_P("Your n, x: hyper P " + sz_PStr(bdPh) + ", binom P " + sz_PStr(bdPb), G1, 6, 68, 1, #000000h, 308);
+  bdDf := szBmD - szHmD;
+  IF szHmD < 0 OR szBmD < 0 THEN
+    bdS := sz_I(szD) + " neg allowed: hyper n " + sz_NStr(szHmD) + ", binom n " + sz_NStr(szBmD);
+  ELSE
+    IF bdDf > 0 THEN bdS := "Binomial: " + sz_I(bdDf) + " more (" + sz_I(szD) + " neg), the safe side"; END;
+    IF bdDf == 0 THEN bdS := "Same least n (" + sz_I(szD) + " neg): N hardly matters"; END;
+    IF bdDf < 0 THEN bdS := "Binomial: " + sz_I(-bdDf) + " fewer (" + sz_I(szD) + " neg) here"; END;
+  END;
+  TEXTOUT_P(bdS, G1, 6, 80, 1, szGRN, 308);
+  // ---- the plot: n across, P(at most d negatives) up ----
+  // the y axis stops at about four times 1 - c, so the crossing at 1 - c
+  // is easy to see; the curves start above it (cut off at the top)
+  szPL := 30; szPR := 312; szPT := 98; szPB := 170;
+  bdTop := MIN(1, sz_Nice(4 * (1 - szC)));
+  sz_YAxis(bdTop);
+  sz_XAxis(0, szBnM, sz_Nice(szBnM / 6));
+  // 1 - c, dotted red
+  bdPy := szPB - IP((1 - szC) / bdTop * (szPB - szPT) + 0.5);
+  sz_DotH(szPL, szPR, bdPy, szRED);
+  TEXTOUT_P("1 - c", G1, szPR - 36, bdPy - 11, 1, szRED, 36);
+  // the least n of each, dotted in its colour
+  IF szHmD > 0 AND szHmD <= szBnM THEN
+    sz_DotV(szPL + IP(szHmD / szBnM * (szPR - szPL) + 0.5), szPT, szPB, szMAG);
+  END;
+  IF szBmD > 0 AND szBmD <= szBnM THEN
+    sz_DotV(szPL + IP(szBmD / szBnM * (szPR - szPL) + 0.5) + 1, szPT, szPB, szBLUE);
+  END;
+  // the binomial curve (blue), then the hypergeometric (magenta)
+  bdLx := -1; bdLy := 0;
+  FOR bdI FROM 1 TO szBnM DO
+    bdPx := szPL + IP(bdI / szBnM * (szPR - szPL) + 0.5);
+    bdPy := szPB - IP(MIN(szBnB(bdI) / bdTop, 1) * (szPB - szPT) + 0.5);
+    IF bdLx >= 0 THEN LINE_P(G1, bdLx, bdLy, bdPx, bdPy, szBLUE); END;
+    bdLx := bdPx; bdLy := bdPy;
+  END;
+  bdLx := -1; bdLy := 0;
+  FOR bdI FROM 1 TO szBnM DO
+    IF szBnH(bdI) >= 0 THEN
+      bdPx := szPL + IP(bdI / szBnM * (szPR - szPL) + 0.5);
+      bdPy := szPB - IP(MIN(szBnH(bdI) / bdTop, 1) * (szPB - szPT) + 0.5);
+      IF bdLx >= 0 THEN
+        LINE_P(G1, bdLx, bdLy, bdPx, bdPy, szMAG);
+        LINE_P(G1, bdLx, bdLy - 1, bdPx, bdPy - 1, szMAG);
+      END;
+      bdLx := bdPx; bdLy := bdPy;
+    END;
+  END;
+  // the n in hand (red)
+  IF szNt <= szBnM THEN
+    bdPx := szPL + IP(szNt / szBnM * (szPR - szPL) + 0.5);
+    LINE_P(G1, bdPx, szPT, bdPx, szPB, szRED);
+  END;
+  LINE_P(G1, szPL, szPT, szPL, szPB, #000000h);
+  LINE_P(G1, szPL, szPB, szPR, szPB, #000000h);
+  // the caption sits on a white box, over the curves' cut-off start
+  RECT_P(G1, szPL + 98, szPT + 1, szPR - 2, szPT + 12, #FFFFFFh, #FFFFFFh);
+  TEXTOUT_P("P(" + szLE + " " + sz_I(szD) + " neg), cut at " + sz_G(bdTop, 1), G1, szPL + 100, szPT + 1, 1, szGRAY, 180);
+  bdLg := "Up/Down = neg, Left/Right = N, Ent = menu";
+  sz_Show(bdLg, {"Neg -", "Neg +", "N / 10", "N " + szTMS + "10", "", "Menu"});
+END;
+
+// A tap on the binomial plot: the two probabilities at that n.
+sz_BinTap(btX, btY)
+BEGIN
+  LOCAL btN, btH;
+  IF btY < szPT OR btY > szPB OR btX < szPL OR btX > szPR THEN RETURN; END;
+  btN := MIN(MAX(ROUND((btX - szPL) / (szPR - szPL) * szBnM, 0), 1), szBnM);
+  btH := "(n > N)";
+  IF szBnH(btN) >= 0 THEN btH := sz_PStr(szBnH(btN)); END;
+  szInfo := "n = " + sz_I(btN) + ": hyper P " + btH + ", binom P " + sz_PStr(szBnB(btN));
+END;
+
+// Neg - / Neg +: the negatives allowed (0 to 20) change for every page.
+sz_SetD(sdV)
+BEGIN
+  szD := MIN(MAX(sdV, 0), 20);
+  IF szD <= 2 THEN
+    szHmD := szHm(szD + 1); szBmD := szBm(szD + 1);
+  ELSE
+    sz_Busy("Computing ...");
+    szHmD := sz_HypMin(szN, szC, szP0, szD); szBmD := sz_BinMin(szC, szP0, szD);
+  END;
+  szInfo := "";
+END;
+
+// N / 10 and N x 10 (kept within 1 .. 10000): everything is recomputed.
+sz_ScaleN(scF)
+BEGIN
+  LOCAL scN;
+  scN := MIN(MAX(ROUND(szN * scF, 0), 1), 10000);
+  IF scN <> szN THEN
+    szN := scN;
+    sz_Recalc();
+  END;
+END;
+
+sz_BinMenu()
+BEGIN
+  LOCAL bmI, bmK;
+  bmI := 0;
+  CHOOSE(bmI, "Binomial page", {
+    "Back to the page",
+    "N / 10",
+    "N " + szTMS + " 10",
+    "Main menu"});
+  REPEAT bmK := GETKEY; UNTIL bmK == -1;
+  sz_Drain();
+  IF bmI == 2 THEN sz_ScaleN(0.1); END;
+  IF bmI == 3 THEN sz_ScaleN(10); END;
+  IF bmI == 4 THEN RETURN 0; END;
+  RETURN 1;
+END;
+
+sz_BinPage()
+BEGIN
+  LOCAL bpK, bpM, bpM1, bpGo, bpSl, bpX;
+  LOCAL bpY;
+  szInfo := "";
+  bpGo := 1;
+  REPEAT bpK := GETKEY; UNTIL bpK == -1;
+  sz_Drain();
+  WHILE bpGo == 1 DO
+    sz_BinDraw();
+    REPEAT
+      bpK := GETKEY;
+      bpM := MOUSE;
+      bpM1 := bpM(1);
+    UNTIL bpK > -1 OR SIZE(bpM1) > 0;
+    IF SIZE(bpM1) > 0 THEN
+      bpX := bpM1(1) + 0.0; bpY := bpM1(2) + 0.0;
+      sz_Drain();
+      IF bpY >= 218 THEN
+        bpSl := MIN(6, IP(bpX / 53.4) + 1);
+        IF bpSl == 1 THEN sz_SetD(szD - 1); END;
+        IF bpSl == 2 THEN sz_SetD(szD + 1); END;
+        IF bpSl == 3 THEN sz_ScaleN(0.1); END;
+        IF bpSl == 4 THEN sz_ScaleN(10); END;
+        IF bpSl == 6 THEN bpGo := sz_BinMenu(); END;
+      ELSE
+        sz_BinTap(bpX, bpY);
+      END;
+    ELSE
+      IF bpK == 12 THEN sz_SetD(szD - 1); END;
+      IF bpK == 2 THEN sz_SetD(szD + 1); END;
+      IF bpK == 7 THEN sz_ScaleN(0.1); END;
+      IF bpK == 8 THEN sz_ScaleN(10); END;
+      IF bpK == 30 THEN bpGo := sz_BinMenu(); END;
+      IF bpK == 4 THEN bpGo := 0; END;
+      REPEAT bpK := GETKEY; UNTIL bpK == -1;
+    END;
+  END;
+  szInfo := "";
+END;
+
+
+// ------------------------------------------------------------
+// PAGE 3: BAYESIAN
+// The prior Beta(a, b) (grey) and the posterior Beta(a + x, b + n - x)
+// (magenta) on the proportion theta; the posterior area right of p0 is
+// shaded green: P(theta >= p0 | data), the claim's probability as N
+// grows.  The finite-N probability (beta-binomial) is printed above.
+// ------------------------------------------------------------
+
+// The prior's name.
+sz_PrName()
+BEGIN
+  IF szA == 1 AND szB == 1 THEN RETURN "uniform"; END;
+  IF szA == 0.5 AND szB == 0.5 THEN RETURN "Jeffreys"; END;
+  RETURN "typed";
+END;
+
+// Both densities per pixel column, and the probabilities, once per
+// (prior, n, x) -- cached by a key.
+sz_BayFit()
+BEGIN
+  LOCAL bfKey, bfI, bfW, bfTh, bfAl, bfBe;
+  LOCAL bfLb0, bfLb1, bfMx;
+  bfKey := sz_G(szA, 0) + "," + sz_G(szB, 0) + "," + sz_I(szNt) + "," + sz_I(szJ) + "," + sz_I(szN) + "," + sz_G(szP0, 2);
+  IF bfKey == szBaKey THEN RETURN; END;
+  IF szN - szNt > 2000 THEN sz_Busy("Computing ..."); END;
+  bfW := szPR - szPL;
+  bfAl := szA + szNt - szJ; bfBe := szB + szJ;
+  bfLb0 := sz_LnB(szA, szB); bfLb1 := sz_LnB(bfAl, bfBe);
+  szBaPr := MAKELIST(0, bfI, 1, bfW);
+  szBaPo := MAKELIST(0, bfI, 1, bfW);
+  bfMx := 1;
+  FOR bfI FROM 1 TO bfW DO
+    bfTh := (bfI - 0.5) / bfW;
+    szBaPr(bfI) := EXP((szA - 1) * LN(bfTh) + (szB - 1) * LN(1 - bfTh) - bfLb0);
+    szBaPo(bfI) := EXP((bfAl - 1) * LN(bfTh) + (bfBe - 1) * LN(1 - bfTh) - bfLb1);
+    // the y-top: the tallest value, leaving out the last 2% at an end
+    // where a density runs off to infinity (its parameter there below 1)
+    IF (bfTh >= 0.02 OR szA >= 1) AND (bfTh <= 0.98 OR szB >= 1) THEN
+      IF szBaPr(bfI) > bfMx THEN bfMx := szBaPr(bfI); END;
+    END;
+    IF (bfTh >= 0.02 OR bfAl >= 1) AND (bfTh <= 0.98 OR bfBe >= 1) THEN
+      IF szBaPo(bfI) > bfMx THEN bfMx := szBaPo(bfI); END;
+    END;
+  END;
+  szBaY := bfMx * 1.1;
+  szBaP := sz_BayP(szN, szNt, szNt - szJ, szP0, szA, szB);
+  szBaL := sz_BayL(szNt, szNt - szJ, szP0, szA, szB);
+  SZ_PB := szBaP;
+  szBaKey := bfKey;
+END;
+
+sz_BayDraw()
+BEGIN
+  LOCAL bdI, bdW, bdPx, bdPy, bdLy, bdLq;
+  LOCAL bdP0x, bdClip, bdS, bdX;
+  szPL := 30; szPR := 312; szPT := 98; szPB := 170;
+  sz_BayFit();
+  bdX := szNt - szJ;
+  sz_Frame("Bayes: prior Beta(" + sz_G(szA, 0) + ", " + sz_G(szB, 0) + "), " + sz_PrName());
+  bdS := "posterior Beta(" + sz_G(szA + bdX, 0) + ", " + sz_G(szB + szJ, 0) + ")";
+  bdS := sz_Fit("n = " + sz_I(szNt) + ", x = " + sz_I(bdX) + ": " + bdS, "P" + MID(bdS, 2));
+  TEXTOUT_P(bdS, G1, 6, 20, 1, #000000h, 308);
+  TEXTOUT_P("P(at least " + sz_I(szKr) + " of " + sz_I(szN) + " drug | data) " + sz_PStr(szBaP), G1, 6, 32, 1, szMAG, 308);
+  IF sz_Ge(szBaP, szC) == 1 THEN
+    TEXTOUT_P(szGE + " c = " + sz_G(szC, 2) + ": the claim is supported (Bayes)", G1, 6, 44, 1, szGRN, 308);
+  ELSE
+    bdS := sz_Fit("< c = " + sz_G(szC, 2) + ": the claim is NOT supported (Bayes)", "< c = " + sz_G(szC, 2) + ": NOT supported (Bayes)");
+    TEXTOUT_P(bdS, G1, 6, 44, 1, szRED, 308);
+  END;
+  // beta 1a (second review, item 3): the finite-N value and the N -> inf
+  // value side by side; ENFSI's Table 4 tabulates the second
+  bdS := ": this N " + sz_NStr(szYm) + "; N " + szAR + " " + szINF + " " + sz_NStr(szYmL);
+  TEXTOUT_P(sz_Fit("Least n, all +, P " + szGE + " " + sz_G(szC, 2) + bdS, "Least n" + bdS), G1, 6, 56, 1, szBLUE, 308);
+  TEXTOUT_P("Shaded: P(" + szTH + " " + szGE + " " + sz_G(szP0, 2) + ") if N were huge " + sz_PStr(szBaL), G1, 6, 68, 1, szGRN, 308);
+  TEXTOUT_P("ENFSI Table 4 takes N " + szAR + " " + szINF + " (it assumes N " + szGE + " 50)", G1, 6, 80, 1, szGRAY, 308);
+  // ---- the plot ----
+  bdW := szPR - szPL;
+  sz_YAxis(szBaY);
+  sz_XAxis(0, 1, 0.2);
+  bdP0x := szPL + IP(szP0 * bdW + 0.5);
+  // shade the posterior right of p0
+  FOR bdI FROM 1 TO bdW DO
+    IF (bdI - 0.5) / bdW >= szP0 THEN
+      bdPy := szPB - IP(MIN(szBaPo(bdI) / szBaY, 1) * (szPB - szPT) + 0.5);
+      IF bdPy < szPB THEN LINE_P(G1, szPL + bdI, szPB - 1, szPL + bdI, bdPy, szLGRN); END;
+    END;
+  END;
+  // the prior (grey) and the posterior (magenta, two pixels thick)
+  bdClip := 0; bdLy := -1; bdLq := -1;
+  FOR bdI FROM 1 TO bdW DO
+    bdPx := szPL + bdI;
+    bdPy := szPB - IP(MIN(szBaPr(bdI) / szBaY, 1) * (szPB - szPT) + 0.5);
+    IF bdLy >= 0 THEN LINE_P(G1, bdPx - 1, bdLy, bdPx, bdPy, szGRAY); END;
+    bdLy := bdPy;
+    IF szBaPo(bdI) > szBaY OR szBaPr(bdI) > szBaY THEN bdClip := 1; END;
+    bdPy := szPB - IP(MIN(szBaPo(bdI) / szBaY, 1) * (szPB - szPT) + 0.5);
+    IF bdLq >= 0 THEN
+      LINE_P(G1, bdPx - 1, bdLq, bdPx, bdPy, szMAG);
+      LINE_P(G1, bdPx - 1, bdLq - 1, bdPx, bdPy - 1, szMAG);
+    END;
+    bdLq := bdPy;
+  END;
+  sz_DotV(bdP0x, szPT, szPB, szRED);
+  TEXTOUT_P(szPZ, G1, bdP0x - 14, szPT + 2, 1, szRED, 20);
+  LINE_P(G1, szPL, szPT, szPL, szPB, #000000h);
+  LINE_P(G1, szPL, szPB, szPR, szPB, #000000h);
+  bdS := "grey = prior, magenta = posterior";
+  IF bdClip == 1 THEN bdS := bdS + " (cut)"; END;
+  TEXTOUT_P(bdS, G1, szPL + 4, szPT + 1, 1, szGRAY, 270);
+  sz_Show("+/- = n, Left/Right = x, Ent = menu", {"n -", "n +", "x -", "x +", "Prior", "Menu"});
+END;
+
+// A tap on the densities: theta there, both densities.
+sz_BayTap(byX, byY)
+BEGIN
+  LOCAL byI, byW;
+  IF byY < szPT OR byY > szPB + 12 OR byX < szPL OR byX > szPR THEN RETURN; END;
+  byW := szPR - szPL;
+  byI := MIN(MAX(IP(byX - szPL), 1), byW);
+  szInfo := szTH + " = " + sz_F((byI - 0.5) / byW, 3) + ": prior " + sz_F(szBaPr(byI), 2) + ", posterior " + sz_F(szBaPo(byI), 2);
+END;
+
+// "Prior": uniform -> Jeffreys -> uniform (a typed prior goes to uniform).
+sz_PrNext()
+BEGIN
+  IF szA == 1 AND szB == 1 THEN
+    szA := 0.5; szB := 0.5;
+  ELSE
+    szA := 1; szB := 1;
+  END;
+  sz_Busy("Computing ...");
+  szStop := 0;
+  szYm := sz_BayMin(szN, szC, szP0, szA, szB);
+  szYmL := sz_BayMinL(szC, szP0, szA, szB);
+  szTbKey := "";
+  szInfo := "";
+END;
+
+sz_BayMenu()
+BEGIN
+  LOCAL ymI, ymK;
+  ymI := 0;
+  CHOOSE(ymI, "Bayesian page", {
+    "Back to the page",
+    "Next prior: uniform, Jeffreys",
+    "Main menu"});
+  REPEAT ymK := GETKEY; UNTIL ymK == -1;
+  sz_Drain();
+  IF ymI == 2 THEN sz_PrNext(); END;
+  IF ymI == 3 THEN RETURN 0; END;
+  RETURN 1;
+END;
+
+sz_BayPage()
+BEGIN
+  LOCAL byK, byM, byM1, byGo, bySl, byX;
+  LOCAL byY;
+  szInfo := "";
+  byGo := 1;
+  REPEAT byK := GETKEY; UNTIL byK == -1;
+  sz_Drain();
+  WHILE byGo == 1 DO
+    sz_BayDraw();
+    REPEAT
+      byK := GETKEY;
+      byM := MOUSE;
+      byM1 := byM(1);
+    UNTIL byK > -1 OR SIZE(byM1) > 0;
+    IF SIZE(byM1) > 0 THEN
+      byX := byM1(1) + 0.0; byY := byM1(2) + 0.0;
+      sz_Drain();
+      IF byY >= 218 THEN
+        bySl := MIN(6, IP(byX / 53.4) + 1);
+        IF bySl == 1 THEN sz_SetN(szNt - 1); END;
+        IF bySl == 2 THEN sz_SetN(szNt + 1); END;
+        IF bySl == 3 THEN sz_SetJ(szJ + 1); END;
+        IF bySl == 4 THEN sz_SetJ(szJ - 1); END;
+        IF bySl == 5 THEN sz_PrNext(); END;
+        IF bySl == 6 THEN byGo := sz_BayMenu(); END;
+      ELSE
+        sz_BayTap(byX, byY);
+      END;
+    ELSE
+      IF byK == 45 THEN sz_SetN(szNt - 1); END;
+      IF byK == 50 THEN sz_SetN(szNt + 1); END;
+      IF byK == 7 THEN sz_SetJ(szJ + 1); END;
+      IF byK == 8 THEN sz_SetJ(szJ - 1); END;
+      IF byK == 30 THEN byGo := sz_BayMenu(); END;
+      IF byK == 4 THEN byGo := 0; END;
+      REPEAT byK := GETKEY; UNTIL byK == -1;
+    END;
+  END;
+  szInfo := "";
+END;
+
+
+// ------------------------------------------------------------
+// PAGE 4: THE OC CURVE
+// The plan "test n, support the claim if at most d are negative".  Its
+// probability of supporting the claim, OC = P(X >= n - d | N, n, K), is
+// drawn against the TRUE proportion K/N (magenta; blue = binomial).
+// Under the curve: red where the claim is false (K <= K0) -- the chance
+// of supporting a false claim -- green where it is true.  Drag the red
+// knob along the top to change n; drag in the plot to move the true
+// proportion (the red line) and read the curve.
+// ------------------------------------------------------------
+
+// The OC page's x axis runs from szOcL to 1: 0 to 1 (the whole curve), or
+// zoomed to the last 0.2 to 0.3 below p0 and above it, where the curve
+// rises.  Column i (1..W) sits at theta = L + (i - 0.5)/W (1 - L).
+sz_OCTh(otI, otW)
+BEGIN
+  RETURN szOcL + (otI - 0.5) / otW * (1 - szOcL);
+END;
+
+// Per pixel column: K = floor(theta N) and ln Gamma(K + 1), once per N
+// and zoom.  floor puts every theta below Kr/N on a false K: theta N < Kr
+// gives K <= Kr - 1 = K0.
+sz_OCFit()
+BEGIN
+  LOCAL ofI, ofW, ofK, ofLast, ofV;
+  ofW := szPR - szPL;
+  szOcK := MAKELIST(0, ofI, 1, ofW);
+  szOcS := MAKELIST(0, ofI, 1, ofW);
+  ofLast := -1; ofV := 0;
+  FOR ofI FROM 1 TO ofW DO
+    // + 1E-9: theta N can land a hair below a whole number in binary
+    // (774.9999999999999 for 775 at N = 1000, zoomed; second review);
+    // the Prime's decimals do not need it, and it moves nothing else
+    ofK := FLOOR(sz_OCTh(ofI, ofW) * szN + 0.000000001);
+    szOcK(ofI) := ofK;
+    IF ofK <> ofLast THEN ofV := sz_LnG(ofK + 1); ofLast := ofK; END;
+    szOcS(ofI) := ofV;
+  END;
+  szOcN := szN; szOcLf := szOcL;
+END;
+
+// Both OC curves for n = szNt, d = szD, at every ocStp-th column (4 while
+// a finger drags n, 1 otherwise); the skipped columns hold -1.  While a
+// finger drags (ocStp > 1) the binomial curve is left out (all -1).
+//   Hypergeometric, K >= n:  P(X = n) = exp(lnG(K+1) - lnG(K-n+1)
+//     - lnG(N+1) + lnG(N-n+1)), then P(X = n - j) from P(X = n - j + 1)
+//     times (n - j + 1)(N - K - j + 1) / ((K - n + j) j), j = 1..d;
+//   K < n: sz_HypS.  Binomial: t^n, then times (n - j + 1)/j (1 - t)/t.
+//   A first term below e^-700 makes the sum below 1E-140 (d <= 20): 0.
+sz_OCCurve(ocStp)
+BEGIN
+  LOCAL ocI, ocW, ocK, ocCN, ocLh, ocT;
+  LOCAL ocS, ocJ, ocTh, ocQ, ocB, ocPk;
+  LOCAL ocPv, ocNn, ocD;
+  ocW := szPR - szPL; ocNn := szNt; ocD := szD;
+  szOcH := MAKELIST(-1, ocI, 1, ocW);
+  szOcB := MAKELIST(-1, ocI, 1, ocW);
+  ocCN := sz_LnG(szN + 1) - sz_LnG(szN - ocNn + 1);
+  ocPk := -1; ocPv := 0;
+  ocI := 1;
+  WHILE ocI <= ocW DO
+    ocK := szOcK(ocI);
+    IF ocK == ocPk THEN
+      ocS := ocPv;
+    ELSE
+      IF ocK >= ocNn THEN
+        ocLh := szOcS(ocI) - sz_LnG(ocK - ocNn + 1) - ocCN;
+        ocS := 0;
+        IF ocLh > -700 THEN
+          ocT := EXP(ocLh); ocS := ocT;
+          FOR ocJ FROM 1 TO ocD DO
+            ocT := ocT * (ocNn - ocJ + 1) * MAX(0, szN - ocK - ocJ + 1) / ((ocK - ocNn + ocJ) * ocJ);
+            ocS := ocS + ocT;
+          END;
+        END;
+      ELSE
+        ocS := sz_HypS(szN, ocK, ocNn, ocNn - ocD, ocNn);
+      END;
+      ocPk := ocK; ocPv := ocS;
+    END;
+    szOcH(ocI) := MIN(ocS, 1);
+    IF ocStp == 1 THEN
+      ocTh := sz_OCTh(ocI, ocW); ocQ := 1 - ocTh;
+      ocLh := ocNn * LN(ocTh);
+      ocB := 0;
+      IF ocLh > -700 THEN
+        ocT := EXP(ocLh); ocB := ocT;
+        FOR ocJ FROM 1 TO MIN(ocD, ocNn) DO
+          ocT := ocT * (ocNn - ocJ + 1) / ocJ * ocQ / ocTh;
+          ocB := ocB + ocT;
+        END;
+      END;
+      szOcB(ocI) := MIN(ocB, 1);
+    END;
+    IF ocI < ocW AND ocI + ocStp > ocW THEN ocI := ocW; ELSE ocI := ocI + ocStp; END;
+  END;
+END;
+
+// The slider's top n: room for twice the least n, at least 40, at most N.
+sz_OCTop()
+BEGIN
+  LOCAL otM;
+  otM := szHmD;
+  IF otM < 1 THEN otM := 50; END;
+  szOcM := MIN(szN, MAX(40, 2 * otM + 10));
+  szOcM := MAX(szOcM, MIN(szN, szNt));
+END;
+
+// The x pixel of a proportion on the OC page.
+sz_OCX(oxT)
+BEGIN
+  RETURN szPL + IP((oxT - szOcL) / (1 - szOcL) * (szPR - szPL) + 0.5);
+END;
+
+sz_OCDraw(odDrag)
+BEGIN
+  LOCAL odI, odW, odV, odB, odPx, odPy;
+  LOCAL odLy, odLb, odY1, odKx, odK, odP;
+  LOCAL odX, odW0, odSx;
+  odW := szPR - szPL;
+  sz_Frame("OC curve: N = " + sz_I(szN) + ", n = " + sz_I(szNt) + ", " + szLE + " " + sz_I(szD) + " neg");
+  // ---- the n slider: track 30..300 at y 28, knob red, least n green ----
+  TEXTOUT_P("n", G1, 8, 21, 2, #000000h, 20);
+  RECT_P(G1, 30, 27, 300, 29, szGRAY, szGRAY);
+  IF szHmD > 0 AND szHmD <= szOcM THEN
+    odSx := 30 + IP((szHmD - 1) / MAX(1, szOcM - 1) * 270 + 0.5);
+    LINE_P(G1, odSx, 22, odSx, 34, szGRN);
+  END;
+  odSx := 30 + IP((szNt - 1) / MAX(1, szOcM - 1) * 270 + 0.5);
+  RECT_P(G1, odSx - 3, 21, odSx + 3, 35, szRED, szRED);
+  TEXTOUT_P(sz_I(szOcM), G1, 302, 23, 1, szGRAY, 18);
+  // ---- the curves: shading under the magenta curve, red where the
+  // claim is false (K <= K0), green where it is true ----
+  sz_YAxis(1);
+  sz_XAxis(szOcL, 1, sz_Nice((1 - szOcL) / 5));
+  odV := 0; odB := 0;
+  FOR odI FROM 1 TO odW DO
+    IF szOcH(odI) >= 0 THEN odV := szOcH(odI); END;
+    odPx := szPL + odI;
+    odPy := szPB - IP(odV * (szPB - szPT) + 0.5);
+    IF odPy < szPB THEN
+      IF szOcK(odI) <= szK0 THEN
+        LINE_P(G1, odPx, szPB - 1, odPx, odPy, szWRNG);
+      ELSE
+        LINE_P(G1, odPx, szPB - 1, odPx, odPy, szLGRN);
+      END;
+    END;
+  END;
+  // 1 - c (dotted grey) and p0 (dotted red)
+  odY1 := szPB - IP((1 - szC) * (szPB - szPT) + 0.5);
+  sz_DotH(szPL, szPR, odY1, szGRAY);
+  TEXTOUT_P("1 - c", G1, szPL + 3, odY1 - 11, 1, szGRAY, 36);
+  odPx := sz_OCX(szP0);
+  sz_DotV(odPx, szPT, szPB, szRED);
+  IF odPx > 290 THEN
+    TEXTOUT_P(szPZ, G1, odPx - 16, szPT + 12, 1, szRED, 20);
+  ELSE
+    TEXTOUT_P(szPZ, G1, odPx + 3, szPT + 12, 1, szRED, 20);
+  END;
+  // binomial (blue, thin; not while a finger drags n), then the
+  // hypergeometric (magenta, thick)
+  odLy := -1; odLb := -1; odV := 0; odB := 0;
+  IF szOcB(1) >= 0 THEN
+    FOR odI FROM 1 TO odW DO
+      odPx := szPL + odI;
+      IF szOcB(odI) >= 0 THEN odB := szOcB(odI); END;
+      odPy := szPB - IP(odB * (szPB - szPT) + 0.5);
+      IF odLb >= 0 THEN LINE_P(G1, odPx - 1, odLb, odPx, odPy, szBLUE); END;
+      odLb := odPy;
+    END;
+  END;
+  FOR odI FROM 1 TO odW DO
+    odPx := szPL + odI;
+    IF szOcH(odI) >= 0 THEN odV := szOcH(odI); END;
+    odPy := szPB - IP(odV * (szPB - szPT) + 0.5);
+    IF odLy >= 0 THEN
+      LINE_P(G1, odPx - 1, odLy, odPx, odPy, szMAG);
+      LINE_P(G1, odPx - 1, odLy - 1, odPx, odPy - 1, szMAG);
+    END;
+    odLy := odPy;
+  END;
+  // the true proportion (red line) and its reading
+  odX := sz_OCX(szOcT);
+  LINE_P(G1, odX, szPT, odX, szPB, szRED);
+  odK := FLOOR(szOcT * szN + 0.000000001);
+  IF szOcT >= 1 THEN odK := szN; END;
+  odP := sz_HypS(szN, odK, szNt, szNt - szD, szNt);
+  LINE_P(G1, szPL, szPT, szPL, szPB, #000000h);
+  LINE_P(G1, szPL, szPB, szPR, szPB, #000000h);
+  // beta 1a: the worst false case sits in the plot's corner, so the key
+  // legend can have the line at y 192 (second review, item 9)
+  odW0 := sz_HypS(szN, szK0, szNt, szNt - szD, szNt);
+  TEXTOUT_P("Worst false claim, " + szKZ + " = " + sz_I(szK0) + ": P " + sz_PStr(odW0), G1, szPL + 4, szPT + 1, 1, szMAG, 270);
+  odKx := " = " + sz_F(szOcT, 3) + " (K = " + sz_I(odK) + "): P(support) " + sz_PStr(odP);
+  odKx := sz_Fit("true " + szTH + odKx, szTH + odKx);
+  IF odK <= szK0 THEN
+    TEXTOUT_P(odKx, G1, 6, 180, 1, szRED, 308);
+  ELSE
+    TEXTOUT_P(odKx, G1, 6, 180, 1, szGRN, 308);
+  END;
+  IF odDrag == 1 THEN szInfo := "(every 4th column, no binomial, while dragging)"; END;
+  sz_Show("+/- = n, Left/Right = " + szTH + ", Up/Down = neg", {"n -", "n +", "Neg -", "Neg +", "Zoom", "Menu"});
+  szInfo := "";
+END;
+
+// One step of a finger drag: 1 while the finger is still down on the
+// screen (its x in szDgX), 0 when it lifted, when any key is pressed, or
+// when the reading is off the screen (a stuck or phantom touch; PrimeSUD
+// once read (2147483647, 0)).  A key that ended the drag is drained.
+sz_DragOn()
+BEGIN
+  LOCAL dkK, dkM, dkM1;
+  dkK := GETKEY;
+  IF dkK > -1 THEN
+    REPEAT dkK := GETKEY; UNTIL dkK == -1;
+    RETURN 0;
+  END;
+  dkM := MOUSE;
+  dkM1 := dkM(1);
+  IF SIZE(dkM1) < 2 THEN RETURN 0; END;
+  IF dkM1(1) < 0 OR dkM1(1) > 319 OR dkM1(2) < 0 OR dkM1(2) > 239 THEN RETURN 0; END;
+  szDgX := dkM1(1) + 0.0;
+  RETURN 1;
+END;
+
+// A new n for the OC page (the curve is recomputed at once).
+sz_OCSetN(onV)
+BEGIN
+  sz_SetN(onV);
+  sz_OCTop();
+  sz_OCCurve(1);
+END;
+
+// A new number of negatives allowed (the least n and the curve follow).
+sz_OCSetD(odV)
+BEGIN
+  sz_SetD(odV);
+  sz_OCTop();
+  sz_OCCurve(1);
+END;
+
+// Zoom: the whole axis, or from a round tenth 0.2 to 0.3 below p0.
+sz_OCZoom()
+BEGIN
+  IF szOcL > 0 THEN
+    szOcL := 0;
+  ELSE
+    szOcL := MAX(0, FLOOR((szP0 - 0.2) * 10) / 10);
+  END;
+  szOcT := MAX(szOcT, szOcL);
+  sz_OCFit();
+  sz_OCCurve(1);
+END;
+
+// "Least n" on the OC page.
+sz_OCMinN()
+BEGIN
+  IF szHmD > 0 THEN
+    sz_OCSetN(szHmD);
+  ELSE
+    MSGBOX("No n works with " + sz_I(szD) + " negatives allowed for this N.");
+  END;
+END;
+
+sz_OCMenu()
+BEGIN
+  LOCAL omI, omK;
+  omI := 0;
+  CHOOSE(omI, "OC curve page", {
+    "Back to the page",
+    "Least n for these negatives",
+    "Zoom: near " + szPZ + " or all",
+    "Main menu"});
+  REPEAT omK := GETKEY; UNTIL omK == -1;
+  sz_Drain();
+  IF omI == 2 THEN sz_OCMinN(); END;
+  IF omI == 3 THEN sz_OCZoom(); END;
+  IF omI == 4 THEN RETURN 0; END;
+  RETURN 1;
+END;
+
+sz_OCPage()
+BEGIN
+  LOCAL ocK, ocM, ocM1, ocGo, ocSl, ocX;
+  LOCAL ocY, ocNw, ocDg;
+  szPL := 30; szPR := 312; szPT := 44; szPB := 164;
+  IF szOcN <> szN OR szOcLf <> szOcL THEN
+    sz_Busy("Computing ...");
+    sz_OCFit();
+  END;
+  sz_OCTop();
+  sz_OCCurve(1);
+  szOcT := MIN(MAX(ROUND(szP0 - 0.1, 2), MAX(0.01, szOcL)), 0.99);
+  ocGo := 1;
+  REPEAT ocK := GETKEY; UNTIL ocK == -1;
+  sz_Drain();
+  WHILE ocGo == 1 DO
+    sz_OCDraw(0);
+    REPEAT
+      ocK := GETKEY;
+      ocM := MOUSE;
+      ocM1 := ocM(1);
+    UNTIL ocK > -1 OR SIZE(ocM1) > 0;
+    IF SIZE(ocM1) > 0 THEN
+      ocX := ocM1(1) + 0.0; ocY := ocM1(2) + 0.0;
+      IF ocY >= 218 THEN
+        sz_Drain();
+        ocSl := MIN(6, IP(ocX / 53.4) + 1);
+        IF ocSl == 1 THEN sz_OCSetN(szNt - 1); END;
+        IF ocSl == 2 THEN sz_OCSetN(szNt + 1); END;
+        IF ocSl == 3 THEN sz_OCSetD(szD - 1); END;
+        IF ocSl == 4 THEN sz_OCSetD(szD + 1); END;
+        IF ocSl == 5 THEN sz_OCZoom(); END;
+        IF ocSl == 6 THEN ocGo := sz_OCMenu(); END;
+      ELSE
+        IF ocY < 40 THEN
+          // ---- drag the n knob: every fourth column while the finger
+          // is down, every column when it lifts.  beta 1a (second review,
+          // item 5; ScatterLab's slDragPt guards): any key ends the drag,
+          // and so does a reading off the screen (a stuck or phantom
+          // touch, Lessons Learned 7); a frame is drawn only when n
+          // changes ----
+          ocDg := 1;
+          WHILE ocDg == 1 DO
+            ocNw := 1 + ROUND((MIN(MAX(ocX, 30), 300) - 30) / 270 * (szOcM - 1), 0);
+            IF ocNw <> szNt THEN
+              szNt := MIN(MAX(ocNw, 1), szN);
+              szJ := MIN(szJ, szNt);
+              sz_OCCurve(4);
+              sz_OCDraw(1);
+            END;
+            ocDg := sz_DragOn();
+            IF ocDg == 1 THEN ocX := szDgX; END;
+          END;
+          sz_Drain();
+          sz_OCSetN(szNt);
+        ELSE
+          IF ocY >= szPT AND ocY <= szPB + 12 AND ocX >= szPL AND ocX <= szPR THEN
+            // ---- drag the true proportion: nothing is recomputed; the
+            // same guards as the knob, and a frame only when theta moves ----
+            ocDg := 1; ocNw := -1;
+            WHILE ocDg == 1 DO
+              szOcT := szOcL + MIN(MAX((ocX - szPL) / (szPR - szPL), 0), 1) * (1 - szOcL);
+              IF szOcT <> ocNw THEN sz_OCDraw(0); ocNw := szOcT; END;
+              ocDg := sz_DragOn();
+              IF ocDg == 1 THEN ocX := szDgX; END;
+            END;
+          END;
+          sz_Drain();
+        END;
+      END;
+    ELSE
+      IF ocK == 45 THEN sz_OCSetN(szNt - 1); END;
+      IF ocK == 50 THEN sz_OCSetN(szNt + 1); END;
+      IF ocK == 7 THEN szOcT := MAX(szOcL, ROUND(szOcT - 0.01, 2)); END;
+      IF ocK == 8 THEN szOcT := MIN(1, ROUND(szOcT + 0.01, 2)); END;
+      IF ocK == 2 THEN sz_OCSetD(szD + 1); END;
+      IF ocK == 12 THEN sz_OCSetD(szD - 1); END;
+      IF ocK == 30 THEN ocGo := sz_OCMenu(); END;
+      IF ocK == 4 THEN ocGo := 0; END;
+      REPEAT ocK := GETKEY; UNTIL ocK == -1;
+    END;
+  END;
+  szInfo := "";
+END;
+
+
+// ------------------------------------------------------------
+// PAGE 5: THE TOTAL NET WEIGHT
+// Dot plot of the weights (blue) with their mean (green); below, the
+// total: the two-sided CI (orange bar), the estimate (green) and the
+// one-sided lower bound (red, with an arrow to the right).
+// ------------------------------------------------------------
+
+// Mean and SD (n - 1 divisor) of the weights, two passes.
+sz_WtStats()
+BEGIN
+  LOCAL wsI, wsS, wsQ;
+  szWn := SIZE(szWt);
+  wsS := 0;
+  FOR wsI FROM 1 TO szWn DO wsS := wsS + szWt(wsI); END;
+  szWm := wsS / szWn;
+  wsQ := 0;
+  FOR wsI FROM 1 TO szWn DO wsQ := wsQ + (szWt(wsI) - szWm)^2; END;
+  szWs := (wsQ / (szWn - 1))^0.5;
+END;
+
+// Total, SE, t values, the interval and the lower bound.
+//   T = N w-bar; SE = N s/sqrt(n) sqrt((N - n)/N)  (beta 1a: was
+//   (N - n)/(N - 1); second review, item 2; Cochran, and ENFSI 2009 s7);
+//   t2 = t(n - 1) upper (1 - c)/2 point, t1 = upper 1 - c point, both as
+//   -STUDENT_ICDF of a lower tail (Lessons Learned 3).
+sz_WtCalc()
+BEGIN
+  LOCAL wcT, wcF, wcSE, wcT2, wcT1;
+  wcT := szN * szWm;
+  wcF := 0;
+  wcF := MAX(0, (szN - szWn) / szN)^0.5;
+  wcSE := szN * szWs / szWn^0.5 * wcF;
+  wcT2 := -STUDENT_ICDF(szWn - 1, (1 - szC) / 2);
+  wcT1 := -STUDENT_ICDF(szWn - 1, 1 - szC);
+  szWr := {wcT, wcSE, wcT2, wcT - wcT2 * wcSE, wcT + wcT2 * wcSE, wcT1, wcT - wcT1 * wcSE, wcF};
+  SZ_TOT := wcT;
+  SZ_TLB := wcT - wcT1 * wcSE;
+END;
+
+// Load the weights: 1 = list D1, 2 = a typed summary, 3 = the example.
+sz_WtLoad(wlSrc)
+BEGIN
+  LOCAL wlN, wlL, wlI, wlOK, wlM, wlS;
+  LOCAL wlEx, wlMin;
+  IF wlSrc == 1 THEN
+    IFERR wlN := SIZE(D1); THEN wlN := 0; END;
+    IF wlN < 2 THEN
+      MSGBOX("Put the net weights (g) of the units you tested in list D1 of the Statistics 1Var app first: at least two values.");
+      RETURN 0;
+    END;
+    wlL := D1;
+    wlMin := sz_LMin(wlL);
+    IF wlMin <= 0 THEN
+      MSGBOX("Every weight in D1 must be positive.");
+      RETURN 0;
+    END;
+    IF wlN > szN THEN
+      MSGBOX("D1 holds " + sz_I(wlN) + " weights but N = " + sz_I(szN) + ": raise N in Set up.");
+      RETURN 0;
+    END;
+    szWt := wlL; sz_WtStats(); szWsrc := "list D1";
+  END;
+  IF wlSrc == 2 THEN
+    wlN := MAX(2, MIN(10, szN)); wlM := 0.5; wlS := 0.02;
+    IF szWok == 1 THEN wlN := szWn; wlM := szWm; wlS := szWs; END;
+    wlOK := INPUT({wlN, wlM, wlS}, "Weights of the tested units",
+      {"n weighed:", szXB + " (g):", "s (g):"},
+      {"How many units were weighed, 2 to N", "Their mean net weight, in grams", "Their SD (divisor n - 1), in grams"});
+    IF wlOK == 0 THEN RETURN 0; END;
+    wlN := ROUND(wlN, 0);
+    IF wlN < 2 OR wlN > szN THEN
+      MSGBOX("n must be a whole number from 2 to N = " + sz_I(szN) + ".");
+      RETURN 0;
+    END;
+    IF wlM <= 0 OR wlS < 0 THEN
+      MSGBOX("The mean must be positive and the SD not negative.");
+      RETURN 0;
+    END;
+    szWt := {}; szWn := wlN; szWm := wlM; szWs := wlS; szWsrc := "typed summary";
+  END;
+  IF wlSrc == 3 THEN
+    IF szN < 2 THEN
+      MSGBOX("N must be at least 2 for the example.");
+      RETURN 0;
+    END;
+    // ten made-up net weights in grams (illustrative numbers)
+    wlEx := {0.512, 0.498, 0.505, 0.521, 0.487, 0.509, 0.515, 0.493, 0.502, 0.511};
+    wlN := MIN(10, szN);
+    wlL := MAKELIST(0, wlI, 1, wlN);
+    FOR wlI FROM 1 TO wlN DO wlL(wlI) := wlEx(wlI); END;
+    szWt := wlL; sz_WtStats(); szWsrc := "illustrative numbers";
+  END;
+  szWok := 1;
+  sz_WtCalc();
+  szInfo := "";
+  RETURN 1;
+END;
+
+sz_WtDraw()
+BEGIN
+  LOCAL wdI, wdLo, wdHi, wdS, wdX, wdY;
+  LOCAL wdB, wdCnt, wdR, wdA, wdZ, wdC;
+  LOCAL wdPx;
+  sz_WtCalc();
+  wdR := szWr;
+  sz_Frame("Total net weight: N = " + sz_I(szN) + " units");
+  TEXTOUT_P("n = " + sz_I(szWn) + " weighed (" + szWsrc + ")", G1, 6, 20, 1, #000000h, 308);
+  TEXTOUT_P(szXB + " = " + sz_W(szWm) + " g, s = " + sz_W(szWs) + " g per unit", G1, 6, 32, 1, szBLUE, 308);
+  TEXTOUT_P("Total = N" + szXB + " = " + sz_W(wdR(1)) + " g, SE = " + sz_W(wdR(2)) + " g", G1, 6, 44, 1, szMAG, 308);
+  TEXTOUT_P("SE = N s/" + szRT + "n " + szTMS + " " + szRT + "((N - n)/N), t df = " + sz_I(szWn - 1), G1, 6, 56, 1, szGRAY, 308);
+  wdC := sz_G(szC * 100, 0) + "% CI: " + sz_W(wdR(4)) + " to " + sz_W(wdR(5)) + " g";
+  TEXTOUT_P(sz_Fit(wdC + " (" + szPM + " " + sz_W(wdR(3) * wdR(2)) + ")", wdC), G1, 6, 68, 1, szORNG, 308);
+  wdC := "lower bound: total " + szGE + " " + sz_W(wdR(7)) + " g";
+  TEXTOUT_P(sz_Fit("One-sided " + sz_G(szC * 100, 0) + "% " + wdC, sz_G(szC * 100, 0) + "% " + wdC), G1, 6, 80, 1, szRED, 308);
+  // ---- the dot plot of the weights (y 98..128) ----
+  szPL := 30; szPR := 300;
+  IF SIZE(szWt) >= 2 THEN
+    wdLo := sz_LMin(szWt); wdHi := MAX(szWt);
+    IF wdHi - wdLo <= 0 THEN wdLo := wdLo * 0.99; wdHi := wdHi * 1.01; END;
+    wdS := sz_Nice((wdHi - wdLo) / 4);
+    wdLo := FLOOR(wdLo / wdS) * wdS; wdHi := CEILING(wdHi / wdS) * wdS;
+    IF wdHi <= wdLo THEN wdHi := wdLo + wdS; END;
+    szPT := 98; szPB := 126;
+    sz_XAxis(wdLo, wdHi, wdS);
+    LINE_P(G1, szPL, szPB, szPR, szPB, #000000h);
+    // stack dots that fall in the same 5-pixel slot
+    wdCnt := MAKELIST(0, wdI, 1, 60);
+    FOR wdI FROM 1 TO SIZE(szWt) DO
+      wdX := szPL + IP((szWt(wdI) - wdLo) / (wdHi - wdLo) * (szPR - szPL) + 0.5);
+      wdB := MIN(60, MAX(1, IP((wdX - szPL) / 5) + 1));
+      wdCnt(wdB) := wdCnt(wdB) + 1;
+      wdY := szPB - 4 - 5 * (wdCnt(wdB) - 1);
+      IF wdY > szPT THEN sz_Dot(wdX, wdY, szBLUE); END;
+    END;
+    wdX := szPL + IP((szWm - wdLo) / (wdHi - wdLo) * (szPR - szPL) + 0.5);
+    LINE_P(G1, wdX, szPT - 2, wdX, szPB, szGRN);
+    TEXTOUT_P(szXB, G1, wdX + 3, szPT - 4, 1, szGRN, 20);
+    TEXTOUT_P("each", G1, 1, szPB - 12, 1, szGRAY, 28);
+  ELSE
+    TEXTOUT_P("(a typed summary: no dots to plot)", G1, 30, 106, 1, szGRAY, 270);
+  END;
+  // ---- the total: CI bar, estimate, lower bound (y 148..176) ----
+  wdLo := wdR(4); wdHi := wdR(5);
+  IF wdHi - wdLo <= 0 THEN wdLo := wdR(1) * 0.99; wdHi := wdR(1) * 1.01; END;
+  wdA := wdLo - 0.25 * (wdHi - wdLo); wdZ := wdHi + 0.25 * (wdHi - wdLo);
+  wdS := sz_Nice((wdZ - wdA) / 4);
+  wdA := FLOOR(wdA / wdS) * wdS; wdZ := CEILING(wdZ / wdS) * wdS;
+  szPT := 148; szPB := 170;
+  sz_XAxis(wdA, wdZ, wdS);
+  LINE_P(G1, szPL, szPB, szPR, szPB, #000000h);
+  wdC := "N" + szXB;
+  TEXTOUT_P(wdC, G1, 2, szPT + 2, 1, szGRAY, 28);
+  wdX := szPL + IP((wdR(4) - wdA) / (wdZ - wdA) * (szPR - szPL) + 0.5);
+  wdPx := szPL + IP((wdR(5) - wdA) / (wdZ - wdA) * (szPR - szPL) + 0.5);
+  RECT_P(G1, wdX, szPT + 6, MAX(wdPx, wdX + 1), szPT + 14, szORNG, szLORN);
+  wdX := szPL + IP((wdR(1) - wdA) / (wdZ - wdA) * (szPR - szPL) + 0.5);
+  LINE_P(G1, wdX, szPT + 2, wdX, szPB, szGRN);
+  wdX := szPL + IP((wdR(7) - wdA) / (wdZ - wdA) * (szPR - szPL) + 0.5);
+  LINE_P(G1, wdX, szPT - 6, wdX, szPB, szRED);
+  LINE_P(G1, wdX + 1, szPT - 6, wdX + 1, szPB, szRED);
+  TEXTOUT_P(szGE + " " + szAR, G1, wdX + 4, szPT - 8, 1, szRED, 30);
+  sz_Show("orange = CI, red = bound, Ent = menu", {"D1", "Type", "Example", "", "", "Menu"});
+END;
+
+// A tap on the weight page: a dot's weight, or what the bars mean.
+sz_WtTap(wtX, wtY)
+BEGIN
+  LOCAL wtI, wtB, wtD, wtLo, wtHi, wtS;
+  LOCAL wtPx;
+  IF wtY >= 92 AND wtY <= 132 AND SIZE(szWt) >= 2 THEN
+    wtLo := sz_LMin(szWt); wtHi := MAX(szWt);
+    IF wtHi - wtLo <= 0 THEN wtLo := wtLo * 0.99; wtHi := wtHi * 1.01; END;
+    wtS := sz_Nice((wtHi - wtLo) / 4);
+    wtLo := FLOOR(wtLo / wtS) * wtS; wtHi := CEILING(wtHi / wtS) * wtS;
+    IF wtHi <= wtLo THEN wtHi := wtLo + wtS; END;
+    wtB := 0; wtD := 9999;
+    FOR wtI FROM 1 TO SIZE(szWt) DO
+      wtPx := 30 + IP((szWt(wtI) - wtLo) / (wtHi - wtLo) * 270 + 0.5);
+      IF ABS(wtPx - wtX) < wtD THEN wtD := ABS(wtPx - wtX); wtB := wtI; END;
+    END;
+    IF wtB > 0 THEN
+      szInfo := "unit " + sz_I(wtB) + ": " + sz_W(szWt(wtB)) + " g (mean " + sz_W(szWm) + " g)";
+    END;
+  END;
+  IF wtY >= 140 AND wtY <= 182 THEN
+    szInfo := "t = " + sz_F(szWr(3), 3) + " (CI), " + sz_F(szWr(6), 3) + " (bound); FPC = " + sz_F(szWr(8), 4);
+  END;
+END;
+
+sz_WtMenu()
+BEGIN
+  LOCAL wmI, wmK;
+  wmI := 0;
+  CHOOSE(wmI, "Weight page", {
+    "Back to the page",
+    "Weights from list D1",
+    "Type n, mean and SD",
+    "Illustrative example",
+    "Main menu"});
+  REPEAT wmK := GETKEY; UNTIL wmK == -1;
+  sz_Drain();
+  IF wmI >= 2 AND wmI <= 4 THEN wmK := sz_WtLoad(wmI - 1); END;
+  IF wmI == 5 THEN RETURN 0; END;
+  RETURN 1;
+END;
+
+sz_WtPage()
+BEGIN
+  LOCAL wpK, wpM, wpM1, wpGo, wpSl, wpX;
+  LOCAL wpY, wpI;
+  szInfo := "";
+  IF szWok == 0 THEN
+    wpI := 0;
+    CHOOSE(wpI, "Weights of the tested units", {
+      "From list D1 (Statistics 1Var)",
+      "Type n, mean and SD",
+      "Illustrative example"});
+    IF wpI == 0 THEN RETURN; END;
+    IF sz_WtLoad(wpI) == 0 THEN RETURN; END;
+  END;
+  IF szWn > szN THEN
+    MSGBOX("The weights are for " + sz_I(szWn) + " units but N = " + sz_I(szN) + ": load them again.");
+    szWok := 0;
+    RETURN;
+  END;
+  wpGo := 1;
+  REPEAT wpK := GETKEY; UNTIL wpK == -1;
+  sz_Drain();
+  WHILE wpGo == 1 DO
+    sz_WtDraw();
+    REPEAT
+      wpK := GETKEY;
+      wpM := MOUSE;
+      wpM1 := wpM(1);
+    UNTIL wpK > -1 OR SIZE(wpM1) > 0;
+    IF SIZE(wpM1) > 0 THEN
+      wpX := wpM1(1) + 0.0; wpY := wpM1(2) + 0.0;
+      sz_Drain();
+      IF wpY >= 218 THEN
+        wpSl := MIN(6, IP(wpX / 53.4) + 1);
+        IF wpSl >= 1 AND wpSl <= 3 THEN wpI := sz_WtLoad(wpSl); END;
+        IF wpSl == 6 THEN wpGo := sz_WtMenu(); END;
+        REPEAT wpK := GETKEY; UNTIL wpK == -1;
+        sz_Drain();
+      ELSE
+        sz_WtTap(wpX, wpY);
+      END;
+    ELSE
+      IF wpK == 30 THEN wpGo := sz_WtMenu(); END;
+      IF wpK == 4 THEN wpGo := 0; END;
+      REPEAT wpK := GETKEY; UNTIL wpK == -1;
+    END;
+  END;
+  szInfo := "";
+END;
+
+
+// ------------------------------------------------------------
+// PAGE 6: TABLES -- the least n, all positive, c = 0.95, for N = 10,
+// 20, 50, 100, 200, 500, 1000 and large, p0 = 0.90 and 0.50, by the
+// hypergeometric and the Bayesian method (the prior now set), computed
+// here; and a plot of them against N.
+// ------------------------------------------------------------
+
+sz_TabCalc()
+BEGIN
+  LOCAL tcI, tcL, tcKey, tcPop;
+  tcKey := sz_G(szA, 0) + "," + sz_G(szB, 0);
+  IF tcKey == szTbKey THEN RETURN; END;
+  tcL := {10, 20, 50, 100, 200, 500, 1000};
+  // every cell starts as "stopped" (-2): Esc (polled inside the Bayesian
+  // searches, beta 1a) leaves the rest that way, and the table is
+  // computed again the next time the page opens
+  szTbH9 := MAKELIST(-2, tcI, 1, 8); szTbY9 := MAKELIST(-2, tcI, 1, 8);
+  szTbH5 := MAKELIST(-2, tcI, 1, 8); szTbY5 := MAKELIST(-2, tcI, 1, 8);
+  szStop := 0;
+  FOR tcI FROM 1 TO 7 DO
+    IF szStop == 0 THEN
+      tcPop := tcL(tcI);
+      DIMGROB_P(G1, 320, 240, #FFFFFFh);
+      RECT_P(G1, 30, 88, 290, 152, szORNG, szLORN);
+      TEXTOUT_P("Table: N = " + sz_I(tcPop), G1, 40, 94, 2, szORNG, 240);
+      RECT_P(G1, 40, 116, 40 + IP(tcI / 8 * 240), 122, szORNG, szORNG);
+      TEXTOUT_P("Esc = stop", G1, 40, 129, 1, szGRAY, 240);
+      BLIT_P(G0, 0, 0, G1);
+      szTbH9(tcI) := sz_HypMin(tcPop, 0.95, 0.9, 0);
+      szTbY9(tcI) := sz_BayMin(tcPop, 0.95, 0.9, szA, szB);
+      szTbH5(tcI) := sz_HypMin(tcPop, 0.95, 0.5, 0);
+      szTbY5(tcI) := sz_BayMin(tcPop, 0.95, 0.5, szA, szB);
+    END;
+  END;
+  IF szStop == 0 THEN
+    szTbH9(8) := sz_BinMin(0.95, 0.9, 0);
+    szTbY9(8) := sz_BayMinL(0.95, 0.9, szA, szB);
+    szTbH5(8) := sz_BinMin(0.95, 0.5, 0);
+    szTbY5(8) := sz_BayMinL(0.95, 0.5, szA, szB);
+  END;
+  IF szStop == 0 THEN szTbKey := tcKey; ELSE szTbKey := ""; END;
+END;
+
+sz_TabDraw()
+BEGIN
+  LOCAL tdI, tdY, tdL, tdN, tdCol;
+  tdL := {"10", "20", "50", "100", "200", "500", "1000", szINF};
+  sz_Frame("Least n, all positive, c = 0.95");
+  TEXTOUT_P("N", G1, 14, 21, 1, #000000h, 40);
+  TEXTOUT_P(szPZ + " = 0.90", G1, 92, 21, 1, #000000h, 90);
+  TEXTOUT_P(szPZ + " = 0.50", G1, 222, 21, 1, #000000h, 90);
+  TEXTOUT_P("Hyper", G1, 70, 33, 1, szMAG, 50);
+  TEXTOUT_P("Bayes", G1, 128, 33, 1, szBLUE, 50);
+  TEXTOUT_P("Hyper", G1, 200, 33, 1, szMAG, 50);
+  TEXTOUT_P("Bayes", G1, 258, 33, 1, szBLUE, 50);
+  LINE_P(G1, 6, 45, 312, 45, szGRAY);
+  FOR tdI FROM 1 TO 8 DO
+    tdY := 47 + (tdI - 1) * 11;
+    IF tdI <= 7 THEN
+      tdN := {10, 20, 50, 100, 200, 500, 1000};
+      IF tdN(tdI) == szN THEN RECT_P(G1, 6, tdY - 1, 312, tdY + 9, szLORN, szLORN); END;
+    END;
+    tdCol := #000000h;
+    TEXTOUT_P(tdL(tdI), G1, 14, tdY, 1, tdCol, 50);
+    TEXTOUT_P(sz_NStr(szTbH9(tdI)), G1, 78, tdY, 1, szMAG, 40);
+    TEXTOUT_P(sz_NStr(szTbY9(tdI)), G1, 136, tdY, 1, szBLUE, 40);
+    TEXTOUT_P(sz_NStr(szTbH5(tdI)), G1, 208, tdY, 1, szMAG, 40);
+    TEXTOUT_P(sz_NStr(szTbY5(tdI)), G1, 266, tdY, 1, szBLUE, 40);
+  END;
+  LINE_P(G1, 6, 134, 312, 134, szGRAY);
+  // beta 1a (second review, item 8): "the your own prior" and 61
+  // characters became two short lines
+  tdN := "Bayes: prior Beta(" + sz_G(szA, 0) + ", " + sz_G(szB, 0) + "), " + sz_PrName();
+  tdN := sz_Fit(tdN + "; " + szINF + " = N grows", tdN);
+  TEXTOUT_P(tdN, G1, 6, 137, 1, szGRAY, 308);
+  TEXTOUT_P(szPZ + " = 0.90: N = 10 needs " + sz_NStr(szTbH9(1)) + " of 10, N = 1000 " + sz_NStr(szTbH9(7)) + ":", G1, 6, 149, 1, szGRN, 308);
+  TEXTOUT_P("a small seizure, a big FRACTION; a large one,", G1, 6, 161, 1, szGRN, 308);
+  TEXTOUT_P("about the same NUMBER, " + sz_NStr(szTbH9(8)) + " however big N is.", G1, 6, 173, 1, szGRN, 308);
+  sz_Show("Left/Right = table or plot, Ent = menu", {"Plot", "", "", "", "", "Menu"});
+  szInfo := "";
+END;
+
+// The table as a plot: least n against N on a log scale (10 to 1000)
+// with the large-N limits dotted at the right.
+sz_TabPlot()
+BEGIN
+  LOCAL tpI, tpS, tpL, tpMx, tpX, tpY;
+  LOCAL tpLx, tpLy, tpC, tpV, tpT, tpN;
+  sz_Frame("Least n against N (log scale), c = 0.95");
+  szPL := 30; szPR := 280; szPT := 30; szPB := 170;
+  tpMx := MAX(MAX(szTbH9), MAX(szTbY9));
+  tpT := sz_Nice(tpMx / 4);
+  tpT := CEILING(tpMx / tpT) * tpT;
+  sz_YAxis(tpT);
+  tpN := {10, 20, 50, 100, 200, 500, 1000};
+  FOR tpI FROM 1 TO 7 DO
+    tpX := szPL + IP((LOG(tpN(tpI)) - 1) / 2 * (szPR - szPL) + 0.5);
+    LINE_P(G1, tpX, szPB, tpX, szPB + 2, #000000h);
+    IF tpI == 1 OR tpI == 4 OR tpI == 7 OR tpI == 3 OR tpI == 6 THEN
+      TEXTOUT_P(sz_I(tpN(tpI)), G1, tpX - 8, szPB + 3, 1, szGRAY, 30);
+    END;
+  END;
+  TEXTOUT_P(szINF, G1, szPR + 18, szPB + 3, 1, szGRAY, 14);
+  // four series: hyper 0.90 magenta, Bayes 0.90 blue, hyper 0.50
+  // orange, Bayes 0.50 green; each with its limit at the right
+  FOR tpS FROM 1 TO 4 DO
+    IF tpS == 1 THEN tpL := szTbH9; tpC := szMAG; END;
+    IF tpS == 2 THEN tpL := szTbY9; tpC := szBLUE; END;
+    IF tpS == 3 THEN tpL := szTbH5; tpC := szORNG; END;
+    IF tpS == 4 THEN tpL := szTbY5; tpC := szGRN; END;
+    tpLx := -1; tpLy := 0;
+    FOR tpI FROM 1 TO 7 DO
+      tpV := tpL(tpI);
+      IF tpV >= 0 THEN
+        tpX := szPL + IP((LOG(tpN(tpI)) - 1) / 2 * (szPR - szPL) + 0.5);
+        tpY := szPB - IP(tpV / tpT * (szPB - szPT) + 0.5);
+        IF tpLx >= 0 THEN LINE_P(G1, tpLx, tpLy, tpX, tpY, tpC); END;
+        sz_Dot(tpX, tpY, tpC);
+        tpLx := tpX; tpLy := tpY;
+      END;
+    END;
+    IF tpL(8) >= 0 THEN
+      tpY := szPB - IP(MIN(tpL(8), tpT) / tpT * (szPB - szPT) + 0.5);
+      sz_DotH(szPL, szPR + 22, tpY, tpC);
+      sz_Dot(szPR + 22, tpY, tpC);
+    END;
+  END;
+  LINE_P(G1, szPL, szPT, szPL, szPB, #000000h);
+  LINE_P(G1, szPL, szPB, szPR + 26, szPB, #000000h);
+  TEXTOUT_P("0.90: magenta = hyper, blue = Bayes;", G1, 6, 180, 1, #000000h, 308);
+  szInfo := "0.50: orange = hyper, green = Bayes, dotted = " + szINF;
+  sz_Show("", {"Table", "", "", "", "", "Menu"});
+  szInfo := "";
+END;
+
+sz_TabMenu()
+BEGIN
+  LOCAL tmI, tmK;
+  tmI := 0;
+  CHOOSE(tmI, "Tables page", {
+    "Back to the page",
+    "Table or plot",
+    "Main menu"});
+  REPEAT tmK := GETKEY; UNTIL tmK == -1;
+  sz_Drain();
+  RETURN tmI;
+END;
+
+sz_TabPage()
+BEGIN
+  LOCAL tbK, tbM, tbM1, tbGo, tbSl, tbV;
+  LOCAL tbI;
+  sz_TabCalc();
+  tbGo := 1; tbV := 1;
+  REPEAT tbK := GETKEY; UNTIL tbK == -1;
+  sz_Drain();
+  WHILE tbGo == 1 DO
+    IF tbV == 1 THEN sz_TabDraw(); ELSE sz_TabPlot(); END;
+    REPEAT
+      tbK := GETKEY;
+      tbM := MOUSE;
+      tbM1 := tbM(1);
+    UNTIL tbK > -1 OR SIZE(tbM1) > 0;
+    IF SIZE(tbM1) > 0 THEN
+      sz_Drain();
+      IF tbM1(2) >= 218 THEN
+        tbSl := MIN(6, IP(tbM1(1) / 53.4) + 1);
+        IF tbSl == 1 THEN tbV := 3 - tbV; END;
+        IF tbSl == 6 THEN
+          tbI := sz_TabMenu();
+          IF tbI == 2 THEN tbV := 3 - tbV; END;
+          IF tbI == 3 THEN tbGo := 0; END;
+        END;
+      END;
+    ELSE
+      IF tbK == 30 THEN
+        tbI := sz_TabMenu();
+        IF tbI == 2 THEN tbV := 3 - tbV; END;
+        IF tbI == 3 THEN tbGo := 0; END;
+      END;
+      IF tbK == 4 THEN tbGo := 0; END;
+      IF tbK == 7 OR tbK == 8 THEN tbV := 3 - tbV; END;
+      REPEAT tbK := GETKEY; UNTIL tbK == -1;
+    END;
+  END;
+END;
+
+
+// ------------------------------------------------------------
+// OPENING PAGE, HELP, MAIN
+// ------------------------------------------------------------
+
+// The title page: what the program is for, 100 packets with a random
+// sample of the least n picked out in red, and the disclaimer.
+sz_Open()
+BEGIN
+  LOCAL opNs, opNn, opL, opI, opJ, opT;
+  LOCAL opX, opY;
+  opNs := MIN(szN, 100);
+  opNn := szHm(1);
+  IF opNn < 1 THEN opNn := opNs; END;
+  opNn := MIN(opNn, opNs);
+  // a random sample of opNn of the opNs units (a partial shuffle)
+  opL := MAKELIST(opI, opI, 1, opNs);
+  FOR opI FROM 1 TO opNn DO
+    opJ := opI + IP(RANDOM * (opNs - opI + 1));
+    IF opJ > opNs THEN opJ := opNs; END;
+    opT := opL(opI); opL(opI) := opL(opJ); opL(opJ) := opT;
+  END;
+  sz_Frame("SeizureLab: how many units to test?");
+  TEXTOUT_P("A lab receives N similar units (packets,", G1, 6, 20, 1, #000000h, 308);
+  TEXTOUT_P("tablets) and cannot test them all. How many", G1, 6, 32, 1, #000000h, 308);
+  TEXTOUT_P("must it test to support, at confidence c, the", G1, 6, 44, 1, #000000h, 308);
+  TEXTOUT_P("claim that at least a proportion " + szPZ + " contain", G1, 6, 56, 1, #000000h, 308);
+  TEXTOUT_P("the drug? Hypergeometric, binomial, Bayesian,", G1, 6, 68, 1, szBLUE, 308);
+  TEXTOUT_P("OC curve, total weight, table of n against N.", G1, 6, 80, 1, szBLUE, 308);
+  FOR opI FROM 1 TO opNs DO
+    opX := 60 + 10 * ((opI - 1) - 20 * IP((opI - 1) / 20));
+    opY := 94 + 10 * IP((opI - 1) / 20);
+    RECT_P(G1, opX, opY, opX + 7, opY + 7, szSHD, szLBLU);
+  END;
+  FOR opI FROM 1 TO opNn DO
+    opJ := opL(opI);
+    opX := 60 + 10 * ((opJ - 1) - 20 * IP((opJ - 1) / 20));
+    opY := 94 + 10 * IP((opJ - 1) / 20);
+    RECT_P(G1, opX, opY, opX + 7, opY + 7, szRED, szRED);
+  END;
+  TEXTOUT_P("N = " + sz_I(opNs) + ": the " + sz_I(opNn) + " red units are a random sample", G1, 6, 145, 1, szRED, 308);
+  TEXTOUT_P("DISCLAIMER: a teaching and demonstration aid.", G1, 6, 158, 1, szGRAY, 308);
+  TEXTOUT_P("Not validated for forensic, clinical or legal", G1, 6, 169, 1, szGRAY, 308);
+  TEXTOUT_P("use; do not rely on its results for legal", G1, 6, 180, 1, szGRAY, 308);
+  TEXTOUT_P("purposes.", G1, 6, 191, 1, szGRAY, 308);
+  TEXTOUT_P(szDisc, G1, 6, 204, 1, szORNG, 308);
+  TEXTOUT_P("Any key or tap = menu", G1, 6, 222, 1, szFOOT, 308);
+  BLIT_P(G0, 0, 0, G1);
+  sz_WaitAny();
+END;
+
+// One help page: a title and up to 14 lines, each [text, colour].
+sz_HelpPg(hgT, hgL, hgC, hgF)
+BEGIN
+  LOCAL hgI;
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 4, 4, 315, 235, szBLUE, szLBLU);
+  TEXTOUT_P(hgT, G1, 12, 8, 2, szBLUE, 296);
+  FOR hgI FROM 1 TO SIZE(hgL) DO
+    TEXTOUT_P(hgL(hgI), G1, 12, 17 + 13 * hgI, 1, hgC(hgI), 296);
+  END;
+  TEXTOUT_P(hgF, G1, 12, 222, 1, szFOOT, 296);
+  BLIT_P(G0, 0, 0, G1);
+  RETURN sz_WaitAny();
+END;
+
+sz_Help()
+BEGIN
+  LOCAL hpK, hpN10, hpN100, hpBin, hpL, hpC;
+  LOCAL hpBk, hpH0, hpH1, hpH2, hpYL, hpY100;
+  LOCAL hpW;
+  hpBk := #000000h;
+  // beta 1a: eight pages (second review, items 2, 3, 7, 8, 9, 11): the
+  // ENFSI check page (6), the keys as they are on each page (7) and the
+  // sources with the UNODC link (8).  Every line is at most 45
+  // characters (296 px at about 6.5 px a character).  The numbers are
+  // computed now, never typed in.
+  hpN10 := sz_HypMin(10, 0.95, 0.9, 0);
+  hpN100 := sz_HypMin(100, 0.95, 0.9, 0);
+  hpBin := sz_BinMin(0.95, 0.9, 0);
+  hpH0 := hpN100; hpH1 := sz_HypMin(100, 0.95, 0.9, 1); hpH2 := sz_HypMin(100, 0.95, 0.9, 2);
+  szStop := 0;
+  hpYL := sz_BayMinL(0.95, 0.9, 1, 1); hpY100 := sz_BayMin(100, 0.95, 0.9, 1, 1);
+  // ENFSI s7 example: N = 100, n = 23, s = 0.023 g, 95%: the half-width
+  hpW := 100 * 0.023 / 23^0.5 * (77 / 100)^0.5 * (-STUDENT_ICDF(22, 0.025));
+  hpL := {"'At least 90% are drug, at 95% confidence':",
+    "if fewer than 90% of the N units held drug,",
+    "a random sample of this size would come out",
+    "this clean (this few negatives or fewer) at",
+    "most 5% of the time: the METHOD rarely backs",
+    "a false claim.  It does NOT mean: a 95%",
+    "probability that 90% are drug (a Bayesian",
+    "statement, page 2); that the untested units",
+    "were analysed; that a given unit is drug;",
+    "anything about weight or purity.",
+    "'90%' of 100 units means at least 90 units."};
+  hpC := {hpBk, hpBk, hpBk, hpBk, szGRN, szRED, szRED, szRED, szRED, szRED, szMAG};
+  hpK := sz_HelpPg("1  What the claim means", hpL, hpC, "Any key = page 2, Esc = menu");
+  IF hpK == 4 THEN RETURN; END;
+  hpL := {"Hypergeometric (frequentist): a statement",
+    "about the PROCEDURE.  Suppose the claim is",
+    "just false (" + szKZ + " drug units); if what you found",
+    "would then be rare (P " + szLE + " 1 - c), it is",
+    "supported.  Bayesian (Aitken 1999; ENFSI",
+    "2009): about THIS SEIZURE: P(at least " + szPZ + "N",
+    "are drug | what you found).  It needs a prior",
+    ": uniform Beta(1, 1) treats every proportion",
+    "as equally likely; Jeffreys Beta(0.5, 0.5)",
+    "leans to all or none.  The prior matters most",
+    "when n is small.  Say which one you used."};
+  hpC := {szMAG, szMAG, szMAG, szMAG, szBLUE, szBLUE, szBLUE, szBLUE, szBLUE, hpBk, szRED};
+  hpK := sz_HelpPg("2  Frequentist or Bayesian?", hpL, hpC, "Any key = page 3, Esc = menu");
+  IF hpK == 4 THEN RETURN; END;
+  hpL := {"Taking n units out of N barely changes what",
+    "is left when N is much bigger than n: the",
+    "hypergeometric becomes the binomial, which",
+    "does not depend on N.  " + szPZ + " = 0.90, c = 0.95,",
+    "no negatives: least n " + sz_NStr(hpN10) + " at N = 10, " + sz_NStr(hpN100) + " at",
+    "N = 100, never more than " + sz_NStr(hpBin) + " however big N is",
+    "(computed now; see Tables).",
+    "A small seizure needs a large FRACTION",
+    "tested; a large one about the same NUMBER.",
+    "On the OC page, as N grows, the magenta",
+    "staircase settles onto the blue binomial."};
+  hpC := {hpBk, hpBk, hpBk, szMAG, szMAG, szMAG, szGRAY, szGRN, szGRN, szBLUE, szBLUE};
+  hpK := sz_HelpPg("3  Why N hardly matters once large", hpL, hpC, "Any key = page 4, Esc = menu");
+  IF hpK == 4 THEN RETURN; END;
+  hpL := {"Every method here assumes the n units were",
+    "chosen AT RANDOM: each unit equally likely to",
+    "be picked (number them, use random numbers),",
+    "not the handiest ones or the top of the bag.",
+    "It also assumes the units are alike (if they",
+    "differ in look or packing, split them into",
+    "groups and sample each: ENFSI), that each",
+    "test is right (no false positive or false",
+    "negative), and that N was counted correctly.",
+    "The claim is about the NUMBER of drug units;",
+    "the total weight needs its own estimate."};
+  hpC := {szRED, szRED, szRED, szRED, hpBk, hpBk, hpBk, hpBk, hpBk, szMAG, szMAG};
+  hpK := sz_HelpPg("4  Random selection and assumptions", hpL, hpC, "Any key = page 5, Esc = menu");
+  IF hpK == 4 THEN RETURN; END;
+  hpL := {"From the net weights of the n units weighed:",
+    "mean " + szXB + ", SD s.  Total T = N" + szXB + ".  SE =",
+    "N s/" + szRT + "n " + szTMS + " " + szRT + "((N - n)/N): the finite-population",
+    "correction (0 when every unit was weighed;",
+    "Cochran; ENFSI s7).  CI: T " + szPM + " t SE, t on n - 1",
+    "df.  A court asks for a LOWER bound: the",
+    "total is at least T - t SE (one-sided, at c).",
+    "T is the weight of ALL N units; ENFSI s7 also",
+    "scales it when some units tested negative",
+    "(not done here).  Weights: list D1, a typed",
+    "summary, or the example (illustrative)."};
+  hpC := {hpBk, hpBk, szMAG, szMAG, szORNG, szRED, szRED, szGRAY, szGRAY, szBLUE, szBLUE};
+  hpK := sz_HelpPg("5  The total weight", hpL, hpC, "Any key = page 6, Esc = menu");
+  IF hpK == 4 THEN RETURN; END;
+  hpL := {"ENFSI's Guidelines on Representative Drug",
+    "Sampling tabulate the least n.  Hyper-",
+    "geometric (Tables 1, 2): the same n as here,",
+    "e.g. " + sz_NStr(hpH0) + ", " + sz_NStr(hpH1) + ", " + sz_NStr(hpH2) + " for N = 100, " + szPZ + " = 0.90, 95%.",
+    "Bayesian (Table 4): 'A large seizure is",
+    "assumed (N " + szGE + " 50).'  Its " + sz_NStr(hpYL) + " (uniform prior,",
+    "0.90, 95%) is this program's N " + szAR + " " + szINF + " value;",
+    "for N = 100 the beta-binomial gives " + sz_NStr(hpY100) + ": it",
+    "counts the untested units of THIS seizure.",
+    "Weight (s7): N = 100, type n = 23, mean",
+    "0.265 g, SD 0.023 g: the CI is 26.50 g",
+    szPM + " " + sz_W(hpW) + " g; ENFSI prints 26.500 " + szPM + " 0.873 g,",
+    "with the same factor " + szRT + "(77/100) = 0.877."};
+  hpC := {hpBk, szMAG, szMAG, szMAG, szBLUE, szBLUE, szBLUE, szBLUE, szBLUE, szORNG, szORNG, szORNG, szORNG};
+  hpK := sz_HelpPg("6  Checking against ENFSI (2009)", hpL, hpC, "Any key = page 7, Esc = menu");
+  IF hpK == 4 THEN RETURN; END;
+  hpL := {"Soft keys on every page; Menu or Enter opens",
+    "the page menu (more, and Main menu); Esc =",
+    "back to the main menu.  Tap a bar or curve.",
+    "Hypergeometric: +/- = n, Up/Down = n by 10,",
+    "Left/Right = x.  Bayes: +/- = n, Left/Right",
+    "= x.  Binomial: Up/Down = negatives allowed,",
+    "Left/Right = N / 10, N " + szTMS + " 10.",
+    "OC: +/- = n, Left/Right = " + szTH + ", Up/Down = neg;",
+    "drag the red knob (n) or the red line (" + szTH + ").",
+    "Tables: Left/Right = table or plot.",
+    "Long sums show a moving bar; Esc stops them.",
+    "Home: SZ_N SZ_NMIN SZ_P SZ_LB SZ_PB",
+    "SZ_TOT SZ_TLB."};
+  hpC := {hpBk, hpBk, hpBk, szMAG, szBLUE, szBLUE, szBLUE, szGRN, szGRN, szGRN, szORNG, szGRAY, szGRAY};
+  hpK := sz_HelpPg("7  Keys and Home", hpL, hpC, "Any key = page 8, Esc = menu");
+  IF hpK == 4 THEN RETURN; END;
+  hpL := {"Methods: ENFSI DWG, Guidelines on",
+    "Representative Drug Sampling (2009), UNODC",
+    "ST/NAR/38, unodc.org/documents/scientific/",
+    "Drug_Sampling.pdf (read for this version).",
+    "Weight: Cochran, Sampling Techniques (1977).",
+    "Cited for methods, NOT checked here against",
+    "the papers: Aitken 1999 JFS 44:750; Coulson",
+    "et al. 2001 JFS 46:1456; Tzidony & Ravreby",
+    "1992 JFS 37:1541 (ENFSI lists a correction",
+    "by Stoel & Bolck); Frank et al. 1991 JFS",
+    "36:350 (multi-container; not done here).",
+    szDisc};
+  hpC := {szBLUE, szBLUE, szBLUE, szBLUE, szBLUE, szRED, hpBk, hpBk, hpBk, hpBk, hpBk, szORNG};
+  hpK := sz_HelpPg("8  Sources", hpL, hpC, "Any key = menu");
+END;
+
+EXPORT SeizureLab()
+BEGIN
+  LOCAL mnI, mnRun, mnS;
+  sz_Init();
+  sz_Recalc();
+  sz_Open();
+  mnRun := 1;
+  WHILE mnRun == 1 DO
+    mnI := 0;
+    CHOOSE(mnI, "SeizureLab (N = " + sz_I(szN) + ", c = " + sz_G(szC, 2) + ")", {
+      "Set up: N, c, " + szPZ + ", prior",
+      "Hypergeometric: n to test",
+      "Binomial approximation",
+      "Bayesian (beta prior)",
+      "OC curve: drag n",
+      "Weight: total net weight",
+      "Tables: n for N = 10 to " + szINF,
+      "Enter a result: n and x",
+      "Help",
+      "Quit"});
+    IF mnI == 0 OR mnI == 10 THEN mnRun := 0; END;
+    IF mnI == 1 THEN sz_Setup(); END;
+    IF mnI == 2 THEN sz_HypPage(); END;
+    IF mnI == 3 THEN sz_BinPage(); END;
+    IF mnI == 4 THEN sz_BayPage(); END;
+    IF mnI == 5 THEN sz_OCPage(); END;
+    IF mnI == 6 THEN sz_WtPage(); END;
+    IF mnI == 7 THEN sz_TabPage(); END;
+    IF mnI == 8 THEN
+      IF sz_Observed() == 1 THEN sz_HypPage(); END;
+    END;
+    IF mnI == 9 THEN sz_Help(); END;
+  END;
+  mnS := "SeizureLab: N = " + sz_I(szN) + ", " + szPZ + " = " + sz_G(szP0, 2) + ", c = " + sz_G(szC, 2);
+  mnS := mnS + ": test " + sz_NStr(szHm(1)) + " (all positive; Bayes " + sz_NStr(szYm) + ")";
+  RETURN mnS;
+END;

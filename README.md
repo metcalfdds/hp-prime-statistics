@@ -4,11 +4,12 @@
 
 Teaching programs for the HP Prime graphing calculator, written in PPL and MicroPython. They were originally intended for upper-level university statistics courses, and also to show off some of the capabilities of the HP Prime calculator: the colour screen, the touch screen, and the MicroPython engine running alongside PPL.
 
-**And a set of notes on what the Prime actually does**, as opposed to what the manual says: hard limits, commands that behave differently than documented, the MicroPython bridge and how it fails. Those notes are not specific to statistics. If you write PPL for anything, [docs/lessons-learned_v7q.md](docs/lessons-learned_v7q.md) is the part worth your time, I hope.
+**And a set of notes on what the Prime actually does**, as opposed to what the manual says: hard limits, commands that behave differently than documented, the MicroPython bridge and how it fails. Those notes are not specific to statistics. If you write PPL for anything, [docs/lessons-learned_v7s.md](docs/lessons-learned_v7s.md) is the part worth your time, I hope.
 
 Everything here is **free for educational and personal use**. See [LICENSE](LICENSE.txt).
 
-> **Test status, 22 October 2026.**
+> **Test status, 27 October 2026.**
+> - **21–26 October 2026: eight new programs** built from a sweep of Mario Triola's TI-83/84 programs (Michael Lloyd's) and the TI library, reworked with courtroom and crime data: **RankLab, AnovaLab, SeizureLab, SurvLab, FitCheck, ResampLab, AgreeLab and RiskLab**. Each passed the gate and its own verify script against SciPy and statsmodels (611 to 17,991 checks, 0 failures), then an independent second review; the fixes are in the versions here. They have had **a quick, cursory try on a G1 and a G2** (27 October): every one loads and runs. The full device checklists (`docs/changes/<Name>_beta1a_NOTES.md`) have not yet been run. ResampLab beta 1b renames one routine whose name equalled a Home export apart from case; `tools/case_scan_v1.py` now checks the whole fleet for that.
 > - **22 October 2026, later: TrendTest beta 3f.** The Pearson and departure p-values now keep their digits on extreme tables (they were `1 - CHISQUARE_CDF`, which is exactly 0 on the Prime once the tail is below about 5E-13); a new routine `trUpper` computes the upper tail as a finite sum of positive terms. No text, page or export changed. The same day, every verify script of 19 October was rerun in a fresh environment from the author's working folders: every check that could run gave the saved result (`docs/dev/independent-review-2026-10-22.md`).
 > - **22 October 2026: StudRange beta 15e.** An independent re-check of the fleet in a fresh environment (the gate with hp-prime-kit, the harness with Giac, and 281 comparisons of the programs' own routines against SciPy, statsmodels and brute-force enumeration) found no wrong formula and one wrong number: the PPL engine's plot cache in StudRange used a 32-node grid for df 8 and above, and from df about 50 to 100 that grid steps over the narrowing density of s, so the cached CDF behind the Plot page was off by up to 2 percentage points (df 90, k 6: 0.968 for a true 0.950). Beta 15e uses 64 nodes at every df, as the Critical value and P-value pages already did; the Python engine, which answers first on a working calculator, is untouched. Only that one line of arithmetic changed. Passed the gate; run in the PC harness; not yet run on the emulator or a calculator.
 > - **20 October 2026: symbols on screen.** Every program was checked for symbols spelled out in the text a student sees. Sixteen of the eighteen here now write χ², x̄, p̂, ², √, ≥, ≤, ±, ×, →, ∞, θ, μ, σ, ρ, φ and the subscripts ₀ ₁ ₂ as symbols (BayesTree, Norm3 and StudRange already did). Only the text changed: the code outside the strings is line-for-line the same, nothing the CAS receives changed, and each program passed the lint gate again. NormExplorer beta 42c also keeps the standardize animation at the same pace on a slow calculator (42b). π, η and τ are new on screen and are on the checklists.
@@ -142,6 +143,26 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 - A MicroPython simulation of 10,000 proficiency programmes.
 - The chance of a coincidental match in a database search.
 
+### Criminal justice and forensic statistics (new, October 2026)
+
+Data sources for every preset are listed, with the checks made on them, in [docs/data/](docs/data/).
+
+**RankLab** (beta 1a): the rank tests. Sign test, Wilcoxon signed-rank (exact, ties handled), Mann-Whitney, Kruskal-Wallis with Dunn's pairs, Friedman with Kendall's W, Spearman and Kendall (exact for small n), Hodges-Lehmann. A rank strip you can tap, and the exact null distribution with the observed value marked. Data: the 1970 draft lottery, Darwin's corn, the Rossi re-arrest study, mock-jury sentences, Connecticut judges' ratings.
+
+**AnovaLab** (beta 1a): one-way ANOVA with Welch, Levene and Bartlett, and Holm, Bonferroni, Scheffé and Tukey-Kramer comparisons; two-way ANOVA for unbalanced designs (Type III); randomized blocks; tests and intervals for variances. Tap two groups to compare them; an interaction plot. Data: mock-jury sentences by attractiveness and crime, the draft lottery by month, insect sprays.
+
+**SeizureLab** (beta 1a): how many units of a drug seizure must be tested? Hypergeometric, binomial and Bayesian answers, an operating-characteristic curve you drag, and the total net weight with its interval. Checked against the tables of the ENFSI *Guidelines on Representative Drug Sampling* (2009): 426 of 427 cells agree, and the one that does not is a misprint in the guideline.
+
+**SurvLab** (beta 1a): time to re-arrest. Kaplan-Meier curves with Greenwood and log-log intervals, a finger cursor that reads S(t), quantiles when the median is never reached, log-rank and Gehan-Breslow tests, hazard ratios and a life table. Data: Rossi, Berk & Lenihan's 432 released prisoners, by financial aid.
+
+**FitCheck** (beta 1a): goodness of fit. Chi-square with cell merging, Benford's law (*Arizona v. Nelson*'s cheques), the exact binomial test (*Castaneda v. Partida*'s grand juries, "29 standard deviations"), Poisson fits (horse kicks, Richmond homicides), and normality: Q-Q plot, Shapiro-Wilk, Anderson-Darling, Lilliefors.
+
+**ResampLab** (beta 1b): permutation tests and the bootstrap you can watch. Shuffle once and see the dots move; ×10, ×100, ×1000; exact enumeration when it is small enough; percentile, basic and BCa intervals. Data: mock-jury sentences, Darwin's corn, months served for homicide (BJS).
+
+**AgreeLab** (beta 1a): examiner agreement. Cohen's kappa on touch tiles (drag a count off the diagonal and watch kappa fall), weighted kappa, Fleiss' kappa, the six intraclass correlations and a Bland-Altman plot; the "kappa paradox" explained. Data: Landis & Koch's two neurologists, Fleiss (1971), Bland & Altman (1986), Shrout & Fleiss (1979).
+
+**RiskLab** (beta 1a): the statistics behind recidivism risk tools. Logistic regression, the ROC curve with a draggable cut-off and a live 2 × 2 table, calibration, and fairness by group, using ProPublica's published COMPAS data from Broward County (as counts) and the Rossi study. It shows, with real numbers, why a score cannot be both equally calibrated and equally wrong for two groups whose base rates differ.
+
 *FDAES (forensic dental age estimation) is held back from this repository for now.*
 
 ---
@@ -178,7 +199,7 @@ Short programs for finding out what your own calculator does.
 
 ## The notes
 
-[**docs/lessons-learned_v7q.md**](docs/lessons-learned_v7q.md) is the substantial document here: everything found the expensive way across roughly forty build iterations on real hardware. It covers:
+[**docs/lessons-learned_v7s.md**](docs/lessons-learned_v7s.md) is the substantial document here: everything found the expensive way across roughly forty build iterations on real hardware. It covers:
 - hard limits;
 - command behaviour that contradicts the manual;
 - graphics and input idioms;

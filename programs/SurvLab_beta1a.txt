@@ -1,0 +1,2651 @@
+#pragma mode( separator(.,;) integer(h32) )
+
+// (C) 2026 Roger D Metcalf
+// For academic use only - do not rely on results for anything important
+// Results have not been rigorously verified and/or validated
+//
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with the
+//   file and credit the author if you pass it on.  Not for sale or
+//   commercial redistribution.
+// DISCLAIMER: a teaching and demonstration aid. Not validated for
+//   forensic, clinical or legal use; do not rely on its results for
+//   legal purposes.
+// Written with AI assistance. The concept, direction, decisions and all
+// hardware testing are Roger D. Metcalf's; the code, drafting and
+// source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
+
+// SURVLAB - beta 1a  (21 Oct 2026)
+// Time-to-event (survival) analysis for a criminal-justice class: the
+//   time from release from prison to the first re-arrest.  Kaplan-Meier
+//   curves with Greenwood's standard error and 95% confidence intervals
+//   (log-log by default, the plain "linear" one on a soft key), the
+//   median and other quantiles with the Brookmeyer-Crowley interval,
+//   the log-rank (Mantel-Cox) test with observed and expected events,
+//   the hazard ratio (O1/E1)/(O2/E2) with its CI and Peto's
+//   exp((O1-E1)/V), the Gehan-Breslow
+//   generalised Wilcoxon test as a second opinion, the Nelson-Aalen
+//   cumulative hazard and the actuarial life table.
+// Launch: SurvLab from the Program Catalog (zero arguments, menu-first).
+//   It opens with the Rossi data loaded (financial aid vs no aid).
+//   Menu: Kaplan-Meier plot; Median and quantiles; Compare groups:
+//   log-rank; Life table (actuarial); Load a preset; Use my data
+//   (Statistics 2Var: C1 time, C2 event 1/0, C3 group 1/2 optional);
+//   Help; Quit.
+// Home exports after a run: SV_T (the distinct event times, all groups
+//   together), SV_S1 and SV_S2 (Kaplan-Meier S(t) of group 1 and group 2
+//   at those times; SV_S2 is {} with one group), SV_CHI and SV_P (log-rank
+//   chi-square and p; -1 with one group), SV_HR (the hazard ratio
+//   (O1/E1)/(O2/E2), -1 if it cannot be estimated), SV_HRP (Peto's
+//   exp((O1-E1)/V), -1 with no test), SV_MED (the median of each group;
+//   -1 = not reached).
+// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  beta 1a has
+//   NOT been run on hardware or the emulator, only in the PC harness.
+// WHAT CHANGED in beta 1a (21 Oct 2026; second review, items 1-15):
+//   (1) No grob is passed as a parameter any more: every helper draws on
+//   G1 by name, every page clears with DIMGROB_P(G1, ...) as the fleet
+//   does, and the Kaplan-Meier plot is composed in G1 and kept in G2 with
+//   BLIT_P(G2, 0, 0, G1) (GaltonBoard's BLIT_P(G2, 0, 0, G3) shape).
+//   (2) The life table ends at the last follow-up time: its last interval
+//   is cut there, and those still followed at that time complete it (they
+//   are not "withdrawn" halfway); Rossi's actuarial S at 52 = KM's 0.7361.
+//   (3) Quantile wording: "first time S < 1 - p" is statsmodels' rule; SAS
+//   and R average when S sits exactly on 1 - p; S = 0.75 is the 25th
+//   percentile (first quartile) of the time to re-arrest; "time by which
+//   25% are re-arrested" throughout; the CI's upper end is not included.
+//   (4) Speed: at most 500 rows of your data; a "working" page (Esc skips
+//   the band) when the Kaplan-Meier plot has more than 150 steps; each
+//   quantile and its CI computed once per page.  (5)-(15): one row in C1,
+//   the "observed grouping" note only for SurvLab's splits, exp(-H) vs S,
+//   Peto's hazard ratio, the early/late line as a rule of thumb, taps on
+//   the life-table plot and the title, no quantile with no events, the
+//   Allison citation, shorter long lines.
+// Sources:
+//   Kaplan EL, Meier P (1958) Nonparametric estimation from incomplete
+//     observations.  JASA 53(282):457-481 (the product-limit estimate).
+//   Greenwood M (1926) The natural duration of cancer.  Reports on
+//     Public Health and Medical Subjects 33, HMSO (the variance).
+//   Kalbfleisch JD, Prentice RL (1980) The Statistical Analysis of
+//     Failure Time Data, Wiley (the log(-log) interval; pages not
+//     checked).
+//   Brookmeyer R, Crowley J (1982) A confidence interval for the median
+//     survival time.  Biometrics 38(1):29-41.
+//   Mantel N (1966) Cancer Chemotherapy Reports 50(3):163-170, and
+//     Peto R, Peto J (1972) JRSS A 135(2):185-207 (the log-rank test).
+//   Gehan EA (1965) Biometrika 52:203-223; Breslow N (1970) Biometrika
+//     57:579-594 (the generalised Wilcoxon test).
+//   Nelson W (1972) Technometrics 14:945-966; Aalen O (1978) Annals of
+//     Statistics 6:701-726 (the cumulative hazard).
+//   Cutler SJ, Ederer F (1958) J Chronic Diseases 8:699-712 (the
+//     actuarial life table: a withdrawal counts as at risk for half its
+//     interval).  SurvLab's convention for the end of follow-up: the last
+//     interval is cut at the last observed time, so those still followed
+//     then were at risk for all of it and are not halved (the usual
+//     treatment of the study's closing date, e.g. Lee ET, Wang JW,
+//     Statistical Methods for Survival Data Analysis, 3rd ed. 2003, ch. 4;
+//     Collett D, Modelling Survival Data in Medical Research, 3rd ed.
+//     2015, section 2.1.1; pages not checked).
+//   The hazard ratio (O1/E1)/(O2/E2) with SE(ln HR) = sqrt(1/E1 + 1/E2):
+//     the textbook approximation (e.g. Kirkwood & Sterne, Essential
+//     Medical Statistics, 2nd ed. 2003, ch. 26; pages not checked); Peto's
+//     one-step estimate exp((O1 - E1)/V), CI exp((O1 - E1)/V +/- 1.96/
+//     sqrt(V)), whose CI excludes 1 exactly when the log-rank p < 0.05
+//     (Peto R et al. 1977 Br J Cancer 35:1-39; pages not checked).
+//   Every formula was checked on the PC against statsmodels 0.15
+//   (statsmodels.duration.survfunc: SurvfuncRight, quantile_ci with
+//   method "cloglog" and "linear", survdiff with weight_type None and
+//   "gb") and by hand in Python (life table, Nelson-Aalen, O and E).
+//   This program matches statsmodels' conventions: a quantile is the
+//   FIRST event time with S(t) BELOW 1 - p (statsmodels' rule; SAS and R
+//   average the two event times when S sits exactly on 1 - p), and the
+//   quantile CI is the set of event times whose z-test does not reject,
+//   up to (not including) the next event time (Brookmeyer-Crowley, as SAS
+//   documents it).  S = 0.75 marks the 25th percentile (first quartile) of
+//   the time to the event: the time by which 25% have had it.
+// Data: Rossi, Berk & Lenihan (1980) Money, Work, and Crime: Experimental
+//   Evidence, Academic Press; data via Allison (1995) Survival Analysis
+//   Using the SAS System: A Practical Guide, SAS Institute, and the R
+//   package carData (Rossi).  432 men released from Maryland
+//   state prisons, followed 52 weeks.  week = week of first arrest (52 if
+//   none), arrest 1/0, fin 1 = received financial aid (the randomised
+//   experiment), age, prio = prior convictions.  On screen: "Rossi, Berk &
+//   Lenihan 1980 (via Allison 1995)".  Checks: 432 rows, 114 arrests, fin
+//   216/216 (data/DATASETS.md).  Two extra splits are SurvLab's own and
+//   are labelled so on screen: prior convictions 0-2 vs 3 or more (the
+//   median is 2) and age under 23 vs 23 and over (the median age is 23).
+// Replaces / reworks: the TI-83/84 program KAPMEIT1 (kaplanmeiertest1.zip,
+//   Triola program library; decoded in ref/triola_ti_programs), which
+//   takes grouped data (days, number failed, number censored), lists the
+//   product-limit S and Greenwood's variance and draws the step plot by
+//   doubling points.  Its bugs, not repeated here: (1) Greenwood's term
+//   d/(n(n-d)) divides by zero when everyone still at risk fails (n = d);
+//   here the SE is "undefined" from that point on, as in statsmodels;
+//   (2) it reports the variance only: no SE, no confidence interval, no
+//   median; (3) censored marks are drawn half a day before the NEXT event
+//   time, not at the censoring time; (4) it overwrites L1-L6 and the lists
+//   A-E and V without asking; (5) it accepts whole-number days only and
+//   needs the counts pre-grouped by the user; (6) its plot runs 2 units
+//   past the last time whatever the scale.  KAPMEIT1 has no group
+//   comparison; there is no Triola program for the log-rank test.
+// File map: header 1-134; state and exports 136-215; helpers 217-410;
+//   Rossi data 412-518; the engine (sv_Fit, sv_CIs, quantiles, life
+//   table, exports) 520-868; plotting helpers 870-1091; Kaplan-Meier
+//   view 1093-1439; quantiles view 1441-1638; log-rank views 1640-2010;
+//   life table view 2012-2248; presets, your data, help, main 2250-2651.
+// ============================================================================
+
+EXPORT SV_T, SV_S1, SV_S2, SV_CHI;
+EXPORT SV_P, SV_HR, SV_HRP, SV_MED;
+
+// ---- the data (one row per person) ----
+LOCAL svTim, svEvt, svGrp, svN, svNG, svHas;
+//  svTim the times, svEvt 1 = event (re-arrest), 0 = censored, svGrp the
+//  group code 1 or 2 (all 1 when svNG = 1), svN the number of people.
+LOCAL svLbl, svShort, svSrc, svGNm, svGSh, svUnit;
+LOCAL svOwn, svEvW, svFinX, svSplit, svEvA;
+//  svLbl the data set's name, svShort a short form for menu titles,
+//  svSrc its source line, svGNm the long group names {g1, g2, all},
+//  svGSh short ones (the at-risk table), svUnit "weeks" or "", svOwn a
+//  note when the grouping is SurvLab's own split, svEvW the word for an
+//  event ("re-arrested"), svFinX = 1 for the randomised aid split.
+
+// ---- the Rossi columns, kept as typed (sv_RData) ----
+LOCAL svRwk, svRar, svRfin, svRage, svRpri, svRok;
+
+// ---- the fitted curves: one grid of distinct times, three rows ----
+LOCAL svU, svM, svDd, svCc, svNr, svSv;
+LOCAL svGw, svHz, svCLo, svCHi, svTot, svEv;
+LOCAL svLast, svTmax;
+//  svU the distinct times (sorted), svM how many.  Every other list has
+//  3*svM entries: row r (1 = group 1, 2 = group 2, 3 = everyone) at time
+//  svU(j) is entry (r-1)*svM + j.  svDd events, svCc censored, svNr the
+//  number at risk just before svU(j), svSv the Kaplan-Meier S just after,
+//  svGw Greenwood's sum of d/(n(n-d)) (-1 once undefined), svHz the
+//  Nelson-Aalen H, svCLo / svCHi the 95% CI of S (-1 = none).  svTot,
+//  svEv and svLast: each row's size, events and last observed time.
+
+// ---- the two-group tests (sv_Fit) ----
+LOCAL svO1, svE1, svO2, svE2, svVar, svChi;
+LOCAL svPv, svHR, svHRL, svHRH, svGbC, svGbP;
+LOCAL svLRok, svGbOk, svPHR, svPHL, svPHH;
+
+// ---- what the views show ----
+LOCAL svCIT, svBand, svZoom, svPool, svView, svCurT;
+LOCAL svRows, svEJ, svCJ, svSKP, svDirty, svQP;
+LOCAL svInfo, svInfC, svLW, svLR, svLMode, svLTop;
+LOCAL svLSel, svTPg, svCvKey, svCvP;
+//  svCIT 1 = log-log CI, 2 = linear; svBand, svZoom 1 = on; svPool 1 =
+//  both groups as one curve; svView 1 = S(t), 2 = cumulative hazard;
+//  svCurT the cursor's time; svRows the rows drawn; svEJ the grid
+//  indices of their event times, svCJ the cursor's place in it; svSKP
+//  the soft-key page; svDirty 1 = the cached plot (G2) must be redrawn;
+//  svQP the quantile (0.5 = median); svInfo / svInfC a line of
+//  explanation after a tap.  Life table: width svLW, row svLR, svLMode
+//  1 table / 2 plot, svLTop the first row shown, svLSel the selected
+//  interval.  svTPg the log-rank page; svCvKey / svCvP the cached
+//  chi-square curve (its window and one pixel row per column).
+
+// ---- the life table (sv_LCalc) ----
+LOCAL svLA, svLN, svLC, svLE, svLDv, svLQ;
+LOCAL svLS, svLK, svLB, svLF;
+//  per interval: start, entering, withdrawn, exposed n' = n - c/2,
+//  events, q = d/n', S at the interval's end; svLK intervals; svLB the
+//  interval's end (the last one is cut at the last follow-up time),
+//  svLF those still followed at that time (they complete the interval).
+
+// ---- plot geometry: the drawing AND the touch code read these ----
+LOCAL svPL, svPR, svPT, svPB, svXmx, svXs;
+LOCAL svYlo, svYhi, svYs, svYdc;
+
+// ---- hit boxes of the last bar chart (taps) ----
+LOCAL svHX1, svHX2, svHY1, svHY2, svHN;
+
+// ---- house colours (Lessons Learned section 13) ----
+LOCAL svBLUE, svMAG, svRED, svGRN, svORNG, svGRAY;
+LOCAL svFOOT, svGRID, svLBLU, svLRED, svLGRN, svLORN;
+LOCAL svLMAG, svBND1, svBND2, svBND3, svBNDX, svTAIL;
+
+// ---- glyphs, built with CHAR() so the source stays ASCII ----
+LOCAL svCHI, svAL, svGEQ, svLEQ, svPM, svINF;
+LOCAL svH0, svARL, svARR, svSQ, svRT, svUD;
+LOCAL svO1s, svE1s, svO2s, svE2s;
+
+// ---- misc ----
+LOCAL svZ, svTapX, svTapY;
+//  svZ = 1.95996398454, the normal 97.5% point (-NORMALD_ICDF(0,1,0.025)).
+
+
+// ============================================================================
+// SMALL HELPERS
+// ============================================================================
+
+// Wait for the finger to lift -- never for more than one second, so a
+// stuck touch reading cannot freeze the program (Lessons Learned 7).
+sv_Drain()
+BEGIN
+  LOCAL drT;
+  drT := TICKS;
+  REPEAT UNTIL MOUSE(1) == -1 OR TICKS - drT > 1000;
+END;
+
+// Drain, wait for a key OR a tap, drain.  Returns the key code, or -1
+// for a tap (its x and y are left in svTapX, svTapY).  TouchKit v3.
+sv_WaitAny()
+BEGIN
+  LOCAL waK, waM, waM1, waK2;
+  REPEAT waK := GETKEY; UNTIL waK == -1;
+  sv_Drain();
+  REPEAT
+    waK := GETKEY;
+    waM := MOUSE;
+    waM1 := waM(1);
+  UNTIL waK > -1 OR SIZE(waM1) > 0;
+  svTapX := -1; svTapY := -1;
+  IF SIZE(waM1) > 0 THEN
+    svTapX := waM1(1); svTapY := waM1(2); waK := -1;
+  END;
+  sv_Drain();
+  REPEAT waK2 := GETKEY; UNTIL waK2 == -1;
+  RETURN waK;
+END;
+
+// A "nice" step: 1, 2 or 5 times a power of ten, at least as big as the
+// value handed in (Heckbert) -- for axis ticks.
+sv_Nice(nnV)
+BEGIN
+  LOCAL nnE, nnF;
+  IF nnV <= 0 THEN RETURN 1; END;
+  nnE := FLOOR(LOG(nnV));
+  nnF := nnV / 10^nnE;
+  IF nnF <= 1 THEN RETURN 10^nnE; END;
+  IF nnF <= 2 THEN RETURN 2 * 10^nnE; END;
+  IF nnF <= 5 THEN RETURN 5 * 10^nnE; END;
+  RETURN 10^(nnE + 1);
+END;
+
+// A number with d fixed decimals.  Rounded first: STRING(x, 2, d) turns
+// scientific when 0 < |x| < 10^-d (Lessons Learned 3).
+sv_F(fxV, fxD)
+BEGIN
+  RETURN STRING(ROUND(fxV, fxD), 2, fxD);
+END;
+
+// A whole number (a count).
+sv_I(fiV)
+BEGIN
+  RETURN STRING(ROUND(fiV, 0), 2, 0);
+END;
+
+// A signed number, "+9.6" or "-9.6"; "+ 0" turns a rounded -0 into 0.
+sv_Sg(sgV, sgD)
+BEGIN
+  LOCAL sgR;
+  sgR := ROUND(sgV, sgD) + 0;
+  IF sgR >= 0 THEN RETURN "+" + STRING(sgR, 2, sgD); END;
+  RETURN STRING(sgR, 2, sgD);
+END;
+
+// A time: whole numbers without decimals, else one or two decimals.
+sv_TS(tsT)
+BEGIN
+  IF ABS(tsT - ROUND(tsT, 0)) < 0.0000001 THEN RETURN STRING(ROUND(tsT, 0), 2, 0); END;
+  IF ABS(tsT - ROUND(tsT, 1)) < 0.0000001 THEN RETURN STRING(ROUND(tsT, 1), 2, 1); END;
+  RETURN STRING(ROUND(tsT, 2), 2, 2);
+END;
+
+// A p-value as text: four decimals, "< 0.0001" below them.
+sv_PS(psP)
+BEGIN
+  IF psP < 0.0001 THEN RETURN "p < 0.0001"; END;
+  RETURN "p = " + sv_F(psP, 4);
+END;
+
+// The time unit with a leading space (" weeks"), or "".
+sv_Un()
+BEGIN
+  IF DIM(svUnit) > 0 THEN RETURN " " + svUnit; END;
+  RETURN "";
+END;
+
+// The colour of a row: group 1 blue, group 2 magenta, everyone green
+// (blue when there is only one group).
+sv_Col(clR)
+BEGIN
+  IF clR == 1 THEN RETURN svBLUE; END;
+  IF clR == 2 THEN RETURN svMAG; END;
+  IF svNG == 1 THEN RETURN svBLUE; END;
+  RETURN svGRN;
+END;
+
+// The pale colour of a row's confidence band.
+sv_Pale(paR)
+BEGIN
+  IF paR == 1 THEN RETURN svBND1; END;
+  IF paR == 2 THEN RETURN svBND2; END;
+  IF svNG == 1 THEN RETURN svBND1; END;
+  RETURN svBND3;
+END;
+
+// A dotted horizontal and a dotted vertical line (LINE_P has no dashes).
+sv_DotH(dhX1, dhX2, dhY, dhC)
+BEGIN
+  LOCAL dhI;
+  FOR dhI FROM dhX1 TO dhX2 STEP 3 DO
+    PIXON_P(G1, dhI, dhY, dhC);
+  END;
+END;
+
+sv_DotV(dvX, dvY1, dvY2, dvC)
+BEGIN
+  LOCAL dvI;
+  FOR dvI FROM dvY1 TO dvY2 STEP 3 DO
+    PIXON_P(G1, dvX, dvI, dvC);
+  END;
+END;
+
+// A white page with an orange title band, on the grob handed in.
+sv_Frame(frT)
+BEGIN
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 0, 0, 319, 18, svORNG);
+  TEXTOUT_P(frT, G1, 4, 2, 2, #FFFFFFh, 312);
+END;
+
+// A "working" page for the slow steps with big data (a G1 runs PPL
+// 30-100 times slower than a PC).
+sv_Busy(buS)
+BEGIN
+  sv_Frame("SurvLab: working");
+  TEXTOUT_P(buS, G1, 10, 100, 2, svBLUE, 300);
+  BLIT_P(G0, 0, 0, G1);
+END;
+
+// The plot box.  Every page sets its own before it draws.
+sv_Box(bxL, bxT, bxR, bxB)
+BEGIN
+  svPL := bxL; svPT := bxT; svPR := bxR; svPB := bxB;
+END;
+
+// Time -> pixel column, and value -> pixel row (clamped to the box).
+sv_XP(xpT)
+BEGIN
+  RETURN svPL + IP(xpT / svXmx * (svPR - svPL) + 0.5);
+END;
+
+sv_YP(ypV)
+BEGIN
+  LOCAL ypY;
+  ypY := (ypV - svYlo) / (svYhi - svYlo) * (svPB - svPT);
+  IF ypY < 0 THEN RETURN svPB; END;
+  ypY := svPB - IP(ypY + 0.5);
+  IF ypY < svPT THEN RETURN svPT; END;
+  RETURN ypY;
+END;
+
+// The last grid index j with svU(j) <= t (0 if t comes before them all):
+// the step of the curve that is in force at time t.  Binary search.
+sv_JLe(jlT)
+BEGIN
+  LOCAL jlLo, jlHi, jlMd;
+  IF svM < 1 THEN RETURN 0; END;
+  IF svU(1) > jlT THEN RETURN 0; END;
+  jlLo := 1; jlHi := svM;
+  WHILE jlLo < jlHi DO
+    jlMd := IP((jlLo + jlHi + 1) / 2);
+    IF svU(jlMd) <= jlT THEN jlLo := jlMd; ELSE jlHi := jlMd - 1; END;
+  END;
+  RETURN jlLo;
+END;
+
+// The number at risk at time t in row r: everyone whose time is t or
+// later (not yet re-arrested and still followed just before t).
+sv_NAt(naR, naT)
+BEGIN
+  LOCAL naJ;
+  naJ := sv_JLe(naT);
+  IF naJ == 0 THEN RETURN svNr((naR - 1) * svM + 1); END;
+  IF svU(naJ) < naT THEN naJ := naJ + 1; END;
+  IF naJ > svM THEN RETURN 0; END;
+  RETURN svNr((naR - 1) * svM + naJ);
+END;
+
+
+// ============================================================================
+// THE ROSSI DATA (Rossi, Berk & Lenihan 1980, via Allison 1995 and R
+// carData).  Row order as in carData::Rossi.  week = week of the first
+// arrest after release (52 = not arrested in the year), arrest 1/0,
+// fin 1 = received financial aid, age at release, prio = number of prior
+// convictions.  Typed once from data/rossi.csv; do not change a value.
+// ============================================================================
+sv_RData()
+BEGIN
+  svRwk := {
+    20, 17, 25, 52, 52, 52, 23, 52, 52, 52, 52, 52, 37, 52, 25, 46, 28, 52, 52, 52, 52, 52, 24, 52,
+    52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 50, 52, 52, 52, 52, 52, 52, 10, 52, 52, 52, 52, 20,
+    52, 52, 52, 52, 52, 50, 52, 52, 52, 52, 52, 52, 6, 52, 52, 52, 52, 52, 52, 52, 49, 52, 52, 52,
+    52, 52, 52, 52, 43, 52, 52, 5, 27, 52, 52, 52, 22, 52, 52, 18, 52, 52, 52, 52, 52, 52, 52, 24,
+    52, 52, 52, 52, 2, 26, 52, 49, 52, 21, 48, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 8, 52,
+    52, 49, 52, 52, 52, 52, 52, 52, 52, 52, 8, 52, 52, 13, 52, 52, 52, 52, 8, 52, 33, 52, 52, 11,
+    52, 52, 52, 52, 52, 37, 52, 52, 52, 44, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52,
+    52, 52, 52, 52, 9, 17, 52, 52, 52, 52, 52, 52, 16, 52, 52, 3, 52, 52, 52, 52, 52, 52, 52, 52,
+    52, 52, 45, 52, 52, 52, 52, 52, 52, 28, 52, 16, 15, 52, 52, 52, 52, 14, 52, 52, 52, 52, 52, 52,
+    52, 52, 52, 52, 52, 52, 52, 52, 52, 7, 52, 52, 43, 46, 40, 52, 14, 52, 52, 8, 52, 52, 52, 52,
+    52, 25, 52, 52, 17, 37, 52, 52, 52, 32, 52, 52, 52, 52, 52, 52, 52, 52, 12, 52, 18, 52, 52, 14,
+    52, 52, 52, 52, 38, 52, 24, 20, 32, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 52, 31, 20, 40, 52,
+    52, 52, 52, 42, 52, 26, 52, 52, 52, 52, 52, 47, 52, 52, 40, 52, 52, 52, 52, 21, 52, 52, 52, 52,
+    52, 1, 43, 24, 11, 52, 52, 52, 52, 33, 52, 46, 36, 52, 52, 18, 52, 52, 50, 52, 34, 52, 35, 52,
+    52, 39, 9, 52, 52, 52, 34, 52, 52, 52, 44, 52, 52, 35, 30, 39, 52, 52, 52, 52, 19, 52, 43, 52,
+    48, 37, 20, 52, 52, 36, 52, 52, 52, 52, 52, 52, 52, 30, 52, 52, 52, 52, 52, 52, 52, 52, 42, 52,
+    52, 52, 52, 26, 40, 52, 52, 52, 35, 52, 46, 52, 49, 52, 52, 49, 52, 52, 52, 52, 52, 35, 52, 52,
+    52, 52, 27, 52, 52, 52, 52, 45, 4, 52, 36, 52, 52, 8, 15, 52, 19, 52, 12, 52, 52, 52, 52, 52};
+  svRar := {
+    1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1,
+    0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0,
+    0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1,
+    0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
+    0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1,
+    0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0,
+    0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1,
+    0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0,
+    0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+    0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0,
+    0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0,
+    1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
+    0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0,
+    0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0};
+  svRfin := {
+    0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1,
+    1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1,
+    0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0,
+    1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1,
+    1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0,
+    1, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1,
+    1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1,
+    0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1,
+    1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1,
+    1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1,
+    0, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1,
+    1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1,
+    1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0,
+    1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0,
+    1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0,
+    0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1,
+    1, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1};
+  svRage := {
+    27, 18, 19, 23, 19, 24, 25, 21, 22, 20, 26, 40, 17, 37, 20, 22, 19, 20, 25, 24, 23, 44, 29, 28,
+    21, 19, 33, 19, 19, 23, 23, 19, 42, 23, 24, 20, 22, 27, 19, 28, 33, 24, 21, 22, 19, 22, 22, 23,
+    32, 27, 36, 22, 32, 19, 28, 32, 33, 26, 20, 42, 19, 22, 22, 36, 23, 27, 21, 22, 35, 21, 25, 18,
+    26, 30, 20, 43, 23, 42, 21, 19, 29, 30, 21, 20, 19, 22, 25, 22, 22, 24, 39, 21, 20, 24, 25, 21,
+    20, 19, 24, 24, 44, 32, 23, 19, 20, 27, 19, 21, 20, 25, 20, 23, 20, 30, 25, 22, 24, 18, 40, 22,
+    23, 21, 24, 24, 38, 26, 29, 21, 21, 22, 23, 27, 18, 23, 24, 21, 20, 27, 20, 29, 19, 20, 18, 19,
+    24, 28, 26, 17, 21, 34, 26, 43, 20, 20, 32, 25, 22, 31, 42, 32, 20, 20, 36, 34, 28, 21, 18, 20,
+    17, 44, 30, 22, 30, 23, 20, 19, 21, 22, 19, 21, 38, 24, 39, 30, 37, 23, 21, 31, 24, 31, 24, 24,
+    21, 22, 20, 21, 24, 25, 19, 20, 20, 24, 18, 28, 19, 19, 25, 19, 25, 24, 20, 30, 29, 28, 36, 23,
+    23, 24, 29, 26, 39, 20, 23, 21, 21, 20, 20, 27, 18, 25, 20, 20, 20, 24, 23, 28, 21, 25, 24, 29,
+    22, 28, 19, 20, 20, 22, 20, 21, 21, 19, 26, 23, 22, 24, 40, 32, 38, 26, 27, 29, 20, 22, 22, 19,
+    22, 19, 32, 25, 21, 36, 40, 20, 19, 18, 28, 22, 25, 28, 25, 20, 24, 24, 36, 34, 19, 23, 19, 40,
+    31, 23, 42, 26, 20, 27, 24, 25, 22, 20, 20, 22, 18, 20, 20, 22, 30, 36, 25, 29, 19, 24, 21, 35,
+    19, 20, 22, 23, 19, 18, 38, 18, 22, 21, 21, 21, 17, 22, 23, 19, 21, 35, 23, 22, 25, 20, 19, 20,
+    41, 23, 26, 26, 38, 27, 19, 25, 30, 42, 20, 23, 21, 20, 17, 26, 24, 37, 28, 33, 22, 25, 20, 20,
+    24, 26, 26, 25, 26, 23, 28, 27, 23, 17, 20, 20, 20, 22, 31, 43, 29, 21, 24, 30, 22, 26, 20, 23,
+    25, 40, 30, 22, 18, 18, 24, 25, 19, 24, 24, 18, 18, 23, 20, 18, 23, 20, 23, 23, 23, 20, 26, 30,
+    36, 43, 20, 24, 22, 20, 21, 18, 18, 33, 19, 21, 21, 21, 22, 18, 18, 24, 22, 31, 20, 20, 29, 24};
+  svRpri := {
+    3, 8, 13, 1, 3, 2, 0, 4, 6, 0, 3, 2, 5, 2, 3, 2, 7, 2, 12, 1, 4, 0, 2, 1,
+    0, 2, 1, 2, 3, 9, 3, 1, 0, 2, 3, 2, 5, 2, 4, 3, 9, 1, 14, 2, 2, 2, 15, 5,
+    2, 0, 0, 1, 1, 10, 1, 3, 1, 1, 0, 9, 6, 2, 5, 11, 2, 3, 1, 2, 3, 4, 5, 0,
+    2, 4, 2, 1, 4, 2, 2, 3, 4, 3, 10, 7, 10, 1, 3, 4, 4, 2, 4, 1, 2, 1, 2, 4,
+    1, 3, 2, 1, 2, 2, 3, 1, 1, 0, 6, 1, 1, 3, 6, 3, 2, 1, 0, 1, 3, 4, 1, 1,
+    6, 1, 2, 14, 2, 3, 1, 8, 2, 4, 5, 2, 2, 5, 2, 3, 4, 4, 11, 5, 10, 8, 0, 2,
+    1, 4, 4, 0, 3, 2, 1, 2, 0, 1, 1, 1, 1, 1, 4, 10, 8, 1, 8, 2, 3, 2, 6, 4,
+    3, 3, 5, 11, 3, 8, 2, 10, 1, 6, 2, 10, 3, 7, 2, 3, 0, 2, 1, 1, 13, 3, 2, 1,
+    1, 2, 5, 0, 2, 1, 1, 2, 4, 1, 4, 5, 4, 1, 0, 1, 2, 0, 1, 1, 4, 4, 1, 7,
+    2, 4, 1, 2, 3, 1, 3, 2, 1, 2, 3, 2, 3, 1, 6, 5, 7, 11, 1, 4, 2, 1, 1, 3,
+    2, 18, 1, 1, 5, 1, 8, 2, 1, 3, 1, 2, 4, 8, 5, 2, 0, 1, 0, 3, 4, 1, 5, 12,
+    1, 3, 1, 2, 2, 1, 2, 1, 0, 4, 0, 2, 1, 2, 2, 4, 5, 0, 2, 1, 5, 1, 3, 2,
+    2, 0, 2, 1, 9, 1, 5, 2, 3, 2, 2, 3, 1, 2, 1, 2, 2, 1, 5, 3, 3, 2, 0, 6,
+    4, 0, 3, 1, 18, 3, 2, 6, 1, 3, 1, 5, 3, 1, 0, 4, 1, 5, 8, 2, 11, 4, 1, 1,
+    3, 4, 0, 2, 1, 1, 3, 1, 2, 1, 2, 1, 3, 3, 1, 5, 1, 1, 1, 0, 4, 2, 10, 1,
+    4, 11, 1, 1, 1, 3, 4, 0, 3, 7, 4, 5, 9, 2, 1, 1, 1, 0, 2, 3, 0, 1, 0, 6,
+    5, 2, 0, 2, 2, 0, 2, 2, 2, 2, 2, 3, 0, 0, 2, 1, 2, 1, 5, 1, 2, 4, 4, 1,
+    4, 4, 1, 1, 1, 1, 0, 5, 1, 2, 2, 1, 1, 4, 3, 3, 2, 2, 2, 3, 1, 1, 3, 1};
+  svRok := 1;
+END;
+
+
+// ============================================================================
+// THE ENGINE
+// ============================================================================
+
+// sv_Fit: everything the pages show, from svTim, svEvt, svGrp.
+//   1. the distinct times, sorted (one SORT, then one pass);
+//   2. events d and censorings c at each distinct time, for group 1,
+//      group 2 and everyone (row 3); each person is placed by a binary
+//      search in the sorted times;
+//   3. per row: the number at risk n (everyone whose time is t or later),
+//      the Kaplan-Meier product-limit estimate S(t) = product over event
+//      times u <= t of (1 - d/n) (Kaplan & Meier 1958), Greenwood's sum
+//      V = sum d/(n(n-d)), so SE(S) = S * sqrt(V) (Greenwood 1926;
+//      undefined from a time where everyone at risk has the event, n = d),
+//      and the Nelson-Aalen cumulative hazard H(t) = sum d/n;
+//   4. with two groups, the log-rank test: at each event time the
+//      expected events in group 1 if both groups shared one curve,
+//      E1 = d n1/n, and the hypergeometric variance
+//      v = d (n1/n)(1 - n1/n)(n - d)/(n - 1) (n > 1);
+//      chi-square = (O1 - E1)^2 / sum v, 1 df (Mantel 1966; Peto & Peto
+//      1972).  Gehan-Breslow weights each time by n:
+//      chi-square = (sum n (d1 - E1))^2 / sum n^2 v (Gehan 1965,
+//      Breslow 1970).  Hazard ratio (O1/E1)/(O2/E2), 95% CI
+//      exp(ln HR +/- 1.96 sqrt(1/E1 + 1/E2)).
+//   p-values: chi-square with 1 df has the upper tail
+//   2 * NORMALD_CDF(0, 1, -sqrt(x)), a lower tail (Lessons Learned 3).
+sv_Fit()
+BEGIN
+  LOCAL ftS, ftI, ftJ, ftM, ftLo, ftHi;
+  LOCAL ftMd, ftT, ftG, ftR, ftK, ftN;
+  LOCAL ftP, ftV, ftH, ftBad, ftD, ftX;
+  LOCAL ftUL, ftN1, ftN3, ftE, ftVt, ftD1;
+  LOCAL ftUg, ftVg, ftW;
+  // ---- 1. the distinct times ----
+  ftS := SORT(svTim);
+  ftUL := MAKELIST(0, ftI, 1, svN, 1);
+  ftM := 1; ftUL(1) := ftS(1);
+  FOR ftI FROM 2 TO svN DO
+    IF ftS(ftI) > ftUL(ftM) THEN ftM := ftM + 1; ftUL(ftM) := ftS(ftI); END;
+  END;
+  svM := ftM;
+  svU := MAKELIST(0, ftI, 1, ftM, 1);
+  FOR ftI FROM 1 TO ftM DO svU(ftI) := ftUL(ftI); END;
+  svTmax := svU(ftM);
+  // ---- 2. events and censorings at each time; row 3 = everyone ----
+  svDd := MAKELIST(0, ftI, 1, 3 * ftM, 1);
+  svCc := MAKELIST(0, ftI, 1, 3 * ftM, 1);
+  FOR ftI FROM 1 TO svN DO
+    ftT := svTim(ftI);
+    ftLo := 1; ftHi := ftM;
+    WHILE ftLo < ftHi DO
+      ftMd := IP((ftLo + ftHi) / 2);
+      IF svU(ftMd) < ftT THEN ftLo := ftMd + 1; ELSE ftHi := ftMd; END;
+    END;
+    ftG := svGrp(ftI);
+    ftK := (ftG - 1) * ftM + ftLo;
+    ftX := 2 * ftM + ftLo;
+    IF svEvt(ftI) == 1 THEN
+      svDd(ftK) := svDd(ftK) + 1;
+      svDd(ftX) := svDd(ftX) + 1;
+    ELSE
+      svCc(ftK) := svCc(ftK) + 1;
+      svCc(ftX) := svCc(ftX) + 1;
+    END;
+  END;
+  // ---- 3. risk sets, Kaplan-Meier, Greenwood, Nelson-Aalen ----
+  svNr := MAKELIST(0, ftI, 1, 3 * ftM, 1);
+  svSv := MAKELIST(1, ftI, 1, 3 * ftM, 1);
+  svGw := MAKELIST(0, ftI, 1, 3 * ftM, 1);
+  svHz := MAKELIST(0, ftI, 1, 3 * ftM, 1);
+  svTot := {0, 0, 0}; svEv := {0, 0, 0}; svLast := {0, 0, 0};
+  FOR ftR FROM 1 TO 3 DO
+    ftN := 0;
+    FOR ftJ FROM 1 TO ftM DO
+      ftK := (ftR - 1) * ftM + ftJ;
+      ftN := ftN + svDd(ftK) + svCc(ftK);
+      svEv(ftR) := svEv(ftR) + svDd(ftK);
+      IF svDd(ftK) + svCc(ftK) > 0 THEN svLast(ftR) := svU(ftJ); END;
+    END;
+    svTot(ftR) := ftN;
+    ftP := 1; ftV := 0; ftH := 0; ftBad := 0;
+    FOR ftJ FROM 1 TO ftM DO
+      ftK := (ftR - 1) * ftM + ftJ;
+      svNr(ftK) := ftN;
+      ftD := svDd(ftK);
+      IF ftD > 0 THEN
+        ftP := ftP * (1 - ftD / ftN);
+        ftH := ftH + ftD / ftN;
+        IF ftN > ftD THEN ftV := ftV + ftD / (ftN * (ftN - ftD)); ELSE ftBad := 1; END;
+      END;
+      svSv(ftK) := ftP;
+      IF ftBad == 1 THEN svGw(ftK) := -1; ELSE svGw(ftK) := ftV; END;
+      svHz(ftK) := ftH;
+      ftN := ftN - ftD - svCc(ftK);
+    END;
+  END;
+  // ---- 4. log-rank, Gehan-Breslow, hazard ratio (two groups) ----
+  svO1 := 0; svE1 := 0; svO2 := 0; svE2 := 0; svVar := 0;
+  ftUg := 0; ftVg := 0;
+  svLRok := 0; svGbOk := 0; svChi := -1; svPv := -1; svGbC := -1; svGbP := -1;
+  svHR := -1; svHRL := -1; svHRH := -1;
+  svPHR := -1; svPHL := -1; svPHH := -1;
+  IF svNG == 2 THEN
+    FOR ftJ FROM 1 TO ftM DO
+      ftD := svDd(2 * ftM + ftJ);
+      IF ftD > 0 THEN
+        ftN3 := svNr(2 * ftM + ftJ);
+        ftN1 := svNr(ftJ);
+        ftD1 := svDd(ftJ);
+        ftE := ftD * ftN1 / ftN3;
+        svO1 := svO1 + ftD1; svE1 := svE1 + ftE;
+        svO2 := svO2 + ftD - ftD1; svE2 := svE2 + ftD - ftE;
+        IF ftN3 > 1 THEN
+          ftVt := ftD * (ftN1 / ftN3) * (1 - ftN1 / ftN3) * (ftN3 - ftD) / (ftN3 - 1);
+          svVar := svVar + ftVt;
+          ftUg := ftUg + ftN3 * (ftD1 - ftE);
+          ftVg := ftVg + ftN3 * ftN3 * ftVt;
+        END;
+      END;
+    END;
+    IF svVar > 0 THEN
+      svChi := (svO1 - svE1)^2 / svVar;
+      svPv := 2 * NORMALD_CDF(0, 1, -(svChi^0.5));
+      svLRok := 1;
+      // Peto's one-step hazard ratio and its CI: ln HR = (O1 - E1)/V,
+      // SE = 1/sqrt(V); its CI excludes 1 exactly when chi-square > 3.84
+      ftW := (svO1 - svE1) / svVar;
+      svPHR := EXP(ftW);
+      svPHL := EXP(ftW - svZ / svVar^0.5);
+      svPHH := EXP(ftW + svZ / svVar^0.5);
+    END;
+    IF ftVg > 0 THEN
+      svGbC := ftUg^2 / ftVg;
+      svGbP := 2 * NORMALD_CDF(0, 1, -(svGbC^0.5));
+      svGbOk := 1;
+    END;
+    IF svO1 > 0 AND svO2 > 0 AND svE1 > 0 AND svE2 > 0 THEN
+      svHR := (svO1 / svE1) / (svO2 / svE2);
+      ftW := svZ * (1 / svE1 + 1 / svE2)^0.5;
+      svHRL := svHR * EXP(-ftW);
+      svHRH := svHR * EXP(ftW);
+    END;
+  END;
+END;
+
+// The 95% CI of S at one step, from S and Greenwood's sum V.
+//   log-log (default): theta = 1.96 sqrt(V) / |ln S|, CI = S^exp(+theta)
+//     to S^exp(-theta); it always stays inside 0..1 (Kalbfleisch &
+//     Prentice 1980; statsmodels' "cloglog", R's conf.type "log-log").
+//   linear: S -/+ 1.96 S sqrt(V), cut at 0 and 1.
+// Returns {lo, hi}; {-1, -1} where it is undefined (S = 0 or V undefined),
+// {S, S} before the first event (S = 1, no uncertainty yet).
+sv_CI(ciS, ciV)
+BEGIN
+  LOCAL ciTh, ciLo, ciHi, ciSE;
+  IF ciV < 0 OR ciS <= 0 THEN RETURN {-1, -1}; END;
+  IF ciS >= 1 OR ciV == 0 THEN RETURN {ciS, ciS}; END;
+  IF svCIT == 1 THEN
+    ciTh := svZ * ciV^0.5 / ABS(LN(ciS));
+    ciLo := ciS^EXP(ciTh);
+    ciHi := ciS^EXP(-ciTh);
+  ELSE
+    ciSE := ciS * ciV^0.5;
+    ciLo := MAX(0, ciS - svZ * ciSE);
+    ciHi := MIN(1, ciS + svZ * ciSE);
+  END;
+  RETURN {ciLo, ciHi};
+END;
+
+// The CI at every step of every row, once per data set or CI type.
+sv_CIs()
+BEGIN
+  LOCAL caK, caCI, caN;
+  caN := 3 * svM;
+  svCLo := MAKELIST(-1, caK, 1, caN, 1);
+  svCHi := MAKELIST(-1, caK, 1, caN, 1);
+  FOR caK FROM 1 TO caN DO
+    caCI := sv_CI(svSv(caK), svGw(caK));
+    svCLo(caK) := caCI(1);
+    svCHi(caK) := caCI(2);
+  END;
+END;
+
+// The quantile: the time by which a proportion p had the event = the
+// FIRST event time with S(t) below 1 - p (statsmodels' rule; SAS and R
+// average the two event times when S sits exactly on 1 - p).  p = 0.5 is
+// the median.  -1 = not reached (S stays at or
+// above 1 - p to the end of follow-up).  The 1E-10 keeps an S that is
+// exactly 1 - p (for example 0.5 = 2/4) from counting as below it.
+sv_Quant(quR, quP)
+BEGIN
+  LOCAL quJ, quK;
+  FOR quJ FROM 1 TO svM DO
+    quK := (quR - 1) * svM + quJ;
+    IF svDd(quK) > 0 THEN
+      IF svSv(quK) < 1 - quP - 0.0000000001 THEN RETURN svU(quJ); END;
+    END;
+  END;
+  RETURN -1;
+END;
+
+// The 95% CI of that quantile (Brookmeyer & Crowley 1982, in the form
+// SAS and statsmodels use): every event time whose test of
+// "S(t) = 1 - p" does not reject at 5% is inside.  On the log(-log)
+// scale the test is z = (g(S) - g(1 - p)) |ln S| / sqrt(V) with
+// g(x) = ln(-ln x); on the linear scale z = (S - (1 - p)) / (S sqrt(V)).
+// The interval runs from the first such event time to the event time
+// AFTER the last one; when the last one is the row's last event time
+// the upper end is not reached.  Returns {lo, hi}: lo = -1 when no event
+// time qualifies (no CI); hi = -2 when the upper end is not reached.
+sv_QCI(qcR, qcP)
+BEGIN
+  LOCAL qcJ, qcK, qcS, qcV, qcZ, qcG;
+  LOCAL qcF, qcL, qcHi;
+  qcG := 1 - qcP;
+  qcF := -1; qcL := -1;
+  FOR qcJ FROM 1 TO svM DO
+    qcK := (qcR - 1) * svM + qcJ;
+    IF svDd(qcK) > 0 THEN
+      qcS := svSv(qcK); qcV := svGw(qcK);
+      IF qcV > 0 AND qcS > 0 AND qcS < 1 THEN
+        IF svCIT == 1 THEN
+          qcZ := (LN(-LN(qcS)) - LN(-LN(qcG))) * ABS(LN(qcS)) / qcV^0.5;
+        ELSE
+          qcZ := (qcS - qcG) / (qcS * qcV^0.5);
+        END;
+        IF ABS(qcZ) <= svZ THEN
+          IF qcF == -1 THEN qcF := qcJ; END;
+          qcL := qcJ;
+        END;
+      END;
+    END;
+  END;
+  IF qcF == -1 THEN RETURN {-1, -1}; END;
+  // the next event time of this row after the last one inside
+  qcHi := -2;
+  FOR qcJ FROM qcL + 1 TO svM DO
+    IF qcHi == -2 THEN
+      IF svDd((qcR - 1) * svM + qcJ) > 0 THEN qcHi := svU(qcJ); END;
+    END;
+  END;
+  RETURN {svU(qcF), qcHi};
+END;
+
+// The actuarial life table of row lcR in intervals [a, a + w), a = 0,
+// w, 2w ... (Cutler & Ederer 1958; SAS and SPSS use the same intervals),
+// the LAST one cut at the row's last observed time T (nobody is followed
+// past T), so it is [a, T]:
+//   n  entering = still at risk at the interval's start,
+//   c  withdrawn = censored inside the interval, before T,
+//   f  censored AT T: followed to the end, so they complete the
+//      (cut) interval and are NOT halved,
+//   n' = n - c/2 exposed (a withdrawal is at risk for half the interval),
+//   d  events, q = d / n', p = 1 - q, S(end) = product of the p so far.
+// With no censoring before T (Rossi: everyone not re-arrested was
+// followed to week 52) the life table's S at each interval end equals
+// the Kaplan-Meier S there.  The 1E-9 keeps a time that is a multiple of
+// w (8 = 2 x 4) in the interval that starts there whatever the rounding.
+// Returns 0 (and changes nothing) if it would need more than 100
+// intervals.
+sv_LCalc(lcR, lcW)
+BEGIN
+  LOCAL lcK, lcJ, lcI, lcN, lcS, lcQ;
+  LOCAL lcE, lcX, lcT;
+  lcT := svLast(lcR);
+  lcK := MAX(1, CEILING(lcT / lcW - 0.000000001));
+  IF lcK > 100 THEN RETURN 0; END;
+  svLA := MAKELIST(0, lcI, 1, lcK, 1);
+  svLB := MAKELIST(0, lcI, 1, lcK, 1);
+  svLN := MAKELIST(0, lcI, 1, lcK, 1);
+  svLC := MAKELIST(0, lcI, 1, lcK, 1);
+  svLF := MAKELIST(0, lcI, 1, lcK, 1);
+  svLE := MAKELIST(0, lcI, 1, lcK, 1);
+  svLDv := MAKELIST(0, lcI, 1, lcK, 1);
+  svLQ := MAKELIST(0, lcI, 1, lcK, 1);
+  svLS := MAKELIST(0, lcI, 1, lcK, 1);
+  FOR lcJ FROM 1 TO svM DO
+    lcX := (lcR - 1) * svM + lcJ;
+    lcI := MIN(lcK, FLOOR(svU(lcJ) / lcW + 0.000000001) + 1);
+    svLDv(lcI) := svLDv(lcI) + svDd(lcX);
+    IF svU(lcJ) >= lcT - 0.000000001 THEN
+      svLF(lcI) := svLF(lcI) + svCc(lcX);
+    ELSE
+      svLC(lcI) := svLC(lcI) + svCc(lcX);
+    END;
+  END;
+  lcN := svTot(lcR); lcS := 1;
+  FOR lcI FROM 1 TO lcK DO
+    svLA(lcI) := (lcI - 1) * lcW;
+    svLB(lcI) := MIN(lcI * lcW, lcT);
+    svLN(lcI) := lcN;
+    lcE := lcN - svLC(lcI) / 2;
+    svLE(lcI) := lcE;
+    lcQ := 0;
+    IF lcE > 0 THEN lcQ := svLDv(lcI) / lcE; END;
+    svLQ(lcI) := lcQ;
+    lcS := lcS * (1 - lcQ);
+    svLS(lcI) := lcS;
+    lcN := lcN - svLDv(lcI) - svLC(lcI) - svLF(lcI);
+  END;
+  svLK := lcK;
+  RETURN 1;
+END;
+
+// The Home exports (header): event times, S of each group, the tests.
+sv_Export()
+BEGIN
+  LOCAL exJ, exN, exI, exT, exA, exB;
+  exN := 0;
+  FOR exJ FROM 1 TO svM DO
+    IF svDd(2 * svM + exJ) > 0 THEN exN := exN + 1; END;
+  END;
+  exT := {}; exA := {}; exB := {};
+  IF exN > 0 THEN
+    exT := MAKELIST(0, exI, 1, exN, 1);
+    exA := MAKELIST(0, exI, 1, exN, 1);
+    exB := MAKELIST(0, exI, 1, exN, 1);
+    exI := 0;
+    FOR exJ FROM 1 TO svM DO
+      IF svDd(2 * svM + exJ) > 0 THEN
+        exI := exI + 1;
+        exT(exI) := svU(exJ);
+        exA(exI) := svSv(exJ);
+        exB(exI) := svSv(svM + exJ);
+      END;
+    END;
+  END;
+  SV_T := exT;
+  IF svNG == 2 THEN
+    SV_S1 := exA; SV_S2 := exB;
+    SV_MED := {sv_Quant(1, 0.5), sv_Quant(2, 0.5)};
+  ELSE
+    SV_S1 := exA; SV_S2 := {};
+    SV_MED := {sv_Quant(3, 0.5)};
+  END;
+  SV_CHI := svChi; SV_P := svPv; SV_HR := svHR; SV_HRP := svPHR;
+END;
+
+// After new data: fit, the CIs, the exports; the views start afresh.
+sv_Refit()
+BEGIN
+  sv_Fit();
+  sv_CIs();
+  sv_Export();
+  svCurT := -1; svDirty := 1; svCvKey := -1; svLTop := 1; svLSel := 0;
+  svHas := 1;
+  IF svNG == 2 THEN svLR := 1; ELSE svLR := 3; END;
+END;
+
+
+// ============================================================================
+// PLOTTING HELPERS
+// ============================================================================
+
+// The x axis for the time plots: 0 to just past the last time, ticks
+// at a nice step (about six of them).
+sv_AxX()
+BEGIN
+  svXmx := svTmax * 1.04;
+  IF svXmx <= 0 THEN svXmx := 1; END;
+  svXs := sv_Nice(svXmx / 6);
+END;
+
+// The y axis of the S(t) view (0 to 1, or zoomed to the curves) or of
+// the cumulative-hazard view (0 to a nice value above the largest H).
+sv_AxY()
+BEGIN
+  LOCAL ayI, ayR, ayJ, ayK, ayMn, ayMx;
+  IF svView == 1 THEN
+    svYlo := 0; svYhi := 1; svYs := 0.2; svYdc := 1;
+    IF svZoom == 1 THEN
+      ayMn := 1;
+      FOR ayI FROM 1 TO SIZE(svRows) DO
+        ayR := svRows(ayI);
+        FOR ayJ FROM 1 TO svM DO
+          ayK := (ayR - 1) * svM + ayJ;
+          IF svU(ayJ) <= svLast(ayR) THEN
+            ayMn := MIN(ayMn, svSv(ayK));
+            IF svBand == 1 AND svCLo(ayK) >= 0 THEN ayMn := MIN(ayMn, svCLo(ayK)); END;
+          END;
+        END;
+      END;
+      svYlo := MAX(0, FLOOR((ayMn - 0.02) * 10) / 10);
+      IF svYlo > 0.9 THEN svYlo := 0.9; END;
+      svYs := 0.1;
+      IF 1 - svYlo <= 0.3 THEN svYs := 0.05; svYdc := 2; END;
+    END;
+  ELSE
+    ayMx := 0;
+    FOR ayI FROM 1 TO SIZE(svRows) DO
+      ayR := svRows(ayI);
+      ayMx := MAX(ayMx, svHz(ayR * svM));
+    END;
+    IF ayMx <= 0 THEN ayMx := 0.1; END;
+    svYs := sv_Nice(ayMx * 1.05 / 5);
+    svYlo := 0;
+    svYhi := CEILING(ayMx * 1.05 / svYs) * svYs;
+    svYdc := MAX(0, -FLOOR(LOG(svYs) + 0.0000001));
+  END;
+END;
+
+// Grid lines, ticks and tick labels for the current box and axes.
+// Long time labels (1000000000) would overlap: then only every 2nd,
+// 3rd ... tick is labelled (grK).
+sv_XLab(xlY)
+BEGIN
+  LOCAL xlV, xlN, xlP, xlS, xlX, xlK;
+  xlS := sv_TS(FLOOR(svXmx / svXs) * svXs);
+  xlK := CEILING((6 * DIM(xlS) + 6) / MAX(1, svXs / svXmx * (svPR - svPL)));
+  IF xlK < 1 THEN xlK := 1; END;
+  xlV := 0; xlN := 0;
+  WHILE xlV <= svXmx + svXs / 1000 AND xlN < 16 DO
+    IF xlN - xlK * IP(xlN / xlK) == 0 THEN
+      xlP := sv_XP(xlV);
+      xlS := sv_TS(xlV);
+      xlX := MIN(xlP - 3 * DIM(xlS), 318 - 6 * DIM(xlS));
+      TEXTOUT_P(xlS, G1, xlX, xlY, 1, svGRAY, 6 * DIM(xlS) + 2);
+    END;
+    xlV := xlV + svXs; xlN := xlN + 1;
+  END;
+END;
+
+sv_Grid()
+BEGIN
+  LOCAL grV, grN, grP, grS;
+  grV := 0; grN := 0;
+  WHILE grV <= svXmx + svXs / 1000 AND grN < 16 DO
+    grP := sv_XP(grV);
+    LINE_P(G1, grP, svPT, grP, svPB, svGRID);
+    LINE_P(G1, grP, svPB, grP, svPB + 3, #000000h);
+    grV := grV + svXs; grN := grN + 1;
+  END;
+  sv_XLab(svPB + 4);
+  grV := svYlo; grN := 0;
+  WHILE grV <= svYhi + svYs / 1000 AND grN < 16 DO
+    grP := sv_YP(grV);
+    LINE_P(G1, svPL, grP, svPR, grP, svGRID);
+    LINE_P(G1, svPL - 3, grP, svPL, grP, #000000h);
+    grS := sv_F(grV, svYdc);
+    TEXTOUT_P(grS, G1, MAX(0, svPL - 5 - 6 * DIM(grS)), grP - 5, 1, svGRAY, 36);
+    grV := grV + svYs; grN := grN + 1;
+  END;
+  LINE_P(G1, svPL, svPT, svPL, svPB, #000000h);
+  LINE_P(G1, svPL, svPB, svPR, svPB, #000000h);
+END;
+
+// The step curve of row spR: flat at the old value up to each event
+// time, then straight down (or up, for H) to the new one -- the
+// horizontal-then-vertical steps of a published Kaplan-Meier figure,
+// two pixels thick.  spKind 1 = S(t), 2 = H(t).  The curve stops at the
+// row's last observed time.
+sv_Steps(spR, spC, spKind)
+BEGIN
+  LOCAL spJ, spK, spX0, spY0, spX, spY;
+  spX0 := svPL;
+  IF spKind == 1 THEN spY0 := sv_YP(1); ELSE spY0 := sv_YP(0); END;
+  FOR spJ FROM 1 TO svM DO
+    spK := (spR - 1) * svM + spJ;
+    IF svDd(spK) > 0 THEN
+      spX := sv_XP(svU(spJ));
+      IF spKind == 1 THEN spY := sv_YP(svSv(spK)); ELSE spY := sv_YP(svHz(spK)); END;
+      LINE_P(G1, spX0, spY0, spX, spY0, spC);
+      LINE_P(G1, spX0, spY0 - 1, spX, spY0 - 1, spC);
+      LINE_P(G1, spX, spY0, spX, spY, spC);
+      LINE_P(G1, spX + 1, spY0, spX + 1, spY, spC);
+      spX0 := spX; spY0 := spY;
+    END;
+  END;
+  spX := sv_XP(svLast(spR));
+  IF spX > spX0 THEN
+    LINE_P(G1, spX0, spY0, spX, spY0, spC);
+    LINE_P(G1, spX0, spY0 - 1, spX, spY0 - 1, spC);
+  END;
+END;
+
+// Censor ticks: a short vertical mark on the curve at every time where
+// someone in row tkR was censored (followed that long, never re-arrested).
+sv_Ticks(tkR, tkC, tkKind)
+BEGIN
+  LOCAL tkJ, tkK, tkX, tkY;
+  FOR tkJ FROM 1 TO svM DO
+    tkK := (tkR - 1) * svM + tkJ;
+    IF svCc(tkK) > 0 THEN
+      tkX := sv_XP(svU(tkJ));
+      IF tkKind == 1 THEN tkY := sv_YP(svSv(tkK)); ELSE tkY := sv_YP(svHz(tkK)); END;
+      LINE_P(G1, tkX, tkY - 4, tkX, tkY + 4, tkC);
+      LINE_P(G1, tkX - 1, tkY - 4, tkX - 1, tkY + 4, tkC);
+    END;
+  END;
+END;
+
+// The 95% CI band of the rows shown, shaded lightly.  S and its CI are
+// constant between two grid times, so the band is one rectangle per
+// grid interval per row (no per-pixel CDF work).  Where the two groups'
+// bands overlap, a third colour.  Returns 1, or 0 if Esc stopped it.
+sv_Band()
+BEGIN
+  LOCAL bdJ, bdTA, bdTB, bdI, bdR, bdK;
+  LOCAL bdX1, bdX2, bdA, bdB, bdOk, bdNR;
+  LOCAL bdA1, bdB1, bdA2, bdB2, bdW1, bdW2;
+  LOCAL bdTr, bdTop, bdBot;
+  bdNR := SIZE(svRows);
+  FOR bdJ FROM 1 TO svM DO
+    // big data: Esc stops the band (checked every 25 steps)
+    IF svM > 150 AND bdJ - 25 * IP(bdJ / 25) == 0 THEN
+      IF GETKEY == 4 THEN RETURN 0; END;
+    END;
+    bdTA := svU(bdJ);
+    IF bdJ < svM THEN bdTB := svU(bdJ + 1); ELSE bdTB := bdTA; END;
+    bdA1 := -1; bdA2 := -1; bdW1 := 0; bdW2 := 0;
+    bdX1 := sv_XP(bdTA);
+    FOR bdI FROM 1 TO bdNR DO
+      bdR := svRows(bdI);
+      bdOk := 0;
+      bdTr := MIN(bdTB, svLast(bdR));
+      IF bdTr > bdTA THEN
+        bdK := (bdR - 1) * svM + bdJ;
+        IF svCLo(bdK) >= 0 THEN
+          IF svCHi(bdK) > svCLo(bdK) THEN bdOk := 1; END;
+        END;
+      END;
+      IF bdOk == 1 THEN
+        bdX2 := sv_XP(bdTr);
+        bdA := sv_YP(svCHi(bdK)); bdB := sv_YP(svCLo(bdK));
+        RECT_P(G1, bdX1, bdA, bdX2, bdB, sv_Pale(bdR), sv_Pale(bdR));
+        IF bdI == 1 THEN
+          bdA1 := bdA; bdB1 := bdB; bdW1 := bdX2;
+        ELSE
+          bdA2 := bdA; bdB2 := bdB; bdW2 := bdX2;
+        END;
+      END;
+    END;
+    IF bdA1 >= 0 AND bdA2 >= 0 THEN
+      bdTop := MAX(bdA1, bdA2); bdBot := MIN(bdB1, bdB2);
+      IF bdTop <= bdBot THEN
+        RECT_P(G1, bdX1, bdTop, MIN(bdW1, bdW2), bdBot, svBNDX, svBNDX);
+      END;
+    END;
+  END;
+  RETURN 1;
+END;
+
+// The event times of the rows shown (grid indices), for the arrow keys.
+sv_EvList()
+BEGIN
+  LOCAL elJ, elI, elN, elHit, elL;
+  elN := 0;
+  elL := MAKELIST(0, elI, 1, svM, 1);
+  FOR elJ FROM 1 TO svM DO
+    elHit := 0;
+    FOR elI FROM 1 TO SIZE(svRows) DO
+      IF svDd((svRows(elI) - 1) * svM + elJ) > 0 THEN elHit := 1; END;
+    END;
+    IF elHit == 1 THEN elN := elN + 1; elL(elN) := elJ; END;
+  END;
+  svEJ := {};
+  IF elN > 0 THEN
+    svEJ := MAKELIST(0, elI, 1, elN, 1);
+    FOR elI FROM 1 TO elN DO svEJ(elI) := elL(elI); END;
+  END;
+END;
+
+// Put the cursor's place in the event list in step with its time.
+sv_CJSync()
+BEGIN
+  LOCAL cjI;
+  svCJ := 0;
+  FOR cjI FROM 1 TO SIZE(svEJ) DO
+    IF svU(svEJ(cjI)) <= svCurT + 0.0000001 THEN svCJ := cjI; END;
+  END;
+END;
+
+
+// ============================================================================
+// THE KAPLAN-MEIER VIEW
+// A plot like a published Kaplan-Meier figure: the step curve of each
+// group (blue, magenta) or of everyone (green), the 95% CI band shaded
+// lightly, censor ticks, and the numbers at risk under the time axis.
+// A finger on the plot moves a red cursor and reads S(t), its CI and the
+// number at risk at that time; Left / Right step the cursor from event
+// time to event time.  The plot without the cursor is cached in G2, so a
+// cursor move costs one blit and a few lines.
+// Soft keys, page 1: CI (log-log / linear), Band, Zoom, H(t) (the
+// Nelson-Aalen view) / S(t), Back, More; page 2: Pool / Split, Median,
+// Test, Life, Back, More.  Enter = the same actions as a menu.
+// ============================================================================
+
+// Which rows, which events, which axes; the cursor near the middle the
+// first time.
+sv_KMSetup()
+BEGIN
+  LOCAL ksI, ksBest, ksD;
+  IF svNG == 2 AND svPool == 0 THEN svRows := {1, 2}; ELSE svRows := {3}; END;
+  sv_Box(44, 30, 312, 144);
+  sv_EvList();
+  sv_AxX();
+  sv_AxY();
+  IF svCurT < 0 THEN
+    svCurT := 0;
+    ksBest := 1E99;
+    FOR ksI FROM 1 TO SIZE(svEJ) DO
+      ksD := ABS(svU(svEJ(ksI)) - svTmax / 2);
+      IF ksD < ksBest THEN ksBest := ksD; svCurT := svU(svEJ(ksI)); END;
+    END;
+  END;
+  IF svCurT > svXmx THEN svCurT := svXmx; END;
+  sv_CJSync();
+END;
+
+// The cached plot (G2): title, axes, band, curves, ticks, at-risk table.
+sv_KMBase()
+BEGIN
+  LOCAL kbI, kbR, kbS, kbV, kbN, kbP;
+  LOCAL kbX, kbY, kbB;
+  // a big data set: say so while it draws (a G1 is slow), Esc skips the band
+  kbB := 0;
+  IF svM > 150 THEN
+    sv_Busy("Drawing " + sv_I(svM) + " steps ... (Esc = no band)");
+    kbB := 1;
+  END;
+  IF svView == 1 THEN kbS := "Kaplan-Meier: "; ELSE kbS := "Cumulative hazard: "; END;
+  sv_Frame(kbS + svShort);
+  // ---- the line under the title: what is drawn ----
+  IF svView == 1 THEN
+    kbS := "S(t), no CI band";
+    IF svBand == 1 THEN
+      IF svCIT == 1 THEN kbS := "S(t), 95% CI log-log"; ELSE kbS := "S(t), 95% CI linear"; END;
+    END;
+    TEXTOUT_P(kbS, G1, svPL + 2, 19, 1, svGRAY, 130);
+    IF svZoom == 1 AND svYlo > 0 THEN
+      TEXTOUT_P("zoomed: y from " + sv_F(svYlo, 2), G1, 200, 19, 1, svRED, 116);
+    END;
+  ELSE
+    TEXTOUT_P("H(t) = sum of d/n (Nelson-Aalen)", G1, svPL + 2, 19, 1, svGRAY, 270);
+  END;
+  sv_Grid();
+  IF svView == 1 AND svBand == 1 THEN
+    IF sv_Band() == 0 THEN
+      svBand := 0;
+      svInfo := "Band skipped (Esc): Band key to draw it"; svInfC := svORNG;
+    END;
+    // the grid's axes again, over the band
+    LINE_P(G1, svPL, svPT, svPL, svPB, #000000h);
+    LINE_P(G1, svPL, svPB, svPR, svPB, #000000h);
+  END;
+  FOR kbI FROM 1 TO SIZE(svRows) DO
+    kbR := svRows(kbI);
+    sv_Steps(kbR, sv_Col(kbR), svView);
+    sv_Ticks(kbR, sv_Col(kbR), svView);
+  END;
+  // ---- numbers at risk at the tick times, one row per curve ----
+  TEXTOUT_P("at risk", G1, 0, 148, 1, svGRAY, 40);
+  FOR kbI FROM 1 TO SIZE(svRows) DO
+    kbR := svRows(kbI);
+    kbY := 149 + 11 * kbI;
+    TEXTOUT_P(svGSh(kbR), G1, 0, kbY, 1, sv_Col(kbR), 40);
+    kbV := 0; kbN := 0;
+    WHILE kbV <= svXmx + svXs / 1000 AND kbN < 16 DO
+      kbP := sv_XP(kbV);
+      kbS := sv_I(sv_NAt(kbR, kbV));
+      kbX := MIN(MAX(kbP - 3 * DIM(kbS), svPL - 2), 318 - 6 * DIM(kbS));
+      TEXTOUT_P(kbS, G1, kbX, kbY, 1, sv_Col(kbR), 40);
+      kbV := kbV + svXs; kbN := kbN + 1;
+    END;
+  END;
+  // the composed plot becomes the cache: G2 = G1 (GaltonBoard's
+  // BLIT_P(G2, 0, 0, G3) shape); every frame copies it back
+  BLIT_P(G2, 0, 0, G1);
+END;
+
+// The soft keys of the Kaplan-Meier view (two pages; slot 6 = More).
+sv_KMKeys()
+BEGIN
+  LOCAL kkA, kkB;
+  IF svSKP == 1 THEN
+    IF svView == 1 THEN kkA := "H(t)"; ELSE kkA := "S(t)"; END;
+    DRAWMENU({"CI", "Band", "Zoom", kkA, "Back", "More"});
+  ELSE
+    IF svPool == 1 THEN kkB := "Split"; ELSE kkB := "Pool"; END;
+    DRAWMENU({kkB, "Median", "Test", "Life", "Back", "More"});
+  END;
+END;
+
+// One frame: the cached plot, then the cursor and the readout on G1.
+sv_KMFrame()
+BEGIN
+  LOCAL rfI, rfR, rfJ, rfK, rfS, rfN;
+  LOCAL rfY, rfLo, rfHi, rfTx, rfX, rfH;
+  LOCAL rfV, rfLy;
+  BLIT_P(G1, 0, 0, G2);
+  rfX := sv_XP(MIN(svCurT, svXmx));
+  LINE_P(G1, rfX, svPT, rfX, svPB, svRED);
+  rfTx := "t = " + sv_TS(svCurT);
+  IF rfX > svPR - 6 * DIM(rfTx) - 6 THEN
+    TEXTOUT_P(rfTx, G1, rfX - 4 - 6 * DIM(rfTx), svPT + 2, 1, svRED, 6 * DIM(rfTx) + 4);
+  ELSE
+    TEXTOUT_P(rfTx, G1, rfX + 4, svPT + 2, 1, svRED, 6 * DIM(rfTx) + 4);
+  END;
+  rfJ := sv_JLe(svCurT);
+  rfLy := 183;
+  FOR rfI FROM 1 TO SIZE(svRows) DO
+    rfR := svRows(rfI);
+    rfS := 1; rfH := 0; rfLo := 1; rfHi := 1;
+    IF rfJ > 0 THEN
+      rfK := (rfR - 1) * svM + rfJ;
+      rfS := svSv(rfK); rfH := svHz(rfK); rfLo := svCLo(rfK); rfHi := svCHi(rfK);
+    END;
+    rfN := sv_NAt(rfR, svCurT);
+    IF svCurT > svLast(rfR) + 0.0000001 THEN
+      rfTx := svGNm(rfR) + ": past its last follow-up (" + sv_TS(svLast(rfR)) + ")";
+    ELSE
+      IF svView == 1 THEN rfV := rfS; ELSE rfV := rfH; END;
+      rfY := sv_YP(rfV);
+      RECT_P(G1, rfX - 2, rfY - 2, rfX + 2, rfY + 2, svRED, sv_Col(rfR));
+      IF svView == 1 THEN
+        rfTx := svGNm(rfR) + ": S = " + sv_F(rfS, 4);
+        IF rfLo >= 0 THEN
+          IF rfHi > rfLo THEN rfTx := rfTx + ", CI " + sv_F(rfLo, 3) + " to " + sv_F(rfHi, 3); END;
+        ELSE
+          rfTx := rfTx + ", CI undefined";
+        END;
+      ELSE
+        rfTx := svGNm(rfR) + ": H = " + sv_F(rfH, 4) + ", exp(-H) = " + sv_F(EXP(-rfH), 4);
+      END;
+      rfTx := rfTx + ", n = " + sv_I(rfN);
+    END;
+    TEXTOUT_P(rfTx, G1, 4, rfLy, 1, sv_Col(rfR), 314);
+    rfLy := rfLy + 12;
+  END;
+  IF SIZE(svRows) == 1 THEN
+    // one curve: the second line says it in words
+    IF svView == 1 THEN
+      rfTx := sv_F(100 * (1 - rfS), 1) + "% " + svEvW + " by t = " + sv_TS(svCurT) + sv_Un();
+      IF svCurT > svLast(svRows(1)) + 0.0000001 THEN rfTx := "the curve ends at the last follow-up"; END;
+    ELSE
+      rfTx := "KM S = " + sv_F(rfS, 4) + "; exp(-H) " + svGEQ + " S, close while many at risk";
+    END;
+    TEXTOUT_P(rfTx, G1, 4, rfLy, 1, #000000h, 314);
+  END;
+  IF DIM(svInfo) > 0 THEN
+    TEXTOUT_P(svInfo, G1, 4, 207, 1, svInfC, 314);
+  ELSE
+    TEXTOUT_P(svARL + svARR + " = event, tap plot = read, Ent = menu, Esc = back", G1, 4, 207, 1, svFOOT, 314);
+  END;
+  BLIT_P(G0, 0, 0, G1);
+  sv_KMKeys();
+END;
+
+// The cursor to the finger's column (any time, not only event times).
+sv_CurTo(ctX)
+BEGIN
+  LOCAL ctT;
+  ctT := (ctX - svPL) / (svPR - svPL) * svXmx;
+  IF ctT < 0 THEN ctT := 0; END;
+  IF ctT > svXmx THEN ctT := svXmx; END;
+  svCurT := ctT;
+  sv_CJSync();
+END;
+
+// The cursor to the next (csD = 1) or previous (-1) event time.
+sv_CurStep(csD)
+BEGIN
+  IF SIZE(svEJ) == 0 THEN RETURN; END;
+  svCJ := svCJ + csD;
+  IF svCJ < 1 THEN svCJ := 1; END;
+  IF svCJ > SIZE(svEJ) THEN svCJ := SIZE(svEJ); END;
+  svCurT := svU(svEJ(svCJ));
+END;
+
+// The Enter menu of any view: where to go.  Returns the view (1 Kaplan-
+// Meier, 2 quantiles, 3 log-rank, 4 life table), 0 for the main menu,
+// -1 to stay.
+sv_GoMenu()
+BEGIN
+  LOCAL gmI, gmK;
+  gmI := 0;
+  CHOOSE(gmI, "Go to", {"Kaplan-Meier plot", "Median and quantiles", "Log-rank test", "Life table", "Main menu"});
+  REPEAT gmK := GETKEY; UNTIL gmK == -1;
+  sv_Drain();
+  IF gmI == 0 THEN RETURN -1; END;
+  IF gmI == 5 THEN RETURN 0; END;
+  RETURN gmI;
+END;
+
+// One Kaplan-Meier action (a soft key, or the Enter menu's item):
+//   1 CI type, 2 band, 3 zoom, 4 S(t) / H(t), 5 pool / split,
+//   6 median page, 7 log-rank page, 8 life table, 9 main menu.
+// Returns -1 to stay on the plot, or the view to go to (0 = main menu).
+sv_KMAct(kaA)
+BEGIN
+  svInfo := "";
+  IF kaA == 1 THEN svCIT := 3 - svCIT; sv_CIs(); sv_AxY(); svDirty := 1; RETURN -1; END;
+  IF kaA == 2 THEN
+    IF svView == 1 THEN svBand := 1 - svBand; sv_AxY(); svDirty := 1;
+    ELSE svInfo := "The band belongs to the S(t) view"; svInfC := svGRAY; END;
+    RETURN -1;
+  END;
+  IF kaA == 3 THEN
+    IF svView == 1 THEN svZoom := 1 - svZoom; sv_AxY(); svDirty := 1;
+    ELSE svInfo := "Zoom belongs to the S(t) view"; svInfC := svGRAY; END;
+    RETURN -1;
+  END;
+  IF kaA == 4 THEN svView := 3 - svView; sv_AxY(); svDirty := 1; RETURN -1; END;
+  IF kaA == 5 THEN
+    IF svNG == 2 THEN
+      svPool := 1 - svPool; sv_KMSetup(); svDirty := 1;
+    ELSE
+      svInfo := "One group only: nothing to pool"; svInfC := svGRAY;
+    END;
+    RETURN -1;
+  END;
+  IF kaA == 6 THEN RETURN 2; END;
+  IF kaA == 7 THEN
+    IF svNG == 2 THEN RETURN 3; END;
+    svInfo := "One group only: no test (load a two-group set)"; svInfC := svGRAY;
+    RETURN -1;
+  END;
+  IF kaA == 8 THEN RETURN 4; END;
+  RETURN 0;
+END;
+
+// The Enter menu of the Kaplan-Meier view (every soft key, by keys).
+sv_KMMenu()
+BEGIN
+  LOCAL kmI, kmK;
+  kmI := 0;
+  CHOOSE(kmI, "Kaplan-Meier", {"CI: log-log / linear", "Band on / off", "Zoom y on / off", "S(t) / cumulative hazard", "Pool / split the groups", "Median and quantiles", "Log-rank test", "Life table", "Main menu"});
+  REPEAT kmK := GETKEY; UNTIL kmK == -1;
+  sv_Drain();
+  IF kmI == 0 THEN RETURN -1; END;
+  RETURN sv_KMAct(kmI);
+END;
+
+// The Kaplan-Meier view.  Returns the next view (0 = main menu).
+sv_KMView()
+BEGIN
+  LOCAL kvK, kvM, kvM1, kvGo, kvNx, kvSl;
+  LOCAL kvX, kvY, kvDg;
+  sv_KMSetup();
+  svDirty := 1; svSKP := 1; svInfo := "";
+  kvGo := 1; kvNx := 0;
+  REPEAT kvK := GETKEY; UNTIL kvK == -1;
+  sv_Drain();
+  WHILE kvGo == 1 DO
+    IF svDirty == 1 THEN sv_KMBase(); svDirty := 0; END;
+    sv_KMFrame();
+    REPEAT
+      kvK := GETKEY;
+      kvM := MOUSE;
+      kvM1 := kvM(1);
+    UNTIL kvK > -1 OR SIZE(kvM1) > 0;
+    IF SIZE(kvM1) > 0 THEN
+      kvX := kvM1(1); kvY := kvM1(2);
+      IF kvY >= 218 THEN
+        // a soft key: six 53-px slots, left to right
+        sv_Drain();
+        kvSl := MIN(6, IP(kvX / 53.4) + 1);
+        IF kvSl == 6 THEN
+          svSKP := 3 - svSKP;
+        ELSE
+          IF kvSl == 5 THEN
+            kvNx := 0; kvGo := 0;
+          ELSE
+            IF svSKP == 1 THEN kvNx := sv_KMAct(kvSl); ELSE kvNx := sv_KMAct(kvSl + 4); END;
+            IF kvNx >= 0 THEN kvGo := 0; END;
+          END;
+        END;
+      ELSE
+        IF kvY >= svPT - 6 AND kvY <= svPB + 3 THEN
+          // the finger reads the curves for as long as it stays down
+          svInfo := "";
+          sv_CurTo(kvX);
+          sv_KMFrame();
+          kvDg := 1;
+          WHILE kvDg == 1 DO
+            kvK := GETKEY;
+            kvM := MOUSE;
+            kvM1 := kvM(1);
+            IF kvK > -1 OR SIZE(kvM1) == 0 THEN
+              kvDg := 0;
+            ELSE
+              IF kvM1(1) <> kvX THEN kvX := kvM1(1); sv_CurTo(kvX); sv_KMFrame(); END;
+            END;
+          END;
+          IF kvK > -1 THEN REPEAT kvK := GETKEY; UNTIL kvK == -1; END;
+          sv_Drain();
+        ELSE
+          sv_Drain();
+          IF kvY > svPB + 3 AND kvY < 180 THEN
+            svInfo := "At risk = not yet " + svEvW + " and still followed then";
+            svInfC := #000000h;
+          ELSE
+            IF kvY < svPT - 6 THEN
+              IF svView == 1 THEN
+                svInfo := "Band = 95% CI of S(t); ticks = censored times";
+              ELSE
+                svInfo := "H(t) = sum of d/n; ticks = censored times";
+              END;
+              svInfC := #000000h;
+            ELSE
+              svInfo := "";
+            END;
+          END;
+        END;
+      END;
+    ELSE
+      IF kvK == 7 THEN svInfo := ""; sv_CurStep(-1); END;
+      IF kvK == 8 THEN svInfo := ""; sv_CurStep(1); END;
+      IF kvK == 4 THEN kvNx := 0; kvGo := 0; END;
+      IF kvK == 30 THEN
+        kvNx := sv_KMMenu();
+        IF kvNx >= 0 THEN kvGo := 0; END;
+      END;
+      REPEAT kvK := GETKEY; UNTIL kvK == -1;
+    END;
+  END;
+  svInfo := "";
+  RETURN kvNx;
+END;
+
+
+// ============================================================================
+// THE QUANTILES VIEW: the median, and the times by which 25%, 20% or 10%
+// had the event.  The picture: the curves, a red dotted line at S = 1 - p,
+// each group's quantile where its curve first drops below the line, and
+// its 95% CI (Brookmeyer-Crowley) as a bar along the line.  When a curve
+// never drops below the line the quantile is "not reached" (n.r.): with
+// Rossi only 26% are re-arrested in 52 weeks, so the median is not
+// reached, and the page says so and offers 25%, 20% and 10%.
+// ============================================================================
+
+// p as a percentage: "50%", "25%" ...
+sv_Pct(pcP)
+BEGIN
+  RETURN sv_I(100 * pcP) + "%";
+END;
+
+// A quantile time as text: "49 weeks", or "n.r." when not reached.
+sv_QS(qsT)
+BEGIN
+  IF qsT < 0 THEN RETURN "n.r."; END;
+  RETURN sv_TS(qsT);
+END;
+
+sv_QDraw()
+BEGIN
+  LOCAL qdI, qdR, qdT, qdC, qdX, qdY;
+  LOCAL qdX1, qdX2, qdS, qdRw, qdNR, qdLy;
+  LOCAL qdYb, qdAny, qdCI, qdR0, qdQ, qdL;
+  LOCAL qdH;
+  IF svNG == 2 THEN qdRw := {1, 2}; qdNR := {1, 2, 3}; ELSE qdRw := {3}; qdNR := {3}; END;
+  // each row's quantile and its CI, computed ONCE per page (beta 1a)
+  qdQ := {-1, -1, -1}; qdL := {-1, -1, -1}; qdH := {-1, -1, -1};
+  FOR qdI FROM 1 TO SIZE(qdNR) DO
+    qdR := qdNR(qdI);
+    qdQ(qdR) := sv_Quant(qdR, svQP);
+    qdCI := sv_QCI(qdR, svQP);
+    qdL(qdR) := qdCI(1); qdH(qdR) := qdCI(2);
+  END;
+  svRows := qdRw;
+  sv_Box(40, 30, 312, 104);
+  sv_AxX();
+  svYlo := 0; svYhi := 1; svYs := 0.25; svYdc := 2;
+  IF svQP == 0.5 THEN
+    qdS := "Median: time by which 50% " + svEvA;
+  ELSE
+    qdS := "Time by which " + sv_Pct(svQP) + " " + svEvA;
+  END;
+  sv_Frame(qdS);
+  TEXTOUT_P("S(t), and the red line at S = " + sv_F(1 - svQP, 2), G1, svPL + 2, 19, 1, svGRAY, 270);
+  sv_Grid();
+  FOR qdI FROM 1 TO SIZE(qdRw) DO
+    qdR := qdRw(qdI);
+    sv_Steps(qdR, sv_Col(qdR), 1);
+  END;
+  qdY := sv_YP(1 - svQP);
+  sv_DotH(svPL, svPR, qdY, svRED);
+  sv_DotH(svPL + 1, svPR, qdY + 1, svRED);
+  // ---- each curve's quantile and its CI bar ----
+  FOR qdI FROM 1 TO SIZE(qdRw) DO
+    qdR := qdRw(qdI);
+    qdC := sv_Col(qdR);
+    qdT := qdQ(qdR);
+    qdYb := qdY + 3 + 4 * qdI;
+    IF qdL(qdR) >= 0 THEN
+      qdX1 := sv_XP(qdL(qdR));
+      IF qdH(qdR) >= 0 THEN qdX2 := sv_XP(qdH(qdR)); ELSE qdX2 := svPR; END;
+      LINE_P(G1, qdX1, qdYb, qdX2, qdYb, qdC);
+      LINE_P(G1, qdX1, qdYb + 1, qdX2, qdYb + 1, qdC);
+      LINE_P(G1, qdX1, qdYb - 2, qdX1, qdYb + 3, qdC);
+      IF qdH(qdR) >= 0 THEN
+        LINE_P(G1, qdX2, qdYb - 2, qdX2, qdYb + 3, qdC);
+      ELSE
+        // not reached: an arrow head at the right edge
+        LINE_P(G1, qdX2 - 4, qdYb - 3, qdX2, qdYb, qdC);
+        LINE_P(G1, qdX2 - 4, qdYb + 4, qdX2, qdYb + 1, qdC);
+      END;
+    END;
+    IF qdT >= 0 THEN
+      qdX := sv_XP(qdT);
+      sv_DotV(qdX, qdY, svPB, qdC);
+      RECT_P(G1, qdX - 2, qdY - 2, qdX + 2, qdY + 2, qdC, qdC);
+    END;
+  END;
+  // ---- the words ----
+  IF svQP == 0.5 THEN qdS := "Median"; ELSE qdS := sv_I(100 * svQP) + "th percentile"; END;
+  IF svQP == 0.25 THEN qdS := "25th percentile (Q1)"; END;
+  qdS := qdS + ": first time S(t) < " + sv_F(1 - svQP, 2);
+  TEXTOUT_P(qdS, G1, 4, 118, 1, svBLUE, 314);
+  qdLy := 130; qdAny := 0; qdR0 := 3;
+  FOR qdI FROM 1 TO SIZE(qdNR) DO
+    qdR := qdNR(qdI);
+    qdT := qdQ(qdR);
+    qdS := svGNm(qdR) + ": " + sv_QS(qdT);
+    IF qdT >= 0 THEN
+      qdS := qdS + sv_Un();
+    ELSE
+      IF qdAny == 0 THEN qdR0 := qdR; END;
+      qdAny := 1;
+    END;
+    IF qdL(qdR) >= 0 THEN
+      qdS := qdS + ";  95% CI " + sv_TS(qdL(qdR)) + " to " + sv_QS(qdH(qdR));
+    ELSE
+      qdS := qdS + ";  no CI (too few events)";
+    END;
+    TEXTOUT_P(qdS, G1, 4, qdLy, 1, sv_Col(qdR), 314);
+    qdLy := qdLy + 11;
+  END;
+  qdLy := qdLy + 2;
+  IF qdAny == 1 THEN
+    IF svEv(qdR0) == 0 THEN
+      // no events at all: no quantile can be estimated, whatever the %
+      TEXTOUT_P(svGNm(qdR0) + ": no events, so no quantile can be", G1, 4, qdLy, 1, svRED, 314);
+      TEXTOUT_P("estimated: S(t) stays at 1.", G1, 4, qdLy + 11, 1, svRED, 314);
+    ELSE
+      qdS := "n.r. = not reached: S(t) never falls below " + sv_F(1 - svQP, 2) + ".";
+      TEXTOUT_P(qdS, G1, 4, qdLy, 1, svRED, 314);
+      qdS := svGNm(qdR0) + ": S(" + sv_TS(svLast(qdR0)) + ") = " + sv_F(svSv(qdR0 * svM), 3) + "; " + sv_F(100 * (1 - svSv(qdR0 * svM)), 1) + "% " + svEvW + ".";
+      TEXTOUT_P(qdS, G1, 4, qdLy + 11, 1, svRED, 314);
+      IF svQP == 0.5 THEN
+        TEXTOUT_P("So the median is not reached: try 25%, 20%, 10%.", G1, 4, qdLy + 22, 1, svRED, 314);
+      ELSE
+        TEXTOUT_P("Try a smaller % (soft keys), or report S at the end.", G1, 4, qdLy + 22, 1, svRED, 314);
+      END;
+    END;
+  ELSE
+    TEXTOUT_P("Read across at S = " + sv_F(1 - svQP, 2) + ", down to the time axis.", G1, 4, qdLy, 1, #000000h, 314);
+    TEXTOUT_P("CI bars: every time whose band reaches the line.", G1, 4, qdLy + 11, 1, #000000h, 314);
+  END;
+  IF svCIT == 1 THEN qdS := "log-log"; ELSE qdS := "linear"; END;
+  IF DIM(svInfo) > 0 THEN
+    TEXTOUT_P(svInfo, G1, 4, 196, 1, svInfC, 314);
+  ELSE
+    TEXTOUT_P("B-C CI from the " + qdS + " band; upper end not included", G1, 4, 196, 1, svGRAY, 314);
+  END;
+  TEXTOUT_P(svARL + svARR + " = %, CI = log-log/linear, Ent = menu, Esc = back", G1, 4, 207, 1, svFOOT, 314);
+  BLIT_P(G0, 0, 0, G1);
+  DRAWMENU({"Median", "25%", "20%", "10%", "CI", "Back"});
+END;
+
+// The quantiles view.  Returns the next view (0 = main menu).
+sv_QView()
+BEGIN
+  LOCAL qvK, qvM, qvM1, qvGo, qvNx, qvSl;
+  LOCAL qvX, qvY, qvL, qvI;
+  qvL := {0.1, 0.2, 0.25, 0.5};
+  qvGo := 1; qvNx := 0; svInfo := "";
+  REPEAT qvK := GETKEY; UNTIL qvK == -1;
+  sv_Drain();
+  WHILE qvGo == 1 DO
+    sv_QDraw();
+    REPEAT
+      qvK := GETKEY;
+      qvM := MOUSE;
+      qvM1 := qvM(1);
+    UNTIL qvK > -1 OR SIZE(qvM1) > 0;
+    IF SIZE(qvM1) > 0 THEN
+      qvX := qvM1(1); qvY := qvM1(2);
+      sv_Drain();
+      svInfo := "";
+      IF qvY >= 218 THEN
+        qvSl := MIN(6, IP(qvX / 53.4) + 1);
+        IF qvSl == 1 THEN svQP := 0.5; END;
+        IF qvSl == 2 THEN svQP := 0.25; END;
+        IF qvSl == 3 THEN svQP := 0.2; END;
+        IF qvSl == 4 THEN svQP := 0.1; END;
+        IF qvSl == 5 THEN svCIT := 3 - svCIT; sv_CIs(); svDirty := 1; END;
+        IF qvSl == 6 THEN qvNx := 0; qvGo := 0; END;
+      ELSE
+        IF qvY >= svPT AND qvY <= svPB THEN
+          svInfo := "Red dots: S = " + sv_F(1 - svQP, 2) + ". Bars: each group's 95% CI";
+          svInfC := svRED;
+        END;
+      END;
+    ELSE
+      IF qvK == 7 OR qvK == 8 THEN
+        qvI := 1;
+        FOR qvX FROM 1 TO 4 DO
+          IF ABS(qvL(qvX) - svQP) < 0.001 THEN qvI := qvX; END;
+        END;
+        IF qvK == 7 THEN qvI := qvI - 1; ELSE qvI := qvI + 1; END;
+        IF qvI < 1 THEN qvI := 4; END;
+        IF qvI > 4 THEN qvI := 1; END;
+        svQP := qvL(qvI);
+        svInfo := "";
+      END;
+      IF qvK == 4 THEN qvNx := 0; qvGo := 0; END;
+      IF qvK == 30 THEN
+        qvNx := sv_GoMenu();
+        IF qvNx >= 0 AND qvNx <> 2 THEN qvGo := 0; END;
+        IF qvNx == 2 THEN qvNx := 0; END;
+      END;
+      REPEAT qvK := GETKEY; UNTIL qvK == -1;
+    END;
+  END;
+  svInfo := "";
+  RETURN qvNx;
+END;
+
+
+// ============================================================================
+// THE LOG-RANK VIEWS (two groups)
+// Page 1: observed and expected events per group, as a table and as
+//   coloured bars (solid O, pale E); chi-square, p, the hazard ratio and
+//   its CI, Gehan-Breslow's chi-square and p, and the verdict.
+// Page 2: the chi-square curve with 1 df, the log-rank statistic marked
+//   (red) with the tail beyond it shaded (= p), Gehan-Breslow's (magenta,
+//   dotted) and the 5% critical value (grey, dotted).
+// Page 3: early or late?  The running total of O1 - E1 over time, and the
+//   weights: Gehan-Breslow weights each event time by the number at risk
+//   n(t), log-rank weights every event time 1.
+// ============================================================================
+
+sv_TPage1()
+BEGIN
+  LOCAL t1G, t1X, t1Y, t1H, t1Mx, t1S;
+  LOCAL t1V, t1B, t1I, t1O, t1E, t1C;
+  sv_Frame("Log-rank: " + svGNm(1) + " vs " + svGNm(2));
+  // ---- the table ----
+  TEXTOUT_P("group", G1, 4, 22, 1, svGRAY, 60);
+  TEXTOUT_P("O", G1, 82, 22, 1, svGRAY, 30);
+  TEXTOUT_P("E", G1, 112, 22, 1, svGRAY, 30);
+  TEXTOUT_P("O - E", G1, 144, 22, 1, svGRAY, 36);
+  FOR t1I FROM 1 TO 2 DO
+    IF t1I == 1 THEN t1O := svO1; t1E := svE1; ELSE t1O := svO2; t1E := svE2; END;
+    t1Y := 22 + 12 * t1I;
+    TEXTOUT_P(svGSh(t1I), G1, 4, t1Y, 1, sv_Col(t1I), 76);
+    TEXTOUT_P(sv_I(t1O), G1, 82, t1Y, 1, sv_Col(t1I), 30);
+    TEXTOUT_P(sv_F(t1E, 1), G1, 112, t1Y, 1, sv_Col(t1I), 32);
+    TEXTOUT_P(sv_Sg(t1O - t1E, 1), G1, 144, t1Y, 1, sv_Col(t1I), 36);
+  END;
+  TEXTOUT_P("both", G1, 4, 58, 1, #000000h, 76);
+  TEXTOUT_P(sv_I(svO1 + svO2), G1, 82, 58, 1, #000000h, 30);
+  TEXTOUT_P(sv_F(svE1 + svE2, 1), G1, 112, 58, 1, #000000h, 40);
+  TEXTOUT_P("V = " + sv_F(svVar, 2) + " (var of O" + CHAR(8321) + ")", G1, 4, 72, 1, #000000h, 174);
+  IF svLRok == 1 THEN
+    TEXTOUT_P(svCHI + " = (O" + CHAR(8321) + " - E" + CHAR(8321) + ")" + svSQ + "/V = " + sv_F(svChi, 2), G1, 4, 84, 1, svRED, 174);
+    TEXTOUT_P("df = 1, " + sv_PS(svPv), G1, 4, 96, 1, svRED, 174);
+  ELSE
+    TEXTOUT_P("V = 0: no test possible", G1, 4, 84, 1, svRED, 174);
+  END;
+  // ---- the bars: solid = observed, pale = expected ----
+  t1Mx := MAX(MAX(svO1, svO2), MAX(svE1, svE2));
+  IF t1Mx <= 0 THEN t1Mx := 1; END;
+  t1Mx := t1Mx * 1.15;
+  svHX1 := {0, 0, 0, 0}; svHX2 := {0, 0, 0, 0}; svHY1 := {0, 0, 0, 0}; svHY2 := {0, 0, 0, 0};
+  svHN := 4;
+  LINE_P(G1, 184, 80, 316, 80, #000000h);
+  FOR t1I FROM 1 TO 2 DO
+    IF t1I == 1 THEN t1O := svO1; t1E := svE1; ELSE t1O := svO2; t1E := svE2; END;
+    t1G := 186 + 66 * (t1I - 1);
+    t1C := sv_Col(t1I);
+    FOR t1B FROM 1 TO 2 DO
+      IF t1B == 1 THEN t1V := t1O; ELSE t1V := t1E; END;
+      t1X := t1G + 4 + 30 * (t1B - 1);
+      t1H := IP(t1V / t1Mx * 46 + 0.5);
+      IF t1B == 1 THEN
+        RECT_P(G1, t1X, 80 - t1H, t1X + 24, 79, t1C, t1C);
+        t1S := sv_I(t1V);
+      ELSE
+        RECT_P(G1, t1X, 80 - t1H, t1X + 24, 79, t1C, sv_Pale(t1I));
+        t1S := sv_F(t1V, 1);
+      END;
+      TEXTOUT_P(t1S, G1, t1X, 80 - t1H - 11, 1, t1C, 40);
+      svHX1(2 * t1I + t1B - 2) := t1X; svHX2(2 * t1I + t1B - 2) := t1X + 24;
+      svHY1(2 * t1I + t1B - 2) := 24; svHY2(2 * t1I + t1B - 2) := 92;
+    END;
+    TEXTOUT_P(svGSh(t1I), G1, t1G + 4, 82, 1, t1C, 62);
+  END;
+  TEXTOUT_P("solid O, pale E", G1, 190, 93, 1, svGRAY, 126);
+  // ---- the hazard ratio (two estimates) and the second opinion ----
+  IF svHR > 0 THEN
+    TEXTOUT_P("HR = (O" + CHAR(8321) + "/E" + CHAR(8321) + ")/(O" + CHAR(8322) + "/E" + CHAR(8322) + ") = " + sv_F(svHR, 3) + ", CI " + sv_F(svHRL, 3) + " to " + sv_F(svHRH, 3), G1, 4, 108, 1, svBLUE, 314);
+  ELSE
+    TEXTOUT_P("HR not estimable: a group has no events", G1, 4, 108, 1, svBLUE, 314);
+  END;
+  IF svLRok == 1 THEN
+    TEXTOUT_P("Peto: exp((O" + CHAR(8321) + " - E" + CHAR(8321) + ")/V) = " + sv_F(svPHR, 3) + ", CI " + sv_F(svPHL, 3) + " to " + sv_F(svPHH, 3), G1, 4, 120, 1, svBLUE, 314);
+    TEXTOUT_P("Peto's CI misses 1 exactly when log-rank p < 0.05", G1, 4, 132, 1, svGRAY, 314);
+  END;
+  IF svGbOk == 1 THEN
+    TEXTOUT_P("Gehan-Breslow (Wilcoxon): " + svCHI + " = " + sv_F(svGbC, 2) + ", " + sv_PS(svGbP), G1, 4, 144, 1, svMAG, 314);
+  END;
+  IF svLRok == 1 THEN
+    // the verdict at alpha = 0.05: evidence (red) or no convincing evidence (green)
+    IF svPv < 0.05 THEN
+      TEXTOUT_P("p < 0.05: evidence that the two curves differ", G1, 4, 156, 1, svRED, 314);
+    ELSE
+      TEXTOUT_P("p " + svGEQ + " 0.05: no convincing evidence the curves differ", G1, 4, 156, 1, svGRN, 314);
+    END;
+    // the O/E-ratio CI is a second approximation; near the line it can
+    // disagree with p (Peto's cannot): say so
+    t1B := 0;
+    IF svHR > 0 THEN
+      IF svHRH < 1 OR svHRL > 1 THEN t1B := 1; END;
+      IF svPv < 0.05 THEN t1B := 1 - t1B; END;
+    END;
+    IF t1B == 1 THEN
+      TEXTOUT_P("Borderline: the O/E-ratio CI and p disagree", G1, 4, 168, 1, svORNG, 314);
+    ELSE
+      IF svPv >= 0.04 AND svPv <= 0.06 THEN
+        TEXTOUT_P("Borderline: p is close to 0.05 -- report p itself.", G1, 4, 168, 1, svORNG, 314);
+      END;
+    END;
+    IF svHR > 0 THEN
+      TEXTOUT_P("Estimate: " + svGSh(1) + "'s hazard = " + sv_I(100 * svHR) + "% of " + svGSh(2) + "'s (the HR)", G1, 4, 180, 1, #000000h, 314);
+    END;
+  END;
+  IF DIM(svInfo) > 0 THEN
+    TEXTOUT_P(svInfo, G1, 4, 192, 1, svInfC, 314);
+  ELSE
+    TEXTOUT_P("HR assumes proportional hazards (no crossing)", G1, 4, 192, 1, svGRAY, 314);
+  END;
+  TEXTOUT_P("1/3, tap a bar = what it is, Ent = menu, Esc = back", G1, 4, 205, 1, svFOOT, 314);
+END;
+
+// The chi-square curve (1 df) from a cache: one pixel row per column,
+// computed once per window (Lessons Learned 6); clipped at the top of
+// the box (the density is infinite at 0).
+sv_CvFit(cfX)
+BEGIN
+  LOCAL cfI, cfW, cfV, cfD;
+  cfW := svPR - svPL;
+  svCvP := MAKELIST(0, cfI, 1, cfW, 1);
+  FOR cfI FROM 1 TO cfW DO
+    cfV := cfI / cfW * cfX;
+    cfD := CHISQUARE(1, cfV);
+    svCvP(cfI) := svPB - IP(MIN(cfD / svYhi, 1) * (svPB - svPT));
+  END;
+  svCvKey := cfX;
+END;
+
+sv_TPage2()
+BEGIN
+  LOCAL t2X, t2S, t2P, t2I, t2Y, t2C;
+  LOCAL t2L, t2Cr;
+  sv_Frame(svCHI + " with 1 df: where the statistics fall");
+  sv_Box(30, 30, 312, 146);
+  t2X := MAX(6, MAX(svChi, svGbC) * 1.25);
+  svXs := sv_Nice(t2X / 6);
+  t2X := CEILING(t2X / svXs) * svXs;
+  // y to 0.4 only (the curve near 0 is clipped), so the thin tail shows
+  svXmx := t2X; svYlo := 0; svYhi := 0.4; svYs := 0.1; svYdc := 1;
+  IF svCvKey <> t2X THEN sv_CvFit(t2X); END;
+  TEXTOUT_P("density of " + svCHI + " if both groups share one curve (" + svH0 + ")", G1, svPL + 2, 19, 1, svGRAY, 286);
+  sv_Grid();
+  // the p-value: the tail beyond the log-rank statistic, column by column
+  t2P := sv_XP(MAX(svChi, 0));
+  IF svLRok == 1 THEN
+    FOR t2I FROM MAX(t2P, svPL + 1) TO svPR DO
+      t2Y := svCvP(t2I - svPL);
+      IF t2Y < svPB THEN LINE_P(G1, t2I, svPB - 1, t2I, t2Y, svTAIL); END;
+    END;
+  END;
+  t2L := -1;
+  FOR t2I FROM svPL + 1 TO svPR DO
+    t2Y := svCvP(t2I - svPL);
+    IF t2L >= 0 THEN LINE_P(G1, t2I - 1, t2L, t2I, t2Y, svBLUE); END;
+    t2L := t2Y;
+  END;
+  LINE_P(G1, svPL, svPB, svPR, svPB, #000000h);
+  // the 5% critical value, 1.96 squared = 3.84
+  t2Cr := svZ^2;
+  t2C := sv_XP(t2Cr);
+  sv_DotV(t2C, svPT, svPB, svGRAY);
+  TEXTOUT_P("5%: " + sv_F(t2Cr, 2), G1, t2C + 3, svPT + 26, 1, svGRAY, 60);
+  // Gehan-Breslow, dotted magenta; log-rank, solid red
+  IF svLRok == 0 THEN
+    TEXTOUT_P("No test: no events, or no variance (V = 0).", G1, 4, 160, 1, svRED, 314);
+    TEXTOUT_P("2/3, Ent = menu, Esc = back", G1, 4, 205, 1, svFOOT, 314);
+    RETURN;
+  END;
+  t2C := sv_XP(svGbC);
+  sv_DotV(t2C, svPT, svPB, svMAG);
+  sv_DotV(t2C + 1, svPT + 1, svPB, svMAG);
+  t2S := "G-B " + sv_F(svGbC, 2);
+  IF t2C > svPR - 70 THEN t2I := t2C - 4 - 6 * DIM(t2S); ELSE t2I := t2C + 3; END;
+  TEXTOUT_P(t2S, G1, t2I, svPT + 14, 1, svMAG, 70);
+  LINE_P(G1, t2P, svPT, t2P, svPB, svRED);
+  LINE_P(G1, t2P + 1, svPT, t2P + 1, svPB, svRED);
+  t2S := "log-rank " + sv_F(svChi, 2);
+  IF t2P > svPR - 90 THEN t2I := t2P - 4 - 6 * DIM(t2S); ELSE t2I := t2P + 4; END;
+  TEXTOUT_P(t2S, G1, t2I, svPT + 2, 1, svRED, 90);
+  TEXTOUT_P("Shaded tail = P(" + svCHI + " " + svGEQ + " " + sv_F(svChi, 2) + " | " + svH0 + ") = p: " + sv_PS(svPv), G1, 4, 160, 1, svRED, 314);
+  TEXTOUT_P(svH0 + ": the two groups share one survival curve.", G1, 4, 172, 1, #000000h, 314);
+  IF DIM(svInfo) > 0 THEN
+    TEXTOUT_P(svInfo, G1, 4, 192, 1, svInfC, 314);
+  ELSE
+    TEXTOUT_P("Gehan-Breslow: " + sv_PS(svGbP) + " (dotted magenta)", G1, 4, 192, 1, svMAG, 314);
+  END;
+  TEXTOUT_P("2/3, tap a line = what it is, Ent = menu, Esc = back", G1, 4, 205, 1, svFOOT, 314);
+END;
+
+// Page 3: where the difference builds up, and how the two tests weigh it.
+sv_TPage3()
+BEGIN
+  LOCAL t3J, t3D, t3Cum, t3Mx;
+  LOCAL t3X0, t3Y0, t3X, t3Y, t3R;
+  LOCAL t3S, t3Z, t3N0, t3T;
+  sv_Frame("Early or late? How the two tests weigh time");
+  sv_Box(40, 30, 312, 86);
+  sv_AxX();
+  // ---- the largest |running O1 - E1|, for the scale ----
+  t3Mx := 0; t3Cum := 0;
+  FOR t3J FROM 1 TO svM DO
+    t3D := svDd(2 * svM + t3J);
+    IF t3D > 0 THEN
+      t3Cum := t3Cum + svDd(t3J) - t3D * svNr(t3J) / svNr(2 * svM + t3J);
+      t3Mx := MAX(t3Mx, ABS(t3Cum));
+    END;
+  END;
+  IF t3Mx <= 0 THEN t3Mx := 1; END;
+  svYs := sv_Nice(t3Mx / 2);
+  svYhi := CEILING(t3Mx / svYs) * svYs; svYlo := -svYhi;
+  svYdc := MAX(0, -FLOOR(LOG(svYs) + 0.0000001));
+  TEXTOUT_P("running total of O" + CHAR(8321) + " - E" + CHAR(8321) + " (" + svGSh(1) + ")", G1, svPL + 2, 19, 1, svBLUE, 270);
+  sv_Grid();
+  t3Z := sv_YP(0);
+  LINE_P(G1, svPL, t3Z, svPR, t3Z, svGRAY);
+  t3X0 := svPL; t3Y0 := t3Z; t3Cum := 0;
+  FOR t3J FROM 1 TO svM DO
+    t3D := svDd(2 * svM + t3J);
+    IF t3D > 0 THEN
+      t3Cum := t3Cum + svDd(t3J) - t3D * svNr(t3J) / svNr(2 * svM + t3J);
+      t3X := sv_XP(svU(t3J)); t3Y := sv_YP(t3Cum);
+      LINE_P(G1, t3X0, t3Y0, t3X, t3Y0, svBLUE);
+      LINE_P(G1, t3X, t3Y0, t3X, t3Y, svBLUE);
+      LINE_P(G1, t3X0, t3Y0 + 1, t3X, t3Y0 + 1, svBLUE);
+      t3X0 := t3X; t3Y0 := t3Y;
+    END;
+  END;
+  // ---- the weights: n(t)/n(0) for Gehan-Breslow, 1 for log-rank ----
+  sv_Box(40, 114, 312, 150);
+  svYlo := 0; svYhi := 1; svYs := 0.5; svYdc := 1;
+  TEXTOUT_P("weight: G-B n(t)/n(0), log-rank 1 (grey dots)", G1, svPL + 2, 101, 1, svMAG, 270);
+  sv_Grid();
+  sv_DotH(svPL, svPR, sv_YP(1), svGRAY);
+  t3N0 := svTot(3);
+  t3X0 := svPL; t3Y0 := sv_YP(1);
+  FOR t3J FROM 1 TO svM DO
+    IF svDd(2 * svM + t3J) > 0 THEN
+      t3X := sv_XP(svU(t3J)); t3Y := sv_YP(svNr(2 * svM + t3J) / t3N0);
+      LINE_P(G1, t3X0, t3Y0, t3X, t3Y0, svMAG);
+      LINE_P(G1, t3X, t3Y0, t3X, t3Y, svMAG);
+      t3X0 := t3X; t3Y0 := t3Y;
+    END;
+  END;
+  // ---- the words ----
+  IF DIM(svInfo) > 0 THEN
+    TEXTOUT_P(svInfo, G1, 4, 167, 1, svInfC, 314);
+  ELSE
+    TEXTOUT_P("G-B weighs by n at risk, so early times count more.", G1, 4, 167, 1, #000000h, 314);
+  END;
+  IF svLRok == 1 AND svGbOk == 1 AND svChi > 0 THEN
+    // SurvLab's rule of thumb (not a test): the ratio of the two
+    // statistics hints where the difference lies
+    t3R := svGbC / svChi;
+    t3S := "G-B " + sv_F(svGbC, 2) + " vs log-rank " + sv_F(svChi, 2) + " (rule of thumb):";
+    IF t3R > 1.15 THEN
+      t3T := "suggests the gap is bigger early on";
+    ELSE
+      IF t3R < 0.87 THEN t3T := "suggests the gap grows later on"; ELSE t3T := "suggests the gap builds steadily"; END;
+    END;
+    TEXTOUT_P(t3S, G1, 4, 178, 1, svRED, 314);
+    TEXTOUT_P(t3T, G1, 4, 190, 1, svRED, 314);
+  END;
+  TEXTOUT_P("3/3, tap = what it is, Ent = menu, Esc = back", G1, 4, 205, 1, svFOOT, 314);
+END;
+
+// What a tap on a log-rank page is.
+sv_TTap(ttX, ttY)
+BEGIN
+  LOCAL ttI, ttB, ttG, ttP;
+  svInfo := ""; svInfC := #000000h;
+  IF svTPg == 1 THEN
+    FOR ttI FROM 1 TO svHN DO
+      IF ttX >= svHX1(ttI) AND ttX <= svHX2(ttI) AND ttY >= svHY1(ttI) AND ttY <= svHY2(ttI) THEN
+        ttG := IP((ttI + 1) / 2); ttB := ttI - 2 * (ttG - 1);
+        svInfC := sv_Col(ttG);
+        IF ttB == 1 THEN
+          IF ttG == 1 THEN ttP := svO1; ELSE ttP := svO2; END;
+          svInfo := svGNm(ttG) + ": O = " + sv_I(ttP) + " " + svEvW + " (observed)";
+        ELSE
+          IF ttG == 1 THEN ttP := svE1; ELSE ttP := svE2; END;
+          svInfo := svGNm(ttG) + ": E = " + sv_F(ttP, 1) + " expected if one curve";
+        END;
+      END;
+    END;
+  END;
+  IF svTPg == 2 AND ttY >= 30 AND ttY <= 146 THEN
+    sv_Box(30, 30, 312, 146);
+    IF ABS(ttX - sv_XP(svChi)) <= 5 THEN
+      svInfo := "Red: log-rank " + svCHI + " = " + sv_F(svChi, 2) + "; tail beyond = p"; svInfC := svRED;
+    ELSE
+      IF ABS(ttX - sv_XP(svGbC)) <= 5 THEN
+        svInfo := "Magenta: Gehan-Breslow " + svCHI + " = " + sv_F(svGbC, 2); svInfC := svMAG;
+      ELSE
+        IF ABS(ttX - sv_XP(svZ^2)) <= 5 THEN
+          svInfo := "Grey: 3.84, past it p < 0.05"; svInfC := svGRAY;
+        ELSE
+          svInfo := "Blue: how " + svCHI + " varies when " + svH0 + " is true"; svInfC := svBLUE;
+        END;
+      END;
+    END;
+  END;
+  IF svTPg == 3 THEN
+    IF ttY < 98 THEN
+      svInfo := "Rises: " + svGSh(1) + " had more events than expected"; svInfC := svBLUE;
+    ELSE
+      svInfo := "n(t)/n(0): the share still at risk at t"; svInfC := svMAG;
+    END;
+  END;
+END;
+
+// The log-rank view: three pages.  Returns the next view.
+sv_TView()
+BEGIN
+  LOCAL tvK, tvM, tvM1, tvGo, tvNx, tvSl;
+  LOCAL tvX, tvY;
+  IF svNG < 2 THEN
+    MSGBOX("One group only: no test." + CHAR(10) + "Load the Rossi aid preset, or put" + CHAR(10) + "group codes 1 and 2 in C3 and" + CHAR(10) + "choose Use my data.");
+    RETURN 0;
+  END;
+  svTPg := 1; tvGo := 1; tvNx := 0; svInfo := "";
+  REPEAT tvK := GETKEY; UNTIL tvK == -1;
+  sv_Drain();
+  WHILE tvGo == 1 DO
+    CASE
+      IF svTPg == 1 THEN sv_TPage1(); END;
+      IF svTPg == 2 THEN sv_TPage2(); END;
+      DEFAULT sv_TPage3();
+    END;
+    BLIT_P(G0, 0, 0, G1);
+    DRAWMENU({"Prev", "Next", "KM", "Median", "Life", "Back"});
+    REPEAT
+      tvK := GETKEY;
+      tvM := MOUSE;
+      tvM1 := tvM(1);
+    UNTIL tvK > -1 OR SIZE(tvM1) > 0;
+    IF SIZE(tvM1) > 0 THEN
+      tvX := tvM1(1); tvY := tvM1(2);
+      sv_Drain();
+      IF tvY >= 218 THEN
+        svInfo := "";
+        tvSl := MIN(6, IP(tvX / 53.4) + 1);
+        IF tvSl == 1 THEN svTPg := MAX(1, svTPg - 1); END;
+        IF tvSl == 2 THEN svTPg := MIN(3, svTPg + 1); END;
+        IF tvSl == 3 THEN tvNx := 1; tvGo := 0; END;
+        IF tvSl == 4 THEN tvNx := 2; tvGo := 0; END;
+        IF tvSl == 5 THEN tvNx := 4; tvGo := 0; END;
+        IF tvSl == 6 THEN tvNx := 0; tvGo := 0; END;
+      ELSE
+        sv_TTap(tvX, tvY);
+      END;
+    ELSE
+      svInfo := "";
+      IF tvK == 7 THEN svTPg := MAX(1, svTPg - 1); END;
+      IF tvK == 8 THEN svTPg := MIN(3, svTPg + 1); END;
+      IF tvK == 4 THEN tvNx := 0; tvGo := 0; END;
+      IF tvK == 30 THEN
+        tvNx := sv_GoMenu();
+        IF tvNx >= 0 AND tvNx <> 3 THEN tvGo := 0; END;
+        IF tvNx == 3 THEN tvNx := 0; END;
+      END;
+      REPEAT tvK := GETKEY; UNTIL tvK == -1;
+    END;
+  END;
+  svInfo := "";
+  RETURN tvNx;
+END;
+
+
+// ============================================================================
+// THE LIFE TABLE VIEW
+// The actuarial table of one row (group 1, group 2 or everyone) in
+// intervals of the chosen width, 12 rows to a screen, and a plot: the
+// life-table S at the interval ends (magenta) over the Kaplan-Meier
+// curve (pale), and the conditional probability q of the event in each
+// interval as bars (tap one, or Left / Right).
+// ============================================================================
+
+// Ask for the interval width.  Returns 1 if a usable width was set.
+sv_LAsk()
+BEGIN
+  LOCAL laW, laH, laOK;
+  laW := svLW;
+  IF DIM(svUnit) > 0 THEN laH := "In " + svUnit + "; e.g. 4 gives 0-4, 4-8, ..."; ELSE laH := "In your time units; at most 100 intervals"; END;
+  laOK := INPUT({laW}, "Life table intervals", {"Width:"}, {laH});
+  IF laOK == 1 THEN
+    IF laW <= 0 THEN MSGBOX("The width must be more than 0."); RETURN 0; END;
+    IF CEILING(svTmax / laW - 0.000000001) > 100 THEN
+      MSGBOX("That width makes more than 100" + CHAR(10) + "intervals up to " + sv_TS(svTmax) + ":" + CHAR(10) + "choose a wider one.");
+      RETURN 0;
+    END;
+    svLW := laW; svLTop := 1; svLSel := 0;
+    RETURN 1;
+  END;
+  RETURN 0;
+END;
+
+sv_LTab()
+BEGIN
+  LOCAL ltI, ltY, ltL, ltC, ltS;
+  sv_Frame("Life table: " + svGNm(svLR) + ", width " + sv_TS(svLW) + sv_Un());
+  ltC := svGRAY;
+  TEXTOUT_P("from-to", G1, 4, 21, 1, ltC, 42);
+  TEXTOUT_P("n", G1, 46, 21, 1, ltC, 36);
+  TEXTOUT_P("wdrn", G1, 84, 21, 1, ltC, 36);
+  TEXTOUT_P("n'", G1, 124, 21, 1, ltC, 40);
+  TEXTOUT_P("d", G1, 170, 21, 1, ltC, 30);
+  TEXTOUT_P("q = d/n'", G1, 200, 21, 1, ltC, 54);
+  TEXTOUT_P("S end", G1, 262, 21, 1, ltC, 54);
+  LINE_P(G1, 2, 32, 317, 32, svGRAY);
+  ltL := MIN(svLTop + 11, svLK);
+  FOR ltI FROM svLTop TO ltL DO
+    ltY := 34 + 12 * (ltI - svLTop);
+    IF ltI == svLSel THEN RECT_P(G1, 2, ltY - 1, 317, ltY + 10, svLORN, svLORN); END;
+    ltS := sv_TS(svLA(ltI)) + "-" + sv_TS(svLB(ltI));
+    IF DIM(ltS) > 7 THEN ltS := sv_TS(svLA(ltI)); END;
+    TEXTOUT_P(ltS, G1, 4, ltY, 1, #000000h, 42);
+    TEXTOUT_P(sv_I(svLN(ltI)), G1, 46, ltY, 1, #000000h, 36);
+    TEXTOUT_P(sv_I(svLC(ltI)), G1, 84, ltY, 1, svGRAY, 36);
+    TEXTOUT_P(sv_TS(svLE(ltI)), G1, 124, ltY, 1, #000000h, 44);
+    TEXTOUT_P(sv_I(svLDv(ltI)), G1, 170, ltY, 1, svMAG, 30);
+    TEXTOUT_P(sv_F(svLQ(ltI), 4), G1, 200, ltY, 1, svMAG, 56);
+    TEXTOUT_P(sv_F(svLS(ltI), 4), G1, 262, ltY, 1, sv_Col(svLR), 56);
+  END;
+  TEXTOUT_P("rows " + sv_I(svLTop) + "-" + sv_I(ltL) + " of " + sv_I(svLK) + "; n' = n - wdrn/2 (half an interval)", G1, 4, 180, 1, svGRAY, 314);
+  IF DIM(svInfo) > 0 THEN
+    TEXTOUT_P(svInfo, G1, 4, 192, 1, svInfC, 314);
+  ELSE
+    IF ltL == svLK THEN
+      // the convention for the last interval, said where it applies
+      TEXTOUT_P("Ends at " + sv_TS(svLB(svLK)) + ": the " + sv_I(svLF(svLK)) + " still followed then complete it", G1, 4, 192, 1, svORNG, 314);
+    ELSE
+      TEXTOUT_P("S end = product of (1 - q) up to that interval", G1, 4, 192, 1, svGRAY, 314);
+    END;
+  END;
+  TEXTOUT_P(CHAR(8645) + " = scroll, tap row = info, Ent = menu, Esc = back", G1, 4, 205, 1, svFOOT, 314);
+  BLIT_P(G0, 0, 0, G1);
+  DRAWMENU({"Group", "Plot", "Width", "Up", "Down", "Back"});
+END;
+
+// The details of interval ldI, in words, for the info line.
+sv_LInfo(ldI)
+BEGIN
+  LOCAL ldS;
+  svInfC := svMAG;
+  IF ldI == svLK THEN ldS := "]"; ELSE ldS := ")"; END;
+  svInfo := "[" + sv_TS(svLA(ldI)) + ", " + sv_TS(svLB(ldI)) + ldS + ": d = " + sv_I(svLDv(ldI)) + " of n' = " + sv_TS(svLE(ldI)) + ", q = " + sv_F(svLQ(ldI), 4);
+END;
+
+sv_LPlot()
+BEGIN
+  LOCAL lpI, lpX0, lpY0, lpX, lpY, lpQm;
+  LOCAL lpH, lpXa, lpXb, lpC;
+  sv_Frame("Life table vs Kaplan-Meier: " + svGNm(svLR));
+  sv_Box(40, 30, 312, 112);
+  svXmx := MAX(svLB(svLK), 0.000001);
+  svXs := sv_Nice(svXmx / 6);
+  svYlo := 0; svYhi := 1; svYs := 0.25; svYdc := 2;
+  TEXTOUT_P("magenta = life table S, pale = Kaplan-Meier", G1, svPL + 2, 19, 1, svGRAY, 270);
+  sv_Grid();
+  sv_Steps(svLR, sv_Pale(svLR), 1);
+  lpX0 := sv_XP(0); lpY0 := sv_YP(1);
+  FOR lpI FROM 1 TO svLK DO
+    lpX := sv_XP(svLB(lpI)); lpY := sv_YP(svLS(lpI));
+    LINE_P(G1, lpX0, lpY0, lpX, lpY, svMAG);
+    LINE_P(G1, lpX0, lpY0 + 1, lpX, lpY + 1, svMAG);
+    RECT_P(G1, lpX - 2, lpY - 2, lpX + 2, lpY + 2, svMAG, svMAG);
+    lpX0 := lpX; lpY0 := lpY;
+  END;
+  // ---- q per interval, as bars (the bottom panel 132..168) ----
+  lpQm := 0;
+  FOR lpI FROM 1 TO svLK DO lpQm := MAX(lpQm, svLQ(lpI)); END;
+  IF lpQm <= 0 THEN lpQm := 1; END;
+  TEXTOUT_P("q = P(event in the interval | at risk at its start)", G1, 4, 124, 1, svORNG, 314);
+  LINE_P(G1, svPL, 172, svPR, 172, #000000h);
+  TEXTOUT_P(sv_F(lpQm, 3), G1, 0, 134, 1, svGRAY, 38);
+  svHN := svLK;
+  svHX1 := MAKELIST(0, lpI, 1, svLK, 1); svHX2 := MAKELIST(0, lpI, 1, svLK, 1);
+  FOR lpI FROM 1 TO svLK DO
+    lpXa := sv_XP(svLA(lpI)) + 1; lpXb := MAX(lpXa, sv_XP(svLB(lpI)) - 1);
+    lpH := IP(svLQ(lpI) / lpQm * 36 + 0.5);
+    IF lpI == svLSel THEN lpC := svRED; ELSE lpC := svORNG; END;
+    IF lpH > 0 THEN RECT_P(G1, lpXa, 172 - lpH, lpXb, 171, lpC, lpC); END;
+    svHX1(lpI) := lpXa; svHX2(lpI) := lpXb;
+  END;
+  sv_XLab(175);
+  IF DIM(svInfo) > 0 THEN
+    TEXTOUT_P(svInfo, G1, 4, 192, 1, svInfC, 314);
+  ELSE
+    TEXTOUT_P("Tap a bar (or " + svARL + svARR + ") to read its interval", G1, 4, 192, 1, svGRAY, 314);
+  END;
+  TEXTOUT_P(svARL + svARR + " = interval, Ent = menu, Esc = back", G1, 4, 205, 1, svFOOT, 314);
+  BLIT_P(G0, 0, 0, G1);
+  DRAWMENU({"Group", "Table", "Width", "", "", "Back"});
+END;
+
+// The life table view.  Returns the next view.
+sv_LView()
+BEGIN
+  LOCAL lvK, lvM, lvM1, lvGo, lvNx, lvSl;
+  LOCAL lvX, lvY, lvI;
+  IF sv_LCalc(svLR, svLW) == 0 THEN
+    MSGBOX("More than 100 intervals: choose a wider width.");
+    IF sv_LAsk() == 0 THEN RETURN 0; END;
+    IF sv_LCalc(svLR, svLW) == 0 THEN RETURN 0; END;
+  END;
+  svLMode := 1; lvGo := 1; lvNx := 0; svInfo := "";
+  IF svLTop > svLK THEN svLTop := 1; END;
+  REPEAT lvK := GETKEY; UNTIL lvK == -1;
+  sv_Drain();
+  WHILE lvGo == 1 DO
+    IF svLMode == 1 THEN sv_LTab(); ELSE sv_LPlot(); END;
+    REPEAT
+      lvK := GETKEY;
+      lvM := MOUSE;
+      lvM1 := lvM(1);
+    UNTIL lvK > -1 OR SIZE(lvM1) > 0;
+    IF SIZE(lvM1) > 0 THEN
+      lvX := lvM1(1); lvY := lvM1(2);
+      sv_Drain();
+      svInfo := "";
+      IF lvY >= 218 THEN
+        lvSl := MIN(6, IP(lvX / 53.4) + 1);
+        IF lvSl == 1 THEN
+          IF svNG == 2 THEN
+            svLR := svLR + 1;
+            IF svLR > 3 THEN svLR := 1; END;
+            lvI := sv_LCalc(svLR, svLW);
+            svLTop := 1; svLSel := 0;
+          ELSE
+            svInfo := "One group only"; svInfC := svGRAY;
+          END;
+        END;
+        IF lvSl == 2 THEN svLMode := 3 - svLMode; END;
+        IF lvSl == 3 THEN
+          IF sv_LAsk() == 1 THEN lvI := sv_LCalc(svLR, svLW); END;
+          REPEAT lvK := GETKEY; UNTIL lvK == -1;
+          sv_Drain();
+        END;
+        IF lvSl == 4 AND svLMode == 1 THEN svLTop := MAX(1, svLTop - 12); END;
+        IF lvSl == 5 AND svLMode == 1 THEN
+          IF svLTop + 12 <= svLK THEN svLTop := svLTop + 12; END;
+        END;
+        IF lvSl == 6 THEN lvNx := 0; lvGo := 0; END;
+      ELSE
+        IF svLMode == 1 THEN
+          IF lvY >= 34 AND lvY < 34 + 12 * 12 THEN
+            lvI := svLTop + IP((lvY - 34) / 12);
+            IF lvI <= svLK THEN svLSel := lvI; sv_LInfo(lvI); END;
+          END;
+        ELSE
+          // a tap off every bar clears the selection
+          svLSel := 0;
+          FOR lvI FROM 1 TO svHN DO
+            IF lvX >= svHX1(lvI) - 1 AND lvX <= svHX2(lvI) + 1 AND lvY >= 120 AND lvY <= 174 THEN
+              svLSel := lvI;
+            END;
+          END;
+          IF svLSel > 0 THEN sv_LInfo(svLSel); END;
+        END;
+      END;
+    ELSE
+      svInfo := "";
+      IF svLMode == 1 THEN
+        IF lvK == 2 THEN svLTop := MAX(1, svLTop - 1); END;
+        IF lvK == 12 THEN
+          IF svLTop + 12 <= svLK THEN svLTop := svLTop + 1; END;
+        END;
+      END;
+      IF lvK == 7 OR lvK == 8 THEN
+        IF lvK == 7 THEN svLSel := svLSel - 1; ELSE svLSel := svLSel + 1; END;
+        IF svLSel < 1 THEN svLSel := 1; END;
+        IF svLSel > svLK THEN svLSel := svLK; END;
+        IF svLSel < svLTop THEN svLTop := svLSel; END;
+        IF svLSel > svLTop + 11 THEN svLTop := svLSel - 11; END;
+        sv_LInfo(svLSel);
+      END;
+      IF lvK == 4 THEN lvNx := 0; lvGo := 0; END;
+      IF lvK == 30 THEN
+        lvNx := sv_GoMenu();
+        IF lvNx >= 0 AND lvNx <> 4 THEN lvGo := 0; END;
+        IF lvNx == 4 THEN lvNx := 0; END;
+      END;
+      REPEAT lvK := GETKEY; UNTIL lvK == -1;
+    END;
+  END;
+  svInfo := "";
+  RETURN lvNx;
+END;
+
+// The views call each other through this loop: each returns the next
+// view (1 Kaplan-Meier, 2 quantiles, 3 log-rank, 4 life table) or 0.
+sv_View(vwN)
+BEGIN
+  LOCAL vwV;
+  vwV := vwN;
+  WHILE vwV > 0 DO
+    CASE
+      IF vwV == 1 THEN vwV := sv_KMView(); END;
+      IF vwV == 2 THEN vwV := sv_QView(); END;
+      IF vwV == 3 THEN vwV := sv_TView(); END;
+      DEFAULT vwV := sv_LView();
+    END;
+  END;
+END;
+
+
+// ============================================================================
+// PRESETS, YOUR DATA, HELP, MAIN
+// ============================================================================
+
+// A page saying what was loaded, with its source line.
+sv_LoadInfo()
+BEGIN
+  LOCAL liY, liR, liS, liK;
+  sv_Frame("Loaded: " + svLbl);
+  liY := 24;
+  TEXTOUT_P("n = " + sv_I(svN) + ", events = " + sv_I(svEv(3)) + ", censored = " + sv_I(svN - svEv(3)), G1, 4, liY, 1, #000000h, 314);
+  liY := liY + 14;
+  IF svNG == 2 THEN
+    FOR liR FROM 1 TO 2 DO
+      liS := "group " + sv_I(liR) + " = " + svGNm(liR) + ": n = " + sv_I(svTot(liR)) + ", events = " + sv_I(svEv(liR));
+      TEXTOUT_P(liS, G1, 4, liY, 1, sv_Col(liR), 314);
+      liY := liY + 12;
+    END;
+  ELSE
+    TEXTOUT_P("one group (no group codes)", G1, 4, liY, 1, svBLUE, 314);
+    liY := liY + 12;
+  END;
+  liY := liY + 4;
+  TEXTOUT_P("Times from " + sv_TS(svU(1)) + " to " + sv_TS(svTmax) + sv_Un() + "; " + sv_I(svM) + " distinct times", G1, 4, liY, 1, #000000h, 314);
+  liY := liY + 12;
+  liK := 3 * svM;
+  TEXTOUT_P("S at the end (everyone): " + sv_F(svSv(liK), 4), G1, 4, liY, 1, #000000h, 314);
+  liY := liY + 18;
+  IF svFinX == 1 THEN
+    TEXTOUT_P("Financial aid was assigned AT RANDOM: a real", G1, 4, liY, 1, svGRN, 314);
+    TEXTOUT_P("experiment, so a difference can be read as an effect.", G1, 4, liY + 12, 1, svGRN, 314);
+    liY := liY + 28;
+  END;
+  IF DIM(svOwn) > 0 THEN
+    TEXTOUT_P(svOwn, G1, 4, liY, 1, svRED, 314);
+    IF svSplit == 1 THEN
+      TEXTOUT_P("An observed grouping, not an experiment.", G1, 4, liY + 12, 1, svRED, 314);
+      liY := liY + 12;
+    END;
+    liY := liY + 16;
+  END;
+  // a small picture of the curves, 0 to 1 by 0 to the last time (no
+  // axis text: the Kaplan-Meier view has it)
+  sv_Box(44, MAX(liY + 4, 140), 312, 178);
+  sv_AxX();
+  svYlo := 0; svYhi := 1;
+  RECT_P(G1, svPL, svPT, svPR, svPB, svGRID, #FFFFFFh);
+  TEXTOUT_P("S(t)", G1, 4, svPT, 1, svGRAY, 36);
+  IF svNG == 2 THEN
+    FOR liR FROM 1 TO 2 DO sv_Steps(liR, sv_Col(liR), 1); END;
+  ELSE
+    sv_Steps(3, sv_Col(3), 1);
+  END;
+  TEXTOUT_P("Data: " + svSrc, G1, 4, 192, 1, svFOOT, 314);
+  TEXTOUT_P("Any key or tap = menu", G1, 4, 207, 1, svFOOT, 314);
+  BLIT_P(G0, 0, 0, G1);
+  sv_WaitAny();
+END;
+
+// Load one of the Rossi splits.  1 aid vs none, 2 everyone, 3 prior
+// convictions 0-2 vs 3+, 4 age under 23 vs 23+.
+sv_Preset(prW)
+BEGIN
+  LOCAL prI;
+  IF svRok <> 1 THEN sv_RData(); END;
+  svN := 432;
+  svTim := svRwk; svEvt := svRar;
+  svGrp := MAKELIST(1, prI, 1, 432, 1);
+  svSrc := "Rossi, Berk & Lenihan 1980 (via Allison 1995)";
+  svUnit := "weeks"; svEvW := "re-arrested"; svOwn := ""; svFinX := 0;
+  svEvA := "are re-arrested"; svSplit := 0;
+  svLW := 4;
+  CASE
+    IF prW == 1 THEN
+      FOR prI FROM 1 TO 432 DO
+        IF svRfin(prI) == 1 THEN svGrp(prI) := 1; ELSE svGrp(prI) := 2; END;
+      END;
+      svNG := 2; svFinX := 1;
+      svGNm := {"aid", "no aid", "all"}; svGSh := {"aid", "no aid", "all"};
+      svLbl := "Rossi, aid vs no aid"; svShort := "Rossi aid/none";
+    END;
+    IF prW == 2 THEN
+      svNG := 1;
+      svGNm := {"all", "", "all"}; svGSh := {"all", "", "all"};
+      svLbl := "Rossi, all 432 men"; svShort := "Rossi, all";
+    END;
+    IF prW == 3 THEN
+      FOR prI FROM 1 TO 432 DO
+        IF svRpri(prI) <= 2 THEN svGrp(prI) := 1; ELSE svGrp(prI) := 2; END;
+      END;
+      svNG := 2;
+      svGNm := {"0-2 priors", "3+ priors", "all"}; svGSh := {"0-2", "3+", "all"};
+      svLbl := "Rossi, prior convictions"; svShort := "Rossi priors";
+      svOwn := "SurvLab's split at the median, 2 priors"; svSplit := 1;
+    END;
+    DEFAULT
+      FOR prI FROM 1 TO 432 DO
+        IF svRage(prI) < 23 THEN svGrp(prI) := 1; ELSE svGrp(prI) := 2; END;
+      END;
+      svNG := 2;
+      svGNm := {"under 23", "23 and over", "all"}; svGSh := {"< 23", svGEQ + " 23", "all"};
+      svLbl := "Rossi, age under 23 vs 23+"; svShort := "Rossi age";
+      svOwn := "SurvLab's split at the median age, 23"; svSplit := 1;
+  END;
+  sv_Refit();
+END;
+
+sv_PresetMenu()
+BEGIN
+  LOCAL pmI;
+  pmI := 0;
+  CHOOSE(pmI, "Load a preset", {"Rossi: aid vs no aid", "Rossi: all 432 men", "Rossi: priors 0-2 vs 3+", "Rossi: age under 23 vs 23+"});
+  IF pmI == 0 THEN RETURN; END;
+  sv_Busy("Loading the Rossi data ...");
+  sv_Preset(pmI);
+  sv_LoadInfo();
+END;
+
+// Your data from the Statistics 2Var app: C1 = time, C2 = event (1 =
+// the event happened, 0 = censored), C3 = group code 1 or 2 (optional:
+// leave C3 empty for one group).  The columns exist only once the app
+// has been opened, so the first read of each is inside IFERR.  Up to
+// 500 people (beta 1a; was 2,000); nothing is changed unless every row
+// is valid.
+sv_MyData()
+BEGIN
+  LOCAL mdN, mdN2, mdN3, mdI, mdV, mdHas1;
+  LOCAL mdHas2, mdT, mdE, mdG, mdBad;
+  mdN := 0;
+  IFERR mdN := SIZE(C1); THEN mdN := 0; END;
+  IF mdN == 1 THEN
+    MSGBOX("Need at least 2 rows;" + CHAR(10) + "C1 has 1.");
+    RETURN 0;
+  END;
+  IF mdN < 2 THEN
+    MSGBOX("C1 holds no data yet." + CHAR(10) + "Open Statistics 2Var (Apps):" + CHAR(10) + "C1 = time, C2 = 1 event / 0 censored," + CHAR(10) + "C3 = group 1 or 2 (or empty).");
+    RETURN 0;
+  END;
+  mdN2 := 0;
+  IFERR mdN2 := SIZE(C2); THEN mdN2 := 0; END;
+  IF mdN2 <> mdN THEN
+    MSGBOX("C2 must hold one 1 (event) or" + CHAR(10) + "0 (censored) for each time in C1:" + CHAR(10) + "C1 has " + sv_I(mdN) + ", C2 has " + sv_I(mdN2) + ".");
+    RETURN 0;
+  END;
+  mdN3 := 0;
+  IFERR mdN3 := SIZE(C3); THEN mdN3 := 0; END;
+  IF mdN3 > 0 AND mdN3 <> mdN THEN
+    MSGBOX("C3 has " + sv_I(mdN3) + " values but C1 has " + sv_I(mdN) + "." + CHAR(10) + "Give every row a group (1 or 2)," + CHAR(10) + "or clear C3 for one group.");
+    RETURN 0;
+  END;
+  // 500 rows: a G1 redraws the Kaplan-Meier plot of 500 distinct times
+  // in a few seconds (about 60,000 PPL statements; 2,000 rows were
+  // about 210,000, roughly 20 s per tap at an untimed 10,000 a second)
+  IF mdN > 500 THEN
+    MSGBOX("At most 500 rows here" + CHAR(10) + "(a calculator redraws them in" + CHAR(10) + "a few seconds); C1 has " + sv_I(mdN) + ".");
+    RETURN 0;
+  END;
+  IF mdN > 150 THEN sv_Busy("Reading and checking " + sv_I(mdN) + " rows ..."); END;
+  mdT := MAKELIST(0, mdI, 1, mdN, 1);
+  mdE := MAKELIST(0, mdI, 1, mdN, 1);
+  mdG := MAKELIST(1, mdI, 1, mdN, 1);
+  mdBad := 0; mdHas1 := 0; mdHas2 := 0;
+  FOR mdI FROM 1 TO mdN DO
+    IF mdBad == 0 THEN
+      mdV := C1(mdI);
+      IF mdV < 0 OR mdV > 999999 THEN
+        MSGBOX("Row " + sv_I(mdI) + " of C1: a time must be" + CHAR(10) + "between 0 and 999,999." + CHAR(10) + "(change the unit for bigger times)");
+        mdBad := 1;
+      END;
+      mdT(mdI) := mdV;
+      mdV := C2(mdI);
+      IF mdV <> 0 AND mdV <> 1 THEN
+        IF mdBad == 0 THEN MSGBOX("Row " + sv_I(mdI) + " of C2: use 1 for the" + CHAR(10) + "event, 0 for censored."); END;
+        mdBad := 1;
+      END;
+      mdE(mdI) := mdV;
+      IF mdN3 > 0 THEN
+        mdV := C3(mdI);
+        IF mdV <> 1 AND mdV <> 2 THEN
+          IF mdBad == 0 THEN MSGBOX("Row " + sv_I(mdI) + " of C3: the group" + CHAR(10) + "code must be 1 or 2."); END;
+          mdBad := 1;
+        END;
+        IF mdV == 1 THEN mdHas1 := 1; END;
+        IF mdV == 2 THEN mdHas2 := 1; END;
+        mdG(mdI) := mdV;
+      END;
+    END;
+  END;
+  IF mdBad == 1 THEN RETURN 0; END;
+  svN := mdN; svTim := mdT; svEvt := mdE;
+  svNG := 1;
+  IF mdHas1 == 1 AND mdHas2 == 1 THEN
+    svNG := 2; svGrp := mdG;
+  ELSE
+    svGrp := MAKELIST(1, mdI, 1, mdN, 1);
+  END;
+  svGNm := {"group 1", "group 2", "all"}; svGSh := {"grp 1", "grp 2", "all"};
+  IF svNG == 1 THEN svGNm := {"all", "", "all"}; svGSh := {"all", "", "all"}; END;
+  svLbl := "your data (C1-C3)"; svShort := "your data";
+  svSrc := "Statistics 2Var: time C1, event C2, group C3";
+  svUnit := ""; svEvW := "had the event"; svOwn := ""; svFinX := 0;
+  svEvA := "have had the event"; svSplit := 0;
+  svLW := sv_Nice(MAX(MAX(mdT), 0.000001) / 10);
+  IF mdN > 150 THEN sv_Busy("Sorting and fitting " + sv_I(mdN) + " rows ..."); END;
+  sv_Refit();
+  IF mdN3 > 0 AND svNG == 1 THEN svOwn := "C3 holds one group code only: one group"; END;
+  sv_LoadInfo();
+  svOwn := "";
+  RETURN 1;
+END;
+
+// Help: five pages.  Any key or tap turns the page; Esc leaves.
+sv_HPage(hpT, hpL, hpC, hpF)
+BEGIN
+  LOCAL hpI, hpY;
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 4, 4, 315, 235, svBLUE, svLBLU);
+  TEXTOUT_P(hpT, G1, 12, 8, 2, svBLUE, 296);
+  hpY := 30;
+  FOR hpI FROM 1 TO SIZE(hpL) DO
+    TEXTOUT_P(hpL(hpI), G1, 12, hpY, 1, hpC(hpI), 296);
+    hpY := hpY + 13;
+  END;
+  TEXTOUT_P(hpF, G1, 12, 222, 1, svFOOT, 296);
+  BLIT_P(G0, 0, 0, G1);
+  RETURN sv_WaitAny();
+END;
+
+sv_Help()
+BEGIN
+  LOCAL hK, hB, hM, hR, hG, hY;
+  hB := #000000h; hM := svMAG; hR := svRED; hG := svGRAY; hY := svBLUE;
+  hK := sv_HPage("Time to re-arrest: Kaplan-Meier", {
+    "Each man is followed until re-arrest (the event,",
+    "1) or until follow-up ends (censored, 0).  Rossi's",
+    "men were followed 52 weeks; 318 were not re-",
+    "arrested: we only know their time is over 52.",
+    "At each event time t, with d events among the n",
+    "at risk (not yet re-arrested, still followed):",
+    "  S(t) = S(before t) " + CHAR(215) + " (1 - d/n)",
+    "the product-limit estimate (Kaplan & Meier 1958).",
+    "A censored man counts in n up to his last week,",
+    "then leaves: he is never counted as an event.",
+    "Greenwood (1926): Var S = S" + svSQ + " " + CHAR(215) + " sum of d/(n(n - d)).",
+    "Ticks on the curve mark censoring times."},
+    {hB, hB, hB, hB, hY, hY, hY, hY, hB, hB, hM, hG},
+    "Page 1/5, any key = next, Esc = leave");
+  IF hK == 4 THEN RETURN; END;
+  hK := sv_HPage("CIs, the median, quantiles", {
+    "95% CI, log-log (default): S^exp(" + svPM + "1.96 " + svRT + "V/|ln S|),",
+    "V = sum of d/(n(n - d)); it stays inside 0..1.",
+    "Linear (soft key CI): S " + svPM + " 1.96 SE, cut at 0 and 1.",
+    "Median: the first time S(t) < 0.5 (statsmodels;",
+    "SAS and R average if S sits exactly on 0.5).",
+    "If S never gets below 0.5 it is NOT REACHED: in",
+    "Rossi only 26% are re-arrested in 52 weeks.  Then",
+    "report the time by which 25%, 20% or 10% are",
+    "re-arrested (25%: S = 0.75, the 25th percentile,",
+    "or first quartile, of the time to re-arrest).",
+    "CI of a quantile (Brookmeyer & Crowley 1982): the",
+    "event times whose band reaches S = 1 - p, up to",
+    "the next event time (not included); n.r. = open.",
+    "Cumulative hazard H(t) = sum of d/n (Nelson-Aalen)."},
+    {hY, hY, hY, hB, hB, hR, hR, hR, hR, hR, hM, hM, hM, hG},
+    "Page 2/5, any key = next, Esc = leave");
+  IF hK == 4 THEN RETURN; END;
+  hK := sv_HPage("Comparing two groups", {
+    "Log-rank: at each event time, if both groups",
+    "shared one curve, group 1 would expect",
+    "E" + CHAR(8321) + " = d " + CHAR(215) + " n" + CHAR(8321) + "/n of the d events.  O = observed.",
+    svCHI + " = (O" + CHAR(8321) + " - E" + CHAR(8321) + ")" + svSQ + "/V, df 1 (Mantel 1966).",
+    "HR = (O" + CHAR(8321) + "/E" + CHAR(8321) + ")/(O" + CHAR(8322) + "/E" + CHAR(8322) + "): below 1 = a lower hazard",
+    "in group 1; CI exp(ln HR " + svPM + " 1.96" + svRT + "(1/E" + CHAR(8321) + " + 1/E" + CHAR(8322) + ")).",
+    "Peto's HR exp((O" + CHAR(8321) + " - E" + CHAR(8321) + ")/V) agrees with the test.",
+    "Gehan-Breslow weighs each time by n at risk:",
+    "early differences count more.  Log-rank is best",
+    "for proportional hazards.  Page 3's early/late",
+    "line is SurvLab's rule of thumb, not a test.",
+    "Assumes: censoring unrelated to the risk; for",
+    "the HR, curves that do not cross."},
+    {hY, hY, hY, hR, hB, hB, hB, hM, hM, hB, hG, hR, hR},
+    "Page 3/5, any key = next, Esc = leave");
+  IF hK == 4 THEN RETURN; END;
+  hK := sv_HPage("The actuarial life table", {
+    "Intervals [t, t + w) of the width you choose.",
+    "n = still at risk at the interval's start,",
+    "wdrn = withdrawn (censored) inside it,",
+    "n' = n - wdrn/2: a withdrawal is taken to be",
+    "at risk for half the interval,",
+    "d = events, q = d/n' (conditional probability),",
+    "S end = product of (1 - q) so far",
+    "(Cutler & Ederer 1958).  Nobody is followed past",
+    "the last time, so the last interval ends there,",
+    "and those still followed then complete it (not",
+    "halved).  Rossi: all 318 not re-arrested were",
+    "followed to week 52, so S at 52 = KM's 0.736."},
+    {hB, hB, hB, hY, hY, hM, hM, hG, hR, hR, hR, hR},
+    "Page 4/5, any key = next, Esc = leave");
+  IF hK == 4 THEN RETURN; END;
+  hK := sv_HPage("Touch, keys, your data, Home", {
+    "KM plot: tap or drag on it = a red cursor that",
+    "reads S(t), its CI and n at risk; " + svARL + svARR + " = event",
+    "to event.  Soft keys: CI, Band, Zoom, H(t); More:",
+    "Pool, Median, Test, Life.  Ent = all as a menu.",
+    "Your data: Statistics 2Var, C1 = time, C2 = 1",
+    "(event) or 0 (censored), C3 = group 1 or 2, or",
+    "empty for one group.  Up to 500 rows.",
+    "Home: SV_T (event times), SV_S1, SV_S2 (S of",
+    "each group), SV_CHI, SV_P (log-rank), SV_HR,",
+    "SV_HRP (Peto), SV_MED (medians, -1 = n.r.).",
+    "Data: Rossi, Berk & Lenihan 1980 (via Allison",
+    "1995): Money, Work, and Crime."},
+    {hY, hY, hY, hY, hB, hB, hB, hM, hM, hM, hG, hG},
+    "Page 5/5, any key = menu");
+END;
+
+// The opening page: what this is, the data, the disclaimer.
+sv_Open()
+BEGIN
+  sv_Frame("SurvLab: time to re-arrest");
+  TEXTOUT_P("Kaplan-Meier curves, the log-rank test and the", G1, 6, 26, 1, #000000h, 310);
+  TEXTOUT_P("life table for time-to-event data: here, weeks", G1, 6, 38, 1, #000000h, 310);
+  TEXTOUT_P("from release from prison to the first arrest.", G1, 6, 50, 1, #000000h, 310);
+  TEXTOUT_P("Loaded: 432 men released from Maryland state", G1, 6, 70, 1, svBLUE, 310);
+  TEXTOUT_P("prisons, followed 52 weeks; half were given", G1, 6, 82, 1, svBLUE, 310);
+  TEXTOUT_P("financial aid, assigned at random.", G1, 6, 94, 1, svBLUE, 310);
+  TEXTOUT_P("Rossi, Berk & Lenihan 1980 (via Allison 1995)", G1, 6, 108, 1, svFOOT, 310);
+  RECT_P(G1, 4, 128, 315, 176, svORNG, svLORN);
+  TEXTOUT_P("DISCLAIMER: a teaching and demonstration aid.", G1, 10, 133, 1, svORNG, 300);
+  TEXTOUT_P("Not validated for forensic, clinical or legal use;", G1, 10, 146, 1, svORNG, 300);
+  TEXTOUT_P("do not rely on its results for legal purposes.", G1, 10, 159, 1, svORNG, 300);
+  TEXTOUT_P("beta 1, 21 Oct 2026.  Help is in the menu.", G1, 6, 186, 1, svGRAY, 310);
+  TEXTOUT_P("Any key or tap = menu", G1, 6, 207, 1, svFOOT, 310);
+  BLIT_P(G0, 0, 0, G1);
+END;
+
+sv_Init()
+BEGIN
+  svBLUE := #003CC8h; svMAG := #C800C8h; svRED := #FF0000h;
+  svGRN := #008C3Ch; svORNG := #FF4500h; svGRAY := #5A5A5Ah;
+  svFOOT := #1E90FFh; svGRID := #E1E4EBh; svLBLU := #EBF2FFh;
+  svLRED := #FFEBEBh; svLGRN := #E8F6EBh; svLORN := #FFF0DCh;
+  svLMAG := #FAEBFAh;
+  // the CI bands: pale blue, pale magenta, pale green; lavender where
+  // the two groups' bands overlap; the p-value tail pale red
+  svBND1 := #C3D7FFh; svBND2 := #F3C8F3h; svBND3 := #C8EBD2h;
+  svBNDX := #D9C6F2h; svTAIL := #FFC8C8h;
+  // glyphs: chi-square, alpha, >=, <=, +/-, infinity, H0, arrows, ^2,
+  // the root sign, up-down arrows
+  svCHI := CHAR(967) + CHAR(178); svAL := CHAR(945);
+  svGEQ := CHAR(8805); svLEQ := CHAR(8804); svPM := CHAR(177);
+  svINF := CHAR(8734); svH0 := "H" + CHAR(8320);
+  svARL := CHAR(8592); svARR := CHAR(8594); svSQ := CHAR(178);
+  svRT := CHAR(8730); svUD := CHAR(8645);
+  svZ := -NORMALD_ICDF(0, 1, 0.025);
+  svCIT := 1; svBand := 1; svZoom := 0; svPool := 0; svView := 1;
+  svQP := 0.5; svLW := 4; svLR := 1; svLMode := 1; svLTop := 1; svLSel := 0;
+  svCurT := -1; svDirty := 1; svSKP := 1; svInfo := ""; svInfC := #000000h;
+  svTPg := 1; svCvKey := -1; svCvP := {0}; svRok := 0; svHas := 0;
+  svRows := {3}; svEJ := {}; svCJ := 0; svHN := 0;
+  svHX1 := {0}; svHX2 := {0}; svHY1 := {0}; svHY2 := {0};
+  svOwn := ""; svFinX := 0; svSplit := 0; svEvA := "are re-arrested";
+  sv_Box(40, 30, 312, 144);
+  svXmx := 1; svXs := 1; svYlo := 0; svYhi := 1; svYs := 0.2; svYdc := 1;
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  DIMGROB_P(G2, 320, 240, #FFFFFFh);
+END;
+
+EXPORT SurvLab()
+BEGIN
+  LOCAL mnI, mnRun, mnS;
+  sv_Init();
+  // the opening page first: the Rossi fit runs while it is being read
+  sv_Open();
+  sv_Preset(1);
+  sv_WaitAny();
+  mnRun := 1;
+  WHILE mnRun == 1 DO
+    mnI := 0;
+    CHOOSE(mnI, "SurvLab: " + svShort, {"Kaplan-Meier plot", "Median and quantiles", "Compare groups: log-rank", "Life table (actuarial)", "Load a preset", "Use my data (Stat 2Var)", "Help", "Quit"});
+    CASE
+      IF mnI == 0 OR mnI == 8 THEN mnRun := 0; END;
+      IF mnI == 1 THEN sv_View(1); END;
+      IF mnI == 2 THEN sv_View(2); END;
+      IF mnI == 3 THEN sv_View(3); END;
+      IF mnI == 4 THEN
+        IF sv_LAsk() == 1 THEN sv_View(4); END;
+      END;
+      IF mnI == 5 THEN sv_PresetMenu(); END;
+      IF mnI == 6 THEN sv_MyData(); END;
+      IF mnI == 7 THEN sv_Help(); END;
+    END;
+  END;
+  // The summary goes back to Home as the program's value; the numbers
+  // stay in SV_T, SV_S1, SV_S2, SV_CHI, SV_P, SV_HR and SV_MED.
+  IF svNG == 2 AND svLRok == 1 THEN
+    mnS := "SurvLab: " + svLbl + ", log-rank " + svCHI + "(1) = " + sv_F(svChi, 2) + ", " + sv_PS(svPv);
+    IF svHR > 0 THEN mnS := mnS + ", HR = " + sv_F(svHR, 2); END;
+    RETURN mnS;
+  END;
+  RETURN "SurvLab: " + svLbl + ", S(" + sv_TS(svLast(3)) + ") = " + sv_F(svSv(3 * svM), 4);
+END;

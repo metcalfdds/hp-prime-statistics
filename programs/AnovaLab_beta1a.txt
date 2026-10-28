@@ -1,0 +1,3771 @@
+#pragma mode( separator(.,;) integer(h32) )
+
+// (C) 2026 Roger D Metcalf
+// For academic use only - do not rely on results for anything important
+// Results have not been rigorously verified and/or validated
+//
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with the
+//   file and credit the author if you pass it on.  Not for sale or
+//   commercial redistribution.
+// DISCLAIMER: a teaching and demonstration aid. Not validated for
+//   forensic, clinical or legal use; do not rely on its results for
+//   legal purposes.
+// Written with AI assistance. The concept, direction, decisions and all
+// hardware testing are Roger D. Metcalf's; the code, drafting and
+// source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
+
+// ANOVALAB - beta 1a  (21 Oct 2026; beta 1 the same day)
+// Analysis of variance for teaching, with pictures you can touch.
+//   Launch AnovaLab() from the Program Catalog: it takes no arguments,
+//   shows an opening page (with the disclaimer), then its main menu:
+//     One-way ANOVA ..... k groups, unequal n: the ANOVA table (SS, df,
+//                         MS, F, p), eta^2 and omega^2, Welch's F beside
+//                         it, the checks (Levene / Brown-Forsythe on
+//                         medians, Bartlett), post hoc pairs (Tukey-
+//                         Kramer, Bonferroni, Holm, Scheffe), a dot plot
+//                         with each mean and its CI (tap two groups to
+//                         compare them), the F curve with the tail shaded
+//     Two-way ANOVA ..... A x B with interaction; unbalanced designs by
+//                         Type III sums of squares (regression with effect
+//                         coding); a balanced design is also worked the
+//                         classical way and the two are checked; cell
+//                         means; a touchable interaction plot; F curves
+//     Randomized blocks . one value per block x treatment: treatments,
+//                         blocks, error; partial eta^2; the one-way F that
+//                         ignores the blocks, for comparison; a profile
+//                         plot; the F curve
+//     Variances ......... one sigma: the chi-square test and CI for sigma
+//                         and sigma^2; two sigmas: the F test and CI for
+//                         sigma1^2/sigma2^2; the curve with both critical
+//                         regions and the equal-area p region shaded
+//     Load a preset, Use my data (D1-D9), Set alpha, Help, Quit
+//   Home exports after a run: AV_F, AV_P, AV_DF {df1, df2}, AV_MSE,
+//     AV_ETA2, AV_TAB (the ANOVA table as a matrix: SS, df, MS, F, p per
+//     row), all from the LAST analysis run: one-way -> its F, p, eta^2;
+//     two-way -> the A x B interaction's F, p, partial eta^2 (the whole
+//     Type III table in AV_TAB); blocks -> the treatments' F, p, partial
+//     eta^2; variances -> the chi-square or F statistic and its p.
+// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  beta 1a (and
+//   beta 1) have NOT been run on hardware or the emulator, only in the PC
+//   harness.
+// WHAT CHANGED in beta 1a (21 Oct 2026): every finding of the second
+//   review (build/AnovaLab/REVIEW2_AnovaLab_beta1.md) and the lead's
+//   decisions; one line per fix in AnovaLab_beta1a_CHANGES.md.
+//   (1) Tukey never starts on page entry: Holm is the default method;
+//       picking Tukey asks first, with a G1 estimate; Tukey p for all
+//       pairs or for one pair, on request.  The engine tabulates the
+//       inner integral once per k (121 points, cubic interpolation):
+//       about 3 x (q crit) to 11 x (draft, all pairs) fewer steps.  Esc is
+//       read inside the integration; the step bar counts honestly.
+//   (2) Cells page laid out for up to 6 x 6 levels with nothing cut.
+//   (3) Interaction wording: "no evidence at alpha", never "no
+//       interaction"; the plot says what parallel lines would mean.
+//   (4) The chi-square upper tail for very large df (n up to 1E6).
+//   (5) Checks page: the unsourced "s ratio under 2" rule removed.
+//   (6) Large data: a Working page with Esc above 500 values; medians in
+//       one pass; the Dots page draws its 3000 dots once (G2 cache).
+//   (7) CHOOSE with a list variable has a fallback; factor codes print as
+//       integers; the Home exports described exactly; the alpha < 0.005
+//       pairs warning replaced by the measured accuracy (help page 3);
+//       the chi-square right-tail quantile never uses ICDF(1 - p) for a
+//       tiny p.
+// Sources:
+//   One-way ANOVA, F: any intro text, e.g. Triola, Elementary Statistics
+//     Using the TI-83/84 Plus (Pearson), the ANOVA chapter.
+//   omega^2: Hays (1963) Statistics for Psychologists (Triola's TI ANOVA
+//     program prints it as "Hay's W^2").
+//   Welch's F: Welch (1951) Biometrika 38:330-336.
+//   Levene's test on medians: Levene (1960), in Olkin (ed.) Contributions
+//     to Probability and Statistics, 278-292; Brown & Forsythe (1974)
+//     JASA 69:364-367.
+//   Bartlett's test: Bartlett (1937) Proc. Roy. Soc. A 160:268-282.
+//   Tukey-Kramer: Kramer (1956) Biometrics 12:307-310; the studentized
+//     range engine is StudRange beta 15d's PPL engine, after Dunlap,
+//     Powell & Konnerth (1977) Behav. Res. Meth. & Instr. 9(4):373-375.
+//   Holm: Holm (1979) Scand. J. Statist. 6:65-70.
+//   Scheffe: Scheffe (1953) Biometrika 40:87-104.
+//   Type III sums of squares: the Wald form b_E' [(X'X)^-1]_EE^-1 b_E with
+//     sum-to-zero (effect) coding, as statsmodels anova_lm(typ=3) with
+//     Sum contrasts and SAS GLM give.
+//   Special functions: Numerical Recipes 6.2 and 6.4 (incomplete gamma and
+//     beta), carried from StatDist v2.7f; Lanczos log-gamma from StudRange.
+// Data (data/DATASETS.md; every value from the CSV files, none typed):
+//   Mock jury: Plaster (1989) M.A. thesis, East Carolina Univ.; data via R
+//     heplots (Friendly).  114 inmates, Years by Attr (Beautiful, Average,
+//     Unattractive) and Crime (Burglary, Swindle); cells of 17-21.
+//   Draft lottery 1970: Fienberg (1971) Science 171:255; Starr (1997) JSE
+//     5(2); Triola TI-83/84 2nd ed. p. 747.  366 priority numbers by month.
+//   Insect sprays: Beall (1942) Biometrika 29:243 (R datasets).  12 plots
+//     per spray A-F.
+//   Judge ratings: New Haven Register, 14 Jan 1977 (via Hartigan; R
+//     datasets USJudgeRatings).  The block design uses all 43 judges as
+//     blocks and three criteria as treatments: INTG (integrity), DMNR
+//     (demeanor) and DILG (diligence).
+// Replaces / reworks (Triola's TI-83/84 CD and related TI programs,
+//   decoded in ref/triola_ti_programs/; credited with thanks):
+//   ANOVA (one-way), ANOVA2FD (two-way factorial), ANOVA2RB and RANOVA
+//   (randomized blocks / repeated measures), LATINSQ, TUKEY, SCHEFFE2,
+//   BONFRNI, COMPERR (the per-comparison rate idea), ANCOVA1 (read, not
+//   carried: no ANCOVA here), SDHYP, SDINT, STDTEST, STDEVCI (Triola's
+//   S2TEST / S2INT, the variance test and interval), FINTRVAL, FTESTUTL.
+//   Bugs NOT repeated:
+//   - ANOVA treats 0 and negative values as missing (it reads a column
+//     until the first value <= 0).  Here every value counts: a group is
+//     exactly the list it was given.
+//   - The TI-82 suite leans on implied multiplication binding tighter
+//     than / ("/ABN").  Here every product is written out with * and
+//     every divisor is in brackets.
+//   - TUKEY uses n_J for the second group of the pair (J, J+1), and
+//     prints no critical q.  Here SE uses n_i and n_j of the pair itself,
+//     and q crit is computed and shown.
+//   - LATINSQ's treatment p comes from SS instead of F.  Here every p
+//     comes from its own F.
+//   - FINTRVAL swaps the bounds of the F interval.  Here the lower bound
+//     is F x F(alpha/2; df2, df1) and the upper F / F(alpha/2; df1, df2).
+//   - SDINT brackets solve() at 100, so it fails for n > 75.  Here the
+//     quantiles come from CHISQUARE_ICDF directly.
+//   - ANCOVA1 assumes equal n (not carried).  Here the two-way ANOVA
+//     takes unequal cells (Type III).
+//   - ALLREG-style "best model by R^2" is not offered: R^2 never falls
+//     when a term is added, so it always picks the biggest model.
+// File map (line numbers of this file; file-level state 148-204):
+//    206- 535  1. small helpers: palette, drains, waits, formats, fit, frame, busy
+//    536- 723  2. special functions: log-gamma, incomplete beta and gamma, tails, quantiles
+//    724- 967  3. studentized range: StudRange PPL engine, P_k tabulated per k
+//    968-1108  4. presets (mock jury, draft 1970, insect sprays, judges)
+//   1109-1791  5. arithmetic: one-way, post hoc, Tukey, inverse, two-way Type III, blocks, variances
+//   1792-1932  6. curve page: F / chi-square cache and drawing
+//   1933-2325  7. one-way pages: Table, Checks, Pairs, Dots, F
+//   2326-2494  8. help (8 pages), set alpha
+//   2495-2667  9. one-way view loop
+//   2668-3056  10. two-way pages and view
+//   3057-3211  11. randomized block pages and view
+//   3212-3503  12. variances pages and view
+//   3504-3689  13. your own data (D1-D9)
+//   3690-3771  14. presets menu, opening page, main menu (AnovaLab)
+// ============================================================
+
+// ---- palette (set in av_Init) ----
+LOCAL avBLUE, avMAG, avRED, avGRN, avORNG, avGRAY;
+LOCAL avFOOT, avGRID, avSHD, avLGRN, avLRED, avLBLU;
+LOCAL avLORN, avCRIT, avBOTH, avLGRY, avGCol;
+// ---- glyphs, built with CHAR() so the source stays pure ASCII ----
+LOCAL avX2, avSq, avAl, avMu, avSg, avTm;
+LOCAL avH0, avH1, avXb, avGE, avLE, avNE;
+LOCAL avPM, avLR, avUD, avRt, avS0, avS1;
+LOCAL avS2;
+// ---- settings and view state ----
+LOCAL avAlpha, avScr, avSKP, avMeth, avTapX, avTapY;
+LOCAL avLast, avStop, avSing, avCvK, avDotOK;
+// ---- the one-way data set ----
+LOCAL avOY, avOG, avOK, avON, avOSh, avOSrc;
+LOCAL avOTtl, avOHas, avODone;
+// ---- one-way results ----
+LOCAL avRn, avRm, avRv, avRmd, avNN, avGM;
+LOCAL avSSB, avSSW, avSST, avDf1, avDf2, avMSB;
+LOCAL avMSW, avFF, avPP, avEta, avOmg, avWOK;
+LOCAL avWF, avWd2, avWP, avLvF, avLvP, avLvOK;
+LOCAL avBrT, avBrP, avBrOK, avTcr, avSDr;
+// ---- post hoc pairs ----
+LOCAL avNP, avPI, avPJ, avPD, avPSE, avPRw;
+LOCAL avPBon, avPHm, avPSc, avPTk, avPQ, avQc;
+LOCAL avBonT, avScM, avPTop, avSelA, avSelB, avPIx;
+// ---- the two-way data set ----
+LOCAL avTY, avTA, avTB, avTNA, avTNB, avTAN;
+LOCAL avTBN, avTFA, avTFB, avTKA, avTKB, avTSrc;
+LOCAL avTTtl, avTHas, avTDone;
+// ---- two-way results ----
+LOCAL avTCM, avTCN, avTCS, avTSS, avTDF, avTMS;
+LOCAL avTF, avTP, avTPE, avTBal, avTCl, avTAgr;
+LOCAL avTSwap, avTSx, avTSt, avTEff, avTMA, avTMB;
+LOCAL avTGM, avTNN, avTCi, avTCj;
+// ---- the block data set and its results ----
+LOCAL avBY, avBNb, avBKt, avBTN, avBBl, avBSrc;
+LOCAL avBTtl, avBHas, avBDone, avBSS, avBDF, avBMS;
+LOCAL avBF, avBP, avBPE, avBTM, avBSD, avBBM;
+LOCAL avBOF, avBOP, avBSel, avBGM;
+// ---- variances ----
+LOCAL avVMode, avVS1, avVN1, avVS2, avVN2, avVSg0;
+LOCAL avVAlt, avVCL, avVStat, avVDf1, avVDf2, avVP;
+LOCAL avVLo, avVHi, avVCrL, avVCrH, avVLbl, avVHas;
+LOCAL avVPL, avVPU, avVRa, avVRb, avVScr;
+// ---- the curve plot: box, cache ----
+LOCAL avPL, avPR, avPT, avPB, avCvP, avCvX;
+LOCAL avCvY, avCvS, avCvDc;
+// ---- the dot plot and interaction plot boxes ----
+LOCAL avDL, avDR, avDT, avDB;
+// ---- the studentized range engine's tables (StudRange's gZN etc.) ----
+LOCAL avZN, avZW, avZC, avNZ, avTbK, avTbP;
+LOCAL avSRE;
+// ---- the preset data, loaded once ----
+LOCAL avJY, avJA, avJC;
+
+EXPORT AV_F, AV_P, AV_DF, AV_MSE, AV_ETA2, AV_TAB;
+
+
+// ============================================================
+// 1. SMALL HELPERS
+// ============================================================
+
+// The palette, the glyphs and the starting state.  Called once.
+av_Init()
+BEGIN
+  avBLUE := #003CC8h; avMAG := #C800C8h; avRED := #FF0000h;
+  avGRN := #008C3Ch; avORNG := #FF4500h; avGRAY := #5A5A5Ah;
+  avFOOT := #1E90FFh; avGRID := #E1E4EBh; avSHD := #AACDFFh;
+  avLGRN := #E8F6EBh; avLRED := #FFEBEBh; avLBLU := #EBF2FFh;
+  avLORN := #FFF0DCh; avCRIT := #FFC3C3h; avBOTH := #A08CEBh;
+  avLGRY := #C3C3C3h;
+  // twelve group colours, clearly distinct, always in this order
+  avGCol := {#003CC8h, #DC0000h, #008C3Ch, #FF7800h, #C800C8h, #0096A0h,
+             #8C5014h, #6E28B4h, #788200h, #E63C8Ch, #464646h, #1E90FFh};
+  // chi-square, superscript 2, alpha, mu, sigma, times
+  avX2 := CHAR(967) + CHAR(178); avSq := CHAR(178); avAl := CHAR(945);
+  avMu := CHAR(956); avSg := CHAR(963); avTm := CHAR(215);
+  // H0, H1, x-bar, >=, <=, not equal
+  avH0 := "H" + CHAR(8320); avH1 := "H" + CHAR(8321); avXb := CHAR(57344);
+  avGE := CHAR(8805); avLE := CHAR(8804); avNE := CHAR(8800);
+  // plus-minus, the left/right arrow pair, up/down arrows, root, subscripts
+  avPM := CHAR(177); avLR := CHAR(8592) + CHAR(8594); avUD := CHAR(8645);
+  avRt := CHAR(8730); avS0 := CHAR(8320); avS1 := CHAR(8321);
+  avS2 := CHAR(8322);
+  avAlpha := 0.05; avScr := 1; avSKP := 1; avMeth := 3;
+  avTapX := -1; avTapY := -1; avLast := "no analysis run";
+  avStop := 0; avSing := 0; avCvK := ""; avDotOK := 0;
+  // curve plot box (the soft keys take y 218-239)
+  avPL := 34; avPR := 310; avPT := 38; avPB := 164;
+  avCvP := {0}; avCvX := 1; avCvY := 1; avCvS := 1; avCvDc := 0;
+  // dot plot / interaction plot box
+  avDL := 36; avDR := 314; avDT := 24; avDB := 158;
+  avZN := {}; avZW := {}; avZC := {}; avNZ := 0; avTbK := 0; avTbP := {};
+  avSRE := 0;
+  avJY := {}; avJA := {}; avJC := {};
+  avOHas := 0; avODone := 0; avTHas := 0; avTDone := 0;
+  avBHas := 0; avBDone := 0; avVHas := 0; avVScr := 1;
+  avNP := 0; avQc := -1; avPTop := 1; avSelA := 0; avSelB := 0; avPIx := 0;
+  avTSwap := 0; avTSx := 1; avTSt := 1; avTEff := 3; avBSel := 1;
+  avTCi := 1; avTCj := 1;
+  avVMode := 1; avVS1 := 2; avVN1 := 12; avVS2 := 6; avVN2 := 12;
+  avVSg0 := 3; avVAlt := 1; avVCL := 0.95; avVLbl := "";
+END;
+
+// Wait for the finger to lift -- never for more than a second (a stuck
+// touch reading must not freeze the program: Lessons Learned 7).
+av_Drain()
+BEGIN
+  LOCAL drT;
+  drT := TICKS;
+  REPEAT UNTIL MOUSE(1) == -1 OR TICKS - drT > 1000;
+END;
+
+// Empty the key buffer.
+av_KDrain()
+BEGIN
+  LOCAL kdK;
+  REPEAT kdK := GETKEY; UNTIL kdK == -1;
+END;
+
+// Drain, wait for a key OR a tap, drain.  Returns the key, or -1 for a
+// tap (its x and y left in avTapX, avTapY).  Holds a page for as long as
+// it takes (WAIT(-1) would give up after about a minute).
+av_WaitAny()
+BEGIN
+  LOCAL waK, waM, waM1;
+  av_KDrain();
+  av_Drain();
+  REPEAT
+    waK := GETKEY;
+    waM := MOUSE;
+    waM1 := waM(1);
+  UNTIL waK > -1 OR SIZE(waM1) > 0;
+  avTapX := -1; avTapY := -1;
+  IF SIZE(waM1) > 0 THEN
+    avTapX := waM1(1); avTapY := waM1(2); waK := -1;
+  END;
+  av_Drain();
+  av_KDrain();
+  RETURN waK;
+END;
+
+// One event for a view (drain, wait, drain): a key, or -1 for a tap
+// (x, y in avTapX, avTapY).
+// The GETKEY + MOUSE polling loop of ChiTable: MOUSE sees a tap on the
+// soft-key strip like any other tap (y >= 218).
+av_Poll()
+BEGIN
+  LOCAL poK, poM, poM1;
+  // drain first: a key left by a CHOOSE, INPUT or MSGBOX must not end
+  // the wait before the page is seen (Lessons Learned 7)
+  av_KDrain();
+  REPEAT
+    poK := GETKEY;
+    poM := MOUSE;
+    poM1 := poM(1);
+  UNTIL poK > -1 OR SIZE(poM1) > 0;
+  avTapX := -1; avTapY := -1;
+  IF SIZE(poM1) > 0 THEN
+    avTapX := poM1(1); avTapY := poM1(2); poK := -1;
+    av_Drain();
+  ELSE
+    av_KDrain();
+  END;
+  RETURN poK;
+END;
+
+// Fixed decimals, rounded first: STRING(x, 2, d) prints SCIENTIFIC when
+// 0 < |x| < 10^-d (Lessons Learned 3), and a rounded -0 prints as 0.
+av_Fx(fxV, fxD)
+BEGIN
+  LOCAL fxR;
+  fxR := ROUND(fxV, fxD);
+  IF fxR == 0 THEN fxR := 0; END;
+  RETURN STRING(fxR, 2, fxD);
+END;
+
+// A whole number as text.
+av_I(itV)
+BEGIN
+  RETURN av_Fx(itV, 0);
+END;
+
+// A number with as many decimals as its size deserves (about 5 digits):
+// 0.1234, 1.234, 12.34, 1234.5, 123456.
+av_Gn(gnV)
+BEGIN
+  LOCAL gnA, gnD;
+  gnA := ABS(gnV);
+  gnD := 4;
+  IF gnA >= 1 THEN gnD := 3; END;
+  IF gnA >= 10 THEN gnD := 2; END;
+  IF gnA >= 1000 THEN gnD := 1; END;
+  IF gnA >= 100000 THEN gnD := 0; END;
+  RETURN av_Fx(gnV, gnD);
+END;
+
+// The same with its sign: "+2.13", "-0.567".
+av_Sgn(sgV)
+BEGIN
+  IF ROUND(sgV, 4) > 0 THEN RETURN "+" + av_Gn(sgV); END;
+  RETURN av_Gn(sgV);
+END;
+
+// A p-value's digits: "< 0.0001" below what 4 decimals can show.
+av_PT(ptP)
+BEGIN
+  IF ptP < 0.0001 THEN RETURN "< 0.0001"; END;
+  RETURN av_Fx(ptP, 4);
+END;
+
+// "p = 0.0670" or "p < 0.0001" (never "p = < ...").
+av_PE(peP)
+BEGIN
+  IF peP < 0.0001 THEN RETURN "p < 0.0001"; END;
+  RETURN "p = " + av_Fx(peP, 4);
+END;
+
+// "= 0.0670" or "< 0.0001": a p-value after a name, with its own relation.
+av_Rel(rlP)
+BEGIN
+  IF rlP < 0.0001 THEN RETURN "< 0.0001"; END;
+  RETURN "= " + av_Fx(rlP, 4);
+END;
+
+// alpha as text: 0.05, 0.01, 0.001 ...
+av_AS()
+BEGIN
+  IF ABS(avAlpha - ROUND(avAlpha, 2)) < 0.000000001 THEN RETURN av_Fx(avAlpha, 2); END;
+  RETURN av_Fx(avAlpha, 3);
+END;
+
+// A confidence level as a percentage: 0.95 -> "95%", 0.995 -> "99.5%".
+av_CS(clC)
+BEGIN
+  LOCAL clV;
+  clV := 100*clC;
+  IF ABS(clV - ROUND(clV, 0)) < 0.000001 THEN RETURN av_Fx(clV, 0) + "%"; END;
+  RETURN av_Fx(clV, 1) + "%";
+END;
+
+// A "nice" step, 1, 2 or 5 times a power of ten, at least the value
+// handed in (Heckbert), for axis ticks.
+av_Nice(nnV)
+BEGIN
+  LOCAL nnE, nnF;
+  IF nnV <= 0 THEN RETURN 1; END;
+  nnE := FLOOR(LOG(nnV));
+  nnF := nnV/10^nnE;
+  IF nnF <= 1 THEN RETURN 10^nnE; END;
+  IF nnF <= 2 THEN RETURN 2*10^nnE; END;
+  IF nnF <= 5 THEN RETURN 5*10^nnE; END;
+  RETURN 10^(nnE + 1);
+END;
+
+// Median of a list (sorted copy; the middle value or the mean of the
+// two middle values).
+av_Med(mdL)
+BEGIN
+  LOCAL mdS, mdN;
+  mdS := SORT(mdL);
+  mdN := SIZE(mdS);
+  IF mdN MOD 2 == 1 THEN RETURN mdS((mdN + 1)/2); END;
+  RETURN (mdS(mdN/2) + mdS(mdN/2 + 1))/2;
+END;
+
+// A name cut to fit cuW pixels of font 1 (about 6.4 px a character on
+// the Prime: ChiTable keeps 46 characters to 296 px).  LEFT(s, 0) would
+// be the whole string, so at least one character is kept.
+av_Cut(cuS, cuW)
+BEGIN
+  LOCAL cuN;
+  cuN := MAX(1, IP(cuW/6.4));
+  IF DIM(cuS) <= cuN THEN RETURN cuS; END;
+  RETURN LEFT(cuS, cuN);
+END;
+
+// A number in at most cmN characters: as many decimals (3 at most) as
+// fit, else whole, else in thousands with a "k".
+av_Cmp(cmV, cmN)
+BEGIN
+  LOCAL cmD, cmS, cmI;
+  FOR cmI FROM 0 TO 3 DO
+    cmD := 3 - cmI;
+    cmS := av_Fx(cmV, cmD);
+    IF DIM(cmS) <= cmN THEN RETURN cmS; END;
+  END;
+  RETURN av_Fx(cmV/1000, 0) + "k";
+END;
+
+// A white page on G1 with an orange title band.  Everything is drawn
+// on G1 and shown by ONE blit (Lessons Learned 6).
+av_Band(bnT)
+BEGIN
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 0, 0, 319, 18, avORNG, avORNG);
+  // a title longer than the band (font 2, about 8 px a character) is
+  // shortened with ".." rather than cut mid-letter
+  IF DIM(bnT) > 38 THEN
+    TEXTOUT_P(LEFT(bnT, 36) + "..", G1, 4, 2, 2, #FFFFFFh, 312);
+  ELSE
+    TEXTOUT_P(bnT, G1, 4, 2, 2, #FFFFFFh, 312);
+  END;
+END;
+
+// One line of small text on G1, clipped at the right edge.
+av_Tx(txS, txX, txY, txC)
+BEGIN
+  TEXTOUT_P(txS, G1, txX, txY, 1, txC, 316 - txX);
+END;
+
+// The footer, house form (dodger blue, comma-separated, spaced "=").
+av_Foot(ftS)
+BEGIN
+  TEXTOUT_P(ftS, G1, 4, 206, 1, avFOOT, 312);
+END;
+
+// Show the composed page, then the soft keys (DRAWMENU paints the
+// SCREEN, so it comes after the blit, every frame).
+av_Show(shK)
+BEGIN
+  BLIT_P(G0, 0, 0, G1);
+  DRAWMENU(shK);
+END;
+
+// A dotted vertical line on G1 (LINE_P has no dash style).
+av_DotV(dvX, dvY1, dvY2, dvC)
+BEGIN
+  LOCAL dvI;
+  FOR dvI FROM dvY1 TO dvY2 STEP 3 DO
+    PIXON_P(G1, dvX, dvI, dvC);
+  END;
+END;
+
+// A small filled marker, 5 x 5 with the corners off (two RECT_P bars;
+// ARC_P rings leave holes, Lessons Learned 6).
+av_Mark(mkX, mkY, mkC)
+BEGIN
+  RECT_P(G1, mkX - 1, mkY - 2, mkX + 1, mkY + 2, mkC);
+  RECT_P(G1, mkX - 2, mkY - 1, mkX + 2, mkY + 1, mkC);
+END;
+
+// One row of an ANOVA table: six columns at fixed x.
+av_Row(rwY, rw1, rw2, rw3, rw4, rw5, rw6, rwC)
+BEGIN
+  TEXTOUT_P(rw1, G1, 4, rwY, 1, rwC, 60);
+  TEXTOUT_P(rw2, G1, 66, rwY, 1, rwC, 62);
+  TEXTOUT_P(rw3, G1, 130, rwY, 1, rwC, 34);
+  TEXTOUT_P(rw4, G1, 166, rwY, 1, rwC, 56);
+  TEXTOUT_P(rw5, G1, 224, rwY, 1, rwC, 40);
+  TEXTOUT_P(rw6, G1, 266, rwY, 1, rwC, 52);
+END;
+
+// A two-line verdict panel: red when p < alpha, green otherwise.
+av_Verdict(vdY, vdP, vdL1, vdL2, vdM1, vdM2)
+BEGIN
+  IF vdP < avAlpha THEN
+    RECT_P(G1, 3, vdY, 316, vdY + 25, avRED, avLRED);
+    TEXTOUT_P(vdL1, G1, 8, vdY + 2, 1, avRED, 304);
+    TEXTOUT_P(vdL2, G1, 8, vdY + 13, 1, avRED, 304);
+  ELSE
+    RECT_P(G1, 3, vdY, 316, vdY + 25, avGRN, avLGRN);
+    TEXTOUT_P(vdM1, G1, 8, vdY + 2, 1, avGRN, 304);
+    TEXTOUT_P(vdM2, G1, 8, vdY + 13, 1, avGRN, 304);
+  END;
+END;
+
+
+// A "Working" page for a long pass over many values (beta 1a, second
+// review item 6): a title, the size, an empty bar; Esc stops.
+av_Busy(buT, buN)
+BEGIN
+  av_Band("Working: " + buT);
+  av_Tx(av_I(buN) + " values: a G1 may need a while.", 12, 40, avBLUE);
+  av_Tx("Esc stops.", 12, 56, avRED);
+  RECT_P(G1, 50, 140, 270, 152, #000000h, #FFFFFFh);
+  BLIT_P(G0, 0, 0, G1);
+END;
+
+// The bar of av_Busy at bsI of bsN, and a look for Esc (avStop := 1).
+av_BusyStep(bsI, bsN)
+BEGIN
+  LOCAL bsK;
+  RECT_P(G0, 51, 141, 51 + IP(218*MIN(1, bsI/bsN)), 151, avBLUE, avBLUE);
+  bsK := GETKEY;
+  IF bsK == 4 THEN avStop := 1; END;
+END;
+
+// ============================================================
+// 2. SPECIAL FUNCTIONS (pure arithmetic on device-verified commands)
+// ============================================================
+
+// Log-gamma, Lanczos g = 7 (LNGAMMA is CAS-only).  StudRange beta 15d's
+// sr_LGAM: accurate to about 1E-13 for x >= 0.5.  0.918938533204673 is
+// 0.5*LN(2*pi).
+av_LGam(lgX)
+BEGIN
+  LOCAL lgC, lgA, lgT, lgJ, lgY;
+  lgC := {676.5203681218851, -1259.1392167224028,
+      771.32342877765313, -176.61502916214059,
+      12.507343278686905, -0.13857109526572012,
+      9.9843695780195716E-6, 1.5056327351493116E-7};
+  lgY := lgX - 1; lgA := 0.99999999999980993;
+  FOR lgJ FROM 1 TO 8 DO
+    lgA := lgA + lgC(lgJ)/(lgY + lgJ);
+  END;
+  lgT := lgY + 7.5;
+  RETURN 0.918938533204673 + (lgY + 0.5)*LN(lgT) - lgT + LN(lgA);
+END;
+
+// The continued fraction inside the incomplete beta (Numerical Recipes
+// 6.4, modified Lentz): StatDist v2.7f's st_betacf.
+av_BetaCF(bcA, bcB, bcX)
+BEGIN
+  LOCAL bcQab, bcQap, bcQam, bcC, bcD, bcH;
+  LOCAL bcM, bcM2, bcAa, bcDel, bcGo;
+  bcQab := bcA + bcB; bcQap := bcA + 1; bcQam := bcA - 1;
+  bcC := 1; bcD := 1 - bcQab*bcX/bcQap;
+  IF ABS(bcD) < 1E-300 THEN bcD := 1E-300; END;
+  bcD := 1/bcD; bcH := bcD;
+  bcM := 0; bcGo := 1;
+  WHILE bcGo == 1 AND bcM < 300 DO
+    bcM := bcM + 1; bcM2 := 2*bcM;
+    bcAa := bcM*(bcB - bcM)*bcX/((bcQam + bcM2)*(bcA + bcM2));
+    bcD := 1 + bcAa*bcD;
+    IF ABS(bcD) < 1E-300 THEN bcD := 1E-300; END;
+    bcC := 1 + bcAa/bcC;
+    IF ABS(bcC) < 1E-300 THEN bcC := 1E-300; END;
+    bcD := 1/bcD; bcH := bcH*bcD*bcC;
+    bcAa := -(bcA + bcM)*(bcQab + bcM)*bcX/((bcA + bcM2)*(bcQap + bcM2));
+    bcD := 1 + bcAa*bcD;
+    IF ABS(bcD) < 1E-300 THEN bcD := 1E-300; END;
+    bcC := 1 + bcAa/bcC;
+    IF ABS(bcC) < 1E-300 THEN bcC := 1E-300; END;
+    bcD := 1/bcD; bcDel := bcD*bcC; bcH := bcH*bcDel;
+    IF ABS(bcDel - 1) < 0.00000000001 THEN bcGo := 0; END;
+  END;
+  RETURN bcH;
+END;
+
+// Regularized incomplete beta I_x(a, b) (StatDist's st_betaI), with the
+// symmetry I_x(a,b) = 1 - I_(1-x)(b,a) where the fraction is slow.
+av_BetaI(biA, biB, biX)
+BEGIN
+  LOCAL biL;
+  IF biX <= 0 THEN RETURN 0; END;
+  IF biX >= 1 THEN RETURN 1; END;
+  biL := av_LGam(biA + biB) - av_LGam(biA) - av_LGam(biB) + biA*LN(biX) + biB*LN(1 - biX);
+  IF biX < (biA + 1)/(biA + biB + 2) THEN
+    RETURN EXP(biL)*av_BetaCF(biA, biB, biX)/biA;
+  END;
+  RETURN 1 - EXP(biL)*av_BetaCF(biB, biA, 1 - biX)/biB;
+END;
+
+// Regularized lower incomplete gamma P(a, x), the series (x < a + 1);
+// StatDist's st_gammaP, series branch.
+av_GamP(gpA, gpX)
+BEGIN
+  LOCAL gpS, gpD, gpAp, gpI, gpGo;
+  IF gpX <= 0 THEN RETURN 0; END;
+  gpAp := gpA; gpS := 1/gpA; gpD := gpS;
+  gpI := 0; gpGo := 1;
+  WHILE gpGo == 1 AND gpI < 5000 DO
+    gpI := gpI + 1;
+    gpAp := gpAp + 1;
+    gpD := gpD*gpX/gpAp;
+    gpS := gpS + gpD;
+    IF ABS(gpD) < ABS(gpS)*0.000000000001 THEN gpGo := 0; END;
+  END;
+  RETURN MIN(1, gpS*EXP(-gpX + gpA*LN(gpX) - av_LGam(gpA)));
+END;
+
+// Regularized UPPER incomplete gamma Q(a, x), every digit kept in the far
+// tail (StatDist's st_gammaQ): the continued fraction for x >= a + 1,
+// 1 - P (safe there) below.  The chi-square's right tail is Q(df/2, x/2).
+av_GamQ(gqA, gqX)
+BEGIN
+  LOCAL gqB, gqC, gqD, gqH, gqI, gqAn;
+  LOCAL gqDel, gqGo;
+  IF gqX <= 0 THEN RETURN 1; END;
+  IF gqX < gqA + 1 THEN RETURN 1 - av_GamP(gqA, gqX); END;
+  gqB := gqX + 1 - gqA; gqC := 1E300; gqD := 1/gqB; gqH := gqD;
+  gqI := 0; gqGo := 1;
+  WHILE gqGo == 1 AND gqI < 5000 DO
+    gqI := gqI + 1;
+    gqAn := -gqI*(gqI - gqA);
+    gqB := gqB + 2;
+    gqD := gqAn*gqD + gqB;
+    IF ABS(gqD) < 1E-300 THEN gqD := 1E-300; END;
+    gqC := gqB + gqAn/gqC;
+    IF ABS(gqC) < 1E-300 THEN gqC := 1E-300; END;
+    gqD := 1/gqD;
+    gqDel := gqD*gqC;
+    gqH := gqH*gqDel;
+    IF ABS(gqDel - 1) < 0.00000000001 THEN gqGo := 0; END;
+  END;
+  RETURN MIN(1, EXP(-gqX + gqA*LN(gqX) - av_LGam(gqA))*gqH);
+END;
+
+// P(F > f) for F(a, b), computed as a LOWER tail (12-digit reals:
+// 1 - CDF is exactly 0 below about 5E-13).  Whole df: the mirror
+// P(F(a,b) > f) = P(F(b,a) < 1/f) with the built-in FISHER_CDF.  A
+// fractional df (Welch) is "Invalid input" for FISHER_CDF, so then
+// z = b/(a f + b) is Beta(b/2, a/2) and P(F > f) = I_z(b/2, a/2).
+av_FUp(fuF, fuA, fuB)
+BEGIN
+  IF fuF <= 0 THEN RETURN 1; END;
+  IF FP(fuA) == 0 AND FP(fuB) == 0 THEN RETURN FISHER_CDF(fuB, fuA, 1/fuF); END;
+  RETURN av_BetaI(fuB/2, fuA/2, fuB/(fuA*fuF + fuB));
+END;
+
+// P(F < f) for F(a, b).
+av_FLo(flF, flA, flB)
+BEGIN
+  IF flF <= 0 THEN RETURN 0; END;
+  IF FP(flA) == 0 AND FP(flB) == 0 THEN RETURN FISHER_CDF(flA, flB, flF); END;
+  RETURN av_BetaI(flA/2, flB/2, flA*flF/(flA*flF + flB));
+END;
+
+// P(chi-square(df) > x) as a lower-tail form: 2 Phi(-sqrt x) for 1 df,
+// e^(-x/2) for 2 df, Q(df/2, x/2) otherwise.
+av_ChiUp(cuX, cuD)
+BEGIN
+  LOCAL cuU;
+  IF cuX <= 0 THEN RETURN 1; END;
+  IF cuD == 1 THEN RETURN 2*NORMALD_CDF(0, 1, -SQRT(cuX)); END;
+  IF cuD == 2 THEN RETURN EXP(-cuX/2); END;
+  // beta 1a (second review, item 4): up to x = df the upper tail is at
+  // least about one half, so 1 - CHISQUARE_CDF keeps its digits there
+  // (Lessons Learned 3); beyond, it is used while it keeps 6 or more
+  // digits (above 1E-6), and only the far tail goes to Q(a, x), whose
+  // continued fraction converges fast out there.  Beta 1's series for
+  // 1 - P stopped at 500 terms and was wrong in the 2nd decimal for
+  // df near 1E5-1E6.
+  IF cuX <= cuD THEN RETURN 1 - CHISQUARE_CDF(cuD, cuX); END;
+  cuU := 1 - CHISQUARE_CDF(cuD, cuX);
+  IF cuU > 0.000001 THEN RETURN cuU; END;
+  RETURN av_GamQ(cuD/2, cuX/2);
+END;
+
+// P(chi-square(df) < x), the built-in (whole df only, which is all this
+// program meets).
+av_ChiLo(ckX, ckD)
+BEGIN
+  IF ckX <= 0 THEN RETURN 0; END;
+  RETURN CHISQUARE_CDF(ckD, ckX);
+END;
+
+// Two-sided p for a t statistic: 2 P(T < -|t|).
+av_TP2(tpT, tpD)
+BEGIN
+  RETURN MIN(1, 2*STUDENT_CDF(tpD, -ABS(tpT)));
+END;
+
+// A probability kept inside (0, 1) before any _ICDF (an ICDF at 0 or 1
+// returns infinity with no error: Lessons Learned 3).
+av_Clp(cpP)
+BEGIN
+  RETURN MIN(MAX(cpP, 1E-12), 0.999999999999);
+END;
+
+// Right-tail t quantile: P(T > t) = a, as -STUDENT_ICDF(df, a), never
+// STUDENT_ICDF(df, 1 - a).
+av_TQ(tqA, tqD)
+BEGIN
+  RETURN -STUDENT_ICDF(tqD, av_Clp(tqA));
+END;
+
+// Right-tail F quantile: P(F(n, d) > x) = a, as 1 / FISHER_ICDF(d, n, a)
+// (the mirror), never FISHER_ICDF(n, d, 1 - a).
+av_FQ(fqA, fqN, fqD)
+BEGIN
+  RETURN 1/FISHER_ICDF(fqD, fqN, av_Clp(fqA));
+END;
+
+
+// ============================================================
+// 3. THE STUDENTIZED RANGE (Tukey's q): StudRange beta 15d's PPL engine,
+//    copied with this program's tag, made faster in beta 1a.
+//    - after Dunlap, Powell & Konnerth (1977), with NORMALD_CDF for their
+//      polynomial normal and a u^2 substitution (s = u^2) that makes low
+//      df work; df 3 and up; above df 100 the outer integral runs over
+//      the spike s in 1 +/- 12/sqrt(2 df) (StudRange's notes, kept);
+//    - beta 1a (second review, item 1): the inner integral P_k(x), the
+//      CDF of the range of k standard normals, depends on k only.  It is
+//      tabulated ONCE per k at x = 0, 0.1, ..., 12 (121 points, each by
+//      StudRange's Simpson rule over z in [-7, 4], 32 intervals, 48 from
+//      k = 6) and read in the outer 64-interval Simpson loop by 4-point
+//      cubic (Lagrange) interpolation; P_k(x) = 1 for x >= 12.  The
+//      table survives Set alpha and the Tukey p button.  Cost: 121 x 33
+//      (or 49) NORMALD_CDF calls once, then 65 interpolations per CDF
+//      instead of 65 x 33 (or 49) NORMALD_CDF calls.
+//    - accuracy, measured against scipy.stats.studentized_range over k
+//      2-12, df 3-1000 and alpha 0.10, 0.05, 0.01, 0.001: q crit within 0.022 % (worst k 12,
+//      df 3, alpha 0.001), the tail P(Q > q crit) within 0.067 % of alpha
+//      (worst k 4, df 100, alpha 0.001), and a pair's p = 1 - F(q) within
+//      4.2E-6 absolute over q 0.25-9 (verify_AnovaLab_beta1a.py; Python
+//      replica of this exact engine, checked against the PPL in the
+//      harness)
+//    - Esc is read inside the outer loop (every 8 nodes), with a step
+//      bar that counts the steps (q crit takes 6 to 23).
+//    - The MicroPython engine of StudRange is NOT carried in beta 1a.
+// ============================================================
+
+// Node tables for the inner integral over z in [-7, 4]: Phi(z) and
+// phi(z) times the Simpson weight do not depend on x, so they are
+// computed once per resolution.
+av_BuildZ(bzN)
+BEGIN
+  LOCAL bzJ, bzH, bzZ, bzW, bzI;
+  IF bzN == avNZ THEN RETURN 0; END;
+  avZN := MAKELIST(0, bzI, 1, bzN + 1);
+  avZW := MAKELIST(0, bzI, 1, bzN + 1);
+  avZC := MAKELIST(0, bzI, 1, bzN + 1);
+  bzH := 11/bzN;
+  FOR bzJ FROM 0 TO bzN DO
+    bzZ := -7 + bzJ*bzH;
+    IF bzJ == 0 OR bzJ == bzN THEN
+      bzW := 1;
+    ELSE
+      IF bzJ MOD 2 == 1 THEN bzW := 4; ELSE bzW := 2; END;
+    END;
+    avZN(bzJ + 1) := bzZ;
+    avZW(bzJ + 1) := bzW*bzH/3*NORMALD(0, 1, bzZ);
+    avZC(bzJ + 1) := NORMALD_CDF(0, 1, bzZ);
+  END;
+  avNZ := bzN;
+  RETURN 0;
+END;
+
+// P_k(x): the CDF of the range of k independent standard normals,
+// k * INT phi(z) [Phi(z + x) - Phi(z)]^(k-1) dz (Simpson).
+av_RngCDF(rcX, rcK)
+BEGIN
+  LOCAL rcJ, rcA, rcD;
+  IF rcX <= 0 THEN RETURN 0; END;
+  rcA := 0;
+  FOR rcJ FROM 1 TO avNZ + 1 DO
+    rcD := NORMALD_CDF(0, 1, avZN(rcJ) + rcX) - avZC(rcJ);
+    IF rcD > 0 THEN rcA := rcA + avZW(rcJ)*rcD^(rcK - 1); END;
+  END;
+  RETURN rcK*rcA;
+END;
+
+// The progress page for the slow engine, composed on G1: a title, what
+// is happening and an estimate, an empty step bar and an empty inner bar.
+av_PrgPage(ppT, ppE)
+BEGIN
+  av_Band("Working: Tukey's studentized range");
+  av_Tx(ppT, 12, 30, avBLUE);
+  av_Tx("The q distribution is an integral, done here", 12, 50, #000000h);
+  av_Tx("by Simpson's rule in PPL (StudRange's engine,", 12, 63, #000000h);
+  av_Tx("with a table of the inner integral per k).", 12, 76, #000000h);
+  av_Tx(ppE, 12, 92, avMAG);
+  av_Tx("Esc stops (read every few moments).", 12, 108, avRED);
+  RECT_P(G1, 50, 140, 270, 152, #000000h, #FFFFFFh);
+  RECT_P(G1, 50, 156, 270, 160, avGRAY, #FFFFFFh);
+  BLIT_P(G0, 0, 0, G1);
+END;
+
+// One step of the bar, drawn straight on the screen: step psStp of psN,
+// the label psL.  The inner bar is emptied for the next step.
+av_PrgStep(psStp, psN, psL)
+BEGIN
+  LOCAL psX;
+  psX := 51 + IP(218*MIN(1, psStp/psN));
+  RECT_P(G0, 51, 141, psX, 151, avRED, avRED);
+  RECT_P(G0, 51, 157, 269, 159, #FFFFFFh, #FFFFFFh);
+  RECT_P(G0, 50, 164, 300, 176, #FFFFFFh, #FFFFFFh);
+  TEXTOUT_P(psL, G0, 50, 164, 1, avGRAY, 250);
+END;
+
+// Inside a step: the thin inner bar, and a look for Esc (avStop := 1).
+// A key other than Esc pressed meanwhile is simply used up here.
+av_PrgTick(ptI, ptN)
+BEGIN
+  LOCAL ptK;
+  RECT_P(G0, 51, 157, 51 + IP(218*MIN(1, ptI/ptN)), 159, avBLUE, avBLUE);
+  ptK := GETKEY;
+  IF ptK == 4 THEN avStop := 1; END;
+END;
+
+// The table of P_k(x), x = 0, 0.1, ..., 12, for k = btK (avTbP, 121
+// values); kept in avTbK.  Returns 0 if Esc stopped it (no table then).
+av_BuildT(btK)
+BEGIN
+  LOCAL btI;
+  IF btK == avTbK THEN RETURN 1; END;
+  IF btK > 5 THEN av_BuildZ(48); ELSE av_BuildZ(32); END;
+  avTbP := MAKELIST(0, btI, 1, 121);
+  FOR btI FROM 2 TO 121 DO
+    avTbP(btI) := av_RngCDF((btI - 1)/10, btK);
+    IF btI MOD 8 == 1 THEN
+      av_PrgTick(btI, 121);
+      IF avStop == 1 THEN RETURN 0; END;
+    END;
+  END;
+  avTbK := btK;
+  RETURN 1;
+END;
+
+// P_k(x) read from the table by 4-point cubic (Lagrange) interpolation:
+// the four grid points around x, t = x in grid steps from the first.
+av_PkI(pkX)
+BEGIN
+  LOCAL pkI, pkT, pkA, pkB, pkC, pkD;
+  IF pkX <= 0 THEN RETURN 0; END;
+  IF pkX >= 12 THEN RETURN 1; END;
+  pkI := MIN(MAX(IP(pkX*10) - 1, 0), 117);
+  pkT := pkX*10 - pkI;
+  pkA := avTbP(pkI + 1); pkB := avTbP(pkI + 2); pkC := avTbP(pkI + 3); pkD := avTbP(pkI + 4);
+  pkA := -pkA*(pkT - 1)*(pkT - 2)*(pkT - 3)/6 + pkB*pkT*(pkT - 2)*(pkT - 3)/2 - pkC*pkT*(pkT - 1)*(pkT - 3)/2 + pkD*pkT*(pkT - 1)*(pkT - 2)/6;
+  RETURN MIN(1, MAX(0, pkA));
+END;
+
+// F(q): the studentized range CDF for v df (the table holds k),
+// F(q) = INT f_s(s) P_k(q s) ds with s = sqrt(chi-square_v / v); the
+// density's constant in logs (the 1977 underflow trick).  ns = outer
+// Simpson intervals (even).  avStop = 1 (Esc pressed) makes it return
+// at once.
+av_SRCDF(scQ, scV, scNs)
+BEGIN
+  LOCAL scLo, scHi, scH, scLc, scJ, scU;
+  LOCAL scS, scW, scA, scSg;
+  IF avStop == 1 THEN RETURN 0; END;
+  IF scQ <= 0 THEN RETURN 0; END;
+  IF scV > 100 THEN
+    scSg := 1/SQRT(2*scV);
+    scLo := MAX(1E-9, 1 - 12*scSg); scHi := 1 + 12*scSg; scH := (scHi - scLo)/scNs;
+    scLc := (1 - scV/2)*LN(2) + (scV/2)*LN(scV) - av_LGam(scV/2);
+    scA := 0;
+    FOR scJ FROM 0 TO scNs DO
+      scS := scLo + scJ*scH;
+      IF scJ == 0 OR scJ == scNs THEN
+        scW := 1;
+      ELSE
+        IF scJ MOD 2 == 1 THEN scW := 4; ELSE scW := 2; END;
+      END;
+      scA := scA + scW*EXP(scLc + (scV - 1)*LN(scS) - scV*scS*scS/2)*av_PkI(scQ*scS);
+      IF scJ MOD 8 == 0 THEN
+        av_PrgTick(scJ, scNs);
+        IF avStop == 1 THEN RETURN 0; END;
+      END;
+    END;
+    RETURN MIN(1, scH/3*scA);
+  END;
+  scHi := SQRT(1 + 9/SQRT(scV)); scLo := 0.001; scH := (scHi - scLo)/scNs;
+  scLc := (1 - scV/2)*LN(2) + (scV/2)*LN(scV) - av_LGam(scV/2);
+  scA := 0;
+  FOR scJ FROM 0 TO scNs DO
+    scU := scLo + scJ*scH; scS := scU*scU;
+    IF scJ == 0 OR scJ == scNs THEN
+      scW := 1;
+    ELSE
+      IF scJ MOD 2 == 1 THEN scW := 4; ELSE scW := 2; END;
+    END;
+    scA := scA + scW*EXP(scLc + (scV - 1)*LN(scS) - scV*scS*scS/2)*2*scU*av_PkI(scQ*scS);
+    IF scJ MOD 8 == 0 THEN
+      av_PrgTick(scJ, scNs);
+      IF avStop == 1 THEN RETURN 0; END;
+    END;
+  END;
+  RETURN MIN(1, scH/3*scA);
+END;
+
+// q crit: the q with F(q) = 1 - alpha, by Illinois-modified regula
+// falsi (StudRange's sr_SRCrit; 6 to 23 CDF evaluations, median 13).  Each
+// evaluation is one step of the bar, counted honestly.  Returns -2 if
+// stopped.
+av_SRCrit(crA, crV, crNs)
+BEGIN
+  LOCAL crT, crQl, crQh, crFl, crFh, crQm;
+  LOCAL crFm, crIt, crSd, crE;
+  crT := 1 - crA; crE := 0;
+  crQl := 0.6; crFl := av_SRCDF(crQl, crV, crNs) - crT;
+  crE := crE + 1; av_PrgStep(crE, 23, "step " + av_I(crE) + " (q crit takes 6 to 23)");
+  crQh := 4; crFh := av_SRCDF(crQh, crV, crNs) - crT;
+  crE := crE + 1; av_PrgStep(crE, 23, "step " + av_I(crE) + " (q crit takes 6 to 23)");
+  WHILE crFh < 0 AND crQh < 60 AND avStop == 0 DO
+    crQh := crQh*1.5; crFh := av_SRCDF(crQh, crV, crNs) - crT;
+    crE := crE + 1; av_PrgStep(crE, 23, "step " + av_I(crE) + " (q crit takes 6 to 23)");
+  END;
+  crQm := (crQl + crQh)/2; crSd := 0;
+  FOR crIt FROM 1 TO 40 DO
+    IF avStop == 1 THEN BREAK; END;
+    crQm := (crQl*crFh - crQh*crFl)/(crFh - crFl);
+    crFm := av_SRCDF(crQm, crV, crNs) - crT;
+    crE := crE + 1; av_PrgStep(crE, 23, "step " + av_I(crE) + " (q crit takes 6 to 23)");
+    IF ABS(crFm) < 1E-7 OR ABS(crQh - crQl) < 5E-5 THEN BREAK; END;
+    IF crFm*crFl > 0 THEN
+      crQl := crQm; crFl := crFm;
+      IF crSd == -1 THEN crFh := crFh/2; END;
+      crSd := -1;
+    ELSE
+      crQh := crQm; crFh := crFm;
+      IF crSd == 1 THEN crFl := crFl/2; END;
+      crSd := 1;
+    END;
+  END;
+  avSRE := crE;
+  IF avStop == 1 THEN RETURN -2; END;
+  RETURN crQm;
+END;
+
+// The G1 estimate shown before a Tukey computation, in seconds, as
+// "about a to b s": table points still to build (121 x (nz + 1) inner
+// steps) plus ev outer evaluations of 65 nodes (one interpolation costs
+// about 3 inner steps), at 5 to 15 ms per inner step on a G1 (the second
+// review's estimate from StudRange's G2 and G1 timings; to be replaced by
+// Roger's stopwatch).
+av_TEst(teEv)
+BEGIN
+  LOCAL teU;
+  teU := teEv*65*3;
+  IF avTbK <> avOK THEN
+    IF avOK > 5 THEN teU := teU + 120*49; ELSE teU := teU + 120*33; END;
+  END;
+  RETURN "about " + av_I(MAX(1, ROUND(teU*0.005, 0))) + "-" + av_I(MAX(2, ROUND(teU*0.015, 0))) + " s on a G1";
+END;
+
+// ============================================================
+// 4. THE PRESETS (data/DATASETS.md only; the values were written into
+//    this file by a script from the CSV files, never typed)
+// ============================================================
+
+// The mock jury: Years of sentence, Attr (1 Beautiful, 2 Average,
+// 3 Unattractive) and Crime (1 Burglary, 2 Swindle) for 114 inmates, in
+// the CSV's row order.  Loaded once.
+av_JuryData()
+BEGIN
+  IF SIZE(avJY) == 114 THEN RETURN 0; END;
+  avJY := {
+      10, 3, 5, 1, 7, 7, 3, 7, 2, 3, 5, 1, 1, 1, 2, 2, 10, 10, 3, 4, 7, 1, 4, 3,
+      2, 8, 8, 1, 1, 5, 7, 1, 5, 2, 12, 10, 1, 6, 2, 5, 12, 6, 3, 8, 4, 10, 10, 15,
+      15, 3, 3, 3, 11, 12, 2, 1, 1, 12, 5, 5, 4, 3, 6, 4, 9, 8, 3, 2, 10, 1, 1, 3,
+      1, 3, 5, 8, 1, 1, 2, 2, 3, 15, 4, 6, 2, 10, 3, 2, 3, 5, 10, 2, 2, 2, 3, 1,
+      1, 1, 2, 2, 1, 1, 2, 3, 4, 5, 3, 3, 3, 2, 7, 6, 12, 8};
+  avJA := {
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+      3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2};
+  avJC := {
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2,
+      2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2};
+  RETURN 0;
+END;
+
+// One-way: years by attractiveness (3 groups of 39, 38 and 37).
+av_LdJury1()
+BEGIN
+  av_JuryData();
+  avOY := avJY; avOG := avJA; avOK := 3;
+  avON := {"Beautiful", "Average", "Unattractive"};
+  avOSh := {"Beaut", "Avg", "Unatt"};
+  avOTtl := "Years of sentence by attractiveness";
+  avOSrc := "Plaster 1989 (thesis); via R heplots MockJury";
+  avOHas := 1; avODone := 0;
+END;
+
+// Two-way: years by attractiveness x crime (cells of 17 to 21).
+av_LdJury2()
+BEGIN
+  av_JuryData();
+  avTY := avJY; avTA := avJA; avTB := avJC;
+  avTNA := 3; avTNB := 2;
+  avTAN := {"Beautiful", "Average", "Unattract."};
+  avTBN := {"Burglary", "Swindle"};
+  avTFA := "Attractiveness"; avTFB := "Crime";
+  avTKA := "Attract"; avTKB := "Crime";
+  avTTtl := "Years by attractiveness " + avTm + " crime";
+  avTSrc := "Plaster 1989 (thesis); via R heplots MockJury";
+  avTHas := 1; avTDone := 0; avTSx := 1; avTSt := 1; avTEff := 3;
+END;
+
+// The 1970 draft lottery: the priority number drawn for each birth
+// date, by month (31, 29, 31, 30 ... days; 1970's lottery covered all
+// 366 dates, Feb 29 included).  The same data RankLab tests with
+// Kruskal-Wallis.
+av_LdDraft()
+BEGIN
+  LOCAL ldI, ldM, ldD, ldK;
+  avOY := {
+      305, 159, 251, 215, 101, 224, 306, 199, 194, 325, 329, 221, 318, 238, 17, 121, 235, 140, 58, 280,
+      186, 337, 118, 59, 52, 92, 355, 77, 349, 164, 211, 86, 144, 297, 210, 214, 347, 91, 181, 338,
+      216, 150, 68, 152, 4, 89, 212, 189, 292, 25, 302, 363, 290, 57, 236, 179, 365, 205, 299, 285,
+      108, 29, 267, 275, 293, 139, 122, 213, 317, 323, 136, 300, 259, 354, 169, 166, 33, 332, 200, 239,
+      334, 265, 256, 258, 343, 170, 268, 223, 362, 217, 30, 32, 271, 83, 81, 269, 253, 147, 312, 219,
+      218, 14, 346, 124, 231, 273, 148, 260, 90, 336, 345, 62, 316, 252, 2, 351, 340, 74, 262, 191,
+      208, 330, 298, 40, 276, 364, 155, 35, 321, 197, 65, 37, 133, 295, 178, 130, 55, 112, 278, 75,
+      183, 250, 326, 319, 31, 361, 357, 296, 308, 226, 103, 313, 249, 228, 301, 20, 28, 110, 85, 366,
+      335, 206, 134, 272, 69, 356, 180, 274, 73, 341, 104, 360, 60, 247, 109, 358, 137, 22, 64, 222,
+      353, 209, 93, 350, 115, 279, 188, 327, 50, 13, 277, 284, 248, 15, 42, 331, 322, 120, 98, 190,
+      227, 187, 27, 153, 172, 23, 67, 303, 289, 88, 270, 287, 193, 111, 45, 261, 145, 54, 114, 168,
+      48, 106, 21, 324, 142, 307, 198, 102, 44, 154, 141, 311, 344, 291, 339, 116, 36, 286, 245, 352,
+      167, 61, 333, 11, 225, 161, 49, 232, 82, 6, 8, 184, 263, 71, 158, 242, 175, 1, 113, 207,
+      255, 246, 177, 63, 204, 160, 119, 195, 149, 18, 233, 257, 151, 315, 359, 125, 244, 202, 24, 87,
+      234, 283, 342, 220, 237, 72, 138, 294, 171, 254, 288, 5, 241, 192, 243, 117, 201, 196, 176, 7,
+      264, 94, 229, 38, 79, 19, 34, 348, 266, 310, 76, 51, 97, 80, 282, 46, 66, 126, 127, 131,
+      107, 143, 146, 203, 185, 156, 9, 182, 230, 132, 309, 47, 281, 99, 174, 129, 328, 157, 165, 56,
+      10, 12, 105, 43, 41, 39, 314, 163, 26, 320, 96, 304, 128, 240, 135, 70, 53, 162, 95, 84,
+      173, 78, 123, 16, 3, 100};
+  ldD := {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+  // the month of each value, filled in place (no growing list)
+  avOG := MAKELIST(0, ldI, 1, 366);
+  ldI := 0;
+  FOR ldM FROM 1 TO 12 DO
+    FOR ldK FROM 1 TO ldD(ldM) DO ldI := ldI + 1; avOG(ldI) := ldM; END;
+  END;
+  avOK := 12;
+  avON := {"January", "February", "March", "April", "May", "June",
+           "July", "August", "September", "October", "November", "December"};
+  avOSh := {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+  avOTtl := "1970 draft number by birth month";
+  avOSrc := "Fienberg 1971 Science 171:255; Triola p 747";
+  avOHas := 1; avODone := 0;
+END;
+
+// Insect sprays: insects counted on 12 plots per spray A-F.  The spreads
+// are very unequal (s from 1.7 to 6.2): the Levene / Welch lesson.
+av_LdInsect()
+BEGIN
+  LOCAL liI;
+  avOY := {
+      10, 7, 20, 14, 14, 12, 10, 23, 17, 20, 14, 13, 11, 17, 21, 11, 16, 14, 17, 17, 19, 21, 7, 13,
+      0, 1, 7, 2, 3, 1, 2, 1, 3, 0, 1, 4, 3, 5, 12, 6, 4, 3, 5, 5, 5, 5, 2, 4,
+      3, 5, 3, 5, 3, 6, 1, 1, 3, 2, 6, 4, 11, 9, 15, 22, 15, 16, 13, 10, 26, 26, 24, 13};
+  avOG := MAKELIST(IP((liI - 1)/12) + 1, liI, 1, 72);
+  avOK := 6;
+  avON := {"Spray A", "Spray B", "Spray C", "Spray D", "Spray E", "Spray F"};
+  avOSh := {"A", "B", "C", "D", "E", "F"};
+  avOTtl := "Insect counts by spray";
+  avOSrc := "Beall 1942 Biometrika 29:243 (R InsectSprays)";
+  avOHas := 1; avODone := 0;
+END;
+
+// Judge ratings as a randomized block design: the 43 judges are the
+// blocks, three criteria the treatments -- INTG (integrity), DMNR
+// (demeanor), DILG (diligence) -- each judge rated on all three by the
+// same lawyers.  Row-major: judge 1's three ratings, then judge 2's ...
+av_LdJudge()
+BEGIN
+  avBY := {
+      7.9, 7.7, 7.3, 8.9, 8.8, 8.5, 8.1, 7.8, 7.8, 8.8, 8.5, 8.8, 6.4, 4.3, 6.5, 8.8, 8.7, 8.5,
+      9, 8.9, 8.7, 5.9, 4.9, 5.1, 8.9, 8.9, 8.7, 7.9, 6.7, 8.1, 8, 7.6, 7.4, 8, 7.6, 7.2,
+      8.6, 8.2, 6.8, 7.5, 6.4, 6.8, 8.1, 8, 8, 8, 7.4, 7.7, 7.6, 6.6, 7.2, 7.7, 6.7, 7.5,
+      8.2, 7.4, 7.8, 6.9, 5.7, 6.6, 8.2, 7.7, 7.1, 7.3, 6.9, 6.8, 7.4, 6.2, 6.2, 8.3, 8.1, 7.7,
+      8.7, 8.5, 8.6, 8.9, 8.7, 8.9, 8.5, 8.3, 8, 9, 8.9, 8.7, 8.1, 7.7, 8.2, 9.2, 9, 9,
+      7.4, 6.9, 8.4, 8, 7.9, 7.9, 8.5, 7.8, 8.5, 8.9, 8.8, 8.7, 6.2, 5.1, 5.6, 8.3, 8.1, 8.3,
+      8.3, 8, 8.1, 8.2, 7.7, 7.8, 7.3, 7, 6.8, 8.2, 7.8, 8.3, 7, 5.9, 7, 8.4, 8.4, 7.7,
+      7.4, 7, 7.5};
+  avBNb := 43; avBKt := 3;
+  avBTN := {"Integrity", "Demeanor", "Diligence"};
+  avBBl := "judge";
+  avBTtl := "43 judges rated on 3 criteria";
+  avBSrc := "New Haven Register, 14 Jan 1977 (R datasets)";
+  avBHas := 1; avBDone := 0; avBSel := 1;
+END;
+
+
+// ============================================================
+// 5. THE ARITHMETIC
+// ============================================================
+
+// The alpha-dependent constants of the one-way pages: t for each
+// group's CI (pooled s), Bonferroni's t, Scheffe's multiplier.  Tukey's
+// q crit is forgotten (it is recomputed when a page needs it).
+av_OCrit()
+BEGIN
+  avTcr := av_TQ(avAlpha/2, avDf2);
+  avBonT := av_TQ(avAlpha/(2*avNP), avDf2);
+  avDotOK := 0;
+  avScM := SQRT(avDf1*av_FQ(avAlpha, avDf1, avDf2));
+  avQc := -1;
+END;
+
+// Every pair of groups i < j: the difference of means m_i - m_j, its
+// SE from MS within, the raw two-sided t p (df N - k), Bonferroni
+// (p x m, at most 1), Scheffe (F = t^2/(k-1) on F(k-1, N-k)), the q
+// statistic for Tukey-Kramer (|t| x sqrt 2), and Holm's step-down.
+// Tukey p-values are left at -1 (computed only on request).
+av_PostHoc()
+BEGIN
+  LOCAL phI, phJ, phM, phD, phSE, phT;
+  LOCAL phU, phK, phO, phMx, phR, phB;
+  phK := avOK; phM := phK*(phK - 1)/2; avNP := phM;
+  avPI := MAKELIST(0, phI, 1, phM); avPJ := MAKELIST(0, phI, 1, phM);
+  avPD := MAKELIST(0, phI, 1, phM); avPSE := MAKELIST(0, phI, 1, phM);
+  avPRw := MAKELIST(0, phI, 1, phM); avPBon := MAKELIST(0, phI, 1, phM);
+  avPHm := MAKELIST(0, phI, 1, phM); avPSc := MAKELIST(0, phI, 1, phM);
+  avPTk := MAKELIST(-1, phI, 1, phM); avPQ := MAKELIST(0, phI, 1, phM);
+  phR := 0;
+  FOR phI FROM 1 TO phK - 1 DO
+    FOR phJ FROM phI + 1 TO phK DO
+      phR := phR + 1;
+      avPI(phR) := phI; avPJ(phR) := phJ;
+      phD := avRm(phI) - avRm(phJ);
+      phSE := SQRT(avMSW*(1/avRn(phI) + 1/avRn(phJ)));
+      phT := phD/phSE;
+      avPD(phR) := phD; avPSE(phR) := phSE;
+      avPRw(phR) := av_TP2(phT, avDf2);
+      avPBon(phR) := MIN(1, phM*avPRw(phR));
+      avPSc(phR) := av_FUp(phT*phT/(phK - 1), phK - 1, avDf2);
+      avPQ(phR) := ABS(phT)*SQRT(2);
+    END;
+  END;
+  // Holm (1979): take the raw p-values from the smallest up; the r-th
+  // smallest is multiplied by (m - r + 1), and an adjusted p never
+  // falls below the one before it.
+  phU := MAKELIST(0, phI, 1, phM);
+  phMx := 0;
+  FOR phO FROM 1 TO phM DO
+    phB := 0;
+    FOR phI FROM 1 TO phM DO
+      IF phU(phI) == 0 THEN
+        IF phB == 0 THEN
+          phB := phI;
+        ELSE
+          IF avPRw(phI) < avPRw(phB) THEN phB := phI; END;
+        END;
+      END;
+    END;
+    phU(phB) := 1;
+    phMx := MAX(phMx, MIN(1, (phM - phO + 1)*avPRw(phB)));
+    avPHm(phB) := phMx;
+  END;
+  avPTop := 1; avPIx := 0; avSelA := 0; avSelB := 0;
+  av_OCrit();
+END;
+
+// The whole one-way analysis.  Returns 1, or 0 (with a message) when
+// it cannot be done.
+//   SS between = sum n_i (mean_i - grand mean)^2
+//   SS within  = sum over values (y - its group mean)^2
+//   F = (SSB/(k-1)) / (SSW/(N-k)),  p = P(F(k-1, N-k) > F)
+//   eta^2 = SSB/SST;  omega^2 = (SSB - (k-1) MSW)/(SST + MSW) (Hays)
+//   Levene (Brown-Forsythe): the one-way F of z = |y - group median|
+//   Bartlett: [(N-k) ln s_p^2 - sum (n_i-1) ln s_i^2] / C,
+//     C = 1 + (sum 1/(n_i-1) - 1/(N-k)) / (3(k-1)), on chi-square(k-1)
+//   Welch: w_i = n_i/s_i^2, the weighted mean m_w,
+//     A = sum w_i (m_i - m_w)^2/(k-1),
+//     L = sum (1 - w_i/W)^2/(n_i - 1),  B = 1 + 2(k-2) L/(k^2-1),
+//     F = A/B on (k-1, (k^2-1)/(3L)) df
+av_OCompute()
+BEGIN
+  LOCAL ocI, ocG, ocV, ocK, ocN, ocS;
+  LOCAL ocL, ocZ, ocZm, ocZb, ocA, ocB;
+  LOCAL ocW, ocWs, ocMw, ocLam, ocC, ocMn;
+  LOCAL ocMx;
+  ocK := avOK; ocN := SIZE(avOY);
+  IF ocK < 2 THEN MSGBOX("ANOVA needs at least two groups."); RETURN 0; END;
+  avRn := MAKELIST(0, ocI, 1, ocK); avRm := MAKELIST(0, ocI, 1, ocK);
+  avRv := MAKELIST(0, ocI, 1, ocK); avRmd := MAKELIST(0, ocI, 1, ocK);
+  ocS := 0;
+  FOR ocI FROM 1 TO ocN DO
+    ocG := avOG(ocI);
+    avRn(ocG) := avRn(ocG) + 1;
+    avRm(ocG) := avRm(ocG) + avOY(ocI);
+    ocS := ocS + avOY(ocI);
+  END;
+  FOR ocG FROM 1 TO ocK DO
+    IF avRn(ocG) == 0 THEN MSGBOX("Group " + avOSh(ocG) + " has no values."); RETURN 0; END;
+  END;
+  IF ocN - ocK < 1 THEN
+    MSGBOX("ANOVA needs more values than groups (N - k " + avGE + " 1).");
+    RETURN 0;
+  END;
+  FOR ocG FROM 1 TO ocK DO avRm(ocG) := avRm(ocG)/avRn(ocG); END;
+  avNN := ocN; avGM := ocS/ocN;
+  // the second pass: deviations from the group means and the grand mean
+  avSST := 0;
+  FOR ocI FROM 1 TO ocN DO
+    ocG := avOG(ocI);
+    ocV := avOY(ocI) - avRm(ocG);
+    avRv(ocG) := avRv(ocG) + ocV*ocV;
+    avSST := avSST + (avOY(ocI) - avGM)^2;
+  END;
+  avSSW := 0; avSSB := 0;
+  FOR ocG FROM 1 TO ocK DO
+    avSSW := avSSW + avRv(ocG);
+    avSSB := avSSB + avRn(ocG)*(avRm(ocG) - avGM)^2;
+    IF avRn(ocG) > 1 THEN avRv(ocG) := avRv(ocG)/(avRn(ocG) - 1); ELSE avRv(ocG) := 0; END;
+  END;
+  IF avSSW <= 0 THEN
+    MSGBOX("Every value equals its group's mean: no variation within groups, so F cannot be computed.");
+    RETURN 0;
+  END;
+  avDf1 := ocK - 1; avDf2 := ocN - ocK;
+  avMSB := avSSB/avDf1; avMSW := avSSW/avDf2;
+  avFF := avMSB/avMSW;
+  avPP := av_FUp(avFF, avDf1, avDf2);
+  avEta := 0;
+  IF avSST > 0 THEN avEta := avSSB/avSST; END;
+  avOmg := (avSSB - avDf1*avMSW)/(avSST + avMSW);
+  // ---- medians (for Levene / Brown-Forsythe) ----
+  // beta 1a (second review, item 6): one pass puts every value in its
+  // group's block of a pre-sized list (no growing CONCAT), then each
+  // block is copied out once and sorted.  Above 500 values a Working
+  // page shows a bar per group, and Esc stops.
+  avStop := 0;
+  IF ocN > 500 THEN av_Busy("one-way ANOVA", ocN); END;
+  ocZm := MAKELIST(0, ocI, 1, ocK);
+  ocC := 0;
+  FOR ocG FROM 1 TO ocK DO ocZm(ocG) := ocC; ocC := ocC + avRn(ocG); END;
+  ocL := MAKELIST(0, ocI, 1, ocN);
+  FOR ocI FROM 1 TO ocN DO
+    ocG := avOG(ocI);
+    ocZm(ocG) := ocZm(ocG) + 1;
+    ocL(ocZm(ocG)) := avOY(ocI);
+  END;
+  ocC := 0;
+  FOR ocG FROM 1 TO ocK DO
+    ocZ := MAKELIST(0, ocI, 1, avRn(ocG));
+    FOR ocI FROM 1 TO avRn(ocG) DO ocZ(ocI) := ocL(ocC + ocI); END;
+    ocC := ocC + avRn(ocG);
+    avRmd(ocG) := av_Med(ocZ);
+    IF ocN > 500 THEN
+      av_BusyStep(ocG, ocK);
+      IF avStop == 1 THEN MSGBOX("Stopped (Esc): nothing was computed."); RETURN 0; END;
+    END;
+  END;
+  // ---- Levene's test on |y - median| (Brown & Forsythe 1974) ----
+  ocZm := MAKELIST(0, ocI, 1, ocK); ocZb := 0;
+  FOR ocI FROM 1 TO ocN DO
+    ocG := avOG(ocI); ocZ := ABS(avOY(ocI) - avRmd(ocG));
+    ocZm(ocG) := ocZm(ocG) + ocZ; ocZb := ocZb + ocZ;
+  END;
+  FOR ocG FROM 1 TO ocK DO ocZm(ocG) := ocZm(ocG)/avRn(ocG); END;
+  ocZb := ocZb/ocN;
+  ocA := 0; ocB := 0;
+  FOR ocG FROM 1 TO ocK DO ocA := ocA + avRn(ocG)*(ocZm(ocG) - ocZb)^2; END;
+  FOR ocI FROM 1 TO ocN DO
+    ocG := avOG(ocI); ocZ := ABS(avOY(ocI) - avRmd(ocG));
+    ocB := ocB + (ocZ - ocZm(ocG))^2;
+  END;
+  avLvOK := 0;
+  IF ocB > 0 THEN
+    avLvF := (ocA/avDf1)/(ocB/avDf2); avLvP := av_FUp(avLvF, avDf1, avDf2); avLvOK := 1;
+  END;
+  // ---- Bartlett and Welch need n >= 2 and s > 0 in every group ----
+  avBrOK := 1;
+  FOR ocG FROM 1 TO ocK DO
+    IF avRn(ocG) < 2 THEN avBrOK := 0; END;
+    IF avRv(ocG) <= 0 THEN avBrOK := 0; END;
+  END;
+  avWOK := avBrOK;
+  IF avBrOK == 1 THEN
+    ocA := avDf2*LN(avMSW); ocC := 0;
+    FOR ocG FROM 1 TO ocK DO
+      ocA := ocA - (avRn(ocG) - 1)*LN(avRv(ocG));
+      ocC := ocC + 1/(avRn(ocG) - 1);
+    END;
+    ocC := 1 + (ocC - 1/avDf2)/(3*avDf1);
+    avBrT := ocA/ocC; avBrP := av_ChiUp(avBrT, avDf1);
+    // Welch
+    ocWs := 0; ocMw := 0;
+    FOR ocG FROM 1 TO ocK DO
+      ocW := avRn(ocG)/avRv(ocG); ocWs := ocWs + ocW; ocMw := ocMw + ocW*avRm(ocG);
+    END;
+    ocMw := ocMw/ocWs;
+    ocA := 0; ocLam := 0;
+    FOR ocG FROM 1 TO ocK DO
+      ocW := avRn(ocG)/avRv(ocG);
+      ocA := ocA + ocW*(avRm(ocG) - ocMw)^2;
+      ocLam := ocLam + (1 - ocW/ocWs)^2/(avRn(ocG) - 1);
+    END;
+    ocA := ocA/avDf1;
+    ocB := 1 + 2*(ocK - 2)/(ocK^2 - 1)*ocLam;
+    avWF := ocA/ocB; avWd2 := (ocK^2 - 1)/(3*ocLam);
+    avWP := av_FUp(avWF, avDf1, avWd2);
+  END;
+  // ---- largest s over smallest s (groups with n >= 2) ----
+  ocMn := -1; ocMx := -1;
+  FOR ocG FROM 1 TO ocK DO
+    IF avRn(ocG) > 1 THEN
+      ocV := SQRT(avRv(ocG));
+      IF ocMn < 0 OR ocV < ocMn THEN ocMn := ocV; END;
+      IF ocV > ocMx THEN ocMx := ocV; END;
+    END;
+  END;
+  avSDr := -1;
+  IF ocMn > 0 THEN avSDr := ocMx/ocMn; END;
+  av_PostHoc();
+  // ---- Home ----
+  AV_F := avFF; AV_P := avPP; AV_DF := {avDf1, avDf2}; AV_MSE := avMSW; AV_ETA2 := avEta;
+  AV_TAB := MAKEMAT(0, 3, 5);
+  AV_TAB(1, 1) := avSSB; AV_TAB(1, 2) := avDf1; AV_TAB(1, 3) := avMSB; AV_TAB(1, 4) := avFF; AV_TAB(1, 5) := avPP;
+  AV_TAB(2, 1) := avSSW; AV_TAB(2, 2) := avDf2; AV_TAB(2, 3) := avMSW;
+  AV_TAB(3, 1) := avSST; AV_TAB(3, 2) := ocN - 1;
+  avLast := "one-way F(" + av_I(avDf1) + ", " + av_I(avDf2) + ") = " + av_Fx(avFF, 3) + ", " + av_PE(avPP) + " (" + avOTtl + ")";
+  avODone := 1;
+  RETURN 1;
+END;
+
+// Tukey's q crit for the current one-way data, with the progress page.
+// avQc: the value; -1 not asked yet; -2 stopped by Esc (or "not now");
+// -3 df below 3 (the PPL engine starts at df 3).  It runs only when the
+// student has picked Tukey and said yes to the estimate (av_TukeyAsk).
+av_TukeyCrit()
+BEGIN
+  LOCAL tkT;
+  IF avDf2 < 3 THEN avQc := -3; RETURN 0; END;
+  av_PrgPage("q crit for k = " + av_I(avOK) + ", df = " + av_I(avDf2) + ", " + avAl + " = " + av_AS(), "Estimate: " + av_TEst(14) + ".");
+  avStop := 0;
+  IF av_BuildT(avOK) == 0 THEN
+    avQc := -2;
+  ELSE
+    tkT := av_SRCrit(avAlpha, avDf2, 64);
+    IF avStop == 1 THEN avQc := -2; ELSE avQc := tkT; END;
+  END;
+  av_KDrain();
+  RETURN 0;
+END;
+
+// Before any Tukey computation: a one-line warning with the estimate,
+// as a CHOOSE.  Returns 1 = go ahead, 0 = not now.  teEv: how many
+// outer evaluations the job needs (q crit about 14; one per pair).
+av_TukeyAsk(taT, taEv)
+BEGIN
+  LOCAL taI;
+  taI := 0;
+  CHOOSE(taI, taT + ": " + av_TEst(taEv), {"Compute it now", "Not now"});
+  IF taI == 1 THEN RETURN 1; END;
+  RETURN 0;
+END;
+
+// Tukey-Kramer p for every pair not yet done, P(Q > q) = 1 - F(q): one
+// CDF per pair (a bar step per pair; Esc stops and keeps the pairs done
+// so far).  Asks first, with the estimate.
+av_TukeyP()
+BEGIN
+  LOCAL tpR, tpF, tpN;
+  IF avDf2 < 3 THEN
+    MSGBOX("Tukey needs df within " + avGE + " 3 here (the PPL engine). Use Bonferroni, Holm or Scheffe.");
+    RETURN 0;
+  END;
+  tpN := 0;
+  FOR tpR FROM 1 TO avNP DO
+    IF avPTk(tpR) < 0 THEN tpN := tpN + 1; END;
+  END;
+  IF avQc < 0 THEN tpN := tpN + 14; END;
+  IF tpN == 0 THEN avMeth := 1; RETURN 0; END;
+  IF av_TukeyAsk("Tukey p", tpN) == 0 THEN RETURN 0; END;
+  avMeth := 1;
+  IF avQc < 0 THEN av_TukeyCrit(); END;
+  IF avQc < 0 THEN RETURN 0; END;
+  av_PrgPage("Tukey p for " + av_I(avNP) + " pairs (one step each)", "Estimate: " + av_TEst(tpN) + ".");
+  avStop := 0;
+  IF av_BuildT(avOK) == 0 THEN RETURN 0; END;
+  FOR tpR FROM 1 TO avNP DO
+    IF avStop == 0 AND avPTk(tpR) < 0 THEN
+      tpF := av_SRCDF(avPQ(tpR), avDf2, 64);
+      IF avStop == 0 THEN avPTk(tpR) := MAX(0, 1 - tpF); END;
+    END;
+    IF avStop == 0 THEN av_PrgStep(tpR, avNP, "pair " + av_I(tpR) + " of " + av_I(avNP)); END;
+  END;
+  av_KDrain();
+  RETURN 0;
+END;
+
+// Tukey-Kramer p for ONE pair (the Dots page's pair): one CDF.
+av_TukeyP1(t1R)
+BEGIN
+  LOCAL t1F;
+  IF t1R < 1 OR t1R > avNP THEN MSGBOX("Pick a pair first (tap two groups)."); RETURN 0; END;
+  IF avDf2 < 3 THEN
+    MSGBOX("Tukey needs df within " + avGE + " 3 here (the PPL engine).");
+    RETURN 0;
+  END;
+  IF avPTk(t1R) >= 0 THEN RETURN 0; END;
+  av_PrgPage("Tukey p for " + avOSh(avPI(t1R)) + " - " + avOSh(avPJ(t1R)), "Estimate: " + av_TEst(1) + ".");
+  avStop := 0;
+  IF av_BuildT(avOK) == 0 THEN RETURN 0; END;
+  t1F := av_SRCDF(avPQ(t1R), avDf2, 64);
+  IF avStop == 0 THEN avPTk(t1R) := MAX(0, 1 - t1F); END;
+  av_KDrain();
+  RETURN 0;
+END;
+
+// The inverse of an n x n matrix by Gauss-Jordan elimination with
+// partial pivoting.  avSing := 1 if a pivot is (nearly) zero.
+av_Inv(ivM, ivN)
+BEGIN
+  LOCAL ivA, ivR, ivI, ivJ, ivK, ivP;
+  LOCAL ivMx, ivT, ivF, ivSc;
+  ivA := ivM;
+  ivR := MAKEMAT(0, ivN, ivN);
+  ivSc := 0;
+  FOR ivI FROM 1 TO ivN DO
+    ivR(ivI, ivI) := 1;
+    ivSc := MAX(ivSc, ABS(ivA(ivI, ivI)));
+  END;
+  IF ivSc <= 0 THEN avSing := 1; RETURN ivR; END;
+  FOR ivK FROM 1 TO ivN DO
+    ivP := ivK; ivMx := ABS(ivA(ivK, ivK));
+    FOR ivI FROM ivK + 1 TO ivN DO
+      IF ABS(ivA(ivI, ivK)) > ivMx THEN ivMx := ABS(ivA(ivI, ivK)); ivP := ivI; END;
+    END;
+    IF ivMx < ivSc*1E-10 THEN avSing := 1; RETURN ivR; END;
+    IF ivP <> ivK THEN
+      FOR ivJ FROM 1 TO ivN DO
+        ivT := ivA(ivK, ivJ); ivA(ivK, ivJ) := ivA(ivP, ivJ); ivA(ivP, ivJ) := ivT;
+        ivT := ivR(ivK, ivJ); ivR(ivK, ivJ) := ivR(ivP, ivJ); ivR(ivP, ivJ) := ivT;
+      END;
+    END;
+    ivT := ivA(ivK, ivK);
+    FOR ivJ FROM 1 TO ivN DO
+      ivA(ivK, ivJ) := ivA(ivK, ivJ)/ivT; ivR(ivK, ivJ) := ivR(ivK, ivJ)/ivT;
+    END;
+    FOR ivI FROM 1 TO ivN DO
+      IF ivI <> ivK THEN
+        ivF := ivA(ivI, ivK);
+        IF ivF <> 0 THEN
+          FOR ivJ FROM 1 TO ivN DO
+            ivA(ivI, ivJ) := ivA(ivI, ivJ) - ivF*ivA(ivK, ivJ);
+            ivR(ivI, ivJ) := ivR(ivI, ivJ) - ivF*ivR(ivK, ivJ);
+          END;
+        END;
+      END;
+    END;
+  END;
+  RETURN ivR;
+END;
+
+// The effect-coded row of the two-way design for cell (i, j): 1, then
+// a-1 columns for A, b-1 for B, (a-1)(b-1) for A x B.  Effect (sum-to-
+// zero) coding: level l of A gives 1 in its column, the LAST level -1
+// in every A column, other levels 0 (the same for B); A x B columns are
+// the products.
+av_TRow(trI, trJ, trA, trB)
+BEGIN
+  LOCAL trR, trL, trM, trEA, trEB, trK;
+  trR := MAKELIST(0, trK, 1, trA*trB);
+  trR(1) := 1;
+  trEA := MAKELIST(0, trK, 1, trA - 1);
+  trEB := MAKELIST(0, trK, 1, trB - 1);
+  FOR trL FROM 1 TO trA - 1 DO
+    IF trI == trL THEN trEA(trL) := 1; END;
+    IF trI == trA THEN trEA(trL) := -1; END;
+    trR(1 + trL) := trEA(trL);
+  END;
+  FOR trM FROM 1 TO trB - 1 DO
+    IF trJ == trM THEN trEB(trM) := 1; END;
+    IF trJ == trB THEN trEB(trM) := -1; END;
+    trR(trA + trM) := trEB(trM);
+  END;
+  FOR trL FROM 1 TO trA - 1 DO
+    FOR trM FROM 1 TO trB - 1 DO
+      trR(trA + trB - 1 + (trL - 1)*(trB - 1) + trM) := trEA(trL)*trEB(trM);
+    END;
+  END;
+  RETURN trR;
+END;
+
+// The two-way analysis.  Returns 1, or 0 with a message.
+//   Cells: n, mean, s.  SSE = sum (y - cell mean)^2 (the full model
+//   fits every cell mean), df N - ab.
+//   Type III: b = (X'X)^-1 X'y with the effect-coded X; for an effect E
+//   with columns E, SS_E = b_E' [ ((X'X)^-1)_EE ]^-1 b_E (a Wald SS;
+//   statsmodels anova_lm(typ=3) with Sum contrasts gives the same).
+//   X'X and X'y are built cell by cell (n_c r r', n_c (mean_c - M) r).
+//   Balanced (every n_c = n): the classical SS as well,
+//     SSA = b n sum (A_i - M)^2, SSB = a n sum (B_j - M)^2,
+//     SSAB = n sum (m_ij - A_i - B_j + M)^2,
+//   and the largest gap between the two, as a share of SST, in avTAgr.
+//   Margins A_i, B_j are means of the CELL means (unweighted): that is
+//   what Type III compares.
+av_TCompute()
+BEGIN
+  LOCAL tcA, tcB, tcC, tcI, tcJ, tcN;
+  LOCAL tcS, tcX, tcY, tcR, tcK, tcL;
+  LOCAL tcM, tcCi, tcBv, tcE, tcQ, tcSub;
+  LOCAL tcT, tcSS, tcU, tcV, tcLo, tcN0;
+  LOCAL tcSE;
+  tcA := avTNA; tcB := avTNB; tcC := tcA*tcB; tcN := SIZE(avTY);
+  IF tcC > 12 THEN
+    av_Band("Working: Type III sums of squares");
+    av_Tx("Solving a " + av_I(tcC) + " " + avTm + " " + av_I(tcC) + " system (effect coding);", 12, 40, avBLUE);
+    av_Tx("a G1 may take several seconds.", 12, 53, avBLUE);
+    BLIT_P(G0, 0, 0, G1);
+  END;
+  avTCN := MAKELIST(0, tcI, 1, tcC); avTCM := MAKELIST(0, tcI, 1, tcC);
+  avTCS := MAKELIST(0, tcI, 1, tcC);
+  tcS := 0;
+  FOR tcI FROM 1 TO tcN DO
+    tcK := (avTA(tcI) - 1)*tcB + avTB(tcI);
+    avTCN(tcK) := avTCN(tcK) + 1;
+    avTCM(tcK) := avTCM(tcK) + avTY(tcI);
+    tcS := tcS + avTY(tcI);
+  END;
+  FOR tcK FROM 1 TO tcC DO
+    IF avTCN(tcK) == 0 THEN
+      MSGBOX("Cell " + avTAN(IP((tcK - 1)/tcB) + 1) + ", " + avTBN(((tcK - 1) MOD tcB) + 1) + " is empty: every cell needs a value.");
+      RETURN 0;
+    END;
+  END;
+  IF tcN - tcC < 1 THEN MSGBOX("Two-way ANOVA needs more values than cells."); RETURN 0; END;
+  FOR tcK FROM 1 TO tcC DO avTCM(tcK) := avTCM(tcK)/avTCN(tcK); END;
+  avTNN := tcN; avTGM := tcS/tcN;
+  tcT := 0; tcSS := 0;
+  FOR tcI FROM 1 TO tcN DO
+    tcK := (avTA(tcI) - 1)*tcB + avTB(tcI);
+    avTCS(tcK) := avTCS(tcK) + (avTY(tcI) - avTCM(tcK))^2;
+    tcT := tcT + (avTY(tcI) - avTGM)^2;
+  END;
+  FOR tcK FROM 1 TO tcC DO
+    tcSS := tcSS + avTCS(tcK);
+    IF avTCN(tcK) > 1 THEN avTCS(tcK) := SQRT(avTCS(tcK)/(avTCN(tcK) - 1)); ELSE avTCS(tcK) := 0; END;
+  END;
+  IF tcSS <= 0 THEN MSGBOX("No variation within cells: F cannot be computed."); RETURN 0; END;
+  // ---- X'X and X'y, cell by cell (y centred on the grand mean) ----
+  tcX := MAKEMAT(0, tcC, tcC); tcY := MAKELIST(0, tcI, 1, tcC);
+  FOR tcI FROM 1 TO tcA DO
+    FOR tcJ FROM 1 TO tcB DO
+      tcR := av_TRow(tcI, tcJ, tcA, tcB);
+      tcK := (tcI - 1)*tcB + tcJ;
+      FOR tcL FROM 1 TO tcC DO
+        IF tcR(tcL) <> 0 THEN
+          tcY(tcL) := tcY(tcL) + tcR(tcL)*avTCN(tcK)*(avTCM(tcK) - avTGM);
+          FOR tcM FROM 1 TO tcC DO
+            tcX(tcL, tcM) := tcX(tcL, tcM) + avTCN(tcK)*tcR(tcL)*tcR(tcM);
+          END;
+        END;
+      END;
+    END;
+  END;
+  avSing := 0;
+  tcCi := av_Inv(tcX, tcC);
+  IF avSing == 1 THEN MSGBOX("The design cannot be solved (singular X'X)."); RETURN 0; END;
+  tcBv := MAKELIST(0, tcI, 1, tcC);
+  FOR tcL FROM 1 TO tcC DO
+    FOR tcM FROM 1 TO tcC DO tcBv(tcL) := tcBv(tcL) + tcCi(tcL, tcM)*tcY(tcM); END;
+  END;
+  // ---- Type III SS for A (columns 2..a), B (a+1..a+b-1), AB (a+b..ab) ----
+  avTSS := {0, 0, 0, tcSS, tcT};
+  FOR tcE FROM 1 TO 3 DO
+    IF tcE == 1 THEN tcLo := 2; tcQ := tcA - 1; END;
+    IF tcE == 2 THEN tcLo := tcA + 1; tcQ := tcB - 1; END;
+    IF tcE == 3 THEN tcLo := tcA + tcB; tcQ := (tcA - 1)*(tcB - 1); END;
+    tcSub := MAKEMAT(0, tcQ, tcQ);
+    FOR tcU FROM 1 TO tcQ DO
+      FOR tcV FROM 1 TO tcQ DO tcSub(tcU, tcV) := tcCi(tcLo + tcU - 1, tcLo + tcV - 1); END;
+    END;
+    tcSub := av_Inv(tcSub, tcQ);
+    IF avSing == 1 THEN MSGBOX("The design cannot be solved (singular block)."); RETURN 0; END;
+    tcSE := 0;
+    FOR tcU FROM 1 TO tcQ DO
+      FOR tcV FROM 1 TO tcQ DO
+        tcSE := tcSE + tcBv(tcLo + tcU - 1)*tcSub(tcU, tcV)*tcBv(tcLo + tcV - 1);
+      END;
+    END;
+    avTSS(tcE) := tcSE;
+  END;
+  avTDF := {tcA - 1, tcB - 1, (tcA - 1)*(tcB - 1), tcN - tcC, tcN - 1};
+  avTMS := MAKELIST(0, tcI, 1, 4);
+  FOR tcE FROM 1 TO 4 DO avTMS(tcE) := avTSS(tcE)/avTDF(tcE); END;
+  avTF := {0, 0, 0}; avTP := {1, 1, 1}; avTPE := {0, 0, 0};
+  FOR tcE FROM 1 TO 3 DO
+    avTF(tcE) := avTMS(tcE)/avTMS(4);
+    avTP(tcE) := av_FUp(avTF(tcE), avTDF(tcE), avTDF(4));
+    avTPE(tcE) := avTSS(tcE)/(avTSS(tcE) + tcSS);
+  END;
+  // ---- unweighted margins: means of the cell means ----
+  avTMA := MAKELIST(0, tcI, 1, tcA); avTMB := MAKELIST(0, tcI, 1, tcB);
+  FOR tcI FROM 1 TO tcA DO
+    FOR tcJ FROM 1 TO tcB DO
+      tcK := (tcI - 1)*tcB + tcJ;
+      avTMA(tcI) := avTMA(tcI) + avTCM(tcK)/tcB;
+      avTMB(tcJ) := avTMB(tcJ) + avTCM(tcK)/tcA;
+    END;
+  END;
+  // ---- balanced?  then the classical SS too, and the check ----
+  avTBal := 1;
+  FOR tcK FROM 1 TO tcC DO
+    IF avTCN(tcK) <> avTCN(1) THEN avTBal := 0; END;
+  END;
+  avTCl := {0, 0, 0}; avTAgr := 0;
+  IF avTBal == 1 THEN
+    tcN0 := avTCN(1);
+    FOR tcI FROM 1 TO tcA DO avTCl(1) := avTCl(1) + tcB*tcN0*(avTMA(tcI) - avTGM)^2; END;
+    FOR tcJ FROM 1 TO tcB DO avTCl(2) := avTCl(2) + tcA*tcN0*(avTMB(tcJ) - avTGM)^2; END;
+    FOR tcI FROM 1 TO tcA DO
+      FOR tcJ FROM 1 TO tcB DO
+        tcK := (tcI - 1)*tcB + tcJ;
+        avTCl(3) := avTCl(3) + tcN0*(avTCM(tcK) - avTMA(tcI) - avTMB(tcJ) + avTGM)^2;
+      END;
+    END;
+    FOR tcE FROM 1 TO 3 DO avTAgr := MAX(avTAgr, ABS(avTCl(tcE) - avTSS(tcE))/tcT); END;
+  END;
+  AV_F := avTF(3); AV_P := avTP(3); AV_DF := {avTDF(3), avTDF(4)}; AV_MSE := avTMS(4); AV_ETA2 := avTPE(3);
+  AV_TAB := MAKEMAT(0, 5, 5);
+  FOR tcE FROM 1 TO 5 DO
+    AV_TAB(tcE, 1) := avTSS(tcE); AV_TAB(tcE, 2) := avTDF(tcE);
+    IF tcE <= 4 THEN AV_TAB(tcE, 3) := avTMS(tcE); END;
+    IF tcE <= 3 THEN AV_TAB(tcE, 4) := avTF(tcE); AV_TAB(tcE, 5) := avTP(tcE); END;
+  END;
+  avLast := "two-way (Type III) A" + avTm + "B F(" + av_I(avTDF(3)) + ", " + av_I(avTDF(4)) + ") = " + av_Fx(avTF(3), 3) + ", " + av_PE(avTP(3));
+  avTDone := 1;
+  RETURN 1;
+END;
+
+// The randomized block analysis (one value per block x treatment).
+//   SSTr = nb sum (T_j - M)^2, SSBl = kt sum (B_i - M)^2,
+//   SSE = sum (y_ij - T_j - B_i + M)^2, df (kt-1)(nb-1)
+//   F for treatments = MSTr/MSE;  partial eta^2 = SSTr/(SSTr + SSE)
+//   for comparison, the one-way F that ignores the blocks:
+//   (SSTr/(kt-1)) / ((SST - SSTr)/(N - kt))
+av_BCompute()
+BEGIN
+  LOCAL bcI, bcJ, bcV, bcN, bcW;
+  bcN := avBNb*avBKt;
+  IF avBNb < 2 OR avBKt < 2 THEN MSGBOX("A block design needs 2 or more blocks and treatments."); RETURN 0; END;
+  avBTM := MAKELIST(0, bcI, 1, avBKt); avBSD := MAKELIST(0, bcI, 1, avBKt);
+  avBBM := MAKELIST(0, bcI, 1, avBNb);
+  avBGM := 0;
+  FOR bcI FROM 1 TO avBNb DO
+    FOR bcJ FROM 1 TO avBKt DO
+      bcV := avBY((bcI - 1)*avBKt + bcJ);
+      avBTM(bcJ) := avBTM(bcJ) + bcV/avBNb;
+      avBBM(bcI) := avBBM(bcI) + bcV/avBKt;
+      avBGM := avBGM + bcV/bcN;
+    END;
+  END;
+  avBSS := {0, 0, 0, 0};
+  FOR bcI FROM 1 TO avBNb DO
+    FOR bcJ FROM 1 TO avBKt DO
+      bcV := avBY((bcI - 1)*avBKt + bcJ);
+      avBSS(3) := avBSS(3) + (bcV - avBTM(bcJ) - avBBM(bcI) + avBGM)^2;
+      avBSS(4) := avBSS(4) + (bcV - avBGM)^2;
+      avBSD(bcJ) := avBSD(bcJ) + (bcV - avBTM(bcJ))^2;
+    END;
+  END;
+  FOR bcJ FROM 1 TO avBKt DO
+    avBSS(1) := avBSS(1) + avBNb*(avBTM(bcJ) - avBGM)^2;
+    avBSD(bcJ) := SQRT(avBSD(bcJ)/(avBNb - 1));
+  END;
+  FOR bcI FROM 1 TO avBNb DO avBSS(2) := avBSS(2) + avBKt*(avBBM(bcI) - avBGM)^2; END;
+  IF avBSS(3) <= 0 THEN MSGBOX("No variation left after blocks and treatments: F cannot be computed."); RETURN 0; END;
+  avBDF := {avBKt - 1, avBNb - 1, (avBKt - 1)*(avBNb - 1), bcN - 1};
+  avBMS := {avBSS(1)/avBDF(1), avBSS(2)/avBDF(2), avBSS(3)/avBDF(3)};
+  avBF := {avBMS(1)/avBMS(3), avBMS(2)/avBMS(3)};
+  avBP := {av_FUp(avBF(1), avBDF(1), avBDF(3)), av_FUp(avBF(2), avBDF(2), avBDF(3))};
+  avBPE := {avBSS(1)/(avBSS(1) + avBSS(3)), avBSS(2)/(avBSS(2) + avBSS(3))};
+  bcW := avBSS(4) - avBSS(1);
+  avBOF := -1; avBOP := 1;
+  IF bcW > 0 THEN
+    avBOF := (avBSS(1)/avBDF(1))/(bcW/(bcN - avBKt));
+    avBOP := av_FUp(avBOF, avBDF(1), bcN - avBKt);
+  END;
+  AV_F := avBF(1); AV_P := avBP(1); AV_DF := {avBDF(1), avBDF(3)}; AV_MSE := avBMS(3); AV_ETA2 := avBPE(1);
+  AV_TAB := MAKEMAT(0, 4, 5);
+  FOR bcI FROM 1 TO 4 DO
+    AV_TAB(bcI, 1) := avBSS(bcI); AV_TAB(bcI, 2) := avBDF(bcI);
+    IF bcI <= 3 THEN AV_TAB(bcI, 3) := avBMS(bcI); END;
+    IF bcI <= 2 THEN AV_TAB(bcI, 4) := avBF(bcI); AV_TAB(bcI, 5) := avBP(bcI); END;
+  END;
+  avLast := "blocks: treatments F(" + av_I(avBDF(1)) + ", " + av_I(avBDF(3)) + ") = " + av_Fx(avBF(1), 3) + ", " + av_PE(avBP(1));
+  avBDone := 1;
+  RETURN 1;
+END;
+
+// The chi-square right-tail quantile: P(chi-square(df) > x) = p.  For
+// p of 1E-6 or more, CHISQUARE_ICDF(df, 1 - p) (1 - p keeps its digits);
+// below that (beta 1a, second review item 10.3) the Lessons' rule: never
+// ICDF(1 - p) -- bisect on the logarithm of the upper tail instead.
+av_ChiHi(chP, chD)
+BEGIN
+  LOCAL chLo, chHi, chM, chI;
+  IF chP >= 0.000001 THEN RETURN CHISQUARE_ICDF(chD, 1 - chP); END;
+  chLo := CHISQUARE_ICDF(chD, 0.999999);
+  chHi := chLo*2 + 10;
+  WHILE av_ChiUp(chHi, chD) > chP DO chHi := chHi*2; END;
+  FOR chI FROM 1 TO 60 DO
+    chM := (chLo + chHi)/2;
+    IF LN(av_ChiUp(chM, chD)) > LN(chP) THEN chLo := chM; ELSE chHi := chM; END;
+  END;
+  RETURN (chLo + chHi)/2;
+END;
+
+// A lower quantile of the variance page's curve: area pp to the LEFT.
+av_VLoQ(vlP)
+BEGIN
+  IF avVMode == 1 THEN RETURN CHISQUARE_ICDF(avVDf1, av_Clp(vlP)); END;
+  RETURN FISHER_ICDF(avVDf1, avVDf2, av_Clp(vlP));
+END;
+
+// An upper quantile: area pp to the RIGHT (F by its mirror; the
+// chi-square has none, so its probability is clamped first).
+av_VHiQ(vhP)
+BEGIN
+  IF avVMode == 1 THEN RETURN av_ChiHi(av_Clp(vhP), avVDf1); END;
+  RETURN av_FQ(vhP, avVDf1, avVDf2);
+END;
+
+// The variance test and interval (Triola's S2TEST / S2INT reworked).
+//   One sigma: chi^2 = (n-1) s^2 / sigma0^2 on n-1 df;
+//     CI for sigma^2: ((n-1)s^2/chi^2_upper, (n-1)s^2/chi^2_lower)
+//   Two sigmas: F = s1^2/s2^2 on (n1-1, n2-1) df;
+//     CI for sigma1^2/sigma2^2: (F x F_(c/2)(df2, df1), F / F_(c/2)(df1, df2))
+//     where F_(c/2)(a, b) is the LOWER c/2 quantile of F(a, b)
+//     (FINTRVAL swapped these two)
+//   p: two-sided = 2 min(lower tail, upper tail) (STDTEST's rule), or the
+//   tail the alternative names.  The two-sided picture shades the
+//   observed tail and the other tail with the SAME area (STDTEST).
+av_VCompute()
+BEGIN
+  LOCAL vcC;
+  vcC := 1 - avVCL;
+  IF avVMode == 1 THEN
+    avVDf1 := avVN1 - 1; avVDf2 := 0;
+    avVStat := avVDf1*avVS1^2/avVSg0^2;
+    avVPL := av_ChiLo(avVStat, avVDf1); avVPU := av_ChiUp(avVStat, avVDf1);
+    avVLo := avVDf1*avVS1^2/av_VHiQ(vcC/2);
+    avVHi := avVDf1*avVS1^2/av_VLoQ(vcC/2);
+  ELSE
+    avVDf1 := avVN1 - 1; avVDf2 := avVN2 - 1;
+    avVStat := avVS1^2/avVS2^2;
+    avVPL := av_FLo(avVStat, avVDf1, avVDf2); avVPU := av_FUp(avVStat, avVDf1, avVDf2);
+    avVLo := avVStat*FISHER_ICDF(avVDf2, avVDf1, av_Clp(vcC/2));
+    avVHi := avVStat/FISHER_ICDF(avVDf1, avVDf2, av_Clp(vcC/2));
+  END;
+  avVCrL := -1; avVCrH := -1; avVRa := -1; avVRb := -1;
+  IF avVAlt == 1 THEN
+    avVP := MIN(1, 2*MIN(avVPL, avVPU));
+    avVCrL := av_VLoQ(avAlpha/2); avVCrH := av_VHiQ(avAlpha/2);
+    IF avVPU <= avVPL THEN
+      avVRb := avVStat; avVRa := av_VLoQ(avVPU);
+    ELSE
+      avVRa := avVStat; avVRb := av_VHiQ(avVPL);
+    END;
+  END;
+  IF avVAlt == 2 THEN avVP := avVPL; avVCrL := av_VLoQ(avAlpha); avVRa := avVStat; END;
+  IF avVAlt == 3 THEN avVP := avVPU; avVCrH := av_VHiQ(avAlpha); avVRb := avVStat; END;
+  AV_F := avVStat; AV_P := avVP; AV_DF := {avVDf1, avVDf2};
+  IF avVMode == 1 THEN
+    avLast := "one " + avSg + ": " + avX2 + "(" + av_I(avVDf1) + ") = " + av_Fx(avVStat, 3) + ", " + av_PE(avVP);
+  ELSE
+    avLast := "two " + avSg + ": F(" + av_I(avVDf1) + ", " + av_I(avVDf2) + ") = " + av_Fx(avVStat, 3) + ", " + av_PE(avVP);
+  END;
+  avVHas := 1;
+END;
+
+
+// ============================================================
+// 6. THE CURVE PAGE (F or chi-square), shared by every analysis
+// ============================================================
+
+// The window and the curve, cached: the density once per pixel column
+// (Lessons Learned 6), as pixel rows in avCvP.  cfT 1 = F(cfA, cfB),
+// 2 = chi-square(cfA).  The height is fitted to the curve away from 0
+// (an F with 1 df, or a chi-square with 1 df, rises without limit
+// there, so its first columns are simply clipped).
+av_CvFit(cfT, cfA, cfB, cfX)
+BEGIN
+  LOCAL cfI, cfV, cfD, cfMx, cfW, cfL;
+  avCvX := cfX;
+  avCvS := av_Nice(cfX/5);
+  avCvDc := MAX(0, -FLOOR(LOG(avCvS)));
+  cfW := avPR - avPL;
+  cfL := MAKELIST(0, cfI, 1, cfW);
+  cfMx := 0;
+  FOR cfI FROM 1 TO cfW DO
+    cfV := cfI/cfW*cfX;
+    IF cfT == 1 THEN cfD := FISHER(cfA, cfB, cfV); ELSE cfD := CHISQUARE(cfA, cfV); END;
+    cfL(cfI) := cfD;
+    IF cfI > cfW/25 THEN cfMx := MAX(cfMx, cfD); END;
+  END;
+  IF cfMx <= 0 THEN cfMx := 1; END;
+  avCvY := cfMx*1.1;
+  avCvP := MAKELIST(0, cfI, 1, cfW);
+  FOR cfI FROM 1 TO cfW DO
+    avCvP(cfI) := avPB - IP(MIN(cfL(cfI)/avCvY, 1)*(avPB - avPT));
+  END;
+END;
+
+// The pixel column of a value on the curve's x axis.
+av_CvPx(cxV)
+BEGIN
+  RETURN avPL + IP(cxV/avCvX*(avPR - avPL) + 0.5);
+END;
+
+// One curve page on G1 from the cache.  The p region is [0, cdPa]
+// (when cdPa > 0) and [cdPb, infinity) (when cdPb >= 0); the critical
+// region likewise [0, cdCa] and [cdCb, infinity); -1 = not used.  A
+// column in the p region is shaded blue, in the critical region pale
+// red, in both purple.  The observed statistic is a red line, or an
+// arrow at the right edge when it is off the plot (and the page says
+// so).  The caller writes its readout lines and the footer.
+av_CvDraw(cdTtl, cdObs, cdPa, cdPb, cdCa, cdCb, cdOL)
+BEGIN
+  LOCAL cdPx, cdV, cdN, cdY, cdIp, cdIc;
+  LOCAL cdC, cdLast, cdX, cdLx;
+  av_Band(cdTtl);
+  RECT_P(G1, 6, 24, 14, 32, avSHD, avSHD);
+  av_Tx("p area", 18, 23, avBLUE);
+  RECT_P(G1, 66, 24, 74, 32, avCRIT, avCRIT);
+  av_Tx("critical region", 78, 23, avMAG);
+  RECT_P(G1, 168, 24, 176, 32, avBOTH, avBOTH);
+  av_Tx("both  (" + avAl + " = " + av_AS() + ")", 180, 23, #6E28B4h);
+  // ---- x ticks and grid ----
+  cdV := 0; cdN := 0;
+  WHILE cdV <= avCvX + avCvS/1000 AND cdN < 16 DO
+    cdPx := av_CvPx(cdV);
+    LINE_P(G1, cdPx, avPT, cdPx, avPB, avGRID);
+    LINE_P(G1, cdPx, avPB, cdPx, avPB + 3, #000000h);
+    TEXTOUT_P(av_Fx(cdV, avCvDc), G1, cdPx - 6, avPB + 5, 1, avGRAY, 40);
+    cdV := cdV + avCvS; cdN := cdN + 1;
+  END;
+  // ---- shading, one pixel column at a time ----
+  FOR cdPx FROM avPL + 1 TO avPR DO
+    cdX := (cdPx - avPL)/(avPR - avPL)*avCvX;
+    cdIp := 0; cdIc := 0;
+    IF cdPa > 0 AND cdX <= cdPa THEN cdIp := 1; END;
+    IF cdPb >= 0 AND cdX >= cdPb THEN cdIp := 1; END;
+    IF cdCa > 0 AND cdX <= cdCa THEN cdIc := 1; END;
+    IF cdCb >= 0 AND cdX >= cdCb THEN cdIc := 1; END;
+    IF cdIp + cdIc > 0 THEN
+      cdC := avSHD;
+      IF cdIp == 0 THEN cdC := avCRIT; END;
+      IF cdIp == 1 AND cdIc == 1 THEN cdC := avBOTH; END;
+      cdY := avCvP(cdPx - avPL);
+      IF cdY < avPB THEN LINE_P(G1, cdPx, avPB - 1, cdPx, cdY, cdC); END;
+    END;
+  END;
+  // ---- the curve ----
+  cdLast := -1;
+  FOR cdPx FROM avPL + 1 TO avPR DO
+    cdY := avCvP(cdPx - avPL);
+    IF cdLast >= 0 THEN LINE_P(G1, cdPx - 1, cdLast, cdPx, cdY, avBLUE); END;
+    cdLast := cdY;
+  END;
+  LINE_P(G1, avPL, avPT, avPL, avPB, #000000h);
+  LINE_P(G1, avPL, avPB, avPR, avPB, #000000h);
+  // ---- critical values: dotted magenta ----
+  IF cdCa > 0 AND cdCa <= avCvX THEN av_DotV(av_CvPx(cdCa), avPT, avPB, avMAG); END;
+  IF cdCb >= 0 AND cdCb <= avCvX THEN av_DotV(av_CvPx(cdCb), avPT, avPB, avMAG); END;
+  // ---- the observed statistic ----
+  IF cdObs <= avCvX THEN
+    cdX := av_CvPx(cdObs);
+    LINE_P(G1, cdX, avPT, cdX, avPB, avRED);
+    LINE_P(G1, cdX + 1, avPT, cdX + 1, avPB, avRED);
+    cdLx := cdX + 4;
+    IF cdX > avPR - 96 THEN cdLx := cdX - 96; END;
+    TEXTOUT_P(cdOL, G1, cdLx, avPT + 3, 1, avRED, 92);
+  ELSE
+    LINE_P(G1, avPR - 30, avPT + 8, avPR, avPT + 8, avRED);
+    LINE_P(G1, avPR - 5, avPT + 4, avPR, avPT + 8, avRED);
+    LINE_P(G1, avPR - 5, avPT + 12, avPR, avPT + 8, avRED);
+    TEXTOUT_P(cdOL, G1, avPR - 130, avPT + 14, 1, avRED, 128);
+    TEXTOUT_P("is off the plot, to the right", G1, avPR - 190, avPT + 26, 1, avRED, 190);
+  END;
+END;
+
+// The window for an F page: wide enough for the critical value, and
+// for the observed F unless it is far out (then the arrow says so).
+av_FWin(fwF, fwC)
+BEGIN
+  LOCAL fwX;
+  fwX := MAX(fwC*1.6, 3);
+  IF fwF*1.1 > fwX AND fwF*1.1 <= 3*fwX THEN fwX := fwF*1.1; END;
+  RETURN fwX;
+END;
+
+// An F curve page for an effect: F(fpA, fpB), observed fpF, its p.
+// Draws the page (not the footer) and writes the two readout lines.
+av_FPage(fpTtl, fpF, fpA, fpB, fpP)
+BEGIN
+  LOCAL fpC, fpX, fpK, fpCol;
+  fpC := av_FQ(avAlpha, fpA, fpB);
+  fpX := av_FWin(fpF, fpC);
+  fpK := "F" + av_Fx(fpA, 0) + "," + av_Fx(fpB, 0) + "," + av_Fx(fpX, 6);
+  IF fpK <> avCvK THEN av_CvFit(1, fpA, fpB, fpX); avCvK := fpK; END;
+  av_CvDraw(fpTtl, fpF, -1, fpF, -1, fpC, "F = " + av_Fx(fpF, 3));
+  fpCol := avGRN;
+  IF fpP < avAlpha THEN fpCol := avRED; END;
+  av_Tx("Shaded = p = P(F " + avGE + " " + av_Fx(fpF, 3) + " | " + avH0 + ") " + av_Rel(fpP), 4, 180, avBLUE);
+  IF fpF >= fpC THEN
+    av_Tx("F " + avGE + " crit " + av_Fx(fpC, 3) + ": reject " + avH0 + " (" + avAl + " = " + av_AS() + ")", 4, 192, fpCol);
+  ELSE
+    av_Tx("F < crit " + av_Fx(fpC, 3) + ": do not reject " + avH0 + " (" + avAl + " = " + av_AS() + ")", 4, 192, fpCol);
+  END;
+END;
+
+
+// ============================================================
+// 7. ONE-WAY: the pages
+//    1 Table   2 Checks   3 Pairs   4 Dots   5 F curve
+// ============================================================
+
+// Page 1: the ANOVA table, effect sizes, Welch, the verdict.
+av_ODrawTable()
+BEGIN
+  LOCAL otS;
+  av_Band("One-way ANOVA: N = " + av_I(avNN) + ", k = " + av_I(avOK));
+  av_Tx(avOTtl, 4, 21, #000000h);
+  av_Tx(avOSrc, 4, 33, avGRAY);
+  av_Row(48, "Source", "SS", "df", "MS", "F", "p", avORNG);
+  LINE_P(G1, 3, 59, 316, 59, avORNG);
+  av_Row(62, "Between", av_Gn(avSSB), av_I(avDf1), av_Gn(avMSB), av_Cmp(avFF, 6), av_PT(avPP), avBLUE);
+  av_Row(74, "Within", av_Gn(avSSW), av_I(avDf2), av_Gn(avMSW), "", "", #000000h);
+  av_Row(86, "Total", av_Gn(avSST), av_I(avNN - 1), "", "", "", #000000h);
+  av_Tx("eta" + avSq + " = " + av_Fx(avEta, 3) + "  (share of SS between groups)", 4, 102, avMAG);
+  otS := "omega" + avSq + " = " + av_Fx(avOmg, 3) + "  (Hays: less biased than eta" + avSq + ")";
+  IF avOmg < 0 THEN otS := "omega" + avSq + " = " + av_Fx(avOmg, 3) + "  (below 0: read it as 0)"; END;
+  av_Tx(otS, 4, 114, avMAG);
+  IF avWOK == 1 THEN
+    av_Tx("Welch: F = " + av_Fx(avWF, 3) + ", df " + av_I(avDf1) + ", " + av_Fx(avWd2, 1) + ", " + av_PE(avWP), 4, 130, avBLUE);
+    av_Tx("  (no equal-spread assumption: see Checks)", 4, 142, avBLUE);
+  ELSE
+    av_Tx("Welch's F needs n " + avGE + " 2 and s > 0 in every group.", 4, 130, avGRAY);
+  END;
+  av_Verdict(156, avPP,
+    "p < " + avAl + " = " + av_AS() + ": reject " + avH0 + " (all " + avMu + " equal).",
+    "Evidence that some group mean differs.",
+    "p " + avGE + " " + avAl + " = " + av_AS() + ": do not reject " + avH0 + " (all " + avMu + " equal).",
+    "No evidence of a difference; not proof of none.");
+  av_Tx("p = P(F " + avGE + " " + av_Fx(avFF, 3) + " if " + avH0 + " true): F page shades it", 4, 188, avGRAY);
+  av_Foot(avLR + " = page, Ent = menu, Esc = main menu");
+END;
+
+// Page 2: the checks.  Equal spreads (Levene / Brown-Forsythe on
+// medians, Bartlett), the s ratio, and every group's n, mean, s.
+av_ODrawChecks()
+BEGIN
+  LOCAL ocG, ocY, ocX, ocS, ocC, ocR;
+  LOCAL ocH;
+  av_Band("Checks: are the spreads equal?");
+  IF avLvOK == 1 THEN
+    ocC := avGRN; ocS := CHAR(8594) + " no evidence the spreads differ";
+    IF avLvP < avAlpha THEN ocC := avRED; ocS := CHAR(8594) + " evidence the spreads differ"; END;
+    av_Tx("Levene (Brown-Forsythe: |y - median|):", 4, 22, #000000h);
+    av_Tx("  F = " + av_Fx(avLvF, 3) + ", df " + av_I(avDf1) + ", " + av_I(avDf2) + ", " + av_PE(avLvP), 4, 33, ocC);
+    av_Tx("  " + ocS, 4, 44, ocC);
+  ELSE
+    av_Tx("Levene: every |y - median| equals its group's", 4, 22, avGRAY);
+    av_Tx("  mean, so no test is possible.", 4, 33, avGRAY);
+  END;
+  IF avBrOK == 1 THEN
+    ocC := avGRN; ocS := CHAR(8594) + " no evidence the spreads differ";
+    IF avBrP < avAlpha THEN ocC := avRED; ocS := CHAR(8594) + " evidence the spreads differ"; END;
+    av_Tx("Bartlett (trusts normal data; Levene is safer):", 4, 57, #000000h);
+    av_Tx("  " + avX2 + " = " + av_Fx(avBrT, 3) + ", df " + av_I(avDf1) + ", " + av_PE(avBrP), 4, 68, ocC);
+    av_Tx("  " + ocS, 4, 79, ocC);
+  ELSE
+    av_Tx("Bartlett needs n " + avGE + " 2 and s > 0 in every group.", 4, 57, avGRAY);
+  END;
+  // beta 1a (second review, item 5): the ratio is described, not judged
+  // (beta 1's "under 2: usually fine" had no source); the tests judge.
+  IF avSDr > 0 THEN
+    av_Tx("Largest s / smallest s = " + av_Fx(avSDr, 2) + " (a description)", 4, 92, avMAG);
+  END;
+  // ---- the groups: one column up to 7 groups, two columns above ----
+  IF avOK <= 7 THEN
+    av_Tx("Group", 4, 105, avORNG); av_Tx("n", 96, 105, avORNG);
+    av_Tx(avXb, 140, 105, avORNG); av_Tx("s", 200, 105, avORNG); av_Tx("median", 256, 105, avORNG);
+    FOR ocG FROM 1 TO avOK DO
+      ocY := 105 + 11*ocG;
+      ocC := avGCol(((ocG - 1) MOD 12) + 1);
+      TEXTOUT_P(avON(ocG), G1, 4, ocY, 1, ocC, 88);
+      av_Tx(av_I(avRn(ocG)), 96, ocY, #000000h);
+      av_Tx(av_Gn(avRm(ocG)), 140, ocY, #000000h);
+      av_Tx(av_Gn(SQRT(avRv(ocG))), 200, ocY, #000000h);
+      av_Tx(av_Gn(avRmd(ocG)), 256, ocY, #000000h);
+    END;
+  ELSE
+    ocH := IP((avOK + 1)/2);
+    FOR ocR FROM 0 TO 1 DO
+      ocX := 4 + 158*ocR;
+      TEXTOUT_P("Group  n", G1, ocX, 105, 1, avORNG, 60);
+      TEXTOUT_P(avXb, G1, ocX + 64, 105, 1, avORNG, 40);
+      TEXTOUT_P("s", G1, ocX + 110, 105, 1, avORNG, 40);
+    END;
+    FOR ocG FROM 1 TO avOK DO
+      ocR := IP((ocG - 1)/ocH);
+      ocX := 4 + 158*ocR;
+      ocY := 116 + 11*(ocG - 1 - ocR*ocH);
+      ocC := avGCol(((ocG - 1) MOD 12) + 1);
+      TEXTOUT_P(avOSh(ocG), G1, ocX, ocY, 1, ocC, 30);
+      TEXTOUT_P(av_I(avRn(ocG)), G1, ocX + 34, ocY, 1, #000000h, 28);
+      TEXTOUT_P(av_Gn(avRm(ocG)), G1, ocX + 64, ocY, 1, #000000h, 44);
+      TEXTOUT_P(av_Gn(SQRT(avRv(ocG))), G1, ocX + 110, ocY, 1, #000000h, 44);
+    END;
+  END;
+  ocS := "Welch's F (Table page) does not assume them.";
+  IF avLvOK == 1 THEN
+    ocS := "Welch's F (Table page) is safe either way.";
+    IF avLvP < avAlpha THEN ocS := "Levene: spreads differ, so read Welch's F."; END;
+  END;
+  av_Tx(ocS, 4, 194, avBLUE);
+  av_Foot(avLR + " = page, Ent = menu, Esc = main menu");
+END;
+
+// The method's simultaneous CI half-width for pair r, or -1 (none yet).
+av_HW(hwR)
+BEGIN
+  IF avMeth == 1 THEN
+    IF avQc > 0 THEN RETURN avQc/SQRT(2)*avPSE(hwR); END;
+    RETURN -1;
+  END;
+  IF avMeth == 4 THEN RETURN avScM*avPSE(hwR); END;
+  RETURN avBonT*avPSE(hwR);
+END;
+
+// The method's adjusted p for pair r, or -1 (Tukey's, not computed yet).
+av_PAdj(paR)
+BEGIN
+  IF avMeth == 1 THEN RETURN avPTk(paR); END;
+  IF avMeth == 2 THEN RETURN avPBon(paR); END;
+  IF avMeth == 3 THEN RETURN avPHm(paR); END;
+  RETURN avPSc(paR);
+END;
+
+// 1 when the method says pair r differs at alpha.  Tukey without its p:
+// q > q crit, the same decision.
+av_Sig(sgR)
+BEGIN
+  LOCAL sgP;
+  sgP := av_PAdj(sgR);
+  IF sgP >= 0 THEN
+    IF sgP < avAlpha THEN RETURN 1; END;
+    RETURN 0;
+  END;
+  IF avMeth == 1 AND avQc > 0 THEN
+    IF avPQ(sgR) > avQc THEN RETURN 1; END;
+  END;
+  RETURN 0;
+END;
+
+// The index of pair (i, j) in the pair lists, either order.
+av_PairOf(pfA, pfB)
+BEGIN
+  LOCAL pfI, pfJ;
+  pfI := MIN(pfA, pfB); pfJ := MAX(pfA, pfB);
+  RETURN (pfI - 1)*avOK - (pfI - 1)*pfI/2 + (pfJ - pfI);
+END;
+
+// The method's short name (for the Dots page's one line).
+av_MShort()
+BEGIN
+  IF avMeth == 1 THEN RETURN "Tukey"; END;
+  IF avMeth == 2 THEN RETURN "Bonferroni"; END;
+  IF avMeth == 3 THEN RETURN "Holm"; END;
+  RETURN "Scheffe";
+END;
+
+// The method's name.
+av_MName()
+BEGIN
+  IF avMeth == 1 THEN RETURN "Tukey-Kramer"; END;
+  IF avMeth == 2 THEN RETURN "Bonferroni"; END;
+  IF avMeth == 3 THEN RETURN "Holm"; END;
+  RETURN "Scheffe";
+END;
+
+// Page 3: every pair, by the chosen method.  Tabs at the top choose the
+// method (or +/-); a tap on a pair opens it on the Dots page.
+av_ODrawPairs()
+BEGIN
+  LOCAL dpR, dpY, dpI, dpP, dpHw, dpS;
+  LOCAL dpC, dpMk, dpTb, dpX;
+  av_Band("Pairs: which group means differ?");
+  dpTb := {"Tukey", "Bonferroni", "Holm", "Scheffe"};
+  FOR dpI FROM 1 TO 4 DO
+    dpX := 4 + (dpI - 1)*78;
+    IF dpI == avMeth THEN
+      RECT_P(G1, dpX, 20, dpX + 75, 33, avORNG, avORNG);
+      TEXTOUT_P(dpTb(dpI), G1, dpX + 6, 22, 1, #FFFFFFh, 66);
+    ELSE
+      RECT_P(G1, dpX, 20, dpX + 75, 33, avORNG, avLORN);
+      TEXTOUT_P(dpTb(dpI), G1, dpX + 6, 22, 1, avORNG, 66);
+    END;
+  END;
+  // ---- what the method does ----
+  IF avMeth == 1 THEN
+    IF avQc > 0 THEN
+      av_Tx("q crit = " + av_Fx(avQc, 4) + "  (k = " + av_I(avOK) + ", df = " + av_I(avDf2) + ", " + avAl + " = " + av_AS() + ")", 4, 37, avBLUE);
+      av_Tx("CI = diff " + avPM + " q crit/" + avRt + "2 " + avTm + " SE;  p = P(Q " + avGE + " q)", 4, 48, avGRAY);
+    ELSE
+      IF avQc == -3 THEN
+        av_Tx("Tukey needs df within " + avGE + " 3 here (PPL engine):", 4, 37, avRED);
+        av_Tx("use Bonferroni, Holm or Scheffe.", 4, 48, avRED);
+      ELSE
+        av_Tx("q crit not computed (not asked for, or Esc).", 4, 37, avRED);
+        av_Tx("More > Tukey p (or Menu) computes it.", 4, 48, avGRAY);
+      END;
+    END;
+  END;
+  IF avMeth == 2 THEN
+    av_Tx("p " + avTm + " " + av_I(avNP) + " pairs (max 1); t crit " + av_Fx(avBonT, 3) + ", df " + av_I(avDf2), 4, 37, avBLUE);
+    av_Tx("CI = diff " + avPM + " t crit " + avTm + " SE (SE from MS within)", 4, 48, avGRAY);
+  END;
+  IF avMeth == 3 THEN
+    av_Tx("Step-down: smallest p " + avTm + " m, next " + avTm + " (m-1) ...", 4, 37, avBLUE);
+    av_Tx("CI: Bonferroni's (Holm gives no CI of its own)", 4, 48, avGRAY);
+  END;
+  IF avMeth == 4 THEN
+    av_Tx("F = t" + avSq + "/(k - 1) on F(" + av_I(avDf1) + ", " + av_I(avDf2) + "); S = " + av_Fx(avScM, 3), 4, 37, avBLUE);
+    av_Tx("CI = diff " + avPM + " S " + avTm + " SE (good for ANY contrast)", 4, 48, avGRAY);
+  END;
+  // ---- the rows ----
+  av_Tx("Pair", 4, 60, avGRAY); av_Tx("diff", 84, 60, avGRAY);
+  av_Tx(av_CS(1 - avAlpha) + " CI (family)", 132, 60, avGRAY); av_Tx("adj. p", 240, 60, avGRAY);
+  LINE_P(G1, 3, 70, 316, 70, avGRAY);
+  FOR dpR FROM avPTop TO MIN(avNP, avPTop + 9) DO
+    dpY := 72 + (dpR - avPTop)*11;
+    dpHw := av_HW(dpR);
+    dpP := av_PAdj(dpR);
+    dpC := #000000h; dpMk := "";
+    IF av_Sig(dpR) == 1 THEN dpC := avRED; dpMk := "*"; END;
+    IF dpR == avPIx THEN RECT_P(G1, 2, dpY - 1, 317, dpY + 9, avLORN, avLORN); END;
+    TEXTOUT_P(avOSh(avPI(dpR)) + "-" + avOSh(avPJ(dpR)), G1, 4, dpY, 1, dpC, 78);
+    TEXTOUT_P(av_Sgn(avPD(dpR)), G1, 84, dpY, 1, dpC, 46);
+    IF dpHw > 0 THEN
+      TEXTOUT_P("(" + av_Gn(avPD(dpR) - dpHw) + ", " + av_Gn(avPD(dpR) + dpHw) + ")", G1, 132, dpY, 1, dpC, 106);
+    ELSE
+      TEXTOUT_P("--", G1, 132, dpY, 1, avGRAY, 106);
+    END;
+    IF dpP >= 0 THEN
+      dpS := av_PT(dpP);
+    ELSE
+      dpS := "q = " + av_Fx(avPQ(dpR), 2);
+    END;
+    TEXTOUT_P(dpS, G1, 240, dpY, 1, dpC, 62);
+    TEXTOUT_P(dpMk, G1, 306, dpY, 1, dpC, 10);
+  END;
+  dpS := "Pairs " + av_I(avPTop) + "-" + av_I(MIN(avNP, avPTop + 9)) + " of " + av_I(avNP) + ";  red * = differ at " + avAl + " = " + av_AS();
+  IF avMeth == 1 AND avQc > 0 AND avPTk(1) < 0 THEN dpS := av_I(avPTop) + "-" + av_I(MIN(avNP, avPTop + 9)) + " of " + av_I(avNP) + "; * = q > q crit; p: More > Tukey p"; END;
+  av_Tx(dpS, 4, 184, avGRAY);
+  av_Tx("diff = first mean - second; SE from both n", 4, 195, avGRAY);
+  av_Foot("+/- = method, " + avUD + " = move, tap a pair = plot");
+END;
+
+// The y pixel of a value on the dot plot.
+av_DY(dyV, dyLo, dyHi)
+BEGIN
+  RETURN avDB - IP((dyV - dyLo)/(dyHi - dyLo)*(avDB - avDT) + 0.5);
+END;
+
+// Page 4: every value as a dot, each group's mean (green) and its CI
+// from the POOLED s (magenta), the selected pair framed.
+av_ODrawDots()
+BEGIN
+  LOCAL ddLo, ddHi, ddS, ddDc, ddV, ddY;
+  LOCAL ddG, ddX, ddW, ddI, ddC, ddCnt;
+  LOCAL ddM, ddH, ddT, ddR, ddX2, ddPr;
+  ddW := (avDR - avDL)/avOK;
+  // beta 1a (second review, item 6): the dots, means, CIs and axes are
+  // drawn ONCE into G2 and copied from there on later frames (3000 dots
+  // would cost seconds per tap on a G1); avDotOK = 0 redraws them (new
+  // data, new alpha).  The selection is drawn on top as orange frames.
+  IF avDotOK == 1 THEN
+    BLIT_P(G1, 0, 0, G2);
+  ELSE
+    av_Band("Dots: " + avOTtl);
+    // ---- the y range: the data and every CI end ----
+    ddLo := avOY(1); ddHi := avOY(1);
+    FOR ddI FROM 1 TO SIZE(avOY) DO
+      ddLo := MIN(ddLo, avOY(ddI)); ddHi := MAX(ddHi, avOY(ddI));
+    END;
+    FOR ddG FROM 1 TO avOK DO
+      ddH := avTcr*SQRT(avMSW/avRn(ddG));
+      ddLo := MIN(ddLo, avRm(ddG) - ddH); ddHi := MAX(ddHi, avRm(ddG) + ddH);
+    END;
+    IF ddHi - ddLo <= 0 THEN ddHi := ddLo + 1; END;
+    ddS := av_Nice((ddHi - ddLo)/5);
+    ddLo := FLOOR(ddLo/ddS)*ddS; ddHi := CEILING(ddHi/ddS)*ddS;
+    ddDc := MAX(0, -FLOOR(LOG(ddS)));
+    // ---- grid and y ticks ----
+    ddV := ddLo;
+    WHILE ddV <= ddHi + ddS/1000 DO
+      ddY := av_DY(ddV, ddLo, ddHi);
+      LINE_P(G1, avDL, ddY, avDR, ddY, avGRID);
+      TEXTOUT_P(av_Fx(ddV, ddDc), G1, 2, ddY - 5, 1, avGRAY, 32);
+      ddV := ddV + ddS;
+    END;
+    // ---- the dots: a little to the left of centre, spread over 5 lanes ----
+    ddCnt := MAKELIST(0, ddI, 1, avOK);
+    FOR ddI FROM 1 TO SIZE(avOY) DO
+      ddG := avOG(ddI);
+      ddCnt(ddG) := ddCnt(ddG) + 1;
+      ddX := IP(avDL + (ddG - 0.5)*ddW - ddW*0.15) + ((ddCnt(ddG) - 1) MOD 5 - 2)*2;
+      ddY := av_DY(avOY(ddI), ddLo, ddHi);
+      ddC := avGCol(((ddG - 1) MOD 12) + 1);
+      RECT_P(G1, ddX - 1, ddY - 1, ddX + 1, ddY + 1, ddC);
+    END;
+    // ---- each mean and its CI ----
+    FOR ddG FROM 1 TO avOK DO
+      ddM := avRm(ddG);
+      ddH := avTcr*SQRT(avMSW/avRn(ddG));
+      ddX := IP(avDL + (ddG - 0.5)*ddW + ddW*0.22);
+      ddT := av_DY(ddM + ddH, ddLo, ddHi); ddR := av_DY(ddM - ddH, ddLo, ddHi);
+      RECT_P(G1, ddX - 1, ddT, ddX + 1, ddR, avMAG);
+      LINE_P(G1, ddX - 3, ddT, ddX + 3, ddT, avMAG);
+      LINE_P(G1, ddX - 3, ddR, ddX + 3, ddR, avMAG);
+      ddY := av_DY(ddM, ddLo, ddHi);
+      RECT_P(G1, ddX - 6, ddY - 1, ddX + 6, ddY + 1, avGRN);
+      TEXTOUT_P(avOSh(ddG), G1, IP(avDL + (ddG - 1)*ddW) + 2, avDB + 3, 1, avGCol(((ddG - 1) MOD 12) + 1), MAX(8, IP(ddW) - 2));
+    END;
+    LINE_P(G1, avDL, avDT, avDL, avDB, #000000h);
+    LINE_P(G1, avDL, avDB, avDR, avDB, #000000h);
+    av_Tx("green = mean, magenta = its " + av_CS(1 - avAlpha) + " CI (pooled s)", 4, 172, avGRAY);
+    DIMGROB_P(G2, 320, 240, #FFFFFFh);
+    BLIT_P(G2, 0, 0, G1);
+    avDotOK := 1;
+  END;
+  // ---- the selected groups' columns, framed in orange (2 px) ----
+  FOR ddG FROM 1 TO avOK DO
+    IF ddG == avSelA OR ddG == avSelB THEN
+      ddX := IP(avDL + (ddG - 1)*ddW) + 1; ddX2 := IP(avDL + ddG*ddW) - 1;
+      RECT_P(G1, ddX, avDT, ddX2, avDT + 1, avORNG, avORNG);
+      RECT_P(G1, ddX, avDB - 1, ddX2, avDB, avORNG, avORNG);
+      RECT_P(G1, ddX, avDT, ddX + 1, avDB, avORNG, avORNG);
+      RECT_P(G1, ddX2 - 1, avDT, ddX2, avDB, avORNG, avORNG);
+    END;
+  END;
+  // ---- the pair ----
+  IF avSelA > 0 AND avSelB > 0 THEN
+    ddPr := av_PairOf(avSelA, avSelB);
+    ddX := IP(avDL + (avSelA - 0.5)*ddW); ddX2 := IP(avDL + (avSelB - 0.5)*ddW);
+    LINE_P(G1, ddX, avDT + 2, ddX2, avDT + 2, avORNG);
+    LINE_P(G1, ddX, avDT + 2, ddX, avDT + 7, avORNG);
+    LINE_P(G1, ddX2, avDT + 2, ddX2, avDT + 7, avORNG);
+    ddH := av_HW(ddPr);
+    ddC := #000000h;
+    IF av_Sig(ddPr) == 1 THEN ddC := avRED; END;
+    IF ddH > 0 THEN
+      av_Tx(avOSh(avPI(ddPr)) + " - " + avOSh(avPJ(ddPr)) + ": diff " + av_Sgn(avPD(ddPr)) + ", CI (" + av_Gn(avPD(ddPr) - ddH) + ", " + av_Gn(avPD(ddPr) + ddH) + ")", 4, 184, ddC);
+    ELSE
+      av_Tx(avOSh(avPI(ddPr)) + " - " + avOSh(avPJ(ddPr)) + ": diff " + av_Sgn(avPD(ddPr)) + " (no CI yet)", 4, 184, ddC);
+    END;
+    ddV := av_PAdj(ddPr);
+    IF ddV >= 0 THEN
+      IF ddV < avAlpha THEN
+        av_Tx(av_MShort() + " " + av_PE(ddV) + ": evidence they differ", 4, 195, avRED);
+      ELSE
+        av_Tx(av_MShort() + " " + av_PE(ddV) + ": no evidence they differ", 4, 195, avGRN);
+      END;
+    ELSE
+      IF avQc > 0 THEN
+        IF avPQ(ddPr) > avQc THEN
+          av_Tx("q = " + av_Fx(avPQ(ddPr), 3) + " > q crit " + av_Fx(avQc, 3) + ": evidence they differ", 4, 195, avRED);
+        ELSE
+          av_Tx("q = " + av_Fx(avPQ(ddPr), 3) + " " + avLE + " q crit " + av_Fx(avQc, 3) + ": no evidence they differ", 4, 195, avGRN);
+        END;
+      ELSE
+        av_Tx("No q crit yet: Menu > Tukey p for this pair", 4, 195, avGRAY);
+      END;
+    END;
+  ELSE
+    IF avSelA > 0 THEN
+      av_Tx("First group: " + avON(avSelA) + ".  Now tap a second one.", 4, 184, #000000h);
+    ELSE
+      av_Tx("Tap two groups (or " + avLR + ") to compare a pair.", 4, 184, #000000h);
+    END;
+    av_Tx("Method: " + av_MName() + " (+/- or the Pairs tabs)", 4, 195, avGRAY);
+  END;
+  av_Foot("tap 2 groups, " + avLR + " = next pair, +/- = method");
+END;
+
+// Page 5: the F curve.
+av_ODrawF()
+BEGIN
+  av_FPage("F(" + av_I(avDf1) + ", " + av_I(avDf2) + "): how surprising is F?", avFF, avDf1, avDf2, avPP);
+  av_Foot(avLR + " = page, Ent = menu, Esc = main menu");
+END;
+
+// Draw the current one-way page.
+av_ODraw()
+BEGIN
+  IF avScr == 1 THEN av_ODrawTable(); END;
+  IF avScr == 2 THEN av_ODrawChecks(); END;
+  IF avScr == 3 THEN av_ODrawPairs(); END;
+  IF avScr == 4 THEN av_ODrawDots(); END;
+  IF avScr == 5 THEN av_ODrawF(); END;
+END;
+
+
+// ============================================================
+// 8. HELP (pages drawn on G1; any key or tap = next, Left = back,
+//    Esc = leave)
+// ============================================================
+
+av_HelpPage(hpN)
+BEGIN
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 3, 3, 316, 236, avBLUE, avLBLU);
+  IF hpN == 1 THEN
+    TEXTOUT_P("1/8  What one-way ANOVA asks", G1, 10, 7, 2, avBLUE, 300);
+    av_Tx(avH0 + ": every group has the same population mean " + avMu + ".", 10, 30, #000000h);
+    av_Tx("ANOVA splits the total spread (SS) in two:", 10, 46, #000000h);
+    av_Tx("  between: n " + avTm + " (group mean - grand mean)" + avSq, 10, 59, avBLUE);
+    av_Tx("  within: (value - its own group mean)" + avSq, 10, 72, avBLUE);
+    av_Tx("MS = SS / df;  F = MS between / MS within.", 10, 88, #000000h);
+    av_Tx("If " + avH0 + " is true, F is near 1 and follows the", 10, 104, avMAG);
+    av_Tx("F(k - 1, N - k) curve; p = P(F this big | " + avH0 + ").", 10, 117, avMAG);
+    av_Tx("A small p is evidence that SOME mean differs:", 10, 133, #000000h);
+    av_Tx("not which (Pairs page), not how much (eta" + avSq + ").", 10, 146, #000000h);
+    av_Tx("eta" + avSq + " = SS between / SS total; omega" + avSq + " (Hays)", 10, 162, avGRAY);
+    av_Tx("subtracts the part chance alone would give.", 10, 175, avGRAY);
+    av_Tx("Every value counts: 0 and negatives are data.", 10, 191, avGRAY);
+  END;
+  IF hpN == 2 THEN
+    TEXTOUT_P("2/8  Welch and the checks", G1, 10, 7, 2, avBLUE, 300);
+    av_Tx("The F test assumes equal spreads (and roughly", 10, 30, #000000h);
+    av_Tx("normal groups).  Welch's F (1951) drops equal", 10, 43, #000000h);
+    av_Tx("spreads: each group is weighted by n / s" + avSq + ".", 10, 56, #000000h);
+    av_Tx("Levene's test (Brown-Forsythe form) runs the", 10, 72, avBLUE);
+    av_Tx("one-way F on |value - group median|: robust.", 10, 85, avBLUE);
+    av_Tx("Bartlett's " + avX2 + " compares the s" + avSq + " directly: it is", 10, 101, avBLUE);
+    av_Tx("misled by non-normal data.", 10, 114, avBLUE);
+    av_Tx("Insect sprays: s runs from 1.7 to 6.2, Levene", 10, 130, avMAG);
+    av_Tx("flags it; compare the ordinary F with Welch's.", 10, 143, avMAG);
+    av_Tx("A check that is not significant is not proof", 10, 159, avRED);
+    av_Tx("of equal spreads: small groups miss a lot.", 10, 172, avRED);
+    av_Tx("Dots page: look at the spreads yourself.", 10, 188, avGRAY);
+  END;
+  IF hpN == 3 THEN
+    TEXTOUT_P("3/8  Which pairs differ?", G1, 10, 7, 2, avBLUE, 300);
+    av_Tx("Many t tests inflate the chance of a false", 10, 30, #000000h);
+    av_Tx("alarm; these keep it at " + avAl + " for the family:", 10, 43, #000000h);
+    av_Tx("Tukey-Kramer: q = |diff|/" + avRt + "(MSW/2 (1/n" + avS1 + "+1/n" + avS2 + "))", 10, 59, avBLUE);
+    av_Tx("  on the studentized range (asks first: slow).", 10, 72, avBLUE);
+    av_Tx("Bonferroni: raw t p " + avTm + " m pairs (simple, safe).", 10, 88, avBLUE);
+    av_Tx("Holm: step-down Bonferroni, never less power.", 10, 101, avBLUE);
+    av_Tx("Scheffe: covers every contrast, widest CIs.", 10, 114, avBLUE);
+    av_Tx("CIs are simultaneous (family " + av_CS(1 - avAlpha) + ").", 10, 130, avMAG);
+    av_Tx("Pairs page: +/- or a tab = method; tap a pair.", 10, 146, #000000h);
+    av_Tx("Dots page: tap two groups, or " + avLR + " for the next", 10, 159, #000000h);
+    av_Tx("pair.  More > Tukey p: every pair's Tukey p.", 10, 172, #000000h);
+    av_Tx("Tukey vs SciPy: q crit within 0.03 %, pair p", 10, 185, avGRAY);
+    av_Tx("within 0.00001 (k 2-12, df 3-1000, " + avAl + " .1-.001).", 10, 197, avGRAY);
+  END;
+  IF hpN == 4 THEN
+    TEXTOUT_P("4/8  Two-way ANOVA", G1, 10, 7, 2, avBLUE, 300);
+    av_Tx("Two factors A and B, every A " + avTm + " B cell filled.", 10, 30, #000000h);
+    av_Tx("Main effects: do A's (or B's) levels differ?", 10, 43, #000000h);
+    av_Tx("Interaction: does A's effect depend on B?", 10, 56, #000000h);
+    av_Tx("Unequal cells (unbalanced): Type III SS,", 10, 72, avBLUE);
+    av_Tx("by regression, effect coding: each effect", 10, 85, avBLUE);
+    av_Tx("is tested after all the others.  They need not", 10, 98, avBLUE);
+    av_Tx("add up to the total.  Balanced: classical SS.", 10, 111, avBLUE);
+    av_Tx("Plot: one line per level of the other factor.", 10, 127, avMAG);
+    av_Tx("Parallel lines = no interaction.  Tap a point", 10, 140, avMAG);
+    av_Tx("for its cell mean and n; Swap turns the plot.", 10, 153, avMAG);
+    av_Tx("Mock jury: unattractive swindlers: 7.0 years;", 10, 169, #000000h);
+    av_Tx("other cells 3.5 to 4.8: striking, yet the", 10, 182, #000000h);
+    av_Tx("interaction's p is 0.13 (cells of 17 to 21).", 10, 195, #000000h);
+  END;
+  IF hpN == 5 THEN
+    TEXTOUT_P("5/8  Randomized blocks", G1, 10, 7, 2, avBLUE, 300);
+    av_Tx("Each block (a judge, a person) gets every", 10, 30, #000000h);
+    av_Tx("treatment once: repeated measures.", 10, 43, #000000h);
+    av_Tx("Blocks differ a lot, and that spread is taken", 10, 59, avBLUE);
+    av_Tx("OUT of the error: SSE = SST - SSTr - SSBlocks.", 10, 72, avBLUE);
+    av_Tx("F (treatments) = MS treatments / MS error.", 10, 85, avBLUE);
+    av_Tx("partial eta" + avSq + " = SSTr / (SSTr + SSE).", 10, 101, avMAG);
+    av_Tx("The Table page also shows the one-way F that", 10, 117, #000000h);
+    av_Tx("ignores the blocks: judges' ratings give", 10, 130, #000000h);
+    av_Tx("p = 0.048 that way, far smaller with blocks.", 10, 143, #000000h);
+    av_Tx("Assumes no block " + avTm + " treatment interaction", 10, 159, avGRAY);
+    av_Tx("(and, for repeated measures, sphericity).", 10, 172, avGRAY);
+    av_Tx("Plot: one grey line per block.", 10, 188, avGRAY);
+  END;
+  IF hpN == 6 THEN
+    TEXTOUT_P("6/8  Variances: " + avX2 + " and F", G1, 10, 7, 2, avBLUE, 300);
+    av_Tx("One " + avSg + ": " + avX2 + " = (n - 1) s" + avSq + " / " + avSg + avS0 + avSq + ", df n - 1.", 10, 30, #000000h);
+    av_Tx("CI for " + avSg + avSq + ": ((n-1)s" + avSq + "/" + avX2 + " upper, (n-1)s" + avSq + "/" + avX2 + " lower)", 10, 43, #000000h);
+    av_Tx("Two " + avSg + ": F = s" + avS1 + avSq + " / s" + avS2 + avSq + ", df n" + avS1 + " - 1 and n" + avS2 + " - 1.", 10, 59, #000000h);
+    av_Tx("CI for " + avSg + avS1 + avSq + "/" + avSg + avS2 + avSq + ": (F/F upper, F/F lower).", 10, 72, #000000h);
+    av_Tx("Two-sided p = 2 " + avTm + " the smaller tail.  The curve", 10, 88, avBLUE);
+    av_Tx("shades that tail and the other tail of EQUAL", 10, 101, avBLUE);
+    av_Tx("area (blue), and both critical regions (red).", 10, 114, avBLUE);
+    av_Tx("These tests trust normal data much more than", 10, 130, avRED);
+    av_Tx("tests of means do; skewed data mislead them.", 10, 143, avRED);
+    av_Tx("For several groups, Levene (Checks) is safer.", 10, 156, avRED);
+    av_Tx("Data: type s and n, or pick one-way groups.", 10, 172, avGRAY);
+  END;
+  IF hpN == 7 THEN
+    TEXTOUT_P("7/8  Your data, and Home", G1, 10, 7, 2, avBLUE, 300);
+    av_Tx("Statistics 1Var app, lists D1-D9:", 10, 30, #000000h);
+    av_Tx("One-way: each non-empty list is a group.", 10, 43, avBLUE);
+    av_Tx("Two-way: D1 = y, D2 = A codes, D3 = B codes", 10, 56, avBLUE);
+    av_Tx("  (any numbers; 2 to 6 levels each).", 10, 69, avBLUE);
+    av_Tx("Blocks: each list a treatment, one row per", 10, 82, avBLUE);
+    av_Tx("  block (all lists the same length).", 10, 95, avBLUE);
+    av_Tx("Home: AV_F, AV_P, AV_DF, AV_MSE, AV_ETA2 of the", 10, 111, avMAG);
+    av_Tx("last run (A" + avTm + "B; blocks: treatments); AV_TAB.", 10, 124, avMAG);
+    av_Tx("Soft keys: More turns to more keys (one-way).", 10, 140, #000000h);
+    av_Tx("Enter = a menu of every action; Esc = back.", 10, 153, #000000h);
+    av_Tx("Every tap has a key: " + avLR + " " + avUD + " +/- Enter Esc.", 10, 166, #000000h);
+    av_Tx("p = P(data this extreme | " + avH0 + "), not P(" + avH0 + ").", 10, 182, avGRAY);
+  END;
+  IF hpN == 8 THEN
+    TEXTOUT_P("8/8  Credits", G1, 10, 7, 2, avBLUE, 300);
+    av_Tx("Reworks Triola's TI-83/84 ANOVA, ANOVA2FD,", 10, 30, #000000h);
+    av_Tx("ANOVA2RB, RANOVA, TUKEY, SCHEFFE2, BONFRNI,", 10, 43, #000000h);
+    av_Tx("SDHYP, SDINT, STDTEST, STDEVCI and FINTRVAL.", 10, 56, #000000h);
+    av_Tx("Not repeated: 0 and negatives as missing,", 10, 72, avRED);
+    av_Tx("the wrong n in Tukey's SE, swapped F bounds,", 10, 85, avRED);
+    av_Tx("a solver that fails for n > 75, equal-n only.", 10, 98, avRED);
+    av_Tx("Tukey's q: StudRange's PPL engine (Dunlap,", 10, 114, avBLUE);
+    av_Tx("Powell & Konnerth 1977, with a u" + avSq + " step).", 10, 127, avBLUE);
+    av_Tx("Data: Plaster 1989; Fienberg 1971; Beall 1942;", 10, 143, avGRAY);
+    av_Tx("New Haven Register 1977 (R datasets).", 10, 156, avGRAY);
+    av_Tx("A teaching aid: not validated for forensic,", 10, 172, avRED);
+    av_Tx("clinical or legal use.", 10, 185, avRED);
+  END;
+  TEXTOUT_P("Any key or tap = next, " + CHAR(8592) + " = back, Esc = leave", G1, 10, 220, 1, avFOOT, 300);
+  BLIT_P(G0, 0, 0, G1);
+END;
+
+// The help pages from page hsN on.
+av_Help(hsN)
+BEGIN
+  LOCAL hsP, hsK;
+  hsP := MAX(1, MIN(8, hsN));
+  WHILE hsP >= 1 AND hsP <= 8 DO
+    av_HelpPage(hsP);
+    hsK := av_WaitAny();
+    IF hsK == 4 THEN
+      hsP := 0;
+    ELSE
+      IF hsK == 7 THEN hsP := MAX(1, hsP - 1); ELSE hsP := hsP + 1; END;
+    END;
+  END;
+  av_KDrain();
+END;
+
+// Set alpha (used by every verdict, critical value and CI).
+av_SetAlpha()
+BEGIN
+  LOCAL saV, saL;
+  saV := avAlpha;
+  saL := avAl + ":";
+  IF INPUT({saV}, "Significance level", {saL}, {"From 0.001 to 0.2; 0.05 is usual"}) == 1 THEN
+    IF saV < 0.001 OR saV > 0.2 THEN
+      MSGBOX(avAl + " must be from 0.001 to 0.2.");
+      RETURN 0;
+    END;
+    avAlpha := saV;
+    IF avODone == 1 THEN av_OCrit(); END;
+  END;
+  RETURN 0;
+END;
+
+
+// ============================================================
+// 9. ONE-WAY: the view (soft keys, taps, keys)
+// ============================================================
+
+// Arrow keys on a one-way page.  Returns an action (a page number) or 0.
+av_OArrow(oaK)
+BEGIN
+  IF avScr == 4 AND (oaK == 7 OR oaK == 8) THEN
+    // Dots: the previous / next pair
+    IF oaK == 8 THEN avPIx := avPIx + 1; ELSE avPIx := avPIx - 1; END;
+    IF avPIx > avNP THEN avPIx := 1; END;
+    IF avPIx < 1 THEN avPIx := avNP; END;
+    avSelA := avPI(avPIx); avSelB := avPJ(avPIx);
+    RETURN 0;
+  END;
+  IF avScr == 3 AND (oaK == 2 OR oaK == 12) THEN
+    // Pairs: move the highlight, scrolling to keep it on the page
+    IF oaK == 12 THEN avPIx := MIN(avNP, avPIx + 1); ELSE avPIx := MAX(1, avPIx - 1); END;
+    IF avPIx < avPTop THEN avPTop := avPIx; END;
+    IF avPIx > avPTop + 9 THEN avPTop := avPIx - 9; END;
+    avSelA := avPI(avPIx); avSelB := avPJ(avPIx);
+    RETURN 0;
+  END;
+  IF oaK == 7 THEN
+    IF avScr == 1 THEN RETURN 5; END;
+    RETURN avScr - 1;
+  END;
+  IF oaK == 8 THEN
+    IF avScr == 5 THEN RETURN 1; END;
+    RETURN avScr + 1;
+  END;
+  RETURN 0;
+END;
+
+// A tap above the soft keys on a one-way page.  Returns an action or 0.
+av_OTap()
+BEGIN
+  LOCAL otI, otW, otG;
+  IF avScr == 3 THEN
+    // the method tabs
+    IF avTapY >= 18 AND avTapY <= 35 THEN
+      avMeth := MAX(1, MIN(4, IP((avTapX - 4)/78) + 1));
+      RETURN 0;
+    END;
+    // a pair's row: open it on the Dots page
+    IF avTapY >= 71 AND avTapY < 182 THEN
+      otI := avPTop + IP((avTapY - 71)/11);
+      IF otI >= 1 AND otI <= avNP AND otI <= avPTop + 9 THEN
+        avPIx := otI; avSelA := avPI(otI); avSelB := avPJ(otI);
+        RETURN 4;
+      END;
+    END;
+    RETURN 0;
+  END;
+  IF avScr == 4 THEN
+    IF avTapY >= avDT AND avTapY <= avDB + 12 AND avTapX >= avDL AND avTapX <= avDR THEN
+      otW := (avDR - avDL)/avOK;
+      otG := MAX(1, MIN(avOK, IP((avTapX - avDL)/otW) + 1));
+      IF avSelA == 0 OR avSelB > 0 THEN
+        avSelA := otG; avSelB := 0; avPIx := 0;
+      ELSE
+        IF otG <> avSelA THEN avSelB := otG; avPIx := av_PairOf(avSelA, otG); END;
+      END;
+    END;
+    RETURN 0;
+  END;
+  RETURN 0;
+END;
+
+// Enter (or the Menu soft key): every action of the one-way pages.
+av_OMenu()
+BEGIN
+  LOCAL omI;
+  omI := 0;
+  CHOOSE(omI, "One-way ANOVA", {
+    "Table: F, p, effect sizes",
+    "Checks: equal spreads?",
+    "Pairs: post hoc tests",
+    "Dots: groups and CIs",
+    "F curve and p",
+    "Next method (now " + av_MName() + ")",
+    "Tukey p for every pair",
+    "Tukey p for this pair",
+    "Set " + avAl + " (now " + av_AS() + ")",
+    "Help",
+    "Back to the main menu"});
+  IF omI >= 1 AND omI <= 5 THEN RETURN omI; END;
+  IF omI == 6 THEN RETURN 7; END;
+  IF omI == 7 THEN RETURN 8; END;
+  IF omI == 8 THEN RETURN 14; END;
+  IF omI == 9 THEN RETURN 13; END;
+  IF omI == 10 THEN RETURN 9; END;
+  IF omI == 11 THEN RETURN 11; END;
+  RETURN 0;
+END;
+
+// The one-way pages.  Soft keys, page 1: Table, Checks, Pairs, Dots, F,
+// More; page 2: Method, Tukey p, Help, Menu, Back, More (the house
+// "More" key: slot 6 on every page).  Actions: 1-5 the pages, 7 next
+// method, 8 Tukey p, 9 help, 10 menu, 11 back, 12 previous method,
+// 13 set alpha, 14 Tukey p for the selected pair.
+av_OView(ovS)
+BEGIN
+  LOCAL ovK, ovA, ovGo, ovSl;
+  IF avODone == 0 THEN
+    IF av_OCompute() == 0 THEN RETURN 0; END;
+  END;
+  avScr := ovS; avSKP := 1; ovGo := 1;
+  av_KDrain(); av_Drain();
+  WHILE ovGo == 1 DO
+    // beta 1a: Tukey is never started by opening a page.  When the
+    // student picks Tukey and q crit is not known yet, a one-line warning
+    // with the G1 estimate asks first; "Not now" leaves it uncomputed
+    // (Menu > Tukey p computes it later).
+    IF (avScr == 3 OR avScr == 4) AND avMeth == 1 AND avQc == -1 THEN
+      IF avDf2 < 3 THEN
+        avQc := -3;
+      ELSE
+        IF av_TukeyAsk("Tukey q crit", 14) == 1 THEN av_TukeyCrit(); ELSE avQc := -2; END;
+      END;
+    END;
+    av_ODraw();
+    IF avSKP == 1 THEN
+      av_Show({"Table", "Checks", "Pairs", "Dots", "F", "More"});
+    ELSE
+      av_Show({"Method", "Tukey p", "Help", "Menu", "Back", "More"});
+    END;
+    ovK := av_Poll();
+    ovA := 0;
+    IF ovK == -1 THEN
+      IF avTapY >= 218 THEN
+        ovSl := MIN(6, IP(avTapX/53.4) + 1);
+        IF ovSl == 6 THEN
+          avSKP := 3 - avSKP;
+        ELSE
+          IF avSKP == 1 THEN ovA := ovSl; ELSE ovA := ovSl + 6; END;
+        END;
+      ELSE
+        ovA := av_OTap();
+      END;
+    ELSE
+      IF ovK == 4 THEN ovA := 11; END;
+      IF ovK == 30 THEN ovA := 10; END;
+      IF ovK == 50 THEN ovA := 7; END;
+      IF ovK == 45 THEN ovA := 12; END;
+      IF ovK == 7 OR ovK == 8 OR ovK == 2 OR ovK == 12 THEN ovA := av_OArrow(ovK); END;
+    END;
+    IF ovA == 10 THEN ovA := av_OMenu(); END;
+    IF ovA >= 1 AND ovA <= 5 THEN avScr := ovA; END;
+    IF ovA == 7 THEN
+      avMeth := avMeth + 1;
+      IF avMeth > 4 THEN avMeth := 1; END;
+    END;
+    IF ovA == 12 THEN
+      avMeth := avMeth - 1;
+      IF avMeth < 1 THEN avMeth := 4; END;
+    END;
+    IF ovA == 8 THEN
+      av_TukeyP();
+      IF avScr <> 4 THEN avScr := 3; END;
+    END;
+    IF ovA == 9 THEN
+      IF avScr == 3 OR avScr == 4 THEN av_Help(3); ELSE av_Help(1); END;
+    END;
+    IF ovA == 13 THEN av_SetAlpha(); END;
+    IF ovA == 14 THEN av_TukeyP1(avPIx); END;
+    IF ovA == 11 THEN ovGo := 0; END;
+  END;
+  av_KDrain();
+  RETURN 0;
+END;
+
+
+// ============================================================
+// 10. TWO-WAY: the pages and the view
+//     1 Table   2 Cells   3 Interaction plot   4 F curve
+// ============================================================
+
+av_TDrawTable()
+BEGIN
+  LOCAL ttE, ttN, ttC;
+  av_Band("Two-way ANOVA, Type III SS");
+  av_Tx(avTTtl + ", N = " + av_I(avTNN), 4, 21, #000000h);
+  av_Tx(avTSrc, 4, 33, avGRAY);
+  av_Row(48, "Source", "SS", "df", "MS", "F", "p", avORNG);
+  LINE_P(G1, 3, 59, 316, 59, avORNG);
+  ttN := {"A " + avTKA, "B " + avTKB, "A" + avTm + "B", "Error", "Total"};
+  FOR ttE FROM 1 TO 5 DO
+    ttC := #000000h;
+    IF ttE <= 3 THEN ttC := avBLUE; END;
+    IF ttE <= 3 THEN
+      av_Row(50 + 12*ttE, ttN(ttE), av_Gn(avTSS(ttE)), av_I(avTDF(ttE)), av_Gn(avTMS(ttE)), av_Cmp(avTF(ttE), 6), av_PT(avTP(ttE)), ttC);
+    END;
+    IF ttE == 4 THEN av_Row(50 + 12*ttE, ttN(ttE), av_Gn(avTSS(ttE)), av_I(avTDF(ttE)), av_Gn(avTMS(ttE)), "", "", ttC); END;
+    IF ttE == 5 THEN av_Row(50 + 12*ttE, ttN(ttE), av_Gn(avTSS(ttE)), av_I(avTDF(ttE)), "", "", "", ttC); END;
+  END;
+  IF avTBal == 1 THEN
+    av_Tx("Balanced (n = " + av_I(avTCN(1)) + " per cell): classical SS =", 4, 126, avGRN);
+    IF avTAgr < 0.000001 THEN
+      av_Tx("  Type III here (checked: they agree).", 4, 138, avGRN);
+    ELSE
+      av_Tx("  Type III?  NO: they differ by " + av_Gn(avTAgr*avTSS(5)), 4, 138, avRED);
+    END;
+  ELSE
+    av_Tx("Unbalanced cells: Type III SS (regression,", 4, 126, avBLUE);
+    av_Tx("  effect coding): need not add to the total.", 4, 138, avBLUE);
+  END;
+  av_Tx("partial eta" + avSq + ": A " + av_Fx(avTPE(1), 3) + ", B " + av_Fx(avTPE(2), 3) + ", A" + avTm + "B " + av_Fx(avTPE(3), 3), 4, 152, avMAG);
+  // beta 1a (second review, item 3): a non-significant interaction is
+  // "no evidence at alpha", never "no interaction".
+  IF avTP(3) < avAlpha THEN
+    RECT_P(G1, 3, 164, 316, 199, avRED, avLRED);
+    av_Tx("Interaction " + av_PE(avTP(3)) + ": evidence that the", 8, 166, avRED);
+    av_Tx("effect of A depends on B: compare the cells", 8, 177, avRED);
+    av_Tx("(Plot), not the main effects alone.", 8, 188, avRED);
+  ELSE
+    RECT_P(G1, 3, 164, 316, 199, avGRN, avLGRN);
+    av_Tx("No evidence of interaction at " + avAl + " = " + av_AS(), 8, 166, avGRN);
+    av_Tx("(" + av_PE(avTP(3)) + ").  Main effects are averages over", 8, 177, avGRN);
+    av_Tx("a pattern that may still be there: see Plot.", 8, 188, avGRN);
+  END;
+  av_Foot(avLR + " = page, Ent = menu, Esc = main menu");
+END;
+
+// Cell means with n, and the unweighted margins (beta 1a, second review
+// item 2: laid out for up to 6 x 6 levels with nothing cut: no x-bar
+// prefix in a cell, numbers fitted to the cell's width, names shortened,
+// n shown only when there is room; tap a cell (or the arrows) for its
+// mean, n and s in full).
+av_TDrawCells()
+BEGIN
+  LOCAL tcI, tcJ, tcK, tcX, tcY, tcW;
+  LOCAL tcH, tcN;
+  av_Band("Cell means: " + avTKA + " " + avTm + " " + avTKB);
+  tcW := MIN(84, IP(252/(avTNB + 1)));
+  tcH := MIN(26, IP(132/(avTNA + 1)));
+  tcN := IP((tcW - 5)/6.4);
+  avTCi := MAX(1, MIN(avTNA, avTCi)); avTCj := MAX(1, MIN(avTNB, avTCj));
+  // header: B levels, then the margin column
+  FOR tcJ FROM 1 TO avTNB DO
+    tcX := 64 + (tcJ - 1)*tcW;
+    TEXTOUT_P(av_Cut(avTBN(tcJ), tcW - 4), G1, tcX + 2, 22, 1, avGCol(((tcJ - 1) MOD 12) + 1), tcW - 3);
+  END;
+  tcX := 64 + avTNB*tcW;
+  TEXTOUT_P(av_Cut("mean", tcW - 4), G1, tcX + 2, 22, 1, avORNG, tcW - 3);
+  FOR tcI FROM 1 TO avTNA DO
+    tcY := 34 + (tcI - 1)*tcH;
+    TEXTOUT_P(av_Cut(avTAN(tcI), 58), G1, 2, tcY + 2, 1, #000000h, 60);
+    FOR tcJ FROM 1 TO avTNB DO
+      tcK := (tcI - 1)*avTNB + tcJ;
+      tcX := 64 + (tcJ - 1)*tcW;
+      IF tcI == avTCi AND tcJ == avTCj THEN
+        RECT_P(G1, tcX, tcY, tcX + tcW - 2, tcY + tcH - 2, avRED, avLRED);
+      ELSE
+        RECT_P(G1, tcX, tcY, tcX + tcW - 2, tcY + tcH - 2, avGRID, avLBLU);
+      END;
+      TEXTOUT_P(av_Cmp(avTCM(tcK), tcN), G1, tcX + 3, tcY + 1, 1, avBLUE, tcW - 4);
+      IF tcH >= 22 THEN
+        IF tcN >= 11 THEN
+          TEXTOUT_P("n " + av_I(avTCN(tcK)) + " s " + av_Cmp(avTCS(tcK), tcN - 7 - DIM(av_I(avTCN(tcK)))), G1, tcX + 3, tcY + 12, 1, avGRAY, tcW - 4);
+        ELSE
+          TEXTOUT_P("n " + av_I(avTCN(tcK)), G1, tcX + 3, tcY + 12, 1, avGRAY, tcW - 4);
+        END;
+      END;
+    END;
+    tcX := 64 + avTNB*tcW;
+    RECT_P(G1, tcX, tcY, tcX + tcW - 2, tcY + tcH - 2, avORNG, avLORN);
+    TEXTOUT_P(av_Cmp(avTMA(tcI), tcN), G1, tcX + 3, tcY + 1, 1, avORNG, tcW - 4);
+  END;
+  tcY := 34 + avTNA*tcH;
+  TEXTOUT_P("mean", G1, 2, tcY + 2, 1, avORNG, 60);
+  FOR tcJ FROM 1 TO avTNB DO
+    tcX := 64 + (tcJ - 1)*tcW;
+    RECT_P(G1, tcX, tcY, tcX + tcW - 2, tcY + tcH - 2, avORNG, avLORN);
+    TEXTOUT_P(av_Cmp(avTMB(tcJ), tcN), G1, tcX + 3, tcY + 1, 1, avORNG, tcW - 4);
+  END;
+  tcK := (avTCi - 1)*avTNB + avTCj;
+  av_Tx(av_Cut(avTAN(avTCi), 80) + ", " + av_Cut(avTBN(avTCj), 80) + ": " + avXb + " = " + av_Gn(avTCM(tcK)) + ", n = " + av_I(avTCN(tcK)), 4, 170, avRED);
+  av_Tx("  s = " + av_Gn(avTCS(tcK)) + ";  all " + av_I(avTNN) + " values: mean " + av_Gn(avTGM), 4, 181, avRED);
+  av_Tx("Margins = means of the CELL means (Type III).", 4, 194, avGRAY);
+  av_Foot("tap a cell, " + avLR + " " + avUD + " = move, Ent = menu");
+END;
+
+// Interaction plot geometry: the x level count and trace count, by Swap.
+av_TNx()
+BEGIN
+  IF avTSwap == 0 THEN RETURN avTNA; END;
+  RETURN avTNB;
+END;
+
+av_TNt()
+BEGIN
+  IF avTSwap == 0 THEN RETURN avTNB; END;
+  RETURN avTNA;
+END;
+
+// The cell index for x level ix and trace it.
+av_TCell(tlX, tlT)
+BEGIN
+  IF avTSwap == 0 THEN RETURN (tlX - 1)*avTNB + tlT; END;
+  RETURN (tlT - 1)*avTNB + tlX;
+END;
+
+// The y range of the cell means, nice; kept in a list {lo, hi, step}.
+av_TRange()
+BEGIN
+  LOCAL trLo, trHi, trS, trK;
+  trLo := avTCM(1); trHi := avTCM(1);
+  FOR trK FROM 1 TO SIZE(avTCM) DO
+    trLo := MIN(trLo, avTCM(trK)); trHi := MAX(trHi, avTCM(trK));
+  END;
+  IF trHi - trLo <= 0 THEN trHi := trLo + 1; END;
+  trS := av_Nice((trHi - trLo)/4);
+  trLo := FLOOR(trLo/trS)*trS; trHi := CEILING(trHi/trS)*trS;
+  IF trHi <= trLo THEN trHi := trLo + trS; END;
+  RETURN {trLo, trHi, trS};
+END;
+
+// The y pixel of a value on the interaction plot (its box ends at 146,
+// leaving room under it for the legend, the readout and two lines).
+av_TY(tyV, tyLo, tyHi)
+BEGIN
+  RETURN 146 - IP((tyV - tyLo)/(tyHi - tyLo)*(146 - avDT) + 0.5);
+END;
+
+// 1 when two of the plotted lines cross (their order changes from one
+// x level to another), else 0.
+av_TCross()
+BEGIN
+  LOCAL tcT1, tcT2, tcX, tcD0, tcD1, tcR;
+  tcR := 0;
+  FOR tcT1 FROM 1 TO av_TNt() - 1 DO
+    FOR tcT2 FROM tcT1 + 1 TO av_TNt() DO
+      tcD0 := avTCM(av_TCell(1, tcT1)) - avTCM(av_TCell(1, tcT2));
+      FOR tcX FROM 2 TO av_TNx() DO
+        tcD1 := avTCM(av_TCell(tcX, tcT1)) - avTCM(av_TCell(tcX, tcT2));
+        IF tcD0*tcD1 < 0 THEN tcR := 1; END;
+        IF tcD1 <> 0 THEN tcD0 := tcD1; END;
+      END;
+    END;
+  END;
+  RETURN tcR;
+END;
+
+// "n 17-21" (or "n 5" when every cell has the same n).
+av_TNs()
+BEGIN
+  LOCAL tnK, tnLo, tnHi;
+  tnLo := avTCN(1); tnHi := avTCN(1);
+  FOR tnK FROM 1 TO SIZE(avTCN) DO
+    tnLo := MIN(tnLo, avTCN(tnK)); tnHi := MAX(tnHi, avTCN(tnK));
+  END;
+  IF tnLo == tnHi THEN RETURN "n " + av_I(tnLo); END;
+  RETURN "n " + av_I(tnLo) + "-" + av_I(tnHi);
+END;
+
+// The x pixel of x level ix on the interaction plot.
+av_TPx(tpX)
+BEGIN
+  RETURN IP(avDL + 20 + (tpX - 0.5)*(avDR - avDL - 40)/av_TNx());
+END;
+
+// The interaction plot: cell means joined by lines, one colour per
+// level of the trace factor; the selected point ringed in red.
+av_TDrawPlot()
+BEGIN
+  LOCAL tpR, tpV, tpY, tpX, tpT, tpK;
+  LOCAL tpC, tpY2, tpNx, tpNt, tpDc, tpS;
+  LOCAL tpXN, tpTN, tpXF, tpTF;
+  tpNx := av_TNx(); tpNt := av_TNt();
+  IF avTSwap == 0 THEN
+    tpXN := avTAN; tpTN := avTBN; tpXF := avTFA; tpTF := avTFB;
+  ELSE
+    tpXN := avTBN; tpTN := avTAN; tpXF := avTFB; tpTF := avTFA;
+  END;
+  avTSx := MAX(1, MIN(tpNx, avTSx)); avTSt := MAX(1, MIN(tpNt, avTSt));
+  av_Band("Interaction: means by " + tpXF);
+  tpR := av_TRange();
+  tpDc := MAX(0, -FLOOR(LOG(tpR(3))));
+  tpV := tpR(1);
+  WHILE tpV <= tpR(2) + tpR(3)/1000 DO
+    tpY := av_TY(tpV, tpR(1), tpR(2));
+    LINE_P(G1, avDL, tpY, avDR, tpY, avGRID);
+    TEXTOUT_P(av_Fx(tpV, tpDc), G1, 2, tpY - 5, 1, avGRAY, 32);
+    tpV := tpV + tpR(3);
+  END;
+  LINE_P(G1, avDL, avDT, avDL, 146, #000000h);
+  LINE_P(G1, avDL, 146, avDR, 146, #000000h);
+  tpS := MIN(90, IP((avDR - avDL - 40)/tpNx) - 4);
+  FOR tpX FROM 1 TO tpNx DO
+    TEXTOUT_P(tpXN(tpX), G1, av_TPx(tpX) - IP(tpS/2), 149, 1, #000000h, tpS);
+  END;
+  // ---- the lines (2 px), then the points ----
+  FOR tpT FROM 1 TO tpNt DO
+    tpC := avGCol(((tpT - 1) MOD 12) + 1);
+    FOR tpX FROM 1 TO tpNx - 1 DO
+      tpY := av_TY(avTCM(av_TCell(tpX, tpT)), tpR(1), tpR(2));
+      tpY2 := av_TY(avTCM(av_TCell(tpX + 1, tpT)), tpR(1), tpR(2));
+      LINE_P(G1, av_TPx(tpX), tpY, av_TPx(tpX + 1), tpY2, tpC);
+      LINE_P(G1, av_TPx(tpX), tpY + 1, av_TPx(tpX + 1), tpY2 + 1, tpC);
+    END;
+  END;
+  FOR tpT FROM 1 TO tpNt DO
+    tpC := avGCol(((tpT - 1) MOD 12) + 1);
+    FOR tpX FROM 1 TO tpNx DO
+      tpY := av_TY(avTCM(av_TCell(tpX, tpT)), tpR(1), tpR(2));
+      av_Mark(av_TPx(tpX), tpY, tpC);
+    END;
+  END;
+  // the selected point: a red ring of 4 lines
+  tpX := av_TPx(avTSx); tpY := av_TY(avTCM(av_TCell(avTSx, avTSt)), tpR(1), tpR(2));
+  LINE_P(G1, tpX - 5, tpY - 5, tpX + 5, tpY - 5, avRED); LINE_P(G1, tpX - 5, tpY + 5, tpX + 5, tpY + 5, avRED);
+  LINE_P(G1, tpX - 5, tpY - 5, tpX - 5, tpY + 5, avRED); LINE_P(G1, tpX + 5, tpY - 5, tpX + 5, tpY + 5, avRED);
+  // ---- legend: the trace factor's levels ----
+  tpS := 4;
+  TEXTOUT_P(tpTF + ":", G1, tpS, 160, 1, #000000h, 120);
+  tpS := tpS + IP(6.4*DIM(tpTF)) + 12;
+  FOR tpT FROM 1 TO tpNt DO
+    tpC := avGCol(((tpT - 1) MOD 12) + 1);
+    IF tpS < 290 THEN
+      RECT_P(G1, tpS, 162, tpS + 8, 168, tpC, tpC);
+      TEXTOUT_P(av_Cut(tpTN(tpT), 70), G1, tpS + 11, 160, 1, tpC, 72);
+    END;
+    tpS := tpS + 16 + MIN(70, IP(6.4*DIM(tpTN(tpT))));
+  END;
+  tpK := av_TCell(avTSx, avTSt);
+  av_Tx(tpXN(avTSx) + ", " + tpTN(avTSt) + ": " + avXb + " " + av_Gn(avTCM(tpK)) + ", n " + av_I(avTCN(tpK)) + ", s " + av_Gn(avTCS(tpK)), 4, 172, avRED);
+  // beta 1a (second review, item 3): what parallel lines WOULD mean, and
+  // what the test says about these lines
+  IF avTP(3) < avAlpha THEN
+    av_Tx("Interaction " + av_PE(avTP(3)) + ": evidence that", 4, 184, avRED);
+    av_Tx("the lines are not parallel in the population.", 4, 195, avRED);
+  ELSE
+    IF av_TCross() == 1 THEN
+      av_Tx("Parallel = no interaction. These lines cross,", 4, 184, avGRAY);
+      av_Tx("but p = " + av_Fx(avTP(3), 3) + " (" + av_TNs() + ") cannot rule out chance.", 4, 195, avGRAY);
+    ELSE
+      av_Tx("Parallel lines would mean no interaction.", 4, 184, avGRAY);
+      av_Tx("Here p = " + av_Fx(avTP(3), 3) + " (" + av_TNs() + "): chance not ruled out.", 4, 195, avGRAY);
+    END;
+  END;
+  av_Foot("tap a point, " + avLR + " " + avUD + " = move, Swap = turn");
+END;
+
+// The F curve of one effect (avTEff: 1 A, 2 B, 3 A x B).
+av_TDrawF()
+BEGIN
+  LOCAL tfN;
+  tfN := {"A (" + avTKA + ")", "B (" + avTKB + ")", "A" + avTm + "B"};
+  av_FPage("F for " + tfN(avTEff) + ": F(" + av_I(avTDF(avTEff)) + ", " + av_I(avTDF(4)) + ")", avTF(avTEff), avTDF(avTEff), avTDF(4), avTP(avTEff));
+  av_Foot("+/- or tap the title = effect, Ent = menu");
+END;
+
+av_TDraw()
+BEGIN
+  IF avScr == 1 THEN av_TDrawTable(); END;
+  IF avScr == 2 THEN av_TDrawCells(); END;
+  IF avScr == 3 THEN av_TDrawPlot(); END;
+  IF avScr == 4 THEN av_TDrawF(); END;
+END;
+
+// The two-way menu (Enter or Menu).
+av_TMenu()
+BEGIN
+  LOCAL tmI;
+  tmI := 0;
+  CHOOSE(tmI, "Two-way ANOVA", {
+    "Table: Type III SS, F, p",
+    "Cells: means and n",
+    "Interaction plot",
+    "F curve of an effect",
+    "Swap the plot's factors",
+    "Set " + avAl + " (now " + av_AS() + ")",
+    "Help",
+    "Back to the main menu"});
+  IF tmI >= 1 AND tmI <= 4 THEN RETURN tmI; END;
+  IF tmI == 5 THEN RETURN 5; END;
+  IF tmI == 6 THEN RETURN 13; END;
+  IF tmI == 7 THEN RETURN 9; END;
+  IF tmI == 8 THEN RETURN 11; END;
+  RETURN 0;
+END;
+
+// The two-way pages.  Soft keys: Table, Cells, Plot, F, Swap, Menu.
+av_TView(tvS)
+BEGIN
+  LOCAL tvK, tvA, tvGo, tvSl, tvX, tvT;
+  LOCAL tvD, tvBd, tvR, tvY, tvW, tvH;
+  IF avTDone == 0 THEN
+    IF av_TCompute() == 0 THEN RETURN 0; END;
+  END;
+  avScr := tvS; tvGo := 1;
+  av_KDrain(); av_Drain();
+  WHILE tvGo == 1 DO
+    av_TDraw();
+    av_Show({"Table", "Cells", "Plot", "F", "Swap", "Menu"});
+    tvK := av_Poll();
+    tvA := 0;
+    IF tvK == -1 THEN
+      IF avTapY >= 218 THEN
+        tvSl := MIN(6, IP(avTapX/53.4) + 1);
+        tvA := tvSl;
+        IF tvSl == 6 THEN tvA := 10; END;
+      ELSE
+        IF avScr == 3 AND avTapY > avDT - 6 AND avTapY < 152 THEN
+          // the nearest cell mean
+          tvR := av_TRange(); tvBd := 9999;
+          FOR tvX FROM 1 TO av_TNx() DO
+            FOR tvT FROM 1 TO av_TNt() DO
+              tvY := av_TY(avTCM(av_TCell(tvX, tvT)), tvR(1), tvR(2));
+              tvD := ABS(avTapX - av_TPx(tvX)) + ABS(avTapY - tvY);
+              IF tvD < tvBd THEN tvBd := tvD; avTSx := tvX; avTSt := tvT; END;
+            END;
+          END;
+        END;
+        IF avScr == 4 AND avTapY < 19 THEN tvA := 14; END;
+        IF avScr == 2 AND avTapY >= 34 AND avTapX >= 64 THEN
+          tvW := MIN(84, IP(252/(avTNB + 1))); tvH := MIN(26, IP(132/(avTNA + 1)));
+          tvX := IP((avTapX - 64)/tvW) + 1; tvT := IP((avTapY - 34)/tvH) + 1;
+          IF tvX >= 1 AND tvX <= avTNB AND tvT >= 1 AND tvT <= avTNA THEN avTCj := tvX; avTCi := tvT; END;
+        END;
+      END;
+    ELSE
+      IF tvK == 4 THEN tvA := 11; END;
+      IF tvK == 30 THEN tvA := 10; END;
+      IF avScr == 2 THEN
+        IF tvK == 7 THEN avTCj := MAX(1, avTCj - 1); END;
+        IF tvK == 8 THEN avTCj := MIN(avTNB, avTCj + 1); END;
+        IF tvK == 2 THEN avTCi := MAX(1, avTCi - 1); END;
+        IF tvK == 12 THEN avTCi := MIN(avTNA, avTCi + 1); END;
+      END;
+      IF avScr == 3 THEN
+        IF tvK == 7 THEN avTSx := MAX(1, avTSx - 1); END;
+        IF tvK == 8 THEN avTSx := MIN(av_TNx(), avTSx + 1); END;
+        IF tvK == 2 THEN avTSt := MAX(1, avTSt - 1); END;
+        IF tvK == 12 THEN avTSt := MIN(av_TNt(), avTSt + 1); END;
+      END;
+      IF avScr == 1 OR avScr == 4 THEN
+        IF tvK == 7 THEN tvA := avScr - 1; IF tvA < 1 THEN tvA := 4; END; END;
+        IF tvK == 8 THEN tvA := avScr + 1; IF tvA > 4 THEN tvA := 1; END; END;
+      END;
+      IF avScr == 4 AND tvK == 50 THEN tvA := 14; END;
+      IF avScr == 4 AND tvK == 45 THEN tvA := 15; END;
+    END;
+    IF tvA == 10 THEN tvA := av_TMenu(); END;
+    IF tvA >= 1 AND tvA <= 4 THEN avScr := tvA; END;
+    IF tvA == 5 THEN
+      avTSwap := 1 - avTSwap;
+      tvX := avTSx; avTSx := avTSt; avTSt := tvX;
+      avScr := 3;
+    END;
+    IF tvA == 14 THEN avTEff := avTEff + 1; IF avTEff > 3 THEN avTEff := 1; END; END;
+    IF tvA == 15 THEN avTEff := avTEff - 1; IF avTEff < 1 THEN avTEff := 3; END; END;
+    IF tvA == 9 THEN av_Help(4); END;
+    IF tvA == 13 THEN av_SetAlpha(); END;
+    IF tvA == 11 THEN tvGo := 0; END;
+  END;
+  av_KDrain();
+  RETURN 0;
+END;
+
+
+// ============================================================
+// 11. RANDOMIZED BLOCKS: the pages and the view
+//     1 Table   2 Profile plot   3 F curve
+// ============================================================
+
+av_BDrawTable()
+BEGIN
+  av_Band("Randomized blocks (repeated measures)");
+  av_Tx(avBTtl + " (" + av_I(avBNb) + " " + avTm + " " + av_I(avBKt) + ")", 4, 21, #000000h);
+  av_Tx(avBSrc, 4, 33, avGRAY);
+  av_Row(48, "Source", "SS", "df", "MS", "F", "p", avORNG);
+  LINE_P(G1, 3, 59, 316, 59, avORNG);
+  av_Row(62, "Treatment", av_Gn(avBSS(1)), av_I(avBDF(1)), av_Gn(avBMS(1)), av_Cmp(avBF(1), 6), av_PT(avBP(1)), avBLUE);
+  av_Row(74, "Blocks", av_Gn(avBSS(2)), av_I(avBDF(2)), av_Gn(avBMS(2)), av_Cmp(avBF(2), 6), av_PT(avBP(2)), avGRAY);
+  av_Row(86, "Error", av_Gn(avBSS(3)), av_I(avBDF(3)), av_Gn(avBMS(3)), "", "", #000000h);
+  av_Row(98, "Total", av_Gn(avBSS(4)), av_I(avBDF(4)), "", "", "", #000000h);
+  av_Tx("partial eta" + avSq + " (treatments) = " + av_Fx(avBPE(1), 3), 4, 114, avMAG);
+  IF avBOF >= 0 THEN
+    av_Tx("One-way, blocks ignored: F " + av_Fx(avBOF, 3) + ", " + av_PE(avBOP), 4, 130, avGRAY);
+    av_Tx("  (blocks take the " + avBBl + "-to-" + avBBl + " spread out)", 4, 142, avGRAY);
+  END;
+  av_Verdict(158, avBP(1),
+    "Treatments " + av_PE(avBP(1)) + ": reject " + avH0 + " (equal " + avMu + ").",
+    "Evidence the treatment means differ.",
+    "Treatments " + av_PE(avBP(1)) + ": do not reject " + avH0 + ".",
+    "No evidence the treatment means differ.");
+  av_Tx("Each block gets every treatment once.", 4, 190, avGRAY);
+  av_Foot(avLR + " = page, Ent = menu, Esc = main menu");
+END;
+
+// The profile plot: one grey line per block across the treatments, the
+// treatment means in green; the selected treatment shaded.
+av_BDrawPlot()
+BEGIN
+  LOCAL bpLo, bpHi, bpS, bpDc, bpV, bpY;
+  LOCAL bpI, bpJ, bpX, bpW, bpY2, bpK;
+  av_Band("Profiles: one grey line per " + avBBl);
+  bpLo := avBY(1); bpHi := avBY(1);
+  FOR bpK FROM 1 TO SIZE(avBY) DO
+    bpLo := MIN(bpLo, avBY(bpK)); bpHi := MAX(bpHi, avBY(bpK));
+  END;
+  IF bpHi - bpLo <= 0 THEN bpHi := bpLo + 1; END;
+  bpS := av_Nice((bpHi - bpLo)/5);
+  bpLo := FLOOR(bpLo/bpS)*bpS; bpHi := CEILING(bpHi/bpS)*bpS;
+  bpDc := MAX(0, -FLOOR(LOG(bpS)));
+  bpW := (avDR - avDL)/avBKt;
+  avBSel := MAX(1, MIN(avBKt, avBSel));
+  RECT_P(G1, IP(avDL + (avBSel - 1)*bpW) + 1, avDT, IP(avDL + avBSel*bpW) - 1, avDB, avLORN, avLORN);
+  bpV := bpLo;
+  WHILE bpV <= bpHi + bpS/1000 DO
+    bpY := av_DY(bpV, bpLo, bpHi);
+    LINE_P(G1, avDL, bpY, avDR, bpY, avGRID);
+    TEXTOUT_P(av_Fx(bpV, bpDc), G1, 2, bpY - 5, 1, avGRAY, 32);
+    bpV := bpV + bpS;
+  END;
+  FOR bpI FROM 1 TO avBNb DO
+    FOR bpJ FROM 1 TO avBKt - 1 DO
+      bpY := av_DY(avBY((bpI - 1)*avBKt + bpJ), bpLo, bpHi);
+      bpY2 := av_DY(avBY((bpI - 1)*avBKt + bpJ + 1), bpLo, bpHi);
+      LINE_P(G1, IP(avDL + (bpJ - 0.5)*bpW), bpY, IP(avDL + (bpJ + 0.5)*bpW), bpY2, avLGRY);
+    END;
+  END;
+  FOR bpJ FROM 1 TO avBKt DO
+    bpX := IP(avDL + (bpJ - 0.5)*bpW);
+    bpY := av_DY(avBTM(bpJ), bpLo, bpHi);
+    IF bpJ < avBKt THEN
+      bpY2 := av_DY(avBTM(bpJ + 1), bpLo, bpHi);
+      LINE_P(G1, bpX, bpY, IP(avDL + (bpJ + 0.5)*bpW), bpY2, avGRN);
+      LINE_P(G1, bpX, bpY + 1, IP(avDL + (bpJ + 0.5)*bpW), bpY2 + 1, avGRN);
+    END;
+    av_Mark(bpX, bpY, avGRN);
+    TEXTOUT_P(avBTN(bpJ), G1, IP(avDL + (bpJ - 1)*bpW) + 2, avDB + 3, 1, #000000h, IP(bpW) - 2);
+  END;
+  LINE_P(G1, avDL, avDT, avDL, avDB, #000000h);
+  LINE_P(G1, avDL, avDB, avDR, avDB, #000000h);
+  av_Tx("green = treatment means; grey = each " + avBBl, 4, 172, avGRAY);
+  av_Tx(avBTN(avBSel) + ": " + avXb + " = " + av_Gn(avBTM(avBSel)) + ", s = " + av_Gn(avBSD(avBSel)) + ", n = " + av_I(avBNb), 4, 184, avRED);
+  av_Tx("Lines far apart = blocks differ (taken out).", 4, 195, avGRAY);
+  av_Foot("tap a treatment, " + avLR + " = move, Ent = menu");
+END;
+
+av_BDrawF()
+BEGIN
+  av_FPage("Treatments: F(" + av_I(avBDF(1)) + ", " + av_I(avBDF(3)) + ")", avBF(1), avBDF(1), avBDF(3), avBP(1));
+  av_Foot(avLR + " = page, Ent = menu, Esc = main menu");
+END;
+
+av_BMenu()
+BEGIN
+  LOCAL bmI;
+  bmI := 0;
+  CHOOSE(bmI, "Randomized blocks", {
+    "Table: F, p, partial eta" + avSq,
+    "Profile plot",
+    "F curve (treatments)",
+    "Set " + avAl + " (now " + av_AS() + ")",
+    "Help",
+    "Back to the main menu"});
+  IF bmI >= 1 AND bmI <= 3 THEN RETURN bmI; END;
+  IF bmI == 4 THEN RETURN 13; END;
+  IF bmI == 5 THEN RETURN 9; END;
+  IF bmI == 6 THEN RETURN 11; END;
+  RETURN 0;
+END;
+
+// The block pages.  Soft keys: Table, Plot, F, (blank), Help, Menu.
+av_BView(bvS)
+BEGIN
+  LOCAL bvK, bvA, bvGo, bvSl, bvW;
+  IF avBDone == 0 THEN
+    IF av_BCompute() == 0 THEN RETURN 0; END;
+  END;
+  avScr := bvS; bvGo := 1;
+  av_KDrain(); av_Drain();
+  WHILE bvGo == 1 DO
+    IF avScr == 1 THEN av_BDrawTable(); END;
+    IF avScr == 2 THEN av_BDrawPlot(); END;
+    IF avScr == 3 THEN av_BDrawF(); END;
+    av_Show({"Table", "Plot", "F", "", "Help", "Menu"});
+    bvK := av_Poll();
+    bvA := 0;
+    IF bvK == -1 THEN
+      IF avTapY >= 218 THEN
+        bvSl := MIN(6, IP(avTapX/53.4) + 1);
+        IF bvSl <= 3 THEN bvA := bvSl; END;
+        IF bvSl == 5 THEN bvA := 9; END;
+        IF bvSl == 6 THEN bvA := 10; END;
+      ELSE
+        IF avScr == 2 AND avTapY >= avDT AND avTapY <= avDB + 12 AND avTapX >= avDL THEN
+          bvW := (avDR - avDL)/avBKt;
+          avBSel := MAX(1, MIN(avBKt, IP((avTapX - avDL)/bvW) + 1));
+        END;
+      END;
+    ELSE
+      IF bvK == 4 THEN bvA := 11; END;
+      IF bvK == 30 THEN bvA := 10; END;
+      IF avScr == 2 THEN
+        IF bvK == 7 THEN avBSel := MAX(1, avBSel - 1); END;
+        IF bvK == 8 THEN avBSel := MIN(avBKt, avBSel + 1); END;
+      ELSE
+        IF bvK == 7 THEN bvA := avScr - 1; IF bvA < 1 THEN bvA := 3; END; END;
+        IF bvK == 8 THEN bvA := avScr + 1; IF bvA > 3 THEN bvA := 1; END; END;
+      END;
+    END;
+    IF bvA == 10 THEN bvA := av_BMenu(); END;
+    IF bvA >= 1 AND bvA <= 3 THEN avScr := bvA; END;
+    IF bvA == 9 THEN av_Help(5); END;
+    IF bvA == 13 THEN av_SetAlpha(); END;
+    IF bvA == 11 THEN bvGo := 0; END;
+  END;
+  av_KDrain();
+  RETURN 0;
+END;
+
+
+// ============================================================
+// 12. VARIANCES (Triola's S2TEST / S2INT reworked)
+//     1 Result   2 Curve
+// ============================================================
+
+// The alternative as text: sigma != / < / > the null value.
+av_VAltS(vaV)
+BEGIN
+  LOCAL vaS;
+  IF avVMode == 1 THEN vaS := avSg; ELSE vaS := avSg + avS1 + avSq + "/" + avSg + avS2 + avSq; END;
+  IF avVAlt == 1 THEN RETURN vaS + " " + avNE + " " + vaV; END;
+  IF avVAlt == 2 THEN RETURN vaS + " < " + vaV; END;
+  RETURN vaS + " > " + vaV;
+END;
+
+// The result page.
+av_VDrawRes()
+BEGIN
+  LOCAL vrS, vrT;
+  IF avVMode == 1 THEN
+    av_Band("One " + avSg + ": the " + avX2 + " test and interval");
+    av_Tx(av_Cut(avVLbl, 310), 4, 21, avGRAY);
+    av_Tx(avH0 + ": " + avSg + " = " + av_Gn(avVSg0) + "    " + avH1 + ": " + av_VAltS(av_Gn(avVSg0)), 4, 35, #000000h);
+    av_Tx("s = " + av_Gn(avVS1) + ", s" + avSq + " = " + av_Gn(avVS1^2) + ", n = " + av_I(avVN1) + ", df = " + av_I(avVDf1), 4, 49, #000000h);
+    av_Tx(avX2 + " = (n - 1)s" + avSq + "/" + avSg + avS0 + avSq + " = " + av_I(avVDf1) + " " + avTm + " " + av_Gn(avVS1^2) + " / " + av_Gn(avVSg0^2) + " = " + av_Fx(avVStat, 3), 4, 63, avBLUE);
+  ELSE
+    av_Band("Two " + avSg + ": the F test and interval");
+    av_Tx(av_Cut(avVLbl, 310), 4, 21, avGRAY);
+    av_Tx(avH0 + ": " + avSg + avS1 + avSq + "/" + avSg + avS2 + avSq + " = 1    " + avH1 + ": " + av_VAltS("1"), 4, 35, #000000h);
+    av_Tx("s" + avS1 + " = " + av_Gn(avVS1) + " (n " + av_I(avVN1) + "),  s" + avS2 + " = " + av_Gn(avVS2) + " (n " + av_I(avVN2) + ")", 4, 49, #000000h);
+    av_Tx("F = s" + avS1 + avSq + "/s" + avS2 + avSq + " = " + av_Gn(avVS1^2) + " / " + av_Gn(avVS2^2) + " = " + av_Fx(avVStat, 4) + ", df " + av_I(avVDf1) + ", " + av_I(avVDf2), 4, 63, avBLUE);
+  END;
+  vrS := "two-sided: 2 " + avTm + " smaller tail";
+  IF avVAlt == 2 THEN vrS := "lower tail"; END;
+  IF avVAlt == 3 THEN vrS := "upper tail"; END;
+  av_Tx(av_PE(avVP) + "  (" + vrS + ")", 4, 77, avBLUE);
+  vrT := "crit (" + avAl + " = " + av_AS() + "):";
+  IF avVCrL > 0 THEN vrT := vrT + " lower " + av_Fx(avVCrL, 3); END;
+  IF avVCrH > 0 THEN vrT := vrT + " upper " + av_Fx(avVCrH, 3); END;
+  av_Tx(vrT, 4, 91, avMAG);
+  IF avVMode == 1 THEN
+    av_Tx(av_CS(avVCL) + " CI for " + avSg + avSq + ": (" + av_Gn(avVLo) + ", " + av_Gn(avVHi) + ")", 4, 107, avGRN);
+    av_Tx(av_CS(avVCL) + " CI for " + avSg + ": (" + av_Gn(SQRT(avVLo)) + ", " + av_Gn(SQRT(avVHi)) + ")", 4, 119, avGRN);
+  ELSE
+    av_Tx(av_CS(avVCL) + " CI for " + avSg + avS1 + avSq + "/" + avSg + avS2 + avSq + ": (" + av_Gn(avVLo) + ", " + av_Gn(avVHi) + ")", 4, 107, avGRN);
+    av_Tx(av_CS(avVCL) + " CI for " + avSg + avS1 + "/" + avSg + avS2 + ": (" + av_Gn(SQRT(avVLo)) + ", " + av_Gn(SQRT(avVHi)) + ")", 4, 119, avGRN);
+  END;
+  av_Tx("(CIs for the population, from this sample)", 4, 131, avGRAY);
+  IF avVMode == 1 THEN
+    av_Verdict(146, avVP,
+      "p < " + avAl + ": reject " + avH0 + "; evidence " + avSg + " is not " + av_Gn(avVSg0) + ".",
+      "(" + avH1 + ": " + av_VAltS(av_Gn(avVSg0)) + ")",
+      "p " + avGE + " " + avAl + ": do not reject " + avH0 + " (" + avSg + " = " + av_Gn(avVSg0) + ").",
+      "No evidence against it (not proof it holds).");
+  ELSE
+    av_Verdict(146, avVP,
+      "p < " + avAl + ": reject " + avH0 + "; evidence the spreads differ.",
+      "(" + avH1 + ": " + av_VAltS("1") + ")",
+      "p " + avGE + " " + avAl + ": do not reject " + avH0 + " (equal spreads).",
+      "No evidence they differ (not proof of equal).");
+  END;
+  av_Tx("Trusts normal data: skewed data can mislead it.", 4, 178, avRED);
+  av_Tx("Curve: the p area and the critical regions.", 4, 190, avGRAY);
+  av_Foot(avLR + " = page, Ent = menu, Esc = main menu");
+END;
+
+// The curve page: chi-square(df) or F(df1, df2), the equal-area p
+// region (blue), both critical regions (pale red), the statistic (red).
+av_VDrawCurve()
+BEGIN
+  LOCAL vdX, vdC, vdK, vdT, vdQ;
+  IF avVMode == 1 THEN
+    vdQ := CHISQUARE_ICDF(avVDf1, 0.999);
+    vdC := MAX(avVCrH, 0);
+    vdX := MAX(vdQ, vdC*1.1, 1);
+    IF avVStat*1.08 > vdX AND avVStat*1.08 <= 2*vdX THEN vdX := avVStat*1.08; END;
+    vdK := "C" + av_Fx(avVDf1, 0) + "," + av_Fx(vdX, 6);
+    IF vdK <> avCvK THEN av_CvFit(2, avVDf1, 0, vdX); avCvK := vdK; END;
+    vdT := avX2 + "(" + av_I(avVDf1) + ") curve";
+    av_CvDraw(vdT, avVStat, avVRa, avVRb, avVCrL, avVCrH, avX2 + " = " + av_Fx(avVStat, 3));
+  ELSE
+    vdQ := av_FQ(0.02, avVDf1, avVDf2);
+    vdC := MAX(avVCrH, 0);
+    vdX := MAX(vdQ, vdC*1.15, 2);
+    IF avVStat*1.08 > vdX AND avVStat*1.08 <= 2*vdX THEN vdX := avVStat*1.08; END;
+    vdK := "V" + av_Fx(avVDf1, 0) + "," + av_Fx(avVDf2, 0) + "," + av_Fx(vdX, 6);
+    IF vdK <> avCvK THEN av_CvFit(1, avVDf1, avVDf2, vdX); avCvK := vdK; END;
+    vdT := "F(" + av_I(avVDf1) + ", " + av_I(avVDf2) + ") curve";
+    av_CvDraw(vdT, avVStat, avVRa, avVRb, avVCrL, avVCrH, "F = " + av_Fx(avVStat, 3));
+  END;
+  IF avVAlt == 1 THEN
+    av_Tx("Blue: observed tail + other tail of equal area", 4, 180, avBLUE);
+    av_Tx("area (" + av_PT(MIN(avVPL, avVPU)) + " each), p " + av_Rel(avVP) + ". Red: " + avAl + "/2 each.", 4, 192, avBLUE);
+  ELSE
+    av_Tx("Blue: the tail beyond the statistic, p " + av_Rel(avVP), 4, 180, avBLUE);
+    av_Tx("Red: the critical region (area " + avAl + " = " + av_AS() + ")", 4, 192, avMAG);
+  END;
+  av_Foot(avLR + " = page, Ent = menu, Esc = main menu");
+END;
+
+// The fallback group picker: one group at a time, literal menus.
+av_PickG2(p2T)
+BEGIN
+  LOCAL p2G, p2I;
+  p2G := 1;
+  WHILE p2G <= avOK DO
+    p2I := 0;
+    CHOOSE(p2I, p2T, {"This one: " + avON(p2G), "Next group", "Cancel"});
+    IF p2I == 1 THEN RETURN p2G; END;
+    IF p2I == 0 OR p2I == 3 THEN RETURN 0; END;
+    p2G := p2G + 1;
+    IF p2G > avOK THEN p2G := 1; END;
+  END;
+  RETURN 0;
+END;
+
+// Pick one group of the one-way data.  Returns its number or 0.
+av_PickG(pgT)
+BEGIN
+  LOCAL pgI, pgL, pgG;
+  pgL := {};
+  FOR pgG FROM 1 TO avOK DO
+    pgL := CONCAT(pgL, {avON(pgG) + " (n " + av_I(avRn(pgG)) + ", s " + av_Gn(SQRT(avRv(pgG))) + ")"});
+  END;
+  pgI := 0;
+  // beta 1a (second review, item 7): a CHOOSE with a list VARIABLE has
+  // not been seen on a calculator; if it raises an error, page through
+  // the groups with literal three-item menus instead.
+  IFERR
+    CHOOSE(pgI, pgT, pgL);
+  THEN
+    pgI := av_PickG2(pgT);
+  END;
+  RETURN pgI;
+END;
+
+// The alternative, by CHOOSE.  Returns 1, 2, 3 or 0.
+av_PickAlt(ptV)
+BEGIN
+  LOCAL ptI, ptS;
+  IF avVMode == 1 THEN ptS := avSg; ELSE ptS := avSg + avS1 + avSq + "/" + avSg + avS2 + avSq; END;
+  ptI := 0;
+  CHOOSE(ptI, "The alternative " + avH1, {
+    avH1 + ": " + ptS + " " + avNE + " " + ptV,
+    avH1 + ": " + ptS + " < " + ptV,
+    avH1 + ": " + ptS + " > " + ptV});
+  RETURN ptI;
+END;
+
+// Set up a one-sigma problem.  Returns 1 when ready.
+av_V1Ask()
+BEGIN
+  LOCAL vaI, vaS, vaN, vaS0, vaC, vaG;
+  LOCAL vaL1, vaL2;
+  vaI := 0;
+  CHOOSE(vaI, "One " + avSg + ": the sample", {"Type s and n", "A group of the one-way data"});
+  IF vaI == 0 THEN RETURN 0; END;
+  IF vaI == 2 THEN
+    IF avODone == 0 THEN
+      IF av_OCompute() == 0 THEN RETURN 0; END;
+    END;
+    vaG := av_PickG("Which group?");
+    IF vaG == 0 THEN RETURN 0; END;
+    IF avRn(vaG) < 2 OR avRv(vaG) <= 0 THEN MSGBOX("That group needs n " + avGE + " 2 and s > 0."); RETURN 0; END;
+    vaS := SQRT(avRv(vaG)); vaN := avRn(vaG);
+    avVLbl := avOSh(vaG) + ": " + avOTtl;
+  ELSE
+    vaS := avVS1; vaN := avVN1;
+    IF INPUT({vaS, vaN}, "One " + avSg + ": the sample", {"s:", "n:"}, {"Sample standard deviation (> 0)", "Sample size (a whole number, 2 or more)"}) == 0 THEN RETURN 0; END;
+    IF vaS <= 0 OR vaN < 2 OR FP(vaN) <> 0 OR vaN > 1000000 THEN
+      MSGBOX("s must be > 0 and n a whole number from 2 to 1000000.");
+      RETURN 0;
+    END;
+    avVLbl := "Typed: s = " + av_Gn(vaS) + ", n = " + av_I(vaN) + " (illustrative numbers)";
+  END;
+  vaS0 := avVSg0; vaC := avVCL;
+  vaL1 := avSg + avS0 + ":"; vaL2 := "Conf:";
+  IF INPUT({vaS0, vaC}, "One " + avSg + ": test and CI", {vaL1, vaL2}, {"The population SD claimed by " + avH0 + " (> 0)", "Confidence level for the CI, 0.5 to 0.999"}) == 0 THEN RETURN 0; END;
+  IF vaS0 <= 0 OR vaC < 0.5 OR vaC > 0.999 THEN
+    MSGBOX(avSg + avS0 + " must be > 0 and the level from 0.5 to 0.999.");
+    RETURN 0;
+  END;
+  avVMode := 1;
+  vaI := av_PickAlt(av_Gn(vaS0));
+  IF vaI == 0 THEN RETURN 0; END;
+  avVAlt := vaI; avVS1 := vaS; avVN1 := vaN; avVSg0 := vaS0; avVCL := vaC;
+  av_VCompute();
+  RETURN 1;
+END;
+
+// Set up a two-sigma problem.  Returns 1 when ready.
+av_V2Ask()
+BEGIN
+  LOCAL vbI, vbS1, vbN1, vbS2, vbN2, vbC;
+  LOCAL vbG1, vbG2, vbL;
+  vbI := 0;
+  CHOOSE(vbI, "Two " + avSg + ": the samples", {"Type s and n for each", "Two groups of the one-way data"});
+  IF vbI == 0 THEN RETURN 0; END;
+  IF vbI == 2 THEN
+    IF avODone == 0 THEN
+      IF av_OCompute() == 0 THEN RETURN 0; END;
+    END;
+    vbG1 := av_PickG("First group (top of F)");
+    IF vbG1 == 0 THEN RETURN 0; END;
+    vbG2 := av_PickG("Second group (bottom of F)");
+    IF vbG2 == 0 OR vbG2 == vbG1 THEN RETURN 0; END;
+    IF avRn(vbG1) < 2 OR avRn(vbG2) < 2 OR avRv(vbG1) <= 0 OR avRv(vbG2) <= 0 THEN
+      MSGBOX("Both groups need n " + avGE + " 2 and s > 0."); RETURN 0;
+    END;
+    vbS1 := SQRT(avRv(vbG1)); vbN1 := avRn(vbG1); vbS2 := SQRT(avRv(vbG2)); vbN2 := avRn(vbG2);
+    avVLbl := avOSh(vbG1) + " / " + avOSh(vbG2) + ": " + avOTtl;
+  ELSE
+    vbS1 := avVS1; vbN1 := avVN1; vbS2 := avVS2; vbN2 := avVN2;
+    IF INPUT({vbS1, vbN1, vbS2, vbN2}, "Two " + avSg + ": the samples", {"s1:", "n1:", "s2:", "n2:"},
+       {"First sample's SD (> 0)", "First sample size (2 or more)", "Second sample's SD (> 0)", "Second sample size (2 or more)"}) == 0 THEN RETURN 0; END;
+    IF vbS1 <= 0 OR vbS2 <= 0 OR vbN1 < 2 OR vbN2 < 2 OR FP(vbN1) <> 0 OR FP(vbN2) <> 0 OR MAX(vbN1, vbN2) > 1000000 THEN
+      MSGBOX("Each s must be > 0 and each n a whole number from 2 to 1000000.");
+      RETURN 0;
+    END;
+    avVLbl := "Typed (illustrative numbers)";
+  END;
+  vbC := avVCL; vbL := "Conf:";
+  IF INPUT({vbC}, "Two " + avSg + ": the interval", {vbL}, {"Confidence level for the CI, 0.5 to 0.999"}) == 0 THEN RETURN 0; END;
+  IF vbC < 0.5 OR vbC > 0.999 THEN MSGBOX("The level must be from 0.5 to 0.999."); RETURN 0; END;
+  avVMode := 2;
+  vbI := av_PickAlt("1");
+  IF vbI == 0 THEN RETURN 0; END;
+  avVAlt := vbI; avVS1 := vbS1; avVN1 := vbN1; avVS2 := vbS2; avVN2 := vbN2; avVCL := vbC;
+  av_VCompute();
+  RETURN 1;
+END;
+
+av_VMenu()
+BEGIN
+  LOCAL vmI;
+  vmI := 0;
+  CHOOSE(vmI, "Variances", {
+    "Result: test and CI",
+    "Curve: p and crit regions",
+    "New: one " + avSg + " (" + avX2 + ")",
+    "New: two " + avSg + " (F)",
+    "Set " + avAl + " (now " + av_AS() + ")",
+    "Help",
+    "Back to the main menu"});
+  IF vmI == 1 OR vmI == 2 THEN RETURN vmI; END;
+  IF vmI == 3 THEN RETURN 3; END;
+  IF vmI == 4 THEN RETURN 4; END;
+  IF vmI == 5 THEN RETURN 13; END;
+  IF vmI == 6 THEN RETURN 9; END;
+  IF vmI == 7 THEN RETURN 11; END;
+  RETURN 0;
+END;
+
+// The variance pages.  Soft keys: Result, Curve, 1 sigma, 2 sigma,
+// Help, Menu.
+av_VView()
+BEGIN
+  LOCAL vvK, vvA, vvGo, vvSl;
+  IF avVHas == 0 THEN RETURN 0; END;
+  avScr := 1; vvGo := 1;
+  av_KDrain(); av_Drain();
+  WHILE vvGo == 1 DO
+    av_VCompute();
+    IF avScr == 1 THEN av_VDrawRes(); ELSE av_VDrawCurve(); END;
+    av_Show({"Result", "Curve", "1 " + avSg, "2 " + avSg, "Help", "Menu"});
+    vvK := av_Poll();
+    vvA := 0;
+    IF vvK == -1 THEN
+      IF avTapY >= 218 THEN
+        vvSl := MIN(6, IP(avTapX/53.4) + 1);
+        vvA := vvSl;
+        IF vvSl == 5 THEN vvA := 9; END;
+        IF vvSl == 6 THEN vvA := 10; END;
+      END;
+    ELSE
+      IF vvK == 4 THEN vvA := 11; END;
+      IF vvK == 30 THEN vvA := 10; END;
+      IF vvK == 7 OR vvK == 8 THEN vvA := 3 - avScr; END;
+    END;
+    IF vvA == 10 THEN vvA := av_VMenu(); END;
+    IF vvA == 1 OR vvA == 2 THEN avScr := vvA; END;
+    IF vvA == 3 THEN av_V1Ask(); avScr := 1; END;
+    IF vvA == 4 THEN av_V2Ask(); avScr := 1; END;
+    IF vvA == 9 THEN av_Help(6); END;
+    IF vvA == 13 THEN av_SetAlpha(); END;
+    IF vvA == 11 THEN vvGo := 0; END;
+  END;
+  av_KDrain();
+  RETURN 0;
+END;
+
+
+// ============================================================
+// 13. YOUR OWN DATA (the Statistics 1Var app's D1-D9)
+// ============================================================
+
+// List Di, or {} when it is empty, not a list, or not there yet (the
+// first read is inside IFERR: Di does not exist until the app has been
+// opened once).
+av_ReadD(rdI)
+BEGIN
+  LOCAL rdL;
+  rdL := {};
+  IFERR
+    IF rdI == 1 THEN rdL := D1; END;
+    IF rdI == 2 THEN rdL := D2; END;
+    IF rdI == 3 THEN rdL := D3; END;
+    IF rdI == 4 THEN rdL := D4; END;
+    IF rdI == 5 THEN rdL := D5; END;
+    IF rdI == 6 THEN rdL := D6; END;
+    IF rdI == 7 THEN rdL := D7; END;
+    IF rdI == 8 THEN rdL := D8; END;
+    IF rdI == 9 THEN rdL := D9; END;
+  THEN
+    rdL := {};
+  END;
+  IF TYPE(rdL) <> 6 THEN rdL := {}; END;
+  RETURN rdL;
+END;
+
+// The distinct values of a list, sorted (the levels of a factor).
+av_Levels(lvL)
+BEGIN
+  LOCAL lvS, lvR, lvI;
+  lvS := SORT(lvL);
+  lvR := {lvS(1)};
+  FOR lvI FROM 2 TO SIZE(lvS) DO
+    IF lvS(lvI) <> lvS(lvI - 1) THEN
+      lvR := CONCAT(lvR, {lvS(lvI)});
+      IF SIZE(lvR) > 6 THEN RETURN lvR; END;
+    END;
+  END;
+  RETURN lvR;
+END;
+
+// A factor code as a label: whole codes as integers ("A=1", not
+// "A=1.000"; second review item 9).
+av_Lv(lbV)
+BEGIN
+  IF FP(lbV) == 0 THEN RETURN av_I(lbV); END;
+  RETURN av_Gn(lbV);
+END;
+
+// The level number of a value.
+av_LevOf(loV, loL)
+BEGIN
+  LOCAL loI;
+  FOR loI FROM 1 TO SIZE(loL) DO
+    IF loL(loI) == loV THEN RETURN loI; END;
+  END;
+  RETURN 0;
+END;
+
+// One-way from D1-D9: each non-empty list is a group.
+av_MyOne()
+BEGIN
+  LOCAL moI, moL, moY, moG, moN, moS;
+  LOCAL moJ, moK, moC;
+  moY := {}; moN := {}; moS := {}; moC := {};
+  FOR moI FROM 1 TO 9 DO
+    moL := av_ReadD(moI);
+    IF SIZE(moL) > 0 THEN
+      moY := CONCAT(moY, moL);
+      moC := CONCAT(moC, {SIZE(moL)});
+      moN := CONCAT(moN, {"D" + av_I(moI)});
+      moS := CONCAT(moS, {"D" + av_I(moI)});
+    END;
+  END;
+  // the group of each value, filled in place (no growing list)
+  moG := MAKELIST(0, moJ, 1, MAX(1, SIZE(moY)));
+  moJ := 0;
+  FOR moI FROM 1 TO SIZE(moC) DO
+    FOR moK FROM 1 TO moC(moI) DO moJ := moJ + 1; moG(moJ) := moI; END;
+  END;
+  IF SIZE(moN) < 2 THEN
+    MSGBOX("Put each group in its own list, D1 to D9, of the Statistics 1Var app: at least two lists.");
+    RETURN 0;
+  END;
+  IF SIZE(moY) > 3000 THEN MSGBOX("More than 3000 values: too many for this program."); RETURN 0; END;
+  avOY := moY; avOG := moG; avOK := SIZE(moN); avON := moN; avOSh := moS;
+  avOTtl := "Your data (D1-D9)";
+  avOSrc := "Statistics 1Var lists D1-D9";
+  avOHas := 1; avODone := 0;
+  IF av_OCompute() == 0 THEN RETURN 0; END;
+  RETURN 1;
+END;
+
+// Two-way from D1 (y), D2 (A codes), D3 (B codes).
+av_MyTwo()
+BEGIN
+  LOCAL mtY, mtA, mtB, mtLA, mtLB, mtI;
+  LOCAL mtN, mtIA, mtIB;
+  mtY := av_ReadD(1); mtA := av_ReadD(2); mtB := av_ReadD(3);
+  mtN := SIZE(mtY);
+  IF mtN > 3000 THEN MSGBOX("More than 3000 values: too many for this program."); RETURN 0; END;
+  IF mtN < 4 OR SIZE(mtA) <> mtN OR SIZE(mtB) <> mtN THEN
+    MSGBOX("Put y in D1, the A codes in D2 and the B codes in D3: three lists of the same length.");
+    RETURN 0;
+  END;
+  mtLA := av_Levels(mtA); mtLB := av_Levels(mtB);
+  IF SIZE(mtLA) < 2 OR SIZE(mtLB) < 2 OR SIZE(mtLA) > 6 OR SIZE(mtLB) > 6 THEN
+    MSGBOX("Each factor needs 2 to 6 levels (D2 has " + av_I(SIZE(mtLA)) + ", D3 has " + av_I(SIZE(mtLB)) + ").");
+    RETURN 0;
+  END;
+  mtIA := MAKELIST(0, mtI, 1, mtN); mtIB := MAKELIST(0, mtI, 1, mtN);
+  avStop := 0;
+  IF mtN > 500 THEN av_Busy("reading D1-D3", mtN); END;
+  FOR mtI FROM 1 TO mtN DO
+    mtIA(mtI) := av_LevOf(mtA(mtI), mtLA);
+    mtIB(mtI) := av_LevOf(mtB(mtI), mtLB);
+    IF mtN > 500 AND mtI MOD 100 == 0 THEN
+      av_BusyStep(mtI, mtN);
+      IF avStop == 1 THEN MSGBOX("Stopped (Esc): nothing was computed."); RETURN 0; END;
+    END;
+  END;
+  avTY := mtY; avTA := mtIA; avTB := mtIB;
+  avTNA := SIZE(mtLA); avTNB := SIZE(mtLB);
+  avTAN := {}; avTBN := {};
+  FOR mtI FROM 1 TO avTNA DO avTAN := CONCAT(avTAN, {"A=" + av_Lv(mtLA(mtI))}); END;
+  FOR mtI FROM 1 TO avTNB DO avTBN := CONCAT(avTBN, {"B=" + av_Lv(mtLB(mtI))}); END;
+  avTFA := "A (D2)"; avTFB := "B (D3)"; avTKA := "(D2)"; avTKB := "(D3)";
+  avTTtl := "Your data: D1 by D2 " + avTm + " D3";
+  avTSrc := "Statistics 1Var lists";
+  avTHas := 1; avTDone := 0; avTSx := 1; avTSt := 1; avTEff := 3;
+  IF av_TCompute() == 0 THEN RETURN 0; END;
+  RETURN 1;
+END;
+
+// Blocks from D1-D9: each non-empty list a treatment, row i = block i.
+av_MyBlock()
+BEGIN
+  LOCAL mbI, mbL, mbC, mbN, mbJ, mbY;
+  mbC := {}; mbN := -1;
+  FOR mbI FROM 1 TO 9 DO
+    mbL := av_ReadD(mbI);
+    IF SIZE(mbL) > 0 THEN
+      IF mbN < 0 THEN mbN := SIZE(mbL); END;
+      IF SIZE(mbL) <> mbN THEN
+        MSGBOX("Every list must have the same length (one value per block): D" + av_I(mbI) + " differs.");
+        RETURN 0;
+      END;
+      mbC := CONCAT(mbC, {mbI});
+    END;
+  END;
+  IF SIZE(mbC) < 2 OR mbN < 2 THEN
+    MSGBOX("Put each treatment in its own list (D1-D9), one row per block: at least 2 lists of 2 or more.");
+    RETURN 0;
+  END;
+  IF mbN*SIZE(mbC) > 3000 THEN MSGBOX("More than 3000 values: too many for this program."); RETURN 0; END;
+  // row-major: block j's values, treatment by treatment; each list is read once
+  mbY := MAKELIST(0, mbJ, 1, mbN*SIZE(mbC));
+  FOR mbI FROM 1 TO SIZE(mbC) DO
+    mbL := av_ReadD(mbC(mbI));
+    FOR mbJ FROM 1 TO mbN DO mbY((mbJ - 1)*SIZE(mbC) + mbI) := mbL(mbJ); END;
+  END;
+  avBY := mbY; avBNb := mbN; avBKt := SIZE(mbC);
+  avBTN := {};
+  FOR mbI FROM 1 TO avBKt DO avBTN := CONCAT(avBTN, {"D" + av_I(mbC(mbI))}); END;
+  avBBl := "block"; avBTtl := "Your data (D1-D9)"; avBSrc := "Statistics 1Var lists";
+  avBHas := 1; avBDone := 0; avBSel := 1;
+  IF av_BCompute() == 0 THEN RETURN 0; END;
+  RETURN 1;
+END;
+
+av_MyData()
+BEGIN
+  LOCAL mdI;
+  mdI := 0;
+  CHOOSE(mdI, "Use my data (Statistics 1Var)", {
+    "One-way: D1-D9 = groups",
+    "Two-way: D1 y, D2 A, D3 B",
+    "Blocks: D1-D9 = treatments"});
+  IF mdI == 1 THEN IF av_MyOne() == 1 THEN av_OView(1); END; END;
+  IF mdI == 2 THEN IF av_MyTwo() == 1 THEN av_TView(1); END; END;
+  IF mdI == 3 THEN IF av_MyBlock() == 1 THEN av_BView(1); END; END;
+END;
+
+
+// ============================================================
+// 14. PRESETS, THE OPENING PAGE, THE MAIN MENU
+// ============================================================
+
+av_Presets()
+BEGIN
+  LOCAL prI;
+  prI := 0;
+  CHOOSE(prI, "Load a preset", {
+    "Jury: years by looks",
+    "Jury: looks " + avTm + " crime",
+    "Draft 1970: by month",
+    "Insect sprays (6)",
+    "Judges " + avTm + " 3 criteria"});
+  IF prI == 1 THEN av_LdJury1(); av_OView(1); END;
+  IF prI == 2 THEN av_LdJury2(); av_TView(1); END;
+  IF prI == 3 THEN av_LdDraft(); av_OView(1); END;
+  IF prI == 4 THEN av_LdInsect(); av_OView(1); END;
+  IF prI == 5 THEN av_LdJudge(); av_BView(1); END;
+END;
+
+av_Hello()
+BEGIN
+  av_Band("AnovaLab - beta 1a");
+  av_Tx("Analysis of variance, with pictures to touch:", 10, 26, #000000h);
+  av_Tx("one-way ANOVA (Welch, checks, post hoc pairs),", 10, 40, avBLUE);
+  av_Tx("two-way ANOVA (Type III, interaction plot),", 10, 53, avBLUE);
+  av_Tx("randomized blocks, and tests and CIs for " + avSg + ".", 10, 66, avBLUE);
+  av_Tx("Presets: a mock jury, the 1970 draft lottery,", 10, 84, avMAG);
+  av_Tx("insect sprays, and 43 judges' ratings.", 10, 97, avMAG);
+  av_Tx("Your own data: lists D1-D9 (Statistics 1Var).", 10, 110, avMAG);
+  RECT_P(G1, 6, 124, 313, 176, avRED, avLRED);
+  av_Tx("DISCLAIMER: a teaching and demonstration aid.", 12, 127, avRED);
+  av_Tx("Not validated for forensic, clinical or legal", 12, 139, avRED);
+  av_Tx("use; do not rely on its results for legal", 12, 151, avRED);
+  av_Tx("purposes.", 12, 163, avRED);
+  av_Tx("(C) 2026 Roger D Metcalf. Written with AI help.", 10, 181, avGRAY);
+  av_Tx("Free for educational and personal use.", 10, 193, avGRAY);
+  av_Foot("Any key or tap = menu");
+  BLIT_P(G0, 0, 0, G1);
+  av_WaitAny();
+END;
+
+EXPORT AnovaLab()
+BEGIN
+  LOCAL mnI, mnRun;
+  av_Init();
+  av_LdJury1();
+  av_LdJury2();
+  av_LdJudge();
+  av_Hello();
+  mnRun := 1;
+  WHILE mnRun == 1 DO
+    mnI := 0;
+    CHOOSE(mnI, "AnovaLab: analysis of variance", {
+      "One-way ANOVA",
+      "Two-way ANOVA (A " + avTm + " B)",
+      "Randomized blocks",
+      "Variances: " + avX2 + " and F",
+      "Load a preset",
+      "Use my data (D1-D9)",
+      "Set " + avAl + " (now " + av_AS() + ")",
+      "Help",
+      "Quit"});
+    IF mnI == 0 OR mnI == 9 THEN mnRun := 0; END;
+    IF mnI == 1 THEN av_OView(1); END;
+    IF mnI == 2 THEN av_TView(1); END;
+    IF mnI == 3 THEN av_BView(1); END;
+    IF mnI == 4 THEN
+      IF avVHas == 1 THEN
+        av_VView();
+      ELSE
+        IF av_V1Ask() == 1 THEN av_VView(); END;
+      END;
+    END;
+    IF mnI == 5 THEN av_Presets(); END;
+    IF mnI == 6 THEN av_MyData(); END;
+    IF mnI == 7 THEN av_SetAlpha(); END;
+    IF mnI == 8 THEN av_Help(1); END;
+  END;
+  RETURN "AnovaLab: " + avLast;
+END;
