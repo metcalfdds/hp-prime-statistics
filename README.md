@@ -63,6 +63,16 @@ Every program is a plain `.txt` file, on purpose.
 
 **Upgrading from an earlier version?** ConTable2 and FEP are now part of EpiStats, and StudRangePy is now part of StudRange. Delete those three from the calculator.
 
+> ⚠️ **CentralLimit: read this before installing it.**
+> CentralLimit is an **app** (a copy of Statistics 1Var with its own program), not an ordinary program. Install it this way, in this order:
+> 1. **Delete any ordinary program called CentralLimit** from the calculator (Program Catalog → highlight it → Delete). It may be there from an earlier version, or from pasting it as a plain program by mistake.
+> 2. **Make the app:** Apps → highlight Statistics 1Var *without opening it* → **Save** → name it `CentralLimit` → OK.
+> 3. **Paste the program into the app:** in the Connectivity Kit, Application Library → double-click CentralLimit → **Program** tab → select all → paste `CentralLimit_beta3d.txt` → save. On the calculator, Check it (it is the first entry in the Program Catalog while the app is active).
+> 4. **Restart the calculator** (on the Virtual Calculator, close and reopen it; on a G1 or G2, a soft reset). Without this, the deleted program's routines can stay in memory and the app keeps opening on its spreadsheet.
+> 5. **Start it:** Apps → highlight CentralLimit *without touching it* → tap **Start**. You should see a welcome page and then its menu. Touching the icon only reopens the spreadsheet; press **View** from there to reach the CentralLimit menu.
+>
+> *Found the hard way on 27 October 2026, on the Virtual Calculator and then a G1.*
+
 **CentralLimit is an app, not a plain program.** The installation steps are in its header. On the Virtual Calculator the Connectivity Kit route worked too, once the app's copy of Statistics 1Var exists (step 1 in the header): Application Library → double-click CentralLimit → Program tab → paste → save. Starting the app shows the stock Numeric view; the calculator's **View** key opens the app's own menu.
 
 **MicroPython.** StudRange, NormExplorer, GaltonBoard, CentralLimit and ErrorRate carry a `#PYTHON … #END` block inside the program file. There is **no separate `.py` file**, and nothing goes into the Python app. With Python firmware (2.1.14566, April 2021, or later) the Python part runs, and a badge on screen says so. Without it, the programs fall back to pure PPL automatically.
@@ -95,7 +105,7 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 
 ### Sampling, estimation and power
 
-**CentralLimit** (beta 3d, an app): watch one sample happen, its members lighting up and their mean dropping into the pile. Then drag along the top panel to choose n, and see the square-root law on its own page. After Colin Croft's HP 39G aplet (2003).
+**CentralLimit** (beta 3d, an app; **see the install warning under [Installing](#installing)**): watch one sample happen, its members lighting up and their mean dropping into the pile. Then drag along the top panel to choose n, and see the square-root law on its own page. After Colin Croft's HP 39G aplet (2003).
 
 **SampDist** (v2.3c): the sampling distribution of x̄, with the population drawn faintly behind it.
 - **n×4** halves the width.
