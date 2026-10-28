@@ -1,31 +1,44 @@
 # HP Prime statistics
 
-**New here? Read [START_HERE.md](START_HERE.md) first:** one page on what to read, what to try and how to help.
+## Welcome, HHC 2026 visitors
 
-Teaching programs for the HP Prime graphing calculator, written in PPL and MicroPython. They were originally intended for upper-level university statistics courses, and also to show off some of the capabilities of the HP Prime calculator: the colour screen, the touch screen, and the MicroPython engine running alongside PPL.
+Thank you for stopping by. This is a set of **27 teaching programs for the HP Prime**, written for university statistics, research methods and forensic science courses, plus **a long set of notes on how the Prime really behaves**: what we found the hard way, on a G1, a G2 and the Virtual Calculator, that the manuals do not say.
 
-**And a set of notes on what the Prime actually does**, as opposed to what the manual says: hard limits, commands that behave differently than documented, the MicroPython bridge and how it fails. Those notes are not specific to statistics. If you write PPL for anything, [docs/lessons-learned_v7s.md](docs/lessons-learned_v7s.md) is the part worth your time, I hope.
+Most of the programs are built around the touch screen. You drag a bound and the shading follows, pour balls through a Galton board with a finger, turn a 3-D bivariate normal in your hand, slide a cut-off along an ROC curve and watch who gets flagged "high risk". The aim is to let students *see* the statistics move.
+
+*A note from Roger: I am very sorry I cannot be with you at HHC 2026 in person this year, and I send my regrets and my best wishes for a wonderful conference. I hope you enjoy exploring what is here, and I would love to hear from you through [GitHub issues](https://github.com/metcalfdds/hp-prime-statistics/issues).*
+
+**New here?** [START_HERE.md](START_HERE.md) is a one-page guide: what to read in five minutes, five programs to try first, and how to help.
+
+### What is here, at a glance
+
+| Area | Programs |
+| --- | --- |
+| **Distributions** | NormExplorer, Norm3, Burr3, StatDist (27 distributions), StudRange (Tukey's q) |
+| **Sampling, estimation and power** | CentralLimit (an app), SampDist, CICatcher, GaltonBoard, PowerViz |
+| **Tables and tests** | ChiTable, TrendTest, TestChooser (a tappable flowchart), EpiStats |
+| **Correlation and regression** | ScatterLab, BiNorm3D |
+| **Bayes and forensic science** | BayesTree, DNAMixLR, ErrorRate Lab |
+| **Criminal justice and forensic statistics** (new, October 2026) | RankLab, AnovaLab, SeizureLab, SurvLab, FitCheck, ResampLab, AgreeLab, RiskLab |
+
+And around the programs:
+
+- **[The notes](docs/lessons-learned_v7s.md)**: hard limits, commands that differ from the manual, touch and graphics idioms, the MicroPython bridge and how it fails silently, calling the CAS safely, numerical methods for 12-digit reals. Useful even if you never run a statistics program, and written so you can hand them to an AI assistant before it writes PPL for you.
+- **[Tools](tools/)**: the checks every program passes before it is pasted (a lint gate, a fleet-wide name check, a PC harness that drives a program like a student), in plain Python 3.
+- **[Diagnostics](diagnostics/)**: small probe programs that test what your own calculator does.
+- **[A touch template](templates/TouchKit_template_v3.txt)** to start a program of your own.
+- **[The same arithmetic in Python](python/hpstats.py)**, tested against SciPy.
+
+### Real data, from courtrooms and casework
+
+The newest programs use published data with their sources on screen: the 1970 draft lottery, *Castaneda v. Partida*'s grand juries ("29 standard deviations"), the cheques in *Arizona v. Nelson* against Benford's law, the Rossi re-arrest study, ProPublica's COMPAS data from Broward County, mock-jury sentences, the ENFSI drug-sampling tables, Darwin's corn and Bortkiewicz's horse kicks. [docs/data/](docs/data/) lists every source and how it was checked.
 
 Everything here is **free for educational and personal use**. See [LICENSE](LICENSE.txt).
 
-> **Test status, 27 October 2026.**
-> - **21–26 October 2026: eight new programs** built from a sweep of Mario Triola's TI-83/84 programs (Michael Lloyd's) and the TI library, reworked with courtroom and crime data: **RankLab, AnovaLab, SeizureLab, SurvLab, FitCheck, ResampLab, AgreeLab and RiskLab**. Each passed the gate and its own verify script against SciPy and statsmodels (611 to 17,991 checks, 0 failures), then an independent second review; the fixes are in the versions here. They have had **a quick, cursory try on a G1 and a G2** (27 October): every one loads and runs. The full device checklists (`docs/changes/<Name>_beta1a_NOTES.md`) have not yet been run. ResampLab beta 1b renames one routine whose name equalled a Home export apart from case; `tools/case_scan_v1.py` now checks the whole fleet for that.
-> - **22 October 2026, later: TrendTest beta 3f.** The Pearson and departure p-values now keep their digits on extreme tables (they were `1 - CHISQUARE_CDF`, which is exactly 0 on the Prime once the tail is below about 5E-13); a new routine `trUpper` computes the upper tail as a finite sum of positive terms. No text, page or export changed. The same day, every verify script of 19 October was rerun in a fresh environment from the author's working folders: every check that could run gave the saved result (`docs/dev/independent-review-2026-10-22.md`).
-> - **22 October 2026: StudRange beta 15e.** An independent re-check of the fleet in a fresh environment (the gate with hp-prime-kit, the harness with Giac, and 281 comparisons of the programs' own routines against SciPy, statsmodels and brute-force enumeration) found no wrong formula and one wrong number: the PPL engine's plot cache in StudRange used a 32-node grid for df 8 and above, and from df about 50 to 100 that grid steps over the narrowing density of s, so the cached CDF behind the Plot page was off by up to 2 percentage points (df 90, k 6: 0.968 for a true 0.950). Beta 15e uses 64 nodes at every df, as the Critical value and P-value pages already did; the Python engine, which answers first on a working calculator, is untouched. Only that one line of arithmetic changed. Passed the gate; run in the PC harness; not yet run on the emulator or a calculator.
-> - **20 October 2026: symbols on screen.** Every program was checked for symbols spelled out in the text a student sees. Sixteen of the eighteen here now write χ², x̄, p̂, ², √, ≥, ≤, ±, ×, →, ∞, θ, μ, σ, ρ, φ and the subscripts ₀ ₁ ₂ as symbols (BayesTree, Norm3 and StudRange already did). Only the text changed: the code outside the strings is line-for-line the same, nothing the CAS receives changed, and each program passed the lint gate again. NormExplorer beta 42c also keeps the standardize animation at the same pace on a slow calculator (42b). π, η and τ are new on screen and are on the checklists.
-> - **19 October 2026: a critical sweep and the fixes it called for.** Six reviewers read every program in full and checked about 82,000 numbers against SciPy, statsmodels and exact arithmetic. They found **no wrong formula**. What they found was at the edges: four crashes on odd or edited inputs, six wrong numbers on extreme inputs or in Home exports, and about 25 wrong or stale lines of text. Every program but one has a new lettered version that fixes them (GaltonBoard needed nothing; its new version adds only the disclaimer below). Highlights: ChiTable's risk difference now uses Newcombe's interval, StatDist computes every right tail family by family, and DNAMixLR computes its probabilities without the cancellation that could turn a large LR into "excluded". Every version passes its verify script (re-run independently) and the lint gate. Not yet re-run on the emulator.
-> - **Two emulator rounds.** These programs have run on the **HP Prime Virtual Calculator** (2.4.2, the same 2026-09-09 firmware as the calculators). Round 1 tested the touch-and-graphics versions of 16 October and found six bugs. Round 2 tested the versions that fixed them, with their exact answers from the CAS. Every number checked matched SciPy or exact arithmetic.
-> - **18 October 2026:** nine programs got a lettered version (BayesTree 8d, StudRange 15c, ErrorRate 1c, Norm3 and Burr3 2.4a, SampDist 2.3a, PowerViz 2.5c, StatDist 2.7d, EpiStats 1.7c) that drops the "=" before a "<" or ">" ("p < 0.001", not "p = < 0.001") and computes every upper tail as a lower tail, so a tiny probability no longer rounds to 0 in the Prime's 12 digits. Verified in the PC harness; not yet re-run on the emulator.
-> - **What round 2 found, and what is fixed.** The versions here fix it:
->   - `INSTRING` on an empty string stops a program. It crashed the CAS pages of TrendTest and ScatterLab, and it would have stopped every program's decimal fallback whenever the CAS failed;
->   - small fixed decimals turn scientific (`STRING(0.096, 2, 1)` is `9.6ᴇ−2`);
->   - a `//` comment inside an open bracket is a syntax error, so ChiTable beta 3b did not compile;
->   - BayesTree and StudRange skipped a real tap after a page closed;
->   - menu lines cut off at the right edge (all but one: DNAMixLR's "Hypotheses" line waits on a wording choice).
-> - **Retested on the emulator.** The fix versions ran there the same afternoon, and all passed. The one surprise was CASProbe beta 1c: its new test T43b failed because it matched the text with a hyphen, where the Prime prints a Unicode minus. The test was wrong, not the calculator. CASProbe beta 1d fixes it, and on the emulator it gives 45 pass, 8 fail, as predicted.
-> - **On hardware:** the 19 October versions were loaded on a G1 and a G2 on 20 October 2026, and the first G1 checks (speed, taps, five Home-screen questions) are in the notes; the full checklists have not yet been run there. The 20 October symbol versions have had a quick, cursory try on a G1 and a G2, not a systematic run of their checklists. The 22 October versions (StudRange beta 15e, TrendTest beta 3f) have not yet run on a calculator. Earlier versions of ChiTable, NormExplorer, StudRange and BayesTree were tested on both.
-> - **How each program was checked:** every program here passed a four-tool lint gate. It was also run on a PC in a test harness that drives it like a student at the keys, with its numbers checked against SciPy and statsmodels.
-> - **Checklists:** each one has a device-test checklist in [docs/changes/](docs/changes/). The emulator's full reports are in [docs/dev/](docs/dev/).
+### How far it has been tested
+
+Every program passes the lint gate and runs in the PC harness, with its numbers checked against SciPy, statsmodels and exact arithmetic, and every one has had an independent review. The fleet has run on the HP Prime Virtual Calculator, and the current versions have had a quick try on a G1 and a G2; their full device checklists, one per version in [docs/changes/](docs/changes/), are still being worked through. **Reports from your own calculator are the most welcome contribution of all.** The full dated record is in [docs/test-status.md](docs/test-status.md).
+
 
 **DISCLAIMER: these programs are teaching and demonstration aids. They are not validated for forensic, clinical or legal use; do not rely on their results for legal purposes.**
 

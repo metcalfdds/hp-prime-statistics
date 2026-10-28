@@ -1,6 +1,6 @@
 # Start here
 
-*HP Prime statistics: a one-page guide for first-time visitors. Version 1, 19 October 2026. Prepared for the HHC 2026 conference drive.*
+*HP Prime statistics: a one-page guide for first-time visitors. Version 2, 27 October 2026. Prepared for HHC 2026: welcome!*
 
 This repository holds **27 teaching programs** for the HP Prime, written in PPL with MicroPython where it helps. It also holds **a set of notes on how the Prime actually behaves**, found by testing and not by reading the manual. The programs were written for university statistics and forensic science courses. The notes are useful to anyone who writes PPL.
 
@@ -20,7 +20,7 @@ The notes are written so they can also be given to an AI coding assistant as bac
 
 ## If you have a calculator: try these first
 
-Install by pasting the `.txt` file into a new program in the HP Connectivity Kit ([full steps](README.md#installing)). Do not rename a `.txt` to `.hpprgm`. Each of these five shows off the touch screen:
+Install by pasting the `.txt` file into a new program in the HP Connectivity Kit ([full steps](README.md#installing)). Do not rename a `.txt` to `.hpprgm`. Each of these shows off the touch screen:
 
 | Program | Try this |
 | --- | --- |
@@ -29,6 +29,7 @@ Install by pasting the `.txt` file into a new program in the HP Connectivity Kit
 | **BayesTree** | Slide the prevalence down and watch a 95 %-accurate test's positive predictive value collapse. |
 | **PowerViz** | Drag the H₁ curve; the α, β and power regions reshade as you move. |
 | **ScatterLab** | Fit a line by eye in Guess mode, then see least squares beat it. |
+| **BiNorm3D** | Turn the bivariate normal in 3-D with a finger, then slice it to see regression to the mean. |
 | **AgreeLab** | Drag a count off the diagonal of the two neurologists' table and watch kappa fall. |
 | **RiskLab** | Drag the cut-off along the ROC curve and watch who gets flagged "high risk", group by group. |
 
@@ -38,7 +39,7 @@ The full list of programs, with what each one does, is in the [README](README.md
 
 - Every program passes a four-tool lint gate and runs in a PC harness that presses keys and taps like a student. Its numbers are checked against SciPy, statsmodels and exact arithmetic. A review on 19 October 2026 made about 82,000 such checks and found no wrong formula.
 - Earlier versions ran in two rounds on the **HP Prime Virtual Calculator**. Its reports are in [docs/dev/](docs/dev/).
-- **The current versions have had only a quick, cursory try on a G1 and a G2**, not a systematic run of their checklists; the two 22 October versions (StudRange beta 15e, TrendTest beta 3f) have not yet run on a calculator. Earlier versions of ChiTable, NormExplorer, StudRange and BayesTree were tested on both.
+- **The current versions have had only a quick, cursory try on a G1 and a G2**, not a systematic run of their checklists. That includes the eight programs added in October 2026 (RankLab, AnovaLab, SeizureLab, SurvLab, FitCheck, ResampLab, AgreeLab and RiskLab), which also each had an independent second review before release; the two 22 October versions (StudRange beta 15e, TrendTest beta 3f) have not yet run on a calculator. Earlier versions of ChiTable, NormExplorer, StudRange and BayesTree were tested on both.
 - Each version has a device-test checklist in [docs/changes/](docs/changes/), ordered from least to most risky.
 
 ## If you would like to help
