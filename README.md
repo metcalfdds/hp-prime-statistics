@@ -21,7 +21,7 @@ Most of the programs are built around the touch screen. You drag a bound and the
 | **Bayes and forensic science** | BayesTree, DNAMixLR, ErrorRate Lab |
 | **Criminal justice and forensic statistics** (new, October 2026) | RankLab, AnovaLab, SeizureLab, SurvLab, FitCheck, ResampLab, AgreeLab, RiskLab |
 
-Together the 27 programs run to about **76,000 lines**: 52,000 of PPL, 640 of MicroPython (in five of them), and 20,000 lines of comments, written so a student can follow what each part does. The largest is EpiStats at about 6,100 lines; the eight October programs average about 3,000 each.
+Together the 27 programs run to about **76,000 lines**: 52,000 of PPL, 640 of MicroPython (in five of them), and 20,000 lines of comments, written so a student can follow what each part does. The largest is EpiStats at about 6,100 lines; the eight October programs average about 3,000 each. These were built with tremendous assistance from Anthropic Claude (mostly Opus 5.5 and Fable 5.1) over several months of intense work.
 
 And around the programs:
 
@@ -48,7 +48,7 @@ These programs are works in progress and have not been extensively tested, and t
 
 ---
 
-## Installing
+## Installing (note in particular the instructions for CentralLimit because it is an app)
 
 Every program is a plain `.txt` file, on purpose.
 
