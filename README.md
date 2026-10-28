@@ -256,6 +256,8 @@ A few things from it that are hard to find elsewhere:
 - the gate that runs them all;
 - a PC run harness that drives a program with scripted keys, taps and drags, with SciPy behind the statistics built-ins and desktop Giac behind `CAS(...)`, made to behave as the Prime's firmware does where the emulator showed a difference.
 
+**On Windows, a Connectivity Kit launcher that starts Bonjour first:** [tools/windows-launcher/](tools/windows-launcher/). If the Kit sometimes fails to see your calculator because Apple's Bonjour Service has stopped, double-click `Start_HP_Prime.cmd` instead of the Kit's own shortcut.
+
 [verify/](verify/) has the scripts that checked each program's numbers.
 
 ---
