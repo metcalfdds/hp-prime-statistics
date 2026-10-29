@@ -286,11 +286,11 @@ A few things from it that are hard to find elsewhere:
 
 ## Credits
 
-Concept, direction, classroom judgement and hardware testing: **Roger Metcalf**, 2026.
+Concept, direction, and hardware testing: **Roger Metcalf**, 2026.
 
-Hundreds of community PPL programs from several HP-related public forums were read as references while working out how the Prime actually behaves. Several entries in the notes exist because a corpus program showed a construct working that the manual does not describe. None of those programs are copied, incorporated, used without permission/authorization, or reproduced here, and credit is noted where others' concepts and/or intellectual property were followed. The programs here probably would not have been possible without the foundation laid by dozens of HP Prime users and the hundreds of programs they graciously made freely available over the years.
+Implementation, numerical work and documentation: re-written, edited, expanded, and **vastly** improved with incredible and amazing AI assistance from **Anthropic Claude** --mostly Opus 5.5 and Fable 5.1. Sonnet 5.5 does a lot of the cleanup and mechanical sorts of tasks.  Most of the notes and the user guides here were essentially written by Claude.
 
-Implementation, numerical work and documentation: re-written, edited, expanded, and **vastly** improved with incredible and amazing AI assistance from **Anthropic Claude** --mostly Opus 5.5 and Fable 5.1. Sonnet 5.5 does a lot of the cleanup and mechanical sorts of tasks.  Most of the notes and the user guides were essentially written by Claude.
+Hundreds of community PPL programs from several HP-related public forums were read as references while working out how the Prime actually behaves. Several entries in the notes exist because a corpus program showed a construct working that the manual does not describe. None of those programs are copied, incorporated, used without permission/authorization, or reproduced here, and credit is noted where others' concepts and/or intellectual property were followed. The programs here probably would not have been possible without the foundation laid by dozens of HP Prime users and the hundreds of programs they graciously made freely available over the years. Thank you all!
 
 The interesting studentized range algorithm is after Dunlap, Powell & Konnerth (1977). Accuracy figures were verified against SciPy, and several were also cross-checked against historical sources: Harter's 1960 tables of the studentized range, and the worked examples HP printed in the manuals for its own 1970s statistics programs on the HP-41, HP-55, HP-65 and HP-67/97 ([docs/historical-cross-checks.md](docs/historical-cross-checks.md)). Our StudRange program demonstrates the advantage of MicroPython in some situations--under PPL only, the complex calculation takes about a minute on a G2, but the Python version runs in a couple of seconds. 
 
