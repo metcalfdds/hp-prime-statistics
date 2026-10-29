@@ -44,7 +44,7 @@ Every program passes the lint gate and runs in the PC harness, with its numbers 
 
 **DISCLAIMER: these programs are teaching and demonstration aids. They are not validated for forensic, clinical or legal use; do not rely on their results for legal or any other purposes.**
 
-These programs were originally intended to demonstrate statistical concepts to undergraduate university students, but the project morphed in a suite of programs that show off some of the capabilities of the HP Prime and also push it to see where the hardware limits there are. Some of the programs are rather large-- 4,000 to 6,000 lines of code-- and so may load slowly and may slow down the Connectivity Kit--it might be best to keep only a couple of these programs on your calculator at a time. 
+These programs were originally intended to demonstrate statistical concepts to undergraduate university students, but the project morphed in a suite of programs that show off some of the capabilities of the HP Prime and also push it to see what the hardware limits are. Some of the programs are rather large-- 4,000 to 6,000 lines of code-- and so may load slowly and may slow down the Connectivity Kit--it might be best to keep only a couple of these programs on your calculator at a time. 
 
 These programs are works-in-progress and have not been extensively tested, verified, or certified; some parts may work very slowly, some parts may or may not even work at all, and they are provided as is--you should not rely on the results from these programs for anything. I think most numerical results are pretty accurate, but use at your own risk. No guarantees. Your mileage may vary.
 
