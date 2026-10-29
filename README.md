@@ -4,7 +4,7 @@
 
 *A note from Roger: I am very sorry I cannot be with you at HHC 2026 in person this year, and I send my regrets and my best wishes for a wonderful conference. I hope you enjoy exploring what is here, and I would love to hear from you through [GitHub issues](https://github.com/metcalfdds/hp-prime-statistics/issues).*
 
-Thank you for stopping by. This is a set of **27 teaching programs for the HP Prime**, written for university statistics, research methods and forensic science courses, plus **a long set of notes on how we believe the Prime really behaves**: what we found the hard way, on a G1, a G2 and the Virtual Calculator, that the manuals do not say.
+Thank you for stopping by. This is a set of **27 teaching programs for the HP Prime**, written for university statistics, research methods, criminal justice, and forensic science courses, plus **a long set of notes on how we believe the Prime really behaves**: what we found the hard way, on a G1, a G2 and the Virtual Calculator, that the manuals do not say (interestingly, the G1 is not always slower than the G2).
 
 Most of the programs are built around the touch screen. You drag a bound and the shading follows, pour balls through a Galton board with a finger, turn a 3-D bivariate normal in your hand, slide a cut-off along an ROC curve and watch who gets flagged "high risk". The aim is to let students *see* the statistics move.
 
@@ -44,9 +44,9 @@ Every program passes the lint gate and runs in the PC harness, with its numbers 
 
 **DISCLAIMER: these programs are teaching and demonstration aids. They are not validated for forensic, clinical or legal use; do not rely on their results for legal or any other purposes.**
 
-These programs were originally intended to demonstrate statistical concepts to undergraduate university students, but the project morphed in a suite of programs that show off some of the capabilities of the HP Prime and also push it to see what reasonable limits there are. Some of the programs are rather large-- 4,000 to 6,000 lines of code-- and so may load slowly and may slow down the Connectivity Kit--it might be best to keep only a couple of these programs on your calculator at a time. 
+These programs were originally intended to demonstrate statistical concepts to undergraduate university students, but the project morphed in a suite of programs that show off some of the capabilities of the HP Prime and also push it to see where the hardware limits there are. Some of the programs are rather large-- 4,000 to 6,000 lines of code-- and so may load slowly and may slow down the Connectivity Kit--it might be best to keep only a couple of these programs on your calculator at a time. 
 
-These programs are works-in-progress and have not been extensively tested, verified, or certified; some parts may work very slowly, some parts may or may not even work at all, and they are provided as is--you should not rely on the results from these programs for anything. Use at your own risk. Your mileage may vary.
+These programs are works-in-progress and have not been extensively tested, verified, or certified; some parts may work very slowly, some parts may or may not even work at all, and they are provided as is--you should not rely on the results from these programs for anything. I think most numerical results are pretty accurate, but use at your own risk. No guarantees. Your mileage may vary.
 
 ---
 
