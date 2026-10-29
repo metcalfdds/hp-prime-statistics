@@ -1,6 +1,6 @@
 # HP Prime statistics
 
-## Welcome, HHC 2026 visitors
+## Welcome one and all!...and especially HHC 2026 visitors!
 
 *A note from Roger: I am very sorry I cannot be with you at HHC 2026 in person this year, and I send my regrets and my best wishes for a wonderful conference. I hope you enjoy exploring what is here, and I would love to hear from you through [GitHub issues](https://github.com/metcalfdds/hp-prime-statistics/issues).*
 
