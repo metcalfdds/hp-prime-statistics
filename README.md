@@ -43,7 +43,7 @@ And around the programs:
 
 The newest programs use published data with their sources on screen: the 1970 draft lottery (I was in that lottery), *Castaneda v. Partida*'s grand juries ("29 standard deviations"), the cheques in *Arizona v. Nelson* against Benford's law, the Rossi re-arrest study, ProPublica's COMPAS data from Broward County, mock-jury sentences, the ENFSI drug-sampling tables, Darwin's corn and Bortkiewicz's horse kicks. [docs/data/](docs/data/) lists every source and how it was checked.
 
-Everything here is **free for educational and personal use**. See [LICENSE](LICENSE.txt).
+Everything here is **free for educational and personal use**. See [LICENSE](LICENSE.txt).  © 2026 Roger D Metcalf
 
 ### How far it has been tested
 
@@ -296,4 +296,4 @@ The interesting studentized range algorithm is after Dunlap, Powell & Konnerth (
 
 Several MicroPython findings credited in the notes come from [JordiRigau/hp-prime-kit](https://github.com/JordiRigau/hp-prime-kit), measured independently on a different G2.
 
-Corrections and reproductions are welcome. Where a claim here is unverified, it says so.
+Corrections and reproductions are welcome. Where a claim here is unverified, it says so.  © 2026 Roger D Metcalf
