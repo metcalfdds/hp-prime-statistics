@@ -33,7 +33,7 @@ And around the programs:
 
 ### Real data, from courtrooms and casework
 
-The newest programs use published data with their sources on screen: the 1970 draft lottery, *Castaneda v. Partida*'s grand juries ("29 standard deviations"), the cheques in *Arizona v. Nelson* against Benford's law, the Rossi re-arrest study, ProPublica's COMPAS data from Broward County, mock-jury sentences, the ENFSI drug-sampling tables, Darwin's corn and Bortkiewicz's horse kicks. [docs/data/](docs/data/) lists every source and how it was checked.
+The newest programs use published data with their sources on screen: the 1970 draft lottery (I was in that lottery), *Castaneda v. Partida*'s grand juries ("29 standard deviations"), the cheques in *Arizona v. Nelson* against Benford's law, the Rossi re-arrest study, ProPublica's COMPAS data from Broward County, mock-jury sentences, the ENFSI drug-sampling tables, Darwin's corn and Bortkiewicz's horse kicks. [docs/data/](docs/data/) lists every source and how it was checked.
 
 Everything here is **free for educational and personal use**. See [LICENSE](LICENSE.txt).
 
@@ -42,9 +42,9 @@ Everything here is **free for educational and personal use**. See [LICENSE](LICE
 Every program passes the lint gate and runs in the PC harness, with its numbers checked against SciPy, statsmodels and exact arithmetic, and every one has had an independent review. The fleet has run on the HP Prime Virtual Calculator, and the current versions have had a quick try on a G1 and a G2; their full device checklists, one per version in [docs/changes/](docs/changes/), are still being worked through. **Reports from your own calculator are the most welcome contribution of all.** The full dated record is in [docs/test-status.md](docs/test-status.md).
 
 
-**DISCLAIMER: these programs are teaching and demonstration aids. They are not validated for forensic, clinical or legal use; do not rely on their results for legal purposes.**
+**DISCLAIMER: these programs are teaching and demonstration aids. They are not validated for forensic, clinical or legal use; do not rely on their results for legal or any other purposes.**
 
-These programs are works in progress and have not been extensively tested, and they are provided as is--you should not rely on the results from these programs for anything. Use at your own risk. Your mileage may vary.
+These programs are works in progress and have not been extensively tested or verified, some parts may not even work, and they are provided as is--you should not rely on the results from these programs for anything. Use at your own risk. Your mileage may vary.
 
 ---
 
