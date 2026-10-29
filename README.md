@@ -6,7 +6,7 @@
 
 Thank you for stopping by. This is a set of **27 teaching programs for the HP Prime**, written for university statistics, research methods, criminal justice, and forensic science courses, plus **a long set of notes on how we believe the Prime really behaves**: what we found the hard way on a G1, a G2 and the Virtual Calculator, that the manuals do not say.
 
-Most of the programs are built around the touch screen. You drag a bound and the shading follows, pour balls through a Galton board with a finger, turn a 3-D bivariate normal wireframe plot, slide a cut-off along an ROC curve and watch who gets flagged "high risk". The aim is to let students *see* the statistics move.
+Most of the programs are built around the touch screen. You drag a bound and the shading follows, pour balls through a Galton board with a finger, rotate a 3-D bivariate normal wireframe plot, slide a cut-off along an ROC curve and watch who gets flagged "high risk". The aim is to let students *see* the statistics move.
 
 **Special thanks** to two sites that hold the HP calculator community together:
 
