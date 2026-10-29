@@ -15,7 +15,7 @@ Most of the programs are built around the touch screen. You drag a bound on a st
 
 We have no official affiliation with either site, or with HP. I’m just a grateful user.
 
-Hundreds of community PPL programs from several HP-related public forums were read as references while working out how the Prime actually behaves. Several entries in the notes exist because a corpus program showed a construct working that the various manuals do not describe. Note that none of those programs were copied, incorporated, used without permission/authorization, or reproduced here, and credit is noted where others' intellectual property and/or concepts were followed. 
+Hundreds of community PPL programs from several HP-related public forums were read as references while working out how the Prime actually behaves. Several entries in the notes exist because a corpus program showed a construct working that the many various manuals do not describe. Note that none of those programs were copied, incorporated, used without permission/authorization, or reproduced here, and credit is noted where others' intellectual property and/or concepts were followed. 
 
 The programs here probably would not have been possible without the foundation laid by dozens and dozens of HP users and the hundreds of programs they have graciously made freely available over the years--if you find anything here helpful or useful, it is due to the myriad of other folks who have gone before. Thank you all--especially Eric Rechlin!
 
@@ -52,7 +52,7 @@ Everything here is **free for educational and personal use**. See [LICENSE](LICE
 
 Three different questions, with three different answers:
 
-- **Is the arithmetic right? Yes, as far as we can test it.** Every program passes the lint gate and runs in the PC harness, with its numbers checked against SciPy, statsmodels and exact arithmetic. Where a program uses published data, it reproduces the published results. Every program has also had an independent review.
+- **Is the arithmetic right? Yes, as far as we can test it.** Every program passes the lint gate and runs in the PC harness, with its numbers checked against SciPy, statsmodels and exact arithmetic. Where a program uses published data, it has been able to reproduce the published results. Every program has also had an independent review.
   
 - **Do they run on a real calculator? Yes, we think so, and we are still checking.** Every program has run on the HP Prime Virtual Calculator, and the current versions have had a quick try on a G1 and a G2. The full device checklists, one per version in [docs/changes/](docs/changes/), are still being worked through, and some screens, especially graphics, can be slow. **Reports from your own calculator are the most welcome contribution of all.** The full dated record is in [docs/test-status.md](docs/test-status.md).
   
