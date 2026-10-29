@@ -25,26 +25,27 @@ The programs here probably would not have been possible without the foundation l
 
 | Area | Programs |
 | --- | --- |
-| **Distributions** | NormExplorer, Norm3, Burr3, StatDist (27 distributions), StudRange (Tukey's q) |
+| **Distributions** | NormExplorer, Norm3, BurrLab, StatDist (27 distributions), StudRange (Tukey's q) |
 | **Sampling, estimation and power** | CentralLimit (an app), SampDist, CICatcher, GaltonBoard, PowerViz |
 | **Tables and tests** | ChiTable, TrendTest, TestChooser (a tappable flowchart), EpiStats |
 | **Correlation and regression** | ScatterLab, BiNorm3D |
 | **Bayes and forensic science** | BayesTree, DNAMixLR, ErrorRate Lab |
 | **Criminal justice and forensic statistics** (new, October 2026) | RankLab, AnovaLab, SeizureLab, SurvLab, FitCheck, ResampLab, AgreeLab, RiskLab |
 
-Together the 27 programs run to about **76,000 lines**: 52,000 of PPL, 640 of MicroPython (in five of them), and 20,000 lines of comments, written so a student can follow what each part does. The largest is EpiStats at about 6,100 lines -- I wrote the original, elementary, unsophisticated version of this program for coursework I had in Harvard's STAT S-103 Intro to Epidemiology & Biostats, and I hope future students in that class and other similar classes will find this one helpful; and eight late October programs average about 3,000 lines each. These were built with tremendous assistance from Anthropic Claude (mostly Opus 5.5 and Fable 5.1) over **many** months of intense, but fun, work.
+Together the 27 programs run to about **79,500 lines**: 54,000 of PPL, 1,150 of MicroPython (in five of them), and 20,700 lines of comments, written so a student can follow what each part does. The largest is EpiStats at about 6,100 lines -- I wrote the original, elementary, unsophisticated version of this program for coursework I had in Harvard's STAT S-103 Intro to Epidemiology & Biostats, and I hope future students in that class and other similar classes will find this one helpful; and eight late October programs average about 3,000 lines each. These were built with tremendous assistance from Anthropic Claude (mostly Opus 5.5 and Fable 5.1) over **many** months of intense, but fun, work.
 
 And around the programs:
 
 - **[The notes](docs/lessons-learned_v7s.md)**: hard limits, commands that differ from the manual, touch and graphics idioms, the MicroPython bridge and how it fails silently, calling the CAS safely, numerical methods for 12-digit reals. Useful even if you never run a statistics program, and written so you can hand them to an AI assistant before it writes PPL for you.
 - **[Tools](tools/)**: the checks every program passes before it is pasted (a lint gate, a fleet-wide name check, a check that no two lines of text overlap on screen, a PC harness that drives a program like a student), in plain Python 3.
 - **[Diagnostics](diagnostics/)**: small probe programs that test what your own calculator does.
+- **[How fast is the Prime?](#how-fast-is-the-prime-what-we-measured)**: what we timed on a G1 and a G2, and why a slow Prime may only need a reset.
 - **[A touch template](templates/TouchKit_template_v3.txt)** to start a program of your own.
 - **[The same arithmetic in Python](python/hpstats.py)**, tested against SciPy.
 
 ### Real data, from courtrooms and published studies
 
-The newest programs use published data with their sources on screen: the 1970 draft lottery (I was in that lottery), *Castaneda v. Partida*'s grand juries ("29 standard deviations"), the cheques in *Arizona v. Nelson* against Benford's law, the Rossi re-arrest study, ProPublica's COMPAS data from Broward County, mock-jury sentences, the ENFSI drug-sampling tables, Darwin's corn and Bortkiewicz's horse kicks. [docs/data/](docs/data/) lists every source and how it was checked.
+The newest programs use published data with their sources on screen: the 1970 draft lottery (I was in that lottery), *Castaneda v. Partida*'s grand juries ("29 standard deviations"), the cheques in *Arizona v. Nelson* against Benford's law, the Rossi re-arrest study, ProPublica's COMPAS data from Broward County, mock-jury sentences, the ENFSI drug-sampling tables, Darwin's corn, Bortkiewicz's horse kicks, the months served by 41 BJS homicide offenders and 2,156 Danish fire-insurance claims. [docs/data/](docs/data/) lists every source and how it was checked.
 
 Everything here is **free for educational and personal use**. See [LICENSE](LICENSE.txt).  © 2026 Roger D Metcalf
 
@@ -112,7 +113,9 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 - A live explorer: drag either bound of a shaded interval. "More" brings up a second page, so the arrow keys can move a bound, μ or σ.
 - Reads your own data from the Statistics apps.
 
-**Norm3 and Burr3** (v2.4b and v2.4c, they take arguments; the Program Catalog asks for them): drag x₀ and watch the area and the S-curve together. Tap the S-curve for the inverse. Burr3 shows its mode, median and mean sliding apart, and announces the moment cases.
+**Norm3** (v2.4b, it takes arguments; the Program Catalog asks for them): drag x₀ and watch the area and the S-curve together. Tap the S-curve for the inverse.
+
+**BurrLab** (beta 1i; replaces Burr3): the Burr XII as the model for a long right tail. Fit it to data by maximum likelihood, in PPL or MicroPython (or both, timed side by side), and see it ranked by AIC against the lognormal, Weibull, gamma, exponential and Lomax; drag C and K and watch it turn into the Pareto, the log-logistic or the Weibull; watch a running mean wander forever when the tail is too heavy for a mean to exist; ask how rare a value is. Data: BJS months served, Rossi weeks to re-arrest, Danish fire claims. **Why the Burr XII, and how the fit differs from fitting a normal:** [docs/burrlab-guide.md](docs/burrlab-guide.md).
 
 **StatDist** (v2.7f): 27 distributions, each result a plot you can touch. Drag x or k, the shading follows, and the window snaps to round values. Overlays show the normal approximation, N(0, 1) behind t, and the CDF as an S-curve. A Gallery opens six examples with one tap.
 
@@ -125,7 +128,7 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 
 ### Sampling, estimation and power
 
-**CentralLimit** (beta 3d, an app; **see the install warning under [Installing](#installing)**): watch one sample happen, its members lighting up and their mean dropping into the pile. Then drag along the top panel to choose n, and see the square-root law on its own page. After Colin Croft's HP 39G aplet (2003).
+**CentralLimit** (beta 3d, an app; **see the install warning under [Installing](#installing-note-in-particular-the-instructions-for-centrallimit-because-it-is-an-app-not-a-program)**): watch one sample happen, its members lighting up and their mean dropping into the pile. Then drag along the top panel to choose n, and see the square-root law on its own page. After Colin Croft's HP 39G aplet (2003).
 
 **SampDist** (v2.3d): the sampling distribution of x̄, with the population drawn faintly behind it.
 - **n×4** halves the width.
@@ -210,6 +213,34 @@ Data sources for every preset are listed, with the checks made on them, in [docs
 
 ---
 
+## How fast is the Prime? What we measured
+
+These programs push the HP Prime hard, and some screens take a moment. That is the hardware, not a fault, and it is worth knowing what to expect. Every figure below was measured on our own calculators (firmware 2026-09-09), with a stopwatch or with a program's own timing readout.
+
+**First: if your Prime feels slow, reset it.** Our G2 had become about **15 times slower** than normal, with no warning and no error, after a long day of loading programs and one MicroPython program that hung. A paperclip reset (the small hole on the back) brought it back at once. Unplugging it from the Connectivity Kit also helps: while the Kit is connected it keeps querying the calculator, and our G2 took 40-75 % longer on the same tests plugged in. Time anything only after a reset, unplugged.
+
+**What takes time**
+
+- **Redrawing a curve.** One key press on BurrLab's Explore page recomputes the curve and redraws the page: about **0.43 s on a G1 and 0.10 s on a G2** (BurrLab beta 1i, after a reset; the program's own readout, More > Timing). Beta 1h took about 0.9 s on the G1: beta 1i computes the curve at every 3rd pixel column instead of every column.
+- **A big fit.** BurrLab's maximum-likelihood fit of 300 Danish fire claims takes about **45 seconds on a G1** in PPL. A progress bar shows it working, a blinking hourglass shows it has not stopped, and Esc stops it. BurrLab can also run the fit in MicroPython (Fit menu, Engine).
+- **Simulations.** GaltonBoard pours 100 balls in about 35 s on a G1 (its ×100 key, which skips the animation, takes half a second).
+
+**What we learned about the hardware** ([SpeedProbe](diagnostics/SpeedProbe_beta1.txt): eleven timed tests; run it on your own calculator)
+
+- **The G2 is three to four times faster than the G1 at PPL.** A loop of 5,000 simple sums takes 870 ms on our G1 and 245 ms on our G2; calling a routine 3,000 times, 478 ms and 158 ms; making a 300-element list 200 times, 611 ms and 149 ms. That agrees with the published benchmarks (Savage: 0.43 s G1, 0.19 s G2).
+- **Copying a whole screen image is fast on both** (BLIT_P of 320 × 240: about 1 ms on the G2, 5 ms on the G1), so drawing pages off-screen and copying them once costs almost nothing.
+- **Every pass of a PPL loop costs time** (about 0.17 ms on a G1, 0.05 ms on a G2, for one simple statement). A redraw that touches every pixel column pays it 268 times; computing fewer points and joining them with lines is the cheapest speed-up there is.
+- **MicroPython is much faster at arithmetic, but crossing the bridge has a price.** StudRange's studentized-range quantile takes about 1.5 s on a G2 with Python (7 s on a G1), where the PPL engine takes about a minute, because Python does the work and hands back one number. When we moved BurrLab's curves to Python, which hands back hundreds of values one at a time, a key press got slower, so the curves went back to PPL. **Rule of thumb: Python pays when it returns a few numbers, not hundreds.**
+- **On the Virtual Calculator everything is fast.** The emulator on a PC runs the same firmware far faster, so it is good for checking that a program works and useless for judging its speed. Time things on a real G1 or G2.
+
+**What the programs do about it**
+
+Progress bars, a blinking hourglass and Esc on anything long; the new value shown the moment a key is pressed (BurrLab); caps on the size of data a page will take; cached plot layers so a key press redraws only what changed; Python engines with a PPL fallback where Python helps (BurrLab's fit, StudRange), with a badge saying which engine answered and how long it took. BurrLab's Engine setting "Both" runs a fit both ways and shows the two times side by side.
+
+**Your measurements are welcome.** If you time something on your own G1 or G2, especially on other firmware, please report it through GitHub issues.
+
+---
+
 ## Diagnostics
 
 Short programs for finding out what your own calculator does.
@@ -234,6 +265,7 @@ Short programs for finding out what your own calculator does.
 - **`LocalHeadProbe`** is ten lines: is `LOCAL name(a, b)` a legal routine head?
 - **`PyVer`** reports your MicroPython version and probes ten modules. It takes two minutes.
 - **`PyProbe`** (beta 2b) asks what the Prime's MicroPython can actually do: how values pass from PPL into Python, what the `matplotl` charts really draw, and what each module contains. Run on the Virtual Calculator only.
+- **`SpeedProbe`** (beta 1) times eleven kinds of work (arithmetic, LN and EXP, list reads and writes, making lists, routine calls, lines, text and whole-screen copies) in about 20 seconds and leaves the times in `SP_MS`. Run it on a G1 and a G2 and compare. It is how we found our G2 running about 15 times slower than normal until a paperclip reset ([How fast is the Prime?](#how-fast-is-the-prime-what-we-measured)).
 - `JoinTest` and `GenTest` isolate a specific `str.join` failure. They are kept because they document a real investigation, including the part where it did not reproduce.
 
 `templates/TouchKit_template_v3.txt` is the house touch kit as a starting point for a new program: drain, wait-for-key-or-tap, soft keys with "More" pages, hit boxes, and a draggable bar chart.

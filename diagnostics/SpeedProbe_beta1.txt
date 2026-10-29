@@ -1,0 +1,169 @@
+#pragma mode( separator(.,;) integer(h32) )
+
+// SpeedProbe beta 1 (29 Oct 2026) -- why is the G2 slower than the G1 on
+//   BurrLab's redraw?  Eleven small timed tests, the same on both
+//   calculators.  Published benchmarks (Savage, N-Queens) put the G2 at
+//   2-3 times the G1's speed; Roger's G1 and G2 timed BurrLab beta 1i's
+//   Explore redraw at c 443 / d 40 ms (G1) and c 518 / d 69 ms (G2).
+//   If the G2 wins the plain arithmetic tests and loses the list or
+//   drawing tests, the difference is in the kind of work; if it loses
+//   them all, it is something about that calculator.
+//
+// (C) 2026 Roger D Metcalf.  Free for educational and personal use; keep
+//   this header and credit the author.  Not for sale.  Written with AI
+//   assistance (Claude Opus 5.5, Anthropic).
+//
+// Run: Home, SpeedProbe (no parentheses).  About 10-20 s on a G1.  The
+//   times (ms) are on the screen and in SP_MS in Home afterwards; the
+//   RETURN line lists them too.  Esc on the results page quits.
+//
+// The tests (each loop's body is one or two statements, as in BurrLab):
+//    1  arithmetic on a routine's LOCAL, 5,000 passes
+//    2  LN and EXP (BurrLab's log arithmetic), 2,000 passes
+//    3  writing list elements, 3,000 writes into a 300-list
+//    4  reading list elements, 3,000 reads
+//    5  MAKELIST of 300, 200 times (memory allocation)
+//    6  SUB + CONCAT of a 300-list, 200 times
+//    7  calling a small routine, 3,000 calls
+//    8  test 1 on a file-level variable (BurrLab keeps its state there)
+//    9  LINE_P to an off-screen grob, 1,000 lines
+//   10  TEXTOUT_P to an off-screen grob, 300 strings
+//   11  BLIT_P of a whole 320 x 240 grob, 100 times
+
+EXPORT SP_MS;                  // the eleven times in milliseconds
+LOCAL spG;                     // the file-level variable test 8 uses
+
+// A small routine for test 7: one statement.
+sp_F(fA)
+BEGIN
+  RETURN fA + 1;
+END;
+
+// A progress line straight to the screen.
+sp_Show(shT)
+BEGIN
+  RECT_P(G0, 0, 200, 319, 217, #FFFFFFh, #FFFFFFh);
+  TEXTOUT_P(shT, G0, 6, 204, 1, #1E90FFh, 308);
+END;
+
+// Milliseconds since t0 as a whole real (TICKS hands back an integer,
+// which STRING() would print in hex: Lessons section 7).
+sp_Dt(msT0)
+BEGIN
+  LOCAL msD;
+  msD := (TICKS - msT0) * 1.0;
+  IF msD < 0 THEN msD := msD + 4294967296; END;
+  RETURN msD;
+END;
+
+// Wait for a key or a tap (drain, wait, drain; the finger-lift drain
+// capped at one second).  Returns the key code, -1 for a tap.
+sp_Wait()
+BEGIN
+  LOCAL wK, wM, wT;
+  REPEAT wK := GETKEY; UNTIL wK == -1;
+  wT := TICKS;
+  REPEAT UNTIL MOUSE(1) == -1 OR TICKS - wT > 1000;
+  REPEAT
+    wK := GETKEY;
+    wM := MOUSE;
+  UNTIL wK > -1 OR SIZE(wM(1)) > 0;
+  IF wK == -1 THEN
+    wT := TICKS;
+    REPEAT UNTIL MOUSE(1) == -1 OR TICKS - wT > 1000;
+  END;
+  REPEAT UNTIL GETKEY == -1;
+  RETURN wK;
+END;
+
+EXPORT SpeedProbe()
+BEGIN
+  LOCAL spI, spJ, spS, spT0, spL, spL2;
+  LOCAL spL3, spK, spMs, spNm, spY, spTx;
+  spMs := MAKELIST(0, spK, 1, 11);
+  spNm := {"1 arithmetic, LOCAL", "2 LN and EXP", "3 list write", "4 list read",
+           "5 MAKELIST of 300", "6 SUB + CONCAT", "7 call a routine",
+           "8 arithmetic, file-level", "9 LINE_P", "10 TEXTOUT_P", "11 BLIT_P 320 x 240"};
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 0, 0, 319, 18, #FF4500h, #FF4500h);
+  TEXTOUT_P("SpeedProbe beta 1: running ...", G1, 4, 2, 2, #FFFFFFh, 312);
+  BLIT_P(G0, 0, 0, G1);
+  // 1 arithmetic on a LOCAL
+  sp_Show("test 1 of 11");
+  spS := 0; spT0 := TICKS;
+  FOR spI FROM 1 TO 5000 DO spS := spS + spI * 1.0001; END;
+  spMs(1) := sp_Dt(spT0);
+  // 2 LN and EXP
+  sp_Show("test 2 of 11");
+  spS := 0; spT0 := TICKS;
+  FOR spI FROM 1 TO 2000 DO spS := spS + LN(1 + EXP(-spI / 1000)); END;
+  spMs(2) := sp_Dt(spT0);
+  // 3 list writes
+  sp_Show("test 3 of 11");
+  spL := MAKELIST(0, spK, 1, 300);
+  spT0 := TICKS;
+  FOR spJ FROM 1 TO 10 DO
+    FOR spI FROM 1 TO 300 DO spL(spI) := spI * 2; END;
+  END;
+  spMs(3) := sp_Dt(spT0);
+  // 4 list reads
+  sp_Show("test 4 of 11");
+  spS := 0; spT0 := TICKS;
+  FOR spJ FROM 1 TO 10 DO
+    FOR spI FROM 1 TO 300 DO spS := spS + spL(spI); END;
+  END;
+  spMs(4) := sp_Dt(spT0);
+  // 5 MAKELIST
+  sp_Show("test 5 of 11");
+  spT0 := TICKS;
+  FOR spJ FROM 1 TO 200 DO spL2 := MAKELIST(0, spK, 1, 300); END;
+  spMs(5) := sp_Dt(spT0);
+  // 6 SUB + CONCAT
+  sp_Show("test 6 of 11");
+  spT0 := TICKS;
+  FOR spJ FROM 1 TO 200 DO spL3 := CONCAT(SUB(spL, 1, 150), SUB(spL, 151, 300)); END;
+  spMs(6) := sp_Dt(spT0);
+  // 7 routine calls
+  sp_Show("test 7 of 11");
+  spS := 0; spT0 := TICKS;
+  FOR spI FROM 1 TO 3000 DO spS := spS + sp_F(spI); END;
+  spMs(7) := sp_Dt(spT0);
+  // 8 test 1 on a file-level variable
+  sp_Show("test 8 of 11");
+  spG := 0; spT0 := TICKS;
+  FOR spI FROM 1 TO 5000 DO spG := spG + spI * 1.0001; END;
+  spMs(8) := sp_Dt(spT0);
+  // 9 LINE_P to an off-screen grob
+  sp_Show("test 9 of 11");
+  DIMGROB_P(G2, 320, 240, #FFFFFFh);
+  spT0 := TICKS;
+  FOR spI FROM 1 TO 1000 DO LINE_P(G2, 0, spI MOD 240, 319, 239 - (spI MOD 240), #003CC8h); END;
+  spMs(9) := sp_Dt(spT0);
+  // 10 TEXTOUT_P to an off-screen grob
+  sp_Show("test 10 of 11");
+  spT0 := TICKS;
+  FOR spI FROM 1 TO 300 DO TEXTOUT_P("C = 2.10", G2, 10 + (spI MOD 200), 10 + (spI MOD 200), 1, #000000h, 100); END;
+  spMs(10) := sp_Dt(spT0);
+  // 11 BLIT_P of a whole screen
+  sp_Show("test 11 of 11");
+  DIMGROB_P(G3, 320, 240, #FFFFFFh);
+  spT0 := TICKS;
+  FOR spI FROM 1 TO 100 DO BLIT_P(G3, 0, 0, G2); END;
+  spMs(11) := sp_Dt(spT0);
+  SP_MS := spMs;
+  // the results page
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 0, 0, 319, 18, #FF4500h, #FF4500h);
+  TEXTOUT_P("SpeedProbe beta 1: times in ms", G1, 4, 2, 2, #FFFFFFh, 312);
+  spTx := "";
+  FOR spI FROM 1 TO 11 DO
+    spY := 24 + 14 * (spI - 1);
+    TEXTOUT_P(spNm(spI), G1, 10, spY, 1, #000000h, 200);
+    TEXTOUT_P(STRING(spMs(spI), 2, 0), G1, 240, spY, 1, #003CC8h, 70);
+    spTx := spTx + " " + STRING(spMs(spI), 2, 0);
+  END;
+  TEXTOUT_P("In Home afterwards: SP_MS.  Any key = quit.", G1, 6, 204, 1, #1E90FFh, 308);
+  BLIT_P(G0, 0, 0, G1);
+  sp_Wait();
+  RETURN "SpeedProbe:" + spTx;
+END;

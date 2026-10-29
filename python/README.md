@@ -37,6 +37,6 @@ H.burr12_cdf(2, c=1.5, k=0.7, scale=1.2)
 | `mixture_probability(freqs, theta, unknowns, knowns, typed)` | NRC II mixture probability with θ, positive terms only | DNAMixLR `dmProb` |
 | `mixture_lr(freqs, theta, hp, hd)` | one locus's likelihood ratio | DNAMixLR |
 | `studentized_range_cdf`, `studentized_range_crit` | Tukey's q | StudRange `sr_SRCDF`, `sr_SRCrit` |
-| `burr12_pdf`, `burr12_cdf`, `burr12_ppf` | Burr type XII | Burr3 |
+| `burr12_pdf`, `burr12_cdf`, `burr12_ppf` | Burr type XII | BurrLab |
 
 `python3 test_hpstats.py` runs every function against SciPy, statsmodels or a brute-force enumeration (the mixture probability is checked against every possible allele sequence). The conventions the calculator programs chose are kept and named in the docstrings: Mantel's N − 1 variance for the trend test, no continuity correction in McNemar when b = c, Haldane's 0.5 at a zero cell.

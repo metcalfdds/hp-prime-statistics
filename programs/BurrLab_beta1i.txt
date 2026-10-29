@@ -1,0 +1,4380 @@
+#pragma mode( separator(.,;) integer(h32) )
+
+// (C) 2026 Roger D Metcalf
+// For academic use only - do not rely on results for anything important
+// Results have not been rigorously verified and/or validated
+//
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with the
+//   file and credit the author if you pass it on.  Not for sale or
+//   commercial redistribution.
+// DISCLAIMER: a teaching and demonstration aid. Not validated for
+//   forensic, clinical or legal use; do not rely on its results for
+//   legal purposes.
+// Written with AI assistance. The concept, direction, decisions and all
+// hardware testing are Roger D. Metcalf's; the code, drafting and
+// source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
+
+// BurrLab - beta 1i  (29 Oct 2026) -- instant feedback and fewer curve
+//   points (Roger, G1 and G2: the Explore redraw "slow but manageable";
+//   "a flashing icon ... to let the user know the calculation is doing
+//   something"):
+//   * a key press that needs a recompute shows the NEW value in the
+//     title row at once, with a yellow hourglass at the top right; the
+//     finished frame replaces both (Explore; the hourglass alone on the
+//     Family and Rare pages).  Through a fit the hourglass BLINKS every
+//     0.4 s beside the progress bar (bu_Blink: one TICKS reading a call);
+//     it stays lit while MicroPython works (PPL cannot draw meanwhile).
+//   * the curve is computed at every 3rd pixel column (1, 4, ..., 268)
+//     and the two columns at the pdf's peak (90-92 points on Explore, not
+//     268), drawn as a polyline: the same top and y scale as before; the
+//     x0 dot and the shade start sit on that line (bu_RowAt).  Python's
+//     curve mode (Python only / Both) uses the same points (BU_IN(10)).
+// BurrLab - beta 1h  (29 Oct 2026) -- the curves back to PPL in Auto (the
+//   Python curve bridge was slower on the G1 and G2: 3-4 s a key press);
+//   Python still does the fit.  Python curves only in "Python only"/"Both".
+// BurrLab - beta 1g  (29 Oct 2026) -- text only: four messages no longer
+//   say "see the Terminal" (it cannot be opened by a key and beta 1f prints
+//   nothing); they point to BU_PZ in Home instead.  Nothing else changed.
+// BurrLab - beta 1f  (29 Oct 2026) -- the Python curve bridge fixed
+// What changed in beta 1f (Roger, beta 1e on the calculator: every
+//   Up/Down on Explore flashed a Python ValueError traceback, then PPL
+//   drew the plot):
+//   * mode 5 read buPB, buPT and buPL -- file-level LOCALs, which
+//     hpprime.eval cannot see (it reads EXPORTed names only), so float()
+//     failed.  The frame rows now travel in BU_IN (9 values for mode 5);
+//     the script reads and writes only BU_JOB, BU_IN, BU_X, BU_GE, BU_GC,
+//     BU_OUT, BU_YP and BU_PZ.
+//   * the script's main() runs inside try/except: an error is caught in
+//     Python (nothing printed on screen), BU_PZ = "error: <message>",
+//     BU_OUT(12) = -2, and PPL falls back silently; the readout says
+//     "py FAIL, PPL".
+//   * the PC verify's hpprime stub now refuses any name that is not
+//     EXPORTed (beta 1e fails under it; beta 1f passes).
+// BurrLab - beta 1e  (29 Oct 2026) -- the Explore curves in MicroPython
+// What changed in beta 1e (Roger's beta 1d readouts, one Up press:
+//   G1 "c 757 d 137 w 4 ms", G2 "c 868 d 117 w 2 ms" -- compute
+//   dominates, drawing is cheap, no wait, and the G2 is no faster than
+//   the G1 on this PPL loop, about 4,000-4,600 statements/s on both):
+//   * #PYTHON bul mode 5 computes the Explore curves (the pdf at every
+//     column, the CDF in CDF view) with the same one-pass arithmetic and
+//     hands them back as pixel rows, one column at a time, in BU_YP (the
+//     StudRange EP_SRCDF shape), the raw y maximum in BU_OUT(1), the
+//     sentinel last.  bu_PyCache: BU_YP cleared to -1 first; the
+//     answer checked by the sentinel, a finite last column and column 10
+//     against the PPL formula to 1E-9; bu_CachePPL (the beta 1d one-pass
+//     loop) is the fallback.  bu_Cache dispatches by the engine setting
+//     (Auto, PPL only, Python only, Both -- Both compares every column).
+//     Family and Rare draw from the same cache, so they take the same path.
+//   * The timing readout is a More-page toggle ("Timing"; also Enter's
+//     menu): when on, the footer shortens to "K chosen" and the readout
+//     sits at its right end: "c 25 d 120 w 2 ms, py" (py / PPL /
+//     py = PPL / py-PPL <difference> / py FAIL, PPL).
+//   * The in-frame short moment line is gone (the curve crossed it; row C
+//     says it); the cap note moves to its row.
+// beta 1d  (29 Oct 2026) -- the fast Explore redraw
+// What changed in beta 1d (Roger, G2: an arrow press on Explore took
+//   about 2 s in beta 1c, and no faster than on the G1 -- so drawing
+//   calls and/or a pause, not arithmetic):
+//   * Explore is drawn in three layers: G3 the frame (page, title band,
+//     plot box, grid, tick labels), rebuilt only when the window changes;
+//     G4 = G3 + the curve, markers, labels and status rows B, C, rebuilt
+//     when C, K, S or the view change; G1 = G4 + the x0 layer (the tail
+//     as ONE translucent FILLPOLY_P, the x0 line and dot, the title
+//     pieces, row A, the footer).  Markers are solid LINE_P verticals
+//     (no PIXON_P dots).  The curve is a run-merged polyline (bu_Curve):
+//     the same pixels as a segment per column, a third of the calls.
+//   * bu_Cache makes the pdf (and, in CDF view, the CDF) in ONE pass per
+//     column from ln x = ln k + ln dx (ln k cached), ln z and ln(1 + z),
+//     and caches mode, median, mean and SD once per change of C, K, S.
+//     bu_DrawFam and bu_DrawRare draw from the same cache.
+//   * Harness counts per Explore redraw: beta 1c 9,497 statements and
+//     561 drawing primitives after an arrow press, 2,241 and 556 after an
+//     x0 move; beta 1d 3,464 and 146, and 474 and 16.  The curve pixels
+//     are identical to beta 1c's (verify Part H, 12 shapes).
+//   * A grey timing readout inside the frame, "c 12 d 180 w 0 ms":
+//     c = window + cache + G4 layer, d = the x0 layer and the blits,
+//     w = from the key to this redraw (TICKS), so the calculators can
+//     say where the time goes.  No WAIT and no capped drain is on the
+//     arrow path (verify Part H checks the loop's text).
+// beta 1c  (28 Oct 2026) -- layout and soft-key visibility
+// What changed in beta 1c (Roger's Virtual Calculator screenshots of
+//   beta 1b: tick labels and axis titles printed over the status rows on
+//   the Q-Q page; mode/median/mean labels piled up on the Explore plot;
+//   the C/K/S/x0 soft keys seemed to do nothing):
+//   * A layout table for every plot page: the frame ends at y 153, the
+//     tick labels have their own row (156), the status rows are 168, 180,
+//     192 and the footer 204 (12-px rows, 10 px of ink), axis titles and
+//     legends sit INSIDE the frame in 14-px rows (PT+2, +16, +30 at the
+//     top, PB-13, PB-27 at the bottom), the marker labels mode/median/mean
+//     in three different rows, left axis labels right-aligned at PL-2,
+//     tick labels clamped to x 37..317.  verify Part F records every
+//     TEXTOUT_P of every screen and asserts no two overlap (2 px of
+//     clearance) and none straddles the frame edge.
+//   * The chosen parameter on Explore is drawn INVERTED in the title band
+//     (a white box, orange text; yellow on orange was invisible) and the
+//     footer names it ("K chosen: arrows/drag ...").  The harness shows a
+//     strip tap IS taken by the polling loop (verify Part G); on the
+//     emulator a mouse click shorter than a loop pass can be missed
+//     (Lessons section 16: press about 0.3 s).
+//   * The simulation's status row shows the speed ("n = 120 (x10): ...")
+//     so the x1/x10/x100 keys have a visible effect mid-run.
+//   Nothing else changed (the engine, the fits, the data are beta 1b's).
+// beta 1b  (28 Oct 2026) -- a TRIAL of a MicroPython engine
+// What changed in beta 1b (Roger, after beta 1a's first G1 run: the
+//   Danish 300 fit took 45 s in PPL):
+//   * A #PYTHON bul block carries the SAME Burr fit (the grid start, the
+//     profile Nelder-Mead over ln C and ln S or the 3-D grouped simplex,
+//     the tolerances, the box and boundary rules, the numerical-Hessian
+//     SEs) in MicroPython 1.9.4, with the three-part guard of Lessons
+//     Learned section 9: BU_OUT cleared before the call, the answer
+//     validated by using it (the sentinel BU_OUT(12), finite values, the
+//     ln L reproduced by the PPL likelihood to 1E-6), the PPL engine as
+//     the fallback; BU_PZ carries the script's last mark.
+//   * An engine setting (Fit menu, "Engine"), kept for the session:
+//     Auto (Python first, PPL on any failure), PPL only, Python only (no
+//     fallback: a failure is reported for diagnosis), Both (Python then
+//     PPL, both timed with TICKS, C, K, S compared on one line, the
+//     Python result kept).
+//   * An engine badge with the engine's time on the results page and in
+//     the Home summary; BU_ENGINE in Home.  Help page 4 explains.
+//   * The rivals, the A-D statistic and every page stay in PPL (the
+//     rivals are about a third of the fit's PPL time; a later version
+//     may move them).  Everything else is byte-for-byte beta 1a.
+// beta 1a (28 Oct 2026):
+// What changed in beta 1a (the independent second review, REVIEW2_BurrLab_beta1.md):
+//   1. The Weibull limit is detected by its definition: the rivals are
+//      fitted BEFORE the standard errors, and a Burr ln L within
+//      1E-4 (1 + |ln L|) of the Weibull MLE's with K > 100 is flagged as
+//      the limit even when the simplex stopped short of the S box
+//      (beta 1 missed it on light-tailed samples: "K = 376000000", "not
+//      positive definite", an absurd Pareto slope).  Grouped: S within 1
+//      of the box top, or K > 1E4.
+//   2. A limit fit is never installed unclamped in Explore, the simulation
+//      or the CAS page: the Weibull limit installs its Weibull-equivalent
+//      at K = 50 (same lambda), the Pareto and box limits leave the
+//      explorer alone, and the results, Rare pages say so.  bu_Median
+//      and bu_Num are capped ("beyond range", never an infinity).
+//   3. No file-level LOCAL matrix: the simplex is four LOCAL lists
+//      (buSx1..buSx4, the proven element-assignment shape); the Hessian
+//      is a 9-element list.
+//   4. The A-D page cites Stephens (1986, in D'Agostino & Stephens) and
+//      says no general table exists for fitted parameters; the unsourced
+//      "below 1.9 is reassuring" is gone.
+//   5. Wording: "not a power law"; the Danish screens say 1980-1990, 1985
+//      prices (inflation-adjusted DKK), excess over 1 million, McNeil 1997.
+// beta 1 (27 Oct 2026): first version.
+// The Burr XII distribution as the model for a long right tail, for
+//   Statistics for Criminal Justice and research-methods classes.  Launch
+//   with BurrLab (no arguments): a menu.  Items: Explore (pdf and CDF with
+//   C, K, S on soft keys, a draggable x0, mode/median/mean markers, the
+//   shaded tail, the moment cases); Family tree (Lomax at C = 1, log-
+//   logistic/Fisk at K = 1, the Weibull limit K -> infinity, a tappable
+//   (C, K) shape map); Fit my data / a preset (maximum likelihood with a
+//   profile Nelder-Mead, SEs from the observed information, AIC and BIC,
+//   an AIC table against lognormal, Weibull, gamma, exponential and
+//   Lomax, histogram, Q-Q, survival on log-log axes, hazard, Anderson-
+//   Darling); The mean that never settles (a simulation of the running
+//   mean and running median); How rare is this? (percentile, "1 in N",
+//   the empirical percentile); Exact moments (CAS, with a decimal
+//   fallback); Help; Quit.
+// Exports to Home on Quit: BU_C, BU_K, BU_S, BU_LL, BU_AIC and the
+//   fitted summary string (the RETURN value).
+// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  beta 1e ran
+//   on the G2/G1 (the bridge bug above); beta 1f has been run only in the
+//   PC harness.
+// REPLACES Burr3 v2.4c in the fleet (its header, its freeze-during-drag /
+//   refit-on-lift idiom and its log-domain pdf and CDF are reused here;
+//   every routine here is tagged bu_, Burr3's are b3_, so the two can sit
+//   on one calculator while Burr3 is retired).
+//
+// PARAMETERISATION (the one scipy.stats.burr12 uses: c = C, d = K,
+//   scale = S, loc = 0):
+//     pdf  f(x) = (C K / S) (x/S)^(C-1) (1 + (x/S)^C)^(-K-1),  x > 0
+//     CDF  F(x) = 1 - (1 + (x/S)^C)^(-K);  survival SF = (1 + z)^(-K),
+//          z = (x/S)^C;  quantile x_p = S ((1 - p)^(-1/K) - 1)^(1/C)
+//     E[X^r] = S^r K B(K - r/C, 1 + r/C), finite iff r < K C
+//     mode S ((C - 1)/(K C + 1))^(1/C) for C > 1, else 0;
+//     median S (2^(1/K) - 1)^(1/C); hazard f/SF = (C K/S)(x/S)^(C-1)/(1+z)
+//   Special cases: C = 1 Pareto II (Lomax, shape K, scale S); K = 1 log-
+//   logistic (Fisk, shape C, scale S); K -> infinity with S = Sw K^(1/C)
+//   -> Weibull(shape C, scale Sw).  Income economists call the Burr XII
+//   the Singh-Maddala distribution (Singh & Maddala 1976).
+// Sources: Burr (1942) Ann Math Stat 13:215-232; Tadikamalla (1980) Int
+//   Stat Rev 48:337-344 (the family and its limits); Singh & Maddala
+//   (1976) Econometrica 44:963-970; Kleiber & Kotz (2003) Statistical
+//   Size Distributions in Economics and Actuarial Sciences, ch. 6 (pdf,
+//   moments, special cases); Nelder & Mead (1965) Comput J 7:308-313;
+//   Burnham & Anderson (2002) Model Selection and Multimodel Inference,
+//   section 2.6 (AIC differences: 0-2 substantial support, 4-7 much less,
+//   > 10 essentially none); Anderson & Darling (1952) Ann Math Stat
+//   23:193-212; D'Agostino & Stephens (1986) Goodness-of-Fit Techniques,
+//   Table 4.2 (A^2 for a fully specified F: 1.933, 2.492, 3.857 at 10, 5,
+//   1 %); Lanczos log-gamma as in Press et al., Numerical Recipes 6.1;
+//   McNeil (1997) ASTIN Bulletin 27(1):117-137 (the Danish fire losses).
+// Data (data/DATASETS.md and the new data/DATASETS_BURR.md):
+//   BJS, Prison Sentences and Time Served for Violence, NCJ-153858
+//     (1995), via R crimedatasets: months served by 41 homicide
+//     offenders (41 values).
+//   Rossi, Berk & Lenihan (1980) via Allison (1995) / R carData: weeks
+//     to re-arrest for the 114 of 432 men arrested within 52 weeks; the
+//     318 right-censored men are EXCLUDED here (said on screen).
+//   Danish fire losses 1980-1990 (Copenhagen Re, via McNeil 1997 and R
+//     evir 'danish'): excess over the 1 million DKK threshold for the
+//     2,156 losses strictly above it (the evir vector has 2,167 values,
+//     11 exactly 1.0; McNeil's paper counts 2,156); carried as a random
+//     subsample of 300 (numpy default_rng(1980)) and as the counts of
+//     all 2,156 in 60 log-spaced bins fitted by a grouped likelihood.
+//     Cross-checked: exceedances above 3, 4, 5, 10, 20 million = 532, 362,
+//     254, 109, 36 and the largest loss 263 agree with McNeil's Table I.
+// Replaces / reworks: Burr3 v2.4c (fleet).  No TI program is replaced.
+// File map (beta 1i, 4380 lines; line numbers of this file):
+//   1-322     header, Home exports, the bridge exports, file-level LOCALs
+//   323-569   kit: bu_Init, bu_Drain, bu_WaitAny, bu_Frame, bu_Show,
+//             bu_Busy/bu_Blink/bu_Band0 (1i), bu_Slot, bu_Box, bu_Hit, dots
+//   570-660   number formatting: bu_Fx, bu_Num, bu_Pv, bu_Pow10, bu_PEq,
+//             bu_RText, bu_IStr, bu_OneIn
+//   661-753   special functions: bu_LnGam (Lanczos), bu_Digam, bu_Trigam,
+//             bu_Log1p, bu_Expm1, bu_GamQ, bu_GamP
+//   754-921   the Burr XII in logs: bu_LnSF .. bu_MomText
+//   922-1442 #PYTHON bul: the MicroPython engine (the same fit)
+//   1444-1705 likelihoods and the optimiser: bu_ProfT, bu_LLBurr,
+//             bu_LLProf, bu_ModSF, bu_GLL, bu_Obj, bu_Prog, bu_SxG,
+//             bu_SxS, bu_SxRow, bu_NM
+//   1706-2230 bu_FitRiv, bu_FitRivG, bu_Hess, bu_ADStat, bu_AICof,
+//             bu_BICof, bu_FitPPL, bu_Secs, the bridge (bu_PyRun,
+//             bu_PyDone, bu_PyFit, bu_PyHess), bu_Fit (the driver)
+//   2231-2404 data and presets: bu_SetData .. bu_DataPage
+//   2405-3257 axes and caches, 1. Explore, 2. Family tree
+//   3258-3878 3. fit pages: bu_DrawRes, bu_Badge, bu_Table, bu_Hist,
+//             bu_QQ, bu_Surv, bu_HazPage, bu_ADPage, bu_Results,
+//             bu_FitMenu (with the Engine setting)
+//   3879-4181 4. bu_Sim (bu_Draw, bu_Seed, bu_SimFrame), 5. bu_Rare
+//   4182-4273 6. the CAS fence: bu_Cas, bu_Frac, bu_MomLine, bu_Moments
+//   4274-end  bu_Help (4 pages), bu_Opening, bu_CasProbe, BurrLab
+
+EXPORT BU_C;
+EXPORT BU_K;
+EXPORT BU_S;
+EXPORT BU_LL;
+EXPORT BU_AIC;
+// ---- the Python bridge (beta 1b): PPL writes the inputs, runs
+//      PYTHON(bul), reads BU_OUT; BU_PZ is the script's last mark ----
+EXPORT BU_JOB;        // 0 probe, 1 raw fit, 2 grouped fit, 3/4 Hessian
+EXPORT BU_IN;          // {ln S box low, high, ln centre, C, K, S}; mode 5: {C, K, S, x max, NC, view, PB, PT, PL, stride}
+EXPORT BU_X;           // the raw data (sorted)
+EXPORT BU_GE;          // bin edges
+EXPORT BU_GC;          // bin counts
+EXPORT BU_OUT;         // {C, K, S, ln L, flag, SE1, SE2, SE3, SEOK, evals, n, done}
+EXPORT BU_YP;          // mode 5: the curve's points {x1, y1, x2, y2, ...} (beta 1i)
+EXPORT BU_PZ;          // the last mark the Python script left
+EXPORT BU_ENGINE;      // "MicroPython 1.9.4", "PPL (Python unavailable)", "PPL (chosen)"
+
+// ---- palette (set in bu_Init; Lessons Learned section 13) ----
+LOCAL buBLUE, buMAG, buRED, buGRN, buORNG, buGRAY;
+LOCAL buFOOT, buGRID, buLBLU, buLORN, buLGRN, buLRED;
+LOCAL buSHD, buBLK, buWHT, buYEL, buPUR, buTEAL;
+// ---- glyphs, built with CHAR() so the source stays ASCII ----
+LOCAL buGEQ, buLEQ, buTIMES, buARR, buINF, buMU;
+LOCAL buSIG, buSQ, buXB, buALPHA, buLAM, buTHE;
+// ---- the explorer's distribution and cursor ----
+LOCAL buC, buK, buS, buX0, buSel, buView;
+// ---- the data: sorted values, their logs, name and source lines ----
+LOCAL buD, buN, buLX, buName, buSrc, buSrc2;
+LOCAL buUnit, buHave, buGrp, buGEd, buGCnt, buNote;
+LOCAL buShort;
+// ---- the Burr fit: parameters, log-likelihood, AIC, BIC, SEs, flags ----
+LOCAL buFC, buFK, buFS, buFLL, buFAIC, buFBIC;
+LOCAL buSE1, buSE2, buSE3, buFlag, buFitOK, buSEOK;
+// ---- the rivals: 5 rows (exp, lognormal, Weibull, gamma, Lomax) ----
+LOCAL buRvN, buRvL, buRvP, buRvA, buRv1, buRv2;
+LOCAL buRvOK, buBest, buRvC, buRvFl;
+// ---- the optimiser: model id, dimension, simplex, profile K, stop ----
+LOCAL buMod, buDim, buFv, buPK, buStop, buSx1;
+LOCAL buSx2, buSx3, buSx4;
+LOCAL buEvals, buProgT, buProgS;
+// ---- touch: last tap, hit boxes, soft-key pages ----
+LOCAL buTapX, buTapY, buNB, buHX1, buHY1, buHX2;
+LOCAL buHY2, buSK, buSKPg, buQuit;
+// ---- plot box and caches ----
+LOCAL buPL, buPR, buPT, buPB, buNC, buPdf;
+LOCAL buXmax, buYmax, buFrz, buRe, buCap;
+// ---- beta 1d: ln k for the pixel columns, the column stride, the cached
+//      closed forms (mode, median, mean, SD) of the current C, K, S ----
+LOCAL buLnK, buStr, buMd, buMe, buMn, buSd;
+LOCAL buFrX, buBase, buTWait, buTEv;
+// ---- beta 1e: which engine filled the curve cache (1 py, 2 PPL, 3 both
+//      agree, 4 both differ), the Both difference, the readout toggle ----
+LOCAL buCEng, buCDiff, buTimOn, buPts, buNPt;
+// ---- simulation, Anderson-Darling, CAS, summary ----
+LOCAL buSeed, buSdOK, buAD, buADOK, buCasOK, buSum;
+LOCAL buSimN, buRunM, buRunMd, buSimL, buSimX, buSimT;
+LOCAL buBoxLo, buBoxHi, buXmin;
+// ---- beta 1f: 1 once a Python call has failed this session (no sentinel,
+//      or a refused curve): no further PYTHON() calls until the engine
+//      setting is chosen again
+LOCAL buPyBad;
+// ---- beta 1i: the hourglass (lit, last toggle, the colour behind it), the
+//      page now on the screen (1 Explore, 2 Family, 3 Rare, 0 other), the
+//      curve's point columns ----
+LOCAL buBlOn, buBlT, buBlBg, buOnPg, buPC;
+// ---- engine (beta 1b): 1 Auto, 2 PPL only, 3 Python only, 4 Both ----
+LOCAL buEng, buEngUsed, buTPy, buTPPL, buCmp, buTFit;
+
+// ============================================================
+// KIT: palette, drains, waits, frames, soft keys, hit boxes
+// ============================================================
+
+// Palette constants, glyph strings and defaults, set once at start.
+bu_Init()
+BEGIN
+  LOCAL inI;
+  buBLUE := #003CC8h; buMAG := #C800C8h; buRED := #FF0000h;
+  buGRN := #008C3Ch; buORNG := #FF4500h; buGRAY := #5A5A5Ah;
+  buFOOT := #1E90FFh; buGRID := #E1E4EBh; buLBLU := #AACDFFh;
+  buLORN := #FFF0DCh; buLGRN := #E8F6EBh; buLRED := #FFEBEBh;
+  buSHD := #EBF2FFh; buBLK := #000000h; buWHT := #FFFFFFh;
+  buYEL := #FFE000h; buPUR := #7030A0h; buTEAL := #008B8Bh;
+  buGEQ := CHAR(8805); buLEQ := CHAR(8804); buTIMES := CHAR(215);
+  buARR := CHAR(8594); buINF := CHAR(8734); buMU := CHAR(956);
+  buSIG := CHAR(963); buSQ := CHAR(178); buXB := CHAR(57344);
+  buALPHA := CHAR(945); buLAM := CHAR(955); buTHE := CHAR(952);
+  // the plot box every picture uses (the touch handler reads the same)
+  // (beta 1c) the plot frame ends at 153: the tick-label row is 156-166,
+  // the status rows 168, 180, 192 and the footer 204, each 12 px with
+  // the glyphs' 10 px of ink, so nothing shares a row
+  buPL := 36; buPR := 304; buPT := 36; buPB := 153;
+  buNC := buPR - buPL;
+  // the explorer starts at a textbook Burr: C = 2, K = 1.5, S = 10
+  buC := 2; buK := 1.5; buS := 10; buX0 := 15; buSel := 1; buView := 0;
+  buD := {}; buN := 0; buLX := {}; buName := "no data loaded"; buSrc := "";
+  buSrc2 := ""; buUnit := "x"; buHave := 0; buGrp := 0; buGEd := {}; buGCnt := {};
+  buNote := ""; buShort := "no data";
+  buFitOK := 0; buSEOK := 0; buFlag := 0; buFC := 0; buFK := 0; buFS := 0;
+  buFLL := 0; buFAIC := 0; buFBIC := 0; buSE1 := 0; buSE2 := 0; buSE3 := 0;
+  buRvN := {"Exponential", "Lognormal", "Weibull", "Gamma", "Lomax"};
+  buRvL := {0, 0, 0, 0, 0}; buRvP := {1, 2, 2, 2, 2}; buRvA := {0, 0, 0, 0, 0};
+  buRv1 := {0, 0, 0, 0, 0}; buRv2 := {0, 0, 0, 0, 0}; buRvOK := {0, 0, 0, 0, 0};
+  buRvFl := {0, 0, 0, 0, 0}; buBest := 0;
+  buRvC := {#FF4500h, #C800C8h, #008B8Bh, #7030A0h, #008C3Ch};
+  buMod := 1; buDim := 2; buPK := 1; buStop := 0; buEvals := 0;
+  buSx1 := {0, 0, 0}; buSx2 := {0, 0, 0}; buSx3 := {0, 0, 0}; buSx4 := {0, 0, 0}; buFv := {0, 0, 0, 0};
+  buProgT := ""; buProgS := 0;
+  buTapX := -1; buTapY := -1; buNB := 0;
+  buHX1 := {0,0,0,0,0,0,0,0}; buHY1 := {0,0,0,0,0,0,0,0};
+  buHX2 := {0,0,0,0,0,0,0,0}; buHY2 := {0,0,0,0,0,0,0,0};
+  buSK := {}; buSKPg := 1; buQuit := 0;
+  buPdf := MAKELIST(0, inI, 1, buNC);
+  buXmax := 1; buYmax := 1; buFrz := 0; buRe := 1; buCap := 0;
+  buLnK := MAKELIST(LN(inI), inI, 1, buNC); buStr := 3;    // beta 1i: every 3rd column
+  buBlOn := 0; buBlT := 0; buBlBg := buWHT; buOnPg := 0; buPC := {1, buNC};
+  buMd := 0; buMe := 1; buMn := 0; buSd := 0;
+  buFrX := -1; buBase := 0; buTWait := 0; buTEv := 0;
+  buCEng := 0; buCDiff := 0; buTimOn := 0; BU_YP := {}; buPts := {0, 0, 0, 0}; buNPt := 0;
+  // the cache grobs (beta 1d): G3 the Explore frame, G4 its parameter
+  // layer; G2 is the family map; G1 is the page, made fresh each frame
+  DIMGROB_P(G3, 320, 240, buWHT); DIMGROB_P(G4, 320, 240, buWHT);
+  buSeed := 0; buSdOK := 1; buAD := 0; buADOK := 0; buCasOK := 0;
+  buSum := "no fit"; buBoxLo := 0; buBoxHi := 1; buXmin := 1;
+  buPyBad := 0;
+  buEng := 1; buEngUsed := 0; buTPy := -1; buTPPL := -1; buCmp := ""; buTFit := -1;
+  BU_JOB := 0; BU_IN := {0, 0, 0, 0, 0, 0}; BU_X := {}; BU_GE := {}; BU_GC := {};
+  BU_OUT := {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}; BU_PZ := ""; BU_ENGINE := "";
+  buSimN := 0; buRunM := {}; buRunMd := {}; buSimL := {}; buSimX := 0; buSimT := 0;
+  BU_C := 0; BU_K := 0; BU_S := 0; BU_LL := 0; BU_AIC := 0;
+END;
+
+// Wait for the finger to lift, never more than one second (section 7).
+bu_Drain()
+BEGIN
+  LOCAL drT;
+  drT := TICKS;
+  REPEAT UNTIL MOUSE(1) == -1 OR TICKS - drT > 1000;
+END;
+
+// Drain, wait for a key OR a tap, drain.  Returns the key code, or -1
+// for a tap (its x and y are left in buTapX, buTapY).
+bu_WaitAny()
+BEGIN
+  LOCAL wk, wm, wm1, wk2;
+  REPEAT wk := GETKEY; UNTIL wk == -1;
+  bu_Drain();
+  REPEAT
+    wk := GETKEY;
+    wm := MOUSE;
+    wm1 := wm(1);
+  UNTIL wk > -1 OR SIZE(wm1) > 0;
+  buTapX := -1; buTapY := -1;
+  IF SIZE(wm1) > 0 THEN
+    buTapX := wm1(1); buTapY := wm1(2); wk := -1;
+  END;
+  bu_Drain();
+  REPEAT wk2 := GETKEY; UNTIL wk2 == -1;
+  RETURN wk;
+END;
+
+// A white page on G1 with an orange title band.
+bu_Frame(frT)
+BEGIN
+  DIMGROB_P(G1, 320, 240, #FFFFFFh);
+  RECT_P(G1, 0, 0, 319, 18, buORNG);
+  TEXTOUT_P(frT, G1, 4, 2, 2, buWHT, 312);
+  buNB := 0;
+END;
+
+// Show the frame, then the soft keys (DRAWMENU paints the screen).
+bu_Show(shK)
+BEGIN
+  BLIT_P(G0, 0, 0, G1);
+  IF SIZE(shK) > 0 THEN DRAWMENU(shK); END;
+END;
+
+// beta 1i: the hourglass at the top right, drawn straight to G0 (only
+// these 15 x 17 pixels change, so nothing tears; the next full frame
+// replaces it).  bzOn 1 draws it, 0 clears it to the colour bzBg.
+// One-colour TRIANGLE_P is GfxProbe T04's form.
+bu_Busy(bzOn, bzBg)
+BEGIN
+  RECT_P(G0, 302, 1, 317, 17, bzBg, bzBg);
+  IF bzOn == 1 THEN
+    TRIANGLE_P(G0, 305, 3, 315, 3, 310, 9, buYEL);
+    TRIANGLE_P(G0, 305, 15, 315, 15, 310, 9, buYEL);
+    LINE_P(G0, 304, 2, 316, 2, buBLK);
+    LINE_P(G0, 304, 16, 316, 16, buBLK);
+    LINE_P(G0, 305, 3, 315, 15, buBLK);
+    LINE_P(G0, 315, 3, 305, 15, buBLK);
+  END;
+END;
+
+// beta 1i: blink the hourglass during a long computation: on or off
+// every 0.4 s.  Called from the likelihood loops, so it must be cheap:
+// one TICKS reading and a comparison unless 0.4 s have passed (the
+// second test catches the millisecond clock wrapping round).
+bu_Blink()
+BEGIN
+  LOCAL blT;
+  blT := TICKS;
+  IF blT - buBlT > 400 OR blT < buBlT THEN
+    buBlT := blT; buBlOn := 1 - buBlOn;
+    bu_Busy(buBlOn, buBlBg);
+  END;
+END;
+
+// beta 1i: a page's title band straight to G0 (font 2, as bu_Frame), so
+// a changed value shows before the page is recomputed.
+bu_Band0(bdT)
+BEGIN
+  RECT_P(G0, 0, 0, 319, 18, buORNG, buORNG);
+  TEXTOUT_P(bdT, G0, 4, 2, 2, buWHT, 296);
+END;
+
+// Which soft key a tap at x is (a tap with y >= 218).
+bu_Slot(slX)
+BEGIN
+  RETURN MIN(6, IP(slX / 53.4) + 1);
+END;
+
+// Record a hit box; bu_Hit says which box a tap is in (0 = none).
+bu_Box(bxI, bxX1, bxY1, bxX2, bxY2)
+BEGIN
+  buHX1(bxI) := bxX1; buHY1(bxI) := bxY1; buHX2(bxI) := bxX2; buHY2(bxI) := bxY2;
+  IF bxI > buNB THEN buNB := bxI; END;
+END;
+
+bu_Hit(htX, htY)
+BEGIN
+  LOCAL hI;
+  FOR hI FROM 1 TO buNB DO
+    IF htX >= buHX1(hI) AND htX <= buHX2(hI) AND htY >= buHY1(hI) AND htY <= buHY2(hI) THEN
+      RETURN hI;
+    END;
+  END;
+  RETURN 0;
+END;
+
+// A 1, 2 or 5 times a power of ten (Heckbert): axis ticks, arrow steps.
+bu_Nice(nV)
+BEGIN
+  LOCAL nE, nF, nR;
+  IF nV <= 0 THEN RETURN 1; END;
+  nE := FLOOR(LOG(nV));
+  nF := nV / 10^nE;
+  nR := 10;
+  IF nF <= 5 THEN nR := 5; END;
+  IF nF <= 2 THEN nR := 2; END;
+  IF nF <= 1 THEN nR := 1; END;
+  RETURN nR * 10^nE;
+END;
+
+// A tick label in the row under the plot frame, kept inside x 37..317
+// so it meets neither the left axis labels nor the screen edge.
+bu_TickLbl(tlS, tlX, tlY)
+BEGIN
+  LOCAL tlW;
+  tlW := IP(6.5 * DIM(tlS));
+  TEXTOUT_P(tlS, G1, MAX(buPL + 1, MIN(tlX, 317 - tlW)), tlY, 1, buGRAY, tlW + 2);
+END;
+
+// A dotted vertical line (LINE_P has no dashes): x, from y1 to y2.
+bu_DotV(dvX, dvY1, dvY2, dvC)
+BEGIN
+  LOCAL dvY;
+  FOR dvY FROM dvY1 TO dvY2 STEP 3 DO PIXON_P(G1, dvX, dvY, dvC); END;
+END;
+
+// A dotted horizontal line: y, from x1 to x2.
+bu_DotH(dhY, dhX1, dhX2, dhC)
+BEGIN
+  LOCAL dhX;
+  FOR dhX FROM dhX1 TO dhX2 STEP 3 DO PIXON_P(G1, dhX, dhY, dhC); END;
+END;
+
+// A small solid dot (overlapping RECT_P bars; ARC_P rings leave holes).
+bu_Dot(dtX, dtY, dtC)
+BEGIN
+  RECT_P(G1, dtX - 1, dtY - 2, dtX + 1, dtY + 2, dtC, dtC);
+  RECT_P(G1, dtX - 2, dtY - 1, dtX + 2, dtY + 1, dtC, dtC);
+END;
+
+// A word-wrapped paragraph in font 1 from y, 46 characters a line;
+// returns the y below it.
+bu_Para(paS, paY, paC)
+BEGIN
+  LOCAL paL, paW, paI, paCh, paY2, paN;
+  paL := ""; paW := ""; paY2 := paY; paN := DIM(paS);
+  FOR paI FROM 1 TO paN DO
+    paCh := MID(paS, paI, 1);
+    IF paCh == " " THEN
+      IF DIM(paL) + DIM(paW) + 1 > 47 THEN
+        TEXTOUT_P(paL, G1, 6, paY2, 1, paC, 308); paY2 := paY2 + 12; paL := paW;
+      ELSE
+        IF DIM(paL) > 0 THEN paL := paL + " " + paW; ELSE paL := paW; END;
+      END;
+      paW := "";
+    ELSE
+      paW := paW + paCh;
+    END;
+  END;
+  IF DIM(paL) + DIM(paW) + 1 > 47 THEN
+    TEXTOUT_P(paL, G1, 6, paY2, 1, paC, 308); paY2 := paY2 + 12; paL := paW;
+  ELSE
+    IF DIM(paL) > 0 THEN paL := paL + " " + paW; ELSE paL := paW; END;
+  END;
+  IF DIM(paL) > 0 THEN TEXTOUT_P(paL, G1, 6, paY2, 1, paC, 308); paY2 := paY2 + 12; END;
+  RETURN paY2;
+END;
+
+// ============================================================
+// NUMBER FORMATTING (never the scientific form on screen)
+// ============================================================
+
+// Fixed decimals, rounded first (STRING turns scientific below 10^-d).
+bu_Fx(fxV, fxD)
+BEGIN
+  RETURN STRING(ROUND(fxV, fxD), 2, fxD);
+END;
+
+// A value with decimals that suit its size: 1234, 123.4, 12.34, 1.234, 0.1234.
+bu_Num(nmV)
+BEGIN
+  LOCAL nmA;
+  nmA := ABS(nmV);
+  IF nmA >= 1E12 THEN RETURN "beyond range"; END;
+  IF nmA >= 100000 THEN RETURN bu_Fx(nmV, 0); END;
+  IF nmA >= 1000 THEN RETURN bu_Fx(nmV, 0); END;
+  IF nmA >= 100 THEN RETURN bu_Fx(nmV, 1); END;
+  IF nmA >= 10 THEN RETURN bu_Fx(nmV, 2); END;
+  IF nmA >= 1 THEN RETURN bu_Fx(nmV, 3); END;
+  IF nmA == 0 THEN RETURN "0"; END;
+  IF nmA < 0.00005 THEN
+    IF nmV > 0 THEN RETURN "< 0.0001"; END;
+    RETURN "> -0.0001";
+  END;
+  RETURN bu_Fx(nmV, 4);
+END;
+
+// A probability: "0.0423", or "< 0.0001" / "> 0.9999" at the edges.
+bu_Pv(pvP)
+BEGIN
+  IF pvP < 0.00005 THEN RETURN "< 0.0001"; END;
+  IF pvP > 0.99995 THEN RETURN "> 0.9999"; END;
+  RETURN bu_Fx(pvP, 4);
+END;
+
+// A power of ten as an axis label: 1000, 1, 0.01 (never 1E-2).
+bu_Pow10(ptE)
+BEGIN
+  IF ptE >= 0 THEN RETURN bu_IStr(10^ptE); END;
+  RETURN bu_Fx(10^ptE, -ptE);
+END;
+
+// A probability with its relation: " = 0.1234", " < 0.0001", " > 0.9999".
+bu_PEq(peP)
+BEGIN
+  IF peP < 0.00005 THEN RETURN " < 0.0001"; END;
+  IF peP > 0.99995 THEN RETURN " > 0.9999"; END;
+  RETURN " = " + bu_Fx(peP, 4);
+END;
+
+// Text right-aligned at x (font 1, 6.5 px a character).
+bu_RText(rtS, rtX, rtY, rtC)
+BEGIN
+  LOCAL rtW;
+  rtW := IP(6.5 * DIM(rtS)) + 2;
+  TEXTOUT_P(rtS, G1, MAX(0, rtX - rtW), rtY, 1, rtC, rtW + 2);
+END;
+
+// A whole number as plain digits (STRING of a big real is scientific
+// past 12 digits; nothing here is that big, but the loop is safe).
+bu_IStr(isV)
+BEGIN
+  LOCAL dS, dV, dD;
+  dV := ROUND(ABS(isV), 0);
+  IF dV == 0 THEN RETURN "0"; END;
+  dS := "";
+  WHILE dV > 0 DO
+    dD := dV MOD 10;
+    dS := CHAR(48 + dD) + dS;
+    dV := (dV - dD) / 10;
+  END;
+  IF isV < 0 THEN dS := "-" + dS; END;
+  RETURN dS;
+END;
+
+// "1 in N" with N rounded to 2 significant figures (1 in 26, 1 in 1,300).
+bu_OneIn(oiP)
+BEGIN
+  LOCAL oiN, oiE, oiR;
+  IF oiP <= 0 THEN RETURN "beyond 1 in 10^12"; END;
+  oiN := 1 / oiP;
+  IF oiN < 1.5 THEN RETURN "more likely than not"; END;
+  IF oiN >= 1000000000000 THEN RETURN "beyond 1 in 10^12"; END;
+  oiE := FLOOR(LOG(oiN));
+  oiR := 10^MAX(0, oiE - 1);
+  oiN := ROUND(oiN / oiR, 0) * oiR;
+  RETURN "1 in " + bu_IStr(oiN);
+END;
+
+// ============================================================
+// SPECIAL FUNCTIONS (no CAS, no LNGAMMA outside the CAS)
+// ============================================================
+
+// Lanczos log-gamma (Press et al., Numerical Recipes 6.1), v > 0.
+bu_LnGam(lgV)
+BEGIN
+  LOCAL lgY, lgT, lgS, lgJ, lgCo;
+  lgCo := {76.18009172947146, -86.50532032941677, 24.01409824083091,
+           -1.231739572450155, 0.001208650973866179, -0.000005395239384953};
+  lgY := lgV;
+  lgT := lgV + 5.5;
+  lgT := lgT - (lgV + 0.5) * LN(lgT);
+  lgS := 1.000000000190015;
+  FOR lgJ FROM 1 TO 6 DO
+    lgY := lgY + 1;
+    lgS := lgS + lgCo(lgJ) / lgY;
+  END;
+  RETURN -lgT + LN(2.5066282746310005 * lgS / lgV);
+END;
+
+// Digamma psi(v) = d ln Gamma / dv: shift up to v >= 8, then the
+// asymptotic series (Abramowitz & Stegun 6.3.18).
+bu_Digam(dgV)
+BEGIN
+  LOCAL dgX, dgR, dgF;
+  dgX := dgV; dgR := 0;
+  WHILE dgX < 8 DO dgR := dgR - 1 / dgX; dgX := dgX + 1; END;
+  dgF := 1 / (dgX * dgX);
+  RETURN dgR + LN(dgX) - 0.5 / dgX - dgF * (1/12 - dgF * (1/120 - dgF * (1/252 - dgF * (1/240 - dgF / 132))));
+END;
+
+// Trigamma psi'(v): the same shift and series (A&S 6.4.12).
+bu_Trigam(tgV)
+BEGIN
+  LOCAL tgX, tgR, tgF;
+  tgX := tgV; tgR := 0;
+  WHILE tgX < 8 DO tgR := tgR + 1 / (tgX * tgX); tgX := tgX + 1; END;
+  tgF := 1 / (tgX * tgX);
+  RETURN tgR + 1 / tgX + tgF / 2 + tgF / tgX * (1/6 - tgF * (1/30 - tgF * (1/42 - tgF / 30)));
+END;
+
+// ln(1 + v) without the cancellation at small v (series below 1E-4).
+bu_Log1p(lpV)
+BEGIN
+  IF ABS(lpV) < 0.0001 THEN RETURN lpV * (1 - lpV * (0.5 - lpV * (1/3 - lpV / 4))); END;
+  RETURN LN(1 + lpV);
+END;
+
+// e^v - 1 without the cancellation at small v.
+bu_Expm1(emV)
+BEGIN
+  IF ABS(emV) < 0.0001 THEN RETURN emV * (1 + emV * (0.5 + emV * (1/6 + emV / 24))); END;
+  RETURN EXP(emV) - 1;
+END;
+
+// Regularised UPPER incomplete gamma Q(a, x) = 1 - P(a, x) (NR 6.2: the
+// series for x < a + 1, where P is small enough to subtract; the
+// continued fraction, which gives Q itself, otherwise, so a far tail
+// keeps its digits).  For the gamma rival's survival curve.
+bu_GamQ(gqA, gqX)
+BEGIN
+  LOCAL gqN, gqS, gqD, gqT, gqB, gqC;
+  LOCAL gqH, gqAn, gqLg;
+  IF gqX <= 0 THEN RETURN 1; END;
+  gqLg := bu_LnGam(gqA);
+  IF gqX < gqA + 1 THEN
+    gqT := 1 / gqA; gqS := gqT; gqD := gqA;
+    FOR gqN FROM 1 TO 300 DO
+      gqD := gqD + 1; gqT := gqT * gqX / gqD; gqS := gqS + gqT;
+      IF ABS(gqT) < ABS(gqS) * 1E-12 THEN BREAK; END;
+    END;
+    RETURN 1 - gqS * EXP(-gqX + gqA * LN(gqX) - gqLg);
+  END;
+  gqB := gqX + 1 - gqA; gqC := 1E300; gqD := 1 / gqB; gqH := gqD;
+  FOR gqN FROM 1 TO 300 DO
+    gqAn := -gqN * (gqN - gqA); gqB := gqB + 2;
+    gqD := gqAn * gqD + gqB; IF ABS(gqD) < 1E-300 THEN gqD := 1E-300; END;
+    gqC := gqB + gqAn / gqC; IF ABS(gqC) < 1E-300 THEN gqC := 1E-300; END;
+    gqD := 1 / gqD; gqT := gqD * gqC; gqH := gqH * gqT;
+    IF ABS(gqT - 1) < 1E-12 THEN BREAK; END;
+  END;
+  IF -gqX + gqA * LN(gqX) - gqLg < -700 THEN RETURN 0; END;
+  RETURN EXP(-gqX + gqA * LN(gqX) - gqLg) * gqH;
+END;
+
+// The lower tail P(a, x) = 1 - Q(a, x).
+bu_GamP(gpA, gpX)
+BEGIN
+  RETURN 1 - bu_GamQ(gpA, gpX);
+END;
+
+// ============================================================
+// THE BURR XII, all in logarithms (Burr3 v2.4b's lesson: a power can
+// pass 1E500 inside a drawn window; EXP is taken only at the end)
+// ============================================================
+
+// ln SF(x) = -K ln(1 + z), z = (x/S)^C.  Past ln z = 30, ln(1 + z) is
+// ln z to 13 digits.  Below -30, ln(1 + z) is z itself (bu_Log1p).
+bu_LnSF(sfX, sfC, sfK, sfS)
+BEGIN
+  LOCAL sfL;
+  IF sfX <= 0 THEN RETURN 0; END;
+  sfL := sfC * LN(sfX / sfS);
+  IF sfL > 30 THEN RETURN -sfK * sfL; END;
+  RETURN -sfK * bu_Log1p(EXP(sfL));
+END;
+
+// Survival P(X > x) and CDF P(X <= x) = 1 - SF, the small-x case kept
+// exact through -expm1(ln SF).
+bu_SF(sfX, sfC, sfK, sfS)
+BEGIN
+  RETURN EXP(bu_LnSF(sfX, sfC, sfK, sfS));
+END;
+
+bu_CDF(cdX, cdC, cdK, cdS)
+BEGIN
+  IF cdX <= 0 THEN RETURN 0; END;
+  RETURN -bu_Expm1(bu_LnSF(cdX, cdC, cdK, cdS));
+END;
+
+// ln pdf = ln(C K) - ln x + ln z - (K + 1) ln(1 + z)
+bu_LnPdf(lpX, lpC, lpK, lpS)
+BEGIN
+  LOCAL lpL;
+  lpL := lpC * LN(lpX / lpS);
+  IF lpL > 30 THEN RETURN LN(lpC * lpK) - LN(lpX) - lpK * lpL; END;
+  RETURN LN(lpC * lpK) - LN(lpX) + lpL - (lpK + 1) * bu_Log1p(EXP(lpL));
+END;
+
+bu_Pdf(pdX, pdC, pdK, pdS)
+BEGIN
+  LOCAL pdL;
+  IF pdX <= 0 THEN RETURN 0; END;
+  pdL := bu_LnPdf(pdX, pdC, pdK, pdS);
+  IF pdL < -700 THEN RETURN 0; END;
+  RETURN EXP(pdL);
+END;
+
+// Hazard h(x) = f/SF = (C K/S)(x/S)^(C-1)/(1 + z), in logs.
+bu_Haz(hzX, hzC, hzK, hzS)
+BEGIN
+  LOCAL hzL;
+  IF hzX <= 0 THEN RETURN 0; END;
+  hzL := hzC * LN(hzX / hzS);
+  IF hzL > 30 THEN RETURN EXP(LN(hzC * hzK) - LN(hzX)); END;
+  RETURN EXP(LN(hzC * hzK) - LN(hzX) + hzL - bu_Log1p(EXP(hzL)));
+END;
+
+// Quantile x_p = S ((1 - p)^(-1/K) - 1)^(1/C), p clamped inside (0, 1):
+// (1-p)^(-1/K) - 1 = expm1(-log1p(-p)/K), exact at small p.
+// Worked in logs: a = -ln(1 - p)/K can be huge for a tiny K, so ln((1-p)^
+// (-1/K) - 1) is a itself past a = 30, and the final exponent is capped
+// at 500 (the Prime's EXP overflows to infinity without an error).
+bu_Quant(qtP, qtC, qtK, qtS)
+BEGIN
+  LOCAL qtA, qtL;
+  qtP := MAX(1E-12, MIN(1 - 1E-12, qtP));
+  qtA := -bu_Log1p(-qtP) / qtK;
+  IF qtA > 30 THEN qtL := qtA; ELSE qtL := LN(bu_Expm1(qtA)); END;
+  RETURN qtS * EXP(MIN(500, qtL / qtC));
+END;
+
+// E[X^r] = S^r K B(K - r/C, 1 + r/C), finite iff K C > r; else 0 and
+// the caller says "does not exist".  B(a, b) = Gamma(a) Gamma(b)/Gamma(a+b).
+bu_Mom(moR, moC, moK, moS)
+BEGIN
+  LOCAL moA, moB;
+  IF moK * moC <= moR THEN RETURN 0; END;
+  moA := moK - moR / moC; moB := 1 + moR / moC;
+  RETURN EXP(moR * LN(moS) + LN(moK) + bu_LnGam(moA) + bu_LnGam(moB) - bu_LnGam(moA + moB));
+END;
+
+bu_Mean(mnC, mnK, mnS)
+BEGIN
+  RETURN bu_Mom(1, mnC, mnK, mnS);
+END;
+
+// SD = sqrt(E[X^2] - mean^2), finite iff K C > 2 (0 otherwise).
+bu_SD(sdC, sdK, sdS)
+BEGIN
+  LOCAL sdM, sdV;
+  IF sdK * sdC <= 2 THEN RETURN 0; END;
+  sdM := bu_Mom(1, sdC, sdK, sdS);
+  sdV := bu_Mom(2, sdC, sdK, sdS) - sdM * sdM;
+  RETURN SQRT(MAX(0, sdV));
+END;
+
+bu_Mode(mdC, mdK, mdS)
+BEGIN
+  IF mdC <= 1 THEN RETURN 0; END;
+  RETURN mdS * EXP(LN((mdC - 1) / (mdK * mdC + 1)) / mdC);
+END;
+
+// Capped: ln 2 / K passes 500 for K below 0.0014, and the Prime's EXP
+// would then overflow to infinity without an error (review 2); a median
+// past S e^500 is returned as 1E300 and shown as "beyond range".
+bu_Median(meC, meK, meS)
+BEGIN
+  LOCAL meA, meL;
+  meA := LN(2) / meK;
+  IF meA > 500 THEN RETURN 1E300; END;
+  IF meA > 30 THEN meL := meA; ELSE meL := LN(bu_Expm1(meA)); END;
+  IF meL / meC > 500 THEN RETURN 1E300; END;
+  RETURN meS * EXP(meL / meC);
+END;
+
+// The moment case in words: 0 none, 1 mean only, 2 mean and variance.
+bu_MomCase(mcC, mcK)
+BEGIN
+  IF mcK * mcC > 2 THEN RETURN 2; END;
+  IF mcK * mcC > 1 THEN RETURN 1; END;
+  RETURN 0;
+END;
+
+bu_MomText(mtC, mtK)
+BEGIN
+  LOCAL mtP;
+  mtP := "K" + buTIMES + "C = " + bu_Fx(mtK * mtC, 2) + ": ";
+  IF mtK * mtC > 2 THEN RETURN mtP + "mean and variance exist"; END;
+  IF mtK * mtC > 1 THEN RETURN mtP + "mean exists, variance infinite"; END;
+  RETURN mtP + "NO mean (heavy tail)";
+END;
+
+// ============================================================
+// THE MICROPYTHON ENGINE (beta 1b, a TRIAL): the same Burr fit as
+// bu_FitPPL and bu_Hess, in MicroPython 1.9.4, for speed on a G1.
+//
+// THE BRIDGE (Lessons Learned v7s section 9, StudRange beta 15e's shape):
+//  * inputs: PPL writes BU_JOB, BU_IN (a list of six reals), BU_X (the
+//    data), BU_GE and BU_GC (the bin edges and counts); the script reads
+//    every value with hpprime.eval, element by element, so each arrives
+//    as a true number (never sys.argv).
+//  * outputs: BU_OUT, a list of 12 reals cleared to -1 by PPL before the
+//    call; the script writes each element as a PPL assignment built by
+//    string concatenation, the number as fixed decimals ("%.12f", never
+//    repr(), which can give exponent notation PPL will not read), and
+//    writes element 12 (the sentinel 1) LAST, so PPL can tell "finished"
+//    from "died".
+//  * BU_PZ: a mark after every step; if the script dies the traceback is
+//    on the Terminal and BU_PZ in Home says how far it got.
+//  * a Python error does NOT raise a PPL error: PPL notices because
+//    BU_OUT(12) is still -1, and uses its own engine (Auto) or says so
+//    (Python only).
+//  * only math and hpprime are imported.  No f-strings, no numpy (1.9.4).
+// Mode 5 (beta 1e): the Explore curves -- the pdf (and, in CDF view, the
+//   CDF) at bu_CachePPL's points (beta 1i: every stride-th column, the
+//   last, the peak's two), the same one-pass arithmetic; BU_IN = {C, K, S, x max, columns,
+//   view, frame bottom, frame top, frame left, stride} (beta 1f: the frame rows come IN BU_IN --
+//   beta 1e read the file-level LOCALs buPB, buPT, buPL, which
+//   hpprime.eval cannot see, and failed on the calculator with a
+//   ValueError); the segments are written one by one into BU_YP, the
+//   scaled y maximum into BU_OUT(1), the sentinel last.
+// THE ONE RULE (beta 1f): the script reads and writes ONLY exported
+//   names: BU_JOB, BU_IN, BU_X, BU_GE, BU_GC, BU_OUT, BU_YP, BU_PZ.
+// NO TRACEBACK ON SCREEN (beta 1f): main() runs inside try/except; an
+//   error writes BU_PZ = "error: <message>" and BU_OUT(12) = -2 (the
+//   failure sentinel), so PPL falls back without a flash on the screen.
+// Modes: 1 raw-data fit (profile over K, Nelder-Mead over ln C, ln S from
+//   the 18-point grid, the box and boundary rules of bu_FitPPL); 2 grouped
+//   fit (3-D simplex from the 48-point grid); 3 raw Hessian SEs at
+//   BU_IN(4..6); 4 grouped Hessian SEs; 0 a probe (writes 1).
+// BU_IN = {ln S box low, ln S box high, ln(centre S), C, K, S}.
+// BU_OUT = {C, K, S, ln L, flag, SE1, SE2, SE3, SEOK, evals, n, done}.
+// ============================================================
+#PYTHON bul
+# BurrLab beta 1f - the MicroPython engine (the Burr XII fit and,
+# since beta 1e, the Explore curves).
+# Roger Metcalf / Claude, Oct 2026.  The same arithmetic as the PPL
+# engine (bu_ProfT, bu_LLProf, bu_GLL, bu_NM, bu_Hess), so the two
+# agree to rounding; verify_BurrLab_beta1b.py runs this very text.
+from math import exp, log, floor
+import hpprime
+
+def ev(s):
+    return hpprime.eval(s)
+
+def num(name):
+    return float(ev(name))
+
+def mark(t):
+    try:
+        ev('BU_PZ:="' + t.replace('"', "'") + '"')
+    except Exception:
+        pass
+
+def putel(name, j, x):
+    ev(name + "(" + str(j) + "):=" + ("%.12f" % x))
+
+def putsci(name, j, x):
+    # a curve value with 13 significant digits whatever its size: mantissa
+    # as fixed decimals, a capital-E exponent (the literal form PPL reads;
+    # never repr(), whose e-07 form is unverified on the Prime)
+    if x == 0.0:
+        ev(name + "(" + str(j) + "):=0")
+        return
+    e = int(floor(log(abs(x)) / log(10.0)))
+    m = x / (10.0 ** e)
+    if abs(m) >= 10.0:
+        m = m / 10.0
+        e += 1
+    ev(name + "(" + str(j) + "):=" + ("%.12f" % m) + "E" + str(e))
+
+def need(ok, what):
+    # beta 1f: every input is checked BEFORE any loop uses it; a bad one
+    # stops the script here (caught in run(): BU_OUT(12) = -2)
+    if not ok:
+        raise ValueError("bad input: " + what)
+
+def getlist(name):
+    n = num("SIZE(" + name + ")")
+    need(n >= 0.0 and n <= 20000.0, name + " size")
+    n = int(n)
+    out = []
+    i = 1
+    while i <= n:
+        out.append(num(name + "(" + str(i) + ")"))
+        i += 1
+    return out
+
+LX = []      # ln of the data
+EDG = []     # bin edges
+CNT = []     # bin counts
+NDAT = 0
+SUMLX = 0.0
+BOXLO = 0.0
+BOXHI = 0.0
+EVALS = [0]
+PK = [1.0]
+
+def log1p_(v):
+    if abs(v) < 0.0001:
+        return v * (1.0 - v * (0.5 - v * (1.0 / 3.0 - v / 4.0)))
+    return log(1.0 + v)
+
+def lnsf(x, c, k, s):
+    if x <= 0.0:
+        return 0.0
+    l = c * log(x / s)
+    if l > 30.0:
+        return -k * l
+    return -k * log1p_(exp(l))
+
+def proft(c, lns):
+    t = 0.0
+    i = 0
+    while i < NDAT:
+        l = c * (LX[i] - lns)
+        if l > 30.0:
+            t += l
+        else:
+            t += log(1.0 + exp(l))
+        i += 1
+    return t
+
+def llprof(lnc, lns):
+    c = exp(lnc)
+    t = proft(c, lns)
+    if t < 1e-200:
+        PK[0] = 1e200
+        return -1e200
+    PK[0] = NDAT / t
+    return NDAT * log(c * PK[0]) - SUMLX + c * (SUMLX - NDAT * lns) - (PK[0] + 1.0) * t
+
+def llburr(c, k, s):
+    lns = log(s)
+    t = proft(c, lns)
+    return NDAT * log(c * k) - SUMLX + c * (SUMLX - NDAT * lns) - (k + 1.0) * t
+
+def gll(c, k, s):
+    nb = len(CNT)
+    tot = 0.0
+    s0 = 1.0
+    j = 0
+    while j < nb:
+        if j < nb - 1:
+            s1 = exp(lnsf(EDG[j], c, k, s))
+        else:
+            s1 = 0.0
+        p = s0 - s1
+        if CNT[j] > 0:
+            if p <= 0.0:
+                return -1e200
+            tot += CNT[j] * log(p)
+        s0 = s1
+        j += 1
+    return tot
+
+MODE = [1]
+
+def obj(p):
+    EVALS[0] += 1
+    if MODE[0] == 1:
+        if p[0] < -4.0 or p[0] > 7.0 or p[1] < BOXLO or p[1] > BOXHI:
+            return 1e200
+        return -llprof(p[0], p[1])
+    if p[0] < -4.0 or p[0] > 7.0 or p[1] < -12.0 or p[1] > 14.0 or p[2] < BOXLO or p[2] > BOXHI:
+        return 1e200
+    return -gll(exp(p[0]), exp(p[1]), exp(p[2]))
+
+def bar(f):
+    try:
+        w = int(260.0 * f)
+        if w > 0:
+            hpprime.fillrect(0, 30, 120, w, 14, 0xFF4500, 0xFF4500)
+    except Exception:
+        pass
+
+def nm(p0, stp, dim, tol, itmax, pstart):
+    # Nelder & Mead, the step-for-step twin of bu_NM
+    nv = dim + 1
+    sx = []
+    fv = []
+    i = 0
+    while i < nv:
+        row = [p0[0], p0[1], p0[2]]
+        if i > 0:
+            row[i - 1] = p0[i - 1] + stp[i - 1]
+        sx.append(row)
+        fv.append(obj(row))
+        i += 1
+    it = 0
+    done = 0
+    while done == 0 and it < itmax:
+        it += 1
+        i = 1
+        while i < nv:
+            j = i
+            while j > 0 and fv[j] < fv[j - 1]:
+                fv[j], fv[j - 1] = fv[j - 1], fv[j]
+                sx[j], sx[j - 1] = sx[j - 1], sx[j]
+                j -= 1
+            i += 1
+        sp = 0.0
+        i = 1
+        while i < nv:
+            j = 0
+            while j < dim:
+                d = abs(sx[i][j] - sx[0][j])
+                if d > sp:
+                    sp = d
+                j += 1
+            i += 1
+        if abs(fv[nv - 1] - fv[0]) <= tol * (1.0 + abs(fv[0])) and sp < 1e-6:
+            done = 1
+        if done == 0:
+            worst = sx[nv - 1]
+            cen = [0.0, 0.0, 0.0]
+            ref = [0.0, 0.0, 0.0]
+            j = 0
+            while j < dim:
+                f = 0.0
+                i = 0
+                while i < dim:
+                    f += sx[i][j]
+                    i += 1
+                cen[j] = f / dim
+                ref[j] = cen[j] + (cen[j] - worst[j])
+                j += 1
+            fr = obj(ref)
+            if fr < fv[0]:
+                ex = [0.0, 0.0, 0.0]
+                j = 0
+                while j < dim:
+                    ex[j] = cen[j] + 2.0 * (cen[j] - worst[j])
+                    j += 1
+                fe = obj(ex)
+                if fe < fr:
+                    sx[nv - 1] = ex
+                    fv[nv - 1] = fe
+                else:
+                    sx[nv - 1] = ref
+                    fv[nv - 1] = fr
+            elif fr < fv[nv - 2]:
+                sx[nv - 1] = ref
+                fv[nv - 1] = fr
+            else:
+                cc = [0.0, 0.0, 0.0]
+                j = 0
+                while j < dim:
+                    if fr < fv[nv - 1]:
+                        cc[j] = cen[j] + 0.5 * (ref[j] - cen[j])
+                    else:
+                        cc[j] = cen[j] + 0.5 * (worst[j] - cen[j])
+                    j += 1
+                fc = obj(cc)
+                if fc < fr and fc < fv[nv - 1]:
+                    sx[nv - 1] = cc
+                    fv[nv - 1] = fc
+                else:
+                    i = 1
+                    while i < nv:
+                        j = 0
+                        while j < dim:
+                            sx[i][j] = sx[0][j] + 0.5 * (sx[i][j] - sx[0][j])
+                            j += 1
+                        fv[i] = obj(sx[i])
+                        i += 1
+            if it % 5 == 0:
+                bar(pstart + (1.0 - pstart) * it / itmax)
+    return sx[0], fv[0]
+
+def hess(c, k, s, grouped):
+    # minus the numerical Hessian of ln L, relative step 1 %, by cofactors
+    th = [c, k, s]
+    h = [0.01 * c, 0.01 * k, 0.01 * s]
+    if grouped:
+        f = lambda t: gll(t[0], t[1], t[2])
+    else:
+        f = lambda t: llburr(t[0], t[1], t[2])
+    f0 = f(th)
+    m = [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
+    i = 0
+    while i < 3:
+        a = list(th)
+        b = list(th)
+        a[i] = th[i] + h[i]
+        b[i] = th[i] - h[i]
+        m[i][i] = (f(a) - 2.0 * f0 + f(b)) / (h[i] * h[i])
+        j = i + 1
+        while j < 3:
+            pp = list(th); pp[i] = th[i] + h[i]; pp[j] = th[j] + h[j]
+            pm = list(th); pm[i] = th[i] + h[i]; pm[j] = th[j] - h[j]
+            mp = list(th); mp[i] = th[i] - h[i]; mp[j] = th[j] + h[j]
+            mm = list(th); mm[i] = th[i] - h[i]; mm[j] = th[j] - h[j]
+            m[i][j] = (f(pp) - f(pm) - f(mp) + f(mm)) / (4.0 * h[i] * h[j])
+            m[j][i] = m[i][j]
+            j += 1
+        i += 1
+    i = 0
+    while i < 3:
+        j = 0
+        while j < 3:
+            m[i][j] = -m[i][j]
+            j += 1
+        i += 1
+    det = (m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
+           - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
+           + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]))
+    if det <= 0.0:
+        return [0.0, 0.0, 0.0, 0.0]
+    v1 = (m[1][1] * m[2][2] - m[1][2] * m[2][1]) / det
+    v2 = (m[0][0] * m[2][2] - m[0][2] * m[2][0]) / det
+    v3 = (m[0][0] * m[1][1] - m[0][1] * m[1][0]) / det
+    if v1 <= 0.0 or v2 <= 0.0 or v3 <= 0.0:
+        return [0.0, 0.0, 0.0, 0.0]
+    return [v1 ** 0.5, v2 ** 0.5, v3 ** 0.5, 1.0]
+
+def fitraw(lnmed, xmin):
+    # the 18-point grid, then the 2-D profile simplex
+    best = -1e300
+    c0 = 0.0
+    s0 = lnmed
+    i = 1
+    while i <= 6:
+        j = 1
+        while j <= 3:
+            lnc = log(0.5 * 2.0 ** (i - 1))
+            lns = lnmed + log(2.0 ** (j - 2))
+            v = llprof(lnc, lns)
+            if v > best:
+                best = v
+                c0 = lnc
+                s0 = lns
+            j += 1
+        i += 1
+    mark("grid done")
+    MODE[0] = 1
+    p, fbest = nm([c0, s0, 0.0], [0.3, 0.3, 0.0], 2, 1e-10, 400, 0.1)
+    v = llprof(p[0], p[1])
+    c = exp(p[0])
+    s = exp(p[1])
+    k = PK[0]
+    flag = 0
+    if p[1] > BOXHI - 0.05:
+        flag = 1
+    if p[0] > 6.95 or p[0] < -3.95 or p[1] < BOXLO + 0.05:
+        flag = 3
+    if p[0] > 6.95 and s < 1.1 * xmin:
+        flag = 2
+    return c, k, s, v, flag
+
+def fitgrp(lnmed, xmin):
+    best = -1e300
+    c0 = 0.0
+    k0 = 0.0
+    s0 = lnmed
+    i = 1
+    while i <= 4:
+        j = 1
+        while j <= 4:
+            l = 1
+            while l <= 3:
+                lnc = log(0.5 * 2.0 ** (i - 1))
+                lnk = log(0.5 * 2.0 ** (j - 1))
+                lns = lnmed + log(2.0 ** (l - 2))
+                v = gll(exp(lnc), exp(lnk), exp(lns))
+                if v > best:
+                    best = v
+                    c0 = lnc
+                    k0 = lnk
+                    s0 = lns
+                l += 1
+            j += 1
+        i += 1
+    mark("grid done")
+    MODE[0] = 2
+    p, fbest = nm([c0, k0, s0], [0.3, 0.3, 0.3], 3, 1e-10, 600, 0.1)
+    c = exp(p[0])
+    k = exp(p[1])
+    s = exp(p[2])
+    v = -fbest
+    flag = 0
+    if p[2] > BOXHI - 1.0 or k > 10000.0:
+        flag = 1
+    if p[0] > 6.95 or p[0] < -3.95 or p[1] > 13.95 or p[1] < -11.95 or p[2] < BOXLO + 0.05:
+        flag = 3
+    if p[0] > 6.95 and s < 1.1 * xmin:
+        flag = 2
+    return c, k, s, v, flag
+
+def cval(j, c, k, lndx, lns, lck, kp1, view):
+    # the pdf (or the CDF) at pixel column j: bu_CachePPL's arithmetic
+    lx = log(j) + lndx
+    lz = c * (lx - lns)
+    if lz > 30.0:
+        l1 = lz
+    else:
+        l1 = log(1.0 + exp(lz))
+    if view == 1:
+        return 1.0 - exp(-k * l1)
+    return exp(lck - lx + lz - kp1 * l1)
+
+def curves(c, k, s, xmax, nc, view, pb, pt, pl, st):
+    # beta 1i: the curve at bu_CachePPL's points (every st-th column from
+    # 1, the last, the two columns either side of the pdf's peak), as pixel
+    # ROWS, the polyline's points {x1, y1, x2, y2, ...} in BU_YP;
+    # the scaled y maximum (1.08 x the pdf's maximum over the points past
+    # column 3) goes to BU_OUT(1), the value at column 10 to BU_OUT(2)
+    lndx = log(xmax / nc)
+    lns = log(s)
+    lck = log(c * k)
+    kp1 = k + 1.0
+    np_ = (nc + st - 2) // st + 1
+    km = -1
+    if c > 1.0:
+        km = int(s * exp(log((c - 1.0) / (k * c + 1.0)) / c) / (xmax / nc))
+    cols = []
+    i = 1
+    while i <= np_:
+        j = 1 + (i - 1) * st
+        if j > nc:
+            j = nc
+        cols.append(j)
+        if i < np_:
+            jn = 1 + i * st
+            if jn > nc:
+                jn = nc
+            if km > j and km < jn and km >= 4:
+                cols.append(km)
+            if km + 1 > j and km + 1 < jn and km + 1 >= 4:
+                cols.append(km + 1)
+        i += 1
+    np_ = len(cols)
+    vals = []
+    ymax = 0.0
+    for j in cols:
+        v = cval(j, c, k, lndx, lns, lck, kp1, view)
+        if view != 1 and j >= 4 and v > ymax:
+            ymax = v
+        vals.append(v)
+    putsci("BU_OUT", 2, cval(10, c, k, lndx, lns, lck, kp1, view))
+    if view == 1:
+        ymax = 1.0
+    else:
+        if ymax <= 0.0:
+            ymax = 1.0
+        ymax = ymax * 1.08
+    h = pb - pt
+    rows = []
+    for v in vals:
+        r = v / ymax
+        if r > 1.0:
+            r = 1.0
+        rows.append(pb - int(r * h))
+    i = 0
+    while i < np_:
+        ev("BU_YP(" + str(2 * i + 1) + "):=" + str(pl + cols[i]))
+        ev("BU_YP(" + str(2 * i + 2) + "):=" + str(rows[i]))
+        i += 1
+    putel("BU_OUT", 3, np_)
+    return ymax
+
+def main():
+    global LX, EDG, CNT, NDAT, SUMLX, BOXLO, BOXHI
+    mark("started")
+    md = int(num("BU_JOB"))
+    inp = getlist("BU_IN")
+    BOXLO = inp[0]
+    BOXHI = inp[1]
+    mark("read mode " + str(md))
+    need(md >= 0 and md <= 5, "mode")
+    if md == 5:
+        # beta 1f: validate everything the loops depend on: the loops run
+        # nc columns and at most nc segments, so nc in 1..320 bounds them
+        need(len(inp) == 10, "BU_IN needs 10 values for mode 5")
+        i = 0
+        while i < 4:
+            need(inp[i] > 0.0 and inp[i] < 1e300, "C K S xmax")
+            i += 1
+        need(inp[4] >= 1.0 and inp[4] <= 320.0, "columns")
+        need(inp[5] == 0.0 or inp[5] == 1.0, "view")
+        need(inp[7] >= 0.0 and inp[6] <= 240.0 and inp[6] - inp[7] >= 1.0 and inp[6] - inp[7] <= 240.0, "frame rows")
+        need(inp[8] >= 0.0 and inp[8] + inp[4] <= 320.0, "frame left")
+        need(inp[9] >= 1.0 and inp[9] <= inp[4], "stride")
+        ym = curves(inp[0], inp[1], inp[2], inp[3], int(inp[4]), int(inp[5]), int(inp[6]), int(inp[7]), int(inp[8]), int(inp[9]))
+        putsci("BU_OUT", 1, ym)
+        putel("BU_OUT", 12, 1.0)
+        mark("finished mode 5")
+        return
+    if md == 0:
+        putel("BU_OUT", 1, 1.0)
+        putel("BU_OUT", 12, 1.0)
+        mark("finished mode 0")
+        return
+    need(len(inp) == 6 and inp[0] > -1e6 and inp[1] < 1e6 and inp[0] < inp[1], "BU_IN box")
+    if md == 1 or md == 3:
+        xs = getlist("BU_X")
+        need(len(xs) >= 4, "BU_X size")
+        NDAT = len(xs)
+        LX = []
+        SUMLX = 0.0
+        i = 0
+        while i < NDAT:
+            LX.append(log(xs[i]))
+            SUMLX += LX[i]
+            i += 1
+        xmin = xs[0]
+    else:
+        EDG = getlist("BU_GE")
+        CNT = getlist("BU_GC")
+        need(len(CNT) >= 2 and len(EDG) >= 1 and len(EDG) >= len(CNT) - 1, "BU_GE BU_GC sizes")
+        NDAT = 0
+        i = 0
+        while i < len(CNT):
+            NDAT += CNT[i]
+            i += 1
+        xmin = EDG[0]
+    mark("data read, n = " + str(NDAT))
+    if md == 1 or md == 2:
+        if md == 1:
+            c, k, s, v, flag = fitraw(inp[2], xmin)
+        else:
+            c, k, s, v, flag = fitgrp(inp[2], xmin)
+        mark("simplex done")
+        putel("BU_OUT", 1, c)
+        putel("BU_OUT", 2, k)
+        putel("BU_OUT", 3, s)
+        putel("BU_OUT", 4, v)
+        putel("BU_OUT", 5, flag)
+        putel("BU_OUT", 10, EVALS[0])
+        putel("BU_OUT", 11, NDAT)
+    else:
+        se = hess(inp[3], inp[4], inp[5], md == 4)
+        mark("hessian done")
+        putel("BU_OUT", 6, se[0])
+        putel("BU_OUT", 7, se[1])
+        putel("BU_OUT", 8, se[2])
+        putel("BU_OUT", 9, se[3])
+    putel("BU_OUT", 12, 1.0)
+    mark("finished mode " + str(md))
+
+def run():
+    # beta 1f: every error is caught HERE, so nothing is printed on the
+    # screen; BU_PZ says what went wrong and BU_OUT(12) = -2 tells PPL
+    try:
+        main()
+    except Exception as err:
+        mark("error: " + str(err))
+        try:
+            ev("BU_OUT(12):=-2")
+        except Exception:
+            pass
+
+run()
+#END
+
+// ============================================================
+// LIKELIHOODS AND THE OPTIMISER
+// ============================================================
+
+// T(C, S) = sum over the data of ln(1 + z_i), z_i = (x_i/S)^C, from the
+// cached logs buLX.  This is the only loop over the data in a Burr
+// evaluation: the rest of ln L is closed form.
+bu_ProfT(ptC, ptLnS)
+BEGIN
+  LOCAL ptI, ptL, ptT;
+  bu_Blink();                                   // beta 1i
+  ptT := 0;
+  FOR ptI FROM 1 TO buN DO
+    ptL := ptC * (buLX(ptI) - ptLnS);
+    IF ptL > 30 THEN ptT := ptT + ptL; ELSE ptT := ptT + LN(1 + EXP(ptL)); END;
+  END;
+  RETURN ptT;
+END;
+
+// Full Burr XII log-likelihood on the raw data:
+//   ln L = n ln(C K) - sum ln x + C (sum ln x - n ln S) - (K + 1) T
+bu_LLBurr(lbC, lbK, lbS)
+BEGIN
+  LOCAL lbI, lbSum, lbLnS, lbT;
+  lbSum := 0;
+  FOR lbI FROM 1 TO buN DO lbSum := lbSum + buLX(lbI); END;
+  lbLnS := LN(lbS);
+  lbT := bu_ProfT(lbC, lbLnS);
+  RETURN buN * LN(lbC * lbK) - lbSum + lbC * (lbSum - buN * lbLnS) - (lbK + 1) * lbT;
+END;
+
+// Profile log-likelihood over K: for given C and S the score in K is
+// n/K - T = 0, so K-hat = n/T, and ln L(C, S, K-hat) needs one loop.
+// Leaves K-hat in buPK.
+bu_LLProf(lpLnC, lpLnS)
+BEGIN
+  LOCAL lpC, lpT, lpI, lpSum;
+  lpC := EXP(lpLnC);
+  lpT := bu_ProfT(lpC, lpLnS);
+  // T -> 0 when every z_i is 0 (S far above the data with a large C):
+  // the profile K would be infinite; refuse the point
+  IF lpT < 1E-200 THEN buPK := 1E200; RETURN -1E200; END;
+  buPK := buN / lpT;
+  lpSum := 0;
+  FOR lpI FROM 1 TO buN DO lpSum := lpSum + buLX(lpI); END;
+  RETURN buN * LN(lpC * buPK) - lpSum + lpC * (lpSum - buN * lpLnS) - (buPK + 1) * lpT;
+END;
+
+// A model's survival function at x, for the grouped likelihood and the
+// pictures.  Models: 1 Burr (C, K, S); 2 exponential (mean m); 3 log-
+// normal (mu, sigma); 4 Weibull (k, lambda); 5 gamma (a, theta);
+// 6 Lomax (K, S).  Every upper tail is formed as a lower tail or in logs.
+bu_ModSF(msM, msX, msA, msB, msC)
+BEGIN
+  LOCAL msZ;
+  IF msX <= 0 THEN RETURN 1; END;
+  IF msM == 1 THEN RETURN bu_SF(msX, msA, msB, msC); END;
+  IF msM == 2 THEN RETURN EXP(-msX / msA); END;
+  IF msM == 3 THEN RETURN NORMALD_CDF(0, 1, -(LN(msX) - msA) / msB); END;
+  IF msM == 4 THEN
+    msZ := msA * LN(msX / msB);
+    IF msZ > 700 THEN RETURN 0; END;
+    RETURN EXP(-EXP(msZ));
+  END;
+  IF msM == 5 THEN RETURN bu_GamQ(msA, msX / msB); END;
+  RETURN EXP(-msA * bu_Log1p(msX / msB));
+END;
+
+// Grouped log-likelihood: sum n_j ln(SF(e_{j-1}) - SF(e_j)), bin 1 from
+// 0, the last bin open to infinity.  A bin with a count and no
+// probability gives the penalty value.
+bu_GLL(glM, glA, glB, glC)
+BEGIN
+  LOCAL glJ, glS0, glS1, glP, glL, glNB;
+  bu_Blink();                                   // beta 1i
+  glNB := SIZE(buGCnt);
+  glL := 0; glS0 := 1;
+  FOR glJ FROM 1 TO glNB DO
+    IF glJ < glNB THEN glS1 := bu_ModSF(glM, buGEd(glJ), glA, glB, glC); ELSE glS1 := 0; END;
+    glP := glS0 - glS1;
+    IF buGCnt(glJ) > 0 THEN
+      IF glP <= 0 THEN RETURN -1E200; END;
+      glL := glL + buGCnt(glJ) * LN(glP);
+    END;
+    glS0 := glS1;
+  END;
+  RETURN glL;
+END;
+
+// The objective the simplex minimises: -ln L for the model in buMod,
+// parameters on the log scale, with a box so the simplex cannot wander
+// off to an infinite parameter.  buMod:
+//   1 Burr, raw data, profile over K: p = {ln C, ln S}
+//   2 Burr, grouped: p = {ln C, ln K, ln S}
+//   3 lognormal, grouped: {mu, ln sigma}   4 Weibull, grouped: {ln k, ln lambda}
+//   5 exponential, grouped: {ln m}         6 Lomax, grouped: {ln K, ln S}
+//   7 Lomax, raw, profile over K: {ln S}
+bu_Obj(obP)
+BEGIN
+  LOCAL obA, obB, obC, obT, obLo, obHi;
+  buEvals := buEvals + 1;
+  obLo := buBoxLo; obHi := buBoxHi;           // the ln S box (set by bu_Fit)
+  IF buMod == 1 THEN
+    IF obP(1) < -4 OR obP(1) > 7 OR obP(2) < obLo OR obP(2) > obHi THEN RETURN 1E200; END;
+    RETURN -bu_LLProf(obP(1), obP(2));
+  END;
+  IF buMod == 2 THEN
+    IF obP(1) < -4 OR obP(1) > 7 OR obP(2) < -12 OR obP(2) > 14 OR obP(3) < obLo OR obP(3) > obHi THEN RETURN 1E200; END;
+    RETURN -bu_GLL(1, EXP(obP(1)), EXP(obP(2)), EXP(obP(3)));
+  END;
+  IF buMod == 3 THEN
+    IF obP(2) < -8 OR obP(2) > 8 OR obP(1) < obLo - 5 OR obP(1) > obHi + 5 THEN RETURN 1E200; END;
+    RETURN -bu_GLL(3, obP(1), EXP(obP(2)), 0);
+  END;
+  IF buMod == 4 THEN
+    IF obP(1) < -4 OR obP(1) > 7 OR obP(2) < obLo OR obP(2) > obHi THEN RETURN 1E200; END;
+    RETURN -bu_GLL(4, EXP(obP(1)), EXP(obP(2)), 0);
+  END;
+  IF buMod == 5 THEN
+    IF obP(1) < obLo OR obP(1) > obHi THEN RETURN 1E200; END;
+    RETURN -bu_GLL(2, EXP(obP(1)), 0, 0);
+  END;
+  IF buMod == 6 THEN
+    IF obP(1) < -12 OR obP(1) > 14 OR obP(2) < obLo OR obP(2) > obHi THEN RETURN 1E200; END;
+    RETURN -bu_GLL(6, EXP(obP(1)), EXP(obP(2)), 0);
+  END;
+  // 7: Lomax on raw data, K profiled: K-hat = n / sum ln(1 + x/S)
+  IF obP(1) < obLo OR obP(1) > obHi THEN RETURN 1E200; END;
+  obA := EXP(obP(1)); obT := 0;
+  bu_Blink();                                   // beta 1i (the other models blink in bu_ProfT / bu_GLL)
+  FOR obB FROM 1 TO buN DO obT := obT + bu_Log1p(buD(obB) / obA); END;
+  obC := buN / obT; buPK := obC;
+  RETURN -(buN * LN(obC / obA) - (obC + 1) * obT);
+END;
+
+// A progress bar on the screen (drawn straight to G0: it is the only
+// thing changing, so nothing tears) and an Esc check.  frac in 0..1.
+bu_Prog(pgF)
+BEGIN
+  LOCAL pgK, pgW;
+  pgW := IP(260 * MAX(0, MIN(1, pgF)));
+  RECT_P(G0, 30, 120, 290, 134, buORNG, buWHT);
+  IF pgW > 0 THEN RECT_P(G0, 30, 120, 30 + pgW, 134, buORNG, buORNG); END;
+  TEXTOUT_P(buProgT + "  (Esc stops)", G0, 30, 104, 1, buGRAY, 290);
+  bu_Blink();                                   // beta 1i
+  pgK := GETKEY;
+  IF pgK == 4 THEN buStop := 1; END;
+END;
+
+// The simplex: four vertices as four file-level LOCAL lists of three
+// (element assignment into a file-level LOCAL list is the hardware-
+// proven shape, ChiTable's csRT; a LOCAL matrix is not).
+bu_SxG(sgI, sgJ)
+BEGIN
+  IF sgI == 1 THEN RETURN buSx1(sgJ); END;
+  IF sgI == 2 THEN RETURN buSx2(sgJ); END;
+  IF sgI == 3 THEN RETURN buSx3(sgJ); END;
+  RETURN buSx4(sgJ);
+END;
+
+bu_SxS(ssI, ssJ, ssV)
+BEGIN
+  IF ssI == 1 THEN buSx1(ssJ) := ssV; END;
+  IF ssI == 2 THEN buSx2(ssJ) := ssV; END;
+  IF ssI == 3 THEN buSx3(ssJ) := ssV; END;
+  IF ssI == 4 THEN buSx4(ssJ) := ssV; END;
+END;
+
+// Vertex i as a list of three.
+bu_SxRow(srI)
+BEGIN
+  IF srI == 1 THEN RETURN buSx1; END;
+  IF srI == 2 THEN RETURN buSx2; END;
+  IF srI == 3 THEN RETURN buSx3; END;
+  RETURN buSx4;
+END;
+
+// Nelder & Mead (1965) on buDim parameters, minimising bu_Obj.  The
+// simplex lives in buSx1..buSx4 (vertices), its values in buFv.
+// Reflection 1, expansion 2, contraction 0.5, shrink 0.5.
+// Returns the best vertex as a list; its value is left in buFv(1).
+// Stops when the values agree to nmTol (relative) and the vertices to
+// 1E-6, or after nmMax iterations, or on Esc (buStop = 1).
+bu_NM(nmP0, nmStp, nmTol, nmMax)
+BEGIN
+  LOCAL nmI, nmJ, nmIt, nmNV, nmX, nmF;
+  LOCAL nmR, nmFr, nmE, nmFe, nmCc, nmFc;
+  LOCAL nmT, nmSp, nmDone, nmRow;
+  nmNV := buDim + 1;
+  buSx1 := {0, 0, 0}; buSx2 := {0, 0, 0}; buSx3 := {0, 0, 0}; buSx4 := {0, 0, 0};
+  FOR nmI FROM 1 TO nmNV DO
+    FOR nmJ FROM 1 TO buDim DO bu_SxS(nmI, nmJ, nmP0(nmJ)); END;
+    IF nmI > 1 THEN bu_SxS(nmI, nmI - 1, nmP0(nmI - 1) + nmStp(nmI - 1)); END;
+    buFv(nmI) := bu_Obj(bu_SxRow(nmI));
+  END;
+  nmIt := 0; nmDone := 0;
+  nmX := {0, 0, 0}; nmR := {0, 0, 0}; nmE := {0, 0, 0}; nmCc := {0, 0, 0};
+  WHILE nmDone == 0 AND nmIt < nmMax AND buStop == 0 DO
+    nmIt := nmIt + 1;
+    // order the vertices by value (an insertion sort of 2 to 4 rows)
+    FOR nmI FROM 2 TO nmNV DO
+      nmJ := nmI;
+      WHILE nmJ > 1 AND buFv(nmJ) < buFv(nmJ - 1) DO
+        nmF := buFv(nmJ); buFv(nmJ) := buFv(nmJ - 1); buFv(nmJ - 1) := nmF;
+        nmRow := bu_SxRow(nmJ);
+        FOR nmT FROM 1 TO buDim DO bu_SxS(nmJ, nmT, bu_SxG(nmJ - 1, nmT)); END;
+        FOR nmT FROM 1 TO buDim DO bu_SxS(nmJ - 1, nmT, nmRow(nmT)); END;
+        nmJ := nmJ - 1;
+      END;
+    END;
+    // convergence: values close AND the simplex small
+    nmSp := 0;
+    FOR nmI FROM 2 TO nmNV DO
+      FOR nmJ FROM 1 TO buDim DO nmSp := MAX(nmSp, ABS(bu_SxG(nmI, nmJ) - buSx1(nmJ))); END;
+    END;
+    IF ABS(buFv(nmNV) - buFv(1)) <= nmTol * (1 + ABS(buFv(1))) AND nmSp < 1E-6 THEN nmDone := 1; END;
+    IF nmDone == 0 THEN
+      // centroid of all but the worst; the worst vertex as a list
+      nmRow := bu_SxRow(nmNV);
+      FOR nmJ FROM 1 TO buDim DO
+        nmF := 0;
+        FOR nmI FROM 1 TO buDim DO nmF := nmF + bu_SxG(nmI, nmJ); END;
+        nmX(nmJ) := nmF / buDim;
+        nmR(nmJ) := nmX(nmJ) + (nmX(nmJ) - nmRow(nmJ));
+      END;
+      nmFr := bu_Obj(nmR);
+      IF nmFr < buFv(1) THEN
+        FOR nmJ FROM 1 TO buDim DO nmE(nmJ) := nmX(nmJ) + 2 * (nmX(nmJ) - nmRow(nmJ)); END;
+        nmFe := bu_Obj(nmE);
+        IF nmFe < nmFr THEN
+          FOR nmJ FROM 1 TO buDim DO bu_SxS(nmNV, nmJ, nmE(nmJ)); END; buFv(nmNV) := nmFe;
+        ELSE
+          FOR nmJ FROM 1 TO buDim DO bu_SxS(nmNV, nmJ, nmR(nmJ)); END; buFv(nmNV) := nmFr;
+        END;
+      ELSE
+        IF nmFr < buFv(nmNV - 1) THEN
+          FOR nmJ FROM 1 TO buDim DO bu_SxS(nmNV, nmJ, nmR(nmJ)); END; buFv(nmNV) := nmFr;
+        ELSE
+          // contraction: outside if the reflection beat the worst, else inside
+          IF nmFr < buFv(nmNV) THEN
+            FOR nmJ FROM 1 TO buDim DO nmCc(nmJ) := nmX(nmJ) + 0.5 * (nmR(nmJ) - nmX(nmJ)); END;
+          ELSE
+            FOR nmJ FROM 1 TO buDim DO nmCc(nmJ) := nmX(nmJ) + 0.5 * (nmRow(nmJ) - nmX(nmJ)); END;
+          END;
+          nmFc := bu_Obj(nmCc);
+          IF nmFc < MIN(nmFr, buFv(nmNV)) THEN
+            FOR nmJ FROM 1 TO buDim DO bu_SxS(nmNV, nmJ, nmCc(nmJ)); END; buFv(nmNV) := nmFc;
+          ELSE
+            // shrink every vertex half way to the best
+            FOR nmI FROM 2 TO nmNV DO
+              FOR nmJ FROM 1 TO buDim DO bu_SxS(nmI, nmJ, buSx1(nmJ) + 0.5 * (bu_SxG(nmI, nmJ) - buSx1(nmJ))); END;
+              buFv(nmI) := bu_Obj(bu_SxRow(nmI));
+            END;
+          END;
+        END;
+      END;
+      IF nmIt MOD 5 == 0 THEN bu_Prog(buProgS + (1 - buProgS) * nmIt / nmMax); END;
+    END;
+  END;
+  RETURN {buSx1(1), buSx1(2), buSx1(3)};
+END;
+
+// ============================================================
+// THE RIVALS on raw data (closed forms where they exist, one-
+// dimensional solves otherwise; Kleiber & Kotz 2003; Johnson, Kotz &
+// Balakrishnan 1994 ch. 17, 21).  Each writes its row of buRv1/buRv2
+// (parameters), buRvL (ln L), buRvOK, buRvFl (1 = at a boundary).
+// ============================================================
+bu_FitRiv()
+BEGIN
+  LOCAL rvI, rvSum, rvSumL, rvXb, rvMu, rvSg;
+  LOCAL rvK, rvLo, rvHi, rvG, rvW, rvWL;
+  LOCAL rvLxm, rvLam, rvA, rvS, rvP, rvT;
+  rvSum := 0; rvSumL := 0;
+  FOR rvI FROM 1 TO buN DO rvSum := rvSum + buD(rvI); rvSumL := rvSumL + buLX(rvI); END;
+  rvXb := rvSum / buN; rvMu := rvSumL / buN;
+  // 1 exponential: mean m = x-bar; ln L = -n ln m - n
+  buRv1(1) := rvXb; buRv2(1) := 0;
+  buRvL(1) := -buN * LN(rvXb) - buN; buRvOK(1) := 1; buRvFl(1) := 0;
+  // 2 lognormal: mu = mean ln x, sigma = root mean square deviation
+  //   (the MLE, divisor n); ln L = -n/2 ln(2 pi) - n ln sigma - sum ln x - n/2
+  rvSg := 0;
+  FOR rvI FROM 1 TO buN DO rvSg := rvSg + (buLX(rvI) - rvMu)^2; END;
+  rvSg := SQRT(rvSg / buN);
+  buRv1(2) := rvMu; buRv2(2) := rvSg; buRvOK(2) := 0; buRvFl(2) := 0;
+  IF rvSg > 0 THEN
+    buRvL(2) := -buN / 2 * LN(2 * 3.14159265359) - buN * LN(rvSg) - rvSumL - buN / 2;
+    buRvOK(2) := 1;
+  END;
+  bu_Prog(0.6);
+  // 3 Weibull: the shape k solves  sum x^k ln x / sum x^k - 1/k - mean ln x = 0
+  //   (increasing in k); bisection on ln k in [ln 0.02, ln 500], with x^k
+  //   formed as exp(k (ln x - ln x_max)) so nothing overflows.
+  //   lambda = (mean x^k)^(1/k); ln L = n ln k - n k ln lambda + (k-1) sum ln x - n
+  rvLxm := buLX(buN);
+  rvLo := LN(0.02); rvHi := LN(500);
+  FOR rvI FROM 1 TO 42 DO
+    bu_Blink();                                 // beta 1i: 42 passes over the data
+    rvK := EXP((rvLo + rvHi) / 2);
+    rvW := 0; rvWL := 0;
+    FOR rvT FROM 1 TO buN DO
+      rvG := EXP(rvK * (buLX(rvT) - rvLxm));
+      rvW := rvW + rvG; rvWL := rvWL + rvG * buLX(rvT);
+    END;
+    rvG := rvWL / rvW - 1 / rvK - rvMu;
+    IF rvG > 0 THEN rvHi := LN(rvK); ELSE rvLo := LN(rvK); END;
+  END;
+  rvK := EXP((rvLo + rvHi) / 2);
+  rvW := 0;
+  FOR rvT FROM 1 TO buN DO rvW := rvW + EXP(rvK * (buLX(rvT) - rvLxm)); END;
+  rvLam := EXP(rvLxm + LN(rvW / buN) / rvK);
+  buRv1(3) := rvK; buRv2(3) := rvLam; buRvFl(3) := 0;
+  buRvL(3) := buN * LN(rvK) - buN * rvK * LN(rvLam) + (rvK - 1) * rvSumL - buN;
+  buRvOK(3) := 1;
+  IF rvK > 499 OR rvK < 0.0201 THEN buRvFl(3) := 1; buRvOK(3) := 0; END;
+  bu_Prog(0.72);
+  // 4 gamma: shape a solves ln a - psi(a) = ln x-bar - mean ln x = s
+  //   (Newton from Minka's start), theta = x-bar / a;
+  //   ln L = (a-1) sum ln x - sum x / theta - n a ln theta - n ln Gamma(a)
+  rvS := LN(rvXb) - rvMu;
+  buRvOK(4) := 0; buRvFl(4) := 0; buRv1(4) := 0; buRv2(4) := 0;
+  IF rvS > 1E-9 THEN
+    rvA := (3 - rvS + SQRT((rvS - 3)^2 + 24 * rvS)) / (12 * rvS);
+    FOR rvI FROM 1 TO 40 DO
+      rvG := (LN(rvA) - bu_Digam(rvA) - rvS) / (1 / rvA - bu_Trigam(rvA));
+      rvA := rvA - rvG;
+      IF rvA <= 0 THEN rvA := 0.001; END;
+    END;
+    rvP := rvXb / rvA;
+    buRv1(4) := rvA; buRv2(4) := rvP;
+    buRvL(4) := (rvA - 1) * rvSumL - rvSum / rvP - buN * rvA * LN(rvP) - buN * bu_LnGam(rvA);
+    buRvOK(4) := 1;
+  END;
+  bu_Prog(0.78);
+  // 5 Lomax (Pareto II): K profiled, a one-dimensional simplex over ln S.
+  //   A light tail sends S and K to infinity together (the exponential
+  //   limit); the box stops it and the row is flagged.
+  buMod := 7; buDim := 1; buProgS := 0.8;
+  rvP := bu_NM({LN(rvXb), 0, 0}, {1, 0, 0}, 1E-10, 200);
+  buRv2(5) := EXP(rvP(1)); buRv1(5) := buPK;
+  buRvL(5) := -buFv(1); buRvOK(5) := 1; buRvFl(5) := 0;
+  // at the top of the box the Lomax IS the exponential (K, S -> infinity
+  // with S/K = the mean): report the limit's own ln L, not the box's
+  IF rvP(1) > buBoxHi - 0.05 THEN buRvFl(5) := 1; buRvL(5) := buRvL(1); buRv1(5) := 0; buRv2(5) := 0; END;
+END;
+
+// The rivals on GROUPED data: every one through the simplex on its own
+// grouped likelihood (closed forms do not exist for bins).  The gamma
+// is skipped (its CDF costs an incomplete gamma per edge per step: too
+// slow for a G1) and the row says so.
+bu_FitRivG()
+BEGIN
+  LOCAL rgP, rgI, rgMed, rgCum, rgLn;
+  // a rough centre: the bin where the cumulative count passes half
+  rgCum := 0; rgMed := buGEd(1);
+  FOR rgI FROM 1 TO SIZE(buGCnt) - 1 DO
+    rgCum := rgCum + buGCnt(rgI);
+    IF rgCum < buN / 2 THEN rgMed := buGEd(rgI); END;
+  END;
+  rgLn := LN(rgMed);
+  buMod := 5; buDim := 1; buProgS := 0.56;
+  rgP := bu_NM({rgLn, 0, 0}, {1, 0, 0}, 1E-10, 150);
+  buRv1(1) := EXP(rgP(1)); buRv2(1) := 0; buRvL(1) := -buFv(1); buRvOK(1) := 1; buRvFl(1) := 0;
+  buMod := 3; buDim := 2; buProgS := 0.62;
+  rgP := bu_NM({rgLn, 0, 0}, {0.5, 0.5, 0}, 1E-10, 300);
+  buRv1(2) := rgP(1); buRv2(2) := EXP(rgP(2)); buRvL(2) := -buFv(1); buRvOK(2) := 1; buRvFl(2) := 0;
+  buMod := 4; buDim := 2; buProgS := 0.7;
+  rgP := bu_NM({0, rgLn, 0}, {0.5, 0.5, 0}, 1E-10, 300);
+  buRv1(3) := EXP(rgP(1)); buRv2(3) := EXP(rgP(2)); buRvL(3) := -buFv(1); buRvOK(3) := 1; buRvFl(3) := 0;
+  buRvOK(4) := 0; buRvFl(4) := 2; buRv1(4) := 0; buRv2(4) := 0; buRvL(4) := 0;
+  buMod := 6; buDim := 2; buProgS := 0.78;
+  rgP := bu_NM({0, rgLn, 0}, {0.5, 0.5, 0}, 1E-10, 300);
+  buRv1(5) := EXP(rgP(1)); buRv2(5) := EXP(rgP(2)); buRvL(5) := -buFv(1); buRvOK(5) := 1; buRvFl(5) := 0;
+  IF rgP(2) > buBoxHi - 0.05 THEN buRvFl(5) := 1; buRvL(5) := buRvL(1); buRv1(5) := 0; buRv2(5) := 0; END;
+END;
+
+// Standard errors from the observed information: minus the numerical
+// Hessian of ln L at the MLE (central differences, relative step 1 %),
+// inverted by cofactors.  Asymptotic, and only as good as n allows:
+// the pages say so.  Sets buSE1..3 and buSEOK.
+bu_Hess(hsC, hsK, hsS)
+BEGIN
+  LOCAL hsI, hsJ, hsH, hsP, hsM, hsF0;
+  LOCAL hsA, hsB, hsD, hsDet, hsV, hsE;
+  LOCAL hsPP, hsPM, hsMP, hsMM;
+  buSEOK := 0; buSE1 := 0; buSE2 := 0; buSE3 := 0;
+  hsP := {hsC, hsK, hsS};
+  hsH := {0.01 * hsC, 0.01 * hsK, 0.01 * hsS};
+  hsM := {0, 0, 0, 0, 0, 0, 0, 0, 0};              // 3 x 3, row-major list
+  IF buGrp == 1 THEN hsF0 := bu_GLL(1, hsC, hsK, hsS); ELSE hsF0 := bu_LLBurr(hsC, hsK, hsS); END;
+  FOR hsI FROM 1 TO 3 DO
+    hsA := hsP; hsA(hsI) := hsP(hsI) + hsH(hsI);
+    hsB := hsP; hsB(hsI) := hsP(hsI) - hsH(hsI);
+    IF buGrp == 1 THEN
+      hsPP := bu_GLL(1, hsA(1), hsA(2), hsA(3)); hsMM := bu_GLL(1, hsB(1), hsB(2), hsB(3));
+    ELSE
+      hsPP := bu_LLBurr(hsA(1), hsA(2), hsA(3)); hsMM := bu_LLBurr(hsB(1), hsB(2), hsB(3));
+    END;
+    hsM((hsI - 1) * 3 + hsI) := (hsPP - 2 * hsF0 + hsMM) / (hsH(hsI) * hsH(hsI));
+    FOR hsJ FROM hsI + 1 TO 3 DO
+      hsA := hsP; hsA(hsI) := hsP(hsI) + hsH(hsI); hsA(hsJ) := hsP(hsJ) + hsH(hsJ);
+      hsB := hsP; hsB(hsI) := hsP(hsI) + hsH(hsI); hsB(hsJ) := hsP(hsJ) - hsH(hsJ);
+      hsD := hsP; hsD(hsI) := hsP(hsI) - hsH(hsI); hsD(hsJ) := hsP(hsJ) + hsH(hsJ);
+      hsE := hsP; hsE(hsI) := hsP(hsI) - hsH(hsI); hsE(hsJ) := hsP(hsJ) - hsH(hsJ);
+      IF buGrp == 1 THEN
+        hsPP := bu_GLL(1, hsA(1), hsA(2), hsA(3)); hsPM := bu_GLL(1, hsB(1), hsB(2), hsB(3));
+        hsMP := bu_GLL(1, hsD(1), hsD(2), hsD(3)); hsMM := bu_GLL(1, hsE(1), hsE(2), hsE(3));
+      ELSE
+        hsPP := bu_LLBurr(hsA(1), hsA(2), hsA(3)); hsPM := bu_LLBurr(hsB(1), hsB(2), hsB(3));
+        hsMP := bu_LLBurr(hsD(1), hsD(2), hsD(3)); hsMM := bu_LLBurr(hsE(1), hsE(2), hsE(3));
+      END;
+      hsM((hsI - 1) * 3 + hsJ) := (hsPP - hsPM - hsMP + hsMM) / (4 * hsH(hsI) * hsH(hsJ));
+      hsM((hsJ - 1) * 3 + hsI) := hsM((hsI - 1) * 3 + hsJ);
+    END;
+  END;
+  // information J = -H; variance = J^-1 by cofactors (3 x 3)
+  FOR hsI FROM 1 TO 3 DO
+    FOR hsJ FROM 1 TO 3 DO hsM((hsI - 1) * 3 + hsJ) := -hsM((hsI - 1) * 3 + hsJ); END;
+  END;
+  hsDet := hsM(1) * (hsM(5) * hsM(9) - hsM(6) * hsM(8))
+         - hsM(2) * (hsM(4) * hsM(9) - hsM(6) * hsM(7))
+         + hsM(3) * (hsM(4) * hsM(8) - hsM(5) * hsM(7));
+  IF hsDet <= 0 THEN RETURN 0; END;
+  hsV := (hsM(5) * hsM(9) - hsM(6) * hsM(8)) / hsDet;
+  IF hsV <= 0 THEN RETURN 0; END;
+  buSE1 := SQRT(hsV);
+  hsV := (hsM(1) * hsM(9) - hsM(3) * hsM(7)) / hsDet;
+  IF hsV <= 0 THEN RETURN 0; END;
+  buSE2 := SQRT(hsV);
+  hsV := (hsM(1) * hsM(5) - hsM(2) * hsM(4)) / hsDet;
+  IF hsV <= 0 THEN RETURN 0; END;
+  buSE3 := SQRT(hsV);
+  buSEOK := 1;
+  RETURN 1;
+END;
+
+// Anderson-Darling A^2 against the fitted Burr (raw data only):
+//   A^2 = -n - (1/n) sum (2i - 1) [ln F(x_(i)) + ln SF(x_(n+1-i))]
+// (Anderson & Darling 1952), the logs formed from ln SF so that a
+// far-tail term keeps its digits.
+bu_ADStat()
+BEGIN
+  LOCAL adI, adS, adLF, adLS, adLnSF, adU;
+  IF buGrp == 1 OR buN < 2 THEN buADOK := 0; RETURN 0; END;
+  adS := 0;
+  FOR adI FROM 1 TO buN DO
+    IF adI MOD 50 == 0 THEN bu_Blink(); END;    // beta 1i
+    adLnSF := bu_LnSF(buD(adI), buFC, buFK, buFS);
+    adU := -bu_Expm1(adLnSF);                         // F(x_(i))
+    IF adU <= 0 THEN buADOK := 0; RETURN 0; END;
+    adLF := LN(adU);
+    adLS := bu_LnSF(buD(buN + 1 - adI), buFC, buFK, buFS);
+    adS := adS + (2 * adI - 1) * (adLF + adLS);
+  END;
+  buAD := -buN - adS / buN;
+  buADOK := 1;
+  RETURN buAD;
+END;
+
+// AIC and BIC for a model with k parameters at ln L.
+bu_AICof(aiL, aiK)
+BEGIN
+  RETURN 2 * aiK - 2 * aiL;
+END;
+
+bu_BICof(biL, biK)
+BEGIN
+  RETURN biK * LN(buN) - 2 * biL;
+END;
+
+// The PPL engine's Burr fit: the grid start, the profile simplex (raw)
+// or the 3-D simplex (grouped), the boundary flags.  Returns 0 on Esc.
+bu_FitPPL()
+BEGIN
+  LOCAL ftI, ftJ, ftL, ftBest, ftC0, ftS0;
+  LOCAL ftP, ftV, ftMed, ftLnC, ftLnS, ftK0;
+  LOCAL ftCum, ftLnK;
+  buFlag := 0;
+  IF buGrp == 0 THEN
+    // ---- raw data: profile Nelder-Mead over (ln C, ln S) ----
+    ftMed := buD(IP((buN + 1) / 2));
+    ftBest := -1E300; ftC0 := 1; ftS0 := ftMed;
+    FOR ftI FROM 1 TO 6 DO
+      FOR ftJ FROM 1 TO 3 DO
+        ftLnC := LN(0.5 * 2^(ftI - 1)); ftLnS := LN(ftMed * 2^(ftJ - 2));
+        ftL := bu_LLProf(ftLnC, ftLnS);
+        IF ftL > ftBest THEN ftBest := ftL; ftC0 := ftLnC; ftS0 := ftLnS; END;
+      END;
+    END;
+    bu_Prog(0.1);
+    IF buStop == 1 THEN RETURN 0; END;
+    buMod := 1; buDim := 2; buProgS := 0.1;
+    ftP := bu_NM({ftC0, ftS0, 0}, {0.3, 0.3, 0}, 1E-10, 400);
+    IF buStop == 1 THEN RETURN 0; END;
+    ftV := bu_LLProf(ftP(1), ftP(2));
+    buFC := EXP(ftP(1)); buFS := EXP(ftP(2)); buFK := buPK; buFLL := ftV;
+    // the boundaries: 1 the Weibull limit (S at the top of its box);
+    // 3 a shape at the edge of its box; 2 the Pareto limit (C at its top
+    // with S at the smallest value: the data start at a floor)
+    IF ftP(2) > buBoxHi - 0.05 THEN buFlag := 1; END;
+    IF ftP(1) > 6.95 OR ftP(1) < -3.95 OR ftP(2) < buBoxLo + 0.05 THEN buFlag := 3; END;
+    IF ftP(1) > 6.95 AND buFS < 1.1 * buXmin THEN buFlag := 2; END;
+  ELSE
+    // ---- grouped data: a 3-D simplex from a coarse grid ----
+    ftCum := 0; ftMed := buGEd(1);
+    FOR ftI FROM 1 TO SIZE(buGCnt) - 1 DO
+      ftCum := ftCum + buGCnt(ftI);
+      IF ftCum < buN / 2 THEN ftMed := buGEd(ftI); END;
+    END;
+    ftBest := -1E300; ftC0 := 0; ftK0 := 0; ftS0 := LN(ftMed);
+    FOR ftI FROM 1 TO 4 DO
+      FOR ftJ FROM 1 TO 4 DO
+        FOR ftL FROM 1 TO 3 DO
+          ftLnC := LN(0.5 * 2^(ftI - 1)); ftLnK := LN(0.5 * 2^(ftJ - 1)); ftLnS := LN(ftMed * 2^(ftL - 2));
+          ftV := bu_GLL(1, EXP(ftLnC), EXP(ftLnK), EXP(ftLnS));
+          IF ftV > ftBest THEN ftBest := ftV; ftC0 := ftLnC; ftK0 := ftLnK; ftS0 := ftLnS; END;
+        END;
+      END;
+    END;
+    bu_Prog(0.1);
+    IF buStop == 1 THEN RETURN 0; END;
+    buMod := 2; buDim := 3; buProgS := 0.1;
+    ftP := bu_NM({ftC0, ftK0, ftS0}, {0.3, 0.3, 0.3}, 1E-10, 600);
+    IF buStop == 1 THEN RETURN 0; END;
+    buFC := EXP(ftP(1)); buFK := EXP(ftP(2)); buFS := EXP(ftP(3));
+    buFLL := -buFv(1);
+    // grouped: no Weibull closed form to compare with, so the limit is
+    // read from a wide margin at the top of the S box, or K past 1E4
+    IF ftP(3) > buBoxHi - 1 OR buFK > 10000 THEN buFlag := 1; END;
+    IF ftP(1) > 6.95 OR ftP(1) < -3.95 OR ftP(2) > 13.95 OR ftP(2) < -11.95 OR ftP(3) < buBoxLo + 0.05 THEN buFlag := 3; END;
+    IF ftP(1) > 6.95 AND buFS < 1.1 * buXmin THEN buFlag := 2; END;
+  END;
+  RETURN 1;
+END;
+
+// Seconds since the TICKS reading t0, wrap-around safe, to a tenth.
+bu_Secs(scT0)
+BEGIN
+  LOCAL scD;
+  scD := TICKS - scT0;
+  IF scD < 0 THEN scD := scD + 4294967296; END;
+  RETURN ROUND(scD / 1000, 1);
+END;
+
+// GUARD 1 (Lessons section 9): clear the output first, so a failure
+// cannot leave an old answer behind; the mark too.  IFERR is for
+// firmware without Python, where PYTHON() itself may error; a Python
+// exception does NOT raise a PPL error (the traceback goes to the
+// Terminal and PPL carries on), which is why bu_PyDone checks the
+// sentinel the script writes LAST.  beta 1f: the script catches its own
+// errors (no traceback on the screen) and writes -2 there instead.
+// beta 1f FAIL ONCE: after a failure (buPyBad = 1) PYTHON() is not
+// called again this session -- BU_OUT stays -1, so every caller falls
+// back to PPL at once; BU_PZ keeps the first failure's message for Home.
+// Choosing the engine again (Fit menu > Engine) clears buPyBad.  No PPL
+// loop ever waits or polls for a Python result: PYTHON() is one call,
+// and the answer is read once afterwards.
+bu_PyRun(prMd)
+BEGIN
+  BU_JOB := prMd;
+  BU_OUT := {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+  IF buPyBad == 1 THEN RETURN 0; END;
+  IF prMd >= 1 AND prMd <= 4 THEN bu_Busy(1, buBlBg); buBlOn := 1; buBlT := TICKS; END;   // beta 1i
+  BU_PZ := "";
+  IFERR
+    PYTHON(bul);
+  THEN
+    BU_OUT := {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+  END;
+  RETURN 0;
+END;
+
+// GUARD 2: validate by USING the answer: read BU_OUT(12) inside IFERR;
+// it is 1 only if the script reached its last line.
+bu_PyDone()
+BEGIN
+  LOCAL pdV, pdOK;
+  pdOK := 0;
+  IFERR
+    pdV := BU_OUT(12) + 0;
+    IF pdV == 1 THEN pdOK := 1; END;
+  THEN
+    pdOK := 0;
+  END;
+  IF pdOK == 0 THEN buPyBad := 1; END;           // beta 1f: fail once
+  RETURN pdOK;
+END;
+
+// The Python engine's Burr fit: hand the data over, run mode 1 or 2,
+// then check the answer the hard way: finite, inside the box, and
+// its ln L reproduced by the PPL likelihood at the same point to 1E-6
+// (a disagreement counts as a failure).  Returns 1 and installs
+// buFC, buFK, buFS, buFLL, buFlag, buEvals on success.
+bu_PyFit(pfMed)
+BEGIN
+  LOCAL pfC, pfK, pfS, pfL, pfF, pfV;
+  LOCAL pfOK;
+  IF buGrp == 1 THEN
+    BU_GE := buGEd; BU_GC := buGCnt; BU_X := {};
+  ELSE
+    BU_X := buD; BU_GE := {}; BU_GC := {};
+  END;
+  BU_IN := {buBoxLo, buBoxHi, LN(pfMed), 0, 0, 0};
+  IF buGrp == 1 THEN bu_PyRun(2); ELSE bu_PyRun(1); END;
+  IF bu_PyDone() == 0 THEN RETURN 0; END;
+  pfOK := 0;
+  IFERR
+    pfC := BU_OUT(1) + 0; pfK := BU_OUT(2) + 0; pfS := BU_OUT(3) + 0;
+    pfL := BU_OUT(4) + 0; pfF := BU_OUT(5) + 0;
+    IF pfC > 0 AND pfK > 0 AND pfS > 0 AND pfC < 1E300 AND pfK < 1E300 AND pfS < 1E300 AND ABS(pfL) < 1E300 THEN
+      IF buGrp == 1 THEN pfV := bu_GLL(1, pfC, pfK, pfS); ELSE pfV := bu_LLProf(LN(pfC), LN(pfS)); END;
+      IF ABS(pfV - pfL) <= 0.000001 * (1 + ABS(pfL)) THEN pfOK := 1; END;
+      IF buGrp == 0 AND ABS(buPK - pfK) > 0.000001 * pfK THEN pfOK := 0; END;
+    END;
+  THEN
+    pfOK := 0;
+  END;
+  IF pfOK == 0 THEN RETURN 0; END;
+  buFC := pfC; buFK := pfK; buFS := pfS; buFLL := pfL; buFlag := IP(pfF + 0.5);
+  buEvals := BU_OUT(10);
+  RETURN 1;
+END;
+
+// The Python engine's Hessian SEs at the installed fit (mode 3 raw,
+// 4 grouped); accepted only if the script reports a positive-definite
+// information matrix and three positive, finite SEs.
+bu_PyHess()
+BEGIN
+  LOCAL phOK, ph1, ph2, ph3, ph9;
+  BU_IN := {buBoxLo, buBoxHi, 0, buFC, buFK, buFS};
+  IF buGrp == 1 THEN bu_PyRun(4); ELSE bu_PyRun(3); END;
+  IF bu_PyDone() == 0 THEN RETURN 0; END;
+  phOK := 0;
+  IFERR
+    ph1 := BU_OUT(6) + 0; ph2 := BU_OUT(7) + 0; ph3 := BU_OUT(8) + 0; ph9 := BU_OUT(9) + 0;
+    IF ph9 == 1 AND ph1 > 0 AND ph2 > 0 AND ph3 > 0 AND ph1 < 1E300 AND ph2 < 1E300 AND ph3 < 1E300 THEN phOK := 1; END;
+  THEN
+    phOK := 0;
+  END;
+  IF phOK == 0 THEN RETURN 0; END;
+  buSE1 := ph1; buSE2 := ph2; buSE3 := ph3; buSEOK := 1;
+  RETURN 1;
+END;
+
+// THE FIT DRIVER: the Burr by maximum likelihood (the engine chosen in
+// buEng: 1 Auto = Python first, PPL on any failure; 2 PPL only;
+// 3 Python only, no fallback; 4 Both, timed and compared), then the
+// rivals, the Weibull-limit test, the SEs, the AICs, the winner and
+// the A-D statistic.  Shows a progress bar; Esc abandons the fit.
+bu_Fit()
+BEGIN
+  LOCAL ftI, ftBest, ftMed, ftCum, ftT0, ftOK;
+  LOCAL ftPC, ftPK, ftPS, ftPL, ftPF, ftD;
+  LOCAL ftPE, ftTAll;
+  buFitOK := 0; buSEOK := 0; buFlag := 0; buStop := 0; buEvals := 0; buADOK := 0;
+  buSE1 := 0; buSE2 := 0; buSE3 := 0; buAD := 0;
+  buEngUsed := 0; buTPy := -1; buTPPL := -1; buCmp := ""; buTFit := -1;
+  ftTAll := TICKS;
+  buProgT := "Fitting the Burr XII";
+  buBlBg := buWHT; buBlOn := 0; buBlT := TICKS - 1000;   // beta 1i: the hourglass lights at once
+  DIMGROB_P(G1, 320, 240, buWHT);
+  BLIT_P(G0, 0, 0, G1);
+  // the ln S box: from well below the smallest value to well above the
+  // largest.  An optimum at the top of the box is the Weibull limit
+  // (K and S to infinity together); at the bottom, the Pareto limit.
+  IF buGrp == 1 THEN
+    buXmin := buGEd(1); buBoxHi := LN(buGEd(SIZE(buGEd))) + 6;
+    ftCum := 0; ftMed := buGEd(1);
+    FOR ftI FROM 1 TO SIZE(buGCnt) - 1 DO
+      ftCum := ftCum + buGCnt(ftI);
+      IF ftCum < buN / 2 THEN ftMed := buGEd(ftI); END;
+    END;
+  ELSE
+    buXmin := buD(1); buBoxHi := LN(buD(buN)) + 6;
+    ftMed := buD(IP((buN + 1) / 2));
+  END;
+  buBoxLo := LN(buXmin) - 6;
+  bu_Prog(0.02);
+  // ---- the engine: Python first unless PPL only was chosen ----
+  IF buEng <> 2 THEN
+    buProgT := "Burr XII fit (MicroPython)";
+    bu_Prog(0.05);
+    ftT0 := TICKS;
+    IF bu_PyFit(ftMed) == 1 THEN buEngUsed := 1; buTPy := bu_Secs(ftT0); END;
+  END;
+  IF buEng == 4 THEN
+    // Both: keep the Python answer, run the PPL engine, compare, reinstall
+    ftPC := buFC; ftPK := buFK; ftPS := buFS; ftPL := buFLL; ftPF := buFlag; ftPE := buEvals;
+    buProgT := "Same fit again (PPL engine)";
+    ftT0 := TICKS;
+    IF bu_FitPPL() == 0 THEN RETURN 0; END;
+    buTPPL := bu_Secs(ftT0);
+    IF buEngUsed == 1 THEN
+      ftD := MAX(ABS(buFC - ftPC) / ftPC, MAX(ABS(buFK - ftPK) / ftPK, ABS(buFS - ftPS) / ftPS));
+      buCmp := "Py " + bu_Fx(buTPy, 1) + " s, PPL " + bu_Fx(buTPPL, 1) + " s: ";
+      IF ftD < 0.0000005 THEN buCmp := buCmp + "same C, K, S to 6 digits"; ELSE buCmp := buCmp + "C, K, S differ by " + bu_Num(ftD); END;
+      buFC := ftPC; buFK := ftPK; buFS := ftPS; buFLL := ftPL; buFlag := ftPF; buEvals := ftPE;
+    ELSE
+      buCmp := "Python failed (BU_PZ in Home); PPL alone " + bu_Fx(buTPPL, 1) + " s";
+      buEngUsed := 2;
+    END;
+  END;
+  IF buEngUsed == 0 THEN
+    IF buEng == 3 THEN
+      MSGBOX("Python engine failed: after Quit, BU_PZ in Home says where. Switch to Auto or PPL (Fit menu, Engine).");
+      RETURN 0;
+    END;
+    buProgT := "Burr XII fit (PPL engine)";
+    ftT0 := TICKS;
+    IF bu_FitPPL() == 0 THEN RETURN 0; END;
+    buTPPL := bu_Secs(ftT0);
+    buEngUsed := 2;
+  END;
+  IF buStop == 1 THEN RETURN 0; END;
+  buFAIC := bu_AICof(buFLL, 3); buFBIC := bu_BICof(buFLL, 3);
+  buFitOK := 1;
+  // the rivals FIRST (beta 1a): the Weibull is the Burr's K -> infinity
+  // limit, so a Burr ln L equal to the Weibull MLE's, with a large K, is
+  // the limit even when the simplex stopped short of the box (review 2,
+  // finding 1); the Hessian is skipped there (it is singular)
+  buProgT := "Fitting the rivals (PPL)";
+  bu_Prog(0.55);
+  IF buGrp == 1 THEN bu_FitRivG(); ELSE bu_FitRiv(); END;
+  IF buStop == 1 THEN RETURN 0; END;
+  IF buGrp == 0 AND buRvOK(3) == 1 AND buFlag == 0 THEN
+    IF buFLL - buRvL(3) <= 0.0001 * (1 + ABS(buFLL)) AND buFK > 100 THEN buFlag := 1; END;
+  END;
+  buProgT := "Standard errors (Hessian)";
+  bu_Prog(0.9);
+  IF buFlag == 0 THEN
+    ftOK := 0;
+    IF buEngUsed == 1 THEN
+      ftT0 := TICKS;
+      ftOK := bu_PyHess();
+      IF ftOK == 1 THEN buTPy := buTPy + bu_Secs(ftT0); END;
+      IF ftOK == 0 AND buEng == 3 THEN
+        MSGBOX("Python engine failed in the Hessian: after Quit, BU_PZ in Home says where. Switch to Auto or PPL.");
+        buFitOK := 0;
+        RETURN 0;
+      END;
+    END;
+    IF ftOK == 0 THEN
+      ftT0 := TICKS;
+      bu_Hess(buFC, buFK, buFS);
+      IF buEngUsed == 2 THEN buTPPL := buTPPL + bu_Secs(ftT0); ELSE buTPPL := bu_Secs(ftT0); END;
+    END;
+  END;
+  IF buStop == 1 THEN RETURN 0; END;
+  IF buEngUsed == 1 THEN BU_ENGINE := "MicroPython 1.9.4"; END;
+  IF buEngUsed == 2 AND buEng == 2 THEN BU_ENGINE := "PPL (chosen)"; END;
+  IF buEngUsed == 2 AND buEng <> 2 THEN BU_ENGINE := "PPL (Python unavailable)"; END;
+  // AICs and the winner among the rivals (the Burr is compared on the table)
+  buBest := 0; ftBest := 1E300;
+  FOR ftI FROM 1 TO 5 DO
+    buRvA(ftI) := 0;
+    IF buRvOK(ftI) == 1 THEN
+      buRvA(ftI) := bu_AICof(buRvL(ftI), buRvP(ftI));
+      IF buRvA(ftI) < ftBest THEN ftBest := buRvA(ftI); buBest := ftI; END;
+    END;
+  END;
+  buProgT := "Anderson-Darling";
+  bu_Prog(0.96);
+  bu_ADStat();
+  // the explorer, the simulation and the CAS page take the fitted shape
+  // -- but never an unclamped limit (review 2, finding 2): at the Weibull
+  // limit they get the Weibull-equivalent at K = 50 (S = lambda 50^(1/C),
+  // the same Weibull scale), and at the Pareto or box limits they keep
+  // the shape they had; the results page says which
+  IF buFlag == 0 THEN buC := buFC; buK := buFK; buS := buFS; buRe := 1; END;
+  IF buFlag == 1 THEN
+    buC := buFC; buK := 50; buS := buFS * EXP(-LN(buFK) / buFC) * EXP(LN(50) / buFC); buRe := 1;
+  END;
+  buX0 := bu_Quant(0.9, buC, buK, buS);
+  BU_C := buFC; BU_K := buFK; BU_S := buFS; BU_LL := buFLL; BU_AIC := buFAIC;
+  buTFit := bu_Secs(ftTAll);
+  buSum := buName + ": Burr XII C = " + bu_Num(buFC) + ", K = " + bu_Num(buFK) + ", S = " + bu_Num(buFS)
+           + ", ln L = " + bu_Fx(buFLL, 2) + ", AIC = " + bu_Fx(buFAIC, 2) + ", engine: " + BU_ENGINE
+           + " (" + bu_Fx(buTFit, 1) + " s)";
+  bu_Prog(1);
+  RETURN 1;
+END;
+
+// ============================================================
+// DATA AND PRESETS (every value from data/DATASETS.md or the new
+// data/DATASETS_BURR.md; the source is shown on screen when loaded)
+// ============================================================
+
+// Install a raw sample: sorted, with its logs cached; clears any fit.
+bu_SetData(sdL, sdNm, sdSh, sdS1, sdS2, sdU)
+BEGIN
+  LOCAL sdI, sdN;
+  sdN := SIZE(sdL);
+  buD := SORT(sdL); buN := sdN;
+  buLX := MAKELIST(LN(buD(sdI)), sdI, 1, sdN);
+  buName := sdNm; buShort := sdSh; buSrc := sdS1; buSrc2 := sdS2; buUnit := sdU;
+  buHave := 1; buGrp := 0; buGEd := {}; buGCnt := {};
+  buFitOK := 0; buSEOK := 0; buADOK := 0; buSum := "no fit";
+END;
+
+// Install grouped counts: edges e_1..e_(m-1) (bin 1 is (0, e_1], bin m
+// is open above e_(m-1)); n = the total count.
+bu_SetGrp(sgE, sgC, sgNm, sgSh, sgS1, sgS2, sgU)
+BEGIN
+  LOCAL sgI;
+  buGEd := sgE; buGCnt := sgC; buN := 0;
+  FOR sgI FROM 1 TO SIZE(sgC) DO buN := buN + sgC(sgI); END;
+  buD := {}; buLX := {};
+  buName := sgNm; buShort := sgSh; buSrc := sgS1; buSrc2 := sgS2; buUnit := sgU;
+  buHave := 1; buGrp := 1;
+  buFitOK := 0; buSEOK := 0; buADOK := 0; buSum := "no fit";
+END;
+
+// BJS: months served by 41 homicide offenders (NCJ-153858, 1995, via R
+// crimedatasets, DATASETS.md).  41 values.
+bu_LoadBJS()
+BEGIN
+  bu_SetData({117, 188, 172, 145, 173, 159, 123, 136, 115, 190, 158, 147, 117, 196, 169,
+              160, 135, 163, 176, 155, 126, 133, 150, 146, 157, 137, 180, 134, 135, 128,
+              209, 144, 164, 185, 168, 121, 195, 149, 148, 216, 139},
+             "BJS: months served, 41 homicide offenders", "BJS months served",
+             "BJS, Prison Sentences and Time Served for Violence, NCJ-153858 (1995),",
+             "via R crimedatasets (Sentence_tbl_df). n = 41 is SMALL: SEs are wide.",
+             "months");
+  buNote := "A small sample: three-parameter fits on 41 values are rough, and the standard errors say so.";
+END;
+
+// Rossi et al. (1980): weeks to first re-arrest for the 114 of 432
+// released men who were re-arrested within 52 weeks (arrest = 1).
+bu_LoadRossi()
+BEGIN
+  bu_SetData({1, 2, 3, 4, 5, 6, 7, 8, 8, 8, 8, 8, 9, 9, 10, 11, 11, 12, 12, 13,
+              14, 14, 14, 15, 15, 16, 16, 17, 17, 17, 18, 18, 18, 19, 19, 20, 20, 20, 20, 20,
+              21, 21, 22, 23, 24, 24, 24, 24, 25, 25, 25, 26, 26, 26, 27, 27, 28, 28, 30, 30,
+              31, 32, 32, 33, 33, 34, 34, 35, 35, 35, 35, 36, 36, 36, 37, 37, 37, 37, 38, 39,
+              39, 40, 40, 40, 40, 42, 42, 43, 43, 43, 43, 44, 44, 45, 45, 46, 46, 46, 46, 47,
+              48, 48, 49, 49, 49, 49, 49, 50, 50, 50, 52, 52, 52, 52},
+             "Rossi: weeks to re-arrest, the 114 re-arrested", "Rossi weeks",
+             "Rossi, Berk & Lenihan (1980) via Allison (1995) / R carData (rossi.csv),",
+             "arrest = 1 only. The 318 men NOT re-arrested by week 52 are left out.",
+             "weeks");
+  buNote := "Right-censored men are excluded by construction: this is the time to re-arrest AMONG the re-arrested, not a survival model (SurvLab keeps the censoring).";
+END;
+
+// Danish fire losses (McNeil 1997; R evir 'danish'): excess over the
+// 1 million DKK threshold, a random 300 of the 2,156 losses above it
+// (numpy default_rng(1980), rounded to 3 decimals).
+bu_LoadDan300()
+BEGIN
+  bu_SetData({0.005, 0.006, 0.007, 0.015, 0.016, 0.02, 0.023, 0.023, 0.03, 0.036, 0.038, 0.045, 0.05, 0.051, 0.058,
+              0.067, 0.07, 0.073, 0.073, 0.077, 0.08, 0.08, 0.084, 0.085, 0.088, 0.094, 0.095, 0.099, 0.1, 0.102,
+              0.102, 0.106, 0.112, 0.113, 0.131, 0.152, 0.155, 0.157, 0.164, 0.175, 0.177, 0.189, 0.194, 0.198, 0.202,
+              0.204, 0.204, 0.206, 0.225, 0.225, 0.228, 0.23, 0.23, 0.236, 0.237, 0.238, 0.254, 0.254, 0.257, 0.257,
+              0.261, 0.263, 0.266, 0.27, 0.276, 0.276, 0.279, 0.283, 0.284, 0.29, 0.296, 0.297, 0.3, 0.308, 0.32,
+              0.321, 0.322, 0.328, 0.331, 0.331, 0.337, 0.35, 0.372, 0.376, 0.378, 0.387, 0.388, 0.389, 0.391, 0.391,
+              0.398, 0.398, 0.4, 0.403, 0.411, 0.415, 0.419, 0.42, 0.427, 0.437, 0.438, 0.464, 0.464, 0.465, 0.466,
+              0.467, 0.467, 0.468, 0.479, 0.488, 0.498, 0.5, 0.502, 0.514, 0.531, 0.543, 0.543, 0.554, 0.567, 0.571,
+              0.573, 0.574, 0.577, 0.581, 0.597, 0.6, 0.605, 0.609, 0.612, 0.623, 0.639, 0.65, 0.65, 0.651, 0.659,
+              0.664, 0.665, 0.665, 0.675, 0.691, 0.693, 0.693, 0.704, 0.704, 0.705, 0.721, 0.722, 0.723, 0.725, 0.727,
+              0.755, 0.756, 0.76, 0.766, 0.775, 0.775, 0.783, 0.784, 0.789, 0.811, 0.815, 0.816, 0.826, 0.832, 0.835,
+              0.842, 0.855, 0.855, 0.857, 0.863, 0.867, 0.871, 0.881, 0.882, 0.885, 0.902, 0.902, 0.903, 0.929, 0.929,
+              0.929, 0.939, 0.946, 0.953, 0.966, 0.979, 1, 1.045, 1.065, 1.097, 1.106, 1.141, 1.147, 1.163, 1.169,
+              1.176, 1.234, 1.278, 1.286, 1.304, 1.307, 1.342, 1.398, 1.408, 1.426, 1.461, 1.463, 1.483, 1.503, 1.507,
+              1.545, 1.551, 1.6, 1.624, 1.65, 1.662, 1.662, 1.711, 1.736, 1.743, 1.779, 1.8, 1.823, 1.9, 1.911,
+              1.973, 2, 2.005, 2.012, 2.014, 2.02, 2.053, 2.061, 2.098, 2.143, 2.21, 2.218, 2.263, 2.294, 2.294,
+              2.3, 2.363, 2.367, 2.403, 2.408, 2.481, 2.497, 2.568, 2.664, 2.756, 2.856, 2.896, 3, 3.05, 3.1,
+              3.125, 3.234, 3.263, 3.373, 3.392, 3.406, 3.494, 3.498, 3.625, 3.764, 4.08, 4.306, 4.377, 4.445, 4.47,
+              4.497, 4.593, 4.681, 4.857, 5.14, 5.307, 5.435, 5.675, 5.774, 5.917, 6.321, 6.899, 6.992, 7.454, 7.813,
+              8.883, 9.137, 9.27, 9.82, 10.713, 13.679, 15.088, 17.628, 17.646, 18.162, 18.473, 28.037, 55.225, 64.707, 151.413},
+             "Danish fire losses: 300 of 2,156, excess over 1M DKK", "Danish 300",
+             "Copenhagen Re via McNeil (1997) ASTIN Bull 27:117 and R evir 'danish',",
+             "1980-1990, in 1985 prices (inflation-adjusted DKK); excess over 1M DKK; a random 300 of the 2,156 (seed 1980).",
+             "M DKK over 1M");
+  buNote := "The textbook heavy tail: of 2,156 losses above 1 million DKK, 109 passed 10 million and the largest was 263 million (McNeil 1997, Table I).";
+END;
+
+// The same losses, all 2,156, counted in 60 log-spaced bins: bin 1 is
+// (0, 0.001], then (10^(-3+0.1(j-2)), 10^(-3+0.1(j-1))] for j = 2..59,
+// bin 60 is everything above 10^2.8 = 631 (empty: the largest excess
+// is 262.25).  Fitted by the grouped likelihood.
+bu_LoadDanBin()
+BEGIN
+  LOCAL dbI, dbE;
+  dbE := MAKELIST(10^(-3 + 0.1 * (dbI - 1)), dbI, 1, 59);
+  bu_SetGrp(dbE,
+            {0, 0, 0, 0, 0, 2, 2, 3, 2, 6, 1, 5, 4, 12, 17, 7, 4, 23, 24, 32,
+             25, 64, 58, 44, 79, 103, 113, 140, 138, 184, 161, 136, 124, 110, 102, 97, 79, 70, 36, 32,
+             22, 24, 19, 20, 10, 10, 2, 4, 2, 1, 0, 0, 2, 0, 0, 1, 0, 0, 0, 0},
+            "Danish fire losses: all 2,156 in 60 log bins", "Danish 2,156 binned",
+            "Copenhagen Re via McNeil (1997) ASTIN Bull 27:117 and R evir 'danish',",
+            "1980-1990, in 1985 prices (inflation-adjusted DKK); excess over 1M DKK; all 2,156 in 60 log-spaced bins.",
+            "M DKK over 1M");
+  buNote := "Binned counts of every loss: the Burr is fitted by the GROUPED likelihood, sum n_j ln P(bin j). No Q-Q or A-D for bins.";
+END;
+
+// The student's own data from D1 of the Statistics 1Var app.  The first
+// read is inside IFERR: D1 does not exist until the app has been opened.
+bu_LoadMine()
+BEGIN
+  LOCAL myA, myN, myI, myOK;
+  IFERR myA := D1; THEN myA := {}; END;
+  IFERR myN := SIZE(myA); THEN myN := 0; END;
+  IF myN < 5 THEN
+    MSGBOX("Put at least 5 positive values in D1 of the Statistics 1Var app, then try again.");
+    RETURN 0;
+  END;
+  IF myN > 1000 THEN
+    MSGBOX("At most 1,000 values, please (a G1 needs roughly half a minute per 300 values; not yet timed).");
+    RETURN 0;
+  END;
+  myOK := 1;
+  FOR myI FROM 1 TO myN DO
+    IF myA(myI) <= 0 THEN myOK := 0; END;
+  END;
+  IF myOK == 0 THEN
+    MSGBOX("The Burr XII lives on x > 0: every value in D1 must be positive.");
+    RETURN 0;
+  END;
+  IF MAX(myA) <= MIN(myA) THEN
+    MSGBOX("Every value in D1 is the same: there is no spread to fit (the likelihood has no maximum).");
+    RETURN 0;
+  END;
+  bu_SetData(myA, "My data: D1 (n = " + bu_IStr(myN) + ")", "D1", "Your own data, read from list D1 of the Statistics 1Var app.",
+             "Check the values before you trust the fit.", "x");
+  buNote := "Your own data. Nothing here knows its units or its censoring: say what x is.";
+  RETURN 1;
+END;
+
+// Simple summaries of the loaded data for the data page.
+bu_DataPage()
+BEGIN
+  LOCAL dpY, dpS, dpI, dpMean, dpMed, dpK;
+  bu_Frame("Data loaded");
+  dpY := bu_Para(buName, 26, buBLK);
+  dpY := bu_Para(buSrc, dpY + 2, buGRAY);
+  dpY := bu_Para(buSrc2, dpY, buGRAY);
+  IF buGrp == 0 THEN
+    dpMean := 0;
+    FOR dpI FROM 1 TO buN DO dpMean := dpMean + buD(dpI); END;
+    dpMean := dpMean / buN;
+    IF buN MOD 2 == 1 THEN dpMed := buD((buN + 1) / 2); ELSE dpMed := (buD(buN / 2) + buD(buN / 2 + 1)) / 2; END;
+    dpS := "n = " + bu_IStr(buN) + ", min = " + bu_Num(buD(1)) + ", max = " + bu_Num(buD(buN));
+    dpY := bu_Para(dpS, dpY + 4, buBLUE);
+    dpS := "mean " + bu_Num(dpMean) + ", median " + bu_Num(dpMed) + ", max/median " + bu_Fx(buD(buN) / dpMed, 1);
+    dpY := bu_Para(dpS, dpY, buBLUE);
+    dpY := bu_Para("Units: " + buUnit + ". A long right tail shows as a max far above the median.", dpY, buGRAY);
+  ELSE
+    dpK := 0;
+    FOR dpI FROM 1 TO SIZE(buGCnt) DO IF buGCnt(dpI) > 0 THEN dpK := dpK + 1; END; END;
+    dpS := "n = " + bu_IStr(buN) + " in " + bu_IStr(SIZE(buGCnt)) + " bins (" + bu_IStr(dpK) + " non-empty), edges 0.001 to 631 (" + buUnit + ")";
+    dpY := bu_Para(dpS, dpY + 4, buBLUE);
+  END;
+  dpY := bu_Para(buNote, dpY + 4, buGRN);
+  TEXTOUT_P("Enter = fit the Burr and rivals, Esc = back", G1, 6, 204, 1, buFOOT, 308);
+  bu_Show({});
+  RETURN bu_WaitAny();
+END;
+
+// ============================================================
+// AXES AND CACHES shared by the pictures
+// ============================================================
+
+// x-axis ticks and labels under the plot box, 0..buXmax (linear).
+bu_XAxis(xaMax, xaY, xaD)
+BEGIN
+  LOCAL xaStp, xaV, xaX, xaDec;
+  xaStp := bu_Nice(xaMax / 6);
+  xaDec := MAX(0, -FLOOR(LOG(xaStp)));
+  xaV := 0;
+  WHILE xaV <= xaMax * 1.0001 DO
+    xaX := buPL + IP(xaV / xaMax * (buPR - buPL));
+    LINE_P(G1, xaX, xaY, xaX, xaY + 3, buGRAY);
+    IF xaD == 1 THEN LINE_P(G1, xaX, buPT, xaX, xaY - 1, buGRID); END;
+    bu_TickLbl(bu_Fx(xaV, xaDec), xaX - 6, xaY + 3);
+    xaV := xaV + xaStp;
+  END;
+END;
+
+// Fill the curve cache for the current C, K, S over 0..buXmax and set
+// buYmax from the pdf (columns 1 to 3 are left out of the maximum: a C
+// below 1 sends the pdf to infinity at 0, and the curve is clamped there).
+// beta 1i: the curve is computed at buNPt points -- every buStr-th column
+// (1, 4, 7, ..., 268 on Explore), the last column and the two columns
+// either side of the pdf's peak -- and drawn as a polyline: 90 to 92
+// points on Explore's 268 columns, a third of beta 1h's work, and a smooth
+// curve still (the points are 3 px apart, the peak as high).  Each point
+// is ONE pass of logs, as in beta 1d: ln x = ln k + ln dx (ln k cached in
+// buLnK), ln z = C (ln x - ln S), ln(1 + z) (= ln z past 30); the pdf and
+// CDF are derived from them (bu_LnPdf's and bu_LnSF's arithmetic).
+bu_CachePPL()
+BEGIN
+  LOCAL caI, caDx, caLnDx, caLnS, caLCK, caKp1;
+  LOCAL caLx, caLz, caL1, caH, caNP, caKm;
+  LOCAL caP, caA, caB;
+  caDx := buXmax / buNC; caLnDx := LN(caDx); caLnS := LN(buS);
+  caLCK := LN(buC * buK); caKp1 := buK + 1; caH := buPB - buPT;
+  // the point columns: 1, 4, 7, ... (every buStr = 3rd; column 4, the
+  // first the y maximum reads, is one), the last column buNC, and the two
+  // columns either side of the pdf's peak (C > 1), so the polyline reaches
+  // the same top as one point per column did and buYmax is beta 1h's.
+  // The 3 is written out: MAKELIST's expression reads only its counter
+  // (the hardware-proven form, GfxProbe T19).
+  caNP := IP((buNC + 1) / 3) + 1;
+  buPC := MAKELIST(1 + (caI - 1) * 3, caI, 1, caNP);
+  buPC(caNP) := MIN(buNC, buPC(caNP));
+  caKm := -1;
+  IF buC > 1 THEN caKm := IP(bu_Mode(buC, buK, buS) / caDx); END;
+  IF caKm >= 4 AND caKm < buNC THEN
+    caP := IP((caKm - 1) / 3) + 1;               // the grid point at or below the peak
+    caA := 0; caB := 0;
+    IF (caKm - 1) MOD 3 <> 0 THEN caA := 1; END;                 // the peak's left column is not a grid point
+    IF caKm MOD 3 <> 0 AND caKm + 1 < buNC THEN caB := 1; END;  // nor its right column
+    IF caA == 1 AND caB == 1 THEN buPC := CONCAT(CONCAT(SUB(buPC, 1, caP), {caKm, caKm + 1}), SUB(buPC, caP + 1, caNP)); END;
+    IF caA == 1 AND caB == 0 THEN buPC := CONCAT(CONCAT(SUB(buPC, 1, caP), {caKm}), SUB(buPC, caP + 1, caNP)); END;
+    IF caA == 0 AND caB == 1 THEN buPC := CONCAT(CONCAT(SUB(buPC, 1, caP), {caKm + 1}), SUB(buPC, caP + 1, caNP)); END;
+    caNP := SIZE(buPC);
+  END;
+  buPdf := MAKELIST(0, caI, 1, caNP);
+  buYmax := 0;
+  // pass 1: the pdf (pdf view) or the CDF (CDF view) per point, and the
+  // raw y maximum of the pdf over the points past column 3
+  IF buView == 1 THEN
+    FOR caI FROM 1 TO caNP DO
+      caLx := buLnK(buPC(caI)) + caLnDx;
+      caLz := buC * (caLx - caLnS);
+      IF caLz > 30 THEN caL1 := caLz; ELSE caL1 := LN(1 + EXP(caLz)); END;
+      buPdf(caI) := 1 - EXP(-buK * caL1);
+    END;
+    buYmax := 1;
+  ELSE
+    FOR caI FROM 1 TO caNP DO
+      caLx := buLnK(buPC(caI)) + caLnDx;
+      caLz := buC * (caLx - caLnS);
+      IF caLz > 30 THEN caL1 := caLz; ELSE caL1 := LN(1 + EXP(caLz)); END;
+      buPdf(caI) := EXP(caLCK - caLx + caLz - caKp1 * caL1);
+      IF buPC(caI) > 3 THEN buYmax := MAX(buYmax, buPdf(caI)); END;
+    END;
+    IF buYmax <= 0 THEN buYmax := 1; END;
+    buYmax := buYmax * 1.08;
+  END;
+  // pass 2: the polyline's points {x1, y1, x2, y2, ...} (pixel x, pixel row)
+  buPts := MAKELIST(0, caI, 1, 2 * caNP);
+  FOR caI FROM 1 TO caNP DO
+    buPts(2 * caI - 1) := buPL + buPC(caI);
+    buPts(2 * caI) := buPB - IP(MIN(1, buPdf(caI) / buYmax) * caH);
+  END;
+  buNPt := caNP;
+END;
+
+// The Python engine's curves (beta 1e, mode 5): the same one-pass
+// arithmetic as pixel rows, handed back one by one in BU_YP (beta 1i: at
+// the same points as bu_CachePPL, the stride in BU_IN(10)).
+// GUARD 1 clears them (-1), GUARD 2 reads the sentinel and checks column
+// 10 against the PPL formula to 1E-9 and the last column is a number,
+// GUARD 3 is bu_CachePPL.  Returns 1 and fills buPdf (rows), buYmax.
+bu_PyCache()
+BEGIN
+  LOCAL pcK, pcOK, pcLx, pcLz, pcL1, pcV;
+  LOCAL pcY, pcN, pcR;
+  BU_YP := MAKELIST(-1, pcK, 1, 2 * buNC);
+  BU_IN := {buC, buK, buS, buXmax, buNC, buView, buPB, buPT, buPL, buStr};  // beta 1f: the frame rows too (Python sees only EXPORTs); beta 1i: the stride
+  BU_OUT := {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+  bu_PyRun(5);
+  IF bu_PyDone() == 0 THEN RETURN 0; END;
+  pcOK := 0;
+  IFERR
+    pcY := BU_OUT(1) + 0;                        // the scaled y maximum
+    pcV := BU_OUT(2) + 0;                        // the value at column 10
+    pcN := BU_OUT(3) + 0;                        // the number of points (beta 1i)
+    IF pcN >= 2 AND pcN <= buNC THEN
+      pcR := BU_YP(2 * pcN) + 0;                 // the last point's row
+      // column 10 by the PPL formula, against Python's value
+      pcLx := buLnK(10) + LN(buXmax / buNC);
+      pcLz := buC * (pcLx - LN(buS));
+      IF pcLz > 30 THEN pcL1 := pcLz; ELSE pcL1 := LN(1 + EXP(pcLz)); END;
+      IF buView == 1 THEN pcLx := 1 - EXP(-buK * pcL1); ELSE pcLx := EXP(LN(buC * buK) - pcLx + pcLz - (buK + 1) * pcL1); END;
+      IF pcY > 0 AND pcY < 1E300 AND pcR >= buPT AND pcR <= buPB AND ABS(pcV - pcLx) <= 0.000000001 * (1 + pcLx) THEN pcOK := 1; END;
+    END;
+  THEN
+    pcOK := 0;
+  END;
+  IF pcOK == 0 THEN RETURN 0; END;
+  buPts := SUB(BU_YP, 1, 2 * pcN); buNPt := pcN;
+  buYmax := pcY;
+  RETURN 1;
+END;
+
+// The curve cache by the chosen engine (beta 1e): Auto = Python, PPL on
+// any failure; PPL only; Python only (a failure is shown in the readout
+// and PPL draws the page anyway); Both = both, compared column by column
+// (buCDiff = the largest relative difference), the Python values kept.
+bu_Cache()
+BEGIN
+  LOCAL chK, chP, chD, chN;
+  buCEng := 0; buCDiff := 0;
+  // beta 1h: on the calculators the Python curve was SLOWER (3-4 s a key
+  // press on the G1 and the G2, against under 1 s for beta 1d's PPL
+  // cache): the ~480 values handed back through hpprime one at a time
+  // cost more than the arithmetic saves.  So the curves are drawn by PPL
+  // in Auto and PPL only; Python draws them only in "Python only" and
+  // "Both", kept for the comparison demo.  The FIT still uses Python.
+  IF buEng == 3 OR buEng == 4 THEN
+    IF bu_PyCache() == 1 THEN buCEng := 1; ELSE buPyBad := 1; END;
+  END;
+  IF buEng == 4 AND buCEng == 1 THEN
+    chP := buPts; chN := buNPt;
+    bu_CachePPL();
+    chD := 0;
+    IF chN == buNPt THEN
+      FOR chK FROM 1 TO 2 * chN DO
+        chD := MAX(chD, ABS(chP(chK) - buPts(chK)));
+      END;
+    ELSE
+      chD := 99;
+    END;
+    buCDiff := chD;                              // the largest coordinate difference, in pixels
+    buPts := chP; buNPt := chN;
+    IF chD <= 1 THEN buCEng := 3; ELSE buCEng := 4; END;
+  END;
+  IF buCEng == 0 THEN
+    bu_CachePPL();
+    IF buEng <= 2 THEN buCEng := 2; ELSE buCEng := -1; END;   // beta 1h: Auto draws by PPL on purpose, not after a failure
+  END;
+  buMd := bu_Mode(buC, buK, buS); buMe := bu_Median(buC, buK, buS);
+  buMn := bu_Mean(buC, buK, buS); buSd := bu_SD(buC, buK, buS);
+  buRe := 0;
+END;
+
+// The curve from the point cache (beta 1i): one LINE_P from each point to
+// the next.  cvG 1 = G1, 4 = G4.
+bu_Curve(cvC, cvG)
+BEGIN
+  LOCAL cvI;
+  IF cvG == 4 THEN
+    FOR cvI FROM 1 TO buNPt - 1 DO
+      LINE_P(G4, buPts(2 * cvI - 1), buPts(2 * cvI), buPts(2 * cvI + 1), buPts(2 * cvI + 2), cvC);
+    END;
+  ELSE
+    FOR cvI FROM 1 TO buNPt - 1 DO
+      LINE_P(G1, buPts(2 * cvI - 1), buPts(2 * cvI), buPts(2 * cvI + 1), buPts(2 * cvI + 2), cvC);
+    END;
+  END;
+END;
+
+// The pixel row of the drawn curve at column k (beta 1i): the curve is
+// straight between its points, so the x0 dot and the shade's first vertex
+// are read off that same line (the exact value can sit a pixel or two off
+// it near a sharp peak).  Binary search for the segment, then interpolate.
+bu_RowAt(raK)
+BEGIN
+  LOCAL raLo, raHi, raMid, raX, raX1, raX2;
+  IF buNPt < 2 THEN RETURN buPB; END;
+  raX := buPL + MAX(1, MIN(buNC, raK));
+  // the first point (2 .. N) at or past column x: the segment ends there
+  raLo := 2; raHi := buNPt;
+  WHILE raLo < raHi DO
+    raMid := IP((raLo + raHi) / 2);
+    IF buPts(2 * raMid - 1) >= raX THEN raHi := raMid; ELSE raLo := raMid + 1; END;
+  END;
+  raX1 := buPts(2 * raLo - 3); raX2 := buPts(2 * raLo - 1);
+  IF raX2 <= raX1 THEN RETURN buPts(2 * raLo); END;
+  RETURN ROUND(buPts(2 * raLo - 2) + (buPts(2 * raLo) - buPts(2 * raLo - 2)) * (raX - raX1) / (raX2 - raX1), 0);
+END;
+
+// The x-window: the 0.995 quantile, at most 50 S, and x0 on screen.
+// Held while a finger is down (buFrz = 1), refitted on the lift.
+bu_Window()
+BEGIN
+  LOCAL wnQ, wnW;
+  IF buFrz == 1 THEN RETURN 0; END;
+  wnQ := bu_Quant(0.995, buC, buK, buS);
+  wnW := MIN(wnQ, 50 * buS);
+  wnW := MAX(wnW, buX0 * 1.15);
+  IF wnW < wnQ THEN buCap := 1; ELSE buCap := 0; END;
+  IF wnW <> buXmax THEN buXmax := wnW; buRe := 1; END;
+  RETURN 1;
+END;
+
+// pixel column -> x and back, through the drawing's own map
+bu_ColX(cxK)
+BEGIN
+  RETURN cxK * buXmax / buNC;
+END;
+
+bu_XCol(xcX)
+BEGIN
+  RETURN buPL + IP(xcX / buXmax * buNC);
+END;
+
+// ============================================================
+// 1. EXPLORE: pdf and CDF with C, K, S, a draggable x0, markers
+// ============================================================
+
+// One piece of the Explore title row: inverted when chosen.  Returns the
+// x after the piece (TEXTOUT_P's own return, so the pieces never meet).
+// beta 1i: tpG 0 draws on the screen (G0), 1 on the page (G1).
+bu_TPiece(tpS, tpX, tpOn, tpG)
+BEGIN
+  LOCAL tpX2;
+  IF tpG == 0 THEN
+    tpX2 := TEXTOUT_P(tpS, G0, tpX + 3, 4, 1, buWHT, 120);
+    IF tpOn THEN
+      RECT_P(G0, tpX, 1, tpX2 + 2, 17, buWHT, buWHT);
+      TEXTOUT_P(tpS, G0, tpX + 3, 4, 1, buORNG, 120);
+    END;
+  ELSE
+    tpX2 := TEXTOUT_P(tpS, G1, tpX + 3, 4, 1, buWHT, 120);
+    IF tpOn THEN
+      RECT_P(G1, tpX, 1, tpX2 + 2, 17, buWHT, buWHT);
+      TEXTOUT_P(tpS, G1, tpX + 3, 4, 1, buORNG, 120);
+    END;
+  END;
+  RETURN tpX2 + 8;
+END;
+
+// The Explore title row: C, K, S, x0, the chosen one inverted.  tiG 0
+// draws it straight to the screen over a fresh band (beta 1i: the new
+// value shows before the recompute), 1 on the page.
+bu_ExTitle(tiG)
+BEGIN
+  LOCAL tiX;
+  IF tiG == 0 THEN RECT_P(G0, 0, 0, 319, 18, buORNG, buORNG); END;
+  tiX := bu_TPiece("C = " + bu_Fx(buC, 2), 4, buSel == 1, tiG);
+  tiX := bu_TPiece("K = " + bu_Fx(buK, 2), tiX, buSel == 2, tiG);
+  tiX := bu_TPiece("S = " + bu_Num(buS), tiX, buSel == 3, tiG);
+  tiX := bu_TPiece("x" + CHAR(8320) + " = " + bu_Num(buX0), tiX, buSel == 4, tiG);
+  RETURN tiX;
+END;
+
+// ---- beta 1d: the Explore page in three layers, so an arrow press
+//      redraws as little as possible (Roger, G2: 2 s a press in beta 1c):
+//   G3 = the frame: white page, title band, plot box, grid, ticks and
+//        tick labels -- rebuilt only when the window (buXmax) changes;
+//   G4 = G3 + everything that depends on C, K, S but not on x0: the
+//        curve (one LINE_P per cached column), the three marker lines,
+//        the y labels, the cap note, the short moment case, status rows
+//        B and C -- rebuilt when C, K, S or the view change (buRe);
+//   G1 = G4 + the x0 layer: the tail shade (ONE FILLPOLY_P, translucent,
+//        over the curve), the x0 line and dot, the title pieces, status
+//        row A, the footer, the timing readout.
+// buFrX is the window G3 was built for; buBase = 1 when G4 is current.
+bu_ExFrame()
+BEGIN
+  LOCAL ffStp, ffV, ffX, ffDec;
+  DIMGROB_P(G3, 320, 240, buWHT);
+  RECT_P(G3, 0, 0, 319, 18, buORNG, buORNG);
+  RECT_P(G3, buPL, buPT, buPR, buPB, buGRID, buWHT);
+  ffStp := bu_Nice(buXmax / 6);
+  ffDec := MAX(0, -FLOOR(LOG(ffStp)));
+  ffV := 0;
+  WHILE ffV <= buXmax * 1.0001 DO
+    ffX := buPL + IP(ffV / buXmax * (buPR - buPL));
+    LINE_P(G3, ffX, buPT, ffX, buPB + 3, buGRID);
+    TEXTOUT_P(bu_Fx(ffV, ffDec), G3, MAX(buPL + 1, MIN(ffX - 6, 317 - IP(6.5 * DIM(bu_Fx(ffV, ffDec))))), buPB + 3, 1, buGRAY, 40);
+    ffV := ffV + ffStp;
+  END;
+  TEXTOUT_P("0", G3, buPL - 10, buPB - 12, 1, buGRAY, 12);
+  buFrX := buXmax;
+END;
+
+// A marker: a thin solid vertical in its colour (beta 1d: one LINE_P in
+// place of 40 PIXON_P dots) with its label in its own row; past the
+// window it is named at the right edge with an arrow.  Draws on G4.
+bu_Marker(mkX, mkLbl, mkC, mkRow)
+BEGIN
+  LOCAL mkPx;
+  IF mkX <= 0 THEN RETURN 0; END;
+  IF mkX > buXmax THEN
+    TEXTOUT_P(mkLbl + " " + buARR, G4, buPR - IP(6.5 * (DIM(mkLbl) + 2)), buPT + 2 + 14 * mkRow, 1, mkC, 60);
+    RETURN 0;
+  END;
+  mkPx := bu_XCol(mkX);
+  LINE_P(G4, mkPx, buPT + 1, mkPx, buPB - 1, mkC);
+  TEXTOUT_P(mkLbl, G4, MIN(mkPx + 2, buPR - IP(6.5 * DIM(mkLbl))), buPT + 2 + 14 * mkRow, 1, mkC, 60);
+  RETURN 1;
+END;
+
+bu_ExBase()
+BEGIN
+  LOCAL bsH, bsT;
+  bsH := buPB - buPT;
+  DIMGROB_P(G4, 320, 240, buWHT);
+  BLIT_P(G4, 0, 0, G3);
+  IF buView == 0 THEN
+    bu_Curve(buBLUE, 4);
+    TEXTOUT_P("pdf", G4, buPL + 3, buPB - 13, 1, buBLUE, 30);
+    IF buYmax >= 1 THEN bsT := bu_Fx(buYmax, 2); ELSE bsT := bu_Fx(buYmax, 3); END;
+    TEXTOUT_P(bsT, G4, 0, buPT - 14, 1, buGRAY, 36);
+  ELSE
+    bu_Curve(buMAG, 4);
+    TEXTOUT_P("CDF", G4, buPL + 3, buPB - 13, 1, buMAG, 30);
+    LINE_P(G4, buPR + 2, buPT, buPR + 2, buPB, buMAG);
+    TEXTOUT_P("1", G4, buPR + 5, buPT - 2, 1, buMAG, 12);
+    TEXTOUT_P(".5", G4, buPR + 3, buPT + IP(bsH / 2) - 5, 1, buMAG, 12);
+    TEXTOUT_P("0", G4, buPR + 5, buPB - 12, 1, buMAG, 12);
+  END;
+  // mode, median, mean: solid verticals that slide apart as K C changes
+  IF buMd > 0 THEN bu_Marker(buMd, "mode", buORNG, 0); END;
+  bu_Marker(buMe, "median", buMAG, 1);
+  IF buMn > 0 THEN bu_Marker(buMn, "mean", buGRN, 2); END;
+  // bottom-right of the frame: the cap note and the moment case in short
+  // (beta 1e: the short moment case is gone from the frame -- the curve
+  // crossed it; status row C says it)
+  IF buCap == 1 THEN
+    bsT := "capped at 50 S";
+    TEXTOUT_P(bsT, G4, buPR - 2 - IP(6.5 * DIM(bsT)) - 2, buPB - 13, 1, buGRAY, 100);
+  END;
+  // status rows B and C
+  bsT := "mode ";
+  IF buMd > 0 THEN bsT := bsT + bu_Num(buMd); ELSE bsT := bsT + "at 0 (C " + buLEQ + " 1)"; END;
+  bsT := bsT + ", median " + bu_Num(buMe) + ", mean ";
+  IF buMn > 0 THEN bsT := bsT + bu_Num(buMn); ELSE bsT := bsT + "none"; END;
+  IF buK * buC > 2 THEN bsT := bsT + ", SD " + bu_Num(buSd); END;
+  TEXTOUT_P(bsT, G4, 6, 180, 1, buGRAY, 308);
+  IF buK * buC > 1 THEN TEXTOUT_P(bu_MomText(buC, buK), G4, 6, 192, 1, buBLK, 308); ELSE TEXTOUT_P(bu_MomText(buC, buK), G4, 6, 192, 1, buRED, 308); END;
+  buBase := 1;
+END;
+
+// The tail beyond pixel column x0 as ONE translucent polygon over the
+// curve (beta 1i): x0's point on the drawn line, the curve's own points
+// past it (SUB of the point list, DNAMixLR's shape), then down to the
+// axis and back (a flat {x1, y1, x2, y2, ...} list, GfxProbe T01-T03).
+// Pdf view only.
+bu_Shade(shCol, shC)
+BEGIN
+  LOCAL shLo, shHi, shMid, shP, shK0;
+  IF buView == 1 OR buNPt < 2 THEN RETURN 0; END;
+  shK0 := MAX(1, MIN(buNC, shCol - buPL));
+  IF shCol >= buPL + buNC - 1 THEN RETURN 0; END;
+  // the first point past the x0 column (binary search; the last point,
+  // column buNC, always is)
+  shLo := 1; shHi := buNPt;
+  WHILE shLo < shHi DO
+    shMid := IP((shLo + shHi) / 2);
+    IF buPts(2 * shMid - 1) > buPL + shK0 THEN shHi := shMid; ELSE shLo := shMid + 1; END;
+  END;
+  shP := CONCAT({buPL + shK0, bu_RowAt(shK0)}, SUB(buPts, 2 * shLo - 1, 2 * buNPt));
+  shP := CONCAT(shP, {buPL + buNC, buPB - 1, buPL + shK0, buPB - 1});
+  FILLPOLY_P(G1, shP, shC, 128);
+  RETURN 1;
+END;
+
+// The cache engine for the readout.
+bu_CEngTxt()
+BEGIN
+  IF buCEng == 1 THEN RETURN "py"; END;
+  IF buCEng == 2 THEN RETURN "PPL"; END;
+  IF buCEng == 3 THEN RETURN "py = PPL"; END;
+  IF buCEng == 4 THEN RETURN "py-PPL " + bu_IStr(buCDiff) + " px"; END;
+  IF buCEng == -1 THEN RETURN "py FAIL, PPL"; END;
+  RETURN "-";
+END;
+
+bu_DrawExp()
+BEGIN
+  LOCAL exK, exX, exT, exH, exT0, exT1;
+  LOCAL exCol;
+  exT0 := TICKS;
+  bu_Window();
+  // beta 1i: when this press needs a recompute (C, K, S, the view or the
+  // window changed), show the new value and the hourglass at once, on the
+  // screen; the finished frame replaces both.  Only when Explore is what
+  // the screen shows (not over a menu, a help page or the main menu).
+  IF buOnPg == 1 AND (buRe == 1 OR buXmax <> buFrX OR buBase == 0) THEN
+    bu_ExTitle(0); bu_Busy(1, buORNG);
+  END;
+  IF buXmax <> buFrX THEN bu_ExFrame(); buBase := 0; END;
+  IF buRe == 1 THEN bu_Cache(); buBase := 0; END;
+  IF buBase == 0 THEN bu_ExBase(); END;
+  exT1 := TICKS;
+  exH := buPB - buPT;
+  // the x0 layer on top of the cached base (a fresh G1 each frame, the
+  // house shape; the base arrives by one blit)
+  DIMGROB_P(G1, 320, 240, buWHT);
+  BLIT_P(G1, 0, 0, G4);
+  buNB := 0;
+  exX := bu_ExTitle(1);
+  exCol := bu_XCol(buX0);
+  bu_Shade(exCol, buLBLU);
+  LINE_P(G1, exCol, buPT, exCol, buPB, buRED);
+  exK := MAX(1, MIN(buNC, exCol - buPL));
+  IF buView == 0 THEN
+    bu_Dot(exCol, bu_RowAt(exK), buRED);
+  ELSE
+    bu_Dot(exCol, bu_RowAt(exK), buMAG);
+  END;
+  exX := buX0;
+  TEXTOUT_P("x" + CHAR(8320) + " = " + bu_Num(exX) + ", pdf " + bu_Num(bu_Pdf(exX, buC, buK, buS))
+            + ", P(X > x" + CHAR(8320) + ") = " + bu_Pv(bu_SF(exX, buC, buK, buS)), G1, 6, 168, 1, buBLK, 308);
+  // the footer names what is chosen (beta 1c: the soft keys' visible answer)
+  IF buSel == 1 THEN exT := "C"; END;
+  IF buSel == 2 THEN exT := "K"; END;
+  IF buSel == 3 THEN exT := "S"; END;
+  IF buSel == 4 THEN exT := "x" + CHAR(8320); END;
+  IF buTimOn == 0 THEN
+    TEXTOUT_P(exT + " chosen: arrows/drag. +/- x" + CHAR(8320) + ", 0 next, Ent", G1, 6, 204, 1, buFOOT, 308);
+  ELSE
+    // the timing readout (More > Timing): c = compute (window, cache,
+    // base), d = this layer and the blit, w = key to redraw, in ms, and
+    // the engine that filled the cache (beta 1e)
+    TEXTOUT_P(exT + " chosen", G1, 6, 204, 1, buFOOT, 100);
+    exT := "c " + bu_IStr(exT1 - exT0) + " d " + bu_IStr(TICKS - exT1) + " w " + bu_IStr(buTWait) + " ms, " + bu_CEngTxt();
+    TEXTOUT_P(exT, G1, 317 - IP(6.5 * DIM(exT)), 204, 1, buGRAY, 220);
+  END;
+  bu_Show(buSK(buSKPg));
+  buOnPg := 1;                                  // beta 1i: Explore is on the screen
+END;
+
+// One step of the chosen quantity: dir = +1 or -1.
+bu_ExpStep(esDir)
+BEGIN
+  LOCAL esStp;
+  IF buSel == 1 THEN buC := MAX(0.2, MIN(50, ROUND(buC + 0.1 * esDir, 2))); buRe := 1; END;
+  IF buSel == 2 THEN buK := MAX(0.2, MIN(50, ROUND(buK + 0.1 * esDir, 2))); buRe := 1; END;
+  IF buSel == 3 THEN
+    IF esDir > 0 THEN buS := MIN(1000000, buS * 1.1); ELSE buS := MAX(0.01, buS / 1.1); END;
+    buRe := 1;
+  END;
+  IF buSel == 4 THEN
+    esStp := bu_Nice(buXmax / 40);
+    buX0 := MAX(esStp, ROUND(buX0 / esStp, 0) * esStp + esStp * esDir);
+  END;
+END;
+
+bu_Explore()
+BEGIN
+  LOCAL exRun, exK, exM, exM1, exEv, exDrag;
+  LOCAL exLX, exLY, exPX, exPY, exP0, exTX;
+  LOCAL exTY, exDo, exCh, exSnap, exNew, exTap;
+  buPB := 153;
+  buSK := {{"C", "K", "S", "x" + CHAR(8320), "CDF", "More"}, {"Reset", "Help", "Timing", "", "Menu", "More"}};
+  buSKPg := 1; buFrz := 0; buRe := 1; buXmax := 0; buCap := 0;
+  buFrX := -1; buBase := 0; buTEv := TICKS; buOnPg := 0;
+  exRun := 1; exDrag := 0; exLX := -1; exLY := -1; exPX := 0; exPY := 0; exP0 := 1;
+  REPEAT exK := GETKEY; UNTIL exK == -1;
+  bu_Drain();
+  WHILE exRun == 1 DO
+    IF buView == 0 THEN exTX := "CDF"; ELSE exTX := "pdf"; END;
+    buSK := {{"C", "K", "S", "x" + CHAR(8320), exTX, "More"}, {"Reset", "Help", "Timing", "", "Menu", "More"}};
+    buTWait := TICKS - buTEv;
+    bu_DrawExp();
+    // wait for a key, a press, a moved finger, or a lift (Burr3's loop)
+    exEv := 0; exK := -1; exDo := 0;
+    REPEAT
+      exK := GETKEY;
+      exM := MOUSE;
+      exM1 := exM(1);
+      IF exDrag > 0 THEN
+        IF SIZE(exM1) == 0 THEN
+          exEv := 2;
+        ELSE
+          IF exM1(1) <> exLX OR exM1(2) <> exLY THEN exEv := 1; END;
+        END;
+      ELSE
+        IF SIZE(exM1) > 0 THEN exEv := 1; END;
+      END;
+      IF exK > -1 THEN exEv := 3; END;
+    UNTIL exEv > 0;
+    buTEv := TICKS;
+    exTap := 0;
+    // ---- the finger lifted (or a key ended the hold): refit the window ----
+    IF exEv == 2 OR (exEv == 3 AND exDrag > 0) THEN
+      IF exDrag == 4 THEN exTap := 1; exTX := exPX; exTY := exPY; END;
+      IF exDrag == 1 THEN
+        exSnap := bu_Nice(buXmax / 100);
+        buX0 := MAX(exSnap, ROUND(buX0 / exSnap, 0) * exSnap);
+        IF buX0 > buXmax THEN buX0 := buX0 - exSnap; END;
+      END;
+      exDrag := 0; buFrz := 0;
+      bu_Drain();
+    END;
+    // ---- a press, a drag sample, or the tap just completed ----
+    IF exEv == 1 OR exTap == 1 THEN
+      IF exEv == 1 THEN exTX := exM1(1); exTY := exM1(2); END;
+      IF exDrag == 0 THEN
+        IF exTY >= 218 THEN
+          bu_Drain();
+          exDo := bu_Slot(exTX);
+        ELSE
+          IF exTX >= buPL AND exTX <= buPR AND exTY >= buPT AND exTY <= buPB THEN
+            exPX := exTX; exPY := exTY;
+            IF buSel == 4 OR exTap == 1 THEN
+              exDrag := 1;
+            ELSE
+              exDrag := 4;
+              IF buSel == 1 THEN exP0 := buC; END;
+              IF buSel == 2 THEN exP0 := buK; END;
+              IF buSel == 3 THEN exP0 := buS; END;
+            END;
+          ELSE
+            bu_Drain();
+          END;
+        END;
+      END;
+      IF exDrag > 0 THEN
+        IF exTap == 0 THEN exLX := exTX; exLY := exTY; END;
+        exTX := MAX(buPL + 1, MIN(buPR, exTX));
+        buFrz := 1;
+        IF exDrag == 1 THEN buX0 := (exTX - buPL) / buNC * buXmax; END;
+        IF exDrag == 4 THEN
+          IF ABS(exTX - exPX) > 8 THEN exDrag := 5; END;
+        END;
+        IF exDrag == 5 THEN
+          // C and K: 0.01 a pixel; S: x1.02 a pixel (Burr3's rates)
+          IF buSel == 1 THEN buC := MAX(0.2, MIN(50, ROUND(exP0 + 0.01 * (exTX - exPX), 2))); END;
+          IF buSel == 2 THEN buK := MAX(0.2, MIN(50, ROUND(exP0 + 0.01 * (exTX - exPX), 2))); END;
+          IF buSel == 3 THEN buS := MAX(0.01, MIN(1000000, exP0 * 1.02^(exTX - exPX))); END;
+          buRe := 1;
+        END;
+      END;
+      IF exTap == 1 THEN
+        exSnap := bu_Nice(buXmax / 100);
+        buX0 := MAX(exSnap, ROUND(buX0 / exSnap, 0) * exSnap);
+        exDrag := 0; buFrz := 0;
+      END;
+    END;
+    // ---- keys: the hardware route to every touch action ----
+    IF exEv == 3 THEN
+      IF exK == 7 OR exK == 12 THEN bu_ExpStep(-1); END;
+      IF exK == 8 OR exK == 2 THEN bu_ExpStep(1); END;
+      IF exK == 45 THEN exDo := 20; END;
+      IF exK == 50 THEN exDo := 21; END;
+      IF exK == 42 THEN buSel := buSel MOD 4 + 1; END;
+      IF exK == 4 THEN exRun := 0; END;
+      IF exK == 30 THEN exDo := 30; END;
+      REPEAT exK := GETKEY; UNTIL exK == -1;
+    END;
+    // the x0 slide keys (+/-), whatever is chosen
+    IF exDo == 20 OR exDo == 21 THEN
+      exNew := buSel; buSel := 4;
+      IF exDo == 20 THEN bu_ExpStep(-1); ELSE bu_ExpStep(1); END;
+      buSel := exNew; exDo := 0;
+    END;
+    // Enter: the menu of every action
+    IF exDo == 30 THEN
+      exCh := 0; buOnPg := 0;
+      CHOOSE(exCh, "Explore", {"Choose C", "Choose K", "Choose S", "Choose x0", "pdf / CDF view", "Reset C, K, S", "Help", "Timing readout on/off", "Main menu"});
+      REPEAT exK := GETKEY; UNTIL exK == -1;
+      bu_Drain();
+      exDo := 0;
+      IF exCh >= 1 AND exCh <= 4 THEN buSel := exCh; END;
+      IF exCh == 5 THEN exDo := 5; END;
+      IF exCh == 6 THEN exDo := 11; END;
+      IF exCh == 7 THEN exDo := 12; END;
+      IF exCh == 8 THEN exDo := 13; END;
+      IF exCh == 9 THEN exRun := 0; END;
+    END;
+    // soft keys
+    IF exDo == 6 THEN
+      buSKPg := buSKPg + 1; IF buSKPg > 2 THEN buSKPg := 1; END;
+      exDo := 0;
+    END;
+    IF exDo >= 1 AND exDo <= 5 AND buSKPg == 2 THEN exDo := exDo + 10; END;
+    IF exDo >= 1 AND exDo <= 4 THEN buSel := exDo; END;
+    IF exDo == 5 THEN buView := 1 - buView; buBase := 0; buRe := 1; END;
+    IF exDo == 11 THEN buC := 2; buK := 1.5; buS := 10; buX0 := 15; buRe := 1; buXmax := 0; END;
+    IF exDo == 12 THEN bu_Help(); buOnPg := 0; END;
+    IF exDo == 13 THEN buTimOn := 1 - buTimOn; END;
+    IF exDo == 15 THEN exRun := 0; END;
+  END;
+  buPB := 153; buFrz := 0;
+  RETURN 1;
+END;
+
+// ============================================================
+// 2. FAMILY TREE: special cases, the Weibull limit, the (C, K) map
+// ============================================================
+
+// The shape map in G2: log2 axes, C and K from 1/4 to 16; the regions
+// where the mean (K C > 1) and the variance (K C > 2) exist; the Lomax
+// line C = 1 and the Fisk line K = 1.  Drawn once per visit.
+bu_MapGrob()
+BEGIN
+  LOCAL mgI, mgL2C, mgY1, mgY2;
+  DIMGROB_P(G2, 92, 92, buWHT);
+  FOR mgI FROM 0 TO 90 DO
+    mgL2C := -2 + 6 * mgI / 90;                       // log2 C at this column
+    // K C = 1: log2 K = -log2 C;  K C = 2: log2 K = 1 - log2 C
+    mgY1 := 91 - IP((-mgL2C + 2) / 6 * 90);           // the K C = 1 line
+    mgY2 := 91 - IP((1 - mgL2C + 2) / 6 * 90);        // the K C = 2 line
+    mgY1 := MAX(0, MIN(91, mgY1)); mgY2 := MAX(0, MIN(91, mgY2));
+    IF mgY1 < 91 THEN LINE_P(G2, mgI + 1, mgY1, mgI + 1, 91, buLRED); END;
+    IF mgY2 < mgY1 THEN LINE_P(G2, mgI + 1, mgY2, mgI + 1, mgY1 - 1, buLORN); END;
+    IF mgY2 > 0 THEN LINE_P(G2, mgI + 1, 0, mgI + 1, mgY2 - 1, buLGRN); END;
+  END;
+  // C = 1 (column of log2 C = 0) and K = 1 (row of log2 K = 0)
+  LINE_P(G2, 31, 0, 31, 91, buORNG);
+  LINE_P(G2, 0, 61, 91, 61, buMAG);
+  RECT_P(G2, 0, 0, 91, 91, buGRAY);
+  TEXTOUT_P("no mean", G2, 40, 78, 1, buRED, 50);
+  TEXTOUT_P("mean,SD", G2, 36, 4, 1, buGRN, 56);
+  TEXTOUT_P("Lomax", G2, 33, 24, 1, buORNG, 40);
+  TEXTOUT_P("Fisk", G2, 2, 50, 1, buMAG, 30);
+END;
+
+// map pixel <-> (C, K)
+bu_MapX(mxC)
+BEGIN
+  RETURN 222 + IP((LN(mxC) / LN(2) + 2) / 6 * 90);
+END;
+
+bu_MapY(myK)
+BEGIN
+  RETURN 131 - IP((LN(myK) / LN(2) + 2) / 6 * 90);
+END;
+
+// The family page.  fmMode: 0 the current Burr; 1 the Weibull approach
+// (fmKw = the K of this frame, fmSw the Weibull scale held fixed).
+bu_DrawFam(fmMode, fmSw)
+BEGIN
+  LOCAL fmK, fmX, fmY, fmY2, fmH, fmT;
+  LOCAL fmW, fmL, fmNm, fmQx, fmQy, fmDx;
+  bu_Window();
+  // beta 1i: the new title and the hourglass at once (the page redraws after the cache)
+  IF buRe == 1 AND buOnPg == 2 THEN
+    bu_Band0("Family: C = " + bu_Fx(buC, 2) + ", K = " + bu_Fx(buK, 2) + ", S = " + bu_Num(buS));
+    bu_Busy(1, buORNG);
+  END;
+  IF buRe == 1 THEN bu_Cache(); END;
+  fmH := buPB - buPT;
+  bu_Frame("Family: C = " + bu_Fx(buC, 2) + ", K = " + bu_Fx(buK, 2) + ", S = " + bu_Num(buS));
+  RECT_P(G1, buPL, buPT, buPR, buPB, buGRID, buWHT);
+  bu_XAxis(buXmax, buPB, 0);
+  // the Weibull target first (green dots), then the Burr (blue)
+  IF fmMode == 1 THEN
+    fmDx := buXmax / buNC;
+    // the target as a green polyline, every 4th column (beta 1d: LINE_P
+    // segments in place of PIXON_P pairs)
+    fmY2 := -1;
+    FOR fmK FROM 2 TO buNC STEP 4 DO
+      fmX := fmK * fmDx;
+      fmL := buC * LN(fmX / fmSw);
+      IF fmL < 600 THEN
+        fmW := EXP(LN(buC / fmSw) + (buC - 1) * LN(fmX / fmSw) - EXP(fmL));
+        fmY := buPB - IP(MIN(1, fmW / buYmax) * fmH);
+        IF fmY2 >= 0 THEN LINE_P(G1, buPL + fmK - 4, fmY2, buPL + fmK, fmY, buGRN); END;
+        fmY2 := fmY;
+      END;
+    END;
+    TEXTOUT_P("Weibull(k = C, " + buLAM + " = " + bu_Num(fmSw) + ")", G1, buPL + 4, buPT + 16, 1, buGRN, 200);
+  END;
+  bu_Curve(buBLUE, 1);
+  TEXTOUT_P("Burr XII pdf", G1, buPL + 4, buPT + 2, 1, buBLUE, 100);
+  // the map, its point and its axis labels
+  BLIT_P(G1, 221, 39, G2);
+  TEXTOUT_P("K", G1, 212, 80, 1, buGRAY, 10);
+  TEXTOUT_P("16", G1, 206, 36, 1, buGRAY, 16);
+  TEXTOUT_P("1/4", G1, 200, 124, 1, buGRAY, 20);
+  TEXTOUT_P("C: 1/4", G1, 220, 132, 1, buGRAY, 40);
+  TEXTOUT_P("16", G1, 300, 132, 1, buGRAY, 16);
+  TEXTOUT_P("tap: set C, K", G1, 228, 147, 1, buFOOT, 88);
+  fmQx := MAX(222, MIN(311, bu_MapX(buC))); fmQy := MAX(40, MIN(130, bu_MapY(buK)));
+  bu_Dot(fmQx, fmQy, buRED);
+  bu_Box(1, 221, 39, 313, 131);
+  // the name of the special case reached
+  fmNm := "";
+  IF ABS(buC - 1) < 0.005 AND ABS(buK - 1) < 0.005 THEN
+    fmNm := "C = K = 1: Lomax and log-logistic at once";
+  ELSE
+    IF ABS(buC - 1) < 0.005 THEN fmNm := "C = 1: Pareto II (Lomax), shape K = " + bu_Fx(buK, 2); END;
+    IF ABS(buK - 1) < 0.005 THEN fmNm := "K = 1: log-logistic (Fisk), shape C = " + bu_Fx(buC, 2); END;
+  END;
+  IF fmMode == 1 THEN
+    fmNm := "K = " + bu_Fx(buK, 0) + ", S = " + bu_Num(buS) + ": near Weibull(" + bu_Fx(buC, 2) + ", " + bu_Num(fmSw) + ")";
+  END;
+  IF DIM(fmNm) > 0 THEN
+    TEXTOUT_P(fmNm, G1, 6, 180, 1, buPUR, 308);
+  ELSE
+    TEXTOUT_P("Burr XII = Singh-Maddala (income economics)", G1, 6, 180, 1, buPUR, 308);
+  END;
+  fmT := bu_MomText(buC, buK);
+  IF buK * buC > 1 THEN TEXTOUT_P(fmT, G1, 6, 192, 1, buBLK, 308); ELSE TEXTOUT_P(fmT, G1, 6, 192, 1, buRED, 308); END;
+  TEXTOUT_P("L/R = C, U/D = K, +/- = S, Ent = menu, Esc", G1, 6, 204, 1, buFOOT, 308);
+  bu_Show(buSK(buSKPg));
+  buOnPg := 2;                                  // beta 1i: Family is on the screen
+END;
+
+// The Weibull limit, animated: K doubles from 1 to 128 while S = Sw
+// K^(1/C), so (1 + (x/S)^C)^(-K) -> exp(-(x/Sw)^C).  Esc stops early.
+bu_WeibAnim()
+BEGIN
+  LOCAL waJ, waSw, waT0, waK;
+  waSw := buS * EXP(-LN(buK) / buC);           // the Weibull scale this Burr implies
+  buFrz := 1;                                   // hold the window: the curves share it
+  waJ := 0;
+  WHILE waJ <= 7 DO
+    buK := 2^waJ; buS := waSw * EXP(LN(buK) / buC); buRe := 1;
+    bu_DrawFam(1, waSw);
+    waT0 := TICKS;
+    REPEAT waK := GETKEY; UNTIL waK > -1 OR TICKS - waT0 > 500;
+    waJ := waJ + 1;
+    IF waK == 4 THEN waJ := 99; END;
+  END;
+  buFrz := 0;
+  bu_DrawFam(1, waSw);
+  RETURN waSw;
+END;
+
+bu_Family()
+BEGIN
+  LOCAL fmRun, fmK, fmM, fmM1, fmEv, fmDrag;
+  LOCAL fmLX, fmLY, fmPX, fmPY, fmC0, fmK0;
+  LOCAL fmTX, fmTY, fmAct, fmCh, fmMode, fmSw;
+  buPB := 153; buPR := 200;
+  buNC := buPR - buPL;
+  buPdf := MAKELIST(0, fmK, 1, buNC);
+  buOnPg := 0;
+  bu_MapGrob();
+  buSK := {{"C-", "C+", "K-", "K+", "Weibl", "More"}, {"Lomax", "Fisk", "Reset", "Help", "Menu", "More"}};
+  buSKPg := 1; buFrz := 0; buRe := 1; buXmax := 0; buCap := 0;
+  fmRun := 1; fmDrag := 0; fmLX := -1; fmLY := -1; fmMode := 0; fmSw := buS;
+  REPEAT fmK := GETKEY; UNTIL fmK == -1;
+  bu_Drain();
+  WHILE fmRun == 1 DO
+    bu_DrawFam(fmMode, fmSw);
+    fmEv := 0; fmK := -1; fmAct := 0;
+    REPEAT
+      fmK := GETKEY;
+      fmM := MOUSE;
+      fmM1 := fmM(1);
+      IF fmDrag > 0 THEN
+        IF SIZE(fmM1) == 0 THEN
+          fmEv := 2;
+        ELSE
+          IF fmM1(1) <> fmLX OR fmM1(2) <> fmLY THEN fmEv := 1; END;
+        END;
+      ELSE
+        IF SIZE(fmM1) > 0 THEN fmEv := 1; END;
+      END;
+      IF fmK > -1 THEN fmEv := 3; END;
+    UNTIL fmEv > 0;
+    IF fmEv == 2 OR (fmEv == 3 AND fmDrag > 0) THEN
+      fmDrag := 0; buFrz := 0; bu_Drain();
+    END;
+    IF fmEv == 1 THEN
+      fmTX := fmM1(1); fmTY := fmM1(2);
+      IF fmDrag == 0 THEN
+        IF fmTY >= 218 THEN
+          bu_Drain();
+          fmAct := bu_Slot(fmTX);
+        ELSE
+          IF bu_Hit(fmTX, fmTY) == 1 THEN
+            fmDrag := 2;                                      // the map: (C, K) from the finger
+          ELSE
+            IF fmTX >= buPL AND fmTX <= buPR AND fmTY >= buPT AND fmTY <= buPB THEN
+              fmDrag := 1; fmPX := fmTX; fmPY := fmTY; fmC0 := buC; fmK0 := buK;
+            ELSE
+              bu_Drain();
+            END;
+          END;
+        END;
+      END;
+      IF fmDrag > 0 THEN
+        fmLX := fmTX; fmLY := fmTY; buFrz := 1; fmMode := 0;
+        IF fmDrag == 2 THEN
+          // log2 C = -2 + 6 (x - 222)/90, log2 K = -2 + 6 (131 - y)/90, to 0.05
+          buC := 2^(ROUND((-2 + 6 * (MAX(222, MIN(312, fmTX)) - 222) / 90) * 20, 0) / 20);
+          buK := 2^(ROUND((-2 + 6 * (131 - MAX(40, MIN(131, fmTY))) / 90) * 20, 0) / 20);
+          buC := ROUND(buC, 2); buK := ROUND(buK, 2);
+          IF ABS(buC - 1) < 0.06 THEN buC := 1; END;
+          IF ABS(buK - 1) < 0.06 THEN buK := 1; END;
+          buRe := 1;
+        ELSE
+          // in the plot: sideways = C, up = K, 0.01 a pixel
+          buC := MAX(0.2, MIN(50, ROUND(fmC0 + 0.01 * (fmTX - fmPX), 2)));
+          buK := MAX(0.2, MIN(50, ROUND(fmK0 + 0.01 * (fmPY - fmTY), 2)));
+          buRe := 1;
+        END;
+      END;
+    END;
+    IF fmEv == 3 THEN
+      IF fmK == 7 THEN fmAct := 1; END;
+      IF fmK == 8 THEN fmAct := 2; END;
+      IF fmK == 12 THEN fmAct := 3; END;
+      IF fmK == 2 THEN fmAct := 4; END;
+      IF fmK == 42 THEN fmAct := 5; END;
+      IF fmK == 45 THEN buS := MAX(0.01, buS / 1.1); buRe := 1; fmMode := 0; END;
+      IF fmK == 50 THEN buS := MIN(1000000, buS * 1.1); buRe := 1; fmMode := 0; END;
+      IF fmK == 4 THEN fmRun := 0; END;
+      IF fmK == 30 THEN fmAct := 30; END;
+      REPEAT fmK := GETKEY; UNTIL fmK == -1;
+    END;
+    IF fmAct == 30 THEN
+      fmCh := 0; buOnPg := 0;
+      CHOOSE(fmCh, "Family tree", {"C down", "C up", "K down", "K up", "Weibull limit (animate)", "Lomax: C = 1", "Log-logistic: K = 1", "Reset", "Help", "Main menu"});
+      REPEAT fmK := GETKEY; UNTIL fmK == -1;
+      bu_Drain();
+      fmAct := 0;
+      IF fmCh >= 1 AND fmCh <= 5 THEN fmAct := fmCh; END;
+      IF fmCh >= 6 AND fmCh <= 9 THEN fmAct := fmCh + 5; END;
+      IF fmCh == 10 THEN fmRun := 0; END;
+    END;
+    IF fmAct == 6 THEN
+      buSKPg := buSKPg + 1; IF buSKPg > 2 THEN buSKPg := 1; END;
+      fmAct := 0;
+    END;
+    IF fmAct >= 1 AND fmAct <= 5 AND buSKPg == 2 THEN fmAct := fmAct + 10; END;
+    IF fmAct == 1 THEN buC := MAX(0.2, ROUND(buC - 0.1, 2)); buRe := 1; fmMode := 0; END;
+    IF fmAct == 2 THEN buC := MIN(50, ROUND(buC + 0.1, 2)); buRe := 1; fmMode := 0; END;
+    IF fmAct == 3 THEN buK := MAX(0.2, ROUND(buK - 0.1, 2)); buRe := 1; fmMode := 0; END;
+    IF fmAct == 4 THEN buK := MIN(50, ROUND(buK + 0.1, 2)); buRe := 1; fmMode := 0; END;
+    IF fmAct == 5 THEN fmSw := bu_WeibAnim(); fmMode := 1; END;
+    IF fmAct == 11 THEN buC := 1; buRe := 1; fmMode := 0; END;
+    IF fmAct == 12 THEN buK := 1; buRe := 1; fmMode := 0; END;
+    IF fmAct == 13 THEN buC := 2; buK := 1.5; buS := 10; buRe := 1; buXmax := 0; fmMode := 0; END;
+    IF fmAct == 14 THEN bu_Help(); buOnPg := 0; END;
+    IF fmAct == 15 THEN fmRun := 0; END;
+  END;
+  buPB := 153; buPR := 304; buFrz := 0;
+  buNC := buPR - buPL;
+  buPdf := MAKELIST(0, fmK, 1, buNC);
+  buRe := 1; buXmax := 0;
+  RETURN 1;
+END;
+
+// ============================================================
+// 3. FIT PAGES: results, the AIC table and the pictures
+// ============================================================
+
+// A parameter with its SE, or a flag when the fit sits at a boundary.
+bu_ParSE(psLbl, psV, psSE)
+BEGIN
+  IF buFlag == 1 AND psLbl <> "C" THEN RETURN psLbl + " " + buARR + " " + buINF; END;
+  IF buSEOK == 1 THEN RETURN psLbl + " = " + bu_Num(psV) + " (SE " + bu_Num(psSE) + ")"; END;
+  RETURN psLbl + " = " + bu_Num(psV);
+END;
+
+// The name of a rival with its fitted parameters, for the pages.
+bu_RivTxt(rtI)
+BEGIN
+  LOCAL rtS;
+  rtS := buRvN(rtI);
+  IF buRvOK(rtI) == 0 THEN
+    IF buRvFl(rtI) == 2 THEN RETURN rtS + " (not fitted on bins: too slow for a G1)"; END;
+    RETURN rtS + " (no fit)";
+  END;
+  IF rtI == 1 THEN RETURN rtS + " (mean " + bu_Num(buRv1(1)) + ")"; END;
+  IF rtI == 2 THEN RETURN rtS + " (" + buMU + " " + bu_Num(buRv1(2)) + ", " + buSIG + " " + bu_Num(buRv2(2)) + ")"; END;
+  IF rtI == 3 THEN RETURN rtS + " (k " + bu_Num(buRv1(3)) + ", " + buLAM + " " + bu_Num(buRv2(3)) + ")"; END;
+  IF rtI == 4 THEN RETURN rtS + " (a " + bu_Num(buRv1(4)) + ", " + buTHE + " " + bu_Num(buRv2(4)) + ")"; END;
+  IF buRvFl(5) == 1 THEN RETURN rtS + " (K, S " + buARR + " " + buINF + ": the exponential)"; END;
+  RETURN rtS + " (K " + bu_Num(buRv1(5)) + ", S " + bu_Num(buRv2(5)) + ")";
+END;
+
+bu_DrawRes()
+BEGIN
+  LOCAL rsY, rsT, rsMn, rsSd, rsMe, rsMd;
+  bu_Frame("Burr XII fit: " + buShort);
+  IF buGrp == 0 THEN rsT := "Maximum likelihood, n = " + bu_IStr(buN) + " values"; ELSE rsT := "Grouped maximum likelihood, n = " + bu_IStr(buN) + " in " + bu_IStr(SIZE(buGCnt)) + " bins"; END;
+  rsY := bu_Para(rsT, 24, buGRAY);
+  rsY := bu_Para(bu_ParSE("C", buFC, buSE1) + "   " + bu_ParSE("K", buFK, buSE2), rsY, buBLUE);
+  rsY := bu_Para(bu_ParSE("S", buFS, buSE3) + "   ln L = " + bu_Fx(buFLL, 2), rsY, buBLUE);
+  rsY := bu_Para("AIC = " + bu_Fx(buFAIC, 2) + "   BIC = " + bu_Fx(buFBIC, 2) + "   (k = 3)", rsY, buBLUE);
+  IF buFlag == 0 THEN
+    rsMn := bu_Mean(buFC, buFK, buFS); rsSd := bu_SD(buFC, buFK, buFS);
+    rsMe := bu_Median(buFC, buFK, buFS); rsMd := bu_Mode(buFC, buFK, buFS);
+    rsT := bu_MomText(buFC, buFK);
+    IF buFK * buFC > 1 THEN rsY := bu_Para(rsT, rsY + 2, buBLK); ELSE rsY := bu_Para(rsT, rsY + 2, buRED); END;
+    rsT := "median " + bu_Num(rsMe) + " " + buUnit;
+    IF rsMd > 0 THEN rsT := rsT + ", mode " + bu_Num(rsMd); END;
+    rsY := bu_Para(rsT, rsY, buBLK);
+    IF rsMn > 0 THEN rsT := "mean " + bu_Num(rsMn); ELSE rsT := "mean: none (infinite)"; END;
+    IF rsSd > 0 THEN rsT := rsT + ", SD " + bu_Num(rsSd); ELSE rsT := rsT + ", SD: none (infinite variance)"; END;
+    rsY := bu_Para(rsT, rsY, buBLK);
+    IF buSEOK == 1 THEN
+      IF buN < 100 THEN
+        rsY := bu_Para("SEs: observed information; asymptotic, n = " + bu_IStr(buN) + " is small.", rsY + 2, buGRAY);
+      ELSE
+        rsY := bu_Para("SEs: observed information (numerical Hessian); asymptotic.", rsY + 2, buGRAY);
+      END;
+    ELSE
+      rsY := bu_Para("No SEs: the information matrix was not positive definite.", rsY + 2, buGRAY);
+    END;
+  END;
+  IF buFlag == 1 THEN
+    rsY := bu_Para("The fit ran to the WEIBULL LIMIT: K and S grew together with S K^(-1/C) fixed. This Burr IS a Weibull(k = " + bu_Fx(buFC, 2) + ", " + buLAM + " = " + bu_Num(buFS * EXP(-LN(buFK) / buFC)) + "): the tail is not a power law. Compare the AIC table. Explore, Rare and the CAS page show its Weibull-equivalent at K = 50.", rsY + 2, buRED);
+  END;
+  IF buFlag == 2 THEN
+    rsY := bu_Para("The fit ran to the PARETO limit (S at the smallest value, C large): the data start at a floor. Fit the excess over that floor instead. The explorer keeps its own shape.", rsY + 2, buRED);
+  END;
+  IF buFlag == 3 THEN
+    rsY := bu_Para("A shape parameter hit the search box (C in [0.02, 1000]): treat the numbers with suspicion. The explorer keeps its own shape.", rsY + 2, buRED);
+  END;
+  IF buADOK == 1 THEN
+    rsY := bu_Para("Anderson-Darling A" + buSQ + " = " + bu_Fx(buAD, 3) + " (no p: see the A-D page).", rsY + 2, buPUR);
+  END;
+  IF DIM(buCmp) > 0 THEN TEXTOUT_P(buCmp, G1, 6, 180, 1, buPUR, 308); END;
+  bu_Badge(6, 192);
+  TEXTOUT_P("soft keys = pictures, Ent = menu, Esc = back", G1, 6, 204, 1, buFOOT, 308);
+  bu_Show(buSK(buSKPg));
+END;
+
+// The engine badge (beta 1b): which engine fitted the Burr, and its time.
+bu_Badge(bdX, bdY)
+BEGIN
+  LOCAL bdT, bdC;
+  IF buEngUsed == 1 THEN
+    bdT := "engine: MicroPython 1.9.4, " + bu_Fx(buTPy, 1) + " s"; bdC := buGRN;
+    IF buEng == 4 THEN bdT := "engine: MicroPython 1.9.4 (compared), " + bu_Fx(buTPy, 1) + " s"; END;
+  ELSE
+    IF buEng == 2 THEN bdT := "engine: PPL (chosen), " + bu_Fx(buTPPL, 1) + " s"; ELSE bdT := "engine: PPL (Python unavailable), " + bu_Fx(buTPPL, 1) + " s"; END;
+    bdC := buRED;
+  END;
+  TEXTOUT_P(bdT, G1, bdX, bdY, 1, bdC, 308);
+END;
+
+// The AIC table against the rivals, the winner marked, in plain words.
+bu_Table()
+BEGIN
+  LOCAL tbY, tbI, tbMin, tbT, tbD, tbC;
+  bu_Frame("AIC table: " + buShort);
+  tbMin := buFAIC;
+  FOR tbI FROM 1 TO 5 DO
+    IF buRvOK(tbI) == 1 AND buRvA(tbI) < tbMin THEN tbMin := buRvA(tbI); END;
+  END;
+  TEXTOUT_P("Model", G1, 6, 24, 1, buGRAY, 80);
+  TEXTOUT_P("k", G1, 108, 24, 1, buGRAY, 20);
+  TEXTOUT_P("ln L", G1, 136, 24, 1, buGRAY, 50);
+  TEXTOUT_P("AIC", G1, 196, 24, 1, buGRAY, 50);
+  TEXTOUT_P("AIC - best", G1, 248, 24, 1, buGRAY, 70);
+  tbY := 38;
+  // the Burr row
+  tbD := buFAIC - tbMin;
+  IF tbD < 0.0001 THEN tbC := buGRN; ELSE tbC := buBLUE; END;
+  TEXTOUT_P("Burr XII", G1, 6, tbY, 1, tbC, 100);
+  TEXTOUT_P("3", G1, 108, tbY, 1, tbC, 20);
+  TEXTOUT_P(bu_Fx(buFLL, 2), G1, 136, tbY, 1, tbC, 58);
+  TEXTOUT_P(bu_Fx(buFAIC, 2), G1, 196, tbY, 1, tbC, 50);
+  IF tbD < 0.0001 THEN TEXTOUT_P("best", G1, 248, tbY, 1, tbC, 60); ELSE TEXTOUT_P("+" + bu_Fx(tbD, 2), G1, 248, tbY, 1, tbC, 60); END;
+  tbY := tbY + 13;
+  FOR tbI FROM 1 TO 5 DO
+    IF buRvOK(tbI) == 1 THEN
+      tbD := buRvA(tbI) - tbMin;
+      IF tbD < 0.0001 THEN tbC := buGRN; ELSE tbC := buRvC(tbI); END;
+      TEXTOUT_P(buRvN(tbI), G1, 6, tbY, 1, tbC, 100);
+      TEXTOUT_P(bu_IStr(buRvP(tbI)), G1, 108, tbY, 1, tbC, 20);
+      TEXTOUT_P(bu_Fx(buRvL(tbI), 2), G1, 136, tbY, 1, tbC, 58);
+      TEXTOUT_P(bu_Fx(buRvA(tbI), 2), G1, 196, tbY, 1, tbC, 50);
+      IF tbD < 0.0001 THEN TEXTOUT_P("best", G1, 248, tbY, 1, tbC, 60); ELSE TEXTOUT_P("+" + bu_Fx(tbD, 2), G1, 248, tbY, 1, tbC, 60); END;
+      IF buRvFl(tbI) == 1 THEN TEXTOUT_P("exp", G1, 298, tbY, 1, buGRAY, 22); END;
+    ELSE
+      TEXTOUT_P(buRvN(tbI), G1, 6, tbY, 1, buGRAY, 100);
+      IF buRvFl(tbI) == 2 THEN TEXTOUT_P("not fitted on bins", G1, 136, tbY, 1, buGRAY, 150); ELSE TEXTOUT_P("no fit", G1, 136, tbY, 1, buGRAY, 60); END;
+    END;
+    tbY := tbY + 13;
+  END;
+  tbY := tbY + 2;
+  tbY := bu_Para("AIC = 2k - 2 ln L: lowest wins. Under 2 apart: about equal; 4-7: a clear preference; over 10: decisive (Burnham & Anderson 2002, 2.6).", tbY, buBLK);
+  IF buFlag == 1 THEN
+    tbY := bu_Para("The Burr ran to its Weibull limit: the same ln L with one parameter more, so the Weibull wins by exactly 2.", tbY, buGRN);
+  END;
+  IF buBest > 0 AND buFlag <> 1 THEN
+    IF buFAIC <= buRvA(buBest) THEN
+      tbT := "Here the Burr XII has the lowest AIC";
+      IF buRvA(buBest) - buFAIC < 2 THEN tbT := tbT + ", but " + buRvN(buBest) + " is within 2: about equal."; ELSE tbT := tbT + "; the nearest rival is " + buRvN(buBest) + "."; END;
+    ELSE
+      tbT := "Here " + buRvN(buBest) + " beats the Burr XII";
+      IF buFAIC - buRvA(buBest) < 2 THEN tbT := tbT + " by under 2: about equal."; ELSE tbT := tbT + " by " + bu_Fx(buFAIC - buRvA(buBest), 1) + "."; END;
+    END;
+    tbY := bu_Para(tbT, tbY, buGRN);
+  END;
+  TEXTOUT_P("any key or tap = back", G1, 6, 204, 1, buFOOT, 308);
+  bu_Show({});
+  bu_WaitAny();
+END;
+
+// A rival's density and survival at x (for the pictures), by row index.
+bu_RivPdf(rpI, rpX)
+BEGIN
+  LOCAL rpA, rpB, rpZ;
+  rpA := buRv1(rpI); rpB := buRv2(rpI);
+  IF rpX <= 0 THEN RETURN 0; END;
+  IF rpI == 1 THEN RETURN EXP(-rpX / rpA) / rpA; END;
+  IF rpI == 2 THEN RETURN NORMALD(rpA, rpB, LN(rpX)) / rpX; END;
+  IF rpI == 3 THEN
+    rpZ := rpA * LN(rpX / rpB);
+    IF rpZ > 600 THEN RETURN 0; END;
+    RETURN EXP(LN(rpA / rpB) + (rpA - 1) * LN(rpX / rpB) - EXP(rpZ));
+  END;
+  IF rpI == 4 THEN RETURN EXP((rpA - 1) * LN(rpX) - rpX / rpB - rpA * LN(rpB) - bu_LnGam(rpA)); END;
+  RETURN EXP(LN(rpA / rpB) - (rpA + 1) * bu_Log1p(rpX / rpB));
+END;
+
+bu_RivSF(rsI, rsX)
+BEGIN
+  LOCAL rsM;
+  rsM := {2, 3, 4, 5, 6};
+  RETURN bu_ModSF(rsM(rsI), rsX, buRv1(rsI), buRv2(rsI), 0);
+END;
+
+// Is the best rival drawable (fitted and not at a boundary)?
+bu_RivOn()
+BEGIN
+  IF buBest == 0 THEN RETURN 0; END;
+  IF buRvOK(buBest) == 0 THEN RETURN 0; END;
+  RETURN 1;
+END;
+
+// Histogram as a density with the fitted Burr (blue) and the best
+// rival (its colour).  Linear x, or log10 x with density per log unit
+// (then a curve is f(x) x ln 10).  Bins: raw data, a 1-2-5 width from 0
+// (linear) or 0.2 dex (log); grouped data, the preset's own bins.
+bu_Hist(hsLog)
+BEGIN
+  LOCAL hsI, hsJ, hsNB, hsW, hsLo, hsHi;
+  LOCAL hsCnt, hsY, hsX1, hsX2, hsMax, hsH;
+  LOCAL hsV, hsT, hsDen, hsY2, hsK, hsOn;
+  LOCAL hsE0, hsF, hsLn10;
+  hsLn10 := LN(10); hsH := buPB - buPT;
+  bu_Frame("Histogram: " + buShort);
+  RECT_P(G1, buPL, buPT, buPR, buPB, buGRID, buWHT);
+  hsOn := bu_RivOn();
+  IF buGrp == 1 THEN hsLog := 1; END;
+  // ---- bins and counts ----
+  IF buGrp == 0 THEN
+    IF hsLog == 0 THEN
+      hsLo := 0; hsW := bu_Nice(buD(buN) / 12); hsNB := CEILING(buD(buN) / hsW + 0.0001);
+      hsHi := hsNB * hsW;
+    ELSE
+      hsW := MAX(0.01, bu_Nice((LOG(buD(buN)) - LOG(buD(1))) / 10)); hsLo := FLOOR(LOG(buD(1)) / hsW) * hsW;
+      hsNB := CEILING((LOG(buD(buN)) - hsLo) / hsW + 0.0001); hsHi := hsLo + hsNB * hsW;
+    END;
+    hsCnt := MAKELIST(0, hsI, 1, hsNB);
+    FOR hsI FROM 1 TO buN DO
+      IF hsLog == 0 THEN hsV := buD(hsI); ELSE hsV := LOG(buD(hsI)); END;
+      hsJ := MIN(hsNB, MAX(1, CEILING((hsV - hsLo) / hsW - 0.000001)));
+      hsCnt(hsJ) := hsCnt(hsJ) + 1;
+    END;
+  ELSE
+    hsNB := SIZE(buGCnt); hsCnt := MAKELIST(buGCnt(hsI), hsI, 1, hsNB);
+    hsLo := LOG(buGEd(1)) - 0.1; hsW := 0.1; hsHi := LOG(buGEd(hsNB - 1)) + 0.1;
+  END;
+  // ---- the y-scale: the tallest bar or curve ----
+  hsMax := 0;
+  FOR hsI FROM 1 TO hsNB DO hsMax := MAX(hsMax, hsCnt(hsI) / (buN * hsW)); END;
+  FOR hsK FROM 4 TO buNC STEP 4 DO
+    IF hsLog == 0 THEN hsV := hsLo + (hsHi - hsLo) * hsK / buNC; hsF := bu_Pdf(hsV, buFC, buFK, buFS);
+    ELSE hsV := 10^(hsLo + (hsHi - hsLo) * hsK / buNC); hsF := bu_Pdf(hsV, buFC, buFK, buFS) * hsV * hsLn10; END;
+    hsMax := MAX(hsMax, hsF);
+  END;
+  IF hsMax <= 0 THEN hsMax := 1; END;
+  hsMax := hsMax * 1.08;
+  // ---- bars ----
+  FOR hsI FROM 1 TO hsNB DO
+    hsX1 := buPL + IP((hsI - 1) / hsNB * buNC); hsX2 := buPL + IP(hsI / hsNB * buNC) - 1;
+    IF hsX2 < hsX1 THEN hsX2 := hsX1; END;
+    hsDen := hsCnt(hsI) / (buN * hsW);
+    hsY := buPB - IP(MIN(1, hsDen / hsMax) * hsH);
+    IF hsY < buPB THEN RECT_P(G1, hsX1, hsY, hsX2, buPB - 1, buGRAY, buLBLU); END;
+  END;
+  // ---- curves per pixel column ----
+  hsY2 := -1; hsT := -1;
+  FOR hsK FROM 1 TO buNC DO
+    IF hsLog == 0 THEN hsV := hsLo + (hsHi - hsLo) * hsK / buNC; hsF := bu_Pdf(hsV, buFC, buFK, buFS);
+    ELSE hsV := 10^(hsLo + (hsHi - hsLo) * hsK / buNC); hsF := bu_Pdf(hsV, buFC, buFK, buFS) * hsV * hsLn10; END;
+    hsY := buPB - IP(MIN(1, hsF / hsMax) * hsH);
+    IF hsY2 >= 0 THEN LINE_P(G1, buPL + hsK - 1, hsY2, buPL + hsK, hsY, buBLUE); END;
+    hsY2 := hsY;
+    IF hsOn == 1 THEN
+      hsF := bu_RivPdf(buBest, hsV);
+      IF hsLog == 1 THEN hsF := hsF * hsV * hsLn10; END;
+      hsY := buPB - IP(MIN(1, hsF / hsMax) * hsH);
+      IF hsT >= 0 THEN LINE_P(G1, buPL + hsK - 1, hsT, buPL + hsK, hsY, buRvC(buBest)); END;
+      hsT := hsY;
+    END;
+  END;
+  // ---- axes and legend ----
+  IF hsLog == 0 THEN
+    bu_XAxis(hsHi, buPB, 0);
+    bu_RText("x: " + buUnit, buPR - 2, buPT + 30, buGRAY);
+  ELSE
+    hsE0 := CEILING(hsLo - 0.0001);
+    WHILE hsE0 <= hsHi DO
+      hsX1 := buPL + IP((hsE0 - hsLo) / (hsHi - hsLo) * buNC);
+      LINE_P(G1, hsX1, buPB, hsX1, buPB + 3, buGRAY);
+      bu_TickLbl(bu_Pow10(hsE0), hsX1 - 6, buPB + 3);
+      hsE0 := hsE0 + 1;
+    END;
+    bu_RText("x: " + buUnit + " (log)", buPR - 2, buPT + 30, buGRAY);
+  END;
+  TEXTOUT_P("Burr XII", G1, buPL + 4, buPT + 2, 1, buBLUE, 80);
+  IF hsOn == 1 THEN TEXTOUT_P(buRvN(buBest) + " (best rival by AIC)", G1, buPL + 4, buPT + 16, 1, buRvC(buBest), 200); END;
+  IF hsLog == 1 THEN hsT := "density per log10 unit"; ELSE hsT := "density"; END;
+  bu_RText(hsT, buPR - 2, buPT + 2, buGRAY);
+  TEXTOUT_P("bars: " + bu_IStr(buN) + " values in " + bu_IStr(hsNB) + " bins", G1, 6, 192, 1, buGRAY, 308);
+  TEXTOUT_P("+/- = linear/log x, other key or tap = back", G1, 6, 204, 1, buFOOT, 308);
+  bu_Show({});
+  RETURN bu_WaitAny();
+END;
+
+bu_HistPage()
+BEGIN
+  LOCAL hpLog, hpK, hpRun;
+  hpLog := 0;
+  IF buGrp == 1 THEN hpLog := 1; ELSE IF buD(buN) / buD(IP((buN + 1) / 2)) > 30 THEN hpLog := 1; END; END;
+  hpRun := 1;
+  WHILE hpRun == 1 DO
+    hpK := bu_Hist(hpLog);
+    IF hpK == 50 OR hpK == 45 THEN hpLog := 1 - hpLog; ELSE hpRun := 0; END;
+  END;
+END;
+
+// Q-Q plot: the sorted data against the Burr quantiles at (i - 0.5)/n.
+// Log-log axes when the data span more than a factor of 30.  Tap a
+// point (or Left/Right) to read it.
+bu_QQ()
+BEGIN
+  LOCAL qqI, qqQ, qqLog, qqLo, qqHi, qqX;
+  LOCAL qqY, qqSel, qqK, qqRun, qqD, qqBest;
+  LOCAL qqT, qqV, qqW, qqH, qqPx, qqPy;
+  IF buGrp == 1 THEN
+    MSGBOX("No Q-Q plot for binned counts: the individual values are not here.");
+    RETURN 0;
+  END;
+  qqQ := MAKELIST(bu_Quant((qqI - 0.5) / buN, buFC, buFK, buFS), qqI, 1, buN);
+  qqLog := 0;
+  IF buD(buN) / buD(IP((buN + 1) / 2)) > 30 THEN qqLog := 1; END;
+  IF qqLog == 0 THEN
+    qqLo := 0; qqHi := MAX(buD(buN), qqQ(buN)) * 1.05;
+  ELSE
+    qqLo := LOG(MIN(buD(1), qqQ(1))) - 0.1; qqHi := LOG(MAX(buD(buN), qqQ(buN))) + 0.1;
+  END;
+  qqW := buPR - buPL; qqH := buPB - buPT;
+  qqSel := buN; qqRun := 1;
+  WHILE qqRun == 1 DO
+    bu_Frame("Q-Q plot against the fitted Burr XII");
+    RECT_P(G1, buPL, buPT, buPR, buPB, buGRID, buWHT);
+    LINE_P(G1, buPL, buPB, buPR, buPT, buGRAY);
+    FOR qqI FROM 1 TO buN DO
+      IF qqLog == 0 THEN qqX := qqQ(qqI); qqY := buD(qqI); ELSE qqX := LOG(qqQ(qqI)); qqY := LOG(buD(qqI)); END;
+      qqPx := buPL + IP((qqX - qqLo) / (qqHi - qqLo) * qqW);
+      qqPy := buPB - IP((qqY - qqLo) / (qqHi - qqLo) * qqH);
+      qqPx := MAX(buPL, MIN(buPR, qqPx)); qqPy := MAX(buPT, MIN(buPB, qqPy));
+      IF qqI == qqSel THEN bu_Dot(qqPx, qqPy, buRED); ELSE RECT_P(G1, qqPx - 1, qqPy - 1, qqPx + 1, qqPy + 1, buBLUE, buBLUE); END;
+    END;
+    IF qqLog == 0 THEN
+      bu_XAxis(qqHi, buPB, 0);
+      bu_RText("model quantile", buPR - 2, buPT + 2, buGRAY);
+    ELSE
+      qqV := CEILING(qqLo - 0.0001);
+      WHILE qqV <= qqHi DO
+        qqPx := buPL + IP((qqV - qqLo) / (qqHi - qqLo) * qqW);
+        LINE_P(G1, qqPx, buPB, qqPx, buPB + 3, buGRAY);
+        bu_TickLbl(bu_Pow10(qqV), qqPx - 6, buPB + 3);
+        qqPy := buPB - IP((qqV - qqLo) / (qqHi - qqLo) * qqH);
+        bu_RText(bu_Pow10(qqV), buPL - 2, qqPy - 5, buGRAY);
+        qqV := qqV + 1;
+      END;
+      bu_RText("model quantile (log scales)", buPR - 2, buPT + 2, buGRAY);
+    END;
+    TEXTOUT_P("data", G1, buPL + 4, buPT + 2, 1, buBLUE, 40);
+    TEXTOUT_P("on the line = fit; a tail bending UP = heavier", G1, 6, 180, 1, buGRAY, 308);
+    qqT := "#" + bu_IStr(qqSel) + "/" + bu_IStr(buN) + ": x " + bu_Num(buD(qqSel)) + ", model " + bu_Num(qqQ(qqSel)) + ", p " + bu_Fx((qqSel - 0.5) / buN, 3);
+    TEXTOUT_P(qqT, G1, 6, 192, 1, buRED, 308);
+    TEXTOUT_P("tap a point or L/R = read it, Esc = back", G1, 6, 204, 1, buFOOT, 308);
+    bu_Show({});
+    qqK := bu_WaitAny();
+    IF qqK == 7 THEN qqSel := MAX(1, qqSel - 1); END;
+    IF qqK == 8 THEN qqSel := MIN(buN, qqSel + 1); END;
+    IF qqK == -1 THEN
+      IF buTapY >= buPT AND buTapY <= buPB + 10 THEN
+        // the nearest point to the finger, by pixel distance
+        qqBest := 1E300;
+        FOR qqI FROM 1 TO buN DO
+          IF qqLog == 0 THEN qqX := qqQ(qqI); qqY := buD(qqI); ELSE qqX := LOG(qqQ(qqI)); qqY := LOG(buD(qqI)); END;
+          qqPx := buPL + IP((qqX - qqLo) / (qqHi - qqLo) * qqW);
+          qqPy := buPB - IP((qqY - qqLo) / (qqHi - qqLo) * qqH);
+          qqD := (qqPx - buTapX)^2 + (qqPy - buTapY)^2;
+          IF qqD < qqBest THEN qqBest := qqD; qqSel := qqI; END;
+        END;
+      ELSE
+        qqRun := 0;
+      END;
+    END;
+    IF qqK == 4 OR qqK == 30 THEN qqRun := 0; END;
+  END;
+  RETURN 1;
+END;
+
+// Survival on log-log axes: the empirical P(X > x) at each value,
+// 1 - (i - 0.5)/n, the fitted Burr (blue), the best rival (its colour),
+// and the Pareto asymptote of slope -K C (red dots): a heavy tail is a
+// straight line there.
+bu_Surv()
+BEGIN
+  LOCAL svI, svLo, svHi, svYlo, svX, svY;
+  LOCAL svPx, svPy, svW, svH, svK, svV;
+  LOCAL svY2, svT, svOn, svCum, svS, svSlope;
+  svW := buPR - buPL; svH := buPB - buPT;
+  bu_Frame("Survival, log-log: " + buShort);
+  RECT_P(G1, buPL, buPT, buPR, buPB, buGRID, buWHT);
+  svOn := bu_RivOn();
+  IF buGrp == 0 THEN
+    svLo := LOG(buD(1)) - 0.1; svHi := LOG(buD(buN)) + 0.3; svYlo := LOG(0.5 / buN) - 0.2;
+  ELSE
+    svLo := LOG(buGEd(1)); svHi := LOG(buGEd(SIZE(buGEd))); svYlo := LOG(0.5 / buN) - 0.2;
+  END;
+  // the empirical points
+  IF buGrp == 0 THEN
+    FOR svI FROM 1 TO buN DO
+      svX := LOG(buD(svI)); svY := LOG(1 - (svI - 0.5) / buN);
+      svPx := buPL + IP((svX - svLo) / (svHi - svLo) * svW);
+      svPy := buPB - IP((svY - svYlo) / (0 - svYlo) * svH);
+      svPx := MAX(buPL, MIN(buPR, svPx)); svPy := MAX(buPT, MIN(buPB, svPy));
+      RECT_P(G1, svPx - 1, svPy - 1, svPx + 1, svPy + 1, buGRAY, buGRAY);
+    END;
+  ELSE
+    svCum := 0;
+    FOR svI FROM 1 TO SIZE(buGEd) DO
+      svCum := svCum + buGCnt(svI);
+      svS := (buN - svCum) / buN;
+      IF svS > 0 THEN
+        svX := LOG(buGEd(svI)); svY := LOG(svS);
+        svPx := buPL + IP((svX - svLo) / (svHi - svLo) * svW);
+        svPy := buPB - IP((svY - svYlo) / (0 - svYlo) * svH);
+        svPx := MAX(buPL, MIN(buPR, svPx)); svPy := MAX(buPT, MIN(buPB, svPy));
+        RECT_P(G1, svPx - 1, svPy - 1, svPx + 1, svPy + 1, buGRAY, buGRAY);
+      END;
+    END;
+  END;
+  // the curves and the asymptote, per pixel column
+  svY2 := -1; svT := -1; svSlope := buFK * buFC;
+  FOR svK FROM 0 TO svW DO
+    svX := svLo + (svHi - svLo) * svK / svW; svV := 10^svX;
+    svY := bu_LnSF(svV, buFC, buFK, buFS) / LN(10);
+    svPy := buPB - IP((MAX(svYlo, svY) - svYlo) / (0 - svYlo) * svH);
+    IF svY2 >= 0 THEN LINE_P(G1, buPL + svK - 1, svY2, buPL + svK, svPy, buBLUE); END;
+    svY2 := svPy;
+    IF svOn == 1 THEN
+      svS := bu_RivSF(buBest, svV);
+      IF svS > 0 THEN svY := LOG(svS); ELSE svY := svYlo; END;
+      svPy := buPB - IP((MAX(svYlo, svY) - svYlo) / (0 - svYlo) * svH);
+      IF svT >= 0 THEN LINE_P(G1, buPL + svK - 1, svT, buPL + svK, svPy, buRvC(buBest)); END;
+      svT := svPy;
+    END;
+    // the Pareto line: log10 SF = -K C (log10 x - log10 S); none at the
+    // Weibull limit, where K C is not a tail index
+    svY := -svSlope * (svX - LOG(buFS));
+    IF svY <= 0 AND svY >= svYlo AND svK MOD 3 == 0 AND buFlag <> 1 THEN
+      svPy := buPB - IP((svY - svYlo) / (0 - svYlo) * svH);
+      PIXON_P(G1, buPL + svK, svPy, buRED);
+    END;
+  END;
+  // axes: powers of ten
+  svV := CEILING(svLo - 0.0001);
+  WHILE svV <= svHi DO
+    svPx := buPL + IP((svV - svLo) / (svHi - svLo) * svW);
+    LINE_P(G1, svPx, buPB, svPx, buPB + 3, buGRAY);
+    bu_TickLbl(bu_Pow10(svV), svPx - 6, buPB + 3);
+    svV := svV + 1;
+  END;
+  svV := 0;
+  WHILE svV >= svYlo DO
+    svPy := buPB - IP((svV - svYlo) / (0 - svYlo) * svH);
+    LINE_P(G1, buPL - 3, svPy, buPL, svPy, buGRAY);
+    bu_RText(bu_Pow10(svV), buPL - 2, svPy - 5, buGRAY);
+    svV := svV - 1;
+  END;
+  TEXTOUT_P("Burr XII", G1, buPL + 4, buPT + 2, 1, buBLUE, 80);
+  IF svOn == 1 THEN TEXTOUT_P(buRvN(buBest), G1, buPL + 4, buPT + 16, 1, buRvC(buBest), 120); END;
+  IF buFlag == 1 THEN svT := "Weibull limit: no Pareto line"; ELSE svT := "Pareto line, slope -K" + buTIMES + "C = " + bu_Fx(-svSlope, 2); END;
+  TEXTOUT_P(svT, G1, buPL + 4, buPT + 30, 1, buRED, IP(6.5 * DIM(svT)) + 4);
+  bu_RText("x: " + buUnit + " (log)", buPR - 2, buPT + 2, buGRAY);
+  TEXTOUT_P("Heavy (Pareto-like) tail: a straight line here.", G1, 6, 180, 1, buGRAY, 308);
+  TEXTOUT_P("Light tail (exponential, Weibull): bends down.", G1, 6, 192, 1, buGRAY, 308);
+  TEXTOUT_P("any key or tap = back", G1, 6, 204, 1, buFOOT, 308);
+  bu_Show({});
+  bu_WaitAny();
+  RETURN 1;
+END;
+
+// A rival's hazard f/SF at x.
+bu_RivHaz(rhI, rhX)
+BEGIN
+  LOCAL rhS;
+  IF rhI == 1 THEN RETURN 1 / buRv1(1); END;
+  IF rhI == 5 THEN RETURN buRv1(5) / (buRv2(5) + rhX); END;
+  rhS := bu_RivSF(rhI, rhX);
+  IF rhS <= 1E-300 THEN RETURN 0; END;
+  RETURN bu_RivPdf(rhI, rhX) / rhS;
+END;
+
+// The hazard function h(x) = f(x)/P(X > x) over the data's range.
+bu_HazPage()
+BEGIN
+  LOCAL hzK, hzX, hzHi, hzMax, hzV, hzY;
+  LOCAL hzY2, hzT, hzOn, hzH, hzLbl;
+  hzH := buPB - buPT;
+  bu_Frame("Hazard: " + buShort);
+  RECT_P(G1, buPL, buPT, buPR, buPB, buGRID, buWHT);
+  hzOn := bu_RivOn();
+  IF buGrp == 0 THEN hzHi := buD(buN) * 1.05; ELSE hzHi := bu_Quant(0.99, buFC, buFK, buFS); END;
+  hzMax := 0;
+  FOR hzK FROM 4 TO buNC STEP 2 DO
+    hzX := hzHi * hzK / buNC;
+    hzMax := MAX(hzMax, bu_Haz(hzX, buFC, buFK, buFS));
+    IF hzOn == 1 THEN hzMax := MAX(hzMax, bu_RivHaz(buBest, hzX)); END;
+  END;
+  IF hzMax <= 0 THEN hzMax := 1; END;
+  hzMax := hzMax * 1.08;
+  hzY2 := -1; hzT := -1;
+  FOR hzK FROM 1 TO buNC DO
+    hzX := hzHi * hzK / buNC;
+    hzV := bu_Haz(hzX, buFC, buFK, buFS);
+    hzY := buPB - IP(MIN(1, hzV / hzMax) * hzH);
+    IF hzY2 >= 0 THEN LINE_P(G1, buPL + hzK - 1, hzY2, buPL + hzK, hzY, buBLUE); END;
+    hzY2 := hzY;
+    IF hzOn == 1 THEN
+      hzV := bu_RivHaz(buBest, hzX);
+      hzY := buPB - IP(MIN(1, hzV / hzMax) * hzH);
+      IF hzT >= 0 THEN LINE_P(G1, buPL + hzK - 1, hzT, buPL + hzK, hzY, buRvC(buBest)); END;
+      hzT := hzY;
+    END;
+  END;
+  bu_XAxis(hzHi, buPB, 0);
+  bu_RText("x: " + buUnit, buPR - 2, buPT + 2, buGRAY);
+  TEXTOUT_P("Burr XII", G1, buPL + 4, buPT + 2, 1, buBLUE, 80);
+  IF hzOn == 1 THEN TEXTOUT_P(buRvN(buBest), G1, buPL + 4, buPT + 16, 1, buRvC(buBest), 120); END;
+  TEXTOUT_P("h max " + bu_Num(hzMax), G1, 2, buPT - 14, 1, buGRAY, 90);
+  IF buFC > 1 THEN
+    hzLbl := "C > 1: Burr hazard rises, peaks, then FALLS";
+  ELSE
+    hzLbl := "C " + buLEQ + " 1: Burr hazard falls from the start";
+  END;
+  TEXTOUT_P(hzLbl, G1, 6, 180, 1, buGRAY, 308);
+  TEXTOUT_P("exponential hazard flat; Weibull monotone", G1, 6, 192, 1, buGRAY, 308);
+  TEXTOUT_P("any key or tap = back", G1, 6, 204, 1, buFOOT, 308);
+  bu_Show({});
+  bu_WaitAny();
+  RETURN 1;
+END;
+
+// Anderson-Darling: the statistic, what it is, and why there is no p.
+bu_ADPage()
+BEGIN
+  LOCAL adY;
+  bu_Frame("A-D statistic: " + buShort);
+  IF buADOK == 0 THEN
+    adY := bu_Para("No A" + buSQ + " here: it needs the individual values (not bins) and a fit inside the parameter box.", 26, buRED);
+  ELSE
+    adY := bu_Para("A" + buSQ + " = " + bu_Fx(buAD, 4) + " against the fitted Burr XII (n = " + bu_IStr(buN) + ").", 26, buPUR);
+    adY := bu_Para("A" + buSQ + " = -n - (1/n) sum (2i - 1)[ln F(x(i)) + ln(1 - F(x(n+1-i)))], sorted data (Anderson & Darling 1952).", adY + 2, buBLK);
+    adY := bu_Para("NO p-value, honestly: with C, K, S estimated from the same data A" + buSQ + " has no published table; a bootstrap is too slow on a G1.", adY + 2, buRED);
+    adY := bu_Para("Stephens (1986, in D'Agostino & Stephens, Table 4.2): 1.933, 2.492, 3.857 at 10, 5, 1 % for a FULLY SPECIFIED F; fitted parameters make the true points smaller and no general table exists. Above 2.5 fails even that lenient table; a smaller A" + buSQ + " only ranks fits.", adY + 2, buGRAY);
+  END;
+  TEXTOUT_P("any key or tap = back", G1, 6, 204, 1, buFOOT, 308);
+  bu_Show({});
+  bu_WaitAny();
+  RETURN 1;
+END;
+
+// The results page and its soft keys: the hub after a fit.
+bu_Results()
+BEGIN
+  LOCAL rsRun, rsK, rsAct, rsCh;
+  buSK := {{"Table", "Hist", "Q-Q", "Surv", "Hazrd", "More"}, {"A-D", "Data", "Rare", "Explr", "Menu", "More"}};
+  buSKPg := 1; rsRun := 1;
+  WHILE rsRun == 1 DO
+    bu_DrawRes();
+    rsK := bu_WaitAny();
+    rsAct := 0;
+    IF rsK == -1 THEN
+      IF buTapY >= 218 THEN rsAct := bu_Slot(buTapX); END;
+    END;
+    IF rsK == 4 THEN rsRun := 0; END;
+    IF rsK == 30 THEN
+      rsCh := 0;
+      CHOOSE(rsCh, "Fit pages", {"AIC table", "Histogram", "Q-Q plot", "Survival (log-log)", "Hazard", "Anderson-Darling", "Data page", "How rare is this?", "Explore this fit", "Main menu"});
+      REPEAT rsK := GETKEY; UNTIL rsK == -1;
+      bu_Drain();
+      IF rsCh >= 1 AND rsCh <= 5 THEN rsAct := rsCh; END;
+      IF rsCh >= 6 AND rsCh <= 9 THEN rsAct := rsCh + 5; END;
+      IF rsCh == 10 THEN rsRun := 0; END;
+    END;
+    IF rsAct == 6 THEN
+      buSKPg := buSKPg + 1; IF buSKPg > 2 THEN buSKPg := 1; END;
+      rsAct := 0;
+    END;
+    IF rsAct >= 1 AND rsAct <= 5 AND buSKPg == 2 THEN rsAct := rsAct + 10; END;
+    IF rsAct == 1 THEN bu_Table(); END;
+    IF rsAct == 2 THEN bu_HistPage(); END;
+    IF rsAct == 3 THEN bu_QQ(); END;
+    IF rsAct == 4 THEN bu_Surv(); END;
+    IF rsAct == 5 THEN bu_HazPage(); END;
+    IF rsAct == 11 THEN bu_ADPage(); END;
+    IF rsAct == 12 THEN bu_DataPage(); END;
+    IF rsAct == 13 THEN bu_Rare(); END;
+    IF rsAct == 14 THEN bu_Explore(); END;
+    IF rsAct == 15 THEN rsRun := 0; END;
+  END;
+  RETURN 1;
+END;
+
+// The fit menu: a preset or D1, the data page, then the fit.
+bu_FitMenu()
+BEGIN
+  LOCAL fmC, fmK, fmOK, fmEn, fmE;
+  fmC := 0;
+  fmEn := {"Auto", "PPL only", "Python only", "Both (compare)"};
+  CHOOSE(fmC, "Fit the Burr XII to", {"BJS: months served, 41 homicides", "Rossi: weeks to re-arrest (114)",
+         "Danish fire losses: 300-value subsample", "Danish fire losses: all 2,156 in 60 bins",
+         "My data: D1 (Statistics 1Var)", "Results of the last fit", "Engine (now: " + fmEn(buEng) + ")", "Back"});
+  REPEAT fmK := GETKEY; UNTIL fmK == -1;
+  bu_Drain();
+  IF fmC == 0 OR fmC == 8 THEN RETURN 0; END;
+  IF fmC == 6 THEN
+    IF buFitOK == 1 THEN bu_Results(); ELSE MSGBOX("No fit yet: choose a data set first."); END;
+    RETURN 1;
+  END;
+  IF fmC == 7 THEN
+    // the engine setting, kept for the session (beta 1b)
+    fmE := 0;
+    CHOOSE(fmE, "Fit engine", {"Auto: Python first, PPL if it fails", "PPL only", "Python only (no fallback: errors show)", "Both: time Python, then PPL, compare"});
+    REPEAT fmK := GETKEY; UNTIL fmK == -1;
+    bu_Drain();
+    IF fmE >= 1 AND fmE <= 4 THEN buEng := fmE; buPyBad := 0; END;   // beta 1f: a new setting tries Python again
+    RETURN 1;
+  END;
+  fmOK := 1;
+  IF fmC == 1 THEN bu_LoadBJS(); END;
+  IF fmC == 2 THEN bu_LoadRossi(); END;
+  IF fmC == 3 THEN bu_LoadDan300(); END;
+  IF fmC == 4 THEN bu_LoadDanBin(); END;
+  IF fmC == 5 THEN fmOK := bu_LoadMine(); END;
+  IF fmOK == 0 THEN RETURN 0; END;
+  fmK := bu_DataPage();
+  IF fmK == 4 THEN RETURN 0; END;
+  IF bu_Fit() == 1 THEN
+    bu_Results();
+  ELSE
+    MSGBOX("Fit stopped (Esc). The numbers shown would be incomplete, so none are kept.");
+    buFitOK := 0;
+  END;
+  RETURN 1;
+END;
+
+// ============================================================
+// 4. THE MEAN THAT NEVER SETTLES: a simulation
+// ============================================================
+
+// One draw from the current Burr by the inverse CDF.  RANDOM is in
+// (0, 1); the clamp keeps the quantile finite.
+bu_Draw()
+BEGIN
+  RETURN bu_Quant(RANDOM, buC, buK, buS);
+END;
+
+// Seed the generator when the class asked for a repeatable run (the
+// shape ResampLab uses; RANDSEED has not run on our G1 or G2 yet).
+bu_Seed()
+BEGIN
+  buSdOK := 1;
+  IF buSeed > 0 THEN
+    IFERR RANDSEED(buSeed); THEN buSdOK := 0; END;
+  END;
+END;
+
+// The whole trace redrawn from the stored frames (used at the start and
+// whenever the y-window grows); smH = the y-window top.
+bu_SimFrame(smH, smTrM, smTrMd, smM)
+BEGIN
+  LOCAL sfI, sfX, sfY, sfX2, sfY2, sfX3;
+  LOCAL sfY3, sfW, sfHt, sfT, sfN, sfC;
+  sfW := buPR - buPL; sfHt := buPB - buPT;
+  bu_Frame("The mean that never settles");
+  RECT_P(G1, buPL, buPT, buPR, buPB, buGRID, buWHT);
+  bu_XAxis(2000, buPB, 0);
+  bu_RText("draws", buPR - 2, buPT + 2, buGRAY);
+  TEXTOUT_P(bu_Num(smH), G1, 0, buPT - 14, 1, buGRAY, 36);
+  TEXTOUT_P("0", G1, buPL - 10, buPB - 12, 1, buGRAY, 12);
+  // the targets: the true mean (green, when it exists) and the true median
+  IF smTrM > 0 AND smTrM <= smH THEN
+    sfY := buPB - IP(smTrM / smH * sfHt);
+    LINE_P(G1, buPL, sfY, buPR, sfY, buGRN);
+    TEXTOUT_P("true mean " + bu_Num(smTrM), G1, buPL + 4, MAX(buPT + 30, sfY - 11), 1, buGRN, 150);
+  END;
+  IF smTrMd <= smH THEN
+    sfY := buPB - IP(smTrMd / smH * sfHt);
+    bu_DotH(sfY, buPL, buPR, buMAG);
+    TEXTOUT_P("true median " + bu_Num(smTrMd), G1, buPR - 130, MAX(buPT + 16, sfY - 11), 1, buMAG, 130);
+  END;
+  // the traces
+  sfN := SIZE(buSimX);
+  sfX2 := -1; sfX3 := -1;
+  FOR sfI FROM 1 TO sfN DO
+    sfX := buPL + IP(buSimX(sfI) / 2000 * sfW);
+    sfY := buPB - IP(MIN(1, buRunM(sfI) / smH) * sfHt);
+    sfY3 := buPB - IP(MIN(1, buRunMd(sfI) / smH) * sfHt);
+    IF sfX2 >= 0 THEN
+      LINE_P(G1, sfX2, sfY2, sfX, sfY, buBLUE);
+      LINE_P(G1, sfX3, sfT, sfX, sfY3, buMAG);
+    END;
+    sfX2 := sfX; sfY2 := sfY; sfX3 := sfX; sfT := sfY3;
+  END;
+  TEXTOUT_P("running mean", G1, buPL + 4, buPT + 2, 1, buBLUE, 100);
+  TEXTOUT_P("running median", G1, buPL + 4, buPT + 16, 1, buMAG, 100);
+  // the status rows
+  IF sfN > 0 THEN
+    sfT := "n = " + bu_IStr(buSimN) + " (x" + bu_IStr(smM) + "): mean " + bu_Num(buRunM(sfN)) + ", median " + bu_Num(buRunMd(sfN));
+    IF buRunM(sfN) > smH THEN sfT := sfT + " (off the top)"; END;
+  ELSE
+    sfT := "C " + bu_Fx(buC, 2) + ", K " + bu_Fx(buK, 2) + ", S " + bu_Num(buS) + ": " + bu_IStr(smM) + " draw(s) a frame";
+  END;
+  TEXTOUT_P(sfT, G1, 6, 180, 1, buBLK, 308);
+  sfC := bu_MomCase(buC, buK);
+  IF sfC == 0 THEN
+    TEXTOUT_P("K" + buTIMES + "C " + buLEQ + " 1: NO mean. The law of large numbers has", G1, 6, 192, 1, buRED, 308);
+    TEXTOUT_P("nothing to aim at; the median settles at " + bu_Num(smTrMd), G1, 6, 204, 1, buRED, 308);
+  END;
+  IF sfC == 1 THEN
+    TEXTOUT_P("1 < K" + buTIMES + "C " + buLEQ + " 2: a mean, but an infinite variance:", G1, 6, 192, 1, buORNG, 308);
+    TEXTOUT_P("the running mean converges slowly, with jumps.", G1, 6, 204, 1, buORNG, 308);
+  END;
+  IF sfC == 2 THEN
+    TEXTOUT_P("K" + buTIMES + "C > 2: mean and variance exist; the running", G1, 6, 192, 1, buGRN, 308);
+    TEXTOUT_P("mean settles at 1/" + CHAR(8730) + "n speed, the median too.", G1, 6, 204, 1, buGRN, 308);
+  END;
+  bu_Show(buSK(buSKPg));
+END;
+
+bu_Sim()
+BEGIN
+  LOCAL smRun, smK, smM, smH, smTrM, smTrMd;
+  LOCAL smI, smV, smSort, smN, smMd, smGo;
+  LOCAL smAct, smCh, smX, smNew, smSd;
+  LOCAL smW, smHt, smX2, smY2, smX3, smY3;
+  buSK := {{"x1", "x10", "x100", "Seed", "Reset", "Menu"}};
+  buSKPg := 1; smM := 10; smRun := 1; smGo := 1;
+  smTrM := bu_Mean(buC, buK, buS); smTrMd := bu_Median(buC, buK, buS);
+  IF smTrMd >= 1E200 THEN
+    MSGBOX("The median of this shape is beyond range (K too small): raise K in Explore first.");
+    RETURN 0;
+  END;
+  smW := buPR - buPL; smHt := buPB - buPT;
+  bu_Seed();
+  buSimN := 0; buSimT := 0; buSimL := {}; buSimX := {}; buRunM := {}; buRunMd := {};
+  smH := bu_Nice(MAX(3 * smTrMd, 1.5 * smTrM));
+  REPEAT smK := GETKEY; UNTIL smK == -1;
+  bu_Drain();
+  bu_SimFrame(smH, smTrM, smTrMd, smM);
+  WHILE smRun == 1 DO
+    IF smGo == 1 AND buSimN < 2000 THEN
+      // ---- a frame: smM draws, the running mean and median, one segment ----
+      smN := MIN(smM, 2000 - buSimN);
+      smNew := MAKELIST(bu_Draw(), smI, 1, smN);
+      buSimL := CONCAT(buSimL, smNew);
+      FOR smI FROM 1 TO smN DO buSimT := buSimT + smNew(smI); END;
+      buSimN := buSimN + smN;
+      smSort := SORT(buSimL);
+      IF buSimN MOD 2 == 1 THEN smMd := smSort((buSimN + 1) / 2); ELSE smMd := (smSort(buSimN / 2) + smSort(buSimN / 2 + 1)) / 2; END;
+      buSimX := CONCAT(buSimX, {buSimN});
+      buRunM := CONCAT(buRunM, {buSimT / buSimN});
+      buRunMd := CONCAT(buRunMd, {smMd});
+      smI := SIZE(buSimX);
+      IF buRunM(smI) > smH OR smMd > smH THEN
+        // the window grows: redraw everything
+        WHILE buRunM(smI) > smH OR smMd > smH DO smH := smH * 2; END;
+        bu_SimFrame(smH, smTrM, smTrMd, smM);
+      ELSE
+        IF smI > 1 THEN
+          smX2 := buPL + IP(buSimX(smI - 1) / 2000 * smW); smX3 := buPL + IP(buSimX(smI) / 2000 * smW);
+          smY2 := buPB - IP(buRunM(smI - 1) / smH * smHt); smY3 := buPB - IP(buRunM(smI) / smH * smHt);
+          LINE_P(G1, smX2, smY2, smX3, smY3, buBLUE);
+          smY2 := buPB - IP(buRunMd(smI - 1) / smH * smHt); smY3 := buPB - IP(buRunMd(smI) / smH * smHt);
+          LINE_P(G1, smX2, smY2, smX3, smY3, buMAG);
+        END;
+        RECT_P(G1, 0, 178, 319, 190, buWHT, buWHT);
+        smX := "n = " + bu_IStr(buSimN) + " (x" + bu_IStr(smM) + "): mean " + bu_Num(buRunM(smI)) + ", median " + bu_Num(smMd);
+        TEXTOUT_P(smX, G1, 6, 180, 1, buBLK, 308);
+        bu_Show(buSK(1));
+      END;
+      // a key or a tap between frames
+      smK := GETKEY; smAct := 0;
+      smV := MOUSE; smV := smV(1);
+      IF SIZE(smV) > 0 THEN
+        IF smV(2) >= 218 THEN smAct := bu_Slot(smV(1)); END;
+        bu_Drain();
+      END;
+    ELSE
+      // finished, or paused: hold the page
+      bu_SimFrame(smH, smTrM, smTrMd, smM);
+      smK := bu_WaitAny(); smAct := 0;
+      IF smK == -1 AND buTapY >= 218 THEN smAct := bu_Slot(buTapX); END;
+    END;
+    IF smK == 4 THEN smRun := 0; END;
+    IF smK == 50 THEN smM := MIN(100, smM * 10); END;
+    IF smK == 45 THEN smM := MAX(1, smM / 10); END;
+    IF smK == 42 THEN smAct := 5; END;
+    IF smK == 30 THEN
+      smCh := 0;
+      CHOOSE(smCh, "Simulation", {"1 draw a frame", "10 draws a frame", "100 draws a frame", "Seed (0 = fresh)", "Reset: start again", "Main menu"});
+      REPEAT smK := GETKEY; UNTIL smK == -1;
+      bu_Drain();
+      smAct := smCh;
+    END;
+    IF smAct == 1 THEN smM := 1; END;
+    IF smAct == 2 THEN smM := 10; END;
+    IF smAct == 3 THEN smM := 100; END;
+    IF smAct == 4 THEN
+      smSd := buSeed;
+      INPUT({smSd}, "Seed", {"Seed (0 = fresh random numbers)"}, {"A whole number makes every Reset repeat the same run"});
+      REPEAT smK := GETKEY; UNTIL smK == -1;
+      bu_Drain();
+      buSeed := MAX(0, ROUND(smSd, 0));
+      smAct := 5;
+    END;
+    IF smAct == 5 THEN
+      bu_Seed();
+      buSimN := 0; buSimT := 0; buSimL := {}; buSimX := {}; buRunM := {}; buRunMd := {};
+      smH := bu_Nice(MAX(3 * smTrMd, 1.5 * smTrM));
+      bu_SimFrame(smH, smTrM, smTrMd, smM);
+    END;
+    IF smAct == 6 THEN smRun := 0; END;
+  END;
+  RETURN 1;
+END;
+
+// ============================================================
+// 5. HOW RARE IS THIS?  A percentile, "1 in N", the empirical
+//    percentile, the courtroom framing
+// ============================================================
+
+bu_DrawRare(drX, drMax)
+BEGIN
+  LOCAL drK, drPx, drH, drI;
+  LOCAL drP, drSF, drAb, drT;
+  LOCAL drYm, drCum;
+  drH := buPB - buPT;
+  // beta 1d: the pdf per column from the shared cache (one pass, every
+  // buStr-th column), refilled only when the window or C, K, S change
+  IF buXmax <> drMax THEN buXmax := drMax; buRe := 1; END;
+  IF buRe == 1 AND buOnPg == 3 THEN bu_Busy(1, buORNG); END;   // beta 1i
+  IF buRe == 1 THEN bu_Cache(); END;
+  drYm := buYmax;
+  bu_Frame("How rare is this?  " + buShort);
+  RECT_P(G1, buPL, buPT, buPR, buPB, buGRID, buWHT);
+  bu_XAxis(drMax, buPB, 0);
+  drPx := buPL + IP(drX / drMax * buNC);
+  bu_Curve(buBLUE, 1);
+  bu_Shade(drPx, buLRED);
+  // the data as a rug of red ticks (raw values)
+  IF buGrp == 0 THEN
+    FOR drI FROM 1 TO buN DO
+      IF buD(drI) <= drMax THEN
+        drK := buPL + IP(buD(drI) / drMax * buNC);
+        LINE_P(G1, drK, buPB - 6, drK, buPB - 1, buRED);
+      END;
+    END;
+  END;
+  LINE_P(G1, drPx, buPT, drPx, buPB, buRED);
+  TEXTOUT_P("x = " + bu_Num(drX), G1, MIN(drPx + 3, buPR - 70), buPT + 16, 1, buRED, 80);
+  TEXTOUT_P("shaded: P(X > x)", G1, buPL + 4, buPT + 2, 1, buGRAY, 110);
+  drSF := bu_SF(drX, buC, buK, buS); drP := 1 - drSF;
+  drT := "P(X " + buLEQ + " x)" + bu_PEq(drP) + ", P(X > x)" + bu_PEq(drSF);
+  TEXTOUT_P(drT, G1, 6, 180, 1, buBLK, 308);
+  drT := "pctile " + bu_Fx(100 * drP, 1) + "; how unusual: " + bu_OneIn(drSF);
+  TEXTOUT_P(drT, G1, 6, 192, 1, buBLK, 308);
+  IF buHave == 1 AND buFitOK == 1 AND buFlag == 1 THEN
+    TEXTOUT_P("model: Weibull-equivalent, K = 50", G1, buPL + 4, buPT + 30, 1, buPUR, 220);
+  END;
+  IF buHave == 1 AND buFitOK == 1 AND buFlag >= 2 THEN
+    TEXTOUT_P("fit at a limit: the explorer's shape", G1, buPL + 4, buPT + 30, 1, buPUR, 240);
+  END;
+  IF buHave == 1 THEN
+    IF buGrp == 0 THEN
+      drAb := 0;
+      FOR drI FROM 1 TO buN DO IF buD(drI) > drX THEN drAb := drAb + 1; END; END;
+      drT := "Data: " + bu_IStr(drAb) + " of " + bu_IStr(buN) + " above x (" + bu_Fx(100 * drAb / buN, 1) + " %), pctile " + bu_Fx(100 * (buN - drAb) / buN, 1);
+    ELSE
+      drCum := 0;
+      FOR drI FROM 1 TO SIZE(buGEd) DO IF buGEd(drI) <= drX THEN drCum := drCum + buGCnt(drI); END; END;
+      drT := "Bins: about " + bu_IStr(buN - drCum) + " of " + bu_IStr(buN) + " above x (" + bu_Fx(100 * (buN - drCum) / buN, 1) + " %)";
+    END;
+    TEXTOUT_P(drT, G1, 6, 204, 1, buRED, 308);
+  ELSE
+    TEXTOUT_P("No data: the explorer's C, K, S are the model.", G1, 6, 204, 1, buGRAY, 308);
+  END;
+  bu_Show({"x-", "x+", "Type", "", "Back", ""});
+  buOnPg := 3;                                  // beta 1i: Rare is on the screen
+END;
+
+bu_Rare()
+BEGIN
+  LOCAL rrX, rrMax, rrRun, rrK, rrAct, rrStp;
+  LOCAL rrV, rrCh;
+  IF buHave == 1 AND buFitOK == 0 THEN
+    MSGBOX("Fit the data first (Fit my data / a preset), or use the explorer's shape with no data.");
+    RETURN 0;
+  END;
+  rrMax := bu_Quant(0.995, buC, buK, buS);
+  IF buHave == 1 THEN
+    IF buGrp == 0 THEN rrMax := MAX(rrMax, buD(buN) * 1.05); END;
+    rrMax := MIN(rrMax, 50 * buS);
+    IF buGrp == 0 THEN rrMax := MAX(rrMax, buD(buN) * 1.05); END;
+  ELSE
+    rrMax := MIN(rrMax, 50 * buS);
+  END;
+  IF buHave == 1 AND buGrp == 0 THEN rrX := buD(buN); ELSE rrX := bu_Quant(0.95, buC, buK, buS); END;
+  rrStp := bu_Nice(rrMax / 50);
+  rrRun := 1; buOnPg := 0;
+  WHILE rrRun == 1 DO
+    bu_DrawRare(rrX, rrMax);
+    rrK := bu_WaitAny(); rrAct := 0;
+    IF rrK == -1 THEN
+      IF buTapY >= 218 THEN
+        rrAct := bu_Slot(buTapX);
+      ELSE
+        IF buTapX >= buPL AND buTapX <= buPR AND buTapY >= buPT AND buTapY <= buPB THEN
+          rrX := (buTapX - buPL) / buNC * rrMax;
+          rrX := MAX(rrStp, ROUND(rrX / rrStp, 0) * rrStp);
+        END;
+      END;
+    END;
+    IF rrK == 7 OR rrK == 45 OR rrK == 12 THEN rrAct := 1; END;
+    IF rrK == 8 OR rrK == 50 OR rrK == 2 THEN rrAct := 2; END;
+    IF rrK == 30 THEN
+      rrCh := 0; buOnPg := 0;
+      CHOOSE(rrCh, "How rare", {"x down", "x up", "Type a value", "Back"});
+      REPEAT rrK := GETKEY; UNTIL rrK == -1;
+      bu_Drain();
+      rrAct := rrCh;
+      IF rrCh == 4 THEN rrAct := 5; END;
+    END;
+    IF rrK == 4 THEN rrRun := 0; END;
+    IF rrAct == 1 THEN rrX := MAX(rrStp, rrX - rrStp); END;
+    IF rrAct == 2 THEN rrX := rrX + rrStp; END;
+    IF rrAct == 3 THEN
+      rrV := rrX; buOnPg := 0;
+      INPUT({rrV}, "How rare is this?", {"Observation x (" + buUnit + ")"}, {"A positive value: a sentence, a wait, a loss"});
+      REPEAT rrK := GETKEY; UNTIL rrK == -1;
+      bu_Drain();
+      IF rrV > 0 THEN rrX := rrV; END;
+    END;
+    IF rrAct == 5 THEN rrRun := 0; END;
+    IF rrX > rrMax THEN rrMax := rrX * 1.1; rrStp := bu_Nice(rrMax / 50); END;
+  END;
+  RETURN 1;
+END;
+
+// ============================================================
+// 6. EXACT MOMENTS, behind the CAS fence (ChiTable's csCas shape)
+// ============================================================
+
+// ONE call routine.  The answer comes back as a PPL string; a failed
+// call, undef, an error or an infinity gives "" and the caller falls
+// back to the decimal.  Checked by value, never by its text.
+bu_Cas(csS)
+BEGIN
+  LOCAL cR;
+  cR := "";
+  IFERR
+    cR := STRING(EXPR("CAS(" + CHAR(34) + "string(" + csS + ")" + CHAR(34) + ")"));
+  THEN
+    cR := "";
+  END;
+  IF DIM(cR) >= 2 THEN
+    IF LEFT(cR, 1) == CHAR(34) AND MID(cR, DIM(cR), 1) == CHAR(34) THEN
+      cR := MID(cR, 2, DIM(cR) - 2);
+    END;
+  END;
+  IF DIM(cR) > 0 THEN
+    IF INSTRING(cR, "undef") > 0 OR INSTRING(cR, "rror") > 0 OR INSTRING(cR, CHAR(8734)) > 0 THEN cR := ""; END;
+  END;
+  RETURN cR;
+END;
+
+// A parameter as an exact fraction of thousandths, in ASCII, for the CAS.
+bu_Frac(frV)
+BEGIN
+  RETURN "(" + bu_IStr(ROUND(frV * 1000, 0)) + "/1000)";
+END;
+
+// E[X^r] shown symbolically and numerically.  The CAS text is built
+// from integers only: S, K and C rounded to 3 decimals as fractions,
+// B(a, b) as Beta(a, b).  The PPL value (bu_Mom, Lanczos) is the
+// fallback and the check: the CAS's evalf must agree to 1E-6.
+bu_MomLine(mlR, mlY)
+BEGIN
+  LOCAL mlC, mlK, mlS, mlTx, mlAns, mlNum;
+  LOCAL mlV, mlOK, mlY2, mlBadge, mlRS;
+  mlY2 := mlY;
+  mlRS := bu_IStr(mlR);
+  IF buK * buC <= mlR THEN
+    mlY2 := bu_Para("E[X^" + mlRS + "]: does not exist (needs K" + buTIMES + "C > " + mlRS + "; here " + bu_Fx(buK * buC, 2) + ")", mlY2, buRED);
+    RETURN mlY2;
+  END;
+  // the decimal uses the same 3-decimal rounding as the CAS text, so the
+  // two can be compared by value
+  mlV := bu_Mom(mlR, ROUND(buC, 3), ROUND(buK, 3), ROUND(buS, 3));
+  mlC := bu_Frac(buC); mlK := bu_Frac(buK); mlS := bu_Frac(buS);
+  mlTx := mlS + "^" + mlRS + "*" + mlK + "*Beta(" + mlK + "-" + mlRS + "/" + mlC + ",1+" + mlRS + "/" + mlC + ")";
+  mlAns := ""; mlOK := 0;
+  IF buCasOK == 1 THEN
+    mlAns := bu_Cas("simplify(" + mlTx + ")");
+    IF DIM(mlAns) > 0 THEN
+      mlNum := bu_Cas("evalf(" + mlTx + ")");
+      IF DIM(mlNum) > 0 THEN
+        IFERR
+          IF ABS(EXPR(mlNum) - mlV) <= 0.000001 * MAX(1, ABS(mlV)) THEN mlOK := 1; END;
+        THEN
+          mlOK := 0;
+        END;
+      END;
+    END;
+  END;
+  IF mlOK == 1 THEN mlBadge := "exact (CAS)"; ELSE mlBadge := "decimal"; END;
+  IF mlOK == 1 AND DIM(mlAns) > 60 THEN mlBadge := "exact (CAS); " + bu_IStr(DIM(mlAns)) + "-char Gamma form not shown"; END;
+  mlY2 := bu_Para("E[X^" + mlRS + "] = S^" + mlRS + " K B(K - " + mlRS + "/C, 1 + " + mlRS + "/C) = " + bu_Num(mlV) + "  [" + mlBadge + "]", mlY2, buBLK);
+  IF mlOK == 1 AND DIM(mlAns) <= 60 THEN mlY2 := bu_Para("  = " + mlAns, mlY2, buFOOT); END;
+  RETURN mlY2;
+END;
+
+bu_Moments()
+BEGIN
+  LOCAL moY, moM, moSD;
+  bu_Frame("Exact moments E[X^r] (CAS)");
+  moY := bu_Para("E[X^r] = S^r K B(K - r/C, 1 + r/C); C = " + bu_Fx(buC, 3) + ", K = " + bu_Fx(buK, 3) + ", S = " + bu_Fx(buS, 3) + " (rounded to 3 decimals here; B = Euler's Beta; finite iff r < K" + buTIMES + "C = " + bu_Fx(buK * buC, 2) + ")", 24, buGRAY);
+  moY := bu_MomLine(1, moY + 2);
+  moY := bu_MomLine(2, moY + 2);
+  moY := bu_MomLine(3, moY + 2);
+  IF buK * buC > 2 THEN
+    moM := bu_Mom(1, ROUND(buC, 3), ROUND(buK, 3), ROUND(buS, 3)); moSD := bu_SD(ROUND(buC, 3), ROUND(buK, 3), ROUND(buS, 3));
+    moY := bu_Para("Var = E[X" + buSQ + "] - E[X]" + buSQ + " = " + bu_Num(moSD * moSD) + ", SD " + bu_Num(moSD), moY + 2, buPUR);
+  END;
+  IF buCasOK == 0 THEN moY := bu_Para("CAS off for this run: decimals from the Lanczos log-gamma.", moY + 2, buGRAY); END;
+  TEXTOUT_P("any key or tap = back", G1, 6, 204, 1, buFOOT, 308);
+  bu_Show({});
+  bu_WaitAny();
+  RETURN 1;
+END;
+
+// ============================================================
+// 7. HELP, the opening page and the entry point
+// ============================================================
+
+bu_Help()
+BEGIN
+  LOCAL hpY, hpPg, hpK, hpRun;
+  hpPg := 1; hpRun := 1;
+  WHILE hpRun == 1 DO
+    bu_Frame("BurrLab help (" + bu_IStr(hpPg) + " of 4)");
+    IF hpPg == 1 THEN
+      hpY := bu_Para("The Burr XII is a flexible model for a long right tail: sentences served, waits to re-arrest, insurance losses, incomes. Two shapes C and K and a scale S. Its tail is a power law: P(X > x) falls like x^(-K C).", 24, buBLK);
+      hpY := bu_Para("The mean exists only if K" + buTIMES + "C > 1, the variance only if K" + buTIMES + "C > 2: with a heavy enough tail the sample mean never settles (menu 4).", hpY + 2, buRED);
+      hpY := bu_Para("Explore: soft keys choose C, K, S or x" + CHAR(8320) + "; arrows step it; drag sideways in the plot to slide it; tap to put x" + CHAR(8320) + " there. The window freezes while a finger is down and refits on the lift. A yellow hourglass at the top right: still computing.", hpY + 2, buGRAY);
+    END;
+    IF hpPg == 2 THEN
+      hpY := bu_Para("Family tree: C = 1 is Pareto II (Lomax); K = 1 is the log-logistic (Fisk); K " + buARR + " " + buINF + " with S = Sw K^(1/C) is the Weibull. Tap the map to set (C, K); its colours are the moment cases.", 24, buBLK);
+      hpY := bu_Para("Fit: maximum likelihood (a profile Nelder-Mead over C and S with K solved exactly), SEs from the observed information, then lognormal, Weibull, gamma, exponential and Lomax by their own MLEs, compared by AIC. A fit that runs to the Weibull or Pareto limit is named as such.", hpY + 2, buGRAY);
+      hpY := bu_Para("Pictures: histogram, Q-Q (tap a point), survival on log-log axes (a heavy tail is a straight line), hazard, Anderson-Darling (a statistic, honestly without a p).", hpY + 2, buGRAY);
+    END;
+    IF hpPg == 3 THEN
+      hpY := bu_Para("How rare is this?: a value's percentile and '1 in N' under the fitted model beside its empirical percentile: 'how unusual is a sentence this long?'", 24, buBLK);
+      hpY := bu_Para("Exact moments: E[X^r] = S^r K B(K - r/C, 1 + r/C) through the CAS (badged 'exact (CAS)' only when its number agrees with the decimal).", hpY + 2, buGRAY);
+      hpY := bu_Para("Keys everywhere: arrows, +/-, 0 = next, Enter = a menu of every soft-key action, Esc = back. On Quit the fitted C, K, S, ln L and AIC are BU_C, BU_K, BU_S, BU_LL, BU_AIC in Home.", hpY + 2, buGRAY);
+      hpY := bu_Para("DISCLAIMER: a teaching and demonstration aid. Not validated for forensic, clinical or legal use.", hpY + 2, buRED);
+    END;
+    IF hpPg == 4 THEN
+      hpY := bu_Para("Fit engines (Fit menu, Engine). Both engines run the SAME algorithm on the same data: the profile simplex, the box, the Hessian.", 24, buBLK);
+      hpY := bu_Para("Auto: the MicroPython engine first; if it fails or disagrees with the PPL likelihood, the PPL engine answers and the badge says so.", hpY + 2, buGRAY);
+      hpY := bu_Para("PPL only: the PPL engine alone (slow on a G1: about 45 s for 300 values).", hpY + 2, buGRAY);
+      hpY := bu_Para("Python only: no fallback; a bridge failure shows a message, and BU_PZ in Home holds the script's last step or its error.", hpY + 2, buGRAY);
+      hpY := bu_Para("Both: Python, then PPL, both timed; a line compares C, K, S; Python's kept. Explore's curves: PPL in Auto (More > Timing).", hpY + 2, buGRAY);
+    END;
+    TEXTOUT_P("Right/tap = next page, Esc = back", G1, 6, 204, 1, buFOOT, 308);
+    bu_Show({});
+    hpK := bu_WaitAny();
+    IF hpK == 4 THEN hpRun := 0; END;
+    IF hpK == 7 OR hpK == 2 THEN hpPg := MAX(1, hpPg - 1); END;
+    IF hpK == 8 OR hpK == 12 OR hpK == -1 OR hpK == 30 THEN
+      hpPg := hpPg + 1;
+      IF hpPg > 4 THEN hpRun := 0; END;
+    END;
+  END;
+  RETURN 1;
+END;
+
+bu_Opening()
+BEGIN
+  LOCAL opY;
+  bu_Frame("BurrLab beta 1i: the long right tail");
+  opY := bu_Para("A teaching lab for Statistics for Criminal Justice: what a heavy tail is, the Burr XII fitted to real criminal-justice data (BJS months served, Rossi weeks to re-arrest) and to the textbook Danish fire losses, and how it compares with the usual rivals.", 26, buBLK);
+  opY := bu_Para("Touch: drag, tap, soft keys. Keys: arrows, +/-, 0, Enter = menu, Esc = back.", opY + 2, buGRAY);
+  opY := bu_Para("DISCLAIMER: a teaching and demonstration aid. Not validated for forensic, clinical or legal use; do not rely on its results for legal purposes.", opY + 4, buRED);
+  opY := bu_Para("(C) 2026 Roger D Metcalf. Free for educational and personal use. Written with AI assistance.", opY + 2, buGRAY);
+  TEXTOUT_P("any key or tap = the menu", G1, 6, 204, 1, buFOOT, 308);
+  bu_Show({});
+  bu_WaitAny();
+END;
+
+// A quick live probe of the CAS (events only; the result sets buCasOK).
+bu_CasProbe()
+BEGIN
+  LOCAL cpR;
+  buCasOK := 0;
+  cpR := bu_Cas("evalf(Beta(1,3/2))");
+  IF DIM(cpR) > 0 THEN
+    IFERR
+      IF ABS(EXPR(cpR) - 2/3) < 0.000001 THEN buCasOK := 1; END;
+    THEN
+      buCasOK := 0;
+    END;
+  END;
+END;
+
+EXPORT BurrLab()
+BEGIN
+  LOCAL mnC, mnK, mnRun;
+  bu_Init();
+  REPEAT mnK := GETKEY; UNTIL mnK == -1;
+  bu_Drain();
+  bu_Opening();
+  mnRun := 1;
+  WHILE mnRun == 1 DO
+    mnC := 0;
+    CHOOSE(mnC, "BurrLab: the Burr XII", {"Explore the Burr XII", "Family tree: Lomax, Fisk, Weibull, map",
+           "Fit my data / a preset", "The mean that never settles (simulate)", "How rare is this? (percentile, 1 in N)",
+           "Exact moments (CAS)", "Help", "Quit"});
+    REPEAT mnK := GETKEY; UNTIL mnK == -1;
+    bu_Drain();
+    IF mnC == 0 OR mnC == 8 THEN mnRun := 0; END;
+    IF mnC == 1 THEN bu_Explore(); END;
+    IF mnC == 2 THEN bu_Family(); END;
+    IF mnC == 3 THEN bu_FitMenu(); END;
+    IF mnC == 4 THEN bu_Sim(); END;
+    IF mnC == 5 THEN bu_Rare(); END;
+    IF mnC == 6 THEN
+      IF buCasOK == 0 THEN bu_CasProbe(); END;
+      bu_Moments();
+    END;
+    IF mnC == 7 THEN bu_Help(); END;
+  END;
+  IF buFitOK == 1 THEN
+    RETURN "BurrLab: " + buSum;
+  END;
+  BU_C := buC; BU_K := buK; BU_S := buS;
+  RETURN "BurrLab: no fit; explorer at C = " + bu_Fx(buC, 2) + ", K = " + bu_Fx(buK, 2) + ", S = " + bu_Num(buS);
+END;

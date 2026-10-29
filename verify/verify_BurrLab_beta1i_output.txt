@@ -1,0 +1,162 @@
+A1 special functions
+A2 the Burr XII against scipy.stats.burr12
+A3 E[X^r] against mpmath
+A4 maximum likelihood
+   BJS        n=  41 flag=0 C=10.84034 K=0.89809 S=150.14 lnL=-191.13745 (SciPy -191.13745) evals=160
+   Rossi      n= 114 flag=1 C=2.04668 K=5.7274e+05 S=20978 lnL=-465.38522 (SciPy -465.38519) evals=229
+   Danish300  n= 300 flag=0 C=1.18294 K=1.079 S=0.82544 lnL=-453.28090 (SciPy -453.28090) evals=138
+   rand0      n= 100 flag=0 C=3.85045 K=0.40963 S=21.439 lnL=-462.96781 (SciPy -462.96781) evals=128
+   rand1      n= 150 flag=0 C=2.38971 K=1.4185 S=8.8495 lnL=-446.01610 (SciPy -446.01610) evals=162
+   rand2      n=   8 flag=0 C=13.42313 K=0.22144 S=0.73926 lnL=-1.90141 (SciPy -1.90141) evals=162
+   rand3      n=  41 flag=0 C=1.99708 K=3.3643 S=8.5096 lnL=-96.84121 (SciPy -96.84121) evals=153
+   rand4      n=  41 flag=0 C=3.49554 K=0.96253 S=10.347 lnL=-127.22977 (SciPy -127.22977) evals=154
+   rand5      n=  25 flag=1 C=1.51989 K=27942 S=10027 lnL=-81.57480 (SciPy -81.57472) evals=233
+   rand6      n=   8 flag=1 C=1.10154 K=2226.7 S=1504.7 lnL=-10.18995 (SciPy -10.18983) evals=267
+   rand7      n=  15 flag=0 C=2.17364 K=3.2003 S=9.6652 lnL=-37.38826 (SciPy -37.38826) evals=165
+   rand8      n=  25 flag=1 C=2.09804 K=1.1405e+06 S=26729 lnL=-102.57598 (SciPy -102.57597) evals=259
+   rand9      n=  25 flag=0 C=3.53374 K=0.72948 S=7.8516 lnL=-76.90342 (SciPy -76.90342) evals=149
+   rand10     n=  60 flag=0 C=9.60590 K=0.076598 S=0.25179 lnL=-83.30987 (SciPy -83.30987) evals=144
+   rand11     n=   8 flag=1 C=2.02610 K=4.9063e+05 S=4210 lnL=-19.71890 (SciPy -19.71890) evals=210
+   rand12     n=  60 flag=0 C=3.92725 K=0.93938 S=4.7516 lnL=-133.86614 (SciPy -133.86614) evals=148
+   rand13     n=  15 flag=1 C=2.07350 K=8.5968e+05 S=7064.4 lnL=-42.57052 (SciPy -42.57052) evals=252
+   rand14     n=   8 flag=2 C=1096.63315 K=0.00073529 S=0.23659 lnL=-8.11773 (SciPy -8.21018) evals=228
+   rand15     n=  25 flag=0 C=2.36244 K=3.6621 S=9.6931 lnL=-59.99361 (SciPy -59.99361) evals=170
+   rand16     n=  41 flag=1 C=1.15516 K=4988 S=27365 lnL=-154.92503 (SciPy -154.92503) evals=268
+   rand17     n=   8 flag=1 C=2.02772 K=6.1971e+05 S=7495 lnL=-23.43047 (SciPy -23.43047) evals=218
+   rand18     n=   8 flag=0 C=5.61795 K=0.46083 S=0.39642 lnL=0.09498 (SciPy 0.09498) evals=169
+   rand19     n=   8 flag=1 C=2.11597 K=8.6055e+05 S=4016.5 lnL=-19.37041 (SciPy -19.37041) evals=219
+A7 the grouped likelihood
+   grouped Burr: C=1.13755 K=1.22762 S=1.02256 lnL=-7060.8971 (SciPy -7060.8971) evals=501
+A8 Anderson-Darling: the hand formula on a normal sample via scipy.stats.anderson
+A9 the simulation replayed from the random numbers
+A10 the CAS templates through Giac
+   E[X^1] C=2 K=1.5 S=10: CAS 10 = 10.0 (ref 10.000000)
+   E[X^2] C=2 K=1.5 S=10: CAS 200 = 200.0 (ref 200.000000)
+   E[X^1] C=2 K=2 S=10: CAS 5*pi/2 = 7.85398163397 (ref 7.853982)
+   E[X^1] C=1.5 K=1 S=10: CAS 40*pi*√3/9 = 24.1839915231 (ref 24.183992)
+   E[X^1] C=10.84 K=0.898 S=150.138: CAS 75069*Gamma(25/271)*Gamma(51/500)*sin(51*pi/500)/(5420*Gamma(26321/135500)*sin(26321*pi/135500)) = 155.037807432 (ref 155.037807)
+   E[X^1] C=1.183 K=1.079 S=0.825: CAS 825000*pi*Gamma(276457/1183000)/(93457*Gamma(183/1183)*Gamma(79/1000)*sin(183*pi/1183)) = 3.15886009831 (ref 3.158860)
+   E[X^2] C=3 K=1 S=7: CAS 196*pi*√3/9 = 118.501558463 (ref 118.501558)
+A11 edge inputs
+   n5     n=5 fit=1 flag=1 C=2.294 K=2.305e+06 S=2017 lnL=-8.6711 evals=249
+   ties   n=12 fit=1 flag=2 C=1097 K=0.0008864 S=0.9949 lnL=-24.6336 evals=218
+   huge   n=10 fit=1 flag=2 C=1097 K=0.0002716 S=0.9946 lnL=-55.6410 evals=218
+   tiny   n=7 fit=1 flag=1 C=1.161 K=3147 S=0.008069 lnL=75.7897 evals=235
+   n1000  n=1000 fit=1 flag=0 C=1.549 K=1.178 S=5.036 lnL=-2954.2094 evals=128
+B the pages
+C G1 cost (objective evaluations per fit)
+   BJS                  n =    41  evaluations = 160  ~ statements in the data loops = 19680
+   Rossi                n =   114  evaluations = 229  ~ statements in the data loops = 78318
+   Danish300            n =   300  evaluations = 138  ~ statements in the data loops = 124200
+   rand0                n =   100  evaluations = 128  ~ statements in the data loops = 38400
+   rand1                n =   150  evaluations = 162  ~ statements in the data loops = 72900
+   rand2                n =     8  evaluations = 162  ~ statements in the data loops = 3888
+   rand3                n =    41  evaluations = 153  ~ statements in the data loops = 18819
+   rand4                n =    41  evaluations = 154  ~ statements in the data loops = 18942
+   rand5                n =    25  evaluations = 233  ~ statements in the data loops = 17475
+   rand6                n =     8  evaluations = 267  ~ statements in the data loops = 6408
+   rand7                n =    15  evaluations = 165  ~ statements in the data loops = 7425
+   rand8                n =    25  evaluations = 259  ~ statements in the data loops = 19425
+   rand9                n =    25  evaluations = 149  ~ statements in the data loops = 11175
+   rand10               n =    60  evaluations = 144  ~ statements in the data loops = 25920
+   rand11               n =     8  evaluations = 210  ~ statements in the data loops = 5040
+   rand12               n =    60  evaluations = 148  ~ statements in the data loops = 26640
+   rand13               n =    15  evaluations = 252  ~ statements in the data loops = 11340
+   rand14               n =     8  evaluations = 228  ~ statements in the data loops = 5472
+   rand15               n =    25  evaluations = 170  ~ statements in the data loops = 12750
+   rand16               n =    41  evaluations = 268  ~ statements in the data loops = 32964
+   rand17               n =     8  evaluations = 218  ~ statements in the data loops = 5232
+   rand18               n =     8  evaluations = 169  ~ statements in the data loops = 4056
+   rand19               n =     8  evaluations = 219  ~ statements in the data loops = 5256
+   DanishBin            n =  2156  evaluations = 501  ~ statements in the data loops = 90180
+   n1000                n =  1000  evaluations = 128  ~ statements in the data loops = 384000
+   BJS (page run)       n =    41  evaluations = 160  ~ statements in the data loops = 19680
+   Rossi (page run)     n =   114  evaluations = 229  ~ statements in the data loops = 78318
+   300-value (page run) n =   300  evaluations = 138  ~ statements in the data loops = 124200
+D1 the Weibull limit on the reviewer's samples and 20 fresh ones
+   rev0     n= 30 flag=1 K=8.38e+05 lnS=8.84 top=8.84 lnL=-83.9533 Weib=-83.9533 SEok=0
+   rev1     n= 30 flag=0 K=4.53 lnS=2.76 top=8.96 lnL=-81.1810 Weib=-81.4135 SEok=1
+   rev2     n= 30 flag=1 K=1.09e+09 lnS=8.60 top=8.64 lnL=-73.1715 Weib=-73.1715 SEok=0
+   rev3     n= 30 flag=1 K=3.76e+08 lnS=8.56 top=8.74 lnL=-76.2831 Weib=-76.2831 SEok=0
+   rev4     n= 30 flag=0 K=2.39 lnS=2.46 top=8.98 lnL=-80.3113 Weib=-80.9110 SEok=1
+   rev5     n= 30 flag=1 K=1.92e+07 lnS=8.62 top=8.63 lnL=-77.0262 Weib=-77.0262 SEok=0
+   rev6     n= 40 flag=0 K=4.63 lnS=2.93 top=9.09 lnL=-116.1296 Weib=-116.3132 SEok=1
+   rev7     n= 40 flag=0 K=4.16 lnS=2.86 top=9.10 lnL=-112.9828 Weib=-113.4565 SEok=1
+   rev8     n= 40 flag=0 K=11.3 lnS=3.36 top=8.98 lnL=-114.5655 Weib=-114.5807 SEok=1
+   rev9     n= 40 flag=1 K=3.83e+07 lnS=8.63 top=8.88 lnL=-110.0384 Weib=-110.0384 SEok=0
+   rev10    n= 40 flag=1 K=1.02e+07 lnS=8.83 top=8.84 lnL=-109.7319 Weib=-109.7319 SEok=0
+   rev11    n= 40 flag=0 K=4.07 lnS=2.89 top=8.98 lnL=-115.7278 Weib=-115.8390 SEok=1
+   weib3    n= 30 flag=1 K=6.45e+07 lnS=8.05 top=8.75 lnL=-77.1434 Weib=-77.1434 SEok=0
+   tinyK    n= 10 flag=2 K=0.000761 lnS=-0.01 top=12.91 lnL=-23.7351 Weib=-36.8252 SEok=0
+   floor    n= 12 flag=2 K=0.00375 lnS=4.60 top=11.99 lnL=-53.2402 Weib=-67.8245 SEok=0
+   outlier  n= 13 flag=0 K=0.179 lnS=0.54 top=15.21 lnL=-45.0244 Weib=-57.9275 SEok=1
+   fresh0   n= 40 flag=1 K=1.57e+07 lnS=8.97 top=9.61 lnL=-136.4604 Weib=-136.4604 SEok=0
+   fresh1   n= 60 flag=1 K=1.24e+07 lnS=8.90 top=8.92 lnL=-170.4256 Weib=-170.4256 SEok=0
+   fresh2   n= 30 flag=0 K=0.411 lnS=1.26 top=11.32 lnL=-106.0755 Weib=-113.1444 SEok=1
+   fresh3   n= 12 flag=1 K=1.15e+06 lnS=7.94 top=7.94 lnL=-24.3020 Weib=-24.3020 SEok=0
+   fresh4   n= 30 flag=0 K=3.15 lnS=4.04 top=10.13 lnL=-90.4299 Weib=-90.9867 SEok=1
+   fresh5   n= 12 flag=1 K=3.87e+06 lnS=8.80 top=8.83 lnL=-33.7542 Weib=-33.7542 SEok=0
+   fresh6   n=100 flag=0 K=0.942 lnS=1.91 top=9.17 lnL=-273.6707 Weib=-280.0479 SEok=1
+   fresh7   n=100 flag=0 K=1.48 lnS=1.82 top=12.87 lnL=-321.9776 Weib=-326.8683 SEok=1
+   fresh8   n= 60 flag=0 K=0.898 lnS=0.93 top=8.44 lnL=-102.5925 Weib=-111.4517 SEok=1
+   fresh9   n=100 flag=0 K=1.93 lnS=3.98 top=10.18 lnL=-309.3801 Weib=-313.0390 SEok=1
+   fresh10  n= 60 flag=0 K=23.9 lnS=3.47 top=9.13 lnL=-165.6268 Weib=-165.6585 SEok=1
+   fresh11  n=100 flag=0 K=1.08 lnS=2.36 top=9.43 lnL=-280.3232 Weib=-288.4825 SEok=1
+   fresh12  n= 12 flag=0 K=0.849 lnS=1.29 top=8.43 lnL=-23.7178 Weib=-25.8009 SEok=1
+   fresh13  n= 40 flag=0 K=3.08 lnS=1.59 top=7.94 lnL=-68.4530 Weib=-68.7626 SEok=1
+   fresh14  n= 60 flag=0 K=1.64 lnS=3.97 top=10.16 lnL=-191.6130 Weib=-193.4894 SEok=1
+   fresh15  n=100 flag=1 K=2.96e+08 lnS=8.18 top=9.52 lnL=-328.4760 Weib=-328.4760 SEok=0
+   fresh16  n= 12 flag=0 K=1.3 lnS=2.62 top=9.17 lnL=-34.7151 Weib=-35.1601 SEok=1
+   fresh17  n= 12 flag=1 K=2.87e+04 lnS=8.43 top=8.43 lnL=-28.5647 Weib=-28.5647 SEok=0
+   fresh18  n=100 flag=0 K=4.41 lnS=1.82 top=8.03 lnL=-181.7124 Weib=-182.0908 SEok=1
+   fresh19  n= 40 flag=1 K=5.32e+07 lnS=5.49 top=10.10 lnL=-121.4999 Weib=-121.4999 SEok=0
+D2 bu_Median / bu_Num caps, the simplex as lists
+D3 text: A-D page, Danish source lines, the help promise
+E1 the Python block under CPython against the PPL engine (same C, K, S, ln L, SEs)
+   BJS        flag=0  Python C=10.84034 K=0.898093 S=150.13823 lnL=-191.13744508  PPL lnL=-191.13744508  evals 160/160
+   Rossi      flag=1  Python C=2.0466784 K=572738 S=20978.192 lnL=-465.38522406  PPL lnL=-465.38522406  evals 229/229
+   Danish300  flag=0  Python C=1.1829417 K=1.07898 S=0.82544442 lnL=-453.28090099  PPL lnL=-453.28090099  evals 138/138
+   DanishBin  flag=0  Python C=1.1375518 K=1.22762 S=1.0225647 lnL=-7060.89707242  PPL lnL=-7060.89707242  evals 501/501
+   rand0      flag=0  Python C=3.8504477 K=0.409634 S=21.438983 lnL=-462.96781005  PPL lnL=-462.96781005  evals 128/128
+   rand1      flag=0  Python C=2.3897113 K=1.41851 S=8.8494745 lnL=-446.01609964  PPL lnL=-446.01609964  evals 162/162
+   rand2      flag=0  Python C=13.423134 K=0.221436 S=0.73926259 lnL=-1.90140807  PPL lnL=-1.90140807  evals 162/162
+   rand3      flag=0  Python C=1.9970788 K=3.36431 S=8.509596 lnL=-96.84121215  PPL lnL=-96.84121215  evals 153/153
+   rand4      flag=0  Python C=3.495543 K=0.962528 S=10.346558 lnL=-127.22976913  PPL lnL=-127.22976913  evals 154/154
+   rand5      flag=1  Python C=1.5198937 K=27941.6 S=10027.262 lnL=-81.57479894  PPL lnL=-81.57479894  evals 233/233
+   rand6      flag=1  Python C=1.1015352 K=2226.71 S=1504.7086 lnL=-10.18995313  PPL lnL=-10.18995313  evals 267/267
+   rand7      flag=0  Python C=2.1736449 K=3.20032 S=9.6652085 lnL=-37.38825653  PPL lnL=-37.38825653  evals 165/165
+   rand8      flag=1  Python C=2.0980393 K=1.14052e+06 S=26728.937 lnL=-102.57597558  PPL lnL=-102.57597558  evals 259/259
+   rand9      flag=0  Python C=3.5337438 K=0.72948 S=7.8515806 lnL=-76.90342091  PPL lnL=-76.90342091  evals 149/149
+   rand10     flag=0  Python C=9.6059047 K=0.0765978 S=0.25178743 lnL=-83.30986934  PPL lnL=-83.30986934  evals 144/144
+   rand11     flag=1  Python C=2.0261015 K=490635 S=4210.017 lnL=-19.71890417  PPL lnL=-19.71890417  evals 210/210
+   rand12     flag=0  Python C=3.9272534 K=0.939377 S=4.7516199 lnL=-133.86614241  PPL lnL=-133.86614241  evals 148/148
+   rand13     flag=1  Python C=2.0734977 K=859676 S=7064.4172 lnL=-42.57051770  PPL lnL=-42.57051770  evals 252/252
+   rand14     flag=2  Python C=1096.6331 K=0.000735293 S=0.23659059 lnL=-8.11772877  PPL lnL=-8.11772877  evals 228/228
+   rand15     flag=0  Python C=2.362439 K=3.6621 S=9.6930813 lnL=-59.99361138  PPL lnL=-59.99361138  evals 170/170
+   rand16     flag=1  Python C=1.1551642 K=4988.04 S=27364.767 lnL=-154.92502819  PPL lnL=-154.92502819  evals 268/268
+   rand17     flag=1  Python C=2.0277166 K=619709 S=7494.96 lnL=-23.43046820  PPL lnL=-23.43046820  evals 218/218
+   rand18     flag=0  Python C=5.6179474 K=0.460827 S=0.39642244 lnL=0.09497960  PPL lnL=0.09497960  evals 169/169
+   rand19     flag=1  Python C=2.1159696 K=860551 S=4016.5422 lnL=-19.37040882  PPL lnL=-19.37040882  evals 219/219
+E2 the four engine settings with Python answering, and the pages
+E3 Python absent (the plain harness): Auto falls back, PPL runs, Python only fails cleanly, Both reports
+E4 the engine menu, help page 4 and the Home summary through the menus
+G the Explore soft keys select, visibly (strip tap through the polling loop)
+H the Explore redraw against beta 1c, pixel for pixel, and its cost
+   worst gap between the polyline and beta 1c over 14 cases: 1.5 px
+   beta 1c param redraw: 9497 statements, primitives {'DIMGROB_P': 1, 'RECT_P': 5, 'TEXTOUT_P': 23, 'LINE_P': 410, 'PIXON_P': 120, 'BLIT_P': 1}
+   beta 1c x0 move:      2241 statements, primitives {'DIMGROB_P': 1, 'RECT_P': 5, 'TEXTOUT_P': 23, 'LINE_P': 405, 'PIXON_P': 120, 'BLIT_P': 1}
+   beta 1d param redraw: 1586 statements, primitives {'RECT_P': 6, 'TEXTOUT_P': 19, 'LINE_P': 99, 'DIMGROB_P': 2, 'BLIT_P': 3, 'FILLPOLY_P': 1}
+   beta 1d x0 move:      243 statements, primitives {'DIMGROB_P': 1, 'BLIT_P': 2, 'TEXTOUT_P': 7, 'RECT_P': 3, 'FILLPOLY_P': 1, 'LINE_P': 1}
+   beta 1h param redraw: 4222 statements; beta 1i 1586 (38 %)
+   Rare draw: 1586 statements, primitives {'DIMGROB_P': 1, 'RECT_P': 2, 'TEXTOUT_P': 11, 'LINE_P': 138, 'FILLPOLY_P': 1, 'BLIT_P': 1}
+I the Explore curves from the Python engine against the PPL cache
+   beta 1f param redraw, Python answering: 762 PPL statements, primitives {'RECT_P': 6, 'TEXTOUT_P': 19, 'LINE_P': 99, 'DIMGROB_P': 2, 'BLIT_P': 3, 'FILLPOLY_P': 1}
+J the bridge reads only EXPORTed names (the beta 1e device failure)
+   names the block hands to hpprime.eval: BU_GC, BU_GE, BU_IN, BU_JOB, BU_OUT, BU_PZ, BU_X, BU_YP
+K a Python failure at each step: back to an interactive page, bounded, fail once
+   Python absent: 14623 PPL statements for the whole path, 1 PYTHON() call(s)
+L the hourglass, the instant title, the point grid, the blink
+   BJS fit, PPL only: beta 1h 44606 statements, beta 1i 45798 (+2.67 %), about 11 s at 4,000/s; hourglass on 14, off 14; longest stretch without a blink check 0.26 s
+   Dan300 fit, PPL only: beta 1h 257710 statements, beta 1i 259909 (+0.85 %), about 65 s at 4,000/s; hourglass on 57, off 57; longest stretch without a blink check 0.48 s
+   the title row ends by x = 260 at most (the hourglass starts at 302)
+3518 checks, 0 failures
