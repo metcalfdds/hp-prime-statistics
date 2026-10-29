@@ -8,10 +8,10 @@ Thank you for stopping by. This is a set of **27 teaching programs for the HP Pr
 
 Most of the programs are built around the touch screen. You drag a bound and the shading follows, pour balls through a Galton board with a finger, turn a 3-D bivariate normal in your hand, slide a cut-off along an ROC curve and watch who gets flagged "high risk". The aim is to let students *see* the statistics move.
 
-Special thanks to two sites that hold the HP calculator community together:
+**Special thanks** to two sites that hold the HP calculator community together:
 
-hpcalc.org, Eric Rechlin’s archive of HP calculator software. Its collection of Prime programs was our reference library while we worked out how the Prime really behaves.
-The Museum of HP Calculators, David G. Hicks’s history of HP’s calculators, and its forum, where much of what is known about the Prime has been worked out in public.
+- **hpcalc.org**, Eric Rechlin’s archive of HP calculator software. Its collection of Prime programs was our reference library while we worked out how the Prime really behaves.
+- **The Museum of HP Calculators**, David G. Hicks’s history of HP’s calculators, and its forum, where much of what is known about the Prime has been worked out in public.
 
 We have no official affiliation with either site, or with HP. I’m just a grateful user.
 
@@ -288,7 +288,7 @@ A few things from it that are hard to find elsewhere:
 
 Concept, direction, classroom judgement and hardware testing: **Roger Metcalf**, 2026.
 
-Hundreds of community PPL programs from several HP-related public forums were read as references while working out how the Prime actually behaves. Several entries in the notes exist because a corpus program showed a construct working that the manual does not describe. None of those programs are copied, used without permission/authorization, or reproduced here, and credit is noted where others' concepts and/or intellectual property were adopted. The programs here probably would not have been possible without the foundation laid by dozens of HP Prime users and the hundreds of programs they made freely available over they years.
+Hundreds of community PPL programs from several HP-related public forums were read as references while working out how the Prime actually behaves. Several entries in the notes exist because a corpus program showed a construct working that the manual does not describe. None of those programs are copied, used without permission/authorization, or reproduced here, and credit is noted where others' concepts and/or intellectual property were adopted. The programs here probably would not have been possible without the foundation laid by dozens of HP Prime users and the hundreds of programs they made freely available over the years.
 
 Implementation, numerical work and documentation: re-written, edited, expanded, and **vastly** improved with incredible and amazing AI assistance from **Anthropic Claude** --mostly Opus 5.5 and Fable 5.1. Sonnet 5.5 does a lot of the cleanup and mechanical sorts of tasks.  Most of the notes and the user guides were essentially written by Claude.
 
