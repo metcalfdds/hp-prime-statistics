@@ -280,7 +280,7 @@ A few things from it that are hard to find elsewhere:
 
 Concept, direction, classroom judgement and hardware testing: **Roger Metcalf**, 2026.
 
-Hundreds of community PPL programs from several HP-related forums were read as references while working out how the Prime actually behaves. Several entries in the notes exist because a corpus program showed a construct working that the manual does not describe. None of those programs are copied, used without permission/authorization, or reproduced here, and credit is noted where other's concepts and/or intellectual property were adopted.
+Hundreds of community PPL programs from several HP-related public forums were read as references while working out how the Prime actually behaves. Several entries in the notes exist because a corpus program showed a construct working that the manual does not describe. None of those programs are copied, used without permission/authorization, or reproduced here, and credit is noted where other's concepts and/or intellectual property were adopted. The programs here probably would not have been possible without the foundation laid by dozens of HP Prime users and the hundreds of programs freely available to the HP community and the wonderful websites such as **hpcalc.org** and **Museum of HP Calculators** (note: we have no official affiliation with any of these other organizations or with HP--just a grateful user).
 
 Implementation, numerical work and documentation: re-written, edited, expanded, and **vastly** improved with incredible and amazing AI assistance from **Anthropic Claude** --mostly Opus 5.5 and Fable 5.1. Sonnet 5.5 does a lot of the cleanup and mechanical sorts of tasks.  Most of the notes and the user's guides were essentially written by Claude.
 
