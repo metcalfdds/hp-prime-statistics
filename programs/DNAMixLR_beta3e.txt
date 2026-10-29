@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// DNAMIXLR - beta 3d
+// DNAMIXLR - beta 3e
 // Likelihood ratio for a DNA mixture, with coancestry (theta)
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
@@ -24,16 +24,23 @@
 // DISCLAIMER: a teaching and demonstration aid. Not validated for forensic, clinical or legal use; do not rely on its results for legal purposes.
 //
 // Firmware: written for the 2026-09-09 firmware (2.4.2).  No beta
-//   (1 to 3c) has been run on hardware.  On the HP Prime Virtual
+//   (1 to 3e) has been run on hardware.  On the HP Prime Virtual
 //   Calculator (2.4.2, build 2026-09-09, the calculators' firmware):
 //   beta 2 passed round 1 (17 Oct 2026); beta 3a ran in round 2 (17
 //   Oct 2026), where the main menu still cut "Results table (tap a
 //   row to drop it)" (fixed in 3b); beta 3b ran in the retest that
-//   afternoon (the LR formula for all three loci, exact).  Beta 3c
-//   has run only in the PC harness.  The CAS's fallback has never
+//   afternoon (the LR formula for all three loci, exact).  Betas 3c
+//   to 3e have run only in the PC harness.  The CAS's fallback has never
 //   been needed on the emulator.
 //
 // Run DNAMixLR() from the Program Catalog.
+//
+// beta 3e (28 Oct 2026): layout only (overlap sweep, 28 Oct 2026).  On
+//   the theta plot the top y-axis label (drawn 5 px above the frame top,
+//   y 29) ran into the theta readout row at y 20 (ink to 30).  The plot
+//   top dmP2T is now 37 (was 34), so that label sits at 32; the "up to
+//   theta 0.25" note moves with it.  No number, formula, key handling or
+//   logic changed; the code stays pure ASCII.
 //
 // beta 3d (20 Oct 2026): symbols instead of spelled-out names, on screen
 //   only (Roger, 20 Oct 2026: "use the symbols we developed"; every
@@ -3198,7 +3205,7 @@ BEGIN
   // geometry, shared by the drawing and the touch handlers; every
   // page keeps y 218-239 free for the soft keys
   dmP1L := 44; dmP1R := 306; dmP1T := 30; dmP1B := 166;    // locus plot
-  dmP2L := 40; dmP2R := 228; dmP2T := 34; dmP2B := 166;    // theta plot
+  dmP2L := 40; dmP2R := 228; dmP2T := 37; dmP2B := 166;    // theta plot (top 37, beta 3e; was 34)
   dmLdX1 := 240; dmLdX2 := 252; dmLdT := 22; dmLdB := 182;  // its ladder
   dmPcY := 107;                                            // locus page boxes
   dmFaT := 34;                                             // prior ladder

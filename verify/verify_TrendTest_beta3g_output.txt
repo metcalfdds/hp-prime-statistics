@@ -1,0 +1,26 @@
+A. trUpper(df, x) against chi2.sf
+  ok   trUpper matches chi2.sf to 1E-9 relative at df 1-12, x 0.5-400 (worst 5.4e-14)
+  ok   trUpper(3, 0) = 1 and trUpper(2, -1) = 1
+B. trCompute: Pearson and departure p on both versions; C. the rest identical
+  ok   [2, 5, 9, 14] Pearson X2 17.280: 3f p 0.0006189 (SciPy 0.0006189); 3e p 0.0006189
+  ok   [2, 5, 9, 14] departure X2 0.427: 3f p 0.8079 (SciPy 0.8079); 3e p 0.8079
+  ok   C [2, 5, 9, 14]: trend X2 and p, Pearson and departure X2, slope, Wilson limits and ORs identical in 3e and 3f
+  ok   [3, 8, 12] Pearson X2 14.141: 3f p 0.0008499 (SciPy 0.0008499); 3e p 0.0008499
+  ok   [3, 8, 12] departure X2 0.407: 3f p 0.5234 (SciPy 0.5234); 3e p 0.5234
+  ok   C [3, 8, 12]: trend X2 and p, Pearson and departure X2, slope, Wilson limits and ORs identical in 3e and 3f
+  ok   [1, 2, 6, 9, 15] Pearson X2 22.553: 3f p 0.0001555 (SciPy 0.0001555); 3e p 0.0001555
+  ok   [1, 2, 6, 9, 15] departure X2 1.255: 3f p 0.7398 (SciPy 0.7398); 3e p 0.7398
+  ok   C [1, 2, 6, 9, 15]: trend X2 and p, Pearson and departure X2, slope, Wilson limits and ORs identical in 3e and 3f
+  ok   [5, 95, 5] Pearson X2 237.363: 3f p 2.867e-52 (SciPy 2.867e-52); 3e p 0
+  ok   [5, 95, 5] departure X2 237.363: 3f p 1.478e-53 (SciPy 1.478e-53); 3e p 0
+     (on the Prime, 3e prints p = 0 here: the tail 2.9e-52 is below its last digit)
+  ok   C [5, 95, 5]: trend X2 and p, Pearson and departure X2, slope, Wilson limits and ORs identical in 3e and 3f
+  ok   [2, 98, 2, 98] Pearson X2 368.640: 3f p 1.372e-79 (SciPy 1.372e-79); 3e p 0
+  ok   [2, 98, 2, 98] departure X2 295.096: 3f p 8.33e-65 (SciPy 8.33e-65); 3e p 0
+     (on the Prime, 3e prints p = 0 here: the tail 1.4e-79 is below its last digit)
+  ok   C [2, 98, 2, 98]: trend X2 and p, Pearson and departure X2, slope, Wilson limits and ORs identical in 3e and 3f
+  ok   [90, 5, 90, 5, 90, 5] Pearson X2 434.586: 3f p 1.037e-91 (SciPy 1.037e-91); 3e p 0
+  ok   [90, 5, 90, 5, 90, 5] departure X2 397.398: 3f p 1.015e-84 (SciPy 1.015e-84); 3e p 0
+     (on the Prime, 3e prints p = 0 here: the tail 1.0e-91 is below its last digit)
+  ok   C [90, 5, 90, 5, 90, 5]: trend X2 and p, Pearson and departure X2, slope, Wilson limits and ORs identical in 3e and 3f
+failures: 0

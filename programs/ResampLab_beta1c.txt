@@ -14,7 +14,7 @@
 // hardware testing are Roger D. Metcalf's; the code, drafting and
 // source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
 
-// RESAMPLAB - beta 1b  (26 Oct 2026)
+// RESAMPLAB - beta 1c  (28 Oct 2026)
 // The permutation test and the bootstrap, shown working so a student can
 //   SEE them: "discover it yourself" simulation for an intro or criminal
 //   justice statistics class.  Launch ResampLab from the Program Catalog
@@ -41,9 +41,16 @@
 //   (exact p, or -1), RS_NB (shuffles / resamples), RS_OBS (the observed
 //   statistic), RS_PCT and RS_BCA (bootstrap interval ends), RS_STAR (the
 //   bootstrap statistics).
-// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  Neither beta
-//   1, 1a nor 1b has been run on hardware or the emulator, only in the PC
+// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  None of beta
+//   1, 1a, 1b, 1c has been run on hardware or the emulator, only in the PC
 //   harness.
+// beta 1c (28 Oct 2026; layout only, no number or logic changed): the
+//   overlap sweep found long axis labels (1E-10, 1E10 data) drawn on each
+//   other; rs_Axis now skips a label that would land within 4 px of the
+//   last one drawn (7 px per character) instead of one within 30 px of
+//   the last tick, and the last label stops 4 px short of the screen's
+//   edge.  The big A / B letters of the lab page sit 1 px higher, clear of
+//   the group names.
 // beta 1b (26 Oct 2026): ONE change.  The plotting routine rs_PX is now
 //   rs_Pix: the Prime reads names without regard to case, so rs_PX and
 //   the Home export RS_PX were one name (a case-insensitive name scan of
@@ -526,10 +533,12 @@ BEGIN
 END;
 
 // Nice ticks and labels along a horizontal axis at y, for lo .. hi.
-// Labels closer than 30 px to the last one are skipped.
+// A label that would land within 4 px of the last one drawn (7 px per
+// character) is skipped (beta 1c; was: within 30 px of the last tick).
 rs_Axis(axLo, axHi, axY)
 BEGIN
   LOCAL axS, axD, axV, axX, axT, axLast;
+  LOCAL axX2;
   axS := rs_Nice((axHi - axLo) / 5);
   axD := MAX(0, -FLOOR(LOG(axS) + 0.000001));
   axV := CEILING(axLo / axS - 0.000001) * axS;
@@ -539,9 +548,10 @@ BEGIN
     axX := rs_Pix(axV, axLo, axHi);
     LINE_P(G1, axX, axY, axX, axY + 2, rsGRAY);
     axT := rs_Fmt(axV, axD);
-    IF axX - axLast >= 30 THEN
-      TEXTOUT_P(axT, G1, MAX(0, MIN(318 - 7 * DIM(axT), axX - 3 * DIM(axT))), axY + 3, 1, rsGRAY);
-      axLast := axX;
+    axX2 := MAX(0, MIN(316 - 7 * DIM(axT), axX - 3 * DIM(axT)));
+    IF axX2 - axLast >= 4 THEN
+      TEXTOUT_P(axT, G1, axX2, axY + 3, 1, rsGRAY);
+      axLast := axX2 + 7 * DIM(axT);
     END;
     axV := axV + axS;
   END;
@@ -1312,9 +1322,9 @@ BEGIN
   // row frames and labels
   LINE_P(G1, rsPL, rsYA, rsPR, rsYA, rsGRID);
   LINE_P(G1, rsPL, rsYB, rsPR, rsYB, rsGRID);
-  TEXTOUT_P("A", G1, 3, rsYA - 26, 2, rsCOLA);
+  TEXTOUT_P("A", G1, 3, rsYA - 27, 2, rsCOLA);
   TEXTOUT_P(rsLA, G1, 2, rsYA - 12, 1, rsCOLA, 40);
-  TEXTOUT_P("B", G1, 3, rsYB - 26, 2, rsCOLB);
+  TEXTOUT_P("B", G1, 3, rsYB - 27, 2, rsCOLB);
   TEXTOUT_P(rsLB, G1, 2, rsYB - 12, 1, rsCOLB, 40);
   FOR dgI FROM 1 TO rsN DO
     dgX := rsPL + 4 * rs_Col(rsV(dgI)) + 2;
@@ -1415,7 +1425,7 @@ BEGIN
       rs_SDot(srX, srY - 3 - srPt * (srH(srK) - 1), srPt, srC);
     END;
   END;
-  TEXTOUT_P(srLb, G1, 3, srY - 26, 2, srC);
+  TEXTOUT_P(srLb, G1, 3, srY - 27, 2, srC);
   RETURN srNo;
 END;
 
@@ -2843,7 +2853,7 @@ BEGIN
   spY := rs_Para("See a permutation test and a bootstrap work: tap Once to deal the data again and watch where its statistic lands; x1000 builds the whole picture.  p and the intervals update as you go.", 28, #000000h);
   spY := rs_Para("Presets: mock jury sentences (Plaster 1989), Rossi's re-arrests, Darwin's maize (Fisher 1935), BJS months served, and a 5 v 5 exact demo.  Your own data: lists D1 and D2 (Statistics 1Var).", spY + 4, rsBLUE);
   spY := rs_Para("DISCLAIMER: a teaching and demonstration aid. Not validated for forensic, clinical or legal use; do not rely on its results for legal purposes.", spY + 4, rsRED);
-  rs_Ln("(C) 2026 Roger D Metcalf; beta 1b 26 Oct 2026", 205, rsGRAY);
+  rs_Ln("(C) 2026 Roger D Metcalf; beta 1c 28 Oct 2026", 205, rsGRAY);
   rs_PgEnd("Any key = menu");
 END;
 

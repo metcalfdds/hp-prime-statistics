@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// POWERVIZ - v2.5e
+// POWERVIZ - v2.5f
 // ============================================================
 // FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
 //   the file and credit the author if you pass it on.  Not for
@@ -19,16 +19,23 @@
 //   firmware.  Earlier versions ran on both calculators; whether
 //   v2.1 ran with the "LOCAL pv_Name()" routine heads is for
 //   Roger to confirm (LocalHeadProbe beta 1 passed on the emulator).
-//   v2.2 to v2.5d have NOT yet been run on a G1 or G2.  On the HP
+//   v2.2 to v2.5f have NOT yet been run on a G1 or G2.  On the HP
 //   Prime Virtual Calculator 2.4.2 (build 2026-09-09, the
 //   calculators' own firmware), 17 Oct 2026: v2.4 passed (round 1),
 //   and v2.5a's "Where n comes from" page showed "exact (CAS)" and
 //   n = ((σ×zα+σ×zβ)/(μ₁−μ₀))^2 (round 2; the CAS never failed
 //   there, so the decimal fallback was not reached).  v2.5b, v2.5c and
-//   v2.5d have not run there yet (v2.5d has run only in the PC
-//   harness).  v2.5 is the first version that calls the CAS;
+//   v2.5d have not run there yet (v2.5d, v2.5e and v2.5f have run only
+//   in the PC harness).  v2.5 is the first version that calls the CAS;
 //   its call form (v2.5a) is the one CASProbe beta 1b found on the
 //   emulator, see pv_Cas below.
+//
+// v2.5f (28 Oct 2026): layout only (overlap sweep, 28 Oct 2026).  On the
+//   power-curve pages (pv_PCDraw) the "1.0" y-axis label, drawn 4 px
+//   above the plot top (y 26), ran into the caption row at y 19 (ink to
+//   29).  The plot top PCT is now 35 (was 30), so the label sits at 31;
+//   the touch handler reads the same constant.  No number, formula, key
+//   handling or logic changed.
 //
 // v2.5e (20 Oct 2026): symbols instead of spelled-out names, on screen
 //   only (Roger, 20 Oct 2026: "use the symbols we developed"; every
@@ -394,7 +401,8 @@ LOCAL HX1, HY1, HX2, HY2, HACT, CLX;
 // n shown, the sweep's n80, and the plot box shared by drawing and
 // the finger.
 LOCAL PWC, PNMX:=200, PN80:=-1;
-LOCAL PCL:=40, PCR:=290, PCT:=30, PCB:=195;
+// v2.5f: PCT 35 (was 30) so the "1.0" label clears the caption row
+LOCAL PCL:=40, PCR:=290, PCT:=35, PCB:=195;
 // two glyph strings built once (see pv_Init): the root sign and
 // "n" with subscript 80.
 LOCAL SQG, N80L;

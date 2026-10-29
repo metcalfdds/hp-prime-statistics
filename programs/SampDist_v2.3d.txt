@@ -26,11 +26,19 @@
 //   5  Help
 // Exports EP_SD_* so results are readable in Home after the menu is cancelled.
 //
-// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  v2.3c has
+// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  v2.3d has
 //   NOT yet been run on hardware or on the emulator, only in the PC
 //   harness (ppl_run_v3e, 19 Oct 2026); v2.3 passed the emulator's round
-//   (17 Oct 2026).  See the checklist at the end, SampDist_v2.3b_CHANGES.md,
-//   SampDist_v2.3a_CHANGES.md and SampDist_v2.3_CHANGES.md.
+//   (17 Oct 2026).  See the checklist at the end, SampDist_v2.3d_CHANGES.md,
+//   SampDist_v2.3b_CHANGES.md, SampDist_v2.3a_CHANGES.md and
+//   SampDist_v2.3_CHANGES.md.
+//
+// v2.3d (28 Oct 2026): layout only (overlap sweep, 28 Oct 2026).  In
+//   Compare sample sizes (sd_drawCmp) the x-axis tick labels at y 177
+//   (ink to 187) ran into the summary panel's first row at y 186.  The
+//   panel now starts at y 188 and its rows sit at 192 / 203 / 214 (were
+//   186 / 197 / 208); the cursor readout and its clear box moved with
+//   them (208 -> 214).  No number, formula, key handling or logic changed.
 //
 // v2.3c (20 Oct 2026): symbols instead of spelled-out names, on screen
 //   only (Roger, 20 Oct 2026: "use the symbols we developed"; every
@@ -1174,16 +1182,16 @@ BEGIN
                 STRING(mu,2,2) + ", σ = " + STRING(sg,2,2) + ")",
                 G2, 6, 4, 1, RGB(0,60,200), 308);
 
-      RECT_P(G2, 4, 182, 315, 220, RGB(255,69,0), RGB(255,240,220));
+      RECT_P(G2, 4, 188, 315, 222, RGB(255,69,0), RGB(255,240,220));
       TEXTOUT_P("n = " + STRING(n1,1,0) + ": σ" + CHAR(57344) + " = " +
-                STRING(se1,2,4), G2, 8, 186, 1, RGB(255,0,0));
+                STRING(se1,2,4), G2, 8, 192, 1, RGB(255,0,0));
       TEXTOUT_P("n = " + STRING(n2,1,0) + ": σ" + CHAR(57344) + " = " +
-                STRING(se2,2,4), G2, 8, 197, 1, RGB(0,60,200));
+                STRING(se2,2,4), G2, 8, 203, 1, RGB(0,60,200));
       TEXTOUT_P("n = " + STRING(n3,1,0) + ": σ" + CHAR(57344) + " = " +
-                STRING(se3,2,4), G2, 170, 186, 1, RGB(0,140,60));
-      TEXTOUT_P("4× n halves σ" + CHAR(57344), G2, 170, 197, 1, RGB(90,90,90));
+                STRING(se3,2,4), G2, 170, 192, 1, RGB(0,140,60));
+      TEXTOUT_P("4× n halves σ" + CHAR(57344), G2, 170, 203, 1, RGB(90,90,90));
       TEXTOUT_P("touch the plot: P(" + CHAR(57344) + " < x) for each n",
-                G2, 8, 208, 1, RGB(90,90,90), 300);
+                G2, 8, 214, 1, RGB(90,90,90), 300);
 
       // house footer: dodger blue, "key = action"
       TEXTOUT_P("drag = cursor, tap a curve = pick, any key = menu",
@@ -1197,12 +1205,12 @@ BEGIN
       IF cx >= LFT AND cx <= RGT THEN
         LINE_P(G1, cx, TOPy, cx, BOT, RGB(0,0,0));
         tmp := xlo + (cx - LFT)/W*(xhi - xlo);
-        RECT_P(G1, 6, 207, 313, 218, RGB(255,240,220));
+        RECT_P(G1, 6, 213, 313, 224, RGB(255,240,220));
         TEXTOUT_P("P(" + CHAR(57344) + " < " + STRING(tmp,2,nfrac+1) + "):",
-                  G1, 8, 208, 1, RGB(0,0,0));
+                  G1, 8, 214, 1, RGB(0,0,0));
         FOR ix FROM 1 TO 3 DO
           pc := NORMALD_CDF(mu, ses(ix), tmp);
-          TEXTOUT_P(sd_fmtp(pc,4), G1, 128 + 60*(ix - 1), 208, 1, cls(ix));
+          TEXTOUT_P(sd_fmtp(pc,4), G1, 128 + 60*(ix - 1), 214, 1, cls(ix));
           yy := ys(ix);
           RECT_P(G1, cx - 1, yy(cx - LFT + 1) - 1, cx + 1, yy(cx - LFT + 1) + 1, cls(ix));
         END;

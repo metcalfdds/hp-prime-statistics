@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// TRENDTEST - beta 3f
+// TRENDTEST - beta 3g
 // Chi-square for linear trend in proportions (2 x k table)
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
@@ -28,6 +28,13 @@
 //   passed the retest that afternoon.  The call form (beta 3a) is
 //   the one CASProbe beta 1b found on the HP Prime Virtual
 //   Calculator (build 2026-09-09, 17 Oct 2026).
+//
+// beta 3g (28 Oct 2026): layout only (overlap sweep, 28 Oct 2026).  On
+//   the odds-ratio plot (trDrawOR) the "ref" label under the OR = 1
+//   circle (circle y + 6) could reach the x tick row at trPB + 5 when
+//   OR = 1 sits low on the axis.  "ref" is now at circle y + 3 and the
+//   tick labels and "score:" at trPB + 6; the readout rows below are
+//   untouched.  No number, formula, key handling or logic changed.
 //
 // beta 3f (22 Oct 2026): the Pearson and departure p-values keep
 //   their digits (independent review, 22 Oct 2026; line numbers are
@@ -1782,15 +1789,15 @@ BEGIN
   FOR doI FROM 1 TO trK DO
     doX := trPxOf(trX(doI), trXlo, trXhi);
     LINE_P(G1, doX, trPB, doX, trPB + 3, #000000h);
-    TEXTOUT_P(trXStr(trX(doI)), G1, doX - 8, trPB + 5, 1, trGRAY, 40);
+    TEXTOUT_P(trXStr(trX(doI)), G1, doX - 8, trPB + 6, 1, trGRAY, 40);
   END;
-  TEXTOUT_P("score:", G1, 6, trPB + 5, 1, trGRAY);
+  TEXTOUT_P("score:", G1, 6, trPB + 6, 1, trGRAY);
   // ---- level 1: a hollow circle at OR = 1 ----
   doX := trPxOf(trX(1), trXlo, trXhi);
   doCol := trGRAY;
   IF trSel == 1 THEN doCol := trRED; END;
   ARC_P(G1, doX, doY, 3, doCol);
-  TEXTOUT_P("ref", G1, doX - 8, doY + 6, 1, doCol);
+  TEXTOUT_P("ref", G1, doX - 8, doY + 3, 1, doCol);
   // ---- the other levels: Woolf bars and dots ----
   FOR doI FROM 2 TO trK DO
     doX := trPxOf(trX(doI), trXlo, trXhi);

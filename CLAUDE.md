@@ -31,8 +31,9 @@ The gate (`tools/ppl_gate_v1c.py`) finds the kit only as a zip, `Community_Libra
 ## The checks
 
 - **Gate, before any paste**: `python3 ppl_gate_v1c.py NEW.txt [ORIGINAL.txt]`; every program in `programs/` passes. "PARSE FAIL" on the √ character, `#RRGGBB:24h` colours or forward declarations is the kit's limit, not an error; the kit linter's "0 errors" is the line that matters.
+- **Text overlap** (since 28 Oct 2026): `python3 tools/text_overlap_v1.py --run verify/verify_<Name>.py` or `--walk programs/<Name>.txt`; no firm overlaps, straddles or overruns on any page.
 - **Fleet names**: `python3 tools/fleet_names_v2.py programs/*.txt` (all programs share one pool of routine names on the calculator).
-- **Verify scripts**: the newest ones (`verify_StudRange_beta15e.py`, `verify_TrendTest_beta3f.py`) run from `verify/` as they are and read older versions from git. The 19 October scripts hard-code the author's folders (`/home/claude/work/...`) and need files that are not in the repository; `verify/README.md` and `docs/dev/independent-review-2026-10-22.md` say what they need and what happened when they were rerun.
+- **Verify scripts**: the newest ones (`verify_StudRange_beta15f.py`, `verify_TrendTest_beta3g.py`) run from `verify/` as they are and read older versions from git. The 19 October scripts hard-code the author's folders (`/home/claude/work/...`) and need files that are not in the repository; `verify/README.md` and `docs/dev/independent-review-2026-10-22.md` say what they need and what happened when they were rerun.
 - **Python**: `cd python && python3 test_hpstats.py` checks `hpstats.py`, the fleet's arithmetic, against SciPy, statsmodels and brute force.
 - **Harness smoke test**: load each program in `tools/ppl_run_v3e.py` with `idle_key=4` and call its main routine; zero warnings and no `PPLError` is the pass.
 

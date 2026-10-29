@@ -14,7 +14,7 @@
 // hardware testing are Roger D. Metcalf's; the code, drafting and
 // source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
 
-// RANKLAB - beta 1a  (21 Oct 2026)
+// RANKLAB - beta 1b  (28 Oct 2026)
 // The rank-based (nonparametric) tests in one program, with pictures.
 //   Run RankLab() from the Program Catalog: it takes no arguments and
 //   opens on a welcome page (with the disclaimer), then the main menu:
@@ -53,8 +53,16 @@
 //   n <= 30, else z) and RK_EFF = tau-b.  The judges' halo preset (W
 //   only) sets RK_P = RK_PN = -1.  Quit returns a one-line summary of
 //   the last test that ran.
-// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  beta 1a
+// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  beta 1b
 //   has NOT been run on hardware or the emulator, only in the PC harness.
+//
+// WHAT CHANGED in beta 1b (28 Oct 2026; layout only, no number or logic
+//   changed): the overlap sweep found the progress panel (rk_Prog) cutting
+//   through the rows of the page under it, so it is now a full working
+//   page under the title bar; the Dunn page's "rank" label, the scatter
+//   page's x caption and readouts, and the null plot's legend rows moved
+//   to 12-px pitch; the observed-value label keeps 7 px per character
+//   from the box's right edge.
 //
 // WHAT CHANGED in beta 1a (21 Oct 2026; the independent second review
 //   of beta 1, REVIEW2_RankLab_beta1.md; item numbers are the review's):
@@ -165,45 +173,45 @@
 // File map: see the FILE MAP block just below the Home exports.
 
 // ============================================================
-// FILE MAP (line numbers of beta 1a)
-//     211-315    Home exports and the file-level state
-//     316-513    SMALL HELPERS
+// FILE MAP (line numbers of beta 1b)
+//     219-323    Home exports and the file-level state
+//     324-523    SMALL HELPERS
 //                  rk_Init, rk_Drain, rk_WaitAny, rk_Nice, rk_Fx, rk_Sg, rk_Num,
 //                  rk_PT, rk_TailW, rk_GCol, rk_Trunc, rk_Zeros, rk_Prog, rk_Esc,
 //                  rk_Grp
-//     514-631    RANKS
+//     524-641    RANKS
 //                  rk_Midrank, rk_Order, rk_Med, rk_Q7
-//     632-696    TAIL PROBABILITIES
+//     642-706    TAIL PROBABILITIES
 //                  rk_PZ, rk_CCZ, rk_ChiUp, rk_TUp
-//     697-1707   THE TESTS
+//     707-1717   THE TESTS
 //                  rk_Diffs, rk_Fill, rk_Walsh, rk_Shift, rk_NullWin, rk_NSum,
 //                  rk_DoSign, rk_SRNull, rk_DoSR, rk_MWNull, rk_DoMW, rk_DoKW,
 //                  rk_DoFr, rk_FrRbar, rk_TieSums, rk_Kendall, rk_SpPerm,
 //                  rk_KdNull, rk_DoCorr, rk_CorrP, rk_CorNull, rk_Pick,
 //                  rk_Compute
-//    1708-2111   THE PRESETS
+//    1718-2121   THE PRESETS
 //                  rk_DraftNo, rk_LdRossi, rk_LdDraftG, rk_LdDraftC, rk_LdDarwin,
 //                  rk_LdHalo, rk_LdJudges, rk_LdJury, rk_Preset, rk_ReadD,
 //                  rk_MyData, rk_ChooseG, rk_PickTwo, rk_Ensure
-//    2112-2423   DRAWING: frames, text, the result page
+//    2122-2433   DRAWING: frames, text, the result page
 //                  rk_Frame, rk_Box, rk_Ln, rk_Foot, rk_TName, rk_TSh, rk_SNm,
 //                  rk_Src, rk_TieTx, rk_PMain, rk_CKind, rk_Verd, rk_ExLine,
 //                  rk_MeanR, rk_PgRes
-//    2424-2584   THE RANK STRIP
+//    2434-2594   THE RANK STRIP
 //                  rk_PgStrip, rk_StripInfo
-//    2585-2746   KRUSKAL-WALLIS: GROUP BOXES, DUNN PAIRS
+//    2595-2756   KRUSKAL-WALLIS: GROUP BOXES, DUNN PAIRS
 //                  rk_PgBox, rk_PgDunn
-//    2747-2811   FRIEDMAN: THE RANK GRID
+//    2757-2821   FRIEDMAN: THE RANK GRID
 //                  rk_PgGrid
-//    2812-2871   RANK CORRELATION: THE SCATTER
+//    2822-2881   RANK CORRELATION: THE SCATTER
 //                  rk_PgScat
-//    2872-3177   THE NULL DISTRIBUTION
+//    2882-3187   THE NULL DISTRIBUTION
 //                  rk_IsBars, rk_NNm, rk_InTail, rk_CvKind, rk_CvObs, rk_Dens,
 //                  rk_CvUp, rk_CvShade, rk_CvFit, rk_PgNull
-//    3178-3499   THE VIEW: pages, soft keys, keys and taps
+//    3188-3509   THE VIEW: pages, soft keys, keys and taps
 //                  rk_NPg, rk_K4, rk_K5, rk_Draw, rk_Pick1, rk_Tap, rk_Act,
 //                  rk_Menu, rk_View, rk_Open
-//    3500-3723   HELP, THE WELCOME PAGE, THE ENTRY POINT
+//    3510-3733   HELP, THE WELCOME PAGE, THE ENTRY POINT
 //                  rk_HPage, rk_Help, rk_Welcome, rk_Summary, RankLab
 // ============================================================
 
@@ -481,13 +489,15 @@ END;
 // count runs (Esc stops it; the caller polls GETKEY).
 rk_Prog(pgF, pgM, pgE)
 BEGIN
-  RECT_P(G0, 30, 92, 290, 150, rkORNG, rkLORN);
-  TEXTOUT_P(pgM, G0, 40, 98, 1, #000000h, 240);
-  RECT_P(G0, 40, 118, 280, 130, rkGRAY, #FFFFFFh);
-  RECT_P(G0, 41, 119, 41 + IP(238 * MAX(0, MIN(1, pgF))), 129, rkBLUE, rkBLUE);
+  // beta 1b: a working page under the title bar (as SurvLab's), not a
+  // small panel that cut through the rows of the page beneath it
+  RECT_P(G0, 0, 20, 319, 239, rkORNG, rkLORN);
+  TEXTOUT_P(pgM, G0, 40, 104, 1, #000000h, 240);
+  RECT_P(G0, 40, 124, 280, 136, rkGRAY, #FFFFFFh);
+  RECT_P(G0, 41, 125, 41 + IP(238 * MAX(0, MIN(1, pgF))), 135, rkBLUE, rkBLUE);
   // beta 1a: "Esc = stop" only where the loop really reads Esc (pgE is
   // what Esc does there, or "" for nothing)
-  IF DIM(pgE) > 0 THEN TEXTOUT_P(pgE, G0, 40, 135, 1, rkFOOT, 240); END;
+  IF DIM(pgE) > 0 THEN TEXTOUT_P(pgE, G0, 40, 142, 1, rkFOOT, 240); END;
 END;
 
 // rk_Esc (beta 1a): was Esc pressed during a long loop?  Called right
@@ -2704,7 +2714,7 @@ BEGIN
   dnY0 := 82 - IP(((rkN + 1) / 2 - dnLo) / (dnHi - dnLo) * 58);
   FOR dnI FROM 34 TO 308 STEP 3 DO PIXON_P(G1, dnI, dnY0, rkGRN); END;
   TEXTOUT_P("mean", G1, 2, 24, 1, rkGRN, 30);
-  TEXTOUT_P("rank", G1, 2, 35, 1, rkGRN, 30);
+  TEXTOUT_P("rank", G1, 2, 36, 1, rkGRN, 30);
   FOR dnG FROM 1 TO dnK DO
     dnX1 := 34 + IP((dnG - 1) * dnW) + 2;
     dnX2 := 34 + IP(dnG * dnW) - 2;
@@ -2850,7 +2860,7 @@ BEGIN
     scV := scV + scT;
   END;
   TEXTOUT_P("y = " + rk_Trunc(rkCNy, 30) + IFTE(rkCDat == 1, "", " (its rank)"), G1, 4, 21, 1, rkMAG, 312);
-  TEXTOUT_P("x = " + rkCNx + IFTE(rkCDat == 1, "", " (rank)"), G1, 120, 165, 1, rkGRAY, 190);
+  TEXTOUT_P("x = " + rkCNx + IFTE(rkCDat == 1, "", " (rank)"), G1, 120, 166, 1, rkGRAY, 190);
   rkHX := rk_Zeros(scN); rkHY := rk_Zeros(scN);
   FOR scI FROM 1 TO scN DO
     IF rkCDat == 1 THEN scX := rkCX(scI); scY := rkCY(scI); ELSE scX := rkRX(scI); scY := rkRY(scI); END;
@@ -2864,7 +2874,7 @@ BEGIN
   RECT_P(G1, rkHX(scI) - 1, rkHY(scI) - 1, rkHX(scI) + 1, rkHY(scI) + 1, rkRED, rkRED);
   RECT_P(G1, 0, 178, 319, 201, rkORNG, rkLORN);
   TEXTOUT_P(rkCLab + " " + STRING(scI, 2, 0) + ": x = " + rk_Num(rkCX(scI)) + ", y = " + rk_Num(rkCY(scI)), G1, 6, 180, 1, rkRED, 308);
-  TEXTOUT_P("midranks: x " + rk_Num(rkRX(scI)) + ", y " + rk_Num(rkRY(scI)) + "  (d = " + rk_Num(rkRX(scI) - rkRY(scI)) + ")", G1, 6, 191, 1, #000000h, 308);
+  TEXTOUT_P("midranks: x " + rk_Num(rkRX(scI)) + ", y " + rk_Num(rkRY(scI)) + "  (d = " + rk_Num(rkRX(scI) - rkRY(scI)) + ")", G1, 6, 192, 1, #000000h, 308);
   rk_Foot("tap a point, " + rkLR + " = pick, " + rkUD + " = page, Esc = back");
 END;
 
@@ -3128,7 +3138,7 @@ BEGIN
   nlPx := rkPL + IP((MAX(nlA, MIN(nlB, nlO)) - nlA) / (nlB - nlA) * nlW);
   LINE_P(G1, nlPx, rkPT, nlPx, rkPB, rkRED);
   nlS := rk_NNm() + " = " + IFTE(ABS(nlO) >= 1E5, "infinite", rk_Num(ROUND(nlO, 3)));
-  TEXTOUT_P(nlS, G1, MAX(rkPL + 2, MIN(rkPR - 6 * DIM(nlS) - 2, nlPx + 3)), rkPT + 2, 1, rkRED, 120);
+  TEXTOUT_P(nlS, G1, MAX(rkPL + 2, MIN(rkPR - 7 * DIM(nlS) - 2, nlPx + 3)), rkPT + 2, 1, rkRED, 120);
   // the tapped value
   IF rkNSel > -1E98 THEN
     nlPx := rkPL + IP((MAX(nlA, MIN(nlB, rkNSel)) - nlA) / (nlB - nlA) * nlW);
@@ -3160,7 +3170,7 @@ BEGIN
       nlS := "shaded = p; the curve is the approximate null";
     END;
   END;
-  TEXTOUT_P(nlS, G1, 6, 178, 1, rkMAG, 308);
+  TEXTOUT_P(nlS, G1, 6, 179, 1, rkMAG, 308);
   nlS := "tap the plot to read a probability";
   IF rkNSel > -1E98 THEN
     IF nlBars == 1 THEN
@@ -3170,7 +3180,7 @@ BEGIN
       nlS := "at " + rk_Num(ROUND(rkNSel, 3)) + ": P(" + rk_SNm() + " " + rkGE + " " + rk_Num(ROUND(rkNSel, 3)) + ") = " + rk_Fx(rk_CvUp(rk_CvKind(), rkNSel), 4);
     END;
   END;
-  TEXTOUT_P(nlS, G1, 6, 189, 1, #000000h, 308);
+  TEXTOUT_P(nlS, G1, 6, 191, 1, #000000h, 308);
   rk_Foot("tap the plot, " + rkLR + " = move, " + rkUD + " = page, Esc = back");
 END;
 
@@ -3649,7 +3659,7 @@ rk_Welcome()
 BEGIN
   DIMGROB_P(G1, 320, 240, #FFFFFFh);
   RECT_P(G1, 0, 0, 319, 24, rkORNG, rkORNG);
-  TEXTOUT_P("RankLab - rank tests, beta 1", G1, 8, 4, 3, #FFFFFFh, 304);
+  TEXTOUT_P("RankLab - rank tests, beta 1b", G1, 8, 4, 3, #FFFFFFh, 304);
   TEXTOUT_P("Sign, Wilcoxon signed-rank, Mann-Whitney,", G1, 10, 32, 1, rkBLUE, 300);
   TEXTOUT_P("Kruskal-Wallis, Dunn, Friedman, Kendall's W,", G1, 10, 45, 1, rkBLUE, 300);
   TEXTOUT_P("Spearman and Kendall rank correlation.", G1, 10, 58, 1, rkBLUE, 300);

@@ -14,7 +14,7 @@
 // hardware testing are Roger D. Metcalf's; the code, drafting and
 // source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
 
-// AGREELAB - beta 1a  (26 Oct 2026; beta 1 the same day)
+// AGREELAB - beta 1b  (28 Oct 2026)
 // Agreement and reliability between examiners or raters, for forensic
 //   science and research-methods classes: what each statistic MEANS, with
 //   pictures you can touch.  Launch AgreeLab() from the Program Catalog:
@@ -46,9 +46,16 @@
 //     kappa = 0), AG_ICC (the six ICCs, in the order ICC(1,1), ICC(2,1),
 //     ICC(3,1), ICC(1,k), ICC(2,k), ICC(3,k)), AG_LOA (Bland-Altman
 //     {lower limit, bias, upper limit}).
-// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  beta 1a (and
-//   beta 1) have NOT been run on hardware or the emulator, only in the PC
-//   harness.
+// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  beta 1b (and
+//   beta 1, 1a) have NOT been run on hardware or the emulator, only in the
+//   PC harness.
+// WHAT CHANGED in beta 1b (28 Oct 2026; layout only, no number or logic
+//   changed): the overlap sweep found labels drawn over other text.  The
+//   top and bottom y tick labels stay inside the plot box (ag_YAxis); the
+//   agreement bars sit at 171 with their po/pe labels clear of the data
+//   line (now 194); the ICC plot's "targets" caption is inside the box and
+//   its two legend rows are 166/178; the Bland-Altman legend rows are
+//   166/178/190; the weights page rows 182/194.
 // WHAT CHANGED in beta 1a (26 Oct 2026): every finding of the second review
 //   (build/AgreeLab/REVIEW2_AgreeLab_beta1.md) with the lead's decisions;
 //   one line per fix in AgreeLab_beta1a_CHANGES.md.
@@ -1498,14 +1505,14 @@ BEGIN
   END;
   dtI := (agSel - 1)*agK + agSelJ;
   ag_Tx("tile " + ag_TNm(agSel, agSelJ) + " = " + ag_I(agT(dtI)), dtX, 156, agRED);
-  IF agTOK >= 1 THEN ag_Bar(agPo, agPe, 175, "po", "pe"); END;
+  IF agTOK >= 1 THEN ag_Bar(agPo, agPe, 171, "po", "pe"); END;
   IF DIM(agInfo) > 0 THEN
-    ag_Tx(agInfo, 4, 195, agBLUE);
+    ag_Tx(agInfo, 4, 194, agBLUE);
   ELSE
     IF agTEd == 1 THEN
-      ag_Tx(ag_TSrcL(), 4, 195, agRED);
+      ag_Tx(ag_TSrcL(), 4, 194, agRED);
     ELSE
-      IF agTIll == 1 THEN ag_Tx("ILLUSTRATIVE NUMBERS, not data", 4, 195, agRED); ELSE ag_Tx(ag_TSrcL(), 4, 195, agGRAY); END;
+      IF agTIll == 1 THEN ag_Tx("ILLUSTRATIVE NUMBERS, not data", 4, 194, agRED); ELSE ag_Tx(ag_TSrcL(), 4, 194, agGRAY); END;
     END;
   END;
   ag_Foot("+/- = count, drag = move, Ent = menu, Esc = back");
@@ -1609,7 +1616,9 @@ BEGIN
   WHILE yaV <= agYhi + yaS*0.000001 DO
     yaP := ag_PY(yaV);
     LINE_P(G1, agPL - 3, yaP, agPL, yaP, agGRAY);
-    TEXTOUT_P(ag_Fx(yaV, yaD), G1, 1, yaP - 6, 1, agGRAY, agPL - 4);
+    // the top and bottom labels stay inside the box, clear of the caption
+    // above and the x labels below
+    TEXTOUT_P(ag_Fx(yaV, yaD), G1, 1, MIN(MAX(yaP - 6, agPT - 2), agPB - 10), 1, agGRAY, agPL - 4);
     yaV := yaV + yaS;
   END;
 END;
@@ -1718,11 +1727,11 @@ BEGIN
     END;
   END;
   IF agTOrd == 0 THEN
-    ag_Tx("Unordered categories: use unweighted kappa.", 4, 184, agRED);
+    ag_Tx("Unordered categories: use unweighted kappa.", 4, 182, agRED);
   ELSE
-    ag_Tx("Near misses earn partial credit (the weights).", 4, 184, agGRAY);
+    ag_Tx("Near misses earn partial credit (the weights).", 4, 182, agGRAY);
   END;
-  ag_Tx("Weights assume the codes 1.." + ag_I(agK) + " are in order.", 4, 195, agGRAY);
+  ag_Tx("Weights assume the codes 1.." + ag_I(agK) + " are in order.", 4, 194, agGRAY);
   ag_Foot("+/- = linear/quadratic, Ent = menu, Esc = back");
 END;
 
@@ -2039,7 +2048,7 @@ BEGIN
     END;
     ag_Tx("Landis & Koch 1977 (Biometrics 33:159-174):", 4, 142, agGRAY);
     ag_Tx(CHAR(34) + ag_LK(agFK) + CHAR(34) + ": their convention, not a test", 4, 154, agGRAY);
-    ag_Bar(agFPb, agFPe, 172, "P", "Pe");
+    ag_Bar(agFPb, agFPe, 171, "P", "Pe");
   END;
   IF DIM(agInfo) > 0 THEN ag_Tx(agInfo, 4, 194, agBLUE); END;
   ag_Foot("tap = what is this, Ent = menu, Esc = back");
@@ -2407,9 +2416,11 @@ BEGIN
       IF agYN <= 15 OR cdI MOD 5 == 0 THEN ag_Tx(ag_I(cdI), cdX - 3, agPB + 3, agGRAY); END;
     END;
   END;
-  ag_Tx("targets " + CHAR(8594), 250, 164, agGRAY);
-  ag_Tx("Parallel lines: consistent raters (ICC 3).", 4, 172, agGRAY);
-  ag_Tx("Lines on top of each other: agreement (ICC 2).", 4, 183, agGRAY);
+  // the axis caption sits inside the box's lower-right corner: the row
+  // under the x labels is the legend's
+  ag_Tx("targets " + CHAR(8594), 250, agPB - 11, agGRAY);
+  ag_Tx("Parallel lines: consistent raters (ICC 3).", 4, 166, agGRAY);
+  ag_Tx("Lines on top of each other: agreement (ICC 2).", 4, 178, agGRAY);
   ag_Foot("tap = read a point, Ent = menu, Esc = back");
     DIMGROB_P(G2, 320, 240, #FFFFFFh);
     BLIT_P(G2, 0, 0, G1);
@@ -2471,7 +2482,7 @@ BEGIN
     IF agBN <= 200 THEN ag_Mark(baX, baY, agBLUE); ELSE PIXON_P(G1, baX, baY, agBLUE); END;
   END;
   ag_Tx("x = mean of the two, y = d = " + agYRN(agBA) + " - " + agYRN(agBB), 4, 166, agGRAY);
-  ag_Tx("green = bias, red = limits, bands: approx. CIs", 4, 177, agGRAY);
+  ag_Tx("green = bias, red = limits, bands: approx. CIs", 4, 178, agGRAY);
   ag_Foot("+/- = pair, tap = read, Ent = menu, Esc = back");
     DIMGROB_P(G3, 320, 240, #FFFFFFh);
     BLIT_P(G3, 0, 0, G1);
@@ -2481,7 +2492,7 @@ BEGIN
   IF DIM(agInfo) > 0 THEN
     ag_Tx(agInfo, 4, 192, agBLUE);
   ELSE
-    ag_Tx("magenta = trend of d on the mean (Stats page)", 4, 188, agMAG);
+    ag_Tx("magenta = trend of d on the mean (Stats page)", 4, 190, agMAG);
   END;
   RETURN 0;
 END;
@@ -2890,7 +2901,7 @@ END;
 
 ag_Hello()
 BEGIN
-  ag_Band("AgreeLab - beta 1a");
+  ag_Band("AgreeLab - beta 1b");
   ag_Tx("Do raters agree beyond chance? How well?", 10, 26, #000000h);
   ag_Tx("Two raters: Cohen's kappa on touch tiles,", 10, 40, agBLUE);
   ag_Tx("weighted kappa; many raters: Fleiss' kappa;", 10, 53, agBLUE);

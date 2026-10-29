@@ -26,7 +26,7 @@ Together the 27 programs run to about **76,000 lines**: 52,000 of PPL, 640 of Mi
 And around the programs:
 
 - **[The notes](docs/lessons-learned_v7s.md)**: hard limits, commands that differ from the manual, touch and graphics idioms, the MicroPython bridge and how it fails silently, calling the CAS safely, numerical methods for 12-digit reals. Useful even if you never run a statistics program, and written so you can hand them to an AI assistant before it writes PPL for you.
-- **[Tools](tools/)**: the checks every program passes before it is pasted (a lint gate, a fleet-wide name check, a PC harness that drives a program like a student), in plain Python 3.
+- **[Tools](tools/)**: the checks every program passes before it is pasted (a lint gate, a fleet-wide name check, a check that no two lines of text overlap on screen, a PC harness that drives a program like a student), in plain Python 3.
 - **[Diagnostics](diagnostics/)**: small probe programs that test what your own calculator does.
 - **[A touch template](templates/TouchKit_template_v3.txt)** to start a program of your own.
 - **[The same arithmetic in Python](python/hpstats.py)**, tested against SciPy.
@@ -98,7 +98,7 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 
 **StatDist** (v2.7f): 27 distributions, each result a plot you can touch. Drag x or k, the shading follows, and the window snaps to round values. Overlays show the normal approximation, N(0, 1) behind t, and the CDF as an S-curve. A Gallery opens six examples with one tap.
 
-**StudRange** (beta 15e): the studentized range (Tukey's q).
+**StudRange** (beta 15f): the studentized range (Tukey's q).
 - p from q, the critical value from α, Tukey HSD, and an interactive plot.
 - **MicroPython does the arithmetic, PPL is the fallback**, and a badge says which engine ran.
 - Python adds an H₀ simulation that shows why q, and not t, is the right yardstick.
@@ -109,7 +109,7 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 
 **CentralLimit** (beta 3d, an app; **see the install warning under [Installing](#installing)**): watch one sample happen, its members lighting up and their mean dropping into the pile. Then drag along the top panel to choose n, and see the square-root law on its own page. After Colin Croft's HP 39G aplet (2003).
 
-**SampDist** (v2.3c): the sampling distribution of x̄, with the population drawn faintly behind it.
+**SampDist** (v2.3d): the sampling distribution of x̄, with the population drawn faintly behind it.
 - **n×4** halves the width.
 - The nearer bound follows your finger.
 - "Watch sample means" drops forty of them onto the axis.
@@ -122,7 +122,7 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 - **Drop 100,000** runs in MicroPython.
 - Tap a bar for its binomial probability and the normal area.
 
-**PowerViz** (v2.5e): **drag the H₁ curve**, and the α, β and power regions reshade live. Drag the critical line to set α, and drag up or down for n. n₈₀ appears in the panel and on the power-versus-n curve.
+**PowerViz** (v2.5f): **drag the H₁ curve**, and the α, β and power regions reshade live. Drag the critical line to set α, and drag up or down for n. n₈₀ appears in the panel and on the power-versus-n curve.
 
 ### Tables and tests
 
@@ -133,7 +133,7 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 - An independence morph, a Fisher bar plot, and the Florida death-penalty tables as a Simpson's-paradox page.
 - [docs/chitable-guide.md](docs/chitable-guide.md) is the user's guide.
 
-**TrendTest** (beta 3f): chi-square for linear trend in a 2 × k table. **Drag a dot** to change a level's proportion and watch the trend test respond. Includes a confidence band and Wilson intervals.
+**TrendTest** (beta 3g): chi-square for linear trend in a 2 × k table. **Drag a dot** to change a level's proportion and watch the trend test respond. Includes a confidence band and Wilson intervals.
 
 **TestChooser** (beta 2b): which statistical test? It is a tappable flowchart: tap the outcome's scale and the design, and the path draws itself to a test. There is also a tappable table, and a 20-case criminal-justice and forensic quiz. After Glantz's *Primer of Biostatistics*.
 
@@ -156,7 +156,7 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 - Sensitivity and specificity can be dragged on the branches.
 - A Fagan nomogram, a second test, and forensic labels.
 
-**DNAMixLR** (beta 3d): the likelihood ratio for a mixed DNA profile, locus by locus, with the NRC II θ correction (Weir et al. 1997; Curran et al. 1999).
+**DNAMixLR** (beta 3e): the likelihood ratio for a mixed DNA profile, locus by locus, with the NRC II θ correction (Weir et al. 1997; Curran et al. 1999).
 - **Drag θ** and watch the LR fall down an ENFSI verbal ladder.
 - Tap a locus for its numbers, and drop loci from the table.
 - A prosecutor's-fallacy page.
@@ -172,21 +172,21 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 
 Data sources for every preset are listed, with the checks made on them, in [docs/data/](docs/data/).
 
-**RankLab** (beta 1a): the rank tests. Sign test, Wilcoxon signed-rank (exact, ties handled), Mann-Whitney, Kruskal-Wallis with Dunn's pairs, Friedman with Kendall's W, Spearman and Kendall (exact for small n), Hodges-Lehmann. A rank strip you can tap, and the exact null distribution with the observed value marked. Data: the 1970 draft lottery, Darwin's corn, the Rossi re-arrest study, mock-jury sentences, Connecticut judges' ratings.
+**RankLab** (beta 1b): the rank tests. Sign test, Wilcoxon signed-rank (exact, ties handled), Mann-Whitney, Kruskal-Wallis with Dunn's pairs, Friedman with Kendall's W, Spearman and Kendall (exact for small n), Hodges-Lehmann. A rank strip you can tap, and the exact null distribution with the observed value marked. Data: the 1970 draft lottery, Darwin's corn, the Rossi re-arrest study, mock-jury sentences, Connecticut judges' ratings.
 
 **AnovaLab** (beta 1a): one-way ANOVA with Welch, Levene and Bartlett, and Holm, Bonferroni, Scheffé and Tukey-Kramer comparisons; two-way ANOVA for unbalanced designs (Type III); randomized blocks; tests and intervals for variances. Tap two groups to compare them; an interaction plot. Data: mock-jury sentences by attractiveness and crime, the draft lottery by month, insect sprays.
 
-**SeizureLab** (beta 1a): how many units of a drug seizure must be tested? Hypergeometric, binomial and Bayesian answers, an operating-characteristic curve you drag, and the total net weight with its interval. Checked against the tables of the ENFSI *Guidelines on Representative Drug Sampling* (2009): 426 of 427 cells agree, and the one that does not is a misprint in the guideline.
+**SeizureLab** (beta 1b): how many units of a drug seizure must be tested? Hypergeometric, binomial and Bayesian answers, an operating-characteristic curve you drag, and the total net weight with its interval. Checked against the tables of the ENFSI *Guidelines on Representative Drug Sampling* (2009): 426 of 427 cells agree, and the one that does not is a misprint in the guideline.
 
-**SurvLab** (beta 1a): time to re-arrest. Kaplan-Meier curves with Greenwood and log-log intervals, a finger cursor that reads S(t), quantiles when the median is never reached, log-rank and Gehan-Breslow tests, hazard ratios and a life table. Data: Rossi, Berk & Lenihan's 432 released prisoners, by financial aid.
+**SurvLab** (beta 1b): time to re-arrest. Kaplan-Meier curves with Greenwood and log-log intervals, a finger cursor that reads S(t), quantiles when the median is never reached, log-rank and Gehan-Breslow tests, hazard ratios and a life table. Data: Rossi, Berk & Lenihan's 432 released prisoners, by financial aid.
 
 **FitCheck** (beta 1a): goodness of fit. Chi-square with cell merging, Benford's law (*Arizona v. Nelson*'s cheques), the exact binomial test (*Castaneda v. Partida*'s grand juries, "29 standard deviations"), Poisson fits (horse kicks, Richmond homicides), and normality: Q-Q plot, Shapiro-Wilk, Anderson-Darling, Lilliefors.
 
-**ResampLab** (beta 1b): permutation tests and the bootstrap you can watch. Shuffle once and see the dots move; ×10, ×100, ×1000; exact enumeration when it is small enough; percentile, basic and BCa intervals. Data: mock-jury sentences, Darwin's corn, months served for homicide (BJS).
+**ResampLab** (beta 1c): permutation tests and the bootstrap you can watch. Shuffle once and see the dots move; ×10, ×100, ×1000; exact enumeration when it is small enough; percentile, basic and BCa intervals. Data: mock-jury sentences, Darwin's corn, months served for homicide (BJS).
 
-**AgreeLab** (beta 1a): examiner agreement. Cohen's kappa on touch tiles (drag a count off the diagonal and watch kappa fall), weighted kappa, Fleiss' kappa, the six intraclass correlations and a Bland-Altman plot; the "kappa paradox" explained. Data: Landis & Koch's two neurologists, Fleiss (1971), Bland & Altman (1986), Shrout & Fleiss (1979).
+**AgreeLab** (beta 1b): examiner agreement. Cohen's kappa on touch tiles (drag a count off the diagonal and watch kappa fall), weighted kappa, Fleiss' kappa, the six intraclass correlations and a Bland-Altman plot; the "kappa paradox" explained. Data: Landis & Koch's two neurologists, Fleiss (1971), Bland & Altman (1986), Shrout & Fleiss (1979).
 
-**RiskLab** (beta 1a): the statistics behind recidivism risk tools. Logistic regression, the ROC curve with a draggable cut-off and a live 2 × 2 table, calibration, and fairness by group, using ProPublica's published COMPAS data from Broward County (as counts) and the Rossi study. It shows, with real numbers, why a score cannot be both equally calibrated and equally wrong for two groups whose base rates differ.
+**RiskLab** (beta 1b): the statistics behind recidivism risk tools. Logistic regression, the ROC curve with a draggable cut-off and a live 2 × 2 table, calibration, and fairness by group, using ProPublica's published COMPAS data from Broward County (as counts) and the Rossi study. It shows, with real numbers, why a score cannot be both equally calibrated and equally wrong for two groups whose base rates differ.
 
 *FDAES (forensic dental age estimation) is held back from this repository for now.*
 

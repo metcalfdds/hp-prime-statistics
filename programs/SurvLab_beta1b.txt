@@ -14,7 +14,7 @@
 // hardware testing are Roger D. Metcalf's; the code, drafting and
 // source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
 
-// SURVLAB - beta 1a  (21 Oct 2026)
+// SURVLAB - beta 1b  (28 Oct 2026)
 // Time-to-event (survival) analysis for a criminal-justice class: the
 //   time from release from prison to the first re-arrest.  Kaplan-Meier
 //   curves with Greenwood's standard error and 95% confidence intervals
@@ -38,8 +38,17 @@
 //   (O1/E1)/(O2/E2), -1 if it cannot be estimated), SV_HRP (Peto's
 //   exp((O1-E1)/V), -1 with no test), SV_MED (the median of each group;
 //   -1 = not reached).
-// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  beta 1a has
+// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  beta 1b has
 //   NOT been run on hardware or the emulator, only in the PC harness.
+// WHAT CHANGED in beta 1b (28 Oct 2026; layout only, no number or
+//   logic changed): the overlap sweep found tick labels drawn over the
+//   caption rows.  The bottom y-axis label now stops at the axis
+//   (sv_Grid); the at-risk table, readout and footer rows of the KM page
+//   sit 12 px apart (160/172/184/196/208); the life-table caption and
+//   q label moved down (128, 140); the quantile page rows are 11 px
+//   apart from 119 with no gap; two 11-px rows of the test pages became
+//   12 px (94; 179/191; 162/174; 102); y tick labels are thinned to one
+//   in 2 (3, ...) when the ticks are closer than 12 px, as the x labels are.
 // WHAT CHANGED in beta 1a (21 Oct 2026; second review, items 1-15):
 //   (1) No grob is passed as a parameter any more: every helper draws on
 //   G1 by name, every page clears with DIMGROB_P(G1, ...) as the fleet
@@ -925,7 +934,7 @@ sv_XLab(xlY)
 BEGIN
   LOCAL xlV, xlN, xlP, xlS, xlX, xlK;
   xlS := sv_TS(FLOOR(svXmx / svXs) * svXs);
-  xlK := CEILING((6 * DIM(xlS) + 6) / MAX(1, svXs / svXmx * (svPR - svPL)));
+  xlK := CEILING((7 * DIM(xlS) + 6) / MAX(1, svXs / svXmx * (svPR - svPL)));
   IF xlK < 1 THEN xlK := 1; END;
   xlV := 0; xlN := 0;
   WHILE xlV <= svXmx + svXs / 1000 AND xlN < 16 DO
@@ -942,6 +951,7 @@ END;
 sv_Grid()
 BEGIN
   LOCAL grV, grN, grP, grS;
+  LOCAL grK, grPt, grB;
   grV := 0; grN := 0;
   WHILE grV <= svXmx + svXs / 1000 AND grN < 16 DO
     grP := sv_XP(grV);
@@ -950,13 +960,24 @@ BEGIN
     grV := grV + svXs; grN := grN + 1;
   END;
   sv_XLab(svPB + 4);
+  // y labels need 12 px each: when the ticks are closer, only every
+  // 2nd, 3rd ... tick is labelled (grK), as sv_XLab does for long times
+  grPt := MAX(1, svYs / (svYhi - svYlo) * (svPB - svPT));
+  grK := CEILING(12 / grPt);
+  IF grK < 1 THEN grK := 1; END;
+  // the bottom label stops at the axis (clear of a caption row just
+  // under the box) when the labelled ticks leave room for that
+  grB := svPB - 5;
+  IF grK * grPt >= 17 THEN grB := svPB - 10; END;
   grV := svYlo; grN := 0;
   WHILE grV <= svYhi + svYs / 1000 AND grN < 16 DO
     grP := sv_YP(grV);
     LINE_P(G1, svPL, grP, svPR, grP, svGRID);
     LINE_P(G1, svPL - 3, grP, svPL, grP, #000000h);
-    grS := sv_F(grV, svYdc);
-    TEXTOUT_P(grS, G1, MAX(0, svPL - 5 - 6 * DIM(grS)), grP - 5, 1, svGRAY, 36);
+    IF grN - grK * IP(grN / grK) == 0 THEN
+      grS := sv_F(grV, svYdc);
+      TEXTOUT_P(grS, G1, MAX(0, svPL - 5 - 6 * DIM(grS)), MIN(grP - 5, grB), 1, svGRAY, 36);
+    END;
     grV := grV + svYs; grN := grN + 1;
   END;
   LINE_P(G1, svPL, svPT, svPL, svPB, #000000h);
@@ -1171,7 +1192,7 @@ BEGIN
   TEXTOUT_P("at risk", G1, 0, 148, 1, svGRAY, 40);
   FOR kbI FROM 1 TO SIZE(svRows) DO
     kbR := svRows(kbI);
-    kbY := 149 + 11 * kbI;
+    kbY := 148 + 12 * kbI;
     TEXTOUT_P(svGSh(kbR), G1, 0, kbY, 1, sv_Col(kbR), 40);
     kbV := 0; kbN := 0;
     WHILE kbV <= svXmx + svXs / 1000 AND kbN < 16 DO
@@ -1216,7 +1237,7 @@ BEGIN
     TEXTOUT_P(rfTx, G1, rfX + 4, svPT + 2, 1, svRED, 6 * DIM(rfTx) + 4);
   END;
   rfJ := sv_JLe(svCurT);
-  rfLy := 183;
+  rfLy := 184;
   FOR rfI FROM 1 TO SIZE(svRows) DO
     rfR := svRows(rfI);
     rfS := 1; rfH := 0; rfLo := 1; rfHi := 1;
@@ -1257,9 +1278,9 @@ BEGIN
     TEXTOUT_P(rfTx, G1, 4, rfLy, 1, #000000h, 314);
   END;
   IF DIM(svInfo) > 0 THEN
-    TEXTOUT_P(svInfo, G1, 4, 207, 1, svInfC, 314);
+    TEXTOUT_P(svInfo, G1, 4, 208, 1, svInfC, 314);
   ELSE
-    TEXTOUT_P(svARL + svARR + " = event, tap plot = read, Ent = menu, Esc = back", G1, 4, 207, 1, svFOOT, 314);
+    TEXTOUT_P(svARL + svARR + " = event, tap plot = read, Ent = menu, Esc = back", G1, 4, 208, 1, svFOOT, 314);
   END;
   BLIT_P(G0, 0, 0, G1);
   sv_KMKeys();
@@ -1525,7 +1546,7 @@ BEGIN
   IF svQP == 0.5 THEN qdS := "Median"; ELSE qdS := sv_I(100 * svQP) + "th percentile"; END;
   IF svQP == 0.25 THEN qdS := "25th percentile (Q1)"; END;
   qdS := qdS + ": first time S(t) < " + sv_F(1 - svQP, 2);
-  TEXTOUT_P(qdS, G1, 4, 118, 1, svBLUE, 314);
+  TEXTOUT_P(qdS, G1, 4, 119, 1, svBLUE, 314);
   qdLy := 130; qdAny := 0; qdR0 := 3;
   FOR qdI FROM 1 TO SIZE(qdNR) DO
     qdR := qdNR(qdI);
@@ -1545,7 +1566,6 @@ BEGIN
     TEXTOUT_P(qdS, G1, 4, qdLy, 1, sv_Col(qdR), 314);
     qdLy := qdLy + 11;
   END;
-  qdLy := qdLy + 2;
   IF qdAny == 1 THEN
     IF svEv(qdR0) == 0 THEN
       // no events at all: no quantile can be estimated, whatever the %
@@ -1706,7 +1726,7 @@ BEGIN
     END;
     TEXTOUT_P(svGSh(t1I), G1, t1G + 4, 82, 1, t1C, 62);
   END;
-  TEXTOUT_P("solid O, pale E", G1, 190, 93, 1, svGRAY, 126);
+  TEXTOUT_P("solid O, pale E", G1, 190, 94, 1, svGRAY, 126);
   // ---- the hazard ratio (two estimates) and the second opinion ----
   IF svHR > 0 THEN
     TEXTOUT_P("HR = (O" + CHAR(8321) + "/E" + CHAR(8321) + ")/(O" + CHAR(8322) + "/E" + CHAR(8322) + ") = " + sv_F(svHR, 3) + ", CI " + sv_F(svHRL, 3) + " to " + sv_F(svHRH, 3), G1, 4, 108, 1, svBLUE, 314);
@@ -1805,7 +1825,7 @@ BEGIN
   TEXTOUT_P("5%: " + sv_F(t2Cr, 2), G1, t2C + 3, svPT + 26, 1, svGRAY, 60);
   // Gehan-Breslow, dotted magenta; log-rank, solid red
   IF svLRok == 0 THEN
-    TEXTOUT_P("No test: no events, or no variance (V = 0).", G1, 4, 160, 1, svRED, 314);
+    TEXTOUT_P("No test: no events, or no variance (V = 0).", G1, 4, 162, 1, svRED, 314);
     TEXTOUT_P("2/3, Ent = menu, Esc = back", G1, 4, 205, 1, svFOOT, 314);
     RETURN;
   END;
@@ -1820,8 +1840,8 @@ BEGIN
   t2S := "log-rank " + sv_F(svChi, 2);
   IF t2P > svPR - 90 THEN t2I := t2P - 4 - 6 * DIM(t2S); ELSE t2I := t2P + 4; END;
   TEXTOUT_P(t2S, G1, t2I, svPT + 2, 1, svRED, 90);
-  TEXTOUT_P("Shaded tail = P(" + svCHI + " " + svGEQ + " " + sv_F(svChi, 2) + " | " + svH0 + ") = p: " + sv_PS(svPv), G1, 4, 160, 1, svRED, 314);
-  TEXTOUT_P(svH0 + ": the two groups share one survival curve.", G1, 4, 172, 1, #000000h, 314);
+  TEXTOUT_P("Shaded tail = P(" + svCHI + " " + svGEQ + " " + sv_F(svChi, 2) + " | " + svH0 + ") = p: " + sv_PS(svPv), G1, 4, 162, 1, svRED, 314);
+  TEXTOUT_P(svH0 + ": the two groups share one survival curve.", G1, 4, 174, 1, #000000h, 314);
   IF DIM(svInfo) > 0 THEN
     TEXTOUT_P(svInfo, G1, 4, 192, 1, svInfC, 314);
   ELSE
@@ -1871,7 +1891,7 @@ BEGIN
   // ---- the weights: n(t)/n(0) for Gehan-Breslow, 1 for log-rank ----
   sv_Box(40, 114, 312, 150);
   svYlo := 0; svYhi := 1; svYs := 0.5; svYdc := 1;
-  TEXTOUT_P("weight: G-B n(t)/n(0), log-rank 1 (grey dots)", G1, svPL + 2, 101, 1, svMAG, 270);
+  TEXTOUT_P("weight: G-B n(t)/n(0), log-rank 1 (grey dots)", G1, svPL + 2, 102, 1, svMAG, 270);
   sv_Grid();
   sv_DotH(svPL, svPR, sv_YP(1), svGRAY);
   t3N0 := svTot(3);
@@ -1900,8 +1920,8 @@ BEGIN
     ELSE
       IF t3R < 0.87 THEN t3T := "suggests the gap grows later on"; ELSE t3T := "suggests the gap builds steadily"; END;
     END;
-    TEXTOUT_P(t3S, G1, 4, 178, 1, svRED, 314);
-    TEXTOUT_P(t3T, G1, 4, 190, 1, svRED, 314);
+    TEXTOUT_P(t3S, G1, 4, 179, 1, svRED, 314);
+    TEXTOUT_P(t3T, G1, 4, 191, 1, svRED, 314);
   END;
   TEXTOUT_P("3/3, tap = what it is, Ent = menu, Esc = back", G1, 4, 205, 1, svFOOT, 314);
 END;
@@ -2113,9 +2133,9 @@ BEGIN
   lpQm := 0;
   FOR lpI FROM 1 TO svLK DO lpQm := MAX(lpQm, svLQ(lpI)); END;
   IF lpQm <= 0 THEN lpQm := 1; END;
-  TEXTOUT_P("q = P(event in the interval | at risk at its start)", G1, 4, 124, 1, svORNG, 314);
+  TEXTOUT_P("q = P(event in the interval | at risk at its start)", G1, 4, 128, 1, svORNG, 314);
   LINE_P(G1, svPL, 172, svPR, 172, #000000h);
-  TEXTOUT_P(sv_F(lpQm, 3), G1, 0, 134, 1, svGRAY, 38);
+  TEXTOUT_P(sv_F(lpQm, 3), G1, 0, 140, 1, svGRAY, 38);
   svHN := svLK;
   svHX1 := MAKELIST(0, lpI, 1, svLK, 1); svHX2 := MAKELIST(0, lpI, 1, svLK, 1);
   FOR lpI FROM 1 TO svLK DO

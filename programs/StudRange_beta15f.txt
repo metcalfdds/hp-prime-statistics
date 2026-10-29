@@ -1,5 +1,5 @@
 // ============================================================
-// STUDRANGE - beta 15e
+// STUDRANGE - beta 15f
 // Studentized range (Tukey q) - MicroPython engine with a PPL
 //   fallback, in one program
 // ============================================================
@@ -20,8 +20,8 @@
 // Tested on an HP Prime G2 and G1, both running the 2026-09-09
 //   firmware, plus the desktop Virtual Calculator (the PPL
 //   program through beta 12; the MicroPython twin StudRangePy
-//   through beta 14b, G2).  Beta 13, 14, 15, 15a, 15b, 15c, 15d and
-//   this beta 15e have NOT yet been run on hardware.  Beta 15 ran on
+//   through beta 14b, G2).  Beta 13, 14, 15, 15a, 15b, 15c, 15d, 15e
+//   and this beta 15f have NOT yet been run on hardware.  Beta 15 ran on
 //   the HP Prime Virtual Calculator (2.4.2, build 2026-09-09) on 17
 //   Oct 2026 and beta 15a fixed what that run found; beta 15a ran
 //   there in round 2 the same day (its soft keys fire) and beta 15b
@@ -58,6 +58,15 @@
 //   which engine answered: an engine badge on every result page
 //   and on the plot, and a Diagnostics item that probes the
 //   bridge live.  StudRangePy is retired by this version.
+//
+// What changed in beta 15f (28 Oct 2026): layout only (overlap sweep,
+//   28 Oct 2026).  sr_PlotMode: the alpha ladder labels (y 39) sat on
+//   the engine badge (y 29, ink to 41); they are now at y 43, their
+//   ticks start at 54 (was 49) and the plot top py1 is 58 (was 54).
+//   sr_Yard: "HSD = ... (the orange bar)" was at (160, 30), across the
+//   badge and off the right edge; it is now on its own row at (8, 74).
+//   No number, formula, key handling or logic changed; the #PYTHON srq
+//   block is byte-identical.
 //
 // What changed in beta 15e (22 Oct 2026): the PPL engine's plot cache
 //   (independent review, 22 Oct; line numbers are beta 15d's):
@@ -341,7 +350,7 @@
 // ============================================================
 
 // ============================================================
-// StudRange beta 15e — Studentized Range Distribution (Tukey q)
+// StudRange beta 15f — Studentized Range Distribution (Tukey q)
 // ============================================================
 // Modernized from: Dunlap, Powell & Konnerth (1977),
 //   "A FORTRAN IV function for calculating probabilities
@@ -1749,7 +1758,8 @@ BEGIN
     RECT_P(G1,0,0,319,24,RGB(255,69,0),RGB(255,69,0));
     TEXTOUT_P("HSD yardstick",G1,8,4,3,RGB(255,255,255));
     sr_Badge(4,28);
-    TEXTOUT_P("HSD = "+sr_FmtF(ydH,4)+" (the orange bar)",G1,160,30,1,RGB(255,69,0));
+    // beta 15f: on its own row (was (160, 30), on the engine badge)
+    TEXTOUT_P("HSD = "+sr_FmtF(ydH,4)+" (the orange bar)",G1,8,74,1,RGB(255,69,0));
     // the means as text, two rows of three
     // beta 15b: the means and the tick labels through sr_FmtF, which rounds
     // first.  A mean such as 0.0004 printed "4.000E-4" (STRING(x, 2, d) is
@@ -1884,10 +1894,11 @@ BEGIN
   pmLbl:={".10",".05",".025",".01",".005"};
   pmLad:={0,0,0,0,0};
   // the plot box: the drawing AND the touch handler read these.
-  // beta 15: top 54 (was 34) for the badge and the ladder labels,
+  // beta 15: top 54 (was 34) for the badge and the ladder labels;
+  // beta 15f: top 58, so the ladder labels (y 43) clear the badge (ink to 41),
   // right 290 (was 306) so the CDF axis strip is wide enough for a
   // finger.  The soft keys own y >= 218.
-  px1:=34; px2:=290; py1:=54; py2:=200;
+  px1:=34; px2:=290; py1:=58; py2:=200;
   pmRb:=1; pmCmp:=0; pmCGo:=0; pmFit:=0; pmSim:=0; pmSGo:=0;
   pmGo:=1; pmDrag:=1; pmKey:=0; pmPy:=0; pmSM:=5; pmSA:=0.05;
   pmD2:={}; pmSN:={};
@@ -2086,9 +2097,9 @@ BEGIN
         gx:=IP(px1+(pmLad(pmJ)/qmax)*(px2-px1));
         pmCol:=RGB(90,90,90);
         IF pmJ==ai THEN pmCol:=RGB(255,69,0); END;
-        LINE_P(G1,gx,49,gx,py1-1,pmCol);
+        LINE_P(G1,gx,54,gx,py1-1,pmCol);
         IF gx-8>pmLE THEN
-          TEXTOUT_P(pmLbl(pmJ),G1,gx-8,39,1,pmCol);
+          TEXTOUT_P(pmLbl(pmJ),G1,gx-8,43,1,pmCol);
           pmLE:=gx+12;
         END;
       END;

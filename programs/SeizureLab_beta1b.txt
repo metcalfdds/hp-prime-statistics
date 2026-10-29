@@ -14,7 +14,7 @@
 // hardware testing are Roger D. Metcalf's; the code, drafting and
 // source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
 
-// SEIZURELAB - beta 1a  (21 Oct 2026)
+// SEIZURELAB - beta 1b  (28 Oct 2026)
 // Representative sampling of a drug seizure, for a forensic-science or
 //   criminal-justice class.  A laboratory receives N similar units
 //   (packets, tablets) and cannot test them all.  How many must it test
@@ -44,8 +44,19 @@
 //   (lower confidence bound for the proportion), SZ_PB (the Bayesian
 //   posterior probability of the claim), SZ_TOT and SZ_TLB (the total
 //   weight and its one-sided lower bound).
-// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  beta 1 has
-//   NOT been run on hardware or the emulator, only in the PC harness.
+// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  beta 1b (and
+//   beta 1, 1a) have NOT been run on hardware or the emulator, only in the
+//   PC harness.
+// WHAT CHANGED in beta 1b (28 Oct 2026; layout only, no number or logic
+//   changed): the overlap sweep found labels drawn over other text.  The
+//   bottom y tick label stops at the axis (sz_YAxis); x tick labels that
+//   would touch are thinned to every 2nd, 3rd ... tick, and a last label
+//   pushed onto the one before is left out (sz_XAxis; the hypergeometric
+//   page's grey k labels likewise keep clear of the red one); the
+//   table page's box ends at 164 so its legend row clears the x labels;
+//   the p0 labels of the OC and Bayes plots sit under the caption row;
+//   the opening page's disclaimer rows and the table page's rows are
+//   12 px apart (144-192; 47-131 with the notes at 144-180).
 // Sources: every formula below was derived here from first principles
 //   and checked numerically against SciPy (hypergeom, binom, betabinom,
 //   beta, t); no number in this file was taken from a paper.
@@ -103,18 +114,18 @@
 //   page's legend names its keys (9); the set-up form says what it
 //   clamped (10); the ENFSI guideline read and cited, the papers marked
 //   unchecked (11); a help page "Checking against ENFSI" (2, 3).
-// File map: (line ranges, beta 1a)
-//      1-  293  header, the arithmetic, Home exports, file-level LOCALs
-//    294-  537  small helpers: init, drains, waits, formats, frames, axes
-//    538-  995  numerics: log-gamma, sums of positive terms, searches
-//    996- 1148  the result in hand, recalculation, the two forms
-//   1149- 1330  page 1: hypergeometric
-//   1331- 1524  page 2: binomial approximation
-//   1525- 1720  page 3: Bayesian
-//   1721- 2087  page 4: OC curve
-//   2088- 2344  page 5: weight
-//   2345- 2532  page 6: tables and their plot
-//   2533- 2771  opening page, help, main
+// File map: (line ranges, beta 1b)
+//      1-  304  header, the arithmetic, Home exports, file-level LOCALs
+//    305-  564  small helpers: init, drains, waits, formats, frames, axes
+//    565- 1022  numerics: log-gamma, sums of positive terms, searches
+//   1023- 1175  the result in hand, recalculation, the two forms
+//   1176- 1358  page 1: hypergeometric
+//   1359- 1552  page 2: binomial approximation
+//   1553- 1748  page 3: Bayesian
+//   1749- 2115  page 4: OC curve
+//   2116- 2372  page 5: weight
+//   2373- 2562  page 6: tables and their plot
+//   2563- 2801  opening page, help, main
 //
 // THE ARITHMETIC (derived here; see the NOTES file for the checks)
 //   The seizure: N units, K of them contain the drug (unknown).  The
@@ -514,7 +525,8 @@ BEGIN
   WHILE yaV <= yaTop * 1.0001 AND yaN < 12 DO
     yaY := szPB - IP(yaV / yaTop * (szPB - szPT) + 0.5);
     LINE_P(G1, szPL, yaY, szPR, yaY, szGRID);
-    TEXTOUT_P(sz_F(yaV, yaD), G1, 1, yaY - 5, 1, szGRAY, szPL - 2);
+    // the bottom label stops at the axis, clear of the x labels
+    TEXTOUT_P(sz_F(yaV, yaD), G1, 1, MIN(yaY - 5, szPB - 10), 1, szGRAY, szPL - 2);
     yaV := yaV + yaS; yaN := yaN + 1;
   END;
 END;
@@ -522,14 +534,29 @@ END;
 // Axis ticks along x for a value axis xa0..xa1 (labels under the box).
 sz_XAxis(xa0, xa1, xaS)
 BEGIN
-  LOCAL xaV, xaX, xaD, xaN, xaL;
+  LOCAL xaV, xaX, xaD, xaN, xaL, xaK;
+  LOCAL xaX2, xaPx;
   xaD := MAX(0, -FLOOR(LOG(xaS)));
   xaV := CEILING(xa0 / xaS - 0.000001) * xaS; xaN := 0;
+  // long labels (1250000, 1260000 ...) would touch: then only every
+  // 2nd, 3rd ... tick is labelled (xaK), 7 px per character
+  xaL := sz_F(xa1, xaD);
+  xaK := CEILING((7 * DIM(xaL) + 4) / MAX(1, xaS / (xa1 - xa0) * (szPR - szPL)));
+  IF xaK < 1 THEN xaK := 1; END;
+  xaPx := -999;
   WHILE xaV <= xa1 * 1.000001 + 0.000000001 AND xaN < 14 DO
     xaX := szPL + IP((xaV - xa0) / (xa1 - xa0) * (szPR - szPL) + 0.5);
     LINE_P(G1, xaX, szPB, xaX, szPB + 2, #000000h);
-    xaL := sz_F(xaV, xaD);
-    TEXTOUT_P(xaL, G1, MIN(xaX - 6, 316 - 6 * DIM(xaL)), szPB + 3, 1, szGRAY, 40);
+    IF xaN - xaK * IP(xaN / xaK) == 0 THEN
+      xaL := sz_F(xaV, xaD);
+      // the last label is kept on the screen; if that puts it on the
+      // label before, it is left out
+      xaX2 := MIN(xaX - 6, 316 - 6 * DIM(xaL));
+      IF xaX2 - xaPx >= 7 * DIM(xaL) + 4 THEN
+        TEXTOUT_P(xaL, G1, xaX2, szPB + 3, 1, szGRAY, 40);
+        xaPx := xaX2;
+      END;
+    END;
     xaV := xaV + xaS; xaN := xaN + 1;
   END;
 END;
@@ -1225,7 +1252,8 @@ BEGIN
         IF hdS == hdX THEN
           TEXTOUT_P(sz_I(hdS), G1, hdX1 - 6, szPB + 3, 1, szRED, 40);
         ELSE
-          IF ABS(hdS - hdX) * hdBw > 18 THEN TEXTOUT_P(sz_I(hdS), G1, hdX1 - 6, szPB + 3, 1, szGRAY, 40); END;
+          // a grey label is left out when it would touch the red one
+          IF ABS(hdS - hdX) * hdBw > 7 * DIM(sz_I(hdS)) + 4 THEN TEXTOUT_P(sz_I(hdS), G1, hdX1 - 6, szPB + 3, 1, szGRAY, 40); END;
         END;
       END;
     END;
@@ -1625,7 +1653,7 @@ BEGIN
     bdLq := bdPy;
   END;
   sz_DotV(bdP0x, szPT, szPB, szRED);
-  TEXTOUT_P(szPZ, G1, bdP0x - 14, szPT + 2, 1, szRED, 20);
+  TEXTOUT_P(szPZ, G1, bdP0x - 14, szPT + 13, 1, szRED, 20);
   LINE_P(G1, szPL, szPT, szPL, szPB, #000000h);
   LINE_P(G1, szPL, szPB, szPR, szPB, #000000h);
   bdS := "grey = prior, magenta = posterior";
@@ -1873,9 +1901,9 @@ BEGIN
   odPx := sz_OCX(szP0);
   sz_DotV(odPx, szPT, szPB, szRED);
   IF odPx > 290 THEN
-    TEXTOUT_P(szPZ, G1, odPx - 16, szPT + 12, 1, szRED, 20);
+    TEXTOUT_P(szPZ, G1, odPx - 16, szPT + 13, 1, szRED, 20);
   ELSE
-    TEXTOUT_P(szPZ, G1, odPx + 3, szPT + 12, 1, szRED, 20);
+    TEXTOUT_P(szPZ, G1, odPx + 3, szPT + 13, 1, szRED, 20);
   END;
   // binomial (blue, thin; not while a finger drags n), then the
   // hypergeometric (magenta, thick)
@@ -2245,7 +2273,7 @@ BEGIN
   wdX := szPL + IP((wdR(7) - wdA) / (wdZ - wdA) * (szPR - szPL) + 0.5);
   LINE_P(G1, wdX, szPT - 6, wdX, szPB, szRED);
   LINE_P(G1, wdX + 1, szPT - 6, wdX + 1, szPB, szRED);
-  TEXTOUT_P(szGE + " " + szAR, G1, wdX + 4, szPT - 8, 1, szRED, 30);
+  TEXTOUT_P(szGE + " " + szAR, G1, wdX + 4, szPT - 7, 1, szRED, 30);
   sz_Show("orange = CI, red = bound, Ent = menu", {"D1", "Type", "Example", "", "", "Menu"});
 END;
 
@@ -2399,7 +2427,7 @@ BEGIN
   TEXTOUT_P("Bayes", G1, 258, 33, 1, szBLUE, 50);
   LINE_P(G1, 6, 45, 312, 45, szGRAY);
   FOR tdI FROM 1 TO 8 DO
-    tdY := 47 + (tdI - 1) * 11;
+    tdY := 47 + (tdI - 1) * 12;
     IF tdI <= 7 THEN
       tdN := {10, 20, 50, 100, 200, 500, 1000};
       IF tdN(tdI) == szN THEN RECT_P(G1, 6, tdY - 1, 312, tdY + 9, szLORN, szLORN); END;
@@ -2411,15 +2439,15 @@ BEGIN
     TEXTOUT_P(sz_NStr(szTbH5(tdI)), G1, 208, tdY, 1, szMAG, 40);
     TEXTOUT_P(sz_NStr(szTbY5(tdI)), G1, 266, tdY, 1, szBLUE, 40);
   END;
-  LINE_P(G1, 6, 134, 312, 134, szGRAY);
+  LINE_P(G1, 6, 141, 312, 141, szGRAY);
   // beta 1a (second review, item 8): "the your own prior" and 61
   // characters became two short lines
   tdN := "Bayes: prior Beta(" + sz_G(szA, 0) + ", " + sz_G(szB, 0) + "), " + sz_PrName();
   tdN := sz_Fit(tdN + "; " + szINF + " = N grows", tdN);
-  TEXTOUT_P(tdN, G1, 6, 137, 1, szGRAY, 308);
-  TEXTOUT_P(szPZ + " = 0.90: N = 10 needs " + sz_NStr(szTbH9(1)) + " of 10, N = 1000 " + sz_NStr(szTbH9(7)) + ":", G1, 6, 149, 1, szGRN, 308);
-  TEXTOUT_P("a small seizure, a big FRACTION; a large one,", G1, 6, 161, 1, szGRN, 308);
-  TEXTOUT_P("about the same NUMBER, " + sz_NStr(szTbH9(8)) + " however big N is.", G1, 6, 173, 1, szGRN, 308);
+  TEXTOUT_P(tdN, G1, 6, 144, 1, szGRAY, 308);
+  TEXTOUT_P(szPZ + " = 0.90: N = 10 needs " + sz_NStr(szTbH9(1)) + " of 10, N = 1000 " + sz_NStr(szTbH9(7)) + ":", G1, 6, 156, 1, szGRN, 308);
+  TEXTOUT_P("a small seizure, a big FRACTION; a large one,", G1, 6, 168, 1, szGRN, 308);
+  TEXTOUT_P("about the same NUMBER, " + sz_NStr(szTbH9(8)) + " however big N is.", G1, 6, 180, 1, szGRN, 308);
   sz_Show("Left/Right = table or plot, Ent = menu", {"Plot", "", "", "", "", "Menu"});
   szInfo := "";
 END;
@@ -2431,7 +2459,9 @@ BEGIN
   LOCAL tpI, tpS, tpL, tpMx, tpX, tpY;
   LOCAL tpLx, tpLy, tpC, tpV, tpT, tpN;
   sz_Frame("Least n against N (log scale), c = 0.95");
-  szPL := 30; szPR := 280; szPT := 30; szPB := 170;
+  // the box ends at 164 (beta 1b): its x labels (167) and the two legend
+  // rows (180, 192) then clear each other
+  szPL := 30; szPR := 280; szPT := 30; szPB := 164;
   tpMx := MAX(MAX(szTbH9), MAX(szTbY9));
   tpT := sz_Nice(tpMx / 4);
   tpT := CEILING(tpMx / tpT) * tpT;
@@ -2569,11 +2599,11 @@ BEGIN
     opY := 94 + 10 * IP((opJ - 1) / 20);
     RECT_P(G1, opX, opY, opX + 7, opY + 7, szRED, szRED);
   END;
-  TEXTOUT_P("N = " + sz_I(opNs) + ": the " + sz_I(opNn) + " red units are a random sample", G1, 6, 145, 1, szRED, 308);
-  TEXTOUT_P("DISCLAIMER: a teaching and demonstration aid.", G1, 6, 158, 1, szGRAY, 308);
-  TEXTOUT_P("Not validated for forensic, clinical or legal", G1, 6, 169, 1, szGRAY, 308);
+  TEXTOUT_P("N = " + sz_I(opNs) + ": the " + sz_I(opNn) + " red units are a random sample", G1, 6, 144, 1, szRED, 308);
+  TEXTOUT_P("DISCLAIMER: a teaching and demonstration aid.", G1, 6, 156, 1, szGRAY, 308);
+  TEXTOUT_P("Not validated for forensic, clinical or legal", G1, 6, 168, 1, szGRAY, 308);
   TEXTOUT_P("use; do not rely on its results for legal", G1, 6, 180, 1, szGRAY, 308);
-  TEXTOUT_P("purposes.", G1, 6, 191, 1, szGRAY, 308);
+  TEXTOUT_P("purposes.", G1, 6, 192, 1, szGRAY, 308);
   TEXTOUT_P(szDisc, G1, 6, 204, 1, szORNG, 308);
   TEXTOUT_P("Any key or tap = menu", G1, 6, 222, 1, szFOOT, 308);
   BLIT_P(G0, 0, 0, G1);

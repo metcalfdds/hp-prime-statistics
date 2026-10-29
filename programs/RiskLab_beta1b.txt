@@ -14,7 +14,7 @@
 // hardware testing are Roger D. Metcalf's; the code, drafting and
 // source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
 
-// RISKLAB - beta 1a  (26 Oct 2026)
+// RISKLAB - beta 1b  (28 Oct 2026)
 // The statistics behind risk-assessment instruments in criminal justice
 //   (recidivism tools such as COMPAS, LSI-R and Static-99), for
 //   Statistics for Criminal Justice and research methods: logistic
@@ -42,6 +42,13 @@
 //   sensitivity, specificity, PPV}); -1 where not computed.
 // Written for the 2026-09-09 firmware (HP Prime G2 and G1).  beta 1 has
 //   NOT been run on hardware or the emulator, only in the PC harness.
+// WHAT CHANGED in beta 1b (28 Oct 2026; layout only, no number or
+//   logic changed): the overlap sweep found axis labels drawn over
+//   captions.  The top and bottom y tick labels now stay inside the box
+//   (rl_Grid); the calibration page rows are 176/187/197; the fairness
+//   pages' rows moved (table 157+; calibration 171 + 11/row; error bars
+//   181/193, a near-full bar's label inside the bar); the opening page
+//   rows 73-109; the last x label keeps within 4 px of the box.
 // WHAT CHANGED in beta 1a (second review, REVIEW2_RiskLab_beta1.md):
 //   (1) the routine rl_HL is now rl_HosLem: on the Prime it was one name
 //   with the Home export RL_HL (case is ignored); (2) Help page 7: the
@@ -428,7 +435,8 @@ BEGIN
     LINE_P(G1, gdP, rlPT, gdP, rlPB, rlGRID);
     LINE_P(G1, gdP, rlPB, gdP, rlPB + 2, rlGRAY);
     gdS := rl_F(gdV, gdXd);
-    TEXTOUT_P(gdS, G1, gdP - 3 * DIM(gdS), rlPB + 3, 1, rlGRAY, 7 * DIM(gdS));
+    // the last label stays within 4 px of the box's right edge
+    TEXTOUT_P(gdS, G1, MIN(gdP - 3 * DIM(gdS), rlPR + 4 - 7 * DIM(gdS)), rlPB + 3, 1, rlGRAY, 7 * DIM(gdS));
     gdV := gdV + rlXs;
   END;
   gdV := CEILING(rlYlo / rlYs - 0.000001) * rlYs;
@@ -436,7 +444,9 @@ BEGIN
     gdP := rl_YP(gdV);
     LINE_P(G1, rlPL, gdP, rlPR, gdP, rlGRID);
     gdS := rl_F(gdV, gdYd);
-    TEXTOUT_P(gdS, G1, rlPL - 2 - 7 * DIM(gdS), gdP - 5, 1, rlGRAY, 7 * DIM(gdS));
+    // the top and bottom labels stay inside the box, clear of the
+    // caption above and the x labels below
+    TEXTOUT_P(gdS, G1, rlPL - 2 - 7 * DIM(gdS), MIN(MAX(gdP - 5, rlPT + 2), rlPB - 10), 1, rlGRAY, 7 * DIM(gdS));
     gdV := gdV + rlYs;
   END;
   rl_Out(rlPL, rlPT, rlPR, rlPB, rlGRAY);
@@ -2052,9 +2062,9 @@ BEGIN
   END;
   IF rlHLp >= 0 THEN
     cdS := "Hosmer-Lemeshow " + rlCHI + " = " + rl_F(rlHLv, 2) + ", df " + rl_I(rlHLdf) + ", " + rl_PS(rlHLp);
-    TEXTOUT_P(cdS, G1, 4, 174, 1, rlMAG, 314);
+    TEXTOUT_P(cdS, G1, 4, 176, 1, rlMAG, 314);
   ELSE
-    TEXTOUT_P("Hosmer-Lemeshow: needs 3 or more groups", G1, 4, 174, 1, rlGRAY, 314);
+    TEXTOUT_P("Hosmer-Lemeshow: needs 3 or more groups", G1, 4, 176, 1, rlGRAY, 314);
   END;
   // a chi-square approximation is rough when a cell expects fewer than
   // 5 (Cochran 1954, Biometrics 10:417-451)
@@ -2063,7 +2073,7 @@ BEGIN
     IF rlGe(cdG) < 5 OR rlGn(cdG) - rlGe(cdG) < 5 THEN cdW := 1; END;
   END;
   IF cdW == 1 AND rlHLp >= 0 THEN
-    TEXTOUT_P("a group expects < 5 (Cochran 1954): p is rough", G1, 4, 196, 1, rlRED, 314);
+    TEXTOUT_P("a group expects < 5 (Cochran 1954): p is rough", G1, 4, 197, 1, rlRED, 314);
   END;
   cdT := rl_CalN();
   IF rlMode == 2 THEN
@@ -2077,7 +2087,7 @@ BEGIN
     cdS := rl_I(rlGk) + " groups by predicted P (aim " + rl_I(cdT) + "; ties kept)";
   END;
   END;
-  TEXTOUT_P(cdS, G1, 4, 185, 1, rlGRAY, 314);
+  TEXTOUT_P(cdS, G1, 4, 187, 1, rlGRAY, 314);
   IF DIM(rlInfo) > 0 THEN
     TEXTOUT_P(rlInfo, G1, 4, 207, 1, rlInfC, 314);
   ELSE
@@ -2259,13 +2269,13 @@ BEGIN
       END;
     END;
   END;
-  ftY := 160;
+  ftY := 157;
   TEXTOUT_P("Differences: base rate " + rl_F(ABS(ftV(2) - ftV(10)), 3) + ", AUC " + rl_F(ABS(ftV(3) - ftV(11)), 3), G1, 4, ftY, 1, #000000h, 314);
   IF ftV(7) >= 0 AND ftV(15) >= 0 AND ftV(5) >= 0 AND ftV(13) >= 0 AND ftV(6) >= 0 AND ftV(14) >= 0 THEN
     TEXTOUT_P("PPV " + rl_F(ABS(ftV(7) - ftV(15)), 3) + ", FPR " + rl_F(ABS(ftV(5) - ftV(13)), 3) + ", FNR " + rl_F(ABS(ftV(6) - ftV(14)), 3), G1, 4, ftY + 12, 1, #000000h, 314);
   END;
-  TEXTOUT_P("PPV, FPR and FNR cannot all be equal when base", G1, 4, ftY + 26, 1, rlGRAY, 314);
-  TEXTOUT_P("rates differ (unless perfect): see Why.", G1, 4, ftY + 38, 1, rlGRAY, 314);
+  TEXTOUT_P("PPV, FPR and FNR cannot all be equal when base", G1, 4, ftY + 24, 1, rlGRAY, 314);
+  TEXTOUT_P("rates differ (unless perfect): see Why.", G1, 4, ftY + 36, 1, rlGRAY, 314);
 END;
 
 // Page 2: calibration within groups -- the share with Y = 1 at each
@@ -2308,7 +2318,7 @@ BEGIN
   rl_DotV(rl_XP(fcS(3)), rlPT, rlPB, rlRED);
   fcS := rlScNm + " " + rl_SV(rlLv(rlFlo(rlFsel)));
   IF rlFhi(rlFsel) > rlFlo(rlFsel) THEN fcS := fcS + " to " + rl_SV(rlLv(rlFhi(rlFsel))); END;
-  TEXTOUT_P(fcS + ":", G1, 4, 168, 1, rlRED, 314);
+  TEXTOUT_P(fcS + ":", G1, 4, 171, 1, rlRED, 314);
   FOR fcG FROM 1 TO 2 DO
     IF fcG == 1 THEN fcC := rlBLUE; ELSE fcC := rlMAG; END;
     fcR := rl_FBin(fcG, rlFsel);
@@ -2317,7 +2327,7 @@ BEGIN
     ELSE
       fcS := rlGSh(fcG) + ": nobody at this score";
     END;
-    TEXTOUT_P(fcS, G1, 4, 168 + 12 * fcG, 1, fcC, 314);
+    TEXTOUT_P(fcS, G1, 4, 171 + 11 * fcG, 1, fcC, 314);
   END;
 END;
 
@@ -2326,7 +2336,7 @@ END;
 rl_FairErr()
 BEGIN
   LOCAL feS, feK, feG, feV, feX, feC;
-  LOCAL feF, feL, feW, feY, feT;
+  LOCAL feF, feL, feW, feY, feT, feLy;
   rl_FairTop("error rates at the cut-off");
   rl_Box(32, 50, 312, 166);
   rlXlo := 0; rlXhi := 1; rlXs := 2; rlYlo := 0; rlYhi := 1; rlYs := 0.25;
@@ -2351,7 +2361,11 @@ BEGIN
       IF feV >= 0 THEN
         feY := rl_YP(feV);
         IF feY < rlPB THEN RECT_P(G1, feX, feY, feX + 24, rlPB, feC, feF); END;
-        TEXTOUT_P(rl_F(feV, 2), G1, feX, feY - 11, 1, feC, 28);
+        // the value above the bar; a bar near full height would put it
+        // on the group names, so then it goes just inside the bar's top
+        feLy := feY - 11;
+        IF feLy < 44 THEN feLy := feY + 2; END;
+        TEXTOUT_P(rl_F(feV, 2), G1, feX, feLy, 1, feC, 28);
       ELSE
         TEXTOUT_P("n/a", G1, feX, rlPB - 12, 1, rlGRAY, 28);
       END;
@@ -2362,8 +2376,8 @@ BEGIN
     feT := feL(feK);
     TEXTOUT_P(feT, G1, IP(rlPL + (feK - 1) * feW + feW / 2 - 3 * DIM(feT)), rlPB + 3, 1, #000000h, 7 * DIM(feT));
   END;
-  TEXTOUT_P("FPR = Y=0 flagged, FNR = Y=1 not flagged,", G1, 4, 180, 1, rlGRAY, 314);
-  TEXTOUT_P("PPV = flagged who had Y = 1 (" + rlARL + rlARR + " moves the cut)", G1, 4, 192, 1, rlGRAY, 314);
+  TEXTOUT_P("FPR = Y=0 flagged, FNR = Y=1 not flagged,", G1, 4, 181, 1, rlGRAY, 314);
+  TEXTOUT_P("PPV = flagged who had Y = 1 (" + rlARL + rlARR + " moves the cut)", G1, 4, 193, 1, rlGRAY, 314);
 END;
 
 // Page 4: why the definitions collide, with this data's own numbers
@@ -2984,16 +2998,16 @@ BEGIN
   TEXTOUT_P("logistic regression, the ROC curve and AUC,", G1, 6, 36, 1, #000000h, 310);
   TEXTOUT_P("cut-offs and their trade-offs, calibration,", G1, 6, 48, 1, #000000h, 310);
   TEXTOUT_P("and what 'fair' can mean for two groups.", G1, 6, 60, 1, #000000h, 310);
-  TEXTOUT_P("Loaded: ProPublica's COMPAS counts (Broward", G1, 6, 75, 1, rlBLUE, 310);
-  TEXTOUT_P("County, FL).  Also in Load a preset: Rossi's", G1, 6, 86, 1, rlBLUE, 310);
+  TEXTOUT_P("Loaded: ProPublica's COMPAS counts (Broward", G1, 6, 73, 1, rlBLUE, 310);
+  TEXTOUT_P("County, FL).  Also in Load a preset: Rossi's", G1, 6, 85, 1, rlBLUE, 310);
   TEXTOUT_P("432 men released from Maryland state prisons.", G1, 6, 97, 1, rlBLUE, 310);
-  TEXTOUT_P("No verdict on any real tool here.", G1, 6, 108, 1, rlBLUE, 310);
+  TEXTOUT_P("No verdict on any real tool here.", G1, 6, 109, 1, rlBLUE, 310);
   RECT_P(G1, 4, 120, 315, 176, rlORNG, rlLORN);
   TEXTOUT_P("DISCLAIMER: a teaching and demonstration aid.", G1, 10, 124, 1, rlORNG, 300);
   TEXTOUT_P("Not validated for forensic, clinical or legal", G1, 10, 136, 1, rlORNG, 300);
   TEXTOUT_P("use; do not rely on its results for legal", G1, 10, 148, 1, rlORNG, 300);
   TEXTOUT_P("purposes.", G1, 10, 160, 1, rlORNG, 300);
-  TEXTOUT_P("beta 1a, 26 Oct 2026.  Help is in the menu.", G1, 6, 184, 1, rlGRAY, 310);
+  TEXTOUT_P("beta 1b, 28 Oct 2026.  Help is in the menu.", G1, 6, 184, 1, rlGRAY, 310);
   TEXTOUT_P("Any key or tap = menu", G1, 6, 205, 1, rlFOOT, 310);
   BLIT_P(G0, 0, 0, G1);
 END;

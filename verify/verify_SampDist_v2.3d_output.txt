@@ -1,0 +1,38 @@
+A. Find probability / Find critical value: v2.3 against v2.2 and SciPy
+   65 cases run through both files
+B. Soft keys n-, n+, nx4, Tail on the probability graph
+C. Live bound: drag, snap on lift, arrows, nearer-bound choice
+D. Critical-value mode: a new n moves the critical values, alpha kept; drag changes alpha
+E. mu,sigma soft key and the Enter menu
+F. Compare: animation, cursor readings, pick a curve, fill order
+G. Watch sample means: the 40 means, their mean and SD, the histogram
+H. Population ghost scale, window, label; help pages; widths; frame cost
+   widest unclipped font-1 line ends near x = 319 (6.2 px per character)
+   drawing calls per live frame (right tail, n = 30): [502, 467, 457, 447, 437, 436]
+I. v2.3a: no "=" before a relation; the right tail as a lower tail (harness v3e)
+   I1 (1, -6): v2.3 ['P(\ue000 < -6.000) = < 0.000001', 'z = -6.0000   = < 0.001%']  ->  v2.3a ['P(\ue000 < -6.000) < 0.000001', 'z = -6.0000   < 0.001%']
+   I1 (2, 6): v2.3 ['P(\ue000 > 6.000) = < 0.000001', 'z = 6.0000   = < 0.001%']  ->  v2.3a ['P(\ue000 > 6.000) < 0.000001', 'z = 6.0000   < 0.001%']
+   I1 (2, 10): v2.3 ['P(\ue000 > 10.000) = 0.000000', 'z = 10.0000   = 0.000%']  ->  v2.3a ['P(\ue000 > 10.000) < 0.000001', 'z = 10.0000   < 0.001%']
+   I1 (3, 5, 6): v2.3 ['P(5.000 < \ue000 < 6.000) = < 0.000001', 'z = 5.0000 to 6.0000   = < 0.001%']  ->  v2.3a ['P(5.000 < \ue000 < 6.000) < 0.000001', 'z = 5.0000 to 6.0000   < 0.001%']
+   I1 (4, -10, 10): v2.3 ['P(outside -10.000 .. 10.000) = < 0.000001', 'z = -10.0000 / 10.0000   = < 0.001%']  ->  v2.3a ['P(outside -10.000 .. 10.000) < 0.000001', 'z = -10.0000 / 10.0000   < 0.001%']
+   I1 (2, 1): v2.3 ['P(\ue000 > 1.000) = 0.158655', 'z = 1.0000   = 15.866%']  ->  v2.3a ['P(\ue000 > 1.000) = 0.158655', 'z = 1.0000   = 15.866%']
+   I1 (4, -1, 1): v2.3 ['P(outside -1.000 .. 1.000) = 0.317311', 'z = -1.0000 / 1.0000   = 31.731%']  ->  v2.3a ['P(outside -1.000 .. 1.000) = 0.317311', 'z = -1.0000 / 1.0000   = 31.731%']
+   I1 (2, 0.5, None, 0.0, 1.0, 30): v2.3 ['P(\ue000 > 0.500) = 0.003085', 'z = 2.7386   = 0.308%']  ->  v2.3a ['P(\ue000 > 0.500) = 0.003085', 'z = 2.7386   = 0.308%']
+   I3 108 panels, 18 of them rewritten from v2.3's text
+   I6 scientific fixed decimals: v2.3a [(-0.0, 1, '-5.6ᴇ-17')], v2.3 [(-0.0, 1, '-5.6ᴇ-17')]
+J. v2.3b: S1 (the alpha floor 1E-7) and S2 (sd_fix's right tail as a lower tail)
+   J1 doubles: v2.3a 'P(\ue000 > 144.000) = 0.000001' 'z = 16.0665   < 0.001%' EP_SD_P 1e-06
+   J1 doubles: v2.3b 'P(\ue000 > 144.000) < 0.000001' 'z = 16.0665   < 0.001%' EP_SD_P 1e-07
+   J1 12 digits: v2.3a 'P(\ue000 > 144.000) = 0.000001' 'z = 16.0665   < 0.001%' EP_SD_P 1e-06
+   J1 12 digits: v2.3b 'P(\ue000 > 144.000) < 0.000001' 'z = 16.0665   < 0.001%' EP_SD_P 1e-07
+   J3 S2 (doubles): alpha from the bound, z 0.5 .. 5.1: v2.3b worst relative error 1.1e-14, v2.3a (z to 4.5) 2.5e-12
+   J3 S2 (12 digits): alpha from the bound, z 0.5 .. 5.1: v2.3b worst relative error 2.9e-12, v2.3a (z to 4.5) 3.7e-08
+   J4 the review's check_SampDist on v2.3a: 30 checks, failed ["H sigma = 0.000045: 4 panel/header lines print the Prime's scientific form (STRING(x, 2, d) below 10^-d): a classroom-scale assumption, worth a note or a general formatter"]
+   J4 the review's check_SampDist on v2.3b: 30 checks, failed ['C sd_fix line 592 still computes alpha for the upper tail as 1 - NORMALD_CDF (sd_prob and Mode 1 were changed in v2.3a; this spot was not)', "C after the clamp to [1e-6, 0.999999] the two forms agree to 6 decimals (the panel's precision) for every z here: the 1 - CDF in sd_fix is a consistency slip, not a visible number", 'C but the clamp itself shows "= 0.000001" (not "< 0.000001") for a critical value dragged past z = 7: alpha 1.000e-07 at z = 7.5', "H sigma = 0.000045: 4 panel/header lines print the Prime's scientific form (STRING(x, 2, d) below 10^-d): a classroom-scale assumption, worth a note or a general formatter"]
+   J4 the review's own reproduction on v2.3b:  after a drag to the right edge: P( > 144.000) < 0.000001   z = 16.0665   < 0.001%
+FAIL J5 the routines that differ from v2.3a: ['sd_drawCmp', 'sd_fix', 'sd_live', 'sd_modeCompare', 'sd_modeCrit', 'sd_modeProb', 'sd_watch'] (want sd_fix only; 26 routines)
+FAIL J5 the code lines that changed are exactly the two of S1 and S2: -['IF tailK == 2 THEN fxP := 1 - NORMALD_CDF(mu, se, fxL); END;', 'fxP := MAX(0.000001, MIN(0.999999, fxP));', '"Sample size, whole number >= 1", "Tail area, e.g. 0.05"});', '"Sample size, whole number >= 1"});', 'IF nn2 < 1 THEN MSGBOX("n must be >= 1; nothing changed"); END;', 'RECT_P(G2, 4, 182, 315, 220, RGB(255,69,0), RGB(255,240,220));', 'STRING(se1,2,4), G2, 8, 186, 1, RGB(255,0,0));', 'STRING(se2,2,4), G2, 8, 197, 1, RGB(0,60,200));', 'STRING(se3,2,4), G2, 170, 186, 1, RGB(0,140,60));', 'TEXTOUT_P("4× n halves σ" + CHAR(57344), G2, 170, 197, 1, RGB(90,90,90));', 'G2, 8, 208, 1, RGB(90,90,90), 300);', 'RECT_P(G1, 6, 207, 313, 218, RGB(255,240,220));', 'G1, 8, 208, 1, RGB(0,0,0));', 'TEXTOUT_P(sd_fmtp(pc,4), G1, 128 + 60*(ix - 1), 208, 1, cls(ix));', '"Sample size, whole number >= 1"});', 'IF nn < 1 THEN MSGBOX("n must be >= 1"); RETURN; END;', '"Sample size, whole number >= 1", "Tail area, e.g. 0.05"});', 'IF nn < 1 THEN MSGBOX("n must be >= 1"); RETURN; END;', 'MSGBOX("every n must be >= 1"); RETURN;', '"Draws per sample, whole number >= 1"});', 'IF nn < 1 THEN MSGBOX("n must be >= 1"); RETURN; END;'] +['IF tailK == 2 THEN fxP := NORMALD_CDF(mu, se, 2*mu - fxL); END;', 'fxP := MAX(0.0000001, MIN(0.9999999, fxP));', '"Sample size, whole number ≥ 1", "Tail area, e.g. 0.05"});', '"Sample size, whole number ≥ 1"});', 'IF nn2 < 1 THEN MSGBOX("n must be ≥ 1; nothing changed"); END;', 'RECT_P(G2, 4, 188, 315, 222, RGB(255,69,0), RGB(255,240,220));', 'STRING(se1,2,4), G2, 8, 192, 1, RGB(255,0,0));', 'STRING(se2,2,4), G2, 8, 203, 1, RGB(0,60,200));', 'STRING(se3,2,4), G2, 170, 192, 1, RGB(0,140,60));', 'TEXTOUT_P("4× n halves σ" + CHAR(57344), G2, 170, 203, 1, RGB(90,90,90));', 'G2, 8, 214, 1, RGB(90,90,90), 300);', 'RECT_P(G1, 6, 213, 313, 224, RGB(255,240,220));', 'G1, 8, 214, 1, RGB(0,0,0));', 'TEXTOUT_P(sd_fmtp(pc,4), G1, 128 + 60*(ix - 1), 214, 1, cls(ix));', '"Sample size, whole number ≥ 1"});', 'IF nn < 1 THEN MSGBOX("n must be ≥ 1"); RETURN; END;', '"Sample size, whole number ≥ 1", "Tail area, e.g. 0.05"});', 'IF nn < 1 THEN MSGBOX("n must be ≥ 1"); RETURN; END;', 'MSGBOX("every n must be ≥ 1"); RETURN;', '"Draws per sample, whole number ≥ 1"});', 'IF nn < 1 THEN MSGBOX("n must be ≥ 1"); RETURN; END;']
+FAIL J6 version strings: the tested-on lines (PC harness only), the CHANGES and verify names, the v2.3b paragraph
+   J7 scientific fixed decimals: v2.3b part J [], part I [(-0.0, 1, '-5.6ᴇ-17')]; v2.3a part J []; v2.3 part I [(-0.0, 1, '-5.6ᴇ-17')]
+
+345 checks, 3 failures

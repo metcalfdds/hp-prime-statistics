@@ -1,0 +1,12 @@
+PART A: formulas
+/usr/local/lib/python3.13/dist-packages/statsmodels/stats/inter_rater.py:534: RuntimeWarning: invalid value encountered in scalar divide
+  self["z_value"] = self["kappa"] / self["std_kappa0"]
+/home/claude/new6/build/AgreeLab/ag_ref.py:95: RuntimeWarning: invalid value encountered in scalar divide
+  kap = (Pb - Pe) / (1 - Pe)
+/home/claude/new6/build/AgreeLab/ag_ref.py:100: RuntimeWarning: invalid value encountered in scalar divide
+  var0 = 2 / (N * m * (m - 1)) * (spq ** 2 - float((pj * qj * (qj - pj)).sum())) / spq ** 2
+/home/claude/new6/build/AgreeLab/ag_ref.py:186: RuntimeWarning: invalid value encountered in scalar divide
+  tb = b1 / seb1
+PART B: pages
+GEOMETRY over 254 pages
+7379 checks, 0 failures
