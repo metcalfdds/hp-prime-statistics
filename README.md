@@ -45,21 +45,21 @@ The newest programs use published data with their sources on screen: the 1970 dr
 
 Everything here is **free for educational and personal use**. See [LICENSE](LICENSE.txt).  © 2026 Roger D Metcalf
 
-### How far it has been tested
+### How far have they been tested?
 
 Three different questions, with three different answers:
 
 - **Is the arithmetic right? Yes, as far as we can test it.** Every program passes the lint gate and runs in the PC harness, with its numbers checked against SciPy, statsmodels and exact arithmetic. Where a program uses published data, it reproduces the published results. Every program has also had an independent review.
   
-- **Does it run on the calculator? Yes, and we are still checking.** Every program has run on the HP Prime Virtual Calculator, and the current versions have had a quick try on a G1 and a G2. The full device checklists, one per version in [docs/changes/](docs/changes/), are still being worked through, and some screens, especially graphics, can be slow. **Reports from your own calculator are the most welcome contribution of all.** The full dated record is in [docs/test-status.md](docs/test-status.md).
+- **Do they run on a real calculator? Yes, we think so, and we are still checking.** Every program has run on the HP Prime Virtual Calculator, and the current versions have had a quick try on a G1 and a G2. The full device checklists, one per version in [docs/changes/](docs/changes/), are still being worked through, and some screens, especially graphics, can be slow. **Reports from your own calculator are the most welcome contribution of all.** The full dated record is in [docs/test-status.md](docs/test-status.md).
   
-- **Can it be used on a real case? No.** Software used in casework must first be formally validated: tested on known samples under a laboratory's quality system, with its limits documented, and then used by a qualified analyst. None of these programs has been through that process.
+- **Can they be used on real cases? No.** Software used in casework must first be formally validated: tested on known samples under a laboratory's quality system, with its limits documented, and then used by a qualified analyst. None of these programs has been through that process.
   
-**DISCLAIMER: these programs are teaching and demonstration aids, provided as is, with no guarantees. They are not validated for forensic, clinical or legal use; do not rely on their results for casework, legal decisions or any other purpose. Use at your own risk.**
+**DISCLAIMER: these programs are teaching and demonstration aids, provided as-is, with no guarantees. They are not validated for forensic, clinical or legal use; do not rely on their results for casework, legal decisions or any other purpose.**
 
-These programs were originally intended to demonstrate statistical concepts to undergraduate university students, but the project morphed into a suite of programs that show off some of the capabilities of the HP Prime, and also push it to see what the hardware limits are for "reasonable" programs. Some of the programs are rather large-- 3,000 up to 6,000 lines of code-- and so may load slowly and may slow down the Connectivity Kit--it might be best to keep only a couple of these programs on your calculator at a time. 
+These programs were originally intended to demonstrate statistical concepts to undergraduate university students, but the project morphed into a suite of programs that show off some of the capabilities of the HP Prime, and also push to see what the hardware limits are for "reasonable" programs. Some of the programs are rather large-- 3,000 up to 6,000 lines of code-- and so may load slowly and may slow down the Connectivity Kit--it might be best to keep only a couple of these programs on your calculator at a time. 
 
-Remember, please, these programs are **works-in-progress**--some parts, especially graphics, may work very slowly, some parts may or may not even work at all, and they are provided strictly as is--again, you should not rely on the results from these programs for anything. I think the numerical results are very accurate, but use at your own risk. No guarantees. Your mileage may vary.
+Remember, please, these programs are **works-in-progress**--some parts, especially graphics, may work very slowly, some parts may or may not even work at all, and they are provided strictly as-is --again, you should not rely on the results from these programs for anything. I think the numerical results are very accurate, but use at your own risk, no guarantees. Your mileage may vary.
 
 ---
 
