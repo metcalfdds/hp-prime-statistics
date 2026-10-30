@@ -12,7 +12,7 @@ Most of the programs are built around the touch screen. You drag a bound on a st
 
 **Very special thanks** to two sites that hold the HP calculator community together:
 
-- **[hpcalc.org](https://www.hpcalc.org)**, Eric Rechlin’s archive of HP calculator software. Its collection of Prime programs was our reference library while we worked out how the Prime really behaves.
+- **[hpcalc.org](https://www.hpcalc.org)**, Eric Rechlin’s archive of HP calculator software. Its collection of Prime programs was our reference library while we worked out how the Prime really works out in the real world.
 - **[The Museum of HP Calculators](https://www.hpmuseum.org)**, David G. Hicks’s history of HP’s calculators, and its forum, where much of what is known about the Prime has been worked out in public.
 
 We have no official affiliation with either site, or with HP. I’m just a grateful user.
@@ -20,7 +20,7 @@ We have no official affiliation with either site, or with HP. I’m just a grate
 
 --------------------------------------------------------------------------------------------------------------------
 
-Hundreds of community PPL programs from several HP-related public forums were read as references while working out how the Prime actually behaves out in the real world. Several entries in the notes exist because a corpus program showed a construct working that the many various manuals do not describe. Note that none of those programs were copied, incorporated, used without permission/authorization, or reproduced here, and credit is noted where others' intellectual property and/or concepts were followed. 
+Hundreds of community PPL programs from several HP-related public forums were read as references while working out how the Prime actually behaves in the wild. Several entries in the notes exist because a corpus program showed a construct working that the many various manuals do not describe. Note that none of those programs were copied, incorporated, used without permission/authorization, or reproduced here, and credit is noted where others' intellectual property and/or concepts were followed. 
 
 **The programs here probably would not have been possible without the foundation laid by dozens and dozens of HP users and the hundreds of programs they have graciously made freely available over the years--if you find anything here helpful or useful, it is due to the myriad of other folks who have gone before. Thank you all--especially Eric Rechlin!**
 
