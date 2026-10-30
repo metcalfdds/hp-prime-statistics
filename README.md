@@ -12,7 +12,7 @@ Most of the programs are built around the touch screen. You drag a bound on a st
 
 **Very special thanks** to two sites that hold the HP calculator community together:
 
-- **[hpcalc.org](https://www.hpcalc.org)**, Eric Rechlin’s archive of HP calculator software. Its collection of Prime programs was our reference library while we worked out how the Prime really does things out in the real world.
+- **[hpcalc.org](https://www.hpcalc.org)**, Eric Rechlin’s archive of HP calculator software. Its collection of Prime programs was our reference library while we worked out how the Prime actually does things out in the real world.
 - **[The Museum of HP Calculators](https://www.hpmuseum.org)**, David G. Hicks’s history of HP’s calculators, and its forum, where much of what is known about the Prime has been worked out in public.
 
 We have no official affiliation with either site, or with HP. I’m just a grateful user.
