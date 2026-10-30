@@ -12,7 +12,7 @@ Most of the programs are built around the touch screen. You drag a bound on a st
 
 **Very special thanks** to two sites that hold the HP calculator community together:
 
-- **[hpcalc.org](https://www.hpcalc.org)**, Eric Rechlin’s archive of HP calculator software. Its collection of Prime programs was our reference library while we worked out how the Prime really behaves.
+- **[hpcalc.org](https://www.hpcalc.org)**, Eric Rechlin’s archive of HP calculator software. Its collection of Prime programs was our reference library while we worked out how the Prime actually does things out in the real world.
 - **[The Museum of HP Calculators](https://www.hpmuseum.org)**, David G. Hicks’s history of HP’s calculators, and its forum, where much of what is known about the Prime has been worked out in public.
 
 We have no official affiliation with either site, or with HP. I’m just a grateful user.
@@ -20,7 +20,7 @@ We have no official affiliation with either site, or with HP. I’m just a grate
 
 --------------------------------------------------------------------------------------------------------------------
 
-Hundreds of community PPL programs from several HP-related public forums were read as references while working out how the Prime actually behaves out in the real world. Several entries in the notes exist because a corpus program showed a construct working that the many various manuals do not describe. Note that none of those programs were copied, incorporated, used without permission/authorization, or reproduced here, and credit is noted where others' intellectual property and/or concepts were followed. 
+Hundreds of community PPL programs from several HP-related public forums were read as references while working out how the Prime actually behaves in the wild. Several entries in the notes exist because a corpus program showed a construct working that the many various manuals do not describe. Note that none of those programs were copied, incorporated, used without permission/authorization, or reproduced here, and credit is noted where others' intellectual property and/or concepts were followed. 
 
 **The programs here probably would not have been possible without the foundation laid by dozens and dozens of HP users and the hundreds of programs they have graciously made freely available over the years--if you find anything here helpful or useful, it is due to the myriad of other folks who have gone before. Thank you all--especially Eric Rechlin!**
 
@@ -236,7 +236,7 @@ These programs push the HP Prime hard, and some screens take a moment. That is t
 - **Copying a whole screen image is fast on both** (BLIT_P of 320 × 240: about 1 ms on the G2, 5 ms on the G1), so drawing pages off-screen and copying them once costs almost nothing.
 - **Every pass of a PPL loop costs time** (about 0.17 ms on a G1, 0.05 ms on a G2, for one simple statement). A redraw that touches every pixel column pays it 268 times; computing fewer points and joining them with lines is the cheapest speed-up there is.
 - **MicroPython is much faster at arithmetic, but crossing the bridge has a price.** StudRange's studentized-range quantile takes about 1.5 s on a G2 with Python (7 s on a G1), where the PPL engine takes about a minute, because Python does the work and hands back one number. When we moved BurrLab's curves to Python, which hands back hundreds of values one at a time, a key press got slower, so the curves went back to PPL. **Rule of thumb: Python pays when it returns a few numbers, not hundreds.**
-- **On the Virtual Calculator everything is fast.** The emulator on a PC runs the same firmware far faster, so it is good for checking that a program works and useless for judging its speed. Time things on a real G1 or G2.
+- **On the Virtual Calculator everything is fast.** The emulator on a PC runs the same firmware far faster, so it is good for checking that a program works, but, of course, is pretty much useless for judging its speed. Time things on a real G1 or G2.
 
 **What the programs do about it**
 
