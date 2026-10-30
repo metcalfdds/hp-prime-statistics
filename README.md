@@ -8,12 +8,17 @@ Thank you for stopping by. Here is a set of **27 teaching programs for the HP Pr
 
 Most of the programs are built around the touch screen. You drag a bound on a statistical distribution curve and the shading follows, pour balls through a Galton board with a finger, rotate a 3-D bivariate normal wireframe plot, slide a cut-off along an ROC curve and watch who gets flagged "high risk". The aim is to let students *see* the statistics move.
 
+--------------------------------------------------------------------------------------------------------------------
+
 **Very special thanks** to two sites that hold the HP calculator community together:
 
 - **[hpcalc.org](https://www.hpcalc.org)**, Eric Rechlin’s archive of HP calculator software. Its collection of Prime programs was our reference library while we worked out how the Prime really behaves.
 - **[The Museum of HP Calculators](https://www.hpmuseum.org)**, David G. Hicks’s history of HP’s calculators, and its forum, where much of what is known about the Prime has been worked out in public.
 
 We have no official affiliation with either site, or with HP. I’m just a grateful user.
+
+
+--------------------------------------------------------------------------------------------------------------------
 
 Hundreds of community PPL programs from several HP-related public forums were read as references while working out how the Prime actually behaves out in the real world. Several entries in the notes exist because a corpus program showed a construct working that the many various manuals do not describe. Note that none of those programs were copied, incorporated, used without permission/authorization, or reproduced here, and credit is noted where others' intellectual property and/or concepts were followed. 
 
