@@ -236,7 +236,7 @@ These programs push the HP Prime hard, and some screens take a moment. That is t
 - **Copying a whole screen image is fast on both** (BLIT_P of 320 × 240: about 1 ms on the G2, 5 ms on the G1), so drawing pages off-screen and copying them once costs almost nothing.
 - **Every pass of a PPL loop costs time** (about 0.17 ms on a G1, 0.05 ms on a G2, for one simple statement). A redraw that touches every pixel column pays it 268 times; computing fewer points and joining them with lines is the cheapest speed-up there is.
 - **MicroPython is much faster at arithmetic, but crossing the bridge has a price.** StudRange's studentized-range quantile takes about 1.5 s on a G2 with Python (7 s on a G1), where the PPL engine takes about a minute, because Python does the work and hands back one number. When we moved BurrLab's curves to Python, which hands back hundreds of values one at a time, a key press got slower, so the curves went back to PPL. **Rule of thumb: Python pays when it returns a few numbers, not hundreds.**
-- **On the Virtual Calculator everything is fast.** The emulator on a PC runs the same firmware far faster, so it is good for checking that a program works and useless for judging its speed. Time things on a real G1 or G2.
+- **On the Virtual Calculator everything is fast.** The emulator on a PC runs the same firmware far faster, so it is good for checking that a program works, but, of course, is pretty much useless for judging its speed. Time things on a real G1 or G2.
 
 **What the programs do about it**
 
