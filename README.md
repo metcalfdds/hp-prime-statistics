@@ -4,7 +4,7 @@
 
 *A note from Roger: I am very sorry I cannot be with you at HHC 2026 in person this year, and I send my regrets and my best wishes for a wonderful conference. I hope you enjoy exploring what is here, and I would love to hear from you through [GitHub issues](https://github.com/metcalfdds/hp-prime-statistics/issues).*
 
-Thank you for stopping by. This is a set of **27 teaching programs for the HP Prime**, written for university statistics, research methods, criminal justice, and forensic science courses, plus **a long set of notes on how we believe the Prime really behaves**: what we found the hard way on a G1, a G2, and the Virtual Calculator, that the manuals do not say.
+Thank you for stopping by. This is a set of **27 teaching programs for the HP Prime**, written for university statistics, research methods, criminal justice, and forensic science courses, plus **a long set of notes on how we believe the Prime really behaves**: what we found the hard way on a G1, a G2, and the Virtual Calculator, that the manuals do not tell us.
 
 Most of the programs are built around the touch screen. You drag a bound on a statistical distribution curve and the shading follows, pour balls through a Galton board with a finger, rotate a 3-D bivariate normal wireframe plot, slide a cut-off along an ROC curve and watch who gets flagged "high risk". The aim is to let students *see* the statistics move.
 
@@ -53,15 +53,15 @@ Everything here is **free for educational and personal use**. See [LICENSE](LICE
 
 Three different questions, with three different answers:
 
-- **Is the arithmetic right? Yes, as far as we can test it.** Every program passes the lint gate and runs in the PC harness, with its numbers extensively checked against SciPy, statsmodels and exact arithmetic. Where a program uses published data, it has been able to reproduce the published results. Every program has also had an independent review.
+- **Is the arithmetic right? Yes, as far as we can test it.** Every program passes the lint gate and runs in the PC harness, with its numbers extensively checked against SciPy, stats models, and exact arithmetic. Where a program refers to published data, it has been able to reproduce those published results. Every program has also had an independent review.
   
-- **Do they run on a real calculator? Yes, we think so, and we are still checking.** Every program has run on the HP Prime Virtual Calculator, and the current versions have had a quick try on a G1 and a G2. The full device checklists, one per version in [docs/changes/](docs/changes/), are still being worked through, and some screens, especially graphics, can be slow. **Reports from your own calculator are the most welcome contribution of all.** The full dated record is in [docs/test-status.md](docs/test-status.md).
+- **Do they run on a real calculator? Yes, we think so, and we are still checking.** Every program has run on the HP Prime Virtual Calculator, and the current versions have had a cursory checks on a G1 and a G2. The full device checklists, one per version in [docs/changes/](docs/changes/), are still being worked through, and some screens, especially graphics, can be slow. **Reports from your own calculator are the most welcome contribution of all.** The full dated record is in [docs/test-status.md](docs/test-status.md).
   
 - **Can they be used on real cases? No.** Software used in casework must first be formally validated: tested on known samples under a laboratory's quality system, with its limits documented, and then used by a qualified analyst. None of these programs has been through that process.
   
 **DISCLAIMER: these programs are teaching and demonstration aids, provided as-is, with no guarantees. They are not validated for forensic, clinical or legal use; do not rely on their results for casework, legal decisions or any other purpose.**
 
-These programs were originally intended to demonstrate statistical concepts to undergraduate university students, but the project morphed into a suite of programs that show off some of the capabilities of the HP Prime, and also push to see what the hardware limits are for "reasonable" programs. Some of the programs are rather large-- 3,000 up to 6,000 lines of code-- and so may load slowly and may slow down the Connectivity Kit--it might be best to keep only a couple of these programs on your calculator at a time. 
+These programs were originally intended to demonstrate statistical concepts to undergraduate university students, but the project eventually morphed into a suite of programs that show off some of the capabilities of the HP Prime, and also push to see what the hardware limits are for "reasonable" programs. Some of the programs are rather large-- 3,000 up to 6,000 lines of code-- and so may load slowly and may slow down the Connectivity Kit--it might be best to keep only a couple of these programs on your calculator at a time. 
 
 Remember, please, these programs are **works-in-progress**--some parts, especially graphics, may work very slowly, some parts may or may not even work at all, and they are provided strictly as-is --again, you should not rely on the results from these programs for anything. I think the numerical results are very accurate, but use at your own risk, no guarantees. Your mileage may vary.
 
