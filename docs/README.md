@@ -2,7 +2,7 @@
 
 | File | What it is |
 | --- | --- |
-| `lessons-learned_v7s.md` | The main reference: PPL, CAS and MicroPython behaviour found on hardware, and the house rules that came out of it. Start here. |
+| `lessons-learned_v7t.md` | The main reference: PPL, CAS and MicroPython behaviour found on hardware, and the house rules that came out of it. Start here. |
 | `test-status.md` | The dated record of what has been tested, on what, and what each round found (moved from the top of the README, 27 Oct 2026). |
 | `data/` | The sources of every preset in the October 2026 programs, and the checks made on them. |
 | `micropython-on-the-prime.md` | Field notes on the Python side: what the interpreter is, how the bridge fails, and when it is worth using. |
