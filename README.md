@@ -32,7 +32,7 @@ Hundreds of community PPL programs from several HP-related public forums were re
 | **Bayes and forensic science** | BayesTree, DNAMixLR, ErrorRate Lab |
 | **Criminal justice and forensic statistics** (new, October 2026) | RankLab, AnovaLab, SeizureLab, SurvLab, FitCheck, ResampLab, AgreeLab, RiskLab |
 
-Together the 27 programs run to about **79,500 lines**: 54,000 of PPL code, 1,150 of MicroPython (in five of them), and 20,700 lines of comments, written so a student can follow what each part does. The largest is EpiStats at about 6,100 lines -- I wrote the original, elementary, unsophisticated version of this program for coursework I had in Harvard's STAT S-103 Intro to Epidemiology & Biostats, and I hope future students in that class and other similar classes will find this one helpful; and eight late October programs average about 3,000 lines each. These were built with tremendous assistance from Anthropic Claude (mostly Opus 5.5 and Fable 5.1) over **many** months of intense, but fun, work.
+Together the 27 programs run to more than **75,000 lines**: 54,000 of PPL code, 1,150 of MicroPython (in five of them), and 20,700 lines of comments, written so a student can follow what each part does. The largest is EpiStats at about 6,100 lines -- I wrote the original, elementary, unsophisticated version of this program for coursework I had in Harvard's STAT S-103 Intro to Epidemiology & Biostats, and I hope future students in that class and other similar classes will find this one helpful; and eight late October programs average about 3,000 lines each. These were built with tremendous assistance from Anthropic Claude (mostly Opus 5.5 and Fable 5.1) over **many** months of intense, but fun, work.
 
 And around the programs:
 
