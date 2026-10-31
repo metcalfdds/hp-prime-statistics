@@ -1,5 +1,19 @@
 # HP Prime Lessons Learned
-*Roger Metcalf & Claude · v7z · 31 October 2026, TTestLab beta 1a and TestChooser beta 2c (v7y 31 October 2026, PowerViz v2.5k; v7x 31 October 2026, PowerViz v2.5j; v7w 31 October 2026, after the first device run of PowerViz v2.5h; v7v 31 October 2026, evening; v7u 31 October 2026; v7t 30 October 2026; v7s 26 October 2026; v7r 24 October 2026; v7q 23 October 2026; v7p 23 October 2026; v7o 22 October 2026; v7n 20 October 2026, night; v7m 20 October 2026, evening; v7l 19 October 2026, night; v7k 19 October 2026, evening; v7j 19 October 2026, afternoon; v7i 17 October 2026, evening; v7h 17 October 2026, morning; v7g 16 October 2026, evening; v7f 16 October 2026; v7e 12 October 2026; v7d 11 October 2026; v7c, v7b, v7a and v7 on 10 October 2026; v6 6 October 2026; v5 3 October 2026; v4 1 October 2026; v3 rewritten 28 September 2026)*
+*Roger Metcalf & Claude · v7za · 31 October 2026, the routine pool (v7z 31 October 2026, TTestLab beta 1a and TestChooser beta 2c; v7y 31 October 2026, PowerViz v2.5k; v7x 31 October 2026, PowerViz v2.5j; v7w 31 October 2026, after the first device run of PowerViz v2.5h; v7v 31 October 2026, evening; v7u 31 October 2026; v7t 30 October 2026; v7s 26 October 2026; v7r 24 October 2026; v7q 23 October 2026; v7p 23 October 2026; v7o 22 October 2026; v7n 20 October 2026, night; v7m 20 October 2026, evening; v7l 19 October 2026, night; v7k 19 October 2026, evening; v7j 19 October 2026, afternoon; v7i 17 October 2026, evening; v7h 17 October 2026, morning; v7g 16 October 2026, evening; v7f 16 October 2026; v7e 12 October 2026; v7d 11 October 2026; v7c, v7b, v7a and v7 on 10 October 2026; v6 6 October 2026; v5 3 October 2026; v4 1 October 2026; v3 rewritten 28 September 2026)*
+
+**What changed in v7za** (the routine pool; 31 Oct 2026, evening):
+
+- **Search the routine pool before writing a routine, and pull the suggested copy** (§14 rule 11). Roger: "build a index for the code you've written in all these programs for the various 'subroutines' ... so you could build a program just by pulling out the needed parts from a pool". `routine_pool_v1.py` in `D:\HP-Prime`, beside `libsearch_v1.py`, indexes every routine of the current version of every program: 2,348 routines in 40 programs on 31 Oct 2026. For each it records:
+  - what it does (the comment above it);
+  - its categories, its built-ins and its file-level variables;
+  - the routines it calls, and the whole chain;
+  - whether the program's current verify script names it, and the program header's own words on where it has run.
+  It also finds the same code in other programs (76 groups, from the key and finger drains to the incomplete beta) and suggests one copy of each.
+  - `search WORDS` and `show NAME` find and read a routine.
+  - `pull NAME --tag xx_` copies it with everything it calls (callees first) and the file-level declarations it needs, all renamed to the new tag. It warns when two pulled routines would get one name, or a new name is a built-in.
+  - The index is `Routine_Pool_Index_v1.md`. Rebuild it after every filing (`python3 routine_pool_v1.py build`, 11 s on Rogers-HP).
+  - A pulled routine brings its code, not its verification: the new program still needs the gate, a harness run and its own verify script. `verify_routine_pool_v1.py` pulled TTestLab's arithmetic under a new tag, ran it in the harness (SPSS's t = −4.351 on 265.924 df) and passed it through the gate.
+- **A fix to a routine with copies belongs in all of them.** The pool lists every copy of a routine. Use it when a fix lands: PowerViz's touch drain, for one, has copies in most of the fleet.
 
 **What changed in v7z** (TTestLab beta 1a, TestChooser beta 2c; 31 Oct 2026):
 
