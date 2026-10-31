@@ -1,0 +1,25 @@
+=== 1. the new lines, as drawn
+PASS details page of test 1, line 3 (y 119) reads 'Fleet: TTestLab.  Inference: T-Test μ₁-μ₂.'
+PASS details page of test 1, line 4 (y 145) reads 'Also T-Int: μ₁ - μ₂ for the difference.'
+PASS details page of test 3, line 3 (y 119) reads 'Fleet: TTestLab, pairs in D1 and D2.'
+PASS details page of test 3, line 4 (y 145) reads 'Or Inference > T-Test: 1 μ, diffs, μ₀ = 0.'
+PASS details page of test 21, line 1 (y 55) reads "One group's mean against a given μ₀."
+PASS details page of test 22, line 1 (y 55) reads 'One proportion vs π₀; counts vs expected.'
+PASS the "On the Prime" lines are blue and the "Afterwards" lines magenta, as before: #003CC8, #C800C8
+=== 2. every details line fits
+PASS all 24 details pages: every line at most 42 characters and inside x 312
+=== 3. nothing else changed
+PASS the routines that differ from beta 2b: ['tcDetail'] (want tcDetail only); 52 routines
+PASS code lines changed: 6 removed, 6 added, all of them detail strings
+PASS tcNotP (the hatched cells) is the same as beta 2b's
+PASS tcNotP still equals the tests whose details say "Not on the Prime"
+PASS the banner reads "beta 2c" and the header has the beta 2c paragraph and status line
+=== 4. symbols
+PASS no spelled-out mu1, mu2, mu0 or pi0 on screen ([]); the R call wilcox.test(x, mu) is kept
+PASS no glyph that is neither on beta 2b's screens nor on the verified list (new to TestChooser: ₁₂, both device-verified subscripts)
+=== 5. TTestLab does what the pages say
+PASS TTestLab beta 1a has the pooled and separate t, and reads pairs from D1 and D2
+=== 6. layout
+PASS text_overlap_v1 over the 24 details pages: beta 2c adds no firm overlap, straddle or overrun (beta 2b 0, beta 2c 0)
+
+17 PASS, 0 FAIL

@@ -4,7 +4,7 @@
 
 *A note from Roger: I am very sorry I cannot be with you at HHC 2026 in person this year, and I send my regrets and my best wishes for a wonderful conference. I hope you enjoy exploring what is here, and I would love to hear from you through [GitHub issues](https://github.com/metcalfdds/hp-prime-statistics/issues).*
 
-Thank you for stopping by. Here is a set of **27 teaching programs for the HP Prime**, written for university statistics, research methods, criminal justice, and forensic science courses, plus **a long set of notes on how we believe the Prime really behaves**: what we found the hard way on a G1, a G2, and the Virtual Calculator--things all the manuals do not tell us.
+Thank you for stopping by. Here is a set of **28 teaching programs for the HP Prime**, written for university statistics, research methods, criminal justice, and forensic science courses, plus **a long set of notes on how we believe the Prime really behaves**: what we found the hard way on a G1, a G2, and the Virtual Calculator--things all the manuals do not tell us.
 
 Most of the programs are built around the touch screen. You drag a bound on a statistical distribution curve and the shading follows, pour balls through a Galton board with a finger, rotate a 3-D bivariate normal distribution wireframe plot, slide a cut-off along an ROC curve and watch who gets flagged "high risk". The aim is to let students *see* the statistics move.
 
@@ -32,16 +32,16 @@ Hundreds of community PPL programs from several HP-related public forums were re
 | --- | --- |
 | **Distributions** | NormExplorer, Norm3, BurrLab, StatDist (27 distributions), StudRange (Tukey's q) |
 | **Sampling, estimation and power** | CentralLimit (an app), SampDist, CICatcher, GaltonBoard, PowerViz |
-| **Tables and tests** | ChiTable, TrendTest, TestChooser (a tappable flowchart), EpiStats |
+| **Tables and tests** | ChiTable, TrendTest, TTestLab (t tests in five steps), TestChooser (a tappable flowchart), EpiStats |
 | **Correlation and regression** | ScatterLab, BiNorm3D |
 | **Bayes and forensic science** | BayesTree, DNAMixLR, ErrorRate Lab |
 | **Criminal justice and forensic statistics** (new, October 2026) | RankLab, AnovaLab, SeizureLab, SurvLab, FitCheck, ResampLab, AgreeLab, RiskLab |
 
-Together, these 27 programs currently run to more than **75,000 lines**: 54,000 of PPL code, 1,150 of MicroPython (in five of them), and 20,700 lines of comments, written so a student can follow what each part does. The largest is EpiStats at about 6,100 lines -- I wrote the original, elementary, unsophisticated version of this program for coursework I had in Harvard's STAT S-103 Intro to Epidemiology & Biostats, and I hope future students in that class or other similar classes will find this one helpful; and eight other late October programs average about 3,000 lines each. These were built with tremendous assistance from Anthropic Claude (mostly Opus 5.5 and Fable 5.1) over **many** months of intense, but fun, work.
+Together, these 28 programs currently run to more than **82,000 lines**: 56,100 of PPL code, 1,160 of MicroPython (in five of them), and 21,200 lines of comments, written so a student can follow what each part does. The largest is EpiStats at about 6,100 lines -- I wrote the original, elementary, unsophisticated version of this program for coursework I had in Harvard's STAT S-103 Intro to Epidemiology & Biostats, and I hope future students in that class or other similar classes will find this one helpful; and eight other late October programs average about 3,000 lines each. These were built with tremendous assistance from Anthropic Claude (mostly Opus 5.5 and Fable 5.1) over **many** months of intense, but fun, work.
 
 And around the programs:
 
-- **[The notes](docs/lessons-learned_v7t.md)**: hard limits, commands that differ from the manual, touch and graphics idioms, the MicroPython bridge and how it fails silently, calling the CAS safely, numerical methods for 12-digit reals. Useful even if you never run a statistics program, and written so you can hand them to an AI assistant before it writes PPL for you.
+- **[The notes](docs/lessons-learned_v7z.md)**: hard limits, commands that differ from the manual, touch and graphics idioms, the MicroPython bridge and how it fails silently, calling the CAS safely, numerical methods for 12-digit reals. Useful even if you never run a statistics program, and written so you can hand them to an AI assistant before it writes PPL for you.
 - **[Tools](tools/)**: the checks every program passes before it is pasted (a lint gate, a fleet-wide name check, a check that no two lines of text overlap on screen, a PC harness that drives a program like a student), in plain Python 3.
 - **[Diagnostics](diagnostics/)**: small probe programs that test what your own calculator does.
 - **[How fast is the Prime?](#how-fast-is-the-prime-what-we-measured)**: what we timed on a G1 and a G2, and why a slow Prime may only need a reset.
@@ -148,7 +148,7 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 - **Drop 100,000** runs in MicroPython.
 - Tap a bar for its binomial probability and the normal area.
 
-**PowerViz** (v2.5f): **drag the H₁ curve**, and the α, β and power regions reshade live. Drag the critical line to set α, and drag up or down for n. n₈₀ appears in the panel and on the power-versus-n curve.
+**PowerViz** (v2.5k): **drag the H₁ curve**, and the α, β and power regions reshade live; a magenta arrow shows the effect size, d. Drag the critical line to set α, and drag up or down for n. n₈₀ appears in the panel and on the power-versus-n curve; the readout shows each group's n, μ and σ side by side and the t obtained with its df, as SPSS prints it (Welch's in the unequal-σ test). Five tests: one mean; two means with equal σ and n; **two means with unequal σ and unequal n**, where each group has its own σ and n and the formula page shows the best split, n₂/n₁ = σ₂/σ₁; one proportion; and two proportions. **Levene's test:** how often it would notice unequal spreads at your n (simulated, from the σ's and n's: SPSS's Levene F needs every score, and the page says so), beside the exact F test, and **two real samples** (the 1970 draft lottery, insect sprays, or your own D1 and D2) with Levene's test, the pooled and Welch t tests and Cohen's d, each read out in plain words for students.
 
 ### Tables and tests
 
@@ -161,7 +161,14 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 
 **TrendTest** (beta 3g): chi-square for linear trend in a 2 × k table. **Drag a dot** to change a level's proportion and watch the trend test respond. Includes a confidence band and Wilson intervals.
 
-**TestChooser** (beta 2b): which statistical test? It is a tappable flowchart: tap the outcome's scale and the design, and the path draws itself to a test. There is also a tappable table, and a 20-case criminal-justice and forensic quiz. After Glantz's *Primer of Biostatistics*.
+**TTestLab** (beta 1a, new 31 October 2026): the t tests of a criminal-justice statistics course, worked the way a lecture works them, in **five steps, a screen each**: the hypotheses and the data; the distribution and df; the critical value and the decision rule on a t curve with the rejection region shaded; the standard error and t obtained with the numbers put in; the decision, with t obtained and the p value drawn on the curve, and Cohen's d.
+- **Pooled-variances, separate-variances (Welch, SPSS's "Equal variances not assumed") and dependent-samples t**, with any mix of equal or unequal SDs and Ns, from each group's mean, SD and N or from raw scores in D1 and D2; two-tailed or one-tailed either way.
+- **Which t test?** A tappable flowchart: are the samples independent? are the variances equal?
+- **Pooled or separate?** Both tests side by side, and what goes wrong with the pooled test when the smaller group has the larger SD.
+- **The printed t table beside the exact value** (df 73 reads row 60), and where a hand calculation rounded too early, what that did to t.
+- Examples: age at arrest (JDCC), matched jails (Census of Jails), and drug use by sex from an SPSS output, which it matches to SPSS's printed t = −4.351 on 265.924 df.
+
+**TestChooser** (beta 2c): which statistical test? It is a tappable flowchart: tap the outcome's scale and the design, and the path draws itself to a test. There is also a tappable table, and a 20-case criminal-justice and forensic quiz. After Glantz's *Primer of Biostatistics*. Its t-test pages point to TTestLab.
 
 **EpiStats** (v1.7e): epidemiology.
 - **2 × 2 tables** in cohort, diagnostic and paired layouts: McNemar, Yule's Q, and a bar for every possible table behind Fisher's test. Call `EpiStats2x2(a,b,c,d)` from Home.
@@ -279,7 +286,7 @@ Short programs for finding out what your own calculator does.
 
 ## The notes
 
-[**docs/lessons-learned_v7t.md**](docs/lessons-learned_v7t.md) is the substantial document here: everything learned the expensive way across dozens and dozens of build iterations on G1 and G2 hardware. It covers:
+[**docs/lessons-learned_v7z.md**](docs/lessons-learned_v7z.md) is the substantial document here: everything learned the expensive way across dozens and dozens of build iterations on G1 and G2 hardware. It covers:
 - hard limits;
 - command behaviour that contradicts the manual;
 - graphics and input idioms;

@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// TESTCHOOSER - beta 2b
+// TESTCHOOSER - beta 2c
 // Which statistical test?  A tappable flowchart, the table,
 // and a quiz
 // ============================================================
@@ -28,9 +28,23 @@
 //
 // Firmware: written for the 2026-09-09 firmware (2.4.2).  This
 //   version has NOT yet been run on hardware or on the emulator,
-//   only in the PC harness (ppl_run_v3e, 19 Oct 2026); beta 2
+//   only in the PC harness (ppl_run_v3e, 31 Oct 2026); beta 2
 //   passed the emulator (HP Prime Virtual Calculator, build
 //   2026-09-09, 17 Oct 2026).
+//
+// beta 2c (31 Oct 2026): the two t-test pages point to TTestLab, the
+//   new program that works the lecture's five steps for the pooled,
+//   separate-variances and dependent-samples t (Roger: "good idea to
+//   do that").  Unpaired t (test 1), "On the Prime": "Fleet:
+//   TTestLab.  Inference: T-Test μ₁-μ₂."  Paired t (test 3), "On the
+//   Prime": "Fleet: TTestLab, pairs in D1 and D2."; the next line
+//   joins the old two lines on the Inference app: "Or Inference >
+//   T-Test: 1 μ, diffs, μ₀ = 0."  Four lines
+//   that beta 2b's symbol sweep missed now use the symbols: "mu1 -
+//   mu2" (tests 1, twice), "mu0" (test 21) and "pi0" (test 22).  The
+//   R call wilcox.test(x, mu) is kept, as in beta 2b.  "Welch form if
+//   SDs differ" stays (decision D12, Welch by default, is open).
+//   No test, quiz case, key, layout position or other logic changed.
 //
 // beta 2b (20 Oct 2026): symbols instead of spelled-out names, on screen
 //   only (Roger, 20 Oct 2026: "use the symbols we developed").  In the
@@ -313,8 +327,8 @@ BEGIN
     IF dtI == 1 THEN RETURN {
       "Means of two independent groups.",
       "Normal-ish data; Welch form if SDs differ.",
-      "Inference > Hyp. test > T-Test: mu1 - mu2.",
-      "Also T-Int: mu1 - mu2 for the difference.",
+      "Fleet: TTestLab.  Inference: T-Test μ₁-μ₂.",
+      "Also T-Int: μ₁ - μ₂ for the difference.",
       "Not normal or ordinal?  Mann-Whitney U."}; END;
     IF dtI == 2 THEN RETURN {
       "Means of three or more independent groups.",
@@ -325,8 +339,8 @@ BEGIN
     IF dtI == 3 THEN RETURN {
       "Matched pairs or before/after: mean diff.",
       "The DIFFERENCES should be roughly normal.",
-      "Form the differences, then Inference >",
-      "Hyp. test > T-Test: 1 μ, with μ₀ = 0.",
+      "Fleet: TTestLab, pairs in D1 and D2.",
+      "Or Inference > T-Test: 1 μ, diffs, μ₀ = 0.",
       "Skewed differences?  Wilcoxon signed-rank."}; END;
     IF dtI == 4 THEN RETURN {
       "Same subjects, 3 or more conditions.",
@@ -431,13 +445,13 @@ BEGIN
       "Reports hazard ratios with 95% CIs.",
       "One grouping factor only?  Log-rank."}; END;
     IF dtI == 21 THEN RETURN {
-      "One group's mean against a given mu0.",
+      "One group's mean against a given μ₀.",
       "Roughly normal, or n large (CLT).",
       "Inference > Hyp. test > T-Test: 1 μ.",
       "Also the T-Int: 1 μ confidence interval.",
       "Skewed data?  Wilcoxon signed-rank/sign."}; END;
     IF dtI == 22 THEN RETURN {
-      "One proportion vs pi0; counts vs expected.",
+      "One proportion vs π₀; counts vs expected.",
       "n π₀ and n(1-π₀) ≥ 10; GOF: exp. ≥ 5.",
       "Inference > Z-Test: 1 π; χ² > Goodness.",
       "Small n?  Exact binomial via BINOMIAL_CDF.",

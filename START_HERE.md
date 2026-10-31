@@ -2,13 +2,13 @@
 
 *HP Prime statistics: a one-page guide for first-time visitors. Version 2, 27 October 2026. Prepared for HHC 2026: welcome!*
 
-This repository holds **27 teaching programs** for the HP Prime, written in PPL with MicroPython where it helps. It also holds **a set of notes on how the Prime actually behaves**, found by testing and not by reading the manual. The programs were written for university statistics and forensic science courses. The notes are useful to anyone who writes PPL.
+This repository holds **28 teaching programs** for the HP Prime, written in PPL with MicroPython where it helps. It also holds **a set of notes on how the Prime actually behaves**, found by testing and not by reading the manual. The programs were written for university statistics and forensic science courses. The notes are useful to anyone who writes PPL.
 
 Everything here is free for educational and personal use ([LICENSE](LICENSE.txt)).
 
 ## If you have five minutes: read the notes
 
-[**docs/lessons-learned_v7t.md**](docs/lessons-learned_v7t.md) is the most useful file here, even if you never run a statistics program. It covers hard limits, commands that behave differently from the manual, touch and graphics idioms, `WAIT(-1)` and soft keys, the MicroPython bridge and how it fails silently, how to call the CAS from a program safely, numerical methods for 12-digit reals, and testing on the Virtual Calculator. Theories that turned out wrong are kept, marked as disproved.
+[**docs/lessons-learned_v7z.md**](docs/lessons-learned_v7z.md) is the most useful file here, even if you never run a statistics program. It covers hard limits, commands that behave differently from the manual, touch and graphics idioms, `WAIT(-1)` and soft keys, the MicroPython bridge and how it fails silently, how to call the CAS from a program safely, numerical methods for 12-digit reals, and testing on the Virtual Calculator. Theories that turned out wrong are kept, marked as disproved.
 
 Three findings that save the most time:
 

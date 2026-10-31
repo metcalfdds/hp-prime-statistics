@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// POWERVIZ - v2.5f
+// POWERVIZ - v2.5k
 // ============================================================
 // FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
 //   the file and credit the author if you pass it on.  Not for
@@ -19,16 +19,167 @@
 //   firmware.  Earlier versions ran on both calculators; whether
 //   v2.1 ran with the "LOCAL pv_Name()" routine heads is for
 //   Roger to confirm (LocalHeadProbe beta 1 passed on the emulator).
-//   v2.2 to v2.5f have NOT yet been run on a G1 or G2.  On the HP
+//   v2.2 to v2.5k have NOT yet had a full run on a G1 or G2;
+//   Roger's first try on the calculator (31 Oct 2026, v2.5h) found
+//   the two faults v2.5i fixes.  On the HP
 //   Prime Virtual Calculator 2.4.2 (build 2026-09-09, the
 //   calculators' own firmware), 17 Oct 2026: v2.4 passed (round 1),
 //   and v2.5a's "Where n comes from" page showed "exact (CAS)" and
 //   n = ((σ×zα+σ×zβ)/(μ₁−μ₀))^2 (round 2; the CAS never failed
 //   there, so the decimal fallback was not reached).  v2.5b, v2.5c and
-//   v2.5d have not run there yet (v2.5d, v2.5e and v2.5f have run only
+//   v2.5d have not run there yet (v2.5d to v2.5k have run only
 //   in the PC harness).  v2.5 is the first version that calls the CAS;
 //   its call form (v2.5a) is the one CASProbe beta 1b found on the
 //   emulator, see pv_Cas below.
+//
+// v2.5k (31 Oct 2026): what the Levene power page is, and is not.
+//   Roger compared PowerViz with his SPSS output (Levene F = 6.847,
+//   p = .009) and wrote: "we're not putting all that raw data in a
+//   calculator -- so maybe we either need to delete our Levene's
+//   section or give a really good explanation as to what is going on".
+//   His choice: keep both pages, and explain.
+//   * The power page opens with a screen that says it: a Levene F is
+//     worked out from every score (how far each sits from its group's
+//     mean); PowerViz has only the means, SDs and n's, so it cannot
+//     give that F and does not try.  The page asks a planning question
+//     instead -- if the population SDs really are those typed, how
+//     often would Levene's test notice with samples of these sizes? --
+//     and a Levene F from data is on Menu, Two samples: data.
+//   * The menu item is "Would Levene notice?", the page's own title
+//     (was "Levene's test: power"); help page 5 and the data page's
+//     reading say so.
+//
+// v2.5j (31 Oct 2026): the test statistic obtained, and the new box
+//   in every test (Roger, 31 Oct 2026: "we didn't put in t obtained!").
+//   * Under POWER, the statistic a sample would give if its means (or
+//     proportions), SDs and n's were exactly the ones typed, with its
+//     df: "t(265.9) = 4.35" (Welch's, test 5), "t(58) = 1.29" (pooled,
+//     test 2), "t(29) = 1.83" (one sample, test 1), "z = 2.00" (the
+//     proportions).  It is (M1v - M0v)/SE0 in every test (pv_TObt).
+//     With Roger's SPSS numbers it is SPSS's t, 4.351 on 265.924 df,
+//     the sign turned (PowerViz takes group 2 minus group 1).  It
+//     replaces v2.5i's "df = ..." line, whose df it carries.
+//   * The one-sample tests (1 and 3) get the new box too (pv_Panel,
+//     was pv_PanelG): n, mu0, mu1 and sigma (or p0 and p1), one value
+//     each, then the same middle and right columns.  A tap on mu0, p0
+//     or sigma opens the Edit form, on mu1 or p1 edits the effect.  So
+//     every test's plot ends at y 133 (PYB, a file-level constant now).
+//   * Help page 1: one SE line and a line for t(df); page 2: "α,
+//     zcrit = the α ladder;  σ, μ₀, p₀ = Edit form".
+//
+// v2.5i (31 Oct 2026): two faults from Roger's first run on the
+//   calculator (31 Oct 2026, test 5 with his SPSS output).
+//   * Tapping OK on the Edit form opened the PowerViz Menu.  The
+//     form's OK sits where PowerViz's sixth soft key (Menu) is; the
+//     form closed with the finger still on the glass, and the live
+//     loop's next MOUSE reading was that same touch, at slot 6.  The
+//     key drain after a form or menu (pv_Drain) empties keys only
+//     (Lessons Learned s7: a GETKEY drain does not drain touch), so
+//     every form and menu opened from the live loop is now followed
+//     by pv_TDrain too, as the start of the program already was: Edit
+//     and Menu (pv_Soft), the n, effect and alpha cells (pv_Touch),
+//     and Enter (the live loop).
+//   * The panel read "β = 3.534E-96" where pv_FMTP should print
+//     "β < 0.001".  Its floor test read "xx != 0 AND ...", the only
+//     "!=" in the program.  The PC harness reads "!=" as "not equal";
+//     the calculator evidently did not.  It is "xx <> 0" now, the form
+//     the rest of the fleet uses on the device.  (The likely cause, not
+//     yet proven: a Home-screen check of "!=" is on the device
+//     checklist.)
+//   * The two-group tests' readout box is reworked (Roger: "display
+//     mu 1 also", "we need to see the std dev's too ... rework the
+//     output box", "the other tests should have both groups too"): a
+//     small table, a column per group -- n, mu and sigma (tests 2 and
+//     5) or n and p (test 4) -- with d or h, zcrit, alpha and beta
+//     beside it, POWER on the right and under it the df of the
+//     matching t test: Welch's, fractional, in test 5 ("even the
+//     fractional one"), 2n - 2 in test 2 (pv_DF).  Their plot is
+//     13 px shorter (PYB 133, set in pv_Setup) to make room.  A tap on
+//     the n row edits n, on the mu or p row the effect, on the sigma
+//     row the whole Edit form.  Tests 1 and 3 (one sample) keep their
+//     box.
+//   * "n = 30" (one sample) and "n = 30 per group" (tests 2 and 4)
+//     replace "n = 30/grp" in the box, the Power-vs-effect subtitle
+//     and the exit box.
+//   * n1 and n2 are written "40, 20", not "40/20", which read as a
+//     fraction (Roger): pv_NStr, so the panel, the n80 line, the
+//     curve views, the hints, the formula page and the Levene page.
+//
+// v2.5h (31 Oct 2026): Levene's test, two real samples, and d on the
+//   plot (Roger, 31 Oct 2026: "we need to add Levene's F test and
+//   Cohen's d", both a power page and a data page, d "more prominent",
+//   "and how to interpret those for students").
+//   * MENU, "Levene's test: power" (test 5; pv_LvPage).  How often
+//     Levene's test (absolute deviations from the group means, the form
+//     SPSS prints) would say "spreads differ" at the sigmas and n on
+//     screen: SIMULATED, 100-400 pairs of normal samples, when n1 + n2
+//     is 240 or less (a progress bar; Esc stops early), else a
+//     large-sample formula (pv_LvApx; within 0.01 of simulation past
+//     240).  Beside it the exact power of the F test of s1^2/s2^2
+//     (pv_FPow, FISHER_CDF, both tails as lower tails) and its curve
+//     over the sigma ratio from 1 up; a second page says what it means
+//     for students: a non-significant Levene is not proof of equal
+//     spreads, a "Levene first" rule then picks the pooled t test, whose
+//     alpha can be far off when n1 <> n2 (Cohen 1988, p. 44), so use
+//     Welch's t test by default (Delacre, Lakens & Leys 2017).
+//   * MENU, "Two samples: data" (pv_DataPage).  The 1970 draft lottery
+//     (Jan-Jun against Jul-Dec birthdays; AnovaLab's data, Fienberg
+//     1971), insect sprays C and F (AnovaLab's, Beall 1942), or the
+//     student's own D1 and D2 from the Statistics 1Var app.  A strip
+//     plot of both samples with each mean and +-1 s; n, mean and s;
+//     Levene's F and p (means, as SPSS) and Brown-Forsythe's p
+//     (medians, as R's car and AnovaLab); the pooled t test and Welch's
+//     (Satterthwaite df); Cohen's d with the pooled s, large, and with
+//     Cohen's sigma' form.  A second page says what each number means
+//     and what not to conclude.  pv_TwoS does the arithmetic and returns
+//     one list, so the verify script checks it against SciPy directly.
+//   * d on the plot: a magenta arrow between the H0 and H1 centres near
+//     the top of the plot, labelled "d = 0.32" (h for proportions), and
+//     the panel's d cell in magenta.  Help page 2 and the new page 5
+//     say what it is.
+//   * Help page 5, "Levene and your data"; pages now 1/5 to 5/5.
+//
+// v2.5g (31 Oct 2026): a FIFTH TEST, two means with unequal sigma and
+//   unequal n (Roger, 31 Oct 2026: "the way we have PowerViz set up
+//   now, it accommodates a two-sample means test where there is equal
+//   variance and equal sample sizes -- we need to add another menu
+//   item for unequal variances and unequal n").
+//   * The test menu has five items; the new one is third, beside the
+//     equal-sigma test: "Two Means, unequal sigma & n (z)".  Inside, it
+//     is TT = 5, so tests 1-4 keep their numbers and their code.  The
+//     old item reads "Two Means, equal sigma & n (z)" now (label only).
+//   * The model: each group has its own sigma and n, and
+//     SE = sqrt(s1^2/n1 + s2^2/n2), the same under H0 and H1 (a z test,
+//     the sigmas taken as known, like the other four tests).  New
+//     file-level values SG2 (sigma of group 2) and NN2, KN1 (the n2 and
+//     the n1 the student typed; their ratio is kept, see pv_N2).
+//   * n: the arrows, a vertical drag and the Pow-n view change n1, and
+//     n2 follows at the typed ratio n2/n1 (rounded to whole people; the
+//     "allocation ratio" of G*Power and statsmodels).  The n80 search,
+//     the Pow-n sweep and the readouts show n1/n2 ("n = 40/20").  The
+//     typed ratio is kept between 0.1 and 10 (pv_Set5).
+//   * d = (mu2 - mu1)/sigma', sigma' = sqrt((s1^2 + s2^2)/2), the root
+//     mean square of the two SDs: Cohen (1988), Statistical Power
+//     Analysis for the Behavioral Sciences, 2nd ed., p. 44, eq. 2.3.2
+//     (Roger's copy, 31 Oct 2026).  The same page keeps the small /
+//     medium / large labels for d, and warns that with sigma AND n both
+//     unequal the pooled t test's alpha and power can be far off; help
+//     page 4 says so.  The effect step and the power-vs-effect view use
+//     sigma' too (pv_SigE).
+//   * The formula page: the CAS solves for n1 with
+//     SE = sqrt(k s1^2 + s2^2)/sqrt(k n1), k = n2/n1, which desktop Giac
+//     1.9 answers as ((sqrt(k s1^2+s2^2) za + ... zb)/delta)^2/k; and a
+//     line on the best split of a fixed total, n2/n1 = s2/s1, when the
+//     page has room.  Help has a fourth page on this test.
+//   * The critical z is now -NORMALD_ICDF(0,1,AL/TL) at all five sites
+//     (pv_NCF, pv_Model, pv_Tails twice, pv_Formula), never
+//     NORMALD_ICDF(0,1,1-AL/TL): a typed alpha of 1E-12 or less made
+//     1 - alpha exactly 1 in 12 digits and the critical z infinite
+//     (Lessons Learned v7m, 20 Oct 2026: "fix at the next version").
+//   * Everything that asked "TT<=2" for a means test asks pv_MeanT()
+//     now, and every "TT>=3" for a proportion test pv_MeanT()==0, so
+//     tests 1-4 behave exactly as in v2.5f (the verify script compares
+//     their screens with v2.5f's).
 //
 // v2.5f (28 Oct 2026): layout only (overlap sweep, 28 Oct 2026).  On the
 //   power-curve pages (pv_PCDraw) the "1.0" y-axis label, drawn 4 px
@@ -305,6 +456,7 @@
 // LIVE CONTROLS (main view):
 //   Left / Right : effect size down / up (round steps)
 //   Up / Down    : n per group up / down (adaptive round step)
+//                  (test 5: n1; n2 follows at the typed ratio)
 //   0            : re-fit the plot window to the current scene
 //   +  /  -      : alpha ladder up / down
 //                  (0.001 0.005 0.01 0.02 0.05 0.10 0.20)
@@ -345,9 +497,19 @@ EXPORT EP_ZCRIT;
 
 // ---------------- shared state ----------------
 LOCAL TT:=1;                     // 1=1-mean 2=2-means 3=1-prop 4=2-props
+                                 // 5=2 means, unequal sigma and n (v2.5g)
 LOCAL MM0:=100, MM1:=105, SG:=15;// means tests (teaching defaults)
 LOCAL PP0:=0.5, PP1:=0.6;        // proportion tests
 LOCAL NN:=30, AL:=0.05, TL:=1;   // n per group, alpha, tails
+// v2.5g, test 5 only: SG2 the sigma of group 2 (SG is group 1's), NN2
+// and KN1 the n2 and the n1 as the student typed them.  NN is n1 as
+// it is now; n2 follows it at the ratio NN2/KN1 (pv_N2).
+LOCAL SG2:=20, NN2:=20, KN1:=40;
+// v2.5h: the normal generator's spare value and its flag (pv_RNorm), and
+// the last Levene run: its inputs (pvLvK) and result {power, reps, how}
+// (pvLvR; how = 1 simulated, 2 the large-sample formula), so reopening
+// the page with nothing changed does not simulate again.
+LOCAL pvGsp:=0, pvGsf:=0, pvLvK:={0}, pvLvR:={0,0,0};
 LOCAL ALAD:={0.001,0.005,0.01,0.02,0.05,0.10,0.20};
 LOCAL AIDX:=5;                   // ladder index of current alpha
 LOCAL M0v, M1v, SE0, SE1;        // scene parameters
@@ -358,7 +520,7 @@ LOCAL XMN, XMX, YSC;             // plot scaling
 // strip, which DRAWMENU paints at y 218-239.  The drawing code AND the
 // touch handler read these same numbers.
 LOCAL PXL:=12, PXR:=308;
-LOCAL PYT:=38, PYB:=146;
+LOCAL PYT:=38, PYB:=133;     // v2.5j: was 146; the readout box has a row more
 LOCAL C2PI:=2.50662827463;       // sqrt(2*pi)
 LOCAL WFIT:=1;                   // 1 = re-fit the window on next pv_Setup
 
@@ -461,6 +623,83 @@ BEGIN
  N80L:="n"+CHAR(8328)+CHAR(8320);
  // v2.5: nothing asked of the CAS yet
  pvCasOK:=0; FSY:=""; FSYK:=0; FSN:=""; FSNK:={0}; FCMS:=0; NCF:=-1;
+END;
+
+// ============================================================
+// v2.5g: helpers for the fifth test, two means with unequal sigma
+// and unequal n.  Here, above every routine that calls them.
+// ============================================================
+
+// 1 for the three tests of means (1, 2 and 5), 0 for the two of
+// proportions (3 and 4).  v2.5f asked "TT<=2" for "a means test" and
+// "TT>=3" for "a proportion test"; with test 5 both questions go here.
+LOCAL pv_MeanT()
+BEGIN
+ IF TT==1 OR TT==2 OR TT==5 THEN RETURN 1; END;
+ RETURN 0;
+END;
+
+// The SD that Cohen's d is measured in.  Tests 1 and 2 have one sigma.
+// Test 5 has two, and Cohen (1988, p. 44, eq. 2.3.2) uses their root mean
+// square, sigma' = sqrt((sigma1^2 + sigma2^2)/2), so d = (mu2 - mu1)/sigma'.
+// The arrow-key step (sigma'/20) and the power-vs-effect view use it.
+LOCAL pv_SigE()
+BEGIN
+ // scaled by the larger sigma, so squaring never underflows or overflows
+ // the Prime's range (a typed 1E-300 or 1E300; the same in pv_Model)
+ IF TT==5 THEN RETURN MAX(SG,SG2)*(((SG/MAX(SG,SG2))^2+(SG2/MAX(SG,SG2))^2)/2)^.5; END;
+ RETURN SG;
+END;
+
+// Test 5: the size of group 2 when group 1 has nv people.  The student
+// types n1 and n2; the program keeps their RATIO (NN2/KN1, the n2 and
+// the n1 as typed), so when the arrows, a drag or the Pow-n view change
+// n1, n2 follows: n2 = n1 x (typed n2 / typed n1), rounded to a whole
+// person, and never below 2.  (G*Power and statsmodels call this the
+// allocation ratio.)  n1 x ratio, rounded, never goes down when n1 goes
+// up, so power still rises with n1 and the n80 search still works.
+LOCAL pv_N2(nv)
+BEGIN
+ RETURN MAX(2,ROUND(nv*NN2/KN1,0));
+END;
+
+// Test 5: the two sample sizes as the readouts write them: "40/20",
+// n1 then n2, for n1 = nv.
+LOCAL pv_NStr(nv)
+BEGIN
+ RETURN STRING(nv,1,0)+", "+STRING(pv_N2(nv),1,0);   // v2.5i: "40, 20", not "40/20"
+END;
+
+// Test 5: take a typed n1 (s5a) and n2 (s5b), from the Edit form or
+// the n cell's form.  Each is a whole number from 2 to 5000, and n2 is
+// kept between 0.1 and 10 times n1; one box per changed value says
+// what was changed and why, as for every other clamp in this program.
+// If the pair is what the screen showed (n1 = NN and n2 = pv_N2(NN)),
+// nothing changes, so opening a form and pressing OK never nudges the
+// ratio by a rounding.  Otherwise the pair becomes the ratio:
+// NN2/KN1 = n2/n1.  Returns 1 if it changed anything.
+LOCAL pv_Set5(s5a, s5b)
+BEGIN
+ LOCAL s5c, s5d, s5e;
+ s5c:=MIN(5000,MAX(2,IP(s5a)));
+ IF s5c<>s5a THEN
+  MSGBOX("n₁ must be a whole number from 2 to 5000 (you entered "+STRING(s5a,2,2)+"): set to "+STRING(s5c,1,0));
+ END;
+ // n2: a whole number from 2 to 5000 (s5d), then between 0.1 n1 (whole
+ // people: rounded up) and 10 n1 (s5e).  One box for n2, naming the
+ // rule that changed it.
+ s5d:=MIN(5000,MAX(2,IP(s5b)));
+ s5e:=MIN(MIN(5000,10*s5c),MAX(MAX(2,CEILING(s5c/10)),s5d));
+ IF s5e<>s5b THEN
+  IF s5e==s5d THEN
+   MSGBOX("n₂ must be a whole number from 2 to 5000 (you entered "+STRING(s5b,2,2)+"): set to "+STRING(s5e,1,0));
+  ELSE
+   MSGBOX("n₂ must be 0.1 to 10 times n₁ (you entered n₁ = "+STRING(s5c,1,0)+", n₂ = "+STRING(s5b,2,2)+"): n₂ set to "+STRING(s5e,1,0));
+  END;
+ END;
+ IF s5c==NN AND s5e==pv_N2(NN) THEN RETURN 0; END;
+ NN:=s5c; NN2:=s5e; KN1:=s5c;
+ RETURN 1;
 END;
 
 // ============================================================
@@ -605,7 +844,7 @@ END;
 LOCAL pv_DName()
 BEGIN
  IF TT==1 THEN RETURN "(μ₁−μ₀)"; END;
- IF TT==2 THEN RETURN "(μ₂−μ₁)"; END;
+ IF TT==2 OR TT==5 THEN RETURN "(μ₂−μ₁)"; END;        // v2.5g: test 5 too
  IF TT==3 THEN RETURN "(p₁−p₀)"; END;
  RETURN "(p₂−p₁)";
 END;
@@ -624,6 +863,13 @@ BEGIN
  dst := pv_Strip(dss);
  dst := pv_Rep(dst, "pvza", "zα");
  dst := pv_Rep(dst, "pvzb", "zβ");
+ // v2.5g, test 5: two sigmas and the ratio k = n2/n1 (pv_Eq's pvs,
+ // pvt, pvk); after this no "pvs" is left for the next line
+ IF TT==5 THEN
+  dst := pv_Rep(dst, "pvs", "σ₁");
+  dst := pv_Rep(dst, "pvt", "σ₂");
+  dst := pv_Rep(dst, "pvk", "k");
+ END;
  dst := pv_Rep(dst, "pvs", "σ");
  dst := pv_Rep(dst, "pvd", pv_DName());
  IF TT==3 THEN
@@ -646,6 +892,8 @@ END;
 //   2 means     u = w = sigma*sqrt(2)          (n per group)
 //   1 prop.     u = sqrt(p0(1-p0)),  w = sqrt(p1(1-p1))
 //   2 props.    u = sqrt(2 pbar(1-pbar)),  w = sqrt(p1(1-p1) + p2(1-p2))
+//   v2.5g, unequal sigma and n:  n2 = k n1, so u = w = sqrt(s1^2 + s2^2/k)
+//               (written below as sqrt(k s1^2 + s2^2)/sqrt(k n1))
 // and power 1 - beta when H1's centre is zb SE1 past the critical
 // line, which is za SE0 past H0's:  (delta - za*SE0)/SE1 = zb.
 // The one argument is a list of CAS text: either the symbols {pvs,
@@ -657,8 +905,18 @@ END;
 LOCAL pv_Eq(eqL)
 BEGIN
  // eqL = {sigma, delta, p (H0 or group 1), p (H1 or group 2), pooled p}
- // as CAS text; the entries a test does not use may be "".
+ // as CAS text; the entries a test does not use may be "".  v2.5g:
+ // test 5 adds {..., sigma of group 2, k = n2/n1} as entries 6 and 7.
  LOCAL equ, eqw;
+ // v2.5g, test 5.  SE = sqrt(s1^2/n1 + s2^2/(k n1)) is written as
+ // sqrt(k s1^2 + s2^2)/sqrt(k n1), with sqrt(k*pvn) apart: desktop Giac
+ // 1.9 then answers ((sqrt(k s1^2+s2^2) za + sqrt(k s1^2+s2^2) zb)/
+ // delta)^2/k, one positive root.  Written as sqrt(s1^2+s2^2/k)/sqrt(n)
+ // it brings in abs(k) and k^2 (31 Oct 2026).
+ IF TT==5 THEN
+  equ := "sqrt(" + eqL(7) + "*" + eqL(1) + "^2+" + eqL(6) + "^2)";
+  RETURN "solve((" + eqL(2) + "-pvza*" + equ + "/sqrt(" + eqL(7) + "*pvn))/(" + equ + "/sqrt(" + eqL(7) + "*pvn))=pvzb,pvn)";
+ END;
  IF TT==1 THEN equ := "" + eqL(1); eqw := equ; END;
  IF TT==2 THEN equ := eqL(1) + "*sqrt(2)"; eqw := equ; END;
  IF TT==3 THEN
@@ -682,11 +940,21 @@ END;
 LOCAL pv_NCF()
 BEGIN
  LOCAL nca, ncb, ncu, ncw, ncd, ncp;
- nca := NORMALD_ICDF(0,1,1-AL/TL);
+ // v2.5g: the mirrored form.  1 - alpha is exactly 1 in 12 digits once
+ // alpha is below about 1E-12, and NORMALD_ICDF(0,1,1) is infinity
+ // (typed on the G1, 20 Oct 2026); -NORMALD_ICDF(0,1,alpha) keeps its
+ // digits.  The same at every other critical z in this file.
+ nca := -NORMALD_ICDF(0,1,AL/TL);
  ncb := NORMALD_ICDF(0,1,0.8);
- IF TT<=2 THEN
+ IF pv_MeanT()==1 THEN
   ncd := MM1-MM0; ncu := SG; ncw := SG;
   IF TT==2 THEN ncu := SG*2^.5; ncw := ncu; END;
+  // v2.5g, test 5: u = w = sqrt(s1^2 + s2^2/k), k = NN2/KN1 (the typed
+  // ratio), so this is the n1 of the formula; n2 = k n1
+  IF TT==5 THEN
+   ncp := MAX(SG,SG2);              // scaled, as in pv_Model
+   ncu := ncp*((SG/ncp)^2+(SG2/ncp)^2*KN1/NN2)^.5; ncw := ncu;
+  END;
  ELSE
   ncd := PP1-PP0;
   IF TT==3 THEN
@@ -782,7 +1050,8 @@ END;
 // (v2.4: the H1 drag snaps to this same grid.)
 LOCAL pv_EffStep()
 BEGIN
- IF TT<=2 THEN RETURN pv_NiceNum(SG/20,1); END;
+ // v2.5g: pv_SigE() is sigma, or test 5's sigma' (Cohen's d)
+ IF pv_MeanT()==1 THEN RETURN pv_NiceNum(pv_SigE()/20,1); END;
  RETURN 0.01;
 END;
 
@@ -796,6 +1065,20 @@ BEGIN
  edD := MAX(0,-FLOOR(LOG(edS)+0.000001));
  IF ABS(MM1/edS - ROUND(MM1/edS,0)) > 0.000001 THEN edD := edD+2; END;
  RETURN edD;
+END;
+
+// v2.5i: decimals for test 5's two means side by side: pv_EffDec's,
+// or two more than the step's if group 1's mean (MM0) is off the grid
+// too, so a typed 4.8185 shows as 4.819, not 4.8.
+LOCAL pv_MuDec()
+BEGIN
+ LOCAL muS, muD;
+ muS := pv_EffStep();
+ muD := pv_EffDec();
+ IF ABS(MM0/muS - ROUND(MM0/muS,0)) > 0.000001 THEN
+  muD := MAX(muD, MAX(0,-FLOOR(LOG(muS)+0.000001))+2);
+ END;
+ RETURN muD;
 END;
 
 // arcsin in RADIANS whatever the Home angle mode (HAngle:
@@ -821,7 +1104,8 @@ END;
 // Standardized effect size: Cohen's d (means) or h (proportions)
 LOCAL pv_EffSz()
 BEGIN
- IF TT<=2 THEN RETURN (MM1-MM0)/SG; END;
+ // v2.5g: test 5 divides by sigma' = sqrt((s1^2+s2^2)/2) (pv_SigE)
+ IF pv_MeanT()==1 THEN RETURN (MM1-MM0)/pv_SigE(); END;
  RETURN 2*pv_AsinR(SQRT(PP1)) - 2*pv_AsinR(SQRT(PP0));
 END;
 
@@ -934,7 +1218,7 @@ LOCAL pv_FMTP(xx, dd)
 BEGIN
  LOCAL thr;
  thr := 10^(-dd);
- IF xx != 0 AND ABS(xx) < thr THEN
+ IF xx <> 0 AND ABS(xx) < thr THEN        // v2.5i: <>, not != (header)
   IF xx > 0 THEN RETURN "< " + STRING(thr,2,dd); END;
   RETURN "> -" + STRING(thr,2,dd);
  END;
@@ -1010,12 +1294,23 @@ BEGIN
    SE0:=(2*pb*(1-pb)/nv)^.5;
    SE1:=(PP0*(1-PP0)/nv+PP1*(1-PP1)/nv)^.5;
   END;
+  IF TT==5 THEN                  // v2.5g: two means, unequal sigma and n (z)
+   // each group its own sigma and n; n = nv is group 1's and group 2
+   // has pv_N2(nv).  SE = sqrt(s1^2/n1 + s2^2/n2), the same under H0
+   // and H1: the sigmas do not change when the means do.  Worked out
+   // as m x sqrt((s1/m)^2/n1 + (s2/m)^2/n2), m the larger sigma, so a
+   // typed sigma of 1E-300 or 1E300 never squares past the Prime's
+   // range (1E-499 to 1E499) into 0 or infinity.
+   pb:=MAX(SG,SG2);
+   M0v:=0; M1v:=MM1-MM0;
+   SE0:=pb*((SG/pb)^2/nv+(SG2/pb)^2/pv_N2(nv))^.5; SE1:=SE0;
+  END;
  END;
 
  DIRN:=SIGN(M1v-M0v);
  IF DIRN==0 THEN DIRN:=1; END;
 
- ZC:=NORMALD_ICDF(0,1,1-AL/TL);
+ ZC:=-NORMALD_ICDF(0,1,AL/TL);          // v2.5g: mirrored (see pv_NCF)
  IF TL==2 THEN
   XCL:=M0v-ZC*SE0; XCU:=M0v+ZC*SE0;
   PW:=NORMALD_CDF(M1v,SE1,XCL)+1-NORMALD_CDF(M1v,SE1,XCU);
@@ -1034,7 +1329,8 @@ END;
 // power reaches 0.80, from the SAME engine as the plot.  Returns 0
 // when there is no effect (power stays at alpha for every n) and -1
 // when even n = 5000 falls short (the cap).  Power rises with n in
-// all four tests, so halving the interval finds it in about 13
+// all five tests (test 5: n is n1, and n2 follows it, see pv_N2), so
+// halving the interval finds it in about 13
 // engine calls; stepping n one at a time could take 5000, and this
 // runs again whenever the effect or alpha changes -- on every drag
 // sample.  Leaves the scene as it was (pv_Model(NN) at the end).
@@ -1073,7 +1369,7 @@ BEGIN
 
  // n80 depends on everything except n: recompute it only when one
  // of those inputs changed since the last time (v2.4).
- nk := {TT,TL,AL,MM0,MM1,SG,PP0,PP1};
+ nk := {TT,TL,AL,MM0,MM1,SG,PP0,PP1,SG2,NN2,KN1};   // v2.5g: test 5's three
  IF pv_Same(N8K,nk) == 0 THEN
   N8K := nk;
   N80 := pv_N80();
@@ -1117,6 +1413,7 @@ BEGIN
   IF TT==2 THEN RETURN "2-Sample Means (z)"; END;
   IF TT==3 THEN RETURN "One Proportion"; END;
   IF TT==4 THEN RETURN "Two Proportions"; END;
+  IF TT==5 THEN RETURN "2 Means, σ₁≠σ₂ (z)"; END;    // v2.5g
  END;
  RETURN "";
 END;
@@ -1129,6 +1426,7 @@ BEGIN
   IF TT==2 THEN RETURN "μ₂ = "+pv_FMT(MM1,pv_EffDec()); END;
   IF TT==3 THEN RETURN "p₁ = "+pv_FMT(PP1,2); END;
   IF TT==4 THEN RETURN "p₂ = "+pv_FMT(PP1,2); END;
+  IF TT==5 THEN RETURN "μ₂ = "+pv_FMT(MM1,pv_EffDec()); END;   // v2.5g
  END;
  RETURN "";
 END;
@@ -1141,7 +1439,7 @@ LOCAL pv_DLbl()
 BEGIN
  LOCAL dlv;
  dlv := ROUND(pv_EffSz(),2);
- RETURN IFTE(TT<=2,"d","h")+" = "+pv_FMT(dlv,2)+", "+pv_EffWord(dlv);
+ RETURN IFTE(pv_MeanT()==1,"d","h")+" = "+pv_FMT(dlv,2)+", "+pv_EffWord(dlv);
 END;
 
 // both together, for the curve views' subtitle
@@ -1153,9 +1451,12 @@ END;
 // The SE teaching line (v2.4): the null curve's standard error with
 // the numbers put in, e.g. "SE₀ = σ/√n = 15/√30 = 2.74".  Decimals:
 // two, or more for a small SE so three figures show (0.0500).
-LOCAL pv_SELine()
+// v2.5g: slx is the x where the n80 text starts on the same row; test
+// 5's line is longer, and gives way to it (the numbers if they fit,
+// else the symbols, else the value alone).  Tests 1-4 ignore slx.
+LOCAL pv_SELine(slx)
 BEGIN
- LOCAL sdd, sqg2, pbl, nst;
+ LOCAL sdd, sqg2, pbl, nst, sel;
  sdd := MAX(2, 2-FLOOR(LOG(SE0)));
  sqg2 := SQG;
  nst := STRING(NN,1,0);
@@ -1173,6 +1474,14 @@ BEGIN
    pbl := (PP0+PP1)/2;           // the pooled proportion under H0
    RETURN "SE₀ = "+sqg2+"(2"+CHAR(215)+pv_NumS(pbl)+CHAR(215)+pv_NumS(1-pbl)+"/"+nst+") = "+pv_FMT(SE0,sdd);
   END;
+  IF TT==5 THEN
+   // v2.5g: "SE₀ = √(10²/40+20²/20) = 4.74"; 6.5 px a character
+   // (the overlap check's wide estimate) must end 2 px short of slx
+   sel := "SE₀ = "+SQG+"("+pv_NumS(SG)+"²/"+nst+"+"+pv_NumS(SG2)+"²/"+STRING(pv_N2(NN),1,0)+") = "+pv_FMT(SE0,sdd);
+   IF 8+6.5*DIM(sel) > slx-2 THEN sel := "SE₀ = "+SQG+"(σ₁²/n₁+σ₂²/n₂) = "+pv_FMT(SE0,sdd); END;
+   IF 8+6.5*DIM(sel) > slx-2 THEN sel := "SE₀ = "+pv_FMT(SE0,sdd); END;
+   RETURN sel;
+  END;
  END;
  RETURN "";
 END;
@@ -1180,7 +1489,10 @@ END;
 // The n80 readout: "n₈₀ = 56", "n₈₀ > 5000" or "n₈₀: no effect".
 LOCAL pv_N80S()
 BEGIN
- IF N80 > 0 THEN RETURN N80L+" = "+STRING(N80,1,0); END;
+ IF N80 > 0 THEN
+  IF TT==5 THEN RETURN N80L+" = "+pv_NStr(N80); END;   // v2.5g: n1/n2
+  RETURN N80L+" = "+STRING(N80,1,0);
+ END;
  IF N80 == 0 THEN RETURN N80L+": no effect"; END;
  RETURN N80L+" > 5000";
 END;
@@ -1275,9 +1587,9 @@ END;
 LOCAL pv_Tails()
 BEGIN
  LOCAL tzo, tzn;
- tzo := NORMALD_ICDF(0,1,1-AL/TL);
+ tzo := -NORMALD_ICDF(0,1,AL/TL);        // v2.5g: mirrored (see pv_NCF)
  TL := 3-TL;
- tzn := NORMALD_ICDF(0,1,1-AL/TL);
+ tzn := -NORMALD_ICDF(0,1,AL/TL);
  IF TL == 2 THEN
   // v2.5c: pv_Rel -- a typed alpha of 0.0001 reads "α < 0.001", not "= < 0.001"
   HB1 := "2-sided: α"+pv_Rel(pv_FMTP(AL,3))+" is split, "+
@@ -1297,6 +1609,158 @@ BEGIN
  GREQ := 1;
 END;
 
+// v2.5i: the degrees of freedom of the t test that goes with the test
+// on screen (Roger, 31 Oct 2026: "we need to put in the df also -- even
+// the fractional one").  PowerViz works with z, so df changes no number
+// here; it is shown so the screen can be read beside SPSS's.
+//   test 1  the one-sample t test: n - 1
+//   test 2  the pooled t test: 2n - 2
+//   test 5  Welch's t test: the Welch-Satterthwaite df, fractional,
+//           (a + b)^2 / (a^2/(n1 - 1) + b^2/(n2 - 1)), a = s1^2/n1 and
+//           b = s2^2/n2, from the sigmas and n's typed.  SPSS's "Equal
+//           variances not assumed" row uses the sample SDs the same way,
+//           so typing a sample's SDs and n's gives SPSS's df.  The
+//           sigmas are divided by the larger first (as in pv_Model):
+//           df does not change, and nothing squares out of range.
+// -1 for the proportions (tests 3 and 4): z tests, no df.
+LOCAL pv_DF()
+BEGIN
+ LOCAL dfa, dfb, dfm, dfk;
+ IF TT==1 THEN RETURN NN-1; END;
+ IF TT==2 THEN RETURN 2*NN-2; END;
+ IF TT==5 THEN
+  dfm := MAX(SG,SG2);
+  dfk := pv_N2(NN);
+  dfa := (SG/dfm)^2/NN;
+  dfb := (SG2/dfm)^2/dfk;
+  RETURN (dfa+dfb)^2/(dfa^2/(NN-1)+dfb^2/(dfk-1));
+ END;
+ RETURN -1;
+END;
+
+// v2.5j: THE TEST STATISTIC OBTAINED (Roger, 31 Oct 2026: "we didn't
+// put in t obtained!"), as "t(265.9) = 4.35" or "z = 2.00": the t (or
+// z) a sample would give if its means (or proportions), SDs and n's
+// were exactly the ones typed.  It is (M1v - M0v)/SE0 in every test,
+// the H1 centre in SE0 units, because SE0 is the very standard error
+// that test divides by: sigma/sqrt(n) (test 1), sigma sqrt(2/n) (test
+// 2), sqrt(p0 q0/n) (test 3), the pooled sqrt(2 pbar qbar/n) (test 4)
+// and sqrt(s1^2/n1 + s2^2/n2), Welch's (test 5).  With Roger's SPSS
+// numbers it is 4.35 on 265.9 df: SPSS's -4.351 on 265.924, the sign
+// turned because PowerViz takes group 2 minus group 1.
+LOCAL pv_TObt()
+BEGIN
+ LOCAL toV, toD;
+ toV := (M1v-M0v)/SE0;
+ toD := pv_DF();
+ IF toD < 0 THEN RETURN "z = "+pv_FMT(toV,2); END;
+ RETURN "t("+IFTE(TT==5,pv_FMT(toD,1),STRING(toD,1,0))+") = "+pv_FMT(toV,2);
+END;
+
+// v2.5j: THE READOUT BOX, every test (Roger, 31 Oct 2026: "display mu 1
+// also", "we need to see the std dev's too ... rework the output box",
+// "the other tests should have both groups too", "we need to put in
+// the df also", "we didn't put in t obtained!").  y 150-217, rows of
+// the small font (font 1) every 13 px at y 152, 165, 178, 191 and 204:
+//   left    two groups (tests 2, 4, 5): a table, a column per group,
+//           rows n, then mu and sigma or p.  Test 2's n and sigma are
+//           the same in both columns: that is what "equal sigma and n"
+//           means.  One sample (tests 1, 3): n, mu0 and mu1 (or p0 and
+//           p1), sigma, one value each.
+//   middle  d or h (magenta, as the arrow), zcrit, alpha, beta
+//   right   POWER, large, coloured by size; under it the test
+//           statistic obtained with its df, "t(265.9) = 4.35" (pv_TObt)
+//   bottom  the SE line, and n80 pulled left as long as it needs
+// Each number goes in its own TEXTOUT_P at a fixed x, so the columns
+// line up.  A number of up to 9 characters fits its column (6.5 px a
+// character, the overlap check's wide estimate).  The tappable cells
+// go into HX1..HACT: n 1 (n), the alternative's mean or p 2 (the
+// effect), sigma and the null's mean or p 5 (the Edit form), d or h 2,
+// zcrit and alpha 3 (the alpha ladder), n80 4 (the formula page).
+LOCAL pv_Panel()
+BEGIN
+ LOCAL p5d, p5c, p5s, p5x, p5a, p5t;
+ RECT_P(G1,2,150,317,217,cfrm,cfil);
+ IF TT==2 OR TT==4 OR TT==5 THEN
+  // two groups: header, then n, then mu and sigma or p
+  TEXTOUT_P("group 1",G1,20,152,1,cgry);
+  TEXTOUT_P("group 2",G1,80,152,1,cgry);
+  TEXTOUT_P("n",G1,6,165,1,cgry);
+  TEXTOUT_P(STRING(NN,1,0),G1,20,165,1,cblk);
+  TEXTOUT_P(STRING(IFTE(TT==5,pv_N2(NN),NN),1,0),G1,80,165,1,cblk);
+  IF TT==4 THEN
+   TEXTOUT_P("p",G1,6,178,1,cgry);
+   TEXTOUT_P(pv_FMT(PP0,2),G1,20,178,1,cblk);
+   TEXTOUT_P(pv_FMT(PP1,2),G1,80,178,1,cblk);
+   p5a:=0;                                  // no sigma row
+  ELSE
+   p5d := pv_MuDec();
+   TEXTOUT_P("μ",G1,6,178,1,cgry);
+   TEXTOUT_P(pv_FMT(MM0,p5d),G1,20,178,1,cblk);
+   TEXTOUT_P(pv_FMT(MM1,p5d),G1,80,178,1,cblk);
+   TEXTOUT_P("σ",G1,6,191,1,cgry);
+   TEXTOUT_P(pv_NumS(SG),G1,20,191,1,cblk);
+   TEXTOUT_P(pv_NumS(IFTE(TT==5,SG2,SG)),G1,80,191,1,cblk);
+   p5a:=5;
+  END;
+  HX1:={4,4,4,142,142,142,0};
+  HX2:={140,140,140,236,236,236,317};
+  HY1:={163,176,189,150,163,176,202};
+  HY2:={176,189,202,163,176,189,216};
+  HACT:={1,2,p5a,2,3,3,4};
+ ELSE
+  // one sample: n, then the null's and the alternative's mean (or p),
+  // then sigma
+  TEXTOUT_P("n",G1,6,152,1,cgry);
+  TEXTOUT_P(STRING(NN,1,0),G1,30,152,1,cblk);
+  IF TT==3 THEN
+   TEXTOUT_P("p₀",G1,6,165,1,cgry);
+   TEXTOUT_P(pv_FMT(PP0,2),G1,30,165,1,cblk);
+   TEXTOUT_P("p₁",G1,6,178,1,cgry);
+   TEXTOUT_P(pv_FMT(PP1,2),G1,30,178,1,cblk);
+   p5a:=0;                                  // no sigma row
+  ELSE
+   p5d := pv_MuDec();
+   TEXTOUT_P("μ₀",G1,6,165,1,cgry);
+   TEXTOUT_P(pv_FMT(MM0,p5d),G1,30,165,1,cblk);
+   TEXTOUT_P("μ₁",G1,6,178,1,cgry);
+   TEXTOUT_P(pv_FMT(MM1,p5d),G1,30,178,1,cblk);
+   TEXTOUT_P("σ",G1,6,191,1,cgry);
+   TEXTOUT_P(pv_NumS(SG),G1,30,191,1,cblk);
+   p5a:=5;
+  END;
+  HX1:={4,4,4,142,142,142,0,4};
+  HX2:={140,140,140,236,236,236,317,140};
+  HY1:={150,163,176,150,163,176,202,189};
+  HY2:={163,176,189,163,176,189,216,202};
+  HACT:={1,5,2,2,3,3,4,p5a};               // the last: test 1's sigma row
+ END;
+ // the middle column
+ TEXTOUT_P(pv_DLbl(),G1,144,152,1,calt);
+ TEXTOUT_P("zcrit = "+pv_FMT(ZC,3),G1,144,165,1,cgry);
+ TEXTOUT_P("α"+pv_Rel(pv_FMTP(AL,3)),G1,144,178,1,cgry);
+ TEXTOUT_P("β"+pv_Rel(pv_BetaS(3)),G1,144,191,1,cgry);
+ // POWER in red below 0.5, orange to 0.8, green from 0.8
+ p5c:=ccrt;
+ IF PW>=0.5 THEN p5c:=cfrm; END;
+ IF PW>=0.8 THEN p5c:=cgrn; END;
+ TEXTOUT_P("POWER",G1,248,152,2,cgry);
+ TEXTOUT_P(pv_FMTP(PW,3),G1,240,167,5,p5c);
+ // under it, the test statistic obtained, with its df (pv_TObt),
+ // pulled left as far as it needs to end at x 316
+ p5t:=pv_TObt();
+ TEXTOUT_P(p5t,G1,MIN(240,316-IP(5.5*DIM(p5t))),191,1,cblk);
+ // the bottom row: n80 (and the formula's n) at the right, the SE line
+ // in what is left (pv_SELine shortens test 5's to end before p5x)
+ p5s:=pv_N80S();
+ IF N80<>0 AND NCF>0 AND NCF<100000 THEN p5s:=p5s+" ("+pv_NCFS()+")"; END;
+ p5x:=MIN(240,314-IP(5.5*DIM(p5s)));
+ TEXTOUT_P(pv_SELine(p5x),G1,8,204,1,cgry);
+ TEXTOUT_P(p5s,G1,p5x,204,1,cgrn);
+ // the n80 cell starts where its text does
+ HX1(7):=p5x-2;
+END;
+
 // ---------------- rendering: main view ----------------
 LOCAL pv_Draw()
 BEGIN
@@ -1308,6 +1772,7 @@ BEGIN
  LOCAL rw, ex, ff, stp, dec, tk;
  LOCAL bA, bX, bY, bW, pA, pX;
  LOCAL pY, pWd, lx, ly, ytp, ybt;   // v2.5: pW -> pWd (PW is the power; see CHANGES)
+ LOCAL ar0, ar1, ary, arl, ars;     // v2.5h: the d arrow
 
  span:=XMX-XMN;
 
@@ -1464,6 +1929,34 @@ BEGIN
   yy:=yy+4;
  END;
 
+ // ----- v2.5h: the effect made visible -----
+ // A magenta arrow from the H0 centre to the H1 centre, 6 px below the
+ // plot top, labelled "d = 0.32" ("h = ..." for proportions): the gap
+ // between the means, and d is that gap measured in SDs.  The ends are
+ // kept inside the plot; the label sits under the middle of the arrow,
+ // or beside it when the arrow is shorter than the label.  No arrow when
+ // the centres are under 6 px apart (no effect, or a tiny one).
+ ar0:=MIN(PXR,MAX(PXL,PXL+IP((M0v-XMN)/span*(PXR-PXL))));
+ ar1:=MIN(PXR,MAX(PXL,PXL+IP((M1v-XMN)/span*(PXR-PXL))));
+ ary:=PYT+6;
+ arl:=IFTE(pv_MeanT()==1,"d","h")+" = "+pv_FMT(ROUND(pv_EffSz(),2),2);
+ IF ABS(ar1-ar0)>=6 THEN
+  ars:=SIGN(ar1-ar0);
+  LINE_P(G1,ar0,ary,ar1,ary,calt);
+  LINE_P(G1,ar1,ary,ar1-3*ars,ary-3,calt);
+  LINE_P(G1,ar1,ary,ar1-3*ars,ary+3,calt);
+  LINE_P(G1,ar0,ary,ar0+3*ars,ary-3,calt);
+  LINE_P(G1,ar0,ary,ar0+3*ars,ary+3,calt);
+ END;
+ // 6 px a character (font 1); centred under the arrow if it fits
+ lx:=IP((ar0+ar1)/2-3*DIM(arl));
+ IF ABS(ar1-ar0) < 6*DIM(arl)+8 THEN
+  lx:=MAX(ar0,ar1)+5;
+  IF lx+6*DIM(arl) > PXR THEN lx:=MIN(ar0,ar1)-5-6*DIM(arl); END;
+ END;
+ lx:=MIN(PXR-6*DIM(arl),MAX(PXL+2,lx));
+ TEXTOUT_P(arl,G1,lx,ary+3,1,calt);
+
  // baseline axis
  LINE_P(G1,PXL,PYB,PXR,PYB,cgry);
 
@@ -1539,43 +2032,8 @@ BEGIN
   TEXTOUT_P(HB2,G1,14,PYT+17,1,cblk);
  END;
 
- // ----- readout panel: orange frame, light fill (house style) -----
- // v2.4: y 162-217, clear of the soft-key strip (218-239).  Rows of
- // the small-2 font at y 165, 179, 193; the SE line (font 1) at 206.
- RECT_P(G1,2,162,317,217,cfrm,cfil);
- TEXTOUT_P("n = "+STRING(NN,1,0)+"/grp",G1,8,165,2,cgry);
- TEXTOUT_P(pv_EffVal(),G1,8,179,2,cgry);
- // v2.5c: pv_Rel on alpha, and beta from pv_BetaS (a probability of its own,
- // not 1 - PW, which is 0 once PW rounds to 1): "β < 0.001" at a large n
- TEXTOUT_P("α"+pv_Rel(pv_FMTP(AL,3)),G1,8,193,2,cgry);
- TEXTOUT_P("zcrit = "+pv_FMT(ZC,3),G1,108,165,2,cgry);
- TEXTOUT_P(pv_DLbl(),G1,108,179,2,cgry);
- TEXTOUT_P("β"+pv_Rel(pv_BetaS(3)),G1,108,193,2,cgry);
- TEXTOUT_P(pv_SELine(),G1,8,206,1,cgry);
- // v2.5: the n80 line carries the formula's n in brackets, "n80 = 56
- // (55.6)" (NCF, worked out by PPL in pv_Setup -- no CAS here: this is
- // a frame).  It is pulled left when long so it ends inside the panel
- // (5.5 px a character, the harness's estimate for the small font).
- lbs:=pv_N80S();
- IF N80<>0 AND NCF>0 AND NCF<100000 THEN lbs:=lbs+" ("+pv_NCFS()+")"; END;
- lx:=MIN(228,314-IP(5.5*DIM(lbs)));
- // the tappable cells, recorded with the same numbers the text uses:
- // n (row 1, left), effect (row 2, both cells), alpha (row 3, left)
- // and zcrit (row 1, middle), which is set by alpha; v2.5: the n80
- // line (action 4, the formula page).
- HX1:={4,4,4,106,106,lx-2};
- HX2:={104,104,104,220,220,317};
- HY1:={163,177,191,163,177,203};
- HY2:={176,190,204,176,190,216};
- HACT:={1,2,3,3,2,4};
-
- // POWER in red below 0.5, orange to 0.8, green from 0.8 (palette constants)
- cpwr:=ccrt;
- IF PW>=0.5 THEN cpwr:=cfrm; END;
- IF PW>=0.8 THEN cpwr:=cgrn; END;
- TEXTOUT_P("POWER",G1,228,165,2,cgry);
- TEXTOUT_P(pv_FMTP(PW,3),G1,222,180,5,cpwr);
- TEXTOUT_P(lbs,G1,lx,206,1,cgrn);    // n80 (v2.4) and the formula's n (v2.5)
+ // ----- readout box (v2.5j: pv_Panel, every test; it also records the tappable cells) -----
+ pv_Panel();
 
  // v2.4: no footer legend here -- the soft keys take its place
  // (DRAWMENU paints y 218-239).  The keys are on the help pages.
@@ -1617,8 +2075,13 @@ BEGIN
  ELSE
   TEXTOUT_P("Power vs effect size",G1,4,3,2,cblk);
   // v2.5c: pv_Rel, as above
-  lbs:="n = "+STRING(NN,1,0)+"/grp, α"+pv_Rel(pv_FMTP(AL,3))+", "+STRING(TL,1,0)+"-sided";
-  IF TT>=3 THEN lbs:=lbs+", p₀ = "+pv_FMT(PP0,2); END;
+  IF TT==5 THEN
+   lbs:="n = "+pv_NStr(NN)+"; α"+pv_Rel(pv_FMTP(AL,3))+"; "+STRING(TL,1,0)+"-sided";   // v2.5g; v2.5i ";"
+  ELSE
+   // v2.5i: "n = 30 per group" (tests 2, 4), "n = 30" (one sample), no "/"
+   lbs:="n = "+STRING(NN,1,0)+IFTE(TT==2 OR TT==4," per group","")+", α"+pv_Rel(pv_FMTP(AL,3))+", "+STRING(TL,1,0)+"-sided";
+  END;
+  IF pv_MeanT()==0 THEN lbs:=lbs+", p₀ = "+pv_FMT(PP0,2); END;
  END;
  TEXTOUT_P(pv_TName(),G1,196,7,1,cgry);
  TEXTOUT_P(lbs,G1,4,19,1,cgry);
@@ -1668,6 +2131,7 @@ BEGIN
     PIXON_P(G1,x0p,i2,cgrn);
    END;
    lbs:=N80L+" = "+STRING(PN80,1,0);
+   IF TT==5 THEN lbs:=N80L+" = "+pv_NStr(PN80); END;   // v2.5g: n1/n2
    tickx:=x0p+4;
    IF x0p>PCR-70 THEN tickx:=x0p-6*DIM(lbs)-3; END;
    TEXTOUT_P(lbs,G1,tickx,PCT+2,1,cgrn);
@@ -1733,18 +2197,28 @@ BEGIN
 
  // axis name and footer (no soft keys on these views)
  IF kind==1 THEN
-  TEXTOUT_P("n",G1,160,214,1,cblk);
-  IF selc>0 THEN
-   // v2.5c: pv_Rel -- a power below 0.001 reads "power < 0.001"
-   lbs:="at n = "+STRING(pv_NofC(selc),1,0)+": power"+pv_Rel(pv_FMTP(PWC(selc),3))+", lift = use this n";
+  IF TT==5 THEN
+   // v2.5g: the axis is n1; n2 follows at the kept ratio
+   TEXTOUT_P("n₁   (n₂ = "+pv_NumD(NN2/KN1)+" × n₁)",G1,110,214,1,cblk);
+   IF selc>0 THEN
+    lbs:="n = "+pv_NStr(pv_NofC(selc))+": power"+pv_Rel(pv_FMTP(PWC(selc),3))+", lift = use this n";
+   ELSE
+    lbs:="n = "+pv_NStr(NN)+": power"+pv_Rel(pv_FMTP(PW,3))+", touch = pick n, key = back";
+   END;
   ELSE
-   // v2.5c: pv_Rel, as above
-   lbs:="at n = "+STRING(NN,1,0)+": power"+pv_Rel(pv_FMTP(PW,3))+", touch = pick n, key = back";
+   TEXTOUT_P("n",G1,160,214,1,cblk);
+   IF selc>0 THEN
+    // v2.5c: pv_Rel -- a power below 0.001 reads "power < 0.001"
+    lbs:="at n = "+STRING(pv_NofC(selc),1,0)+": power"+pv_Rel(pv_FMTP(PWC(selc),3))+", lift = use this n";
+   ELSE
+    // v2.5c: pv_Rel, as above
+    lbs:="at n = "+STRING(NN,1,0)+": power"+pv_Rel(pv_FMTP(PW,3))+", touch = pick n, key = back";
+   END;
   END;
  ELSE
-  TEXTOUT_P(IFTE(TT<=2,"Cohen's d","Cohen's h"),G1,136,214,1,cblk);
+  TEXTOUT_P(IFTE(pv_MeanT()==1,"Cohen's d","Cohen's h"),G1,136,214,1,cblk);
   // v2.5c: pv_Rel, as above
-  lbs:="at "+IFTE(TT<=2,"d","h")+" = "+pv_FMT(pv_EffSz(),2)+": power"+pv_Rel(pv_FMTP(PW,3))+", key or tap = back";
+  lbs:="at "+IFTE(pv_MeanT()==1,"d","h")+" = "+pv_FMT(pv_EffSz(),2)+": power"+pv_Rel(pv_FMTP(PW,3))+", key or tap = back";
  END;
  TEXTOUT_P(lbs,G1,6,226,1,cfot);
 
@@ -1835,7 +2309,7 @@ END;
 // ---------------- power-vs-effect-size view (v2.4) ----------------
 // Power over the standardized effect, 0 to 1.5, at the current n and
 // alpha, in the direction of the current effect.  Means: mu1 = mu0 +
-// d*sigma.  Proportions: p1 = sin^2(asin(sqrt p0) + h/2), which runs
+// d*sigma (v2.5g: test 5's sigma', pv_SigE).  Proportions: p1 = sin^2(asin(sqrt p0) + h/2), which runs
 // out where p1 would pass 0.98 (the program's own limit); the curve
 // simply stops there.
 LOCAL pv_PowEView()
@@ -1846,12 +2320,12 @@ BEGIN
  pv_Model(NN);
  sdir:=DIRN;
  a0:=0;
- IF TT>=3 THEN a0:=pv_AsinR(SQRT(PP0)); END;
+ IF pv_MeanT()==0 THEN a0:=pv_AsinR(SQRT(PP0)); END;
  FOR cc FROM 1 TO 250 DO
   ev:=cc/250*1.5;
   PWC(cc):=-1;
-  IF TT<=2 THEN
-   MM1:=MM0+sdir*ev*SG;
+  IF pv_MeanT()==1 THEN
+   MM1:=MM0+sdir*ev*pv_SigE();
    pv_Model(NN);
    PWC(cc):=PW;
   ELSE
@@ -1876,7 +2350,11 @@ END;
 LOCAL pv_EditForm()
 BEGIN
  LOCAL efok, efv;
+ LOCAL e5a, e5b;                  // v2.5g: test 5's n1 and n2 as typed
  efok := 1;
+ // v2.5g, test 5: the form shows n2 as it is now (n1 at the kept
+ // ratio); pv_Set5 takes the pair after OK
+ e5a := NN; e5b := pv_N2(NN);
  CASE
   IF TT==1 THEN
    efok:=INPUT({MM0,MM1,SG,NN,AL},"One-Sample Mean",
@@ -1902,22 +2380,33 @@ BEGIN
     {"Group 1 proportion","Group 2 proportion",
      "Per-group sample size (≥2)","Significance level"});
   END;
+  IF TT==5 THEN
+   // v2.5g: seven fields; n1 and n2 go into LOCALs (pv_Set5 below)
+   efok:=INPUT({MM0,MM1,SG,SG2,e5a,e5b,AL},"Two Means, unequal σ & n",
+    {"μ grp1:","μ grp2:","σ grp1:","σ grp2:","n grp1:","n grp2:","α:"},
+    {"Group 1 mean","Group 2 mean","Group 1 SD (>0)","Group 2 SD (>0)",
+     "Group 1 sample size (≥2)","Group 2 sample size (≥2)","Significance level"});
+  END;
  END;
  IF efok==0 THEN RETURN 0; END;   // Cancel: values untouched
  // sanity clamps.  v2.3: every clamp that CHANGES a typed value now
  // says so first, in a one-line box, so a student learns why the
  // plot does not show what was entered.  A value already in range
  // passes silently.  (efv holds the in-range value.)
- efv:=MIN(5000,MAX(2,IP(NN)));
- IF efv<>NN THEN
-  MSGBOX("n must be a whole number from 2 to 5000 (you entered "+STRING(NN,2,2)+"): set to "+STRING(efv,1,0));
-  NN:=efv;
+ IF TT==5 THEN
+  pv_Set5(e5a, e5b);               // v2.5g: n1, n2 and their ratio
+ ELSE
+  efv:=MIN(5000,MAX(2,IP(NN)));
+  IF efv<>NN THEN
+   MSGBOX("n must be a whole number from 2 to 5000 (you entered "+STRING(NN,2,2)+"): set to "+STRING(efv,1,0));
+   NN:=efv;
+  END;
  END;
  IF (AL<=0) OR (AL>=1) THEN
   MSGBOX("α must be between 0 and 1 (you entered "+STRING(AL,2,3)+"): reset to 0.05");
   AL:=0.05;
  END;
- IF TT>=3 THEN
+ IF pv_MeanT()==0 THEN
   efv:=MIN(0.98,MAX(0.02,PP0));
   IF efv<>PP0 THEN
    MSGBOX("A proportion must be 0.02 to 0.98 (you entered "+STRING(PP0,2,3)+"): set to "+STRING(efv,2,2));
@@ -1933,6 +2422,12 @@ BEGIN
   MSGBOX("σ must be positive (you entered "+STRING(SG,2,3)+"): reset to 1");
   SG:=1;
  END;
+ IF TT==5 THEN
+  IF SG2<=0 THEN                   // v2.5g: group 2's sigma
+   MSGBOX("σ₂ must be positive (you entered "+STRING(SG2,2,3)+"): reset to 1");
+   SG2:=1;
+  END;
+ END;
  pv_SyncA();                        // re-seat the alpha ladder
  RETURN 1;
 END;
@@ -1942,7 +2437,17 @@ END;
 // (both verified in ChiTable).  Same clamp and message as the form.
 LOCAL pv_EditN()
 BEGIN
- LOCAL env, enok, enc, enl;
+ LOCAL env, enok, enc, enl, en2;
+ IF TT==5 THEN
+  // v2.5g: test 5 has two sample sizes, both in one form; the typed
+  // pair sets the ratio n2/n1 that the arrows then keep (pv_Set5)
+  env:=NN; en2:=pv_N2(NN);
+  enok:=INPUT({env,en2},"Sample sizes",{"n grp1:","n grp2:"},
+   {"Group 1: a whole number from 2 to 5000","Group 2: 0.1 to 10 times group 1"});
+  IF enok==0 THEN RETURN 0; END;
+  pv_Set5(env, en2);
+  RETURN 1;
+ END;
  env:=NN;
  enl:=IFTE(TT==1 OR TT==3,"n:","n/group:");
  enok:=INPUT({env},"Sample size",{enl},{"A whole number from 2 to 5000"});
@@ -1959,7 +2464,7 @@ END;
 LOCAL pv_EditEff()
 BEGIN
  LOCAL eev, eeok, eel, eeh, eec;
- IF TT<=2 THEN
+ IF pv_MeanT()==1 THEN
   eev:=MM1;
   eel:=IFTE(TT==1,"μ₁:","μ grp2:");
   eeh:=IFTE(TT==1,"Alternative mean","Group 2 mean");
@@ -1970,7 +2475,7 @@ BEGIN
  END;
  eeok:=INPUT({eev},pv_TName(),{eel},{eeh});
  IF eeok==0 THEN RETURN 0; END;
- IF TT<=2 THEN
+ IF pv_MeanT()==1 THEN
   MM1:=eev;
  ELSE
   eec:=MIN(0.98,MAX(0.02,eev));
@@ -1986,20 +2491,32 @@ END;
 // CHOOSE pattern per lessons learned: init 0, test the index
 LOCAL pv_SelTest()
 BEGIN
- LOCAL tsel;
+ LOCAL tsel, tmap;
  tsel:=0;
+ // v2.5g: five tests.  The new one is shown third, beside the other
+ // test of two means; inside it is TT = 5 (tmap), so tests 1-4 keep
+ // their numbers.  The old second item now says what it assumes.
+ // Items kept under about 30 characters (a CHOOSE line longer than
+ // that is cut at the box edge: emulator, round 1).
+ tmap:={1,2,5,3,4};
  CHOOSE(tsel,"PowerViz - Select Test",
   {"One-Sample Mean (z)",
-   "Two-Sample Means (z)",
+   "Two Means, equal σ & n (z)",
+   "Two Means, unequal σ & n (z)",
    "One Proportion",
    "Two Proportions"});
  IF tsel>0 THEN
-  TT:=tsel;
+  TT:=tmap(tsel);
   CASE
    IF TT==1 THEN MM0:=100; MM1:=105; SG:=15; NN:=30; END;
    IF TT==2 THEN MM0:=100; MM1:=105; SG:=15; NN:=30; END;
    IF TT==3 THEN PP0:=0.5; PP1:=0.6; NN:=100; END;
    IF TT==4 THEN PP0:=0.5; PP1:=0.6; NN:=100; END;
+   // v2.5g: group 2 twice as spread out, and the people split the
+   // other way round (40 in group 1, 20 in group 2), so the formula
+   // page's best-split line has something to teach: put more people
+   // where sigma is larger (n2/n1 = s2/s1 = 2)
+   IF TT==5 THEN MM0:=100; MM1:=105; SG:=10; SG2:=20; NN:=40; NN2:=20; KN1:=40; END;
   END;
   AL:=0.05; TL:=1; pv_SyncA();
  END;
@@ -2020,31 +2537,43 @@ LOCAL pv_Formula()
 BEGIN
  LOCAL fza, fzb, fln, fcl, ft0;
  LOCAL fdl, fs1, fs2, fs3, fnc, fok;
- LOCAL fdn, fii;
+ LOCAL fdn, fii, fnl, fk5;
 
- fza := NORMALD_ICDF(0,1,1-AL/TL);       // the plot's own critical z
+ fza := -NORMALD_ICDF(0,1,AL/TL);        // the plot's own critical z (v2.5g: mirrored)
  fzb := NORMALD_ICDF(0,1,0.8);           // power 0.80
- fdl := ABS(IFTE(TT<=2, MM1-MM0, PP1-PP0));
+ fdl := ABS(IFTE(pv_MeanT()==1, MM1-MM0, PP1-PP0));
+ // v2.5g: test 5 solves for n1 (n2 = k n1, k the kept ratio)
+ fnl := "n"; IF TT==5 THEN fnl := "n₁"; END;
+ fk5 := NN2/KN1;
  fdn := pv_DName();
  ft0 := TICKS; fok := 1;
 
  // ---- the CAS: the symbolic solve (once per test) ----
  IF FSYK <> TT THEN
-  FSY := pv_Strip(pv_Cas(pv_Eq({"pvs", "pvd", "pvp", "pvr", "pvm"})));
+  FSY := pv_Strip(pv_Cas(pv_Eq({"pvs", "pvd", "pvp", "pvr", "pvm", "pvt", "pvk"})));
   IF pv_CasUse(FSY) == 0 THEN FSY := ""; END;
   FSYK := TT;
  END;
  IF DIM(FSY) == 0 THEN fok := 0; END;
  // ---- the CAS: the student's numbers put in, z kept as symbols ----
- fs1 := {TT, MM0, MM1, SG, PP0, PP1};
+ fs1 := {TT, MM0, MM1, SG, PP0, PP1, SG2, NN2, KN1};    // v2.5g: test 5's three
  IF pv_Same(FSNK, fs1) == 0 THEN
   FSN := "";
   IF fdl > 0 THEN
-   IF TT<=2 THEN
+   IF pv_MeanT()==1 THEN
     fs2 := pv_RatS(SG);
     fs3 := pv_RatS(MAX(MM0,MM1)) + "-" + pv_RatS(MIN(MM0,MM1));   // the size of the difference
     IF DIM(fs2) > 0 AND DIM(pv_RatS(MM0)) > 0 AND DIM(pv_RatS(MM1)) > 0 THEN
-     FSN := pv_Strip(pv_Cas(pv_Eq({fs2, "(" + fs3 + ")", "", "", ""})));
+     IF TT==5 THEN
+      // v2.5g: sigma2 as a ratio too, and k = n2/n1 from the two whole
+      // numbers typed (exact; never a decimal in CAS text)
+      IF DIM(pv_RatS(SG2)) > 0 THEN
+       FSN := pv_Strip(pv_Cas(pv_Eq({fs2, "(" + fs3 + ")", "", "", "", pv_RatS(SG2),
+                                     "(" + pv_IStr(NN2) + "/" + pv_IStr(KN1) + ")"})));
+      END;
+     ELSE
+      FSN := pv_Strip(pv_Cas(pv_Eq({fs2, "(" + fs3 + ")", "", "", ""})));
+     END;
     END;
    ELSE
     fs2 := pv_RatS(PP0); fs3 := pv_RatS(PP1);
@@ -2085,23 +2614,34 @@ BEGIN
                       "  SE₀ = "+SQG+"(2"+CHAR(57345)+"(1−"+CHAR(57345)+")/n),  SE₁ = "+SQG+"((p₁(1−p₁)+p₂(1−p₂))/n)"});
   fcl := CONCAT(fcl, {cblk, cblk});
  END;
+ IF TT==5 THEN
+  // v2.5g: one SE for both curves, each group with its own sigma and n
+  fln := CONCAT(fln, {"  (μ₂−μ₁ − zα×SE₀)/SE₁ = zβ,  SE₀ = SE₁ = SE,",
+                      "  SE = "+SQG+"(σ₁²/n₁ + σ₂²/n₂),  n₂ = k×n₁"});
+  fcl := CONCAT(fcl, {cblk, cblk});
+ END;
  // 4-5: the CAS's symbolic solve (or the textbook form without it)
  IF DIM(FSY) > 0 THEN
-  fln := CONCAT(fln, {"CAS, solved for n:"});
-  fs1 := pv_Wrap("  n = "+pv_Disp(FSY), 54);
+  fln := CONCAT(fln, {"CAS, solved for "+fnl+":"});
+  fs1 := pv_Wrap("  "+fnl+" = "+pv_Disp(FSY), 54);
  ELSE
   fln := CONCAT(fln, {"(no CAS: the formula as textbooks print it)"});
   IF TT==1 THEN fs1 := {"  n = ((zα+zβ)×σ/(μ₁−μ₀))²"}; END;
   IF TT==2 THEN fs1 := {"  n = 2×((zα+zβ)×σ/(μ₂−μ₁))²"}; END;
   IF TT==3 THEN fs1 := pv_Wrap("  n = ((zα"+SQG+"(p₀(1−p₀)) + zβ"+SQG+"(p₁(1−p₁)))/(p₁−p₀))²", 54); END;
   IF TT==4 THEN fs1 := pv_Wrap("  n = ((zα"+SQG+"(2"+CHAR(57345)+"(1−"+CHAR(57345)+")) + zβ"+SQG+"(p₁(1−p₁)+p₂(1−p₂)))/(p₂−p₁))²", 54); END;
+  IF TT==5 THEN fs1 := pv_Wrap("  n₁ = (zα+zβ)²×(σ₁² + σ₂²/k)/(μ₂−μ₁)²", 54); END;   // v2.5g
  END;
  fcl := CONCAT(fcl, {cgry});
  fln := CONCAT(fln, fs1);
  FOR fii FROM 1 TO SIZE(fs1) DO fcl := CONCAT(fcl, {calt}); END;
  // 6-7: the CAS with the student's numbers, z still symbols
- IF TT<=2 THEN
+ IF pv_MeanT()==1 THEN
   fs2 := "σ = "+pv_NumD(SG)+", |"+MID(fdn,2,DIM(fdn)-2)+"| = "+pv_NumD(fdl);
+  // v2.5g: test 5's two sigmas and k
+  IF TT==5 THEN
+   fs2 := "σ₁ = "+pv_NumD(SG)+", σ₂ = "+pv_NumD(SG2)+", k = "+pv_NumD(fk5)+", |"+MID(fdn,2,DIM(fdn)-2)+"| = "+pv_NumD(fdl);
+  END;
  ELSE
   fs2 := IFTE(TT==3,"p₀","p₁")+" = "+pv_NumD(PP0)+", "+IFTE(TT==3,"p₁","p₂")+" = "+pv_NumD(PP1);
  END;
@@ -2110,10 +2650,20 @@ BEGIN
   fcl := CONCAT(fcl, {ccrt});
  ELSE
   IF DIM(FSN) > 0 THEN
-   fln := CONCAT(fln, {"CAS, with "+fs2+" (z kept exact):"});
-   fs1 := pv_Wrap("  n = "+pv_Disp(FSN), 54);
+   // v2.5g: test 5's list of values is long; "(z kept exact)" goes
+   IF TT==5 THEN
+    fln := CONCAT(fln, {"CAS, with "+fs2+":"});
+   ELSE
+    fln := CONCAT(fln, {"CAS, with "+fs2+" (z kept exact):"});
+   END;
+   fs1 := pv_Wrap("  "+fnl+" = "+pv_Disp(FSN), 54);
   ELSE
-   fln := CONCAT(fln, {"(no CAS line with "+fs2+")"});
+   // v2.5g: test 5's list of values is long; a shorter lead-in
+   IF TT==5 THEN
+    fln := CONCAT(fln, {"(no CAS) "+fs2});
+   ELSE
+    fln := CONCAT(fln, {"(no CAS line with "+fs2+")"});
+   END;
    fs1 := {};
   END;
   fcl := CONCAT(fcl, {cgry});
@@ -2129,16 +2679,21 @@ BEGIN
    fnc := (PP0+PP1)/2;
    fs3 := "(("+SQG+"("+pv_NumD(2*fnc*(1-fnc))+")×"+pv_FMT(fza,3)+" + "+SQG+"("+pv_NumD(PP0*(1-PP0)+PP1*(1-PP1))+")×"+pv_FMT(fzb,3)+")/"+pv_NumD(fdl)+")²";
   END;
+  // v2.5g: test 5, ((za + zb) x sqrt(s1^2 + s2^2/k)/delta)^2 -- the same
+  // number as pv_NCF's ((za u + zb w)/delta)^2 with u = w
+  IF TT==5 THEN
+   fs3 := "(("+pv_FMT(fza,3)+" + "+pv_FMT(fzb,3)+")×"+SQG+"("+pv_NumD(SG^2)+" + "+pv_NumD(SG2^2/fk5)+")/"+pv_NumD(fdl)+")²";
+  END;
   IF NCF < 0 THEN
    // v2.5d (fleet review P1): pv_NCF found no root -- the bracket is 0 or
    // below (a 1-sided alpha above 0.5 makes zα negative), and sqrt(n)
    // cannot be.  The formula is shown without a value, and why.
-   fs1 := CONCAT(pv_Wrap("  n = "+fs3, 54), {"    no root: the bracket is 0 or less, and "+SQG+"n > 0"});
+   fs1 := CONCAT(pv_Wrap("  "+fnl+" = "+fs3, 54), {"    no root: the bracket is 0 or less, and "+SQG+fnl+" > 0"});
   ELSE
    IF DIM(fs3) + 15 <= 54 THEN
-    fs1 := {"  n = "+fs3+" = "+pv_FMT(NCF,2)};
+    fs1 := {"  "+fnl+" = "+fs3+" = "+pv_FMT(NCF,2)};
    ELSE
-    fs1 := CONCAT(pv_Wrap("  n = "+fs3, 54), {"    = "+pv_FMT(NCF,2)});
+    fs1 := CONCAT(pv_Wrap("  "+fnl+" = "+fs3, 54), {"    = "+pv_FMT(NCF,2)});
    END;
   END;
   fln := CONCAT(fln, fs1);
@@ -2149,6 +2704,7 @@ BEGIN
   fnc := MAX(2, CEILING(NCF));
   IF N80 > 0 THEN
    fs2 := ";  trying n: "+N80L+" = "+pv_IStr(N80);
+   IF TT==5 THEN fs2 := "; trying: "+N80L+" = "+pv_NStr(N80); END;   // v2.5g
   ELSE
    fs2 := ";  trying n: "+N80L+" > 5000";
   END;
@@ -2157,9 +2713,14 @@ BEGIN
    fln := CONCAT(fln, {"Power is above 0.80 at every n"+fs2});
   ELSE
    IF CEILING(NCF) < 2 THEN
-    fln := CONCAT(fln, {"Round UP: "+pv_IStr(CEILING(NCF))+", but n starts at 2"+fs2});
+    fln := CONCAT(fln, {"Round UP: "+pv_IStr(CEILING(NCF))+", but "+fnl+" starts at 2"+fs2});
    ELSE
-    fln := CONCAT(fln, {"Round UP (whole people): n = "+pv_IStr(fnc)+fs2});
+    IF TT==5 THEN
+     // v2.5g: n1 rounded up, and the n2 that goes with it
+     fln := CONCAT(fln, {"Round UP: n₁ = "+pv_IStr(fnc)+", n₂ = "+pv_IStr(pv_N2(fnc))+fs2});
+    ELSE
+     fln := CONCAT(fln, {"Round UP (whole people): n = "+pv_IStr(fnc)+fs2});
+    END;
    END;
   END;
   fcl := CONCAT(fcl, {cgrn});
@@ -2188,6 +2749,14 @@ BEGIN
    END;
   END;
   FOR fii FROM SIZE(fcl)+1 TO SIZE(fln) DO fcl := CONCAT(fcl, {cgry}); END;
+  // v2.5g, test 5: the best split of a fixed total n1 + n2 makes
+  // s1^2/n1 + s2^2/n2 smallest at n2/n1 = s2/s1 (more people where sigma
+  // is larger), if the page has a line left (15 at most); help page 4
+  // says it whatever the page holds
+  IF TT==5 AND SIZE(fln) < 15 THEN
+   fln := CONCAT(fln, {"Best split of n₁+n₂: n₂/n₁ = σ₂/σ₁ = "+pv_FMT(SG2/SG,2)+" (yours "+pv_FMT(fk5,2)+")"});
+   fcl := CONCAT(fcl, {cnul});
+  END;
  END;
 
  // ---- draw it: composed on G1, one blit (house idiom) ----
@@ -2207,18 +2776,617 @@ BEGIN
  WFIT:=1;
 END;
 
+// ============================================================
+// v2.5h: LEVENE'S TEST AND TWO REAL SAMPLES
+// ============================================================
+
+// One value from N(0,1): Marsaglia's polar method (no trig, so the
+// Home angle mode cannot touch it; Lessons Learned s11).  Each accepted
+// pair gives two values; the second is kept for the next call.
+LOCAL pv_RNorm()
+BEGIN
+ LOCAL rnu, rnv, rns, rnf;
+ IF pvGsf==1 THEN pvGsf:=0; RETURN pvGsp; END;
+ REPEAT
+  rnu:=2*RANDOM-1; rnv:=2*RANDOM-1;
+  rns:=rnu*rnu+rnv*rnv;
+ UNTIL rns>0 AND rns<1;
+ rnf:=(-2*LN(rns)/rns)^.5;
+ pvGsp:=rnv*rnf; pvGsf:=1;
+ RETURN rnu*rnf;
+END;
+
+// Exact power of the two-sided F test of equal variances, F = s2^2/s1^2,
+// for normal data: under H1, F/rho2 has the F(fd2, fd1) distribution,
+// rho2 = sigma2^2/sigma1^2, fd1 = n1 - 1, fd2 = n2 - 1.  Power = P(F <
+// lower critical value) + P(F > upper one).  The upper critical value is
+// 1/(a lower quantile of F(fd1, fd2)) and the upper tail P(F > c) is the
+// lower tail of 1/F, so every call is a lower tail and keeps its digits
+// (Lessons Learned s3: never 1 - CDF, never ICDF(1 - alpha)).
+LOCAL pv_FPow(fr2, fd1, fd2, fal)
+BEGIN
+ LOCAL fcl, fcu;
+ fcl:=FISHER_ICDF(fd2,fd1,fal/2);
+ fcu:=1/FISHER_ICDF(fd1,fd2,fal/2);
+ RETURN FISHER_CDF(fd2,fd1,fcl/fr2)+FISHER_CDF(fd1,fd2,fr2/fcu);
+END;
+
+// Levene's power, large samples: Levene's F for two groups is the square
+// of a pooled two-sample t on z = |x - group mean|.  For normal data z
+// has mean sigma sqrt(2/pi) sqrt((n-1)/n) and variance about sigma^2 (1 -
+// 2/pi), and for large n the t is close to normal: power = P(|T| > t
+// crit) with T normal, centre delta_z/SE0, spread SE1/SE0 (SE0 the
+// pooled SE the test uses, SE1 the true one).  Within 0.01 of simulation
+// once n1 + n2 is past 240 (verify_PowerViz_v2.5h, section E); used only
+// there.  The sigmas are divided by the larger one first: power does not
+// depend on their scale, and nothing is squared out of range.
+LOCAL pv_LvApx(lxa, lxb, lna, lnb, lal)
+BEGIN
+ LOCAL lsc, lca, lcb, lvv, lpc, lsp;
+ LOCAL ls0, ls1, ldz, lzc;
+ lsc:=MAX(lxa,lxb); lca:=lxa/lsc; lcb:=lxb/lsc;
+ lpc:=(2/3.14159265359)^.5;              // sqrt(2/pi)
+ lvv:=1-2/3.14159265359;                 // 1 - 2/pi
+ ldz:=lpc*(lcb*((lnb-1)/lnb)^.5-lca*((lna-1)/lna)^.5);
+ lsp:=((lna-1)*lca^2*lvv+(lnb-1)*lcb^2*lvv)/(lna+lnb-2);
+ ls0:=(lsp*(1/lna+1/lnb))^.5;
+ ls1:=(lvv*(lca^2/lna+lcb^2/lnb))^.5;
+ lzc:=-STUDENT_ICDF(lna+lnb-2,lal/2);    // the t critical value, mirrored
+ RETURN NORMALD_CDF(0,1,(ldz-lzc*ls0)/ls1)+NORMALD_CDF(0,1,(-ldz-lzc*ls0)/ls1);
+END;
+
+// Levene's power by simulation: lsr pairs of normal samples, sizes n1 =
+// NN and n2 = pv_N2(NN), SDs sigma1 and sigma2 (scaled by the larger:
+// the result does not depend on the scale), each tested with Levene's F
+// on the absolute deviations from the group MEANS (the form SPSS prints)
+// at the alpha on screen.  F for two groups is SSB/(SSW/(N - 2)), with
+// critical value t(N-2)^2 at alpha/2 (F(1, d) = t(d)^2), so no F quantile
+// is needed.  A progress bar every 20 pairs, straight to the screen;
+// Esc stops early.  Returns {rejections, pairs done}.
+LOCAL pv_LvSim(lsr)
+BEGIN
+ LOCAL lsn1, lsn2, lsN, lsi, lsj, lsx;
+ LOCAL lss, lsm, lsz, lsBt, lsS1, lsQ1;
+ LOCAL lsS2, lsQ2, lsF, lsc, lsk, lsA;
+ LOCAL lsB, lsg, lsca, lscb, lssw, lszb;
+ LOCAL lsTot;
+ lsTot:=lsr;                           // a LOCAL copy: Esc shortens it
+ lsn1:=NN; lsn2:=pv_N2(NN); lsN:=lsn1+lsn2;
+ lsg:=MAX(SG,SG2); lsca:=SG/lsg; lscb:=SG2/lsg;
+ lsc:=(-STUDENT_ICDF(lsN-2,AL/2))^2;
+ lsA:=MAKELIST(0,lsj,1,lsn1); lsB:=MAKELIST(0,lsj,1,lsn2);
+ lsk:=0; lsi:=0;
+ REPEAT
+  lsi:=lsi+1;
+  // group 1: the sample, its mean, then the absolute deviations
+  lss:=0;
+  FOR lsj FROM 1 TO lsn1 DO lsx:=lsca*pv_RNorm(); lsA(lsj):=lsx; lss:=lss+lsx; END;
+  lsm:=lss/lsn1; lsS1:=0; lsQ1:=0;
+  FOR lsj FROM 1 TO lsn1 DO lsz:=ABS(lsA(lsj)-lsm); lsS1:=lsS1+lsz; lsQ1:=lsQ1+lsz*lsz; END;
+  // group 2, the same
+  lss:=0;
+  FOR lsj FROM 1 TO lsn2 DO lsx:=lscb*pv_RNorm(); lsB(lsj):=lsx; lss:=lss+lsx; END;
+  lsm:=lss/lsn2; lsS2:=0; lsQ2:=0;
+  FOR lsj FROM 1 TO lsn2 DO lsz:=ABS(lsB(lsj)-lsm); lsS2:=lsS2+lsz; lsQ2:=lsQ2+lsz*lsz; END;
+  // Levene's F: between-groups over within-groups sums of squares of z
+  lszb:=(lsS1+lsS2)/lsN;
+  lsBt:=lsn1*(lsS1/lsn1-lszb)^2+lsn2*(lsS2/lsn2-lszb)^2;
+  lssw:=MAX(0,lsQ1-lsS1*lsS1/lsn1)+MAX(0,lsQ2-lsS2*lsS2/lsn2);
+  IF lssw>0 THEN
+   lsF:=lsBt*(lsN-2)/lssw;
+   IF lsF>lsc THEN lsk:=lsk+1; END;
+  END;
+  IF lsi MOD 20 == 0 THEN
+   RECT_P(G0,40,60,40+IP(240*lsi/lsTot),66,cfrm,cfrm);
+   IF GETKEY==4 THEN lsTot:=lsi; END;   // Esc: stop with what is done
+  END;
+ UNTIL lsi>=lsTot;
+ RETURN {lsk, lsi};
+END;
+
+// The Levene power page (menu; test 5 only).  Page 1: the exact F test's
+// power over the sigma ratio (a magenta curve), Levene's power at the
+// ratio on screen (a red point, +-2 SE when simulated), 0.80 dotted
+// green, the two numbers.  Page 2: what they mean, in words a student
+// can use.  The simulation runs when the page opens and its inputs
+// changed since the last run (pvLvK); otherwise the cached result shows.
+LOCAL pv_LvPage()
+BEGIN
+ LOCAL lpn2, lpN, lpr, lpk, lpp, lpf;
+ LOCAL lpXm, lpx, lpy, lpi, lpw, lph;
+ LOCAL lps, lpL, lpc, lpq, lpm, lpe;
+ LOCAL lpt, lpu, lpv;
+ IF TT<>5 THEN
+  MSGBOX("Levene's test compares σ₁ with σ₂: choose the test 'Two Means, unequal σ & n' first (Menu, Change test).");
+  RETURN 0;
+ END;
+ lpn2:=pv_N2(NN); lpN:=NN+lpn2;
+ // v2.5k: first, what this page is and is not (Roger, 31 Oct 2026).  A
+ // Levene F (SPSS's, R's) is worked out from every score; PowerViz has
+ // only the means, SDs and n's, so it cannot give that F.  The page
+ // answers a planning question about the sigmas and n's on screen.
+ DIMGROB_P(G1,320,240,cwht);
+ RECT_P(G1,2,2,317,24,cfrm,cfil);
+ TEXTOUT_P("Would Levene's test notice?",G1,8,6,2,cfrm);
+ TEXTOUT_P("A Levene F, as SPSS or R prints it, comes from",G1,8,32,1,cblk);
+ TEXTOUT_P("every score (here "+STRING(lpN,1,0)+"): how far each one sits",G1,8,45,1,cblk);
+ TEXTOUT_P("from its group's mean. PowerViz has only the",G1,8,58,1,cblk);
+ TEXTOUT_P("means, SDs and n's, so it cannot work out that",G1,8,71,1,cblk);
+ TEXTOUT_P("F, and it does not try.",G1,8,84,1,cblk);
+ TEXTOUT_P("This page asks a planning question instead:",G1,8,104,1,cnul);
+ TEXTOUT_P("if the population SDs really are "+pv_NumS(SG)+" and",G1,8,117,1,cnul);
+ TEXTOUT_P(pv_NumS(SG2)+", how often would Levene's test notice",G1,8,130,1,cnul);
+ TEXTOUT_P("with samples of "+STRING(NN,1,0)+" and "+STRING(lpn2,1,0)+"?",G1,8,143,1,cnul);
+ TEXTOUT_P("To see a Levene F worked out from data, use",G1,8,163,1,cgry);
+ TEXTOUT_P("Menu > Two samples: data (built-in examples,",G1,8,176,1,cgry);
+ TEXTOUT_P("or a short list of your own in D1 and D2).",G1,8,189,1,cgry);
+ TEXTOUT_P("any key or tap = go on",G1,8,222,1,cfot);
+ BLIT_P(G0,0,0,G1);
+ pv_WaitAny();
+ lpr:=MAX(SG,SG2)/MIN(SG,SG2);            // the larger sigma over the smaller
+ lpf:=pv_FPow((SG2/SG)^2,NN-1,lpn2-1,AL); // the exact F test, now
+ lpk:={SG,SG2,NN,NN2,KN1,AL};
+ IF pv_Same(pvLvK,lpk)==0 THEN
+  IF lpN<=240 THEN
+   // simulate: 100 to 400 pairs, about 24,000 values in all
+   lps:=MIN(400,MAX(100,IP(24000/lpN)));
+   DIMGROB_P(G1,320,240,cwht);
+   RECT_P(G1,2,2,317,24,cfrm,cfil);
+   TEXTOUT_P("Would Levene's test notice?",G1,8,6,2,cfrm);
+   TEXTOUT_P("Simulating "+STRING(lps,1,0)+" pairs of samples, n = "+pv_NStr(NN),G1,8,44,1,cblk);
+   RECT_P(G1,39,59,281,67,cgry);
+   TEXTOUT_P("Esc = stop early (fewer pairs, a wider ± band)",G1,8,74,1,cfot);
+   BLIT_P(G0,0,0,G1);
+   lpL:=pv_LvSim(lps);
+   pvLvR:={lpL(1)/MAX(1,lpL(2)),lpL(2),1};
+  ELSE
+   pvLvR:={pv_LvApx(SG,SG2,NN,lpn2,AL),0,2};
+  END;
+  pvLvK:=lpk;
+ END;
+ lpp:=pvLvR(1);
+
+ // ---- page 1: the picture and the two numbers ----
+ DIMGROB_P(G1,320,240,cwht);
+ RECT_P(G1,2,2,317,24,cfrm,cfil);
+ TEXTOUT_P("Would Levene's test notice?",G1,8,6,2,cfrm);
+ // v2.5i: "σ = 10, 20; n = 40, 20; α = 0.050 (2-sided)", group 1 first, as the readout box
+ TEXTOUT_P("σ = "+pv_NumS(SG)+", "+pv_NumS(SG2)+"; n = "+pv_NStr(NN)+"; α"+pv_Rel(pv_FMTP(AL,3))+" (2-sided)",G1,6,28,1,cblk);
+ // the plot box: x = larger sigma / smaller from 1 to lpXm (3 to 10),
+ // y = power 0-1; a ratio past 10 sits at the right edge
+ lpXm:=MAX(3,MIN(10,CEILING(lpr*1.3*2)/2));
+ lpw:=240; lph:=80;
+ FOR lpi FROM 0 TO 5 DO
+  lpy:=124-IP(lpi/5*lph);
+  IF lpi>0 THEN LINE_P(G1,41,lpy,40+lpw,lpy,cgrd); END;
+  TEXTOUT_P(STRING(lpi/5,2,1),G1,16,lpy-4,1,cgry);
+ END;
+ FOR lpi FROM 1 TO IP(lpXm) DO
+  lpx:=40+IP((lpi-1)/(lpXm-1)*lpw);
+  LINE_P(G1,lpx,44,lpx,123,cgrd);
+  TEXTOUT_P(STRING(lpi,1,0),G1,lpx-3,128,1,cgry);
+ END;
+ LINE_P(G1,40,124,40+lpw,124,cblk);
+ LINE_P(G1,40,44,40,124,cblk);
+ // 0.80, dotted green
+ lpy:=124-IP(0.8*lph);
+ FOR lpi FROM 41 TO 40+lpw STEP 4 DO PIXON_P(G1,lpi,lpy,cgrn); END;
+ // the exact F test's power over the ratio, magenta: the group whose
+ // sigma is larger now stays the larger one along the curve
+ lpq:=-1;
+ FOR lpi FROM 0 TO 60 DO
+  lpx:=1+lpi/60*(lpXm-1);
+  lpm:=IFTE(SG2>=SG,lpx^2,1/lpx^2);
+  lpe:=pv_FPow(lpm,NN-1,lpn2-1,AL);
+  lpy:=124-IP(lpe*lph);
+  lpt:=40+IP(lpi/60*lpw);
+  IF lpq>=0 THEN LINE_P(G1,lpu,lpq,lpt,lpy,calt); END;
+  lpq:=lpy; lpu:=lpt;
+ END;
+ // the ratio on screen: a dotted vertical, the F test's point (magenta)
+ // and Levene's (red), with +-2 SE when it was simulated
+ lpx:=40+IP((MIN(lpr,lpXm)-1)/(lpXm-1)*lpw);
+ FOR lpi FROM 44 TO 124 STEP 3 DO PIXON_P(G1,lpx,lpi,cgry); END;
+ lpy:=124-IP(lpf*lph);
+ RECT_P(G1,lpx-2,lpy-2,lpx+2,lpy+2,calt,calt);
+ lpy:=124-IP(lpp*lph);
+ IF pvLvR(3)==1 THEN
+  lpv:=2*(lpp*(1-lpp)/pvLvR(2))^.5;
+  LINE_P(G1,lpx,124-IP(MIN(1,lpp+lpv)*lph),lpx,124-IP(MAX(0,lpp-lpv)*lph),ccrt);
+ END;
+ RECT_P(G1,lpx-3,lpy-3,lpx+3,lpy+3,ccrt,ccrt);
+ TEXTOUT_P("larger σ / smaller σ",G1,110,138,1,cblk);
+ // the numbers
+ IF pvLvR(3)==1 THEN
+  lpc:="Levene (simulated, "+STRING(pvLvR(2),1,0)+" pairs): "+pv_FMT(lpp,2)+" ± "+pv_FMT(lpv,2);
+ ELSE
+  lpc:="Levene (large-sample formula): "+pv_FMT(lpp,2);
+ END;
+ TEXTOUT_P(lpc,G1,6,154,1,ccrt);
+ TEXTOUT_P("F test of s₁²/s₂² (exact, normal data): "+pv_FMT(lpf,2),G1,6,167,1,calt);
+ TEXTOUT_P("Power = how often a test says 'spreads differ'",G1,6,183,1,cgry);
+ TEXTOUT_P("when σ₁ and σ₂ really are as typed.",G1,6,196,1,cgry);
+ TEXTOUT_P("any key or tap = what it means",G1,12,226,1,cfot);
+ BLIT_P(G0,0,0,G1);
+ pv_WaitAny();
+
+ // ---- page 2: what it means ----
+ lpm:=ROUND(100*lpp,0);
+ DIMGROB_P(G1,320,240,cwht);
+ RECT_P(G1,2,2,317,24,cfrm,cfil);
+ TEXTOUT_P("Levene's test: what it means",G1,8,6,2,cfrm);
+ IF lpr<1.0000001 THEN
+  TEXTOUT_P("With σ₁ = σ₂, Levene's test still says 'spreads",G1,8,30,1,cblk);
+  TEXTOUT_P("differ' in about "+STRING(lpm,1,0)+" of 100 studies: that is α.",G1,8,43,1,cblk);
+  TEXTOUT_P("The spreads are equal here, so the pooled t",G1,8,56,1,cblk);
+  TEXTOUT_P("test is fine, and Welch's t test is nearly as",G1,8,69,1,cblk);
+  TEXTOUT_P("good: it loses very little power.",G1,8,82,1,cblk);
+ ELSE
+  TEXTOUT_P("If one σ is really "+pv_FMT(lpr,2)+" × the other, Levene's",G1,8,30,1,cblk);
+  TEXTOUT_P("test flags it in about "+STRING(lpm,1,0)+" of 100 such studies.",G1,8,43,1,cblk);
+  TEXTOUT_P("In the other "+STRING(100-lpm,1,0)+", a 'Levene first' rule keeps",G1,8,56,1,cblk);
+  TEXTOUT_P("'equal spreads' and picks the pooled t test,",G1,8,69,1,cblk);
+  IF NN<>lpn2 THEN
+   TEXTOUT_P("whose α can be far off (Cohen 1988, p. 44).",G1,8,82,1,cfrm);
+  ELSE
+   TEXTOUT_P("which with n₁ = n₂ stays close to α.",G1,8,82,1,cblk);
+  END;
+ END;
+ TEXTOUT_P("A non-significant Levene does NOT show that the",G1,8,98,1,cnul);
+ TEXTOUT_P("spreads are equal: it may just lack power.",G1,8,111,1,cnul);
+ // skewed data (equal spreads, nominal 0.05, simulated in the verify
+ // script): the F test rejects 17-52 %, Levene's mean form 10-19 %, its
+ // median form (Brown-Forsythe) 4-5 %
+ TEXTOUT_P("The F test of s₁²/s₂² ("+pv_FMT(lpf,2)+" here) is stronger",G1,8,127,1,calt);
+ TEXTOUT_P("with normal data, but skewed data fool it badly.",G1,8,140,1,calt);
+ TEXTOUT_P("Levene's test (means, as SPSS) is fooled less;",G1,8,153,1,calt);
+ TEXTOUT_P("its median form (Brown-Forsythe) hardly at all.",G1,8,166,1,calt);
+ TEXTOUT_P("Simplest rule: use Welch's t test every time",G1,8,182,1,cgrn);
+ TEXTOUT_P("(Delacre, Lakens & Leys 2017).",G1,8,195,1,cgrn);
+ TEXTOUT_P("any key or tap = back",G1,12,226,1,cfot);
+ BLIT_P(G0,0,0,G1);
+ pv_WaitAny();
+ RETURN 1;
+END;
+
+// ---------------- two real samples (v2.5h) ----------------
+
+// List D1 or D2 from the Statistics 1Var app, or {} when it is empty,
+// not a list or not there yet (the first read of Dn is inside IFERR: it
+// does not exist until the app has been opened once; Lessons Learned
+// s10).  AnovaLab's av_ReadD, for two columns.
+LOCAL pv_ReadD(rdi)
+BEGIN
+ LOCAL rdl;
+ rdl:={};
+ IFERR
+  IF rdi==1 THEN rdl:=D1; END;
+  IF rdi==2 THEN rdl:=D2; END;
+ THEN
+  rdl:={};
+ END;
+ IF TYPE(rdl)<>6 THEN rdl:={}; END;
+ RETURN rdl;
+END;
+
+// The 1970 draft lottery: the number drawn for each birth date, in date
+// order, Jan 1 to Dec 31 (366 dates, Feb 29 included).  1 means called
+// first.  Group 1 = Jan-Jun (182 dates), group 2 = Jul-Dec (184).  The
+// list is AnovaLab's (Fienberg 1971, Science 171:255; Triola, p 747),
+// checked number for number by verify_PowerViz_v2.5h.
+LOCAL pv_Draft(dfg)
+BEGIN
+ IF dfg==1 THEN
+  RETURN {
+   305, 159, 251, 215, 101, 224, 306, 199, 194, 325, 329, 221, 318, 238, 17, 121, 235, 140, 58, 280,
+   186, 337, 118, 59, 52, 92, 355, 77, 349, 164, 211, 86, 144, 297, 210, 214, 347, 91, 181, 338,
+   216, 150, 68, 152, 4, 89, 212, 189, 292, 25, 302, 363, 290, 57, 236, 179, 365, 205, 299, 285,
+   108, 29, 267, 275, 293, 139, 122, 213, 317, 323, 136, 300, 259, 354, 169, 166, 33, 332, 200, 239,
+   334, 265, 256, 258, 343, 170, 268, 223, 362, 217, 30, 32, 271, 83, 81, 269, 253, 147, 312, 219,
+   218, 14, 346, 124, 231, 273, 148, 260, 90, 336, 345, 62, 316, 252, 2, 351, 340, 74, 262, 191,
+   208, 330, 298, 40, 276, 364, 155, 35, 321, 197, 65, 37, 133, 295, 178, 130, 55, 112, 278, 75,
+   183, 250, 326, 319, 31, 361, 357, 296, 308, 226, 103, 313, 249, 228, 301, 20, 28, 110, 85, 366,
+   335, 206, 134, 272, 69, 356, 180, 274, 73, 341, 104, 360, 60, 247, 109, 358, 137, 22, 64, 222,
+   353, 209};
+ END;
+ RETURN {
+   93, 350, 115, 279, 188, 327, 50, 13, 277, 284, 248, 15, 42, 331, 322, 120, 98, 190, 227, 187,
+   27, 153, 172, 23, 67, 303, 289, 88, 270, 287, 193, 111, 45, 261, 145, 54, 114, 168, 48, 106,
+   21, 324, 142, 307, 198, 102, 44, 154, 141, 311, 344, 291, 339, 116, 36, 286, 245, 352, 167, 61,
+   333, 11, 225, 161, 49, 232, 82, 6, 8, 184, 263, 71, 158, 242, 175, 1, 113, 207, 255, 246,
+   177, 63, 204, 160, 119, 195, 149, 18, 233, 257, 151, 315, 359, 125, 244, 202, 24, 87, 234, 283,
+   342, 220, 237, 72, 138, 294, 171, 254, 288, 5, 241, 192, 243, 117, 201, 196, 176, 7, 264, 94,
+   229, 38, 79, 19, 34, 348, 266, 310, 76, 51, 97, 80, 282, 46, 66, 126, 127, 131, 107, 143,
+   146, 203, 185, 156, 9, 182, 230, 132, 309, 47, 281, 99, 174, 129, 328, 157, 165, 56, 10, 12,
+   105, 43, 41, 39, 314, 163, 26, 320, 96, 304, 128, 240, 135, 70, 53, 162, 95, 84, 173, 78,
+   123, 16, 3, 100};
+END;
+
+// mean of a list (a loop: no list arithmetic, Lessons Learned v7r)
+LOCAL pv_LMean(lml)
+BEGIN
+ LOCAL lmi, lms;
+ lms:=0;
+ FOR lmi FROM 1 TO SIZE(lml) DO lms:=lms+lml(lmi); END;
+ RETURN lms/SIZE(lml);
+END;
+
+// SD of a list (n - 1), two passes
+LOCAL pv_LSD(lsl, lsmn)
+BEGIN
+ LOCAL lsi, lss;
+ lss:=0;
+ FOR lsi FROM 1 TO SIZE(lsl) DO lss:=lss+(lsl(lsi)-lsmn)^2; END;
+ RETURN (lss/(SIZE(lsl)-1))^.5;
+END;
+
+// median of a list
+LOCAL pv_LMed(mdl)
+BEGIN
+ LOCAL mds, mdn;
+ mds:=SORT(mdl); mdn:=SIZE(mds);
+ IF mdn MOD 2 == 1 THEN RETURN mds((mdn+1)/2); END;
+ RETURN (mds(mdn/2)+mds(mdn/2+1))/2;
+END;
+
+// Levene's F for two groups from the centres lfa, lfb (the group means:
+// Levene 1960, as SPSS; the medians: Brown & Forsythe 1974, as R's car
+// and AnovaLab): z = |x - centre|, F = SSB/(SSW/(N - 2)), two passes.
+// Returns {F, p}; p = 2 P(T < -sqrt F) with T ~ t(N - 2), a lower tail
+// (F(1, d) = t(d)^2).  {-1, -1} when every z equals its group's mean z
+// (SSW = 0: no F).
+LOCAL pv_LvF(lfx, lfy, lfa, lfb)
+BEGIN
+ LOCAL lfi, lf1, lf2, lfn, lfw, lfz;
+ LOCAL lfm, lfF;
+ lf1:=0; lf2:=0; lfn:=SIZE(lfx)+SIZE(lfy);
+ FOR lfi FROM 1 TO SIZE(lfx) DO lf1:=lf1+ABS(lfx(lfi)-lfa); END;
+ FOR lfi FROM 1 TO SIZE(lfy) DO lf2:=lf2+ABS(lfy(lfi)-lfb); END;
+ lf1:=lf1/SIZE(lfx); lf2:=lf2/SIZE(lfy);
+ lfm:=(SIZE(lfx)*lf1+SIZE(lfy)*lf2)/lfn;
+ lfw:=0;
+ FOR lfi FROM 1 TO SIZE(lfx) DO lfz:=ABS(lfx(lfi)-lfa)-lf1; lfw:=lfw+lfz*lfz; END;
+ FOR lfi FROM 1 TO SIZE(lfy) DO lfz:=ABS(lfy(lfi)-lfb)-lf2; lfw:=lfw+lfz*lfz; END;
+ IF lfw<=0 THEN RETURN {-1,-1}; END;
+ lfF:=(SIZE(lfx)*(lf1-lfm)^2+SIZE(lfy)*(lf2-lfm)^2)*(lfn-2)/lfw;
+ RETURN {lfF, 2*STUDENT_CDF(lfn-2,-(lfF^.5))};
+END;
+
+// Everything the data page shows, for samples tsa (group 1) and tsb
+// (group 2), as one flat list of numbers (so a verify script can check
+// it against SciPy in one call):
+//   1-6   n1, mean1, s1, n2, mean2, s2
+//   7-10  Levene F and p (means), Brown-Forsythe F and p (medians)
+//   11-13 pooled t, df, p (2-sided)
+//   14-16 Welch t, df (Satterthwaite), p (2-sided)
+//   17-18 Cohen's d with the pooled s; with sigma' = sqrt((s1^2+s2^2)/2)
+// t and d are group 2 minus group 1.  A p is a lower tail, doubled.  -1
+// marks a number that does not exist (no spread: s = 0 in both groups).
+// Data beyond 1E50 or under 1E-50 is first divided by a power of 10 near
+// the largest |value| (tsk), so that no square of a square over- or
+// underflows (Lessons Learned v7u: scale before squaring).  A power of 10
+// divides exactly on the Prime, whose numbers are decimal.  t, F, p, df
+// and d do not change; the means and SDs are multiplied back at the end.
+// Everyday data is left exactly as it is (tsk = 1).
+LOCAL pv_TwoS(tsa, tsb)
+BEGIN
+ LOCAL tn1, tn2, tm1, tm2, ts1, ts2;
+ LOCAL tlv, tbf, tsp, ttp, tdf, tv1;
+ LOCAL tv2, ttw, twd, tpp, tpw, tdp;
+ LOCAL tds, tsk, tsx, tsy, tsj;
+ tn1:=SIZE(tsa); tn2:=SIZE(tsb);
+ tsk:=0;
+ FOR tsj FROM 1 TO tn1 DO tsk:=MAX(tsk,ABS(tsa(tsj))); END;
+ FOR tsj FROM 1 TO tn2 DO tsk:=MAX(tsk,ABS(tsb(tsj))); END;
+ IF tsk>1E50 OR (tsk>0 AND tsk<1E-50) THEN
+  tsk:=10^FLOOR(LOG(tsk));
+ ELSE
+  tsk:=1;
+ END;
+ // working copies (a list assigned to a LOCAL is a copy), scaled if need be
+ tsx:=tsa; tsy:=tsb;
+ IF tsk<>1 THEN
+  FOR tsj FROM 1 TO tn1 DO tsx(tsj):=tsa(tsj)/tsk; END;
+  FOR tsj FROM 1 TO tn2 DO tsy(tsj):=tsb(tsj)/tsk; END;
+ END;
+ tm1:=pv_LMean(tsx); tm2:=pv_LMean(tsy);
+ ts1:=pv_LSD(tsx,tm1); ts2:=pv_LSD(tsy,tm2);
+ tlv:=pv_LvF(tsx,tsy,tm1,tm2);
+ tbf:=pv_LvF(tsx,tsy,pv_LMed(tsx),pv_LMed(tsy));
+ tdf:=tn1+tn2-2;
+ tsp:=(((tn1-1)*ts1^2+(tn2-1)*ts2^2)/tdf)^.5;
+ tv1:=ts1^2/tn1; tv2:=ts2^2/tn2;
+ IF tsp>0 THEN
+  ttp:=(tm2-tm1)/(tsp*(1/tn1+1/tn2)^.5);
+  tpp:=2*STUDENT_CDF(tdf,-ABS(ttp));
+  ttw:=(tm2-tm1)/(tv1+tv2)^.5;
+  twd:=(tv1+tv2)^2/(tv1^2/(tn1-1)+tv2^2/(tn2-1));
+  tpw:=2*STUDENT_CDF(twd,-ABS(ttw));
+  tdp:=(tm2-tm1)/tsp;
+  tds:=(tm2-tm1)/((ts1^2+ts2^2)/2)^.5;
+ ELSE
+  ttp:=-1; tpp:=-1; ttw:=-1; twd:=-1; tpw:=-1; tdp:=-1; tds:=-1;
+ END;
+ RETURN {tn1,tm1*tsk,ts1*tsk,tn2,tm2*tsk,ts2*tsk,tlv(1),tlv(2),tbf(1),tbf(2),
+         ttp,tdf,tpp,ttw,twd,tpw,tdp,tds};
+END;
+
+// "p = 0.031" or "p < 0.001" (pv_FMTP and pv_Rel, so never "= <")
+LOCAL pv_PStr(psv)
+BEGIN
+ RETURN "p"+pv_Rel(pv_FMTP(psv,3));
+END;
+
+// The data page (menu).  Choose the samples, then page 1: a strip plot
+// of both (each value a dot, the mean a red bar, +-1 s green) and the
+// numbers, Cohen's d large; page 2: what they mean.
+LOCAL pv_DataPage()
+BEGIN
+ LOCAL dsel, dga, dgb, dn1, dn2, dr;
+ LOCAL dlo, dhi, dsp, dst, dde, dx;
+ LOCAL di, dy, dtk, dv, dc, dt;
+ LOCAL dnm1, dnm2, dsrc, dw, ddm;
+ LOCAL dlab, dlpx, dlend;
+ dsel:=0;
+ CHOOSE(dsel,"Two samples",
+  {"1970 draft lottery (2 halves)",
+   "Insect sprays C and F",
+   "Your data: D1 and D2"});
+ IF dsel==0 THEN RETURN 0; END;
+ IF dsel==1 THEN
+  dga:=pv_Draft(1); dgb:=pv_Draft(2);
+  dnm1:="Jan-Jun"; dnm2:="Jul-Dec";
+  dsrc:="1970 draft numbers by birthday (Fienberg 1971)";
+ END;
+ IF dsel==2 THEN
+  dga:={0,1,7,2,3,1,2,1,3,0,1,4};
+  dgb:={11,9,15,22,15,16,13,10,26,26,24,13};
+  dnm1:="Spray C"; dnm2:="Spray F";
+  dsrc:="Insects counted per plot (Beall 1942)";
+ END;
+ IF dsel==3 THEN
+  dga:=pv_ReadD(1); dgb:=pv_ReadD(2);
+  dnm1:="D1"; dnm2:="D2";
+  dsrc:="Your data: Statistics 1Var, D1 and D2";
+  IF SIZE(dga)<2 OR SIZE(dgb)<2 THEN
+   MSGBOX("Put group 1 in D1 and group 2 in D2 (Apps, Statistics 1Var, Num), at least 2 values each, then try again.");
+   RETURN 0;
+  END;
+ END;
+ dr:=pv_TwoS(dga,dgb);
+ IF dr(3)==0 AND dr(6)==0 THEN
+  MSGBOX("Both groups have no spread (every value the same): no t test, no Levene's test and no d.");
+  RETURN 0;
+ END;
+ dn1:=dr(1); dn2:=dr(4);
+
+ // ---- page 1: the strip plot and the numbers ----
+ DIMGROB_P(G1,320,240,cwht);
+ TEXTOUT_P("Two samples: "+dnm1+" and "+dnm2,G1,4,2,2,cblk);
+ TEXTOUT_P(dsrc,G1,4,17,1,cgry);
+ // the x range: every value, with nice ticks (Heckbert), as the plot
+ dlo:=dga(1); dhi:=dga(1);
+ FOR di FROM 1 TO SIZE(dga) DO dlo:=MIN(dlo,dga(di)); dhi:=MAX(dhi,dga(di)); END;
+ FOR di FROM 1 TO SIZE(dgb) DO dlo:=MIN(dlo,dgb(di)); dhi:=MAX(dhi,dgb(di)); END;
+ IF dhi<=dlo THEN dhi:=dlo+1; END;
+ dsp:=dhi-dlo; dlo:=dlo-0.05*dsp; dhi:=dhi+0.05*dsp; dsp:=dhi-dlo;
+ dst:=pv_NiceNum(dsp/5,1);
+ dde:=MAX(0,-FLOOR(LOG(dst)));
+ dtk:=CEILING(dlo/dst)*dst;
+ dlend:=-99;                 // right edge of the last tick label drawn
+ WHILE dtk<=dhi DO
+  dx:=50+IP((dtk-dlo)/dsp*260);
+  LINE_P(G1,dx,30,dx,86,cgrd);
+  LINE_P(G1,dx,87,dx,90,cgry);
+  // the label starts 8 px left of its tick, but is kept inside the screen
+  // (about 6 px a character in font 1), and is left out when it would run
+  // into the label before it (long labels such as 1.5205 on a narrow range)
+  dlab:=pv_FMT(dtk,dde);
+  dlpx:=MIN(dx-8,318-6*DIM(dlab));
+  IF dlpx>dlend+4 THEN
+   TEXTOUT_P(dlab,G1,dlpx,92,1,cgry);
+   dlend:=dlpx+6*DIM(dlab);
+  END;
+  dtk:=dtk+dst;
+ END;
+ LINE_P(G1,50,87,310,87,cgry);
+ // each group in its band: dots (staggered so equal values show), the
+ // mean as a red bar, +-1 s as a green line under the dots
+ FOR dc FROM 1 TO 2 DO
+  dy:=IFTE(dc==1,32,60);
+  IF dc==1 THEN dv:=dga; ELSE dv:=dgb; END;
+  TEXTOUT_P(IFTE(dc==1,dnm1,dnm2),G1,2,dy+6,1,IFTE(dc==1,cnul,calt));
+  FOR di FROM 1 TO SIZE(dv) DO
+   dx:=50+IP((dv(di)-dlo)/dsp*260);
+   RECT_P(G1,dx-1,dy+2+(di MOD 6)*3,dx+1,dy+4+(di MOD 6)*3,IFTE(dc==1,cnul,calt),IFTE(dc==1,cnul,calt));
+  END;
+  dt:=dr(IFTE(dc==1,2,5)); dw:=dr(IFTE(dc==1,3,6));
+  dx:=50+IP((dt-dlo)/dsp*260);
+  RECT_P(G1,dx-1,dy,dx+1,dy+24,ccrt,ccrt);
+  LINE_P(G1,50+IP((dt-dw-dlo)/dsp*260),dy+25,50+IP((dt+dw-dlo)/dsp*260),dy+25,cgrn);
+ END;
+ // the numbers.  Decimals for the means and SDs: enough for 3 significant
+ // digits of the larger s, 2 at least and 8 at most, so data such as
+ // glass refractive indices (s about 0.0001) or blood alcohol levels
+ // does not print as "s 0.00".  The presets keep 2.
+ ddm:=2;
+ IF MAX(dr(3),dr(6))>0 THEN ddm:=MAX(2,MIN(8,2-FLOOR(LOG(MAX(dr(3),dr(6)))))); END;
+ TEXTOUT_P(dnm1+": n "+STRING(dn1,1,0)+", mean "+pv_FMT(dr(2),ddm)+", s "+pv_FMT(dr(3),ddm),G1,4,106,1,cnul);
+ TEXTOUT_P(dnm2+": n "+STRING(dn2,1,0)+", mean "+pv_FMT(dr(5),ddm)+", s "+pv_FMT(dr(6),ddm),G1,4,119,1,calt);
+ IF dr(7)>=0 THEN
+  TEXTOUT_P("Levene (means, as SPSS): F = "+pv_FMT(dr(7),2)+", "+pv_PStr(dr(8)),G1,4,135,1,cblk);
+ ELSE
+  TEXTOUT_P("Levene: every |x − mean| equals its group's",G1,4,135,1,cblk);
+ END;
+ IF dr(9)>=0 THEN
+  TEXTOUT_P("  (medians, Brown-Forsythe): "+pv_PStr(dr(10)),G1,4,148,1,cgry);
+ END;
+ IF dr(11)<>-1 OR dr(13)<>-1 THEN
+  TEXTOUT_P("Pooled t("+STRING(dr(12),1,0)+") = "+pv_FMT(dr(11),2)+", "+pv_PStr(dr(13)),G1,4,164,1,cblk);
+  TEXTOUT_P("Welch  t("+pv_FMT(dr(15),1)+") = "+pv_FMT(dr(14),2)+", "+pv_PStr(dr(16)),G1,4,177,1,cblk);
+  // Cohen's d, large and magenta
+  TEXTOUT_P("d = "+pv_FMT(dr(17),2),G1,4,192,4,calt);
+  TEXTOUT_P("Cohen's d, pooled s; "+pv_EffWord(ROUND(dr(17),2)),G1,120,192,1,calt);
+  TEXTOUT_P("σ' form: d = "+pv_FMT(dr(18),2),G1,120,205,1,cgry);
+ END;
+ TEXTOUT_P("any key or tap = what it means",G1,12,226,1,cfot);
+ BLIT_P(G0,0,0,G1);
+ pv_WaitAny();
+
+ // ---- page 2: what the numbers mean ----
+ DIMGROB_P(G1,320,240,cwht);
+ RECT_P(G1,2,2,317,24,cfrm,cfil);
+ TEXTOUT_P("Two samples: what it means",G1,8,6,2,cfrm);
+ IF dr(8)>=0 THEN
+  IF dr(8)<AL THEN
+   TEXTOUT_P("SPREADS: Levene "+pv_PStr(dr(8))+", below α"+pv_Rel(pv_FMTP(AL,3))+":",G1,8,30,1,cnul);
+   TEXTOUT_P("  the spreads look different. Read Welch's t.",G1,8,43,1,cnul);
+  ELSE
+   TEXTOUT_P("SPREADS: Levene "+pv_PStr(dr(8))+", above α"+pv_Rel(pv_FMTP(AL,3))+":",G1,8,30,1,cnul);
+   TEXTOUT_P("  no clear sign they differ. That is not proof",G1,8,43,1,cnul);
+   TEXTOUT_P("  they are equal (Menu, Would Levene notice?).",G1,8,56,1,cnul);   // v2.5k
+  END;
+ END;
+ IF dr(16)>=0 THEN
+  TEXTOUT_P("MEANS: Welch's t test, "+pv_PStr(dr(16))+".",G1,8,72,1,cblk);
+  TEXTOUT_P("  If the population means were equal, a gap at",G1,8,85,1,cblk);
+  TEXTOUT_P("  least this big (either way) would turn up",G1,8,98,1,cblk);
+  IF dr(16)<0.001 THEN
+   TEXTOUT_P("  less than 0.1 % of the time.",G1,8,111,1,cblk);
+  ELSE
+   TEXTOUT_P("  about "+pv_FMT(100*dr(16),1)+" % of the time.",G1,8,111,1,cblk);
+  END;
+  IF (dr(13)<AL)==(dr(16)<AL) THEN
+   TEXTOUT_P("  Pooled and Welch agree about p < α here.",G1,8,124,1,cgry);
+  ELSE
+   TEXTOUT_P("  Pooled and Welch DISAGREE: go with Welch's.",G1,8,124,1,cfrm);
+  END;
+  TEXTOUT_P("SIZE: d = "+pv_FMT(dr(17),2)+". "+dnm2+"'s mean is "+pv_FMT(ABS(dr(17)),2)+" SDs",G1,8,140,1,calt);
+  TEXTOUT_P("  "+IFTE(dr(17)<0,"below","above")+" "+dnm1+"'s: a "+pv_EffWord(ROUND(dr(17),2))+" difference",G1,8,153,1,calt);
+  TEXTOUT_P("  (Cohen: 0.2 small, 0.5 medium, 0.8 large).",G1,8,166,1,calt);
+  TEXTOUT_P("p says whether a gap is likely to be real;",G1,8,182,1,cgrn);
+  TEXTOUT_P("d says how big it is. Report both.",G1,8,195,1,cgrn);
+ END;
+ TEXTOUT_P("any key or tap = back",G1,12,226,1,cfot);
+ BLIT_P(G0,0,0,G1);
+ pv_WaitAny();
+ RETURN 1;
+END;
+
 // ---------------- help ----------------
 // v2.3: a drawn page instead of a MSGBOX (the Prime shows about five
 // lines of a message box).  v2.4: two pages -- keys and soft keys,
 // then touch and the picture.  Each is composed on G1 and shown with
 // one blit; any key or a tap moves on (drain, wait, drain).  v2.5: a
 // third page, the sample-size formula and what the CAS does there.
+// v2.5g: a fourth, the test of two means with unequal sigma and n.
+// v2.5h: a fifth, Levene's test and the two-samples page.
 LOCAL pv_ShowHelp()
 BEGIN
  // ---- page 1: soft keys and keys ----
  DIMGROB_P(G1,320,240,cwht);
  RECT_P(G1,2,2,317,24,cfrm,cfil);
- TEXTOUT_P("PowerViz  help  1/3: keys",G1,8,6,2,cfrm);
+ TEXTOUT_P("PowerViz  help  1/5: keys",G1,8,6,2,cfrm);
  TEXTOUT_P("SOFT KEYS (the strip along the bottom):",G1,12,30,1,cnul);
  TEXTOUT_P("Edit = all values,  Tails = 1- or 2-sided",G1,12,43,1,cblk);
  TEXTOUT_P("α− / α+ = α ladder .001 .005 .01 .02 .05 .10 .20",G1,12,56,1,cblk);
@@ -2230,8 +3398,8 @@ BEGIN
  TEXTOUT_P("Enter = menu,  Esc = exit and export",G1,12,137,1,cblk);
  TEXTOUT_P("d, h = Cohen's standardized effect",G1,12,153,1,calt);
  TEXTOUT_P("  .2 small  .5 medium  .8 large  (below .2: tiny)",G1,12,166,1,calt);
- TEXTOUT_P("SE₀ = the standard error of the H₀ curve, worked",G1,12,182,1,cgry);
- TEXTOUT_P("out from your σ (or p) and n",G1,12,195,1,cgry);
+ TEXTOUT_P("SE₀ = the H₀ curve's SE, from σ (or p) and n",G1,12,182,1,cgry);
+ TEXTOUT_P("t(df) = t obtained if a sample had these values",G1,12,195,1,cgry);   // v2.5j
  // v2.5d (Roger, 19 Oct 2026): the header's disclaimer, on screen in one
  // line, in the free row above the footer
  TEXTOUT_P("Teaching aid; not for clinical or legal use.",G1,12,208,1,ccrt);
@@ -2242,20 +3410,21 @@ BEGIN
  // ---- page 2: touch, and what the picture shows ----
  DIMGROB_P(G1,320,240,cwht);
  RECT_P(G1,2,2,317,24,cfrm,cfil);
- TEXTOUT_P("PowerViz  help  2/3: touch",G1,8,6,2,cfrm);
+ TEXTOUT_P("PowerViz  help  2/5: touch",G1,8,6,2,cfrm);
  TEXTOUT_P("DRAG ON THE PLOT:",G1,12,30,1,cnul);
  TEXTOUT_P("sideways near H₁ = move the alternative",G1,12,43,1,cblk);
  TEXTOUT_P("the dashed red line = set α by hand; on lift",G1,12,56,1,cblk);
  TEXTOUT_P("  it snaps to the ladder if within 15 %",G1,12,69,1,cblk);
  TEXTOUT_P("up or down = n (one step per 12 px)",G1,12,82,1,cblk);
  TEXTOUT_P("TAP THE READOUT:",G1,12,98,1,cnul);
- TEXTOUT_P("n = type n;  μ₁, p₁, d or h = type the effect",G1,12,111,1,cblk);
- TEXTOUT_P("α or zcrit = pick α from the ladder",G1,12,124,1,cblk);
+ TEXTOUT_P("n = type n;  μ, p, d or h = type the effect",G1,12,111,1,cblk);
+ TEXTOUT_P("α, zcrit = the α ladder;  σ, μ₀, p₀ = Edit form",G1,12,124,1,cblk);   // v2.5j
  TEXTOUT_P("THE PICTURE:",G1,12,140,1,cnul);
  TEXTOUT_P("blue = H₀, magenta = H₁, pale magenta = H₁ before",G1,12,153,1,cgry);
  TEXTOUT_P("red = α, yellow = β, green = power, dashes = crit",G1,12,166,1,cgry);
  TEXTOUT_P(N80L+" = smallest n per group with power of 0.80",G1,12,182,1,cgrn);
  TEXTOUT_P("  or more (a green dotted line in Pow-n)",G1,12,195,1,cgrn);
+ TEXTOUT_P("magenta arrow: the effect, d (or h), on the plot",G1,12,208,1,calt);
  TEXTOUT_P("any key or tap = next page",G1,12,222,1,cfot);
  BLIT_P(G0,0,0,G1);
  pv_WaitAny();
@@ -2263,7 +3432,7 @@ BEGIN
  // ---- page 3 (v2.5): the sample-size formula and the CAS ----
  DIMGROB_P(G1,320,240,cwht);
  RECT_P(G1,2,2,317,24,cfrm,cfil);
- TEXTOUT_P("PowerViz  help  3/3: the n formula",G1,8,6,2,cfrm);
+ TEXTOUT_P("PowerViz  help  3/5: the n formula",G1,8,6,2,cfrm);
  TEXTOUT_P(N80L+" = 56 (55.6): 56 is found by TRYING n = 2, 3 ...",G1,12,30,1,cgrn);
  TEXTOUT_P("  with the power engine; 55.6 is the FORMULA's n.",G1,12,43,1,cgrn);
  TEXTOUT_P("Tap that line (or Menu, Sample-size formula):",G1,12,59,1,cnul);
@@ -2277,6 +3446,56 @@ BEGIN
  TEXTOUT_P("  one smaller than the rounded formula.",G1,12,169,1,cgry);
  TEXTOUT_P("exact (CAS) = the CAS did the algebra; decimal =",G1,12,185,1,cfot);
  TEXTOUT_P("  no CAS: the formula is shown as texts print it.",G1,12,198,1,cfot);
+ TEXTOUT_P("any key or tap = next page",G1,12,222,1,cfot);
+ BLIT_P(G0,0,0,G1);
+ pv_WaitAny();
+
+ // ---- page 4 (v2.5g): two means, unequal sigma and n ----
+ // Every sentence checked in verify_PowerViz_v2.5g.py: the SE, the kept
+ // ratio, Cohen's sigma', the best split (brute force over every split
+ // of a total) and Welch's t against this z test (simulated).
+ DIMGROB_P(G1,320,240,cwht);
+ RECT_P(G1,2,2,317,24,cfrm,cfil);
+ TEXTOUT_P("PowerViz  help  4/5: unequal σ and n",G1,8,6,2,cfrm);
+ TEXTOUT_P("TWO MEANS, UNEQUAL σ & n (the 3rd test):",G1,12,30,1,cnul);
+ TEXTOUT_P("each group has its own σ and n, so",G1,12,43,1,cblk);
+ TEXTOUT_P("  SE = "+SQG+"(σ₁²/n₁ + σ₂²/n₂); box: n, μ, σ by group",G1,12,56,1,cblk);
+ TEXTOUT_P("UP/DOWN, a drag and Pow-n change n₁; n₂ keeps",G1,12,69,1,cblk);
+ TEXTOUT_P("  the ratio n₂/n₁ you typed (Edit, or tap n =)",G1,12,82,1,cblk);
+ TEXTOUT_P("d = (μ₂−μ₁)/σ',  σ' = "+SQG+"((σ₁²+σ₂²)/2)  (Cohen)",G1,12,95,1,calt);
+ TEXTOUT_P("BEST SPLIT of a fixed total: n₂/n₁ = σ₂/σ₁",G1,12,108,1,cgrn);
+ TEXTOUT_P("  (more people where σ is larger)",G1,12,121,1,cgrn);
+ // Cohen (1988, p. 44): with sigma AND n both unequal, the nominal alpha
+ // and power of the pooled t test "may differ greatly from the true
+ // values" (Scheffe 1959).  This test does not pool: its SE is Welch's.
+ TEXTOUT_P("Unequal σ AND unequal n: the pooled t test's α",G1,12,134,1,cfrm);
+ TEXTOUT_P("  and power can be far off (Cohen 1988, p. 44).",G1,12,147,1,cfrm);
+ TEXTOUT_P("  This test does not pool: its SE is Welch's.",G1,12,160,1,cfrm);
+ TEXTOUT_P("z test: σ₁, σ₂ taken as known. Welch's t test",G1,12,173,1,cgry);
+ TEXTOUT_P("  estimates them: less power when n is small.",G1,12,186,1,cgry);
+ TEXTOUT_P(N80L+" = 40, 20: smallest n₁, n₂ with power ≥ 0.80",G1,12,199,1,cgrn);
+ TEXTOUT_P("any key or tap = next page",G1,12,222,1,cfot);
+ BLIT_P(G0,0,0,G1);
+ pv_WaitAny();
+
+ // ---- page 5 (v2.5h): Levene's test and two real samples ----
+ DIMGROB_P(G1,320,240,cwht);
+ RECT_P(G1,2,2,317,24,cfrm,cfil);
+ TEXTOUT_P("PowerViz help 5/5: Levene, data",G1,8,6,2,cfrm);
+ // v2.5k: what the power page answers, and why it gives no Levene F
+ TEXTOUT_P("MENU, Would Levene notice? (unequal σ test):",G1,12,30,1,cnul);
+ TEXTOUT_P("  if σ₁ and σ₂ are as typed, how often would",G1,12,43,1,cblk);
+ TEXTOUT_P("  Levene's test notice at your n? (A plan.)",G1,12,56,1,cblk);
+ TEXTOUT_P("  It cannot give SPSS's Levene F: that F needs",G1,12,69,1,cblk);
+ TEXTOUT_P("  every score; PowerViz has means, SDs and n.",G1,12,82,1,cblk);
+ TEXTOUT_P("MENU, Two samples: data:",G1,12,98,1,cnul);
+ TEXTOUT_P("  Levene's test, the pooled and Welch t tests",G1,12,111,1,cblk);
+ TEXTOUT_P("  and Cohen's d for two real samples: the 1970",G1,12,124,1,cblk);
+ TEXTOUT_P("  draft lottery, two insect sprays, or yours:",G1,12,137,1,cblk);
+ TEXTOUT_P("  group 1 in D1, group 2 in D2 (Apps,",G1,12,150,1,cblk);
+ TEXTOUT_P("  Statistics 1Var, Num).",G1,12,163,1,cblk);
+ TEXTOUT_P("The magenta arrow on the plot: the gap between",G1,12,179,1,calt);
+ TEXTOUT_P("  the means; d is that gap in SD units.",G1,12,192,1,calt);
  TEXTOUT_P("any key or tap = back",G1,12,222,1,cfot);
  BLIT_P(G0,0,0,G1);
  pv_WaitAny();
@@ -2287,6 +3506,9 @@ LOCAL pv_MainMenu()
 BEGIN
  LOCAL msel;
  msel:=0;
+ // v2.5k: item 7 is "Would Levene notice?" (was "Levene's test: power").
+ // No comment may go inside the list's braces: a // comment inside an
+ // open bracket is a syntax error on the Prime (Lessons Learned, E12).
  CHOOSE(msel,"PowerViz Menu",
   {"Edit values",
    "Toggle 1/2-sided",
@@ -2294,6 +3516,8 @@ BEGIN
    "Power vs n curve",
    "Power vs effect size",
    "Sample-size formula",
+   "Would Levene notice?",
+   "Two samples: data",
    "Change test",
    "Help",
    "Return to plot"});
@@ -2305,10 +3529,14 @@ BEGIN
  // v2.5: where the n formula comes from (pv_Setup first: n80 and the
  // formula's n must be for the values just edited)
  IF msel==6 THEN pv_Setup(); pv_Formula(); END;
- IF msel==7 THEN
+ // v2.5h: Levene's power (test 5) and the two-samples page; Change
+ // test, Help and Return move down two (9, A, B on the Prime's list)
+ IF msel==7 THEN pv_Setup(); pv_LvPage(); END;
+ IF msel==8 THEN pv_DataPage(); END;
+ IF msel==9 THEN
   IF pv_SelTest()>0 THEN pv_EditForm(); END;
  END;
- IF msel==8 THEN pv_ShowHelp(); END;
+ IF msel==10 THEN pv_ShowHelp(); END;
 END;
 
 // ---------------- effect / n stepping ----------------
@@ -2319,7 +3547,7 @@ LOCAL pv_StepEff(dd)
 BEGIN
  LOCAL es;
  es := pv_EffStep();
- IF TT<=2 THEN
+ IF pv_MeanT()==1 THEN
   IF dd>0 THEN
    MM1:=ROUND((FLOOR(MM1/es+0.000001)+1)*es,6);
   ELSE
@@ -2364,14 +3592,16 @@ END;
 // Slot 1..6 of DRAWMENU({"Edit","Tails","α−","α+","Pow-n","Menu"}).
 // The labels never produce a key code; the hardware keys stay as
 // shortcuts (Enter = Menu, +/- = α+/α−).  Returns 1: redraw.
+// v2.5i: after a form or the menu, the finger too (pv_TDrain).  The
+// form's OK is where Menu is: a finger still on it read as a tap there.
 LOCAL pv_Soft(sl)
 BEGIN
- IF sl==1 THEN pv_EditForm(); pv_Drain(); WFIT:=1; END;   // Edit
+ IF sl==1 THEN pv_EditForm(); pv_Drain(); pv_TDrain(); WFIT:=1; END;   // Edit
  IF sl==2 THEN pv_Tails(); END;                            // Tails
  IF sl==3 THEN pv_AStep(-1); END;                          // α−
  IF sl==4 THEN pv_AStep(1); END;                           // α+
  IF sl==5 THEN pv_Setup(); pv_PowNView(); END;             // Pow-n
- IF sl==6 THEN pv_MainMenu(); pv_Drain(); WFIT:=1; END;    // Menu
+ IF sl==6 THEN pv_MainMenu(); pv_Drain(); pv_TDrain(); WFIT:=1; END;    // Menu
  RETURN 1;
 END;
 
@@ -2416,7 +3646,9 @@ BEGIN
   IF hb==2 THEN pv_EditEff(); END;
   IF hb==3 THEN pv_AChoose(); END;
   IF hb==4 THEN pv_Formula(); END;          // v2.5: where n comes from
+  IF hb==5 THEN pv_EditForm(); WFIT:=1; END;   // v2.5i: the sigma row
   pv_Drain();                               // the form's OK press is spent
+  pv_TDrain();                              // v2.5i: and the finger on OK
   RETURN 1;
  END;
 
@@ -2479,8 +3711,8 @@ BEGIN
    IF md==1 THEN
     vx:=XMN+(MIN(PXR,MAX(PXL,tx))-PXL)*span/(PXR-PXL);
     es:=pv_EffStep();
-    IF TT<=2 THEN
-     IF TT==2 THEN vx:=vx+MM0; END;         // the axis is the difference
+    IF pv_MeanT()==1 THEN
+     IF TT==2 OR TT==5 THEN vx:=vx+MM0; END;   // the axis is the difference
      vx:=ROUND(ROUND(vx/es,0)*es,6);
      IF vx<>MM1 THEN MM1:=vx; nw:=1; END;
     ELSE
@@ -2511,6 +3743,7 @@ BEGIN
     WHILE ns>nt DO pv_StepN(-1); ns:=ns-1; END;
     IF NN<>nw0 THEN nw:=1; END;
     HNT:="n = "+STRING(NN,1,0)+" per group: drag up = larger n"; HNC:=cnul;
+    IF TT==5 THEN HNT:="n = "+pv_NStr(NN)+": drag up = larger n₁ (n₂ follows)"; END;   // v2.5g
    END;
    // -- sideways from nearer H0: H0 does not move; say so once --
    IF md==4 AND hz==0 THEN
@@ -2532,7 +3765,7 @@ END;
 // ---------------- main (zero-argument signature) ----------------
 EXPORT POWERVIZ()
 BEGIN
- LOCAL kk, rd, nl, mm, mmF;
+ LOCAL kk, rd, nl, mm, mmF, ns5;
 
  pv_Init();                                          // palette constants (v2.3)
 
@@ -2578,6 +3811,7 @@ BEGIN
    IF kk==30 THEN                                  // Enter -> menu
     pv_MainMenu();
     pv_Drain();                                    // its Enter is spent
+    pv_TDrain();                                   // v2.5i: and a finger on an item
     WFIT:=1; rd:=1;
    END;
   END;
@@ -2591,16 +3825,19 @@ BEGIN
 
  // ---------- export & summary ----------
  EP_PWR:=PW;
- EP_NPG:=NN;
+ EP_NPG:=NN;                      // test 5: n1 (n2 is in the exit box)
  EP_ALPHA:=AL;
  EP_DELTA:=M1v-M0v;
  EP_ZCRIT:=ZC;
 
  nl:=CHAR(10);
+ // v2.5g: test 5 names both sample sizes (EP_NPG holds n1)
+ ns5:="n = "+STRING(NN,1,0)+IFTE(TT==2 OR TT==4," per group","");   // v2.5i: no "/"
+ IF TT==5 THEN ns5:="n₁ = "+STRING(NN,1,0)+", n₂ = "+STRING(pv_N2(NN),1,0); END;
  // v2.5c: pv_Rel on alpha and POWER, and beta from pv_BetaS (never 1 - PW = 0)
  MSGBOX(pv_TName()+nl+
-  "n = "+STRING(NN,1,0)+"/group  α"+pv_Rel(pv_FMTP(AL,3))+"  "+STRING(TL,1,0)+"-sided"+nl+
-  "effect = "+pv_FMT(M1v-M0v,4)+"   "+IFTE(TT<=2,"d","h")+" = "+pv_FMT(pv_EffSz(),3)+nl+
+  ns5+"  α"+pv_Rel(pv_FMTP(AL,3))+"  "+STRING(TL,1,0)+"-sided"+nl+
+  "effect = "+pv_FMT(M1v-M0v,4)+"   "+IFTE(pv_MeanT()==1,"d","h")+" = "+pv_FMT(pv_EffSz(),3)+nl+
   "POWER"+pv_Rel(pv_FMTP(PW,4))+"   (β"+pv_Rel(pv_BetaS(4))+")"+nl+
   "Exported: EP_PWR EP_NPG EP_ALPHA EP_DELTA EP_ZCRIT");
 
