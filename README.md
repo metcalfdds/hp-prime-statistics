@@ -4,9 +4,9 @@
 
 *A note from Roger: I am very sorry I cannot be with you at HHC 2026 in person this year, and I send my regrets and my best wishes for a wonderful conference. I hope you enjoy exploring what is here, and I would love to hear from you through [GitHub issues](https://github.com/metcalfdds/hp-prime-statistics/issues).*
 
-Thank you for stopping by. Here is a set of **27 teaching programs for the HP Prime**, written for university statistics, research methods, criminal justice, and forensic science courses, plus **a long set of notes on how we believe the Prime really behaves**: what we found the hard way on a G1, a G2, and the Virtual Calculator, that the manuals do not tell us.
+Thank you for stopping by. Here is a set of **27 teaching programs for the HP Prime**, written for university statistics, research methods, criminal justice, and forensic science courses, plus **a long set of notes on how we believe the Prime really behaves**: what we found the hard way on a G1, a G2, and the Virtual Calculator--things all the manuals do not tell us.
 
-Most of the programs are built around the touch screen. You drag a bound on a statistical distribution curve and the shading follows, pour balls through a Galton board with a finger, rotate a 3-D bivariate normal wireframe plot, slide a cut-off along an ROC curve and watch who gets flagged "high risk". The aim is to let students *see* the statistics move.
+Most of the programs are built around the touch screen. You drag a bound on a statistical distribution curve and the shading follows, pour balls through a Galton board with a finger, rotate a 3-D bivariate normal distribution wireframe plot, slide a cut-off along an ROC curve and watch who gets flagged "high risk". The aim is to let students *see* the statistics move.
 
 --------------------------------------------------------------------------------------------------------------------
 
@@ -20,9 +20,9 @@ We have no official affiliation with either site, or with HP. I’m just a grate
 
 --------------------------------------------------------------------------------------------------------------------
 
-Hundreds of community PPL programs from several HP-related public forums were read as references while working out how the Prime actually behaves in the wild. Several entries in the notes exist because a corpus program showed a construct working that the many various manuals do not describe. Note that none of those programs were copied, incorporated, used without permission/authorization, or reproduced here, and credit is noted where others' intellectual property and/or concepts were followed. 
+Hundreds of community PPL programs from several HP-related public forums were read as references while figuring out how the Prime really works in the wild. Several entries in the notes exist because a corpus program showed a construct working that the many various manuals do not describe. Note that none of those programs were copied, incorporated, used without permission/authorization, or reproduced here, and credit is noted where others' intellectual property and/or concepts were followed. 
 
-**The programs here probably would not have been possible without the foundation laid by dozens and dozens of HP users and the hundreds of programs they have graciously made freely available over the years--if you find anything here helpful or useful, it is due to the myriad of other folks who have gone before. Thank you all--especially Eric Rechlin!**
+**The programs here probably would not have been possible without the foundation laid by dozens and dozens of HP users and the hundreds of programs they have graciously made freely available over the years--if you find anything here helpful or useful, it is due to and a tribute to the myriad of other folks who have gone before. Thank you all--especially Eric Rechlin!**
 
 **New here?** [START_HERE.md](START_HERE.md) is a one-page guide: what to read in five minutes, five programs to try first, and how to help.
 
@@ -37,7 +37,7 @@ Hundreds of community PPL programs from several HP-related public forums were re
 | **Bayes and forensic science** | BayesTree, DNAMixLR, ErrorRate Lab |
 | **Criminal justice and forensic statistics** (new, October 2026) | RankLab, AnovaLab, SeizureLab, SurvLab, FitCheck, ResampLab, AgreeLab, RiskLab |
 
-Together the 27 programs run to more than **75,000 lines**: 54,000 of PPL code, 1,150 of MicroPython (in five of them), and 20,700 lines of comments, written so a student can follow what each part does. The largest is EpiStats at about 6,100 lines -- I wrote the original, elementary, unsophisticated version of this program for coursework I had in Harvard's STAT S-103 Intro to Epidemiology & Biostats, and I hope future students in that class and other similar classes will find this one helpful; and eight late October programs average about 3,000 lines each. These were built with tremendous assistance from Anthropic Claude (mostly Opus 5.5 and Fable 5.1) over **many** months of intense, but fun, work.
+Together, these 27 programs currently run to more than **75,000 lines**: 54,000 of PPL code, 1,150 of MicroPython (in five of them), and 20,700 lines of comments, written so a student can follow what each part does. The largest is EpiStats at about 6,100 lines -- I wrote the original, elementary, unsophisticated version of this program for coursework I had in Harvard's STAT S-103 Intro to Epidemiology & Biostats, and I hope future students in that class or other similar classes will find this one helpful; and eight other late October programs average about 3,000 lines each. These were built with tremendous assistance from Anthropic Claude (mostly Opus 5.5 and Fable 5.1) over **many** months of intense, but fun, work.
 
 And around the programs:
 
@@ -58,17 +58,17 @@ Everything here is **free for educational and personal use**. See [LICENSE](LICE
 
 Three different questions, with three different answers:
 
-- **Is the arithmetic right? Yes, as far as we can test it.** Every program passes the lint gate and runs in the PC harness, with its numbers extensively checked against SciPy, stats models, and exact arithmetic. Where a program refers to published data, it has been able to reproduce those published results. Every program has also had an independent review.
+- **Is the arithmetic right? Yes, as far as we can test it, I think so.** Every program passes the lint gate and runs in the PC harness, with its numbers extensively checked against SciPy, stats models, and exact arithmetic. Where a program refers to published data, it has been able to reproduce the published results. Every program has also had an independent review.
   
-- **Do they run on a real calculator? Yes, we think so, and we are still checking.** Every program has run on the HP Prime Virtual Calculator, and the current versions have had a cursory checks on a G1 and a G2. The full device checklists, one per version in [docs/changes/](docs/changes/), are still being worked through, and some screens, especially graphics, can be slow. **Reports from your own calculator are the most welcome contribution of all.** The full dated record is in [docs/test-status.md](docs/test-status.md).
+- **Do they run on a real calculator? Yes, we think so, but we are still checking.** Every program has run and been tested on the HP Prime Virtual Calculator, and the current versions have had a cursory checks on a G1 and a G2. The full device checklists, one per version in [docs/changes/](docs/changes/), are still being worked through, and some screens, especially graphics, can be slow. **Reports from your own calculator are the most welcome contribution of all.** The full dated record is in [docs/test-status.md](docs/test-status.md).
   
-- **Can they be used on real cases? No.** Software used in casework must first be formally validated: tested on known samples under a laboratory's quality system, with its limits documented, and then used by a qualified analyst. None of these programs has been through that process.
+- **Can they be used on real cases? No!** Software used in casework must first be formally validated: tested on known samples under a laboratory's quality system, with its limits documented, certified, and then used by a qualified analyst. None of these programs has been through that process.
   
-**DISCLAIMER: these programs are teaching and demonstration aids, provided as-is, with no guarantees. They are not validated for forensic, clinical or legal use; do not rely on their results for casework, legal decisions or any other purpose.**
+**DISCLAIMER: so...these programs are teaching and demonstration aids, provided as-is, with no guarantees. They are not validated for forensic, clinical, or legal use; do not rely on their results for casework, legal decisions, or any other purpose.**
 
-These programs were originally intended to demonstrate statistical concepts to undergraduate university students, but the project eventually morphed into a suite of programs that show off some of the capabilities of the HP Prime, and also push to see what the hardware limits are for "reasonable" programs. Some of the programs are rather large-- 3,000 up to 6,000 lines of code-- and so may load slowly and may slow down the Connectivity Kit--it might be best to keep only a couple of these programs on your calculator at a time. And please note that we are always open to suggestions for new programs.
+These programs were originally intended just to demonstrate statistical concepts to undergraduate university students, but the project eventually morphed into a suite of programs that show off some of the capabilities of the HP Prime, and also to push to see what the hardware limits are for programs that are "reasonable" to run on a calculator. Some of these programs are rather large-- 3,000 up to 6,000 lines of code-- and so may load slowly and may slow down the Connectivity Kit--it might be best to keep only a couple of these programs on your calculator at any one time. And please note that we are always open to suggestions for new programs.
 
-Remember, too, these programs are **works-in-progress**--some parts, especially graphics, may work very slowly, some parts may or may not even work at all, and they are provided strictly as-is --again, you should not rely on the results from these programs for anything. I think the numerical results are very accurate, but use at your own risk, no guarantees. Your mileage may vary.
+Remember, too, these programs are **works-in-progress**--some parts, especially graphics, may work very slowly, some parts may or may not even work at all, and they are provided strictly as-is --again, you should not rely on the results from these programs for **anything.** I think the numerical results are very accurate, but, even so, use at your own risk, no guarantees. Your mileage may vary.
 
 ---
 
@@ -83,7 +83,7 @@ Every program is a plain `.txt` file, on purpose.
 
 **Do not rename the file to `.hpprgm`.** That format is binary (UTF-16LE with a header), and a `.txt` renamed to it will not import. Pasting is the reliable route.
 
-**Install one version of each program.** Every program on a Prime shares one pool of routine names, so two versions of the same program on one calculator can run each other's code. Delete the old one first.
+**Install only one version of each program.** Every program on a Prime shares one pool of routine names, so two versions of the same program on one calculator can run each other's code. Delete the old one first.
 
 **The same arithmetic in Python.** [`python/hpstats.py`](python/hpstats.py) holds the fleet's formulas (intervals, 2 × 2 tables, the trend test, the DNA mixture probability with θ, the studentized range, Burr XII, chi-square tails as positive sums) as plain, tested functions, for checking a program, for teaching, or for citing. Its README has the list; `python3 test_hpstats.py` checks every one against SciPy, statsmodels or brute force.
 
@@ -220,9 +220,9 @@ Data sources for every preset are listed, with the checks made on them, in [docs
 
 ## How fast is the Prime? What we measured
 
-These programs push the HP Prime hard, and some screens take a moment. That is the hardware, not a fault, and it is worth knowing what to expect. Every figure below was measured on our own calculators (firmware 2026-09-09), with a stopwatch or with a program's own timing readout.
+These programs push the HP Prime hard, and some screens take a moment to draw. That is the hardware, not a fault, and it is worth knowing what to expect. Every figure below was measured on our own calculators (firmware 2026-09-09), with a stopwatch or with a program's own timing readout.
 
-**First: if your Prime feels slow, reset it.** Our G2 had become about **15 times slower** than normal, with no warning and no error, after a long day of loading programs and one MicroPython program that hung. A paperclip reset (the small hole on the back) brought it back at once. Unplugging it from the Connectivity Kit also helps: while the Kit is connected it keeps querying the calculator, and our G2 took 40-75 % longer on the same tests plugged in. Time anything only after a reset, unplugged.
+**First: if your Prime feels slow, reset it.** Our G2 had become about **15 times slower** than normal, with no warning and no error, after a long day of loading programs and one MicroPython program that hung. A paperclip reset brought it back at once. Unplugging it from the Connectivity Kit also helps: while the Kit is connected it keeps querying the calculator, and our G2 took 40-75 % longer on the same tests when plugged in. Time anything only after a reset, unplugged.
 
 **What takes time**
 
@@ -331,7 +331,7 @@ A few things from it that are hard to find elsewhere:
 
 ## Credits
 
-Concept, direction, and hardware testing: **Roger Metcalf**, 2026.
+Concept, direction, and hardware testing: **Roger Metcalf**, © 2026.
 
 Implementation, numerical work and documentation: re-written, edited, expanded, and **vastly** improved with incredible and amazing AI assistance from **Anthropic Claude** --mostly Opus 5.5 and Fable 5.1. Sonnet 5.5 does a lot of the cleanup and mechanical sorts of tasks.  Most of the notes and the user guides here were essentially written by Claude.
 
