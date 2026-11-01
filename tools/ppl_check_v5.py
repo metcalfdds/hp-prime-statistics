@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""ppl_check_v4.py  --  static checks for HP Prime PPL source, in the spirit of ppl_lint.py.
+"""ppl_check_v5.py  --  static checks for HP Prime PPL source, in the spirit of ppl_lint.py.
 
 Usage: python3 -I ppl_check.py whitelist.json file.txt [file2.txt ...]
 
@@ -30,6 +30,11 @@ Checks (E = error, W = warning):
       moved out it compiled and ran (emulator, 17 Oct 2026).  A comment AFTER the bracket
       closes on the same line is fine (NormExplorer beta 42 ran with two).
 
+v5 (1 Nov 2026): E10 accepts the User Guide's typed fields.  An element of INPUT's list may be
+      {name, [types]}, {name, [types], {pos}}, {name, real} (a check box) or {name, {items}}
+      (a choose field): the first item must be a plain variable name.  v4 read the first '}'
+      as the list's end and reported '[0]' as a target (TTestLab beta 1c's real-only fields,
+      {ttM1,[0]}, the form 130 library programs use).  A bare value is still E10.
 v4 (17 Oct 2026): adds E12.
 
 v3 (16 Oct 2026): E1/E7 match built-ins ignoring case, as the device does (TYPE, LEFT
@@ -51,6 +56,54 @@ GLOBALS = {'G0','G1','G2','G3','G4','G5','G6','G7','G8','G9','K','Ans','HAngle'}
           | {'D%d' % n for n in range(10)} | {'C%d' % n for n in range(10)} \
           | {'L%d' % n for n in range(10)} | {'M%d' % n for n in range(10)}
 IDENT = re.compile(r'[A-Za-z_][A-Za-z0-9_]*')
+
+
+def _split_top(s):
+    """v5: split s at the commas outside any bracket."""
+    out, d, cur = [], 0, ''
+    for ch in s:
+        if ch in '([{': d += 1
+        elif ch in ')]}': d -= 1
+        if ch == ',' and d == 0:
+            out.append(cur); cur = ''
+        else:
+            cur += ch
+    out.append(cur)
+    return [x.strip() for x in out]
+
+
+def _first_arg(code, start, src, ln):
+    """v5: INPUT's first argument, from code[start:] (strings already blanked), read on across
+    the following source lines while its brackets are open."""
+    text = code[start:]
+    k = ln
+    while True:
+        d = 0
+        for i, ch in enumerate(text):
+            if ch in '([{': d += 1
+            elif ch in ')]}':
+                d -= 1
+                if d < 0: return text[:i].strip()
+            elif ch == ',' and d == 0: return text[:i].strip()
+        if k >= len(src): return text.strip()
+        nxt, _ = strip(src[k]); k += 1
+        text += ' ' + nxt
+
+
+def _input_targets(arg):
+    """v5: the variable names INPUT writes, as written: a name, or a list whose elements are names
+    or {name, [types] | real | {items}, [{pos}]}.  Returns each target's text."""
+    a = arg.strip()
+    if not (a.startswith('{') and a.endswith('}')):
+        return [a] if a else []
+    out = []
+    for el in _split_top(a[1:-1]):
+        if el.startswith('{') and el.endswith('}'):
+            parts = _split_top(el[1:-1])
+            out.append(parts[0] if parts else el)
+        elif el:
+            out.append(el)
+    return out
 
 def _has_comment(line):
     """v4: True if the line has a // comment outside string literals."""
@@ -133,13 +186,12 @@ def main():
             if re.search(r'STRING\s*\([^()]*,\s*1\s*,\s*\d', code): errs.append((ln, 'E9', 'STRING(..., 1, digits) ignores digits'))
             # W5
             if re.search(r'\bIF\s+CHOOSE\s*\(', code): warns.append((ln, 'W5', 'IF CHOOSE(...): test the index variable'))
-            # E10
-            m = re.search(r'INPUT\s*\(\s*(\{[^}]*\}|[A-Za-z_][A-Za-z0-9_]*)', code)
+            # E10 (v5: typed fields {name,[types],{pos}} are names too)
+            m = re.search(r'INPUT\s*\(\s*', code)
             if m:
-                arg = m.group(1).strip('{} ')
-                for part in arg.split(','):
-                    p = part.strip()
-                    if p and not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', p):
+                arg = _first_arg(code, m.end(), src, ln)
+                for p in _input_targets(arg):
+                    if not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', p):
                         errs.append((ln, 'E10', 'INPUT target is not a plain variable name: %r' % p))
             # W4
             if 'MSGBOX' in code:

@@ -28,7 +28,7 @@ Hundreds of community PPL programs from several HP-related public forums were re
 
 **New here?** [START_HERE.md](START_HERE.md) is a one-page guide: what to read in five minutes, five programs to try first, and how to help.
 
-**No calculator? Try all 30 on HP's free Virtual Calculator.** Download the **[starter pack](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v5.zip)** (one 1.4 MB zip, for the Virtual Calculator on Windows). Unzip it, copy one folder's files into the Virtual Calculator's own folder, and start it: the programs are in its Program Catalog, CentralLimit already made into its app. No Connectivity Kit, and no copying and pasting of code. [The steps](starter-pack/README.md) fit on one page.
+**No calculator? Try all 30 on HP's free Virtual Calculator.** Download the **[starter pack](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v6.zip)** (one 1.4 MB zip, for the Virtual Calculator on Windows). Unzip it, copy one folder's files into the Virtual Calculator's own folder, and start it: the programs are in its Program Catalog, CentralLimit already made into its app. No Connectivity Kit, and no copying and pasting of code. [The steps](starter-pack/README.md) fit on one page.
 
 **Your own data, without typing it in.** The **[HP Prime Data Loader](data-loader/README.md)** is one web page that works offline: paste columns from Excel, SPSS or a CSV file, and it writes the calculator's own matrix file. On the calculator, **DataLoad** puts each column, or each group's scores, into the Statistics lists that the other programs read, and draws a box plot of each. The starter pack carries DataLoad and a sample data set (new, 31 October 2026).
 
@@ -52,7 +52,7 @@ Together, these 30 programs currently run to more than **84,000 lines**: 57,900 
 
 And around the programs:
 
-- **[The notes](docs/lessons-learned_v7zf.md)**: hard limits, commands that differ from the manual, touch and graphics idioms, the MicroPython bridge and how it fails silently, calling the CAS safely, numerical methods for 12-digit reals. Useful even if you never run a statistics program, and written so you can hand them to an AI assistant before it writes PPL for you.
+- **[The notes](docs/lessons-learned_v7zg.md)**: hard limits, commands that differ from the manual, touch and graphics idioms, the MicroPython bridge and how it fails silently, calling the CAS safely, numerical methods for 12-digit reals. Useful even if you never run a statistics program, and written so you can hand them to an AI assistant before it writes PPL for you.
 - **[Two shortcuts the manuals don't mention](docs/two-shortcuts.md)**: loading the Virtual Calculator by copying files into its folder, and a big data set as one matrix file, with who found what.
 - **[Tools](tools/)**: the checks every program passes before it is pasted (a lint gate, a fleet-wide name check, a check that no two lines of text overlap on screen, a PC harness that drives a program like a student), in plain Python 3.
 - **[Diagnostics](diagnostics/)**: small probe programs that test what your own calculator does.
@@ -74,6 +74,8 @@ Three different questions, with three different answers:
   
 - **Do they run on a real calculator? Yes, we think so, but we are still checking.** Every program has run and been extensively tested on the HP Prime Virtual Calculator by Claude, and the current versions have had cursory checks on a G1 and a G2 by human me. The full device checklists, one per version in [docs/changes/](docs/changes/), are still being worked through, and some screens, especially graphics, can be slow. **Reports from your own calculator are the most welcome contribution of all.** The full dated record is in [docs/test-status.md](docs/test-status.md).
   
+- **Do they survive careless use? We now test that too** (1 November 2026). The **monkey test** (`tools/monkey_v1a.py`) drives a program the way a student who doesn't want to be there might: random keys, taps, menu picks and cancels, and odd values typed into the forms (a list where a number belongs, 1E300, 0, negatives). TTestLab and TTestLabG now pass 1,000 random runs with none broken. The first pass over the other book programs found what to fix next: [docs/dev/monkey-fleet-2026-11-01.md](docs/dev/monkey-fleet-2026-11-01.md).
+
 - **Can they be used on real cases? No!** Software used in casework must first be formally validated: tested on known samples under a laboratory's quality system, with its limits documented, certified, and then used by a qualified analyst. None of these programs has been through that process.
   
 **DISCLAIMER: so...these programs are teaching and demonstration aids, provided as-is, with no guarantees. They are not validated for forensic, clinical, or legal use; do not rely on their results for casework, legal decisions, or any other purpose.**
@@ -175,18 +177,18 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 
 **TrendTest** (beta 3g): chi-square for linear trend in a 2 × k table. **Drag a dot** to change a level's proportion and watch the trend test respond. Includes a confidence band and Wilson intervals.
 
-**TTestLab** (beta 1b, new 31 October 2026): the t tests of a criminal-justice statistics course, worked the way a lecture works them, in **five steps, a screen each**: the hypotheses and the data; the distribution and df; the critical value and the decision rule on a t curve with the rejection region shaded; the standard error and t obtained with the numbers put in; the decision, with t obtained and the p value drawn on the curve, and Cohen's d.
+**TTestLab** (beta 1c, new 31 October 2026; 1 November: every form field takes numbers only, and numbers too large for the calculator to work with are refused with a sentence, after the monkey test below): the t tests of a criminal-justice statistics course, worked the way a lecture works them, in **five steps, a screen each**: the hypotheses and the data; the distribution and df; the critical value and the decision rule on a t curve with the rejection region shaded; the standard error and t obtained with the numbers put in; the decision, with t obtained and the p value drawn on the curve, and Cohen's d.
 - **Pooled-variances, separate-variances (Welch, SPSS's "Equal variances not assumed") and dependent-samples t**, with any mix of equal or unequal SDs and Ns, from each group's mean, SD and N or from raw scores in D1 and D2; two-tailed or one-tailed either way.
 - **Which t test?** A tappable flowchart: are the samples independent? are the variances equal?
 - **Pooled or separate?** Both tests side by side, and what goes wrong with the pooled test when the smaller group has the larger SD.
 - **The printed t table beside the exact value** (df 73 reads row 60), and where a hand calculation rounded too early, what that did to t.
 - Examples: age at arrest (JDCC), matched jails (Census of Jails), and drug use by sex from an SPSS output, which it matches to SPSS's printed t = −4.351 on 265.924 df.
 
-**TTestLabG** (beta 1, new 31 October 2026): **the general version of TTestLab**, for an intro course in any subject and the companion guide in progress. The same five steps, arithmetic and screens (built from TTestLab beta 1b by `tools/make_tlg1_v1.py`), with its own name so both can sit on one calculator, and these differences:
+**TTestLabG** (beta 1a, new 31 October 2026; 1 November: the same fixes as TTestLab beta 1c): **the general version of TTestLab**, for an intro course in any subject and the companion guide in progress. The same five steps, arithmetic and screens (built from TTestLab beta 1c by `tools/make_tlg1_v2.py`), with its own name so both can sit on one calculator, and these differences:
 - **Separate variances (Welch) is the default**; pooled stays a choice. The flowchart says: not sure the variances are equal? Answer No.
 - **t critical is the exact one for the df.** A printed table is a note: a df it lacks takes the next smaller row (the larger t crit); a fractional df is rounded down first. Step 2 also gives the hand shortcut for separate variances, the smaller N − 1.
 - **A p that rounds to α prints its 4 significant digits** ("p = 0.04970: just below α = 0.050"), and means worked out from raw scores print to 4 significant digits.
-- Examples: **Darwin's plants** (his 1876 *Zea mays* pairs, crossed and self-fertilised), **the 1970 draft lottery** (Selective Service: were the birthdays drawn at random?), age at arrest (JDCC) and matched jails (Census of Jails). Ran on the Virtual Calculator beside TTestLab; 93 checks: [TTestLabG_beta1_NOTES.md](docs/changes/TTestLabG_beta1_NOTES.md).
+- Examples: **Darwin's plants** (his 1876 *Zea mays* pairs, crossed and self-fertilised), **the 1970 draft lottery** (Selective Service: were the birthdays drawn at random?), age at arrest (JDCC) and matched jails (Census of Jails). Ran on the Virtual Calculator beside TTestLab; 106 checks: [TTestLabG_beta1_NOTES.md](docs/changes/TTestLabG_beta1_NOTES.md), [TTestLabG_beta1a_CHANGES.md](docs/changes/TTestLabG_beta1a_CHANGES.md).
 
 **TestChooser** (beta 2c): which statistical test? It is a tappable flowchart: tap the outcome's scale and the design, and the path draws itself to a test. There is also a tappable table, and a 20-case criminal-justice and forensic quiz. After Glantz's *Primer of Biostatistics*. Its t-test pages point to TTestLab.
 
@@ -310,7 +312,7 @@ Short programs for finding out what your own calculator does.
 
 ## The notes
 
-[**docs/lessons-learned_v7zf.md**](docs/lessons-learned_v7zf.md) is the substantial document here: everything learned the expensive way across dozens and dozens of build iterations on G1 and G2 hardware. It covers:
+[**docs/lessons-learned_v7zg.md**](docs/lessons-learned_v7zg.md) is the substantial document here: everything learned the expensive way across dozens and dozens of build iterations on G1 and G2 hardware. It covers:
 - hard limits;
 - command behaviour that contradicts the manual;
 - graphics and input idioms;
@@ -353,7 +355,8 @@ A few things from it that are hard to find elsewhere:
 - the built-in-name and structure checks;
 - the gate that runs them all;
 - a PC run harness that drives a program with scripted keys, taps and drags, with SciPy behind the statistics built-ins and desktop Giac behind `CAS(...)`, made to behave as the Prime's firmware does where the emulator showed a difference;
-- the starter-pack builder, which turns `programs/` into ready-made Virtual Calculator files and reads each one back against its source.
+- the starter-pack builder, which turns `programs/` into ready-made Virtual Calculator files and reads each one back against its source;
+- the monkey test, which throws random keys, taps and typed values at a program in the harness and reports every way it broke.
 
 [data-loader/](data-loader/) has the Data Loader page, its number encoder and its tests (20,011 numbers against hp-prime-kit's encoder, and the page itself in Chromium).
 

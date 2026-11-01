@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-"""build_loader_v1c.py -- assembles PrimeLoader_v1c.html: the page template, the loader's core, the Data Loader's core
+"""build_loader_v1d.py -- assembles PrimeLoader_v1d.html: the page template, the loader's core, the Data Loader's core
 (for its zip writer), the chapter list, and every program file from a starter pack, embedded so the page works offline.
 
-    python3 build_loader_v1c.py PACK.zip [OUT.html] [--kit PATH]
+    python3 build_loader_v1d.py PACK.zip [OUT.html] [--kit PATH]
+
+v1d (1 Nov 2026): starter pack v6, whose TTestLab beta 1c and TTestLabG beta 1a carry the monkey test's fixes
+(every form field takes a real number only; a number with more than 50 digits, or a typed N over 1,000,000, is
+refused with a sentence).  The catalog names those versions.  The page template is v1c's, unchanged.
 
 v1c (1 Nov 2026): the repository is published on GitHub Pages (SITE below), so the book can link to the page.  The
 build also writes index.html beside the page, which sends a browser on to the current version: the fixed address
@@ -32,7 +36,7 @@ KIT = os.environ.get('HPKIT', '/tmp/kit/hp-prime-kit-HEAD')
 if '--kit' in argv:
     i = argv.index('--kit'); KIT = argv[i + 1]; del argv[i:i + 2]
 PACK = argv[0]
-OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v1c.html')
+OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v1d.html')
 SITE = 'https://metcalfdds.github.io/hp-prime-statistics/'
 sys.path.insert(0, KIT)
 from hpkit import program as kitprog            # hp-prime-kit (MIT, JordiRigau/hp-prime-kit)
@@ -65,8 +69,8 @@ PROGRAMS = {
   'StatDist':     ('StatDist.hpprgm', 'v2.7f', '27 distributions, each a plot you can touch', 'StatDist'),
   'StudRange':    ('StudRange.hpprgm', 'beta 15f', "Tukey's q, the studentized range", 'StudRange'),
   'SurvLab':      ('SurvLab.hpprgm', 'beta 1b', 'Time to an event: survival curves', 'SurvLab'),
-  'TTestLab':     ('TTestLab.hpprgm', 'beta 1b', 't tests in five steps (the advanced version)', 'TTESTLAB'),
-  'TTestLabG':    ('TTestLabG.hpprgm', 'beta 1', 't tests in five steps', 'TTESTLABG'),
+  'TTestLab':     ('TTestLab.hpprgm', 'beta 1c', 't tests in five steps (the advanced version)', 'TTESTLAB'),
+  'TTestLabG':    ('TTestLabG.hpprgm', 'beta 1a', 't tests in five steps', 'TTESTLABG'),
   'TestChooser':  ('TestChooser.hpprgm', 'beta 2c', 'Which test? A flowchart you tap', 'TestChooser'),
   'TrendTest':    ('TrendTest.hpprgm', 'beta 3g', 'Chi-square for a trend', 'TrendTest'),
 }
@@ -179,7 +183,7 @@ redirect = ('<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n
             '<link rel="canonical" href="' + SITE + 'prime-loader/' + page + '">\n'
             '<style>body{font:16px/1.5 system-ui,sans-serif;margin:2rem;color:#172033;background:#f6f8fb}'
             '@media (prefers-color-scheme:dark){body{color:#e8edf6;background:#0f1420}a{color:#7d9cff}}</style>\n'
-            '</head>\n<body>\n<!-- Written by build_loader_v1c.py: sends the browser on to the current Prime Loader, so the '
+            '</head>\n<body>\n<!-- Written by build_loader_v1d.py: sends the browser on to the current Prime Loader, so the '
             'address .../prime-loader/ never changes. -->\n'
             '<p>Opening the HP Prime Loader&hellip; If nothing happens, <a href="' + page + '">click here</a>.</p>\n'
             '</body>\n</html>\n')

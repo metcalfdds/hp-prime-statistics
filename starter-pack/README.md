@@ -1,10 +1,10 @@
 # Starter pack for the Virtual Calculator
 
-*v5, 2026-11-01. Built by `tools/make_starter_pack_v4.py` from `programs/`; do not edit this page by hand.*
+*v6, 2026-11-01. Built by `tools/make_starter_pack_v4.py` from `programs/`; do not edit this page by hand.*
 
-All 30 programs in one zip, ready for the free **HP Prime Virtual Calculator** on a Windows PC: no Connectivity Kit, no copying and pasting. Download **[HP_Prime_Statistics_Starter_Pack_v5.zip](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v5.zip)** (one file).
+All 30 programs in one zip, ready for the free **HP Prime Virtual Calculator** on a Windows PC: no Connectivity Kit, no copying and pasting. Download **[HP_Prime_Statistics_Starter_Pack_v6.zip](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v6.zip)** (one file).
 
-*How this pack was tested on the Virtual Calculator: [docs/changes/StarterPack_v5_NOTES.md](../docs/changes/StarterPack_v5_NOTES.md).*
+*How this pack was tested on the Virtual Calculator: [docs/changes/StarterPack_v6_NOTES.md](../docs/changes/StarterPack_v6_NOTES.md).*
 
 ### What you need
 - A Windows PC with the HP Prime Virtual Calculator (64-bit). It is a free download from hpcalc.org, which lists Hewlett-Packard as its author. The pack was tested on the Virtual Calculator 2.4.2 (build 2026-09-09), 64-bit.
@@ -62,8 +62,8 @@ All 30 programs in one zip, ready for the free **HP Prime Virtual Calculator** o
 | StatDist | v2.7f | 4,712 | `StatDist` |  | `4594ba1793b8` |
 | StudRange | beta 15f | 2,584 | `StudRange` | MicroPython | `a689bc28f64b` |
 | SurvLab | beta 1b | 2,672 | `SurvLab` |  | `e62650dabde0` |
-| TTestLabG | beta 1 | 1,299 | `TTESTLABG` |  | `0bdb31d3bba9` |
-| TTestLab | beta 1b | 1,319 | `TTESTLAB` |  | `3fdd873b9264` |
+| TTestLabG | beta 1a | 1,393 | `TTESTLABG` |  | `43108258f901` |
+| TTestLab | beta 1c | 1,420 | `TTESTLAB` |  | `172819074c60` |
 | TestChooser | beta 2c | 1,853 | `TestChooser` |  | `5e16ec2ea20c` |
 | TrendTest | beta 3g | 2,196 | `TrendTest` |  | `abbccd89a046` |
 

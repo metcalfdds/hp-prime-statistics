@@ -1,4 +1,4 @@
-// test_loader_v1c.js -- drives PrimeLoader_v1c.html in Chromium against a mock Virtual Calculator folder.
+// test_loader_v1d.js -- drives PrimeLoader_v1d.html in Chromium against a mock Virtual Calculator folder.
 // Roger Metcalf & Claude, 1 Nov 2026.
 //
 // The browser's folder picker cannot be driven by a test, so it is replaced by one that returns a folder in the
@@ -6,7 +6,10 @@
 // Calculator: Calculators\Prime with HP's apps, settings, old programs and a matrix; Temp with the lock file.  Every file
 // the page writes is compared byte for byte with the starter pack it was built from.
 //
-//   node tests/test_loader_v1c.js PrimeLoader_v1c.html PACK.zip
+//   node tests/test_loader_v1d.js PrimeLoader_v1d.html PACK.zip
+// v1d (1 Nov 2026): v1c's checks, run on the page built from starter pack v6 (TTestLab beta 1c, TTestLabG beta 1a).
+//   One change: before 'own data listed' it waits up to 5 s for the page to list the file; in one run of four the
+//   check read the list before the page had read the file.
 // v1c: the Data Loader link is the Data Loader page's web address on GitHub Pages; index.html beside the page sends
 // the browser on to it.
 // v1b: the Firefox route (a browser without the folder API, with Firefox's user-agent): its own steps, the zip named
@@ -164,6 +167,8 @@ function check(name, ok, detail) {
   // ---- 4. your own data file ----
   await page.reload();
   await page.setInputFiles('#ownfile', { name: 'M3.hpmat', mimeType: 'application/octet-stream', buffer: Buffer.from([1, 0, 20, 128]) });
+  // v1d: wait for the page to list the file (it reads the file first); one run in four read the list too early
+  await page.waitForFunction(() => /M3\.hpmat/.test(document.querySelector('#ownlist').textContent), null, { timeout: 5000 }).catch(() => {});
   check('own data listed', /M3\.hpmat/.test(await page.textContent('#ownlist')));
   await page.click('#load');
   await page.waitForSelector('#done:not([hidden])');

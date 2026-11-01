@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""ppl_gate_v1c.py -- the four-tool gate every HP Prime PPL file passes before a paste.
+"""ppl_gate_v1d.py -- the four-tool gate every HP Prime PPL file passes before a paste.
 
 usage (from D:\\HP-Prime, or the repo's tools/ folder with the programs one level up):
-    python3 ppl_gate_v1c.py NEW.txt [ORIGINAL.txt]
-    python3 ppl_gate_v1c.py --fleet *.txt          (only the fleet-wide name check)
+    python3 ppl_gate_v1d.py NEW.txt [ORIGINAL.txt]
+    python3 ppl_gate_v1d.py --fleet *.txt          (only the fleet-wide name check)
 
 What it runs, in order (Lessons Learned v7f, rule 14):
   1. hp-prime-kit's linter (`hpprime lint`).  Every device-tested program in the fleet gives
@@ -11,11 +11,11 @@ What it runs, in order (Lessons Learned v7f, rule 14):
      Community_Library/github/JordiRigau__hp-prime-kit.zip and unpacked once into a temp folder.
      v1c: it reads a copy of the file with every #PYTHON ... #END block blanked, so a file with a
      #PYTHON block no longer shows a false 'unbalanced', and an error there is real too.
-  2. ppl_check_v4.py, the error-code tally (and the ORIGINAL's, for comparison).  The hard
+  2. ppl_check_v5.py, the error-code tally (and the ORIGINAL's, for comparison).  The hard
      codes E2 (block balance), E3 (LOCAL > 6), E6 (LOCAL placement), E8 (lowercase exponent,
      '=' for '=='), E10 (INPUT target), E11 (built-in name clash, case ignored) and E12 (a //
      comment inside an open bracket: a Syntax Error on the Prime, ChiTable beta 3b) must be 0.
-  3. lint_ppl.py, version 2 (v1c; v1b ran version 1), the structural lint (block balance, LOCAL
+  3. lint_ppl.py, version 3 (v1d; v1c ran version 2, v1b version 1), the structural lint (block balance, LOCAL
      sizes, INPUT counts, CHOOSE pattern).  Its 'no function named <file>' and EXPORT-discipline
      lines are known noise.
   4. A full parse with the kit's own PPL interpreter.  It cannot read a file-level LOCAL after
@@ -25,6 +25,9 @@ Then fleet_names_v2.py over every *.txt beside NEW, so a new helper name cannot 
 another program's (all programs share ONE pool of routine names on the calculator).
 
 Python 3 standard library only.  Roger Metcalf / Claude, 16 Oct 2026.
+v1d (1 Nov 2026): step 2 runs ppl_check_v5.py, whose E10 reads INPUT's typed fields,
+  {name,[0]} and {name,[types],{pos}}, as the names they are (v4 reported '[0]' as a target:
+  TTestLab beta 1c).  Nothing else changed.
 v1c (19 Oct 2026; fleet review of 19 Oct 2026, tools items 21 and 23): two changes.
   - Step 3 runs lint_ppl.py: it skips the comment lines of HP_Prime_Builtin_Names.txt (v1 read
     'means', 'the', 'name' ... as built-ins and warned on FDAES), counts STRING(MAX(a,b),2,1) as
@@ -37,7 +40,7 @@ v1c (19 Oct 2026; fleet review of 19 Oct 2026, tools items 21 and 23): two chang
     every file, because the Python is no longer in what the kit reads.
   The verdict on every program of the 19 Oct 2026 fleet is the same as v1b's (PASS); see
   TOOLS_v1c_NOTES.md for the run.
-v1b (17 Oct 2026): ppl_check_v4.py and its E12 (a comment inside an open bracket) are hard.
+v1b (17 Oct 2026): ppl_check_v5.py and its E12 (a comment inside an open bracket) are hard.
 v1a (16 Oct 2026, evening): paths are made absolute before any tool sees them, and a lint_ppl
 run that prints no summary line now FAILS the gate instead of passing it silently.
 """
@@ -166,14 +169,14 @@ def gate(new, orig=None):
         if errs: bad += 1
     else:
         print('1. hp-prime-kit lint: skipped (zip not found)')
-    # 2. ppl_check_v4
-    checker = find('ppl_check_v4.py'); names = find('HP_Prime_Builtin_Names.txt')
+    # 2. ppl_check_v5
+    checker = find('ppl_check_v5.py'); names = find('HP_Prime_Builtin_Names.txt')
     if checker and names:
         empty = os.path.join(tempfile.gettempdir(), 'ppl_gate_empty.json')
         open(empty, 'w').write('[]')
         lists = empty + ',' + names
         c, hard = tally(new, checker, lists)
-        print('2. ppl_check_v4 tally: ' + (', '.join('%d %s' % (v, k) for k, v in sorted(c.items())) or 'clean'))
+        print('2. ppl_check_v5 tally: ' + (', '.join('%d %s' % (v, k) for k, v in sorted(c.items())) or 'clean'))
         if orig:
             c0, _ = tally(orig, checker, lists)
             print('   original:          ' + (', '.join('%d %s' % (v, k) for k, v in sorted(c0.items())) or 'clean'))
@@ -181,7 +184,7 @@ def gate(new, orig=None):
         for ln in hard: print('     ' + ln.strip())
         if hard: bad += 1
     else:
-        print('2. ppl_check_v4: skipped (ppl_check_v4.py or HP_Prime_Builtin_Names.txt not found)')
+        print('2. ppl_check_v5: skipped (ppl_check_v5.py or HP_Prime_Builtin_Names.txt not found)')
     # 3. lint_ppl -- v1c: lint_ppl.py
     lp = find('lint_ppl.py')
     if lp:
@@ -189,11 +192,11 @@ def gate(new, orig=None):
         noise = ('no function named', 'is neither the entry point nor an EP_', 'is not EXPORTed', "' is EXPORTed")
         probs = [ln.strip() for ln in out.split('\n') if 'PROBLEM' in ln and not any(n in ln for n in noise)]
         summ = [ln.strip() for ln in out.split('\n') if 'checks,' in ln]
-        print('3. lint_ppl (v2): ' + (summ[0] if summ else 'DID NOT RUN -- ' + out.strip().split(chr(10))[-1][:120]))
+        print('3. lint_ppl (v3): ' + (summ[0] if summ else 'DID NOT RUN -- ' + out.strip().split(chr(10))[-1][:120]))
         for ln in probs: print('     ' + ln)
         if not summ: bad += 1
     else:
-        print('3. lint_ppl (v2): skipped (lint_ppl.py not found)')
+        print('3. lint_ppl (v3): skipped (lint_ppl.py not found)')
     # 4. parse
     print('4. full parse: ' + parse(new, kit))
     if orig: print('   original:   ' + parse(orig, kit))

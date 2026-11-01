@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""make_tlg1_v1.py -- builds TTestLabG beta 1, the GENERAL version of TTestLab, from TTestLab beta 1b
+"""make_tlg1_v2.py -- builds TTestLabG beta 1a, the GENERAL version of TTestLab, from TTestLab beta 1c
 (the advanced version), by exact replacements: every replacement must find its text exactly the number of times
 expected, or the build stops.
 
@@ -19,7 +19,12 @@ What changes (the Chapter Plan's "General and advanced versions" and "Convention
   * examples: Darwin's 1876 Zea mays pairs (dependent), the 1970 draft lottery (separate; Selective Service), and
     two of the lecture's government-data examples kept (age at arrest, JDCC, pooled; matched jails, Census of Jails,
     dependent).  The SPSS drug-use example stays in the advanced version only.
-Run:  python3 make_tlg1_v1.py SRC_TTestLab_beta1b.txt SRC_PowerViz_v2.5k.txt OUT_TTestLabG_beta1.txt
+Run:  python3 make_tlg1_v2.py SRC_TTestLab_beta1c.txt SRC_PowerViz_v2.5k.txt OUT_TTestLabG_beta1a.txt
+
+v2 (1 Nov 2026): the source is TTestLab beta 1c (the monkey test's two fixes: real-only form fields, and
+numbers with more than 50 digits refused; a typed N of at most 1,000,000); the header names beta 1a and says so.  Every replacement is v1's;
+the new code in beta 1c needs none (its messages carry no program name, and its routines are renamed
+tt_ -> tz_ with the rest).  Rule 23: a fix goes into the advanced version first, then this script.
 """
 import re
 import sys
@@ -75,10 +80,10 @@ if re.search(r'\btt[A-Z_]', S):
     sys.exit('an old tt name survived the rename')
 
 # ---------------------------------------------------------------- 2. the header
-a = S.find('// ============================================================\n// TTESTLAB - beta 1b')
+a = S.find('// ============================================================\n// TTESTLAB - beta 1c')
 b = S.find('// ---------------- shared state ----------------')
 HEADER = r'''// ============================================================
-// TTESTLABG - beta 1   (the general version of TTestLab)
+// TTESTLABG - beta 1a   (the general version of TTestLab)
 // ============================================================
 // FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
 //   the file and credit the author if you pass it on.  Not for
@@ -89,14 +94,27 @@ HEADER = r'''// ============================================================
 // (C) 2026 Roger D Metcalf.  Written with AI assistance (Anthropic
 //   Claude); every formula checked against SciPy before delivery.
 // Firmware: written for the HP Prime G2 and G1 on the 2026-09-09
-//   firmware.  beta 1 has run in the PC harness only so far.
+//   firmware.  beta 1 ran on the Virtual Calculator 2.4.2 (31 Oct
+//   2026, beside TTestLab; its NOTES file says what was seen, and on
+//   1 Nov 2026 its checked file ran there with no Check).  beta 1a
+//   has run in the PC harness only so far.
+//
+// beta 1a (1 Nov 2026): rebuilt from TTestLab beta 1c, which fixes
+//   the two faults a monkey test found in beta 1 (1,000 runs of random
+//   keys, taps, menu picks and typed values, with random D1/D2 lists;
+//   13 broke).  Every field of both forms now takes a real number only
+//   ({name,[0]}), so a list typed as a mean is refused by the form; and
+//   a number with more than 50 digits, typed or read from D1/D2, is
+//   refused with a sentence before it can overflow when squared.  A
+//   typed N may be at most 1,000,000: the Prime's t distribution loses
+//   its digits at a huge df (found on the Virtual Calculator).
 //
 // GENERAL AND ADVANCED VERSIONS (Roger, 31 Oct 2026).  TTestLab is
 //   the ADVANCED version: Roger's lecture rules, his examples and
 //   SPSS output.  TTestLabG is the GENERAL version, for the intro
 //   statistics companion guide, Statisticles and any intro course.
-//   It is built from TTestLab beta 1b by make_tlg1_v1.py, with the
-//   same arithmetic and screens (84 checks and an independent review
+//   It is built from TTestLab beta 1c by make_tlg1_v2.py, with the
+//   same arithmetic and screens (97 checks and an independent review
 //   behind them), and differs in:
 //   * its name and tags (tz_, tz), so both versions can sit on one
 //     calculator: every program shares one pool of routine names;

@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// TTESTLABG - beta 1   (the general version of TTestLab)
+// TTESTLABG - beta 1a   (the general version of TTestLab)
 // ============================================================
 // FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
 //   the file and credit the author if you pass it on.  Not for
@@ -12,14 +12,27 @@
 // (C) 2026 Roger D Metcalf.  Written with AI assistance (Anthropic
 //   Claude); every formula checked against SciPy before delivery.
 // Firmware: written for the HP Prime G2 and G1 on the 2026-09-09
-//   firmware.  beta 1 has run in the PC harness only so far.
+//   firmware.  beta 1 ran on the Virtual Calculator 2.4.2 (31 Oct
+//   2026, beside TTestLab; its NOTES file says what was seen, and on
+//   1 Nov 2026 its checked file ran there with no Check).  beta 1a
+//   has run in the PC harness only so far.
+//
+// beta 1a (1 Nov 2026): rebuilt from TTestLab beta 1c, which fixes
+//   the two faults a monkey test found in beta 1 (1,000 runs of random
+//   keys, taps, menu picks and typed values, with random D1/D2 lists;
+//   13 broke).  Every field of both forms now takes a real number only
+//   ({name,[0]}), so a list typed as a mean is refused by the form; and
+//   a number with more than 50 digits, typed or read from D1/D2, is
+//   refused with a sentence before it can overflow when squared.  A
+//   typed N may be at most 1,000,000: the Prime's t distribution loses
+//   its digits at a huge df (found on the Virtual Calculator).
 //
 // GENERAL AND ADVANCED VERSIONS (Roger, 31 Oct 2026).  TTestLab is
 //   the ADVANCED version: Roger's lecture rules, his examples and
 //   SPSS output.  TTestLabG is the GENERAL version, for the intro
 //   statistics companion guide, Statisticles and any intro course.
-//   It is built from TTestLab beta 1b by make_tlg1_v1.py, with the
-//   same arithmetic and screens (84 checks and an independent review
+//   It is built from TTestLab beta 1c by make_tlg1_v2.py, with the
+//   same arithmetic and screens (97 checks and an independent review
 //   behind them), and differs in:
 //   * its name and tags (tz_, tz), so both versions can sit on one
 //     calculator: every program shares one pool of routine names;
@@ -370,12 +383,75 @@ BEGIN
  tzSDv := (tzSSq/(tzNP-1))^.5;
 END;
 
+// Too large to work with?  The program squares the numbers it is given
+// (an SD, a difference from the mean) and step 4 squares s^2/N again
+// for Welch's df.  On the Prime a square past 1E499 is infinity, with
+// no error (Lessons Learned s3), and the screens would fill with it.
+// So every number taken in, typed or read from D1/D2, must be smaller
+// than 1E50 in size: 50 digits before the point, far beyond any data a
+// course meets, and its fourth power still fits (beta 1c, from the
+// monkey test).  An infinity is refused too.
+LOCAL tz_Big(bv)
+BEGIN
+ RETURN IFTE(ABS(bv) >= 1E50,1,0);
+END;
+
+// The position of the first value in a list that is too large
+// (tz_Big), or 0 when every value is fine.
+LOCAL tz_BigL(bl)
+BEGIN
+ LOCAL bi;
+ FOR bi FROM 1 TO SIZE(bl) DO
+  IF tz_Big(bl(bi)) THEN RETURN bi; END;
+ END;
+ RETURN 0;
+END;
+
+// The sentence for a list read from the Statistics 1Var app that holds
+// a value too large: which list, and which value in it.
+LOCAL tz_BigLMsg(gl1, gl2)
+BEGIN
+ LOCAL gk, gw;
+ gk := tz_BigL(gl1); gw := "D1";
+ IF gk == 0 THEN gk := tz_BigL(gl2); gw := "D2"; END;
+ RETURN "Value "+STRING(gk,1,0)+" in "+gw+" has more than 50 digits: too large to work with. Check "+gw+" in the Statistics 1Var app.";
+END;
+
+// The sentence for a typed N over 1,000,000.  The Prime's STUDENT_CDF
+// loses its digits at a huge df (Virtual Calculator 2.4.2, 1 Nov 2026,
+// at t = -1.96: df 1E6 gave 0.024998033593, right to 8 digits; df 1E10
+// 0.02498, where the value is 0.024998; df 1E13 0.014; df 1E15 and past
+// 0.5).  N of at most 1,000,000 keeps every df below 2,000,000, where
+// it is right, and t and z there agree to 5 digits anyway.  Only a
+// typed N is checked: an N from D1/D2 counts the values in a list.
+LOCAL tz_NMsg()
+BEGIN
+ RETURN "N can be at most 1,000,000: the calculator's t distribution loses accuracy far beyond it (and there t equals z).";
+END;
+
 // Everything the five steps show, from the numbers on screen.  Sets
 // tzOK = 0 and tzMSG when the numbers cannot give a t.
 LOCAL tz_Calc()
 BEGIN
  LOCAL cr;
  tzOK := 1; tzMSG := "";
+ // A typed number too large to work with (tz_Big).  Only typed ones:
+ // numbers worked out from D1/D2 come from values already checked
+ // when the lists were read, and an SD worked out from values below
+ // 1E50 can lie a little above it.
+ IF tzSRC == 1 THEN
+  IF tzTY == 3 THEN
+   IF tz_Big(tzMD) OR tz_Big(tzSDv) OR tz_Big(tzNP) THEN
+    tzOK := 0; tzMSG := "A number you typed has more than 50 digits: too large to work with. Choose Edit the numbers to change it."; RETURN 0;
+   END;
+   IF tzNP > 1000000 THEN tzOK := 0; tzMSG := tz_NMsg(); RETURN 0; END;
+  ELSE
+   IF tz_Big(tzM1) OR tz_Big(tzS1) OR tz_Big(tzN1) OR tz_Big(tzM2) OR tz_Big(tzS2) OR tz_Big(tzN2) THEN
+    tzOK := 0; tzMSG := "A number you typed has more than 50 digits: too large to work with. Choose Edit the numbers to change it."; RETURN 0;
+   END;
+   IF tzN1 > 1000000 OR tzN2 > 1000000 THEN tzOK := 0; tzMSG := tz_NMsg(); RETURN 0; END;
+  END;
+ END;
  IF tzTY == 3 THEN
   // the guard before the SD of the differences is formed (it divides
   // by N - 1): review 10
@@ -1003,9 +1079,13 @@ BEGIN
  // are in: a cancelled form or a refused D1/D2 read leaves everything
  // as it was (review 2 and 6).  The forms write into the variables
  // themselves only on OK.
+ // Every field is {name,[0]}: [0] is the list of types the field
+ // allows, and 0 is a real number, so the form refuses a list or a
+ // text typed into it (beta 1c: the monkey test typed {1,2} as a
+ // mean, and the list went on into the arithmetic).
  IF tzTY <> 3 THEN
   IF ds == 1 THEN
-   dok := INPUT({tzM1,tzS1,tzN1,tzM2,tzS2,tzN2},"Two independent samples",
+   dok := INPUT({{tzM1,[0]},{tzS1,[0]},{tzN1,[0]},{tzM2,[0]},{tzS2,[0]},{tzN2,[0]}},"Two independent samples",
     {"Mean 1:","SD 1:","N 1:","Mean 2:","SD 2:","N 2:"},
     {"Sample 1 mean","Sample 1 SD (s, with N - 1)","Sample 1 size","Sample 2 mean","Sample 2 SD (s, with N - 1)","Sample 2 size"});
    tz_Settle();
@@ -1018,6 +1098,13 @@ BEGIN
    dl1 := tz_ReadD(1); dl2 := tz_ReadD(2);
    IF SIZE(dl1) < 2 OR SIZE(dl2) < 2 THEN
     MSGBOX("Put sample 1 in D1 and sample 2 in D2 of the Statistics 1Var app: at least 2 scores in each.");
+    tz_Settle();
+    RETURN 0;
+   END;
+   // a value too large to square is refused before any arithmetic
+   // (beta 1c, tz_Big), and nothing changes
+   IF tz_BigL(dl1) > 0 OR tz_BigL(dl2) > 0 THEN
+    MSGBOX(tz_BigLMsg(dl1,dl2));
     tz_Settle();
     RETURN 0;
    END;
@@ -1035,12 +1122,19 @@ BEGIN
     tz_Settle();
     RETURN 0;
    END;
+   // a value too large to square is refused, and nothing changes
+   // (beta 1c, tz_Big)
+   IF tz_BigL(dl1) > 0 OR tz_BigL(dl2) > 0 THEN
+    MSGBOX(tz_BigLMsg(dl1,dl2));
+    tz_Settle();
+    RETURN 0;
+   END;
    tzX1 := dl1; tzX2 := dl2;
    tzSRC := 2;
    tzG1 := "D1"; tzG2 := "D2";
   ELSE
    dm := tzMD; dsd := tzSDv; dn := tzNP;
-   dok := INPUT({dm,dsd,dn},"Dependent samples",{"Mean xD:","SD sD:","N pairs:"},
+   dok := INPUT({{dm,[0]},{dsd,[0]},{dn,[0]}},"Dependent samples",{"Mean xD:","SD sD:","N pairs:"},
     {"Mean of the differences x1 - x2","SD of the differences (N - 1)","Number of pairs"});
    tz_Settle();
    IF dok == 0 THEN RETURN 0; END;

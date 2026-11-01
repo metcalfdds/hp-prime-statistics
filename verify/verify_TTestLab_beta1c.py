@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""verify_TTestLab_beta1b.py -- checks TTestLab beta 1b (31 Oct 2026, night: the independent second review's eleven
-findings fixed; beta 1a the same evening, beta 1 the same afternoon), the five-step t tests of Roger's lecture note
+"""verify_TTestLab_beta1c.py -- checks TTestLab beta 1c (1 Nov 2026: the monkey test's two findings fixed; beta 1b
+31 Oct 2026, night: the independent second review's eleven findings fixed; beta 1a the same evening, beta 1 the same
+afternoon), the five-step t tests of Roger's lecture note
 "Hypothesis Testing: t-Test (with two population means)": pooled-variances, separate-variances (Welch) and
 dependent-samples t, with any mix of equal or unequal variances and equal or unequal N.
 
@@ -21,12 +22,19 @@ R  the review's findings (REVIEW2_TTestLab_beta1a.md), one check each, every one
    prints 0.000 and prints 1.000 for 1; t obt to 3 decimals on the decision line; a typed N is whole; t crit past the
    window: the label and the rule's wording; a negative sD; the pairs guard before the SD; help's "sample 1"; the
    pairs' decimals; the table-row line; step 4's rows for a typed summary; Help from the start menu returns to it.
+M  the monkey test's findings (1 Nov 2026; 1,000 random runs of the general version, 13 broken), one check each, every
+   one failing on beta 1b (read from ../programs or, once it has left that folder, from git history): every form
+   field takes a real number only ({name,[0]}), so a typed list is refused by the form; a value of 1E50 or more in
+   size in D1 or D2 (independent or pairs) is refused with a box that names the list and the value, and nothing
+   changes; 9.99E49 is accepted; a typed number of 1E50 or more gets a sentence and the menu, and stays as typed;
+   a typed N over 1,000,000 is refused (the Prime's t distribution loses its digits at a huge df); the
+   largest numbers accepted draw all five steps for all three tests, with t against SciPy.
 G  static: no "!=", every routine tagged tt_, every file-level variable tagged tt, one EXPORT.
 D  layout: text_overlap_v1's recorder over every screen drawn above: no firm overlap, frame straddle or overrun.
 
 Needs TTestLab_lecture_t_table_v1.py (the lecture's t table, transcribed) beside this file, the PPL harness ppl_run_v3e.py and text_overlap_v1.py (in ./tools, ../tools, this folder, or $TTL_TOOLS),
 hp-prime-kit ($HPKIT), SciPy, NumPy.
-Run:  python3 verify_TTestLab_beta1b.py [TTestLab_beta1b.txt]     (exit code 0 = all passed)
+Run:  python3 verify_TTestLab_beta1c.py [TTestLab_beta1c.txt]     (exit code 0 = all passed)
 """
 import math
 import os
@@ -53,9 +61,9 @@ import ppl_run_v3e  # noqa: E402,F401
 from ppl_run_v3e import Harness, ACCEPT, CANCEL  # noqa: E402
 import text_overlap_v1 as OV  # noqa: E402
 
-PROG = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, 'TTestLab_beta1b.txt')
+PROG = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, 'TTestLab_beta1c.txt')
 if not os.path.exists(PROG):
-    PROG = os.path.join(HERE, '..', 'programs', 'TTestLab_beta1b.txt')
+    PROG = os.path.join(HERE, '..', 'programs', 'TTestLab_beta1c.txt')
 SRC = open(PROG, encoding='utf-8').read()
 
 FAIL = []
@@ -987,6 +995,271 @@ check('R11 Help from the start menu returns to that menu (cancel there gives "TT
       ' example 1)', err is None and res == 'TTestLab: cancelled' and
       [U(p.lines()[0]) for p in hh.pages] == ['TTestLab help 1/2: keys', 'TTestLab help 2/2: the numbers'], (err, res))
 
+# ===================================================================== M. the monkey test's findings
+print("=== M. the monkey test's findings (1 Nov 2026; each check fails on beta 1b)")
+
+
+OLD_FROM = ['']
+
+
+def older(name):
+    """the previous version: beside this script, in ../programs, in an _superseded_* folder beside it (the author's
+    D:\\HP-Prime), or from git history (Lessons Learned rule 18)"""
+    import glob
+    for pth in [os.path.join(HERE, name), os.path.join(HERE, '..', 'programs', name)] + \
+            sorted(glob.glob(os.path.join(HERE, '_superseded_*', name)), reverse=True):   # the author's folder
+        if os.path.exists(pth):
+            return pth
+    import subprocess
+    root, rel_ = os.path.join(HERE, '..'), 'programs/' + name
+    try:
+        c = subprocess.run(['git', '-C', root, 'rev-list', '-n', '1', 'HEAD', '--', rel_],
+                           capture_output=True, text=True, timeout=60).stdout.strip()
+        for ref in ((c + ':' + rel_, c + '^:' + rel_) if c else ()):
+            out = subprocess.run(['git', '-C', root, 'show', ref], capture_output=True, timeout=60)
+            if out.returncode == 0:
+                pth = os.path.join(tempfile.mkdtemp(), name)
+                open(pth, 'wb').write(out.stdout)
+                OLD_FROM[0] = 'git history (' + ('the commit before the one that removed it' if ref.split(':')[0].endswith('^') else 'the last commit that has it') + ')'
+                return pth
+    except Exception:
+        pass
+    return None
+
+
+OLD = older('TTestLab_beta1b.txt')
+print('   beta 1b for the controls: %s' % ((OLD_FROM[0] or os.path.relpath(OLD, HERE)) if OLD else
+                                          'NOT FOUND (the controls are reported as failures)'))
+
+
+def split_top(t):
+    out, d, cur = [], 0, ''
+    for ch in t:
+        if ch in '([{':
+            d += 1
+        elif ch in ')]}':
+            d -= 1
+        if ch == ',' and d == 0:
+            out.append(cur.strip())
+            cur = ''
+        else:
+            cur += ch
+    out.append(cur.strip())
+    return out
+
+
+def input_fields(src):
+    """the fields of every INPUT in the code (comments left out): its first argument, split at the top level"""
+    code_ = '\n'.join(ln.split('//')[0] for ln in src.split('\n'))
+    out = []
+    for m in re.finditer(r'\bINPUT\(', code_):
+        i = j = m.end()
+        d = 0
+        while True:
+            ch = code_[j]
+            if ch in '([{':
+                d += 1
+            elif ch in ')]}':
+                d -= 1
+                if d < 0:
+                    break
+            elif ch == ',' and d == 0:
+                break
+            j += 1
+        a = code_[i:j].strip()
+        out.append(split_top(a[1:-1]) if a.startswith('{') else [a])
+    return out
+
+
+def real_only(src):
+    ff = input_fields(src)
+    return len(ff) == 2 and all(re.fullmatch(r'\{[A-Za-z]\w*,\[0\]\}', x) for f in ff for x in f), ff
+
+
+ok_new, ff_new = real_only(SRC)
+ok_old, ff_old = real_only(open(OLD, encoding='utf-8').read()) if OLD else (True, None)
+check('M1 both forms take real numbers only: every field is {name,[0]} (%d and %d fields), so the form refuses a '
+      'list typed as a mean; beta 1b\'s fields took any type (%s)'
+      % (len(ff_new[0]) if ff_new else 0, len(ff_new[1]) if len(ff_new) > 1 else 0, ff_old[0][:2] if ff_old else '-'),
+      ok_new and OLD is not None and not ok_old, (ff_new, ff_old))
+
+
+def box(hh):
+    return [U(' '.join(m.lines)) for m in hh.msgboxes]
+
+
+def both(script, app=None):
+    """the run on beta 1c and the same run on beta 1b"""
+    new = run(script, app=app)
+    old = run(script, app=app, path=OLD) if OLD else (None, None, 'no beta 1b')
+    return new, old
+
+
+big = []
+for name, sc, app, want in (
+        ('independent, 1E300 in D1', s_flow_raw, {'D1': [12, 1E300, 15], 'D2': d2}, 'Value 2 in D1 has more than 50 digits'),
+        ('independent, -1E300 last in D2', s_flow_raw, {'D1': d1, 'D2': d2[:-1] + [-1E300]}, 'Value 10 in D2 has more than 50 digits'),
+        ('pairs, -1E300 in D2', s_flow_pairs, {'D1': [1.30, 1.25, 0.86, 0.94, 2.26], 'D2': [1.00, 0.76, 0.99, -1E300, 1.85]},
+         'Value 4 in D2 has more than 50 digits')):
+    (hn, rn, en), (ho, ro, eo) = both(sc, app)
+    mb = box(hn)
+    big.append((name, en, rn, mb[:1], eo, box(ho)[:1] if ho else None))
+    check('M2 %s: a box names the list and the value ("%s ... Check %s in the Statistics 1Var app."), the program '
+          'ends cleanly ("%s"); beta 1b: %s' % (name, want, want.split(' in ')[1].split(' ')[0], rn, eo or 'no box'),
+          en is None and mb and want in mb[0] and 'Statistics 1Var app.' in mb[0] and rn == 'TTestLab: cancelled' and
+          OLD is not None and (eo is not None or not any('50 digits' in x for x in box(ho))), big[-1])
+over5 = [m.lines for m in hn.msgboxes if m.over_five]
+check('M2 the box fits in 5 lines (Lessons Learned s3)', not over5, over5)
+
+# the line: 1E50 (and -1E50) refused, 9.99E49 accepted
+(hn, rn, en) = run(s_flow_raw, app={'D1': d1, 'D2': d2 + [1E50]})
+(hm, rm, em) = run(s_flow_raw, app={'D1': [-1E50] + d1, 'D2': d2})
+(ha, ra, ea) = run(s_flow_raw, app={'D1': d1, 'D2': d2 + [9.99E49]})
+ra_ = stats.ttest_ind(d1, d2 + [9.99E49], equal_var=True)
+check('M3 the line is 1E50 in size: 1E50 in D2 refused (%s), -1E50 in D1 refused (%s), 9.99E49 accepted (t %.6g, '
+      'SciPy %.6g; no box)' % (box(hn)[:1], box(hm)[:1], g(ha, 'ttT'), ra_.statistic),
+      en is None and em is None and ea is None and box(hn) and 'Value 11 in D2' in box(hn)[0] and box(hm) and
+      'Value 1 in D1' in box(hm)[0] and not box(ha) and rel(g(ha, 'ttT'), ra_.statistic) < 1e-9,
+      (box(hn), box(hm), box(ha), en, em, ea))
+
+
+def s_refused_from_example(h):
+    h.choose(2)                                          # example 1
+    h.press('Enter')
+    h.choose('Edit the numbers')
+    h.choose(2)                                          # raw scores in D1 and D2: refused
+    h.press('Esc')
+
+
+(hn, rn, en) = run(s_refused_from_example, app={'D1': [1E300, 2], 'D2': [3, 4]})
+check('M4 example 1, then a D1 holding 1E300 refused: nothing changes (example 1, its names, typed source, its '
+      'numbers; "%s")' % U(rn or ''),
+      en is None and g(hn, 'ttEX') == 1 and g(hn, 'ttG1') == 'Hispanic' and g(hn, 'ttSRC') == 1 and
+      g(hn, 'ttM1') == 15.89 and U(rn) == 'TTestLab: t(73) = -2.20, p = 0.031, two-tailed', (en, rn))
+
+
+def s_typed_big(h):
+    h.choose(2)                                          # example 1
+    h.press('Enter')
+    h.choose('Edit the numbers')
+    h.choose(1)                                          # type the numbers
+    h.answer({'ttM1': 1E60})
+    h.choose('Quit')                                     # the menu after the box
+
+
+TYPED = 'A number you typed has more than 50 digits: too large to work with. Choose Edit the numbers to change it.'
+(hn, rn, en), (ho, ro, eo) = both(s_typed_big)
+check('M5 a typed Mean 1 of 1E60: "%s", then the menu; the number stays as typed (the form shows it next time); '
+      'beta 1b worked a t from it ("%s")' % (TYPED, U(ro or eo or '')),
+      en is None and box(hn) == [TYPED] and rn == 'TTestLab' and g(hn, 'ttM1') == 1E60 and g(hn, 'ttOK') == 0 and
+      OLD is not None and not any('50 digits' in x for x in box(ho)), (en, rn, box(hn), ro, eo))
+typed = []
+for kv in (dict(ttS2=1E50), dict(ttN1=1E50), dict(ttM2=-1E55), dict(ttS1=float('inf'))):
+    hh = H()
+    put(hh, ttTY=2, ttSRC=1, ttM1=5, ttS1=2, ttN1=10, ttM2=4, ttS2=2, ttN2=10)
+    put(hh, **kv)
+    hh.execute('tt_Calc()')
+    typed.append((list(kv)[0], g(hh, 'ttOK'), g(hh, 'ttMSG') == TYPED))
+check('M5 every typed field is checked (SD 2 = 1E50, N 1 = 1E50, Mean 2 = -1E55, an infinite SD 1): %s' % typed,
+      all(t[1] == 0 and t[2] for t in typed), typed)
+
+
+def s_dep_big(h):
+    h.choose(1)
+    h.tap(230, 71)
+    h.tap(290, 230)                                      # dependent
+    h.choose(2)                                          # type the mean and SD of the differences
+    h.answer({'dm': 0.5, 'dsd': 1, 'dn': 1E50})
+    h.choose(1)
+    h.choose(3)
+    h.choose('Quit')
+
+
+(hn, rn, en), (ho, ro, eo) = both(s_dep_big)
+check('M5 dependent samples, N pairs typed as 1E50: the same sentence; beta 1b worked a t on 1E50 - 1 df ("%s")'
+      % U(ro or eo or ''),
+      en is None and box(hn) == [TYPED] and rn == 'TTestLab' and OLD is not None and
+      not any('50 digits' in x for x in box(ho)), (en, rn, box(hn), ro, eo))
+
+# a typed N over 1,000,000: the Prime's STUDENT_CDF loses its digits at a huge df (Virtual Calculator, 1 Nov 2026)
+NMSG = "N can be at most 1,000,000: the calculator's t distribution loses accuracy far beyond it (and there t equals z)."
+ncap = []
+for ty, kv, refuse in ((2, dict(ttN1=1000001), True), (1, dict(ttN2=1E12), True), (2, dict(ttN1=1000000), False),
+                       (3, dict(ttNP=2000000), True), (3, dict(ttNP=1000000), False)):
+    hh = H()
+    put(hh, ttTY=ty, ttSRC=1, ttTL=0, ttAL=0.05, ttM1=5, ttS1=2, ttN1=10, ttM2=4, ttS2=2, ttN2=10, ttMD=0.5, ttSDv=1,
+        ttNP=5)
+    put(hh, **kv)
+    hh.execute('tt_Calc()')
+    if ty == 3:
+        want_t = 0.5 / (1 / g(hh, 'ttNP') ** 0.5)
+    else:
+        want_t = stats.ttest_ind_from_stats(5, 2, g(hh, 'ttN1'), 4, 2, g(hh, 'ttN2'), equal_var=(ty == 1)).statistic
+    ok_ = (g(hh, 'ttOK') == 0 and g(hh, 'ttMSG') == NMSG) if refuse else \
+          (g(hh, 'ttOK') == 1 and rel(g(hh, 'ttT'), want_t) < 1e-9)
+    ncap.append((ty, kv, 'refused' if g(hh, 'ttOK') == 0 else 't %.4f' % g(hh, 'ttT'), ok_))
+check('M7 a typed N may be at most 1,000,000 (N 1 = 1,000,001 and N 2 = 1E12 refused, N 1 = 1,000,000 accepted; '
+      'N pairs 2,000,000 refused, 1,000,000 accepted, t against SciPy): %s' % [(c[0], c[2]) for c in ncap],
+      all(c[3] for c in ncap), ncap)
+
+
+def s_typed_bign(h):
+    h.choose(1)
+    for x, y in [(90, 71), (40, 133), (290, 230)]:
+        h.tap(x, y)
+    h.choose(1)                                          # type the numbers
+    h.answer({'ttM1': 5, 'ttS1': 2, 'ttN1': 10, 'ttM2': 4, 'ttS2': 2, 'ttN2': 1E12})
+    h.choose(1)
+    h.choose(3)
+    h.choose('Quit')
+
+
+(hn, rn, en), (ho, ro, eo) = both(s_typed_bign)
+check('M7 the whole flow with N 2 = 1E12: the box says why, then the menu; beta 1b went on ("%s")' % U(ro or eo or ''),
+      en is None and box(hn) == [NMSG] and rn == 'TTestLab' and OLD is not None and
+      not any('1,000,000' in x for x in box(ho)), (en, rn, box(hn), ro, eo))
+
+# the largest numbers accepted: every step draws, for every test, and t agrees with SciPy
+mx = []
+for ty in (1, 2):
+    hh = H()
+    put(hh, ttTY=ty, ttSRC=1, ttTL=0, ttAL=0.05, ttM1=9.9E49, ttS1=9.9E49, ttN1=3, ttM2=-9.9E49, ttS2=1E-300, ttN2=4)
+    hh.execute('tt_Calc()')
+    errp = None
+    try:
+        for st in range(1, 6):
+            hh.execute('tt_Page(%d)' % st)
+    except Exception as e:
+        errp = str(e)[:100]
+    want_t = stats.ttest_ind_from_stats(9.9E49, 9.9E49, 3, -9.9E49, 1E-300, 4, equal_var=(ty == 1)).statistic
+    mx.append((ty, g(hh, 'ttOK'), errp, round(g(hh, 'ttT'), 9), round(float(want_t), 9)))
+hh = H()
+put(hh, ttTY=3, ttSRC=1, ttTL=0, ttAL=0.05, ttMD=9.9E49, ttSDv=9.9E49, ttNP=10)
+hh.execute('tt_Calc()')
+errp = None
+try:
+    for st in range(1, 6):
+        hh.execute('tt_Page(%d)' % st)
+except Exception as e:
+    errp = str(e)[:100]
+mx.append((3, g(hh, 'ttOK'), errp, round(g(hh, 'ttT'), 9), round(10 ** 0.5, 9)))
+hh = H({'D1': [9.9E49, -9.9E49, 9.9E49], 'D2': [-9.9E49, 9.9E49, -9.9E49]})
+put(hh, ttTY=3)
+hh.choose(1)
+hh.execute('tt_AskData()')
+hh.execute('tt_Calc()')
+errp = None
+try:
+    for st in range(1, 6):
+        hh.execute('tt_Page(%d)' % st)
+except Exception as e:
+    errp = str(e)[:100]
+dd = np.array([9.9E49, -9.9E49, 9.9E49]) - np.array([-9.9E49, 9.9E49, -9.9E49])
+mx.append(('pairs', g(hh, 'ttOK'), errp, round(g(hh, 'ttT'), 9), round(float(stats.ttest_1samp(dd, 0).statistic), 9)))
+check('M6 the largest numbers accepted (means and SDs of 9.9E49, an SD of 1E-300, pairs of 9.9E49): all five steps '
+      'draw for pooled, separate, dependent typed and pairs, and t agrees with SciPy: %s' % mx,
+      all(m[1] == 1 and m[2] is None and abs(m[3] - m[4]) < 1e-6 * max(1, abs(m[4])) for m in mx), mx)
+
 # ===================================================================== G. static
 print('=== G. static checks')
 code = [ln.split('//')[0] for ln in SRC.split('\n')]
@@ -1013,7 +1286,7 @@ check('G1 every routine is defined before its first use (no forward references)'
 # ===================================================================== D. layout
 print('=== D. layout (text_overlap_v1 over every screen above)')
 rep = OV.report()
-tag = [t for t in rep if t.startswith('TTestLab_beta1b')]
+tag = [t for t in rep if t.startswith(os.path.splitext(os.path.basename(PROG))[0])]
 f = rep[tag[0]] if tag else None
 firm = []
 if f:

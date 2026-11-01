@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// TTESTLAB - beta 1b
+// TTESTLAB - beta 1c
 // ============================================================
 // FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
 //   the file and credit the author if you pass it on.  Not for
@@ -16,6 +16,26 @@
 //   2026): Check clean, example 1 to the end, and the lists DataLoad
 //   had filled (t(421.19) = -1.68).  beta 1b ran there too, the same
 //   night: six of the review's items (its CHANGES file says which).
+//   beta 1c has run in the PC harness only so far.
+//
+// beta 1c (1 Nov 2026, from the monkey test: 1,000 runs of random keys,
+//   taps, menu picks and typed values on the general version, with
+//   random D1/D2 lists; 13 runs broke, for two reasons):
+//   1. A list typed into a number field ({1,2} as "Mean 1") went on
+//      into the arithmetic.  Every field of both forms now takes a
+//      real number only: {name,[0]} (the User Guide's allowed-types
+//      form, used by 130 programs in the library), so the form itself
+//      refuses a list.
+//   2. Numbers near 10^300 in D1 or D2 overflowed when squared (on the
+//      Prime a square past 1E499 is infinity, with no error).  Every
+//      number TTestLab takes in, typed or read, must now have at most
+//      50 digits before the point (tt_Big); a larger one is refused
+//      with a sentence that says where it is.
+//   3. A typed N may be at most 1,000,000 (tt_NMsg).  Testing item 2 on
+//      the Virtual Calculator found that the Prime's STUDENT_CDF loses
+//      its digits at a huge df (df 1E10: 0.02498 for 0.024998; df 1E15
+//      and past: 0.5), so with a typed N of 1E20 a t of 1.96 would get
+//      a two-tailed p of 2 x 0.5 = 1.
 //
 // beta 1b (31 Oct 2026, from the independent second review of beta 1a,
 //   REVIEW2_TTestLab_beta1a.md; all eleven findings):
@@ -429,12 +449,75 @@ BEGIN
  RETURN 0;
 END;
 
+// Too large to work with?  The program squares the numbers it is given
+// (an SD, a difference from the mean) and step 4 squares s^2/N again
+// for Welch's df.  On the Prime a square past 1E499 is infinity, with
+// no error (Lessons Learned s3), and the screens would fill with it.
+// So every number taken in, typed or read from D1/D2, must be smaller
+// than 1E50 in size: 50 digits before the point, far beyond any data a
+// course meets, and its fourth power still fits (beta 1c, from the
+// monkey test).  An infinity is refused too.
+LOCAL tt_Big(bv)
+BEGIN
+ RETURN IFTE(ABS(bv) >= 1E50,1,0);
+END;
+
+// The position of the first value in a list that is too large
+// (tt_Big), or 0 when every value is fine.
+LOCAL tt_BigL(bl)
+BEGIN
+ LOCAL bi;
+ FOR bi FROM 1 TO SIZE(bl) DO
+  IF tt_Big(bl(bi)) THEN RETURN bi; END;
+ END;
+ RETURN 0;
+END;
+
+// The sentence for a list read from the Statistics 1Var app that holds
+// a value too large: which list, and which value in it.
+LOCAL tt_BigLMsg(gl1, gl2)
+BEGIN
+ LOCAL gk, gw;
+ gk := tt_BigL(gl1); gw := "D1";
+ IF gk == 0 THEN gk := tt_BigL(gl2); gw := "D2"; END;
+ RETURN "Value "+STRING(gk,1,0)+" in "+gw+" has more than 50 digits: too large to work with. Check "+gw+" in the Statistics 1Var app.";
+END;
+
+// The sentence for a typed N over 1,000,000.  The Prime's STUDENT_CDF
+// loses its digits at a huge df (Virtual Calculator 2.4.2, 1 Nov 2026,
+// at t = -1.96: df 1E6 gave 0.024998033593, right to 8 digits; df 1E10
+// 0.02498, where the value is 0.024998; df 1E13 0.014; df 1E15 and past
+// 0.5).  N of at most 1,000,000 keeps every df below 2,000,000, where
+// it is right, and t and z there agree to 5 digits anyway.  Only a
+// typed N is checked: an N from D1/D2 counts the values in a list.
+LOCAL tt_NMsg()
+BEGIN
+ RETURN "N can be at most 1,000,000: the calculator's t distribution loses accuracy far beyond it (and there t equals z).";
+END;
+
 // Everything the five steps show, from the numbers on screen.  Sets
 // ttOK = 0 and ttMSG when the numbers cannot give a t.
 LOCAL tt_Calc()
 BEGIN
  LOCAL cr, cbk;
  ttOK := 1; ttMSG := "";
+ // A typed number too large to work with (tt_Big).  Only typed ones:
+ // numbers worked out from D1/D2 come from values already checked
+ // when the lists were read, and an SD worked out from values below
+ // 1E50 can lie a little above it.
+ IF ttSRC == 1 THEN
+  IF ttTY == 3 THEN
+   IF tt_Big(ttMD) OR tt_Big(ttSDv) OR tt_Big(ttNP) THEN
+    ttOK := 0; ttMSG := "A number you typed has more than 50 digits: too large to work with. Choose Edit the numbers to change it."; RETURN 0;
+   END;
+   IF ttNP > 1000000 THEN ttOK := 0; ttMSG := tt_NMsg(); RETURN 0; END;
+  ELSE
+   IF tt_Big(ttM1) OR tt_Big(ttS1) OR tt_Big(ttN1) OR tt_Big(ttM2) OR tt_Big(ttS2) OR tt_Big(ttN2) THEN
+    ttOK := 0; ttMSG := "A number you typed has more than 50 digits: too large to work with. Choose Edit the numbers to change it."; RETURN 0;
+   END;
+   IF ttN1 > 1000000 OR ttN2 > 1000000 THEN ttOK := 0; ttMSG := tt_NMsg(); RETURN 0; END;
+  END;
+ END;
  IF ttTY == 3 THEN
   // the guard before the SD of the differences is formed (it divides
   // by N - 1): review 10
@@ -1078,9 +1161,13 @@ BEGIN
  // are in: a cancelled form or a refused D1/D2 read leaves everything
  // as it was (review 2 and 6).  The forms write into the variables
  // themselves only on OK.
+ // Every field is {name,[0]}: [0] is the list of types the field
+ // allows, and 0 is a real number, so the form refuses a list or a
+ // text typed into it (beta 1c: the monkey test typed {1,2} as a
+ // mean, and the list went on into the arithmetic).
  IF ttTY <> 3 THEN
   IF ds == 1 THEN
-   dok := INPUT({ttM1,ttS1,ttN1,ttM2,ttS2,ttN2},"Two independent samples",
+   dok := INPUT({{ttM1,[0]},{ttS1,[0]},{ttN1,[0]},{ttM2,[0]},{ttS2,[0]},{ttN2,[0]}},"Two independent samples",
     {"Mean 1:","SD 1:","N 1:","Mean 2:","SD 2:","N 2:"},
     {"Sample 1 mean","Sample 1 SD (s, with N - 1)","Sample 1 size","Sample 2 mean","Sample 2 SD (s, with N - 1)","Sample 2 size"});
    tt_Settle();
@@ -1093,6 +1180,13 @@ BEGIN
    dl1 := tt_ReadD(1); dl2 := tt_ReadD(2);
    IF SIZE(dl1) < 2 OR SIZE(dl2) < 2 THEN
     MSGBOX("Put sample 1 in D1 and sample 2 in D2 of the Statistics 1Var app: at least 2 scores in each.");
+    tt_Settle();
+    RETURN 0;
+   END;
+   // a value too large to square is refused before any arithmetic
+   // (beta 1c, tt_Big), and nothing changes
+   IF tt_BigL(dl1) > 0 OR tt_BigL(dl2) > 0 THEN
+    MSGBOX(tt_BigLMsg(dl1,dl2));
     tt_Settle();
     RETURN 0;
    END;
@@ -1110,12 +1204,19 @@ BEGIN
     tt_Settle();
     RETURN 0;
    END;
+   // a value too large to square is refused, and nothing changes
+   // (beta 1c, tt_Big)
+   IF tt_BigL(dl1) > 0 OR tt_BigL(dl2) > 0 THEN
+    MSGBOX(tt_BigLMsg(dl1,dl2));
+    tt_Settle();
+    RETURN 0;
+   END;
    ttX1 := dl1; ttX2 := dl2;
    ttSRC := 2;
    ttG1 := "D1"; ttG2 := "D2";
   ELSE
    dm := ttMD; dsd := ttSDv; dn := ttNP;
-   dok := INPUT({dm,dsd,dn},"Dependent samples",{"Mean xD:","SD sD:","N pairs:"},
+   dok := INPUT({{dm,[0]},{dsd,[0]},{dn,[0]}},"Dependent samples",{"Mean xD:","SD sD:","N pairs:"},
     {"Mean of the differences x1 - x2","SD of the differences (N - 1)","Number of pairs"});
    tt_Settle();
    IF dok == 0 THEN RETURN 0; END;

@@ -84,12 +84,27 @@ PASS R11 the table-row line reads "(Table row 120, ±1.980, decides the other wa
 PASS R11 step 4 for a typed summary: the SE and t lines sit right under the summary (y 60 and 73), not after a 100-px gap
 PASS R11 step 4 for raw pairs: the SE and t lines stay under the table (y 141 and 154)
 PASS R11 Help from the start menu returns to that menu (cancel there gives "TTestLab: cancelled"; beta 1a went on to example 1)
+=== M. the monkey test's findings (1 Nov 2026; each check fails on beta 1b)
+   beta 1b for the controls: git history (the commit before the one that removed it)
+PASS M1 both forms take real numbers only: every field is {name,[0]} (6 and 3 fields), so the form refuses a list typed as a mean; beta 1b's fields took any type (['ttM1', 'ttS1'])
+PASS M2 independent, 1E300 in D1: a box names the list and the value ("Value 2 in D1 has more than 50 digits ... Check D1 in the Statistics 1Var app."), the program ends cleanly ("TTestLab: cancelled"); beta 1b: Unsupported: ^ between a number and a number is not covered
+PASS M2 independent, -1E300 last in D2: a box names the list and the value ("Value 10 in D2 has more than 50 digits ... Check D2 in the Statistics 1Var app."), the program ends cleanly ("TTestLab: cancelled"); beta 1b: Unsupported: ^ between a number and a number is not covered
+PASS M2 pairs, -1E300 in D2: a box names the list and the value ("Value 4 in D2 has more than 50 digits ... Check D2 in the Statistics 1Var app."), the program ends cleanly ("TTestLab: cancelled"); beta 1b: Unsupported: ^ between a number and a number is not covered
+PASS M2 the box fits in 5 lines (Lessons Learned s3)
+PASS M3 the line is 1E50 in size: 1E50 in D2 refused (['Value 11 in D2 has more than 50 digits: too large to work with. Check D2 in the Statistics 1Var app.']), -1E50 in D1 refused (['Value 1 in D1 has more than 50 digits: too large to work with. Check D1 in the Statistics 1Var app.']), 9.99E49 accepted (t -0.788811, SciPy -0.788811; no box)
+PASS M4 example 1, then a D1 holding 1E300 refused: nothing changes (example 1, its names, typed source, its numbers; "TTestLab: t(73) = -2.20, p = 0.031, two-tailed")
+PASS M5 a typed Mean 1 of 1E60: "A number you typed has more than 50 digits: too large to work with. Choose Edit the numbers to change it.", then the menu; the number stays as typed (the form shows it next time); beta 1b worked a t from it ("TTestLab: t(73) = 3.23ᴇ60, p < 0.001, two-tailed")
+PASS M5 every typed field is checked (SD 2 = 1E50, N 1 = 1E50, Mean 2 = -1E55, an infinite SD 1): [('ttS2', 0.0, True), ('ttN1', 0.0, True), ('ttM2', 0.0, True), ('ttS1', 0.0, True)]
+PASS M5 dependent samples, N pairs typed as 1E50: the same sentence; beta 1b worked a t on 1E50 - 1 df ("TTestLab: t(1E50) = 5.00ᴇ24, p < 0.001, two-tailed")
+PASS M7 a typed N may be at most 1,000,000 (N 1 = 1,000,001 and N 2 = 1E12 refused, N 1 = 1,000,000 accepted; N pairs 2,000,000 refused, 1,000,000 accepted, t against SciPy): [(2, 'refused'), (1, 'refused'), (2, 't 1.5811'), (3, 'refused'), (3, 't 500.0000')]
+PASS M7 the whole flow with N 2 = 1E12: the box says why, then the menu; beta 1b went on ("TTestLab: t(1.00000000001E12) = 1.58, p = 0.114, two-tailed")
+PASS M6 the largest numbers accepted (means and SDs of 9.9E49, an SD of 1E-300, pairs of 9.9E49): all five steps draw for pooled, separate, dependent typed and pairs, and t agrees with SciPy: [(1, 1.0, None, 4.140393356, 4.140393356), (2, 1.0, None, 3.464101615, 3.464101615), (3, 1.0, None, 3.16227766, 3.16227766), ('pairs', 1.0, None, 0.5, 0.5)]
 === G. static checks
-PASS G1 no "!=" in the code (Lessons Learned: "<>" on the device); 48 routines, all tagged tt_; 51 file-level variables, all tagged tt; one EXPORT, TTESTLAB
+PASS G1 no "!=" in the code (Lessons Learned: "<>" on the device); 52 routines, all tagged tt_; 51 file-level variables, all tagged tt; one EXPORT, TTESTLAB
 PASS G1 only verified glyphs in the code's strings (Lessons Learned s5): ±²×αμ₁₂√≠
 PASS G1 every routine is defined before its first use (no forward references)
 === D. layout (text_overlap_v1 over every screen above)
-   screens: 92 distinct of 306; marginal findings: 0 collisions, 0 straddles, 0 overruns
-PASS D1 no firm overlap, frame straddle or overrun on any TTestLab screen drawn (['TTestLab_beta1b.txt'])
+   screens: 134 distinct of 398; marginal findings: 0 collisions, 0 straddles, 0 overruns
+PASS D1 no firm overlap, frame straddle or overrun on any TTestLab screen drawn (['TTestLab_beta1c.txt'])
 
-84 PASS, 0 FAIL
+97 PASS, 0 FAIL

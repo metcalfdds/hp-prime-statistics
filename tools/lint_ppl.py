@@ -1,7 +1,14 @@
 """
-lint_ppl.py (version 2) — structural lint for an HP Prime PPL source file.
+lint_ppl.py (version 3) — structural lint for an HP Prime PPL source file.
 (A fixed-name tool, edited in place: the gate finds it by this name. Version 1 is archived as
 _superseded_2026-10-19/tools/lint_ppl_v1.py.)
+
+v3 (1 Nov 2026): check 4 (INPUT) reads the call's own arguments: the variables, labels and help
+  lines are its first, third and fourth, and each list is counted at its own top level, so a typed
+  field {name,[0]} (TTestLab beta 1c) is one variable.  v2 took the first three innermost {...}
+  as the three lists, which with typed fields compared {ttM1,[0]} with {ttS1,[0]} and passed
+  without ever looking at the labels.  A form without the four arguments is now reported.  Version
+  2 is archived as _superseded_2026-11-01/tools/lint_ppl_v2.py.
 
 v2 (19 Oct 2026; fleet review of 19 Oct 2026, tools item 21), from version 1.  Three fixes,
 each a false report the review found (the second with two more of its kind):
@@ -268,6 +275,24 @@ for k, l in enumerate(code):
         check(v.upper() not in BUILT_UP, f"line {k+1}: file-level '{v}' is a builtin name when case is ignored (rename)")
 
 # ---------------------------------------------------------------- 4
+
+def _split_top(s):
+    """v3: split s at the commas outside any (), [] or {}."""
+    out, d, cur = [], 0, ""
+    for ch in s:
+        if ch in "([{":
+            d += 1
+        elif ch in ")]}":
+            d -= 1
+        if ch == "," and d == 0:
+            out.append(cur.strip())
+            cur = ""
+        else:
+            cur += ch
+    out.append(cur.strip())
+    return out
+
+
 print(" 4. INPUT list lengths and return assigned")
 for m in re.finditer(r"INPUT\s*\(", codetext):
     start = m.end() - 1
@@ -282,12 +307,17 @@ for m in re.finditer(r"INPUT\s*\(", codetext):
         j += 1
     stmt = codetext[start:j + 1]
     lineno = codetext[:m.start()].count("\n") + 1
-    braces = re.findall(r"\{([^{}]*)\}", stmt)
-    check(len(braces) >= 3,
-          f"line {lineno}: INPUT has {len(braces)} list args (want vars/labels/help)")
-    if len(braces) >= 3:
-        # string literals are blanked to spaces, so count top-level commas
-        counts = [0 if b == "" else b.count(",") + 1 for b in braces[:3]]
+    # v3: the call's own arguments, split at its top-level commas; the variables are the first,
+    # the labels the third and the help lines the fourth (the title is the second).  An element
+    # of the first may be a typed field, {name,[0]}, which counts once (v2 counted the innermost
+    # braces and so read {ttM1,[0]} as the whole list of variables: TTestLab beta 1c).
+    args = _split_top(stmt[1:-1])
+    lists = [a for i, a in enumerate(args) if i in (0, 2, 3)]
+    check(len(lists) == 3 and all(a.startswith("{") and a.endswith("}") for a in lists),
+          f"line {lineno}: INPUT wants a list of variables, a title, a list of labels and a list of help lines")
+    if len(lists) == 3 and all(a.startswith("{") and a.endswith("}") for a in lists):
+        # string literals are blanked to spaces (so a blanked label is not empty): only {} counts 0
+        counts = [0 if a[1:-1] == "" else len(_split_top(a[1:-1])) for a in lists]
         check(counts[0] == counts[1] == counts[2],
               f"line {lineno}: INPUT var/label/help counts {counts} disagree")
     pre = codetext[max(0, m.start() - 40):m.start()]

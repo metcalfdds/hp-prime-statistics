@@ -2,7 +2,7 @@
 
 **For students: pick your chapter, click Load (or, in Firefox, download and unpack one file), start the Virtual Calculator, tap a program, tap Run.** That's all. The chapter's programs are waiting in the Program Catalog with nothing else to get lost in, and nothing needs checking or compiling first.
 
-**Open it here: <https://metcalfdds.github.io/hp-prime-statistics/prime-loader/>.** That address never changes: it always opens the newest version (this folder's `index.html` sends the browser on to it). The page is one file, `PrimeLoader_v1c.html`, and also works offline on a Windows computer with HP's free Virtual Calculator: download it (on GitHub: open the file, then "Download raw file") and open it in any browser.
+**Open it here: <https://metcalfdds.github.io/hp-prime-statistics/prime-loader/>.** That address never changes: it always opens the newest version (this folder's `index.html` sends the browser on to it). The page is one file, `PrimeLoader_v1d.html`, and also works offline on a Windows computer with HP's free Virtual Calculator: download it (on GitHub: open the file, then "Download raw file") and open it in any browser.
 
 - **In Edge or Chrome** the page puts the programs on the calculator itself, with one click on Load.
 - **In Firefox (or Safari)** the page gives you one file to download, named for your chapter (`HP_Prime_Chapter_11.zip`), and walks you through unpacking it with Windows' own **Extract All** into the calculator's folder. That takes about two minutes. Firefox never lets a web page write into a folder on your computer, by its makers' design, and many schools require Firefox, so this route is a full part of the page, not a fallback. The page explains the difference to the student in plain words.
@@ -59,7 +59,7 @@ The Edge route, with v1 and starter pack v4 (unchecked files):
 - The calculator, started, listed exactly those three in its Program Catalog.
 - Two things came out of the run. "Calculator menu" was not clear, so the page now says "the small word Calculator at the top left of its window, or its X". And a computer whose default browser is Firefox opens the page there: the page shows its Edge-or-Chrome note.
 
-**In Chromium:** `tests/test_loader_v1c.js`, **58 PASS, 0 FAIL** with starter pack v5 (`tests/test_loader_v1c_output.txt`). It drives the page in Chromium 141 against a mock `HP Prime` folder in the browser's private file system: HP's apps, settings, a list, a matrix, old programs, an old CentralLimit app, and the lock file. The folder picker is replaced by one that returns that folder. Checked:
+**In Chromium:** `tests/test_loader_v1d.js`, **58 PASS, 0 FAIL** with starter pack v6 (`tests/test_loader_v1d_output.txt`; four runs in a row, after the test was made to wait for the own-data list, which one run in four had read too early). It drives the page in Chromium 141 against a mock `HP Prime` folder in the browser's private file system: HP's apps, settings, a list, a matrix, old programs, an old CentralLimit app, and the lock file. The folder picker is replaced by one that returns that folder. Checked:
 
 - a running calculator is refused, with nothing written;
 - chapter 11, then chapter 7 with the sample data, then your own `M3.hpmat`: every file byte for byte against the pack;
@@ -88,17 +88,19 @@ The page was also looked at in light and dark, at desktop and phone widths: noth
 
 **On the web (1 November 2026):** after the repository went on GitHub Pages, v1b opened from its web address in Chromium worked as Edge/Chrome (a secure page with folder access, no errors) and as Firefox (its own route; chapter 11's zip held the checked TTestLabG, DataLoad and ResampLab). v1c is v1b with the Data Loader link changed and `index.html` added.
 
+**v1d (1 November 2026)** is v1c built from starter pack v6, whose TTestLab beta 1c and TTestLabG beta 1a carry the monkey test's fixes; the page itself is unchanged. Each of those two checked files was collected after a Check and nothing else (a checked file keeps the values of its last run).
+
 **Not yet:** a Mac; a computer that has never run the Virtual Calculator before.
 
 ## Files
 
 | File | What it is |
 |---|---|
-| `PrimeLoader_v1c.html` | The page, built: open this one. About 2 MB, all 30 programs inside, checked. |
+| `PrimeLoader_v1d.html` | The page, built: open this one. About 2 MB, all 30 programs inside, checked. |
 | `index.html` | Written by the build: sends a browser at `.../prime-loader/` on to the current page, so the book's link never changes. |
 | `loader_template_v1c.html` | The page's source, with slots for the two cores, the catalog, the files and the Data Loader's web address. |
 | `loader_core_v1.js` | The file work: find the folder, check the lock, back up, clear, write, read back; and the zip reader for the embedded files (every CRC checked). No DOM: the page and the tests share it. |
-| `build_loader_v1c.py` | `python3 build_loader_v1c.py ../starter-pack/HP_Prime_Statistics_Starter_Pack_v5.zip --kit PATH_TO_hp-prime-kit`. Holds the chapter list (from the companion guide's Chapter Plan), each program's one line, and the name to type in Home. Stops if the catalog and the pack disagree, and says how many files are checked. Uses `../data-loader/dl_core_v1.js` for the zip it offers. |
-| `tests/test_loader_v1c.js` | The Chromium test: `node tests/test_loader_v1c.js PrimeLoader_v1c.html ../starter-pack/HP_Prime_Statistics_Starter_Pack_v5.zip` (Playwright). |
+| `build_loader_v1d.py` | `python3 build_loader_v1d.py ../starter-pack/HP_Prime_Statistics_Starter_Pack_v6.zip --kit PATH_TO_hp-prime-kit`. Holds the chapter list (from the companion guide's Chapter Plan), each program's one line, and the name to type in Home. Stops if the catalog and the pack disagree, and says how many files are checked. Uses `../data-loader/dl_core_v1.js` for the zip it offers. |
+| `tests/test_loader_v1d.js` | The Chromium test: `node tests/test_loader_v1d.js PrimeLoader_v1d.html ../starter-pack/HP_Prime_Statistics_Starter_Pack_v6.zip` (Playwright). |
 
 *Free for educational and personal use. © 2026 Roger Metcalf. Written with AI assistance (Anthropic Claude).*

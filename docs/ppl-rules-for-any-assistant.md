@@ -2,7 +2,7 @@
 
 *A 2,500-word distillation of `lessons-learned` (currently v7q) for a model with a small context window. Flat rules, no history, no evidence; the long document has both. Every rule here was found on an HP Prime G1 or G2 running the 2026-09-09 firmware, or on HP's Virtual Calculator of the same build. Roger Metcalf, 2026; written with AI assistance (Anthropic Claude).*
 
-**How to use this file with a model.** Put the whole file in the system prompt. Set the context length to at least 32,768 tokens and, for a reasoning model, the output budget to at least 16,384. Ask for one small program at a time. Run `tools/ppl_gate_v1c.py` on what comes back and paste the error lines into the next turn. The example at the end passes the gate; ask the model to imitate it.
+**How to use this file with a model.** Put the whole file in the system prompt. Set the context length to at least 32,768 tokens and, for a reasoning model, the output budget to at least 16,384. Ask for one small program at a time. Run `tools/ppl_gate_v1d.py` on what comes back and paste the error lines into the next turn. The example at the end passes the gate; ask the model to imitate it.
 
 ## 1. What PPL is and is not
 
@@ -112,7 +112,7 @@
 5. No `1 - CDF`; probabilities clamped before an inverse CDF.
 6. Draw to `G1`, blit once; drain, wait, drain.
 7. The formulas checked against SciPy or a textbook example before the program is pasted.
-8. `python3 ppl_gate_v1c.py Program.txt` passes.
+8. `python3 ppl_gate_v1d.py Program.txt` passes.
 
 ## 12. A complete example that passes the gate
 
