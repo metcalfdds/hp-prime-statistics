@@ -24,6 +24,8 @@ Hundreds of community PPL programs from several HP-related public forums were re
 
 **The programs here probably would not be possible without the foundation laid by dozens and dozens of HP users and the hundreds of programs they have graciously made freely available over the years--if you find anything here helpful or useful, it is due to and a tribute to the myriad of other folks who have gone before. Thank you all--especially Eric Rechlin!**
 
+----------------------------------------------------------------------------------------------------------------------
+
 **New here?** [START_HERE.md](START_HERE.md) is a one-page guide: what to read in five minutes, five programs to try first, and how to help.
 
 **No calculator? Try all 30 on HP's free Virtual Calculator.** Download the **[starter pack](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v5.zip)** (one 1.4 MB zip, for the Virtual Calculator on Windows). Unzip it, copy one folder's files into the Virtual Calculator's own folder, and start it: the programs are in its Program Catalog, CentralLimit already made into its app. No Connectivity Kit, and no copying and pasting of code. [The steps](starter-pack/README.md) fit on one page.
