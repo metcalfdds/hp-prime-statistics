@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HP Prime Data Loader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: one column of four numbered steps, paste -> check -> make -> load; the column table is the working surface.
+   Colours echo the HP Prime fleet's screens (its curve blue, frame orange, mean green, code magenta), so a student who
+   uses both recognizes them, with nothing of HP's own look. */
+:root {
+  --paper: #f6f8fb;
+  --surface: #ffffff;
+  --ink: #172033;
+  --muted: #5a6478;
+  --line: #d9dfea;
+  --accent: #003cc8;       /* the fleet's curve blue, RGB(0,60,200) */
+  --frame: #e04000;        /* the fleet's frame orange, a shade deeper for text */
+  --good: #008c3c;         /* the fleet's mean green */
+  --code: #b000b0;         /* the fleet's magenta */
+  --warn-bg: #fff3e8;
+  --accent-soft: #e6edff;
+  --display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1420; --surface: #172033; --ink: #e8edf6; --muted: #9aa6bc; --line: #2b3650;
+    --accent: #7d9cff; --frame: #ff8a55; --good: #43d081; --code: #e57ae5; --warn-bg: #3a2717;
+    --accent-soft: #1f2d52; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1420; --surface: #172033; --ink: #e8edf6; --muted: #9aa6bc; --line: #2b3650;
+  --accent: #7d9cff; --frame: #ff8a55; --good: #43d081; --code: #e57ae5; --warn-bg: #3a2717;
+  --accent-soft: #1f2d52; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--paper); color: var(--ink); font: 16px/1.5 var(--body); }
+main { max-width: 980px; margin: 0 auto; padding: 28px 16px 48px; display: grid; gap: 20px; }
+header h1 { font: 600 2rem/1.15 var(--display); margin: 0 0 6px; text-wrap: balance; letter-spacing: 0.2px; }
+header p { margin: 0; color: var(--muted); max-width: 68ch; }
+.step { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 18px 20px;
+        display: grid; gap: 12px; }
+.step > h2 { font: 600 1.2rem/1.2 var(--display); margin: 0; display: flex; align-items: center; gap: 10px; }
+.stepnum { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
+       border: 2px solid var(--frame); color: var(--frame); font: 600 0.95rem var(--display); flex: none; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+textarea { width: 100%; min-height: 170px; resize: vertical; padding: 10px; border-radius: 8px;
+           border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: 13px/1.45 var(--mono); }
+button, select, .filebtn { font: 500 0.95rem var(--body); border-radius: 8px; padding: 8px 14px; cursor: pointer;
+                           border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; padding: 10px 18px; }
+:root[data-theme="dark"] button.primary { color: #0f1420; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) button.primary { color: #0f1420; } }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+button:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-visible, .filebtn:focus-within {
+  outline: 3px solid var(--accent); outline-offset: 2px; }
+.filebtn input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.filebtn { position: relative; display: inline-block; }
+.note { color: var(--muted); font-size: 0.92rem; margin: 0; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; white-space: nowrap; }
+th { font: 600 0.82rem var(--body); color: var(--muted); background: var(--paper); text-transform: none; }
+tr:last-child td { border-bottom: 0; }
+td.num, .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+td.first { color: var(--muted); font-family: var(--mono); font-size: 0.85rem; white-space: normal; min-width: 160px; }
+.pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 0.8rem; font-weight: 600;
+        border: 1px solid currentColor; }
+.pill.numbers { color: var(--accent); }
+.pill.text { color: var(--code); }
+.slot { font: 600 0.9rem var(--mono); color: var(--accent); }
+.codes { color: var(--code); font-family: var(--mono); font-size: 0.85rem; white-space: normal; }
+tr.off td { opacity: 0.45; }
+.summary { font-size: 1.05rem; margin: 0; }
+.summary b { font-family: var(--mono); }
+.status { margin: 0; font-weight: 500; }
+.status.ok { color: var(--good); }
+.status.bad { color: var(--frame); }
+.warn { background: var(--warn-bg); border-radius: 8px; padding: 10px 12px; margin: 0; }
+ol.howto { margin: 0; padding-left: 1.4em; display: grid; gap: 6px; max-width: 72ch; }
+ol.howto code, p code { font-family: var(--mono); font-size: 0.9em; background: var(--accent-soft); padding: 0 4px; border-radius: 4px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.two h3 { margin: 0 0 6px; font: 600 1rem var(--display); }
+@media (max-width: 720px) { .two { grid-template-columns: 1fr; } header h1 { font-size: 1.6rem; } }
+footer { color: var(--muted); font-size: 0.85rem; display: grid; gap: 6px; max-width: 80ch; }
+footer a, .step a { color: var(--accent); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>HP Prime Data Loader</h1>
+    <p>Paste columns from Excel, SPSS or a CSV file and get the calculator's own matrix file. The <b>DataLoad</b> program on the Prime then puts each column, or each group's scores, into the Statistics lists that TTestLab, AnovaLab, ScatterLab and the other programs read.</p>
+  </header>
+
+  <section class="step" aria-labelledby="s1">
+    <h2 id="s1"><span class="stepnum">1</span>Paste your data</h2>
+    <p class="note">One variable per column, one case per row. A first row of names is recognized. Empty cells, and cells such as <code>NA</code> or <code>.</code>, become blanks.</p>
+    <label for="paste" class="note">Data (tab, comma or semicolon separated)</label>
+    <textarea id="paste" spellcheck="false"></textarea>
+    <div class="row">
+      <label class="filebtn" for="file">Open a CSV or text file<input type="file" id="file" accept=".csv,.txt,.tsv,.dat,text/csv,text/plain"></label>
+      <button type="button" id="example">Use the example (Rossi re-arrest data)</button>
+      <button type="button" id="clear">Clear</button>
+    </div>
+  </section>
+
+  <section class="step" aria-labelledby="s2">
+    <h2 id="s2"><span class="stepnum">2</span>Check the columns</h2>
+    <p class="status" id="readout" role="status"></p>
+    <div class="tablewrap"><table id="cols">
+      <thead><tr><th scope="col">Use</th><th scope="col">On the Prime</th><th scope="col">Column</th><th scope="col">Kind</th>
+      <th scope="col">Values</th><th scope="col">Blanks</th><th scope="col">Range or codes</th><th scope="col">First values</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <p class="note">Text columns (such as <i>male</i> / <i>female</i>) are numbered 1, 2, 3 &hellip; in alphabetical order, as the codes column shows: the calculator holds numbers only. Write the codes down; DataLoad puts the smallest code's scores in D1.</p>
+  </section>
+
+  <section class="step" aria-labelledby="s3">
+    <h2 id="s3"><span class="stepnum">3</span>Make the file</h2>
+    <div class="row">
+      <label for="mat">Matrix</label>
+      <select id="mat"></select>
+      <p class="summary" id="summary"></p>
+    </div>
+    <p class="warn" id="padnote" hidden></p>
+    <div class="row">
+      <button type="button" class="primary" id="save" disabled>Download M1.hpmat</button>
+      <p class="status" id="savestatus" role="status"></p>
+    </div>
+  </section>
+
+  <section class="step" aria-labelledby="s4">
+    <h2 id="s4"><span class="stepnum">4</span>Put it on the calculator</h2>
+    <div class="two">
+      <div>
+        <h3>The Virtual Calculator (Windows)</h3>
+        <ol class="howto">
+          <li>Close the Virtual Calculator (its Calculator menu, Exit). It reads its folder only when it starts.</li>
+          <li>Copy <code id="fname1">M1.hpmat</code> into <code>Documents\HP Prime\Calculators\Prime</code>; if the file came in a zip, unzip it first. Replace the file that is there.</li>
+          <li>Start the calculator, open the Statistics 1Var app once (Apps), then run <b>DataLoad</b> from the Program Catalog and choose <i>Columns</i> or <i>Scores by group</i>.</li>
+          <li>If DataLoad says lists after the new ones hold data from before, choose <i>clear</i>: AnovaLab, RankLab and AgreeLab read every list that holds data as one more group (or rater).</li>
+        </ol>
+        <p class="note">Tested on the Virtual Calculator 2.4.2 (build 2026-09-09), 31 Oct 2026: the example's 432 rows &times; 5 columns arrived whole, DataLoad put them in D1&ndash;D5 and the weeks by financial aid in D1 and D2, and TTestLab read those two lists (separate-variances t(421.19) = &minus;1.68, p = 0.094). DataLoad is in the starter pack; the first time, Check it once in the Program Catalog.</p>
+      </div>
+      <div>
+        <h3>A G1 or G2</h3>
+        <ol class="howto">
+          <li>Connect the calculator to the HP Connectivity Kit.</li>
+          <li>Drag <code id="fname2">M1.hpmat</code> onto the calculator in the Kit, or open its matrix M1 there and paste the columns.</li>
+          <li>Run <b>DataLoad</b> on the calculator.</li>
+        </ol>
+        <p class="note">Not yet tested on a G1 or G2. Large data sets load slowly over the Kit; send one matrix at a time.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Part of <a href="https://github.com/metcalfdds/hp-prime-statistics">hp-prime-statistics</a>, Roger Metcalf's teaching programs for the HP Prime. Written with AI assistance (Anthropic Claude). Free for educational and personal use. A teaching aid: not validated for forensic, clinical or legal use.</p>
+    <p>Everything happens in this page; nothing you paste leaves your computer. Numbers are read from their digits and rounded to the Prime's 12 significant digits, half up. The file format is the one hp-prime-kit (JordiRigau/hp-prime-kit, MIT) documents. Blank cells are written as 9.99999999999E499, the Prime's largest real, which DataLoad leaves out.</p>
+    <p>Example data: Rossi, Berk &amp; Lenihan (1980), <i>Money, Work, and Crime</i>: 432 men released from Maryland state prisons, followed 52 weeks (week of first re-arrest, arrest 1/0, financial aid 1/0, age, prior convictions), via the R package carData.</p>
+  </footer>
+</main>
+
+<script>
+/*CORE*/
+</script>
+<script>
+'use strict';
+const EXAMPLE = /*EXAMPLE*/;
+
+const el = id => document.getElementById(id);
+const paste = el('paste'), tbody = document.querySelector('#cols tbody');
+let table = null, infos = [], use = [];
+
+// The viewer's save prompt, when this page runs inside claude.ai: there a page may not start a download itself, and
+// .zip is a format it may offer.  Elsewhere (the page opened from a file or another site) the browser downloads.
+let dlProbe = null;
+function probeDownloads() {
+  if (!dlProbe) {
+    try {
+      dlProbe = (window.claude && typeof window.claude.use === 'function')
+        ? Promise.resolve(window.claude.use('downloads')).catch(() => null)
+        : Promise.resolve(null);
+    } catch (e) { dlProbe = Promise.resolve(null); }
+  }
+  return dlProbe;
+}
+
+function matName() { return 'M' + el('mat').value; }
+
+function fmt(v) {
+  if (!isFinite(v)) return '';
+  const a = Math.abs(v);
+  if (a !== 0 && (a >= 1e9 || a < 1e-4)) return v.toExponential(3);
+  return String(Math.round(v * 10000) / 10000);
+}
+
+function render() {
+  table = DLCore.readTable(paste.value);
+  infos = table.cols.map(DLCore.describe);
+  if (use.length !== infos.length) use = infos.map(i => i.values > 0);
+  tbody.textContent = '';
+  let slot = 0;
+  infos.forEach((info, j) => {
+    const tr = document.createElement('tr');
+    if (!use[j]) tr.className = 'off';
+    const on = use[j] && info.values > 0;
+    if (on) slot++;
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.checked = use[j]; cb.id = 'use' + j; cb.disabled = info.values === 0;
+    cb.setAttribute('aria-label', 'Use ' + table.names[j]);
+    cb.addEventListener('change', () => { use[j] = cb.checked; render(); });
+    const td0 = document.createElement('td'); td0.appendChild(cb); tr.appendChild(td0);
+    const add = (html, cls) => { const td = document.createElement('td'); if (cls) td.className = cls; td.innerHTML = html; tr.appendChild(td); };
+    add(on ? '<span class="slot">column ' + slot + '</span>' : '&mdash;');
+    add(escapeHtml(table.names[j]));
+    add('<span class="pill ' + info.kind + '">' + (info.kind === 'text' ? 'text &rarr; codes' : 'numbers') + '</span>');
+    add(String(info.values), 'num');
+    add(String(info.blanks), 'num');
+    if (info.kind === 'text') {
+      const parts = Array.from(info.codes).slice(0, 9).map(([s, c]) => c + ' = ' + escapeHtml(s));
+      if (info.codes.size > 9) parts.push('&hellip; ' + info.codes.size + ' labels');
+      add(parts.join(', '), 'codes');
+    } else {
+      add(info.values ? fmt(info.lo) + ' to ' + fmt(info.hi) : '', 'num');
+    }
+    add(escapeHtml(table.cols[j].slice(0, 6).join(', ')), 'first');
+    tbody.appendChild(tr);
+  });
+  update();
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+function chosen() {
+  const cols = [], inf = [], names = [];
+  infos.forEach((info, j) => { if (use[j] && info.values > 0) { cols.push(table.cols[j]); inf.push(info); names.push(table.names[j]); } });
+  return { cols, inf, names };
+}
+
+function update() {
+  const c = chosen();
+  const readout = el('readout'), save = el('save');
+  const name = matName();
+  el('fname1').textContent = name + '.hpmat';
+  el('fname2').textContent = name + '.hpmat';
+  if (!table || table.cols.length === 0) {
+    readout.textContent = 'Paste some data in step 1.'; readout.className = 'status';
+    el('summary').textContent = ''; save.disabled = true; el('padnote').hidden = true; return;
+  }
+  const rows = c.cols.length ? Math.max(...c.cols.map(x => x.length)) : 0;
+  const textCols = c.inf.filter(i => i.kind === 'text').length;
+  readout.textContent = table.cols[0].length + ' rows and ' + table.cols.length + ' columns read' +
+    (table.header ? ', with a row of names' : '') + '. ' + c.cols.length + ' column' + (c.cols.length === 1 ? '' : 's') +
+    ' will go to the calculator' + (textCols ? ', ' + textCols + ' as codes' : '') + '.';
+  readout.className = c.cols.length ? 'status ok' : 'status bad';
+  if (!c.cols.length) {
+    el('summary').textContent = ''; save.disabled = true; el('padnote').hidden = true;
+    readout.textContent += ' No column holds a number yet.'; return;
+  }
+  el('summary').innerHTML = name + ' will hold <b>' + rows + '</b> rows &times; <b>' + c.cols.length + '</b> column' +
+    (c.cols.length === 1 ? '' : 's') + (c.cols.length > 9 ? ' (DataLoad takes the first 9)' : '') + '.';
+  const blanks = c.inf.reduce((s, i) => s + i.blanks, 0) + c.cols.reduce((s, col) => s + (rows - col.length), 0);
+  const pad = el('padnote');
+  const notes = [];
+  if (blanks > 0) notes.push(blanks + ' blank cell' + (blanks === 1 ? '' : 's') + ' will be marked 9.99999999999E499; DataLoad leaves them out, so each list gets only its own values.');
+  if (rows > 10000) notes.push('More than 10,000 rows has not been tried on the calculator.');
+  pad.textContent = notes.join(' '); pad.hidden = notes.length === 0;
+  save.disabled = false;
+  probeDownloads().then(ns => { save.textContent = ns ? 'Save ' + name + ' (zip)' : 'Download ' + name + '.hpmat'; });
+}
+
+function readme(name) {
+  return ['DataLoad file ' + name + '.hpmat, made by the HP Prime Data Loader.', '',
+    'Virtual Calculator (Windows):',
+    '1. Close the Virtual Calculator (Calculator menu, Exit).',
+    '2. Copy ' + name + '.hpmat into Documents\\HP Prime\\Calculators\\Prime (replace the file there).',
+    '3. Start it, open the Statistics 1Var app once, then run DataLoad from the Program Catalog.',
+    '4. If DataLoad says lists after the new ones hold data from before, choose clear.', '',
+    'G1 or G2: drag ' + name + '.hpmat onto the calculator in the Connectivity Kit (not yet tested), then run DataLoad.', '',
+    'https://github.com/metcalfdds/hp-prime-statistics', ''].join('\r\n');
+}
+
+el('save').addEventListener('click', async () => {
+  const c = chosen();
+  if (!c.cols.length) return;
+  const name = matName();
+  const bytes = DLCore.buildHpmat(c.cols, c.inf);
+  const st = el('savestatus');
+  const ns = await probeDownloads();
+  if (ns) {
+    const z = DLCore.zip([{ name: name + '.hpmat', data: bytes }, { name: 'READ_ME.txt', data: new TextEncoder().encode(readme(name)) }]);
+    try {
+      await ns.save({ filename: name + '_for_the_HP_Prime.zip', data: z });
+      st.textContent = 'Saved. Unzip it and copy ' + name + '.hpmat as step 4 says.'; st.className = 'status ok';
+    } catch (e) {
+      st.className = 'status bad';
+      st.textContent = (e && e.code === 'declined') ? 'Not saved.' : 'This view cannot save files. Open the page in a browser of its own.';
+    }
+    return;
+  }
+  const url = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
+  const a = document.createElement('a');
+  a.href = url; a.download = name + '.hpmat';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  st.textContent = name + '.hpmat is in your Downloads folder. Copy it as step 4 says.'; st.className = 'status ok';
+});
+
+let timer = null;
+paste.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => { use = []; render(); }, 250); });
+el('example').addEventListener('click', () => { paste.value = EXAMPLE; use = []; render(); });
+el('clear').addEventListener('click', () => { paste.value = ''; use = []; render(); paste.focus(); });
+el('file').addEventListener('change', ev => {
+  const f = ev.target.files && ev.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => { paste.value = String(r.result); use = []; render(); };
+  r.readAsText(f);
+});
+for (let k = 0; k <= 9; k++) {
+  const o = document.createElement('option'); o.value = String(k); o.textContent = 'M' + k; if (k === 1) o.selected = true;
+  el('mat').appendChild(o);
+}
+el('mat').addEventListener('change', update);
+paste.value = EXAMPLE;
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HP Prime Data Loader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: one column of four numbered steps, paste -> check -> make -> load; the column table is the working surface.
+   Colours echo the HP Prime fleet's screens (its curve blue, frame orange, mean green, code magenta), so a student who
+   uses both recognizes them, with nothing of HP's own look. */
+:root {
+  --paper: #f6f8fb;
+  --surface: #ffffff;
+  --ink: #172033;
+  --muted: #5a6478;
+  --line: #d9dfea;
+  --accent: #003cc8;       /* the fleet's curve blue, RGB(0,60,200) */
+  --frame: #e04000;        /* the fleet's frame orange, a shade deeper for text */
+  --good: #008c3c;         /* the fleet's mean green */
+  --code: #b000b0;         /* the fleet's magenta */
+  --warn-bg: #fff3e8;
+  --accent-soft: #e6edff;
+  --display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1420; --surface: #172033; --ink: #e8edf6; --muted: #9aa6bc; --line: #2b3650;
+    --accent: #7d9cff; --frame: #ff8a55; --good: #43d081; --code: #e57ae5; --warn-bg: #3a2717;
+    --accent-soft: #1f2d52; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1420; --surface: #172033; --ink: #e8edf6; --muted: #9aa6bc; --line: #2b3650;
+  --accent: #7d9cff; --frame: #ff8a55; --good: #43d081; --code: #e57ae5; --warn-bg: #3a2717;
+  --accent-soft: #1f2d52; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--paper); color: var(--ink); font: 16px/1.5 var(--body); }
+main { max-width: 980px; margin: 0 auto; padding: 28px 16px 48px; display: grid; gap: 20px; }
+header h1 { font: 600 2rem/1.15 var(--display); margin: 0 0 6px; text-wrap: balance; letter-spacing: 0.2px; }
+header p { margin: 0; color: var(--muted); max-width: 68ch; }
+.step { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 18px 20px;
+        display: grid; gap: 12px; }
+.step > h2 { font: 600 1.2rem/1.2 var(--display); margin: 0; display: flex; align-items: center; gap: 10px; }
+.stepnum { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
+       border: 2px solid var(--frame); color: var(--frame); font: 600 0.95rem var(--display); flex: none; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+textarea { width: 100%; min-height: 170px; resize: vertical; padding: 10px; border-radius: 8px;
+           border: 1px solid var(--line); background: var(--paper); color: var(--ink); font: 13px/1.45 var(--mono); }
+button, select, .filebtn { font: 500 0.95rem var(--body); border-radius: 8px; padding: 8px 14px; cursor: pointer;
+                           border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; padding: 10px 18px; }
+:root[data-theme="dark"] button.primary { color: #0f1420; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) button.primary { color: #0f1420; } }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+button:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-visible, .filebtn:focus-within {
+  outline: 3px solid var(--accent); outline-offset: 2px; }
+.filebtn input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.filebtn { position: relative; display: inline-block; }
+.note { color: var(--muted); font-size: 0.92rem; margin: 0; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; white-space: nowrap; }
+th { font: 600 0.82rem var(--body); color: var(--muted); background: var(--paper); text-transform: none; }
+tr:last-child td { border-bottom: 0; }
+td.num, .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+td.first { color: var(--muted); font-family: var(--mono); font-size: 0.85rem; white-space: normal; min-width: 160px; }
+.pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 0.8rem; font-weight: 600;
+        border: 1px solid currentColor; }
+.pill.numbers { color: var(--accent); }
+.pill.text { color: var(--code); }
+.slot { font: 600 0.9rem var(--mono); color: var(--accent); }
+.codes { color: var(--code); font-family: var(--mono); font-size: 0.85rem; white-space: normal; }
+tr.off td { opacity: 0.45; }
+.summary { font-size: 1.05rem; margin: 0; }
+.summary b { font-family: var(--mono); }
+.status { margin: 0; font-weight: 500; }
+.status.ok { color: var(--good); }
+.status.bad { color: var(--frame); }
+.warn { background: var(--warn-bg); border-radius: 8px; padding: 10px 12px; margin: 0; }
+ol.howto { margin: 0; padding-left: 1.4em; display: grid; gap: 6px; max-width: 72ch; }
+ol.howto code, p code { font-family: var(--mono); font-size: 0.9em; background: var(--accent-soft); padding: 0 4px; border-radius: 4px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.two h3 { margin: 0 0 6px; font: 600 1rem var(--display); }
+@media (max-width: 720px) { .two { grid-template-columns: 1fr; } header h1 { font-size: 1.6rem; } }
+footer { color: var(--muted); font-size: 0.85rem; display: grid; gap: 6px; max-width: 80ch; }
+footer a, .step a { color: var(--accent); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>HP Prime Data Loader</h1>
+    <p>Paste columns from Excel, SPSS or a CSV file and get the calculator's own matrix file. The <b>DataLoad</b> program on the Prime then puts each column, or each group's scores, into the Statistics lists that TTestLab, AnovaLab, ScatterLab and the other programs read.</p>
+  </header>
+
+  <section class="step" aria-labelledby="s1">
+    <h2 id="s1"><span class="stepnum">1</span>Paste your data</h2>
+    <p class="note">One variable per column, one case per row. A first row of names is recognized. Empty cells, and cells such as <code>NA</code> or <code>.</code>, become blanks.</p>
+    <label for="paste" class="note">Data (tab, comma or semicolon separated)</label>
+    <textarea id="paste" spellcheck="false"></textarea>
+    <div class="row">
+      <label class="filebtn" for="file">Open a CSV or text file<input type="file" id="file" accept=".csv,.txt,.tsv,.dat,text/csv,text/plain"></label>
+      <button type="button" id="example">Use the example (Rossi re-arrest data)</button>
+      <button type="button" id="clear">Clear</button>
+    </div>
+  </section>
+
+  <section class="step" aria-labelledby="s2">
+    <h2 id="s2"><span class="stepnum">2</span>Check the columns</h2>
+    <p class="status" id="readout" role="status"></p>
+    <div class="tablewrap"><table id="cols">
+      <thead><tr><th scope="col">Use</th><th scope="col">On the Prime</th><th scope="col">Column</th><th scope="col">Kind</th>
+      <th scope="col">Values</th><th scope="col">Blanks</th><th scope="col">Range or codes</th><th scope="col">First values</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <p class="note">Text columns (such as <i>male</i> / <i>female</i>) are numbered 1, 2, 3 &hellip; in alphabetical order, as the codes column shows: the calculator holds numbers only. Write the codes down; DataLoad puts the smallest code's scores in D1.</p>
+  </section>
+
+  <section class="step" aria-labelledby="s3">
+    <h2 id="s3"><span class="stepnum">3</span>Make the file</h2>
+    <div class="row">
+      <label for="mat">Matrix</label>
+      <select id="mat"></select>
+      <p class="summary" id="summary"></p>
+    </div>
+    <p class="warn" id="padnote" hidden></p>
+    <div class="row">
+      <button type="button" class="primary" id="save" disabled>Download M1.hpmat</button>
+      <p class="status" id="savestatus" role="status"></p>
+    </div>
+  </section>
+
+  <section class="step" aria-labelledby="s4">
+    <h2 id="s4"><span class="stepnum">4</span>Put it on the calculator</h2>
+    <div class="two">
+      <div>
+        <h3>The Virtual Calculator (Windows)</h3>
+        <ol class="howto">
+          <li>Close the Virtual Calculator (its Calculator menu, Exit). It reads its folder only when it starts.</li>
+          <li>Copy <code id="fname1">M1.hpmat</code> into <code>Documents\HP Prime\Calculators\Prime</code>; if the file came in a zip, unzip it first. Replace the file that is there.</li>
+          <li>Start the calculator, open the Statistics 1Var app once (Apps), then run <b>DataLoad</b> from the Program Catalog and choose <i>Columns</i> or <i>Scores by group</i>.</li>
+          <li>If DataLoad says lists after the new ones hold data from before, choose <i>clear</i>: AnovaLab, RankLab and AgreeLab read every list that holds data as one more group (or rater).</li>
+        </ol>
+        <p class="note">Tested on the Virtual Calculator 2.4.2 (build 2026-09-09), 31 Oct 2026: the example's 432 rows &times; 5 columns arrived whole, DataLoad put them in D1&ndash;D5 and the weeks by financial aid in D1 and D2, and TTestLab read those two lists (separate-variances t(421.19) = &minus;1.68, p = 0.094). DataLoad is in the starter pack; the first time, Check it once in the Program Catalog.</p>
+      </div>
+      <div>
+        <h3>A G1 or G2</h3>
+        <ol class="howto">
+          <li>Connect the calculator to the HP Connectivity Kit.</li>
+          <li>Drag <code id="fname2">M1.hpmat</code> onto the calculator in the Kit, or open its matrix M1 there and paste the columns.</li>
+          <li>Run <b>DataLoad</b> on the calculator.</li>
+        </ol>
+        <p class="note">Not yet tested on a G1 or G2. Large data sets load slowly over the Kit; send one matrix at a time.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Part of <a href="https://github.com/metcalfdds/hp-prime-statistics">hp-prime-statistics</a>, Roger Metcalf's teaching programs for the HP Prime. Written with AI assistance (Anthropic Claude). Free for educational and personal use. A teaching aid: not validated for forensic, clinical or legal use.</p>
+    <p>Everything happens in this page; nothing you paste leaves your computer. Numbers are read from their digits and rounded to the Prime's 12 significant digits, half up. The file format is the one hp-prime-kit (JordiRigau/hp-prime-kit, MIT) documents. Blank cells are written as 9.99999999999E499, the Prime's largest real, which DataLoad leaves out.</p>
+    <p>Example data: Rossi, Berk &amp; Lenihan (1980), <i>Money, Work, and Crime</i>: 432 men released from Maryland state prisons, followed 52 weeks (week of first re-arrest, arrest 1/0, financial aid 1/0, age, prior convictions), via the R package carData.</p>
+  </footer>
+</main>
+
+<script>
+// dl_core_v1.js -- the Data Loader's arithmetic: read pasted data, and write the HP Prime's matrix file (.hpmat).
+// Roger Metcalf & Claude, 31 Oct 2026.  No DOM here: the page and the node tests share this file.
+//
+// THE FILE (hp-prime-kit, docs/topics/formats.md, "formats.hpmat"; checked on the Virtual Calculator 31 Oct 2026):
+//   bytes 0-1   01 00
+//   bytes 2-3   14 80      type: real matrix (the low byte 14 says real; the high byte varies, 80 is accepted)
+//   bytes 4-7   rank 2, little-endian
+//   bytes 8-11  rows      bytes 12-15  columns
+//   then every cell, row by row, 8 bytes each: the Prime's own number, read as a little-endian 64-bit word:
+//     bits 0-11  the decimal exponent, 12-bit two's complement
+//     bits 12-59 twelve BCD digits, the first digit at the top (bits 56-59)
+//     bits 60-63 the sign: 0 positive, 9 negative          zero is all zeros
+//
+// NUMBERS are read from their TEXT, digit by digit, never through a binary double, and rounded to the Prime's
+// 12 significant digits half up (away from zero), as the Prime rounds.  So "0.1" is exactly 0.1 on the calculator.
+//
+// BLANKS: a cell with no number becomes 9.99999999999E499, the Prime's largest real (MAXREAL), which no data set can
+// hold; DataLoad leaves such cells out, so every list gets only its own values.
+
+'use strict';
+
+const DLCore = (function () {
+  const NUM_RE = /^([+-]?)(\d*)(?:\.(\d*))?(?:[eE]([+-]?\d+))?$/;
+  const THOUSANDS_RE = /^[+-]?\d{1,3}(,\d{3})+(\.\d*)?$/;
+  const BLANK_WORD = { sign: 0, digits: '999999999999', exp: 499 };   // MAXREAL, the blank marker
+
+  // A cell's text -> {sign, digits (12), exp} or null when it is not a number.
+  // exp is the power of ten of the first digit: 52 is 5.2 x 10^1, digits "520000000000", exp 1.
+  function parseNumber(text) {
+    let t = String(text).trim();
+    if (t === '') return null;
+    // a minus from a word processor or the Prime itself (U+2212)
+    t = t.replace(/−/g, '-');
+    if (THOUSANDS_RE.test(t)) t = t.replace(/,/g, '');
+    const m = NUM_RE.exec(t);
+    if (!m) return null;
+    const intPart = m[2] || '';
+    const fracPart = m[3] || '';
+    if (intPart === '' && fracPart === '') return null;          // "." or "-" alone
+    let e10 = m[4] ? parseInt(m[4], 10) : 0;
+    let all = intPart + fracPart;                                  // all the digits
+    // the power of ten of all's first digit, before leading zeros are dropped
+    let exp = intPart.length - 1 + e10;
+    let k = 0;
+    while (k < all.length && all[k] === '0') { k++; exp--; }
+    all = all.slice(k);
+    if (all === '') return { sign: 0, digits: '000000000000', exp: 0, zero: true };
+    // round to 12 significant digits, half up
+    let digits = all.slice(0, 12);
+    if (all.length > 12 && all.charCodeAt(12) >= 53) {           // 13th digit 5-9
+      let carry = 1;
+      const d = digits.split('').map(Number);
+      for (let i = 11; i >= 0 && carry; i--) {
+        d[i] += carry;
+        if (d[i] === 10) { d[i] = 0; carry = 1; } else { carry = 0; }
+      }
+      digits = d.join('');
+      if (carry) { digits = '1' + digits.slice(0, 11); exp++; }   // 999... rounded up
+    }
+    digits = digits.padEnd(12, '0');
+    return { sign: m[1] === '-' ? 9 : 0, digits: digits, exp: exp, zero: false };
+  }
+
+  // The Prime's range: 1E-499 to 9.99999999999E499 (HP Prime User Guide, MINREAL and MAXREAL).
+  function inRange(n) {
+    return n.zero || (n.exp >= -499 && n.exp <= 499);
+  }
+
+  // {sign, digits, exp} -> 8 bytes (Uint8Array), little-endian.
+  function encodeParsed(n) {
+    const out = new Uint8Array(8);
+    if (n.zero) return out;
+    let w = BigInt(n.sign) << 60n;
+    for (let i = 0; i < 12; i++) w |= BigInt(n.digits.charCodeAt(i) - 48) << BigInt(56 - 4 * i);
+    w |= BigInt(n.exp & 0xFFF);
+    for (let i = 0; i < 8; i++) { out[i] = Number(w & 0xFFn); w >>= 8n; }
+    return out;
+  }
+
+  // 8 bytes -> the number as text (for checks): "-7.6E1" style.
+  function decode(bytes) {
+    let w = 0n;
+    for (let i = 7; i >= 0; i--) w = (w << 8n) | BigInt(bytes[i]);
+    if (w === 0n) return '0';
+    const sign = Number(w >> 60n) === 9 ? '-' : '';
+    let digits = '';
+    for (let i = 0; i < 12; i++) digits += String(Number((w >> BigInt(56 - 4 * i)) & 0xFn));
+    let exp = Number(w & 0xFFFn);
+    if (exp >= 2048) exp -= 4096;
+    digits = digits.replace(/0+$/, '');
+    return sign + digits[0] + (digits.length > 1 ? '.' + digits.slice(1) : '') + 'E' + exp;
+  }
+
+  // Split pasted text into rows of cells.  Tabs (a paste from Excel or SPSS) win, then semicolons, then commas, then
+  // runs of spaces.  Quotes around a CSV field are honoured.
+  function splitRows(text) {
+    const lines = String(text).replace(/\r\n?/g, '\n').split('\n').filter(l => l.trim() !== '');
+    if (lines.length === 0) return { rows: [], delim: '' };
+    const sample = lines.slice(0, 20).join('\n');
+    let delim = ' ';
+    if (sample.includes('\t')) delim = '\t';
+    else if (sample.includes(';')) delim = ';';
+    else if (sample.includes(',')) delim = ',';
+    const rows = lines.map(l => (delim === ' ') ? l.trim().split(/\s+/) : splitQuoted(l, delim));
+    return { rows: rows, delim: delim };
+  }
+
+  function splitQuoted(line, delim) {
+    const out = [];
+    let cur = '', q = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (q) {
+        if (c === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c;
+      } else if (c === '"') q = true;
+      else if (c === delim) { out.push(cur); cur = ''; }
+      else cur += c;
+    }
+    out.push(cur);
+    return out.map(s => s.trim());
+  }
+
+  // Rows -> columns, with a header when the first row is names over numbers.
+  function readTable(text) {
+    const sp = splitRows(text);
+    const rows = sp.rows;
+    if (rows.length === 0) return { names: [], cols: [], header: false, delim: sp.delim };
+    const width = Math.max(...rows.map(r => r.length));
+    let header = false;
+    if (rows.length >= 2) {
+      const first = rows[0], second = rows[1];
+      let named = 0, numberBelow = 0;
+      for (let j = 0; j < width; j++) {
+        const a = (first[j] || '').trim();
+        if (a !== '' && parseNumber(a) === null) named++;
+        if (parseNumber(second[j] || '') !== null) numberBelow++;
+      }
+      header = named > 0 && numberBelow > 0 && first.every(c => parseNumber(c) === null || c.trim() === '');
+    }
+    const body = header ? rows.slice(1) : rows;
+    const names = [];
+    for (let j = 0; j < width; j++) {
+      const nm = header ? (rows[0][j] || '').trim() : '';
+      names.push(nm || ('column ' + (j + 1)));
+    }
+    const cols = [];
+    for (let j = 0; j < width; j++) cols.push(body.map(r => (r[j] === undefined ? '' : String(r[j]).trim())));
+    return { names: names, cols: cols, header: header, delim: sp.delim };
+  }
+
+  // A column's kind: "numbers" (blanks and a few odd cells allowed, they become blanks) or "text" (coded 1, 2, ...
+  // by its labels in sorted order).  A column is text when most of its non-empty cells are not numbers.
+  function describe(col) {
+    let nums = 0, texts = 0, empty = 0;
+    const labels = new Set();
+    let lo = Infinity, hi = -Infinity;
+    for (const c of col) {
+      if (c === '') { empty++; continue; }
+      const p = parseNumber(c);
+      if (p !== null && inRange(p)) {
+        nums++;
+        const v = Number(c.replace(/−/g, '-').replace(/,/g, ''));
+        if (v < lo) lo = v;
+        if (v > hi) hi = v;
+      } else { texts++; labels.add(c); }
+    }
+    const kind = texts > nums ? 'text' : 'numbers';
+    let codes = null;
+    if (kind === 'text') {
+      const sorted = Array.from(labels).sort((a, b) => a.localeCompare(b));
+      codes = new Map(sorted.map((s, i) => [s, i + 1]));
+    }
+    const values = kind === 'text' ? texts : nums;
+    return { kind: kind, values: values, blanks: col.length - values, empty: empty, odd: kind === 'text' ? nums : texts,
+             lo: lo, hi: hi, codes: codes };
+  }
+
+  // The cell as the Prime will hold it: a parsed number, or the blank marker.
+  function cellWord(text, info) {
+    if (info.kind === 'text') {
+      if (text === '' || !info.codes.has(text)) return BLANK_WORD;
+      return parseNumber(String(info.codes.get(text)));
+    }
+    const p = parseNumber(text);
+    if (p === null || !inRange(p)) return BLANK_WORD;
+    return p;
+  }
+
+  // The .hpmat file for the chosen columns: header, then every cell row by row.
+  function buildHpmat(cols, infos) {
+    const nc = cols.length;
+    const nr = Math.max(...cols.map(c => c.length));
+    const buf = new Uint8Array(16 + 8 * nr * nc);
+    const dv = new DataView(buf.buffer);
+    buf[0] = 0x01; buf[1] = 0x00; buf[2] = 0x14; buf[3] = 0x80;
+    dv.setUint32(4, 2, true);
+    dv.setUint32(8, nr, true);
+    dv.setUint32(12, nc, true);
+    let off = 16;
+    for (let i = 0; i < nr; i++) {
+      for (let j = 0; j < nc; j++) {
+        const t = i < cols[j].length ? cols[j][i] : '';
+        buf.set(encodeParsed(cellWord(t, infos[j])), off);
+        off += 8;
+      }
+    }
+    return buf;
+  }
+
+  // ---- a small zip (stored, no compression), for viewers that may only save .zip files ----
+  const CRC_TABLE = (function () {
+    const t = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+
+  function crc32(bytes) {
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  // files: [{name, data (Uint8Array)}] -> Uint8Array of a zip.  Dates are 31 Oct 2026, 12:00.
+  function zip(files) {
+    const enc = new TextEncoder();
+    const parts = [], central = [];
+    let offset = 0;
+    const dosTime = (12 << 11), dosDate = ((2026 - 1980) << 9) | (10 << 5) | 31;
+    for (const f of files) {
+      const name = enc.encode(f.name);
+      const crc = crc32(f.data);
+      const lh = new Uint8Array(30 + name.length);
+      const lv = new DataView(lh.buffer);
+      lv.setUint32(0, 0x04034b50, true); lv.setUint16(4, 20, true); lv.setUint16(6, 0, true);
+      lv.setUint16(8, 0, true); lv.setUint16(10, dosTime, true); lv.setUint16(12, dosDate, true);
+      lv.setUint32(14, crc, true); lv.setUint32(18, f.data.length, true); lv.setUint32(22, f.data.length, true);
+      lv.setUint16(26, name.length, true); lv.setUint16(28, 0, true);
+      lh.set(name, 30);
+      parts.push(lh, f.data);
+      const ch = new Uint8Array(46 + name.length);
+      const cv = new DataView(ch.buffer);
+      cv.setUint32(0, 0x02014b50, true); cv.setUint16(4, 20, true); cv.setUint16(6, 20, true);
+      cv.setUint16(8, 0, true); cv.setUint16(10, 0, true); cv.setUint16(12, dosTime, true);
+      cv.setUint16(14, dosDate, true); cv.setUint32(16, crc, true); cv.setUint32(20, f.data.length, true);
+      cv.setUint32(24, f.data.length, true); cv.setUint16(28, name.length, true);
+      cv.setUint32(42, offset, true);
+      ch.set(name, 46);
+      central.push(ch);
+      offset += lh.length + f.data.length;
+    }
+    const cdSize = central.reduce((s, c) => s + c.length, 0);
+    const end = new Uint8Array(22);
+    const ev = new DataView(end.buffer);
+    ev.setUint32(0, 0x06054b50, true); ev.setUint16(8, files.length, true); ev.setUint16(10, files.length, true);
+    ev.setUint32(12, cdSize, true); ev.setUint32(16, offset, true);
+    const all = parts.concat(central, [end]);
+    const total = all.reduce((s, p) => s + p.length, 0);
+    const out = new Uint8Array(total);
+    let o = 0;
+    for (const p of all) { out.set(p, o); o += p.length; }
+    return out;
+  }
+
+  return { parseNumber, inRange, encodeParsed, decode, splitRows, readTable, describe, cellWord, buildHpmat,
+           crc32, zip, BLANK_WORD };
+})();
+
+if (typeof module !== 'undefined') module.exports = DLCore;
+
+</script>
+<script>
+'use strict';
+const EXAMPLE = "week,arrest,fin,age,prio\n20,1,0,27,3\n17,1,0,18,8\n25,1,0,19,13\n52,0,1,23,1\n52,0,0,19,3\n52,0,0,24,2\n23,1,0,25,0\n52,0,1,21,4\n52,0,0,22,6\n52,0,0,20,0\n52,0,1,26,3\n52,0,0,40,2\n37,1,0,17,5\n52,0,0,37,2\n25,1,0,20,3\n46,1,1,22,2\n28,1,0,19,7\n52,0,0,20,2\n52,0,0,25,12\n52,0,0,24,1\n52,0,0,23,4\n52,0,1,44,0\n24,1,1,29,2\n52,0,1,28,1\n52,0,1,21,0\n52,0,1,19,2\n52,0,0,33,1\n52,0,0,19,2\n52,0,1,19,3\n52,0,1,23,9\n52,0,1,23,3\n52,0,1,19,1\n52,0,1,42,0\n52,0,0,23,2\n52,0,0,24,3\n50,1,1,20,2\n52,0,0,22,5\n52,0,0,27,2\n52,0,1,19,4\n52,0,0,28,3\n52,0,1,33,9\n52,0,0,24,1\n10,1,0,21,14\n52,0,0,22,2\n52,0,1,19,2\n52,0,1,22,2\n52,0,1,22,15\n20,1,1,23,5\n52,0,0,32,2\n52,0,1,27,0\n52,0,1,36,0\n52,0,1,22,1\n52,0,1,32,1\n50,1,1,19,10\n52,0,0,28,1\n52,0,0,32,3\n52,0,0,33,1\n52,0,0,26,1\n52,0,1,20,0\n52,0,1,42,9\n6,1,0,19,6\n52,0,0,22,2\n52,0,0,22,5\n52,0,0,36,11\n52,1,0,23,2\n52,0,1,27,3\n52,0,1,21,1\n52,0,1,22,2\n49,1,0,35,3\n52,0,0,21,4\n52,0,1,25,5\n52,0,0,18,0\n52,0,1,26,2\n52,0,0,30,4\n52,0,0,20,2\n52,0,1,43,1\n43,1,0,23,4\n52,0,0,42,2\n52,0,0,21,2\n5,1,0,19,3\n27,1,0,29,4\n52,0,0,30,3\n52,0,1,21,10\n52,0,0,20,7\n22,1,1,19,10\n52,0,1,22,1\n52,0,0,25,3\n18,1,0,22,4\n52,0,1,22,4\n52,0,1,24,2\n52,0,0,39,4\n52,0,0,21,1\n52,0,1,20,2\n52,0,1,24,1\n52,0,0,25,2\n24,1,1,21,4\n52,0,1,20,1\n52,0,1,19,3\n52,0,1,24,2\n52,0,1,24,1\n2,1,0,44,2\n26,1,0,32,2\n52,0,0,23,3\n49,1,1,19,1\n52,0,0,20,1\n21,1,0,27,0\n48,1,0,19,6\n52,0,1,21,1\n52,0,0,20,1\n52,0,0,25,3\n52,0,0,20,6\n52,0,1,23,3\n52,0,0,20,2\n52,0,1,30,1\n52,0,0,25,0\n52,0,0,22,1\n52,0,0,24,3\n52,0,1,18,4\n8,1,1,40,1\n52,0,0,22,1\n52,0,1,23,6\n49,1,0,21,1\n52,0,1,24,2\n52,0,1,24,14\n52,0,0,38,2\n52,0,0,26,3\n52,0,1,29,1\n52,0,0,21,8\n52,0,1,21,2\n52,0,0,22,4\n8,1,0,23,5\n52,0,0,27,2\n52,0,1,18,2\n13,1,0,23,5\n52,0,1,24,2\n52,0,1,21,3\n52,0,1,20,4\n52,0,1,27,4\n8,1,1,20,11\n52,0,1,29,5\n33,1,0,19,10\n52,0,0,20,8\n52,0,1,18,0\n11,1,1,19,2\n52,0,1,24,1\n52,0,0,28,4\n52,0,1,26,4\n52,0,1,17,0\n52,0,0,21,3\n37,1,0,34,2\n52,0,1,26,1\n52,0,1,43,2\n52,0,0,20,0\n44,1,0,20,1\n52,0,0,32,1\n52,1,0,25,1\n52,0,1,22,1\n52,0,1,31,1\n52,0,1,42,4\n52,0,1,32,10\n52,0,1,20,8\n52,0,0,20,1\n52,0,1,36,8\n52,0,1,34,2\n52,0,1,28,3\n52,0,1,21,2\n52,0,0,18,6\n52,0,1,20,4\n52,0,0,17,3\n52,0,1,44,3\n52,0,1,30,5\n52,0,1,22,11\n9,1,1,30,3\n17,1,0,23,8\n52,0,1,20,2\n52,0,0,19,10\n52,0,1,21,1\n52,0,1,22,6\n52,0,1,19,2\n52,0,1,21,10\n16,1,0,38,3\n52,0,1,24,7\n52,0,1,39,2\n3,1,0,30,3\n52,0,0,37,0\n52,0,1,23,2\n52,0,0,21,1\n52,0,1,31,1\n52,0,1,24,13\n52,0,0,31,3\n52,0,0,24,2\n52,0,1,24,1\n52,0,1,21,1\n52,0,1,22,2\n45,1,0,20,5\n52,0,1,21,0\n52,0,1,24,2\n52,0,0,25,1\n52,0,0,19,1\n52,0,0,20,2\n52,0,0,20,4\n28,1,0,24,1\n52,0,1,18,4\n16,1,1,28,5\n15,1,1,19,4\n52,0,0,19,1\n52,0,0,25,0\n52,0,1,19,1\n52,0,1,25,2\n14,1,0,24,0\n52,0,1,20,1\n52,0,1,30,1\n52,0,0,29,4\n52,0,0,28,4\n52,0,1,36,1\n52,0,1,23,7\n52,0,1,23,2\n52,0,0,24,4\n52,0,0,29,1\n52,0,0,26,2\n52,0,0,39,3\n52,0,1,20,1\n52,0,0,23,3\n52,0,1,21,2\n52,0,1,21,1\n7,1,1,20,2\n52,0,1,20,3\n52,0,1,27,2\n43,1,0,18,3\n46,1,1,25,1\n40,1,1,20,6\n52,0,1,20,5\n14,1,0,20,7\n52,0,0,24,11\n52,0,1,23,1\n8,1,0,28,4\n52,0,0,21,2\n52,0,0,25,1\n52,0,0,24,1\n52,0,0,29,3\n52,0,0,22,2\n25,1,0,28,18\n52,0,0,19,1\n52,0,0,20,1\n17,1,0,20,5\n37,1,1,22,1\n52,0,0,20,8\n52,0,1,21,2\n52,0,1,21,1\n32,1,0,19,3\n52,0,0,26,1\n52,0,0,23,2\n52,0,1,22,4\n52,0,1,24,8\n52,0,1,40,5\n52,0,1,32,2\n52,0,0,38,0\n52,0,0,26,1\n12,1,1,27,0\n52,0,0,29,3\n18,1,0,20,4\n52,0,0,22,1\n52,0,0,22,5\n14,1,1,19,12\n52,0,0,22,1\n52,0,0,19,3\n52,0,1,32,1\n52,0,1,25,2\n38,1,0,21,2\n52,0,1,36,1\n24,1,0,40,2\n20,1,1,20,1\n32,1,1,19,0\n52,0,0,18,4\n52,0,1,28,0\n52,0,1,22,2\n52,0,1,25,1\n52,0,1,28,2\n52,0,1,25,2\n52,0,1,20,4\n52,0,1,24,5\n52,0,0,24,0\n52,0,1,36,2\n52,0,1,34,1\n31,1,0,19,5\n20,1,1,23,1\n40,1,0,19,3\n52,0,1,40,2\n52,0,1,31,2\n52,0,0,23,0\n52,0,0,42,2\n42,1,1,26,1\n52,0,0,20,9\n26,1,0,27,1\n52,0,1,24,5\n52,0,0,25,2\n52,0,1,22,3\n52,0,1,20,2\n52,0,1,20,2\n47,1,0,22,3\n52,0,0,18,1\n52,0,0,20,2\n40,1,0,20,1\n52,0,0,22,2\n52,0,1,30,2\n52,0,0,36,1\n52,0,0,25,5\n21,1,0,29,3\n52,0,0,19,3\n52,0,1,24,2\n52,0,1,21,0\n52,0,1,35,6\n52,0,1,19,4\n1,1,0,20,0\n43,1,0,22,3\n24,1,0,23,1\n11,1,0,19,18\n52,0,0,18,3\n52,0,1,38,2\n52,0,1,18,6\n52,0,0,22,1\n33,1,0,21,3\n52,0,0,21,1\n46,1,1,21,5\n36,1,1,17,3\n52,0,1,22,1\n52,0,1,23,0\n18,1,1,19,4\n52,0,1,21,1\n52,0,1,35,5\n50,1,0,23,8\n52,0,1,22,2\n34,1,1,25,11\n52,0,1,20,4\n35,1,1,19,1\n52,0,0,20,1\n52,0,1,41,3\n39,1,0,23,4\n9,1,1,26,0\n52,0,0,26,2\n52,0,1,38,1\n52,0,0,27,1\n34,1,1,19,3\n52,0,0,25,1\n52,0,1,30,2\n52,0,1,42,1\n44,1,0,20,2\n52,0,1,23,1\n52,0,0,21,3\n35,1,1,20,3\n30,1,0,17,1\n39,1,1,26,5\n52,0,1,24,1\n52,0,0,37,1\n52,0,0,28,1\n52,0,0,33,0\n19,1,1,22,4\n52,0,0,25,2\n43,1,0,20,10\n52,0,0,20,1\n48,1,1,24,4\n37,1,1,26,11\n20,1,1,26,1\n52,0,0,25,1\n52,0,0,26,1\n36,1,1,23,3\n52,0,1,28,4\n52,0,0,27,0\n52,0,1,23,3\n52,0,0,17,7\n52,0,0,20,4\n52,0,1,20,5\n52,0,1,20,9\n30,1,1,22,2\n52,0,0,31,1\n52,0,0,43,1\n52,0,0,29,1\n52,0,1,21,0\n52,0,0,24,2\n52,0,1,30,3\n52,0,0,22,0\n52,0,1,26,1\n42,1,1,20,0\n52,0,0,23,6\n52,0,0,25,5\n52,0,1,40,2\n52,0,1,30,0\n26,1,0,22,2\n40,1,0,18,2\n52,0,0,18,0\n52,0,0,24,2\n52,0,1,25,2\n35,1,1,19,2\n52,0,0,24,2\n46,1,0,24,2\n52,0,0,18,3\n49,1,1,18,0\n52,0,0,23,0\n52,0,0,20,2\n49,1,1,18,1\n52,0,0,23,2\n52,0,1,20,1\n52,0,0,23,5\n52,0,0,23,1\n52,0,0,23,2\n35,1,0,20,4\n52,0,1,26,4\n52,0,1,30,1\n52,0,1,36,4\n52,0,1,43,4\n27,1,0,20,1\n52,0,1,24,1\n52,0,0,22,1\n52,0,1,20,1\n52,1,0,21,0\n45,1,1,18,5\n4,1,0,18,1\n52,1,0,33,2\n36,1,1,19,2\n52,0,1,21,1\n52,0,1,21,1\n8,1,1,21,4\n15,1,1,22,3\n52,0,0,18,3\n19,1,0,18,2\n52,0,0,24,2\n12,1,1,22,2\n52,0,1,31,3\n52,0,0,20,1\n52,0,1,20,1\n52,0,0,29,3\n52,0,1,24,1\n";
+
+const el = id => document.getElementById(id);
+const paste = el('paste'), tbody = document.querySelector('#cols tbody');
+let table = null, infos = [], use = [];
+
+// The viewer's save prompt, when this page runs inside claude.ai: there a page may not start a download itself, and
+// .zip is a format it may offer.  Elsewhere (the page opened from a file or another site) the browser downloads.
+let dlProbe = null;
+function probeDownloads() {
+  if (!dlProbe) {
+    try {
+      dlProbe = (window.claude && typeof window.claude.use === 'function')
+        ? Promise.resolve(window.claude.use('downloads')).catch(() => null)
+        : Promise.resolve(null);
+    } catch (e) { dlProbe = Promise.resolve(null); }
+  }
+  return dlProbe;
+}
+
+function matName() { return 'M' + el('mat').value; }
+
+function fmt(v) {
+  if (!isFinite(v)) return '';
+  const a = Math.abs(v);
+  if (a !== 0 && (a >= 1e9 || a < 1e-4)) return v.toExponential(3);
+  return String(Math.round(v * 10000) / 10000);
+}
+
+function render() {
+  table = DLCore.readTable(paste.value);
+  infos = table.cols.map(DLCore.describe);
+  if (use.length !== infos.length) use = infos.map(i => i.values > 0);
+  tbody.textContent = '';
+  let slot = 0;
+  infos.forEach((info, j) => {
+    const tr = document.createElement('tr');
+    if (!use[j]) tr.className = 'off';
+    const on = use[j] && info.values > 0;
+    if (on) slot++;
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.checked = use[j]; cb.id = 'use' + j; cb.disabled = info.values === 0;
+    cb.setAttribute('aria-label', 'Use ' + table.names[j]);
+    cb.addEventListener('change', () => { use[j] = cb.checked; render(); });
+    const td0 = document.createElement('td'); td0.appendChild(cb); tr.appendChild(td0);
+    const add = (html, cls) => { const td = document.createElement('td'); if (cls) td.className = cls; td.innerHTML = html; tr.appendChild(td); };
+    add(on ? '<span class="slot">column ' + slot + '</span>' : '&mdash;');
+    add(escapeHtml(table.names[j]));
+    add('<span class="pill ' + info.kind + '">' + (info.kind === 'text' ? 'text &rarr; codes' : 'numbers') + '</span>');
+    add(String(info.values), 'num');
+    add(String(info.blanks), 'num');
+    if (info.kind === 'text') {
+      const parts = Array.from(info.codes).slice(0, 9).map(([s, c]) => c + ' = ' + escapeHtml(s));
+      if (info.codes.size > 9) parts.push('&hellip; ' + info.codes.size + ' labels');
+      add(parts.join(', '), 'codes');
+    } else {
+      add(info.values ? fmt(info.lo) + ' to ' + fmt(info.hi) : '', 'num');
+    }
+    add(escapeHtml(table.cols[j].slice(0, 6).join(', ')), 'first');
+    tbody.appendChild(tr);
+  });
+  update();
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+function chosen() {
+  const cols = [], inf = [], names = [];
+  infos.forEach((info, j) => { if (use[j] && info.values > 0) { cols.push(table.cols[j]); inf.push(info); names.push(table.names[j]); } });
+  return { cols, inf, names };
+}
+
+function update() {
+  const c = chosen();
+  const readout = el('readout'), save = el('save');
+  const name = matName();
+  el('fname1').textContent = name + '.hpmat';
+  el('fname2').textContent = name + '.hpmat';
+  if (!table || table.cols.length === 0) {
+    readout.textContent = 'Paste some data in step 1.'; readout.className = 'status';
+    el('summary').textContent = ''; save.disabled = true; el('padnote').hidden = true; return;
+  }
+  const rows = c.cols.length ? Math.max(...c.cols.map(x => x.length)) : 0;
+  const textCols = c.inf.filter(i => i.kind === 'text').length;
+  readout.textContent = table.cols[0].length + ' rows and ' + table.cols.length + ' columns read' +
+    (table.header ? ', with a row of names' : '') + '. ' + c.cols.length + ' column' + (c.cols.length === 1 ? '' : 's') +
+    ' will go to the calculator' + (textCols ? ', ' + textCols + ' as codes' : '') + '.';
+  readout.className = c.cols.length ? 'status ok' : 'status bad';
+  if (!c.cols.length) {
+    el('summary').textContent = ''; save.disabled = true; el('padnote').hidden = true;
+    readout.textContent += ' No column holds a number yet.'; return;
+  }
+  el('summary').innerHTML = name + ' will hold <b>' + rows + '</b> rows &times; <b>' + c.cols.length + '</b> column' +
+    (c.cols.length === 1 ? '' : 's') + (c.cols.length > 9 ? ' (DataLoad takes the first 9)' : '') + '.';
+  const blanks = c.inf.reduce((s, i) => s + i.blanks, 0) + c.cols.reduce((s, col) => s + (rows - col.length), 0);
+  const pad = el('padnote');
+  const notes = [];
+  if (blanks > 0) notes.push(blanks + ' blank cell' + (blanks === 1 ? '' : 's') + ' will be marked 9.99999999999E499; DataLoad leaves them out, so each list gets only its own values.');
+  if (rows > 10000) notes.push('More than 10,000 rows has not been tried on the calculator.');
+  pad.textContent = notes.join(' '); pad.hidden = notes.length === 0;
+  save.disabled = false;
+  probeDownloads().then(ns => { save.textContent = ns ? 'Save ' + name + ' (zip)' : 'Download ' + name + '.hpmat'; });
+}
+
+function readme(name) {
+  return ['DataLoad file ' + name + '.hpmat, made by the HP Prime Data Loader.', '',
+    'Virtual Calculator (Windows):',
+    '1. Close the Virtual Calculator (Calculator menu, Exit).',
+    '2. Copy ' + name + '.hpmat into Documents\\HP Prime\\Calculators\\Prime (replace the file there).',
+    '3. Start it, open the Statistics 1Var app once, then run DataLoad from the Program Catalog.',
+    '4. If DataLoad says lists after the new ones hold data from before, choose clear.', '',
+    'G1 or G2: drag ' + name + '.hpmat onto the calculator in the Connectivity Kit (not yet tested), then run DataLoad.', '',
+    'https://github.com/metcalfdds/hp-prime-statistics', ''].join('\r\n');
+}
+
+el('save').addEventListener('click', async () => {
+  const c = chosen();
+  if (!c.cols.length) return;
+  const name = matName();
+  const bytes = DLCore.buildHpmat(c.cols, c.inf);
+  const st = el('savestatus');
+  const ns = await probeDownloads();
+  if (ns) {
+    const z = DLCore.zip([{ name: name + '.hpmat', data: bytes }, { name: 'READ_ME.txt', data: new TextEncoder().encode(readme(name)) }]);
+    try {
+      await ns.save({ filename: name + '_for_the_HP_Prime.zip', data: z });
+      st.textContent = 'Saved. Unzip it and copy ' + name + '.hpmat as step 4 says.'; st.className = 'status ok';
+    } catch (e) {
+      st.className = 'status bad';
+      st.textContent = (e && e.code === 'declined') ? 'Not saved.' : 'This view cannot save files. Open the page in a browser of its own.';
+    }
+    return;
+  }
+  const url = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
+  const a = document.createElement('a');
+  a.href = url; a.download = name + '.hpmat';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  st.textContent = name + '.hpmat is in your Downloads folder. Copy it as step 4 says.'; st.className = 'status ok';
+});
+
+let timer = null;
+paste.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => { use = []; render(); }, 250); });
+el('example').addEventListener('click', () => { paste.value = EXAMPLE; use = []; render(); });
+el('clear').addEventListener('click', () => { paste.value = ''; use = []; render(); paste.focus(); });
+el('file').addEventListener('change', ev => {
+  const f = ev.target.files && ev.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => { paste.value = String(r.result); use = []; render(); };
+  r.readAsText(f);
+});
+for (let k = 0; k <= 9; k++) {
+  const o = document.createElement('option'); o.value = String(k); o.textContent = 'M' + k; if (k === 1) o.selected = true;
+  el('mat').appendChild(o);
+}
+el('mat').addEventListener('change', update);
+paste.value = EXAMPLE;
+render();
+</script>
+</body>
+</html>

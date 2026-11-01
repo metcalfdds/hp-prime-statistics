@@ -1,2 +1,10 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+# The starter pack and the app descriptor are binary
+*.zip binary
+*.hpapp binary
+# Calculator files: a matrix and a program
+*.hpmat binary
+*.hpprgm binary
+# the built Prime Loader page: one long line of embedded files
+prime-loader/PrimeLoader_*.html -diff linguist-generated

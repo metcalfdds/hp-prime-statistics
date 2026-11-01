@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""verify_TTestLab_beta1a.py -- checks TTestLab beta 1a (31 Oct 2026; beta 1 the same afternoon, with the examples' sources
-named on screen in 1a), the five-step t tests of Roger's lecture note
+"""verify_TTestLab_beta1b.py -- checks TTestLab beta 1b (31 Oct 2026, night: the independent second review's eleven
+findings fixed; beta 1a the same evening, beta 1 the same afternoon), the five-step t tests of Roger's lecture note
 "Hypothesis Testing: t-Test (with two population means)": pooled-variances, separate-variances (Welch) and
 dependent-samples t, with any mix of equal or unequal variances and equal or unequal N.
 
@@ -15,12 +15,18 @@ E  the "Pooled or separate?" page: the same t when N1 = N2 or s1 = s2; which way
    simulation of its type I error rate that backs the claim).
 F  a finger still on a form's OK when the form closes is waited out (tt_Settle), not read as a tap on Menu; a copy
    without the finger drain reproduces the fault.
+R  the review's findings (REVIEW2_TTestLab_beta1a.md), one check each, every one failing on beta 1a: tails and alpha
+   change together or not at all; a refused D1/D2 read or a cancelled form leaves the source, the names and the
+   example as they were, and the next page draws; "Pooled or separate?" refuses numbers that gave no t; p never
+   prints 0.000 and prints 1.000 for 1; t obt to 3 decimals on the decision line; a typed N is whole; t crit past the
+   window: the label and the rule's wording; a negative sD; the pairs guard before the SD; help's "sample 1"; the
+   pairs' decimals; the table-row line; step 4's rows for a typed summary; Help from the start menu returns to it.
 G  static: no "!=", every routine tagged tt_, every file-level variable tagged tt, one EXPORT.
 D  layout: text_overlap_v1's recorder over every screen drawn above: no firm overlap, frame straddle or overrun.
 
 Needs TTestLab_lecture_t_table_v1.py (the lecture's t table, transcribed) beside this file, the PPL harness ppl_run_v3e.py and text_overlap_v1.py (in ./tools, ../tools, this folder, or $TTL_TOOLS),
 hp-prime-kit ($HPKIT), SciPy, NumPy.
-Run:  python3 verify_TTestLab_beta1a.py [TTestLab_beta1a.txt]     (exit code 0 = all passed)
+Run:  python3 verify_TTestLab_beta1b.py [TTestLab_beta1b.txt]     (exit code 0 = all passed)
 """
 import math
 import os
@@ -44,12 +50,12 @@ for cand in reversed(_cands):
     if any(os.path.exists(os.path.join(cand, f)) for f in ('ppl_run_v3e.py', 'text_overlap_v1.py')):
         sys.path.insert(0, cand)
 import ppl_run_v3e  # noqa: E402,F401
-from ppl_run_v3e import Harness, ACCEPT  # noqa: E402
+from ppl_run_v3e import Harness, ACCEPT, CANCEL  # noqa: E402
 import text_overlap_v1 as OV  # noqa: E402
 
-PROG = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, 'TTestLab_beta1a.txt')
+PROG = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, 'TTestLab_beta1b.txt')
 if not os.path.exists(PROG):
-    PROG = os.path.join(HERE, '..', 'programs', 'TTestLab_beta1a.txt')
+    PROG = os.path.join(HERE, '..', 'programs', 'TTestLab_beta1b.txt')
 SRC = open(PROG, encoding='utf-8').read()
 
 FAIL = []
@@ -739,6 +745,248 @@ menus_c = [d.title for d in hh.dialogs].count('TTestLab')
 check('F1 control: a copy whose tt_Settle drains keys only opens the menu a second time (%d), as PowerViz v2.5h did '
       'on Roger\'s calculator' % menus_c, ctl != SRC and menus_c >= 2, [d.title for d in hh.dialogs])
 
+
+# ===================================================================== R. the review's findings
+print("=== R. the independent review's findings (each check fails on beta 1a)")
+
+
+def s_tails_cancel(h):
+    h.choose(2)                                          # example 1
+    h.press('Enter')                                     # the menu
+    h.choose(2)                                          # Tails and alpha
+    h.choose(2)                                          # one-tailed mu1 < mu2
+    h.choose(0)                                          # ... then Esc at the alpha list
+    h.press('Enter')
+    h.choose(7)
+
+
+hh, res, err = run(s_tails_cancel)
+st1 = [p for p in hh.pages if U(p.lines()[0]).startswith('Step 1')]
+check('R1 tails chosen, alpha list cancelled: nothing changes (step 1 still "two-tailed", t crit ±1.993, and the result'
+      ' line "p = 0.031, two-tailed")',
+      err is None and len(st1) >= 2 and has(st1[-1], 'Pooled-variances t test, two-tailed, α = 0.050') and
+      g(hh, 'ttTL') == 0 and U(res) == 'TTestLab: t(73) = -2.20, p = 0.031, two-tailed', (err, res, lines(st1[-1])[:2] if st1 else None))
+
+
+def s_tails_ok(h):
+    h.choose(2)
+    h.press('Enter')
+    h.choose(2)
+    h.choose(2)                                          # one-tailed mu1 < mu2
+    h.choose(2)                                          # alpha .05 (one-tailed list)
+    h.press('Enter')
+    h.choose(7)
+
+
+hh, res, err = run(s_tails_ok)
+check('R1 tails and alpha both chosen: both change (t crit -1.666, p = 0.016, one-tailed)',
+      err is None and g(hh, 'ttTL') == -1 and abs(g(hh, 'ttTC') - tdist.isf(0.05, 73)) < 1e-9 and
+      U(res) == 'TTestLab: t(73) = -2.20, p = 0.016, one-tailed', (err, res))
+
+
+def s_refused_pairs(h):
+    h.choose(1)
+    h.tap(230, 71)                                       # dependent
+    h.tap(290, 230)                                      # OK
+    h.choose(2)                                          # type mean, SD of differences
+    h.answer({'dm': 0.5, 'dsd': 1, 'dn': 5})
+    h.choose(1)                                          # two-tailed
+    h.choose(3)                                          # .05
+    h.press('Enter')                                     # the menu
+    h.choose(1)                                          # Edit the numbers
+    h.choose(1)                                          # pairs in D1 and D2 (empty): refused
+    h.press('Enter')
+    h.choose(7)
+
+
+hh, res, err = run(s_refused_pairs, app={'D1': [], 'D2': []})
+st1 = [p for p in hh.pages if U(p.lines()[0]).startswith('Step 1')]
+check('R2 a typed dependent summary, then a refused D1/D2 pairs read: the source stays "summary" (ttSRC 1), step 1'
+      ' draws again with "N pairs = 5", no error',
+      err is None and g(hh, 'ttSRC') == 1 and len(st1) >= 2 and has(st1[-1], 'N pairs = 5') and
+      any('Put the pairs in D1 and D2' in str(it) for it in hh.log), (err, res, g(hh, 'ttSRC')))
+
+hh = H()
+calc(hh, ttTY=1, ttSRC=1, ttM1=4, ttS1=2, ttN1=1, ttM2=2, ttS2=2, ttN2=5)
+cerr = None
+try:
+    hh.execute('tt_Compare()')
+except Exception as e:                                   # noqa: BLE001
+    cerr = '%s: %s' % (type(e).__name__, str(e)[:80])
+check('R3 "Pooled or separate?" with numbers that gave no t (N1 = 1): a box "give no t", no division by zero',
+      g(hh, 'ttOK') == 0 and cerr is None and any('give no t' in str(it) for it in hh.log), (cerr, g(hh, 'ttOK')))
+hh = H()
+calc(hh, ttTY=1, ttSRC=1, ttM1=4, ttS1=0, ttN1=5, ttM2=2, ttS2=0, ttN2=5)
+cerr = None
+try:
+    hh.execute('tt_Compare()')
+except Exception as e:                                   # noqa: BLE001
+    cerr = '%s: %s' % (type(e).__name__, str(e)[:80])
+check('R3 the same with both SDs 0', g(hh, 'ttOK') == 0 and cerr is None, cerr)
+
+hh = H()
+fm = {v: hh.execute('tt_FmtP(%r,3)' % v) for v in (0, 1e-320, 0.0004, 0.0005, 0.0314, 0.9994, 0.9996, 1)}
+check('R4 tt_FmtP: 0 and an underflow print "< 0.001" (so does 0.0005, below the floor); 1 prints "1.000"; 0.9996 "> 0.999"; 0.0314 "0.031"',
+      fm[0] == '< 0.001' and fm[1e-320] == '< 0.001' and fm[0.0004] == '< 0.001' and fm[0.0005] == '< 0.001' and
+      fm[0.0314] == '0.031' and fm[0.9994] == '0.999' and fm[0.9996] == '> 0.999' and fm[1] == '1.000', fm)
+hh = H()
+calc(hh, ttTY=3, ttSRC=1, ttMD=0.5, ttSDv=1, ttNP=10000)
+p5 = page(hh, 'tt_Step5()')
+check('R4 10,000 pairs at d = 0.5 (t = 50, p underflows): step 5 reports "p < 0.001", never "p = 0.000"',
+      has(p5, 'Report t(9999) = 50.00, p < 0.001, two-tailed') and not has(p5, 'p = 0.000'), lines(p5))
+hh = H()
+calc(hh, ttTY=1, ttSRC=1, ttM1=0, ttS1=1, ttN1=6, ttM2=0, ttS2=1, ttN2=6)
+p5 = page(hh, 'tt_Step5()')
+check('R4 t = 0: "p = 1.000"', has(p5, 'p = 1.000'), lines(p5))
+
+hh = H()
+calc(hh, ttTY=1, ttSRC=1, ttM1=1.2852, ttS1=1, ttN1=6, ttM2=0, ttS2=1, ttN2=6)
+p5 = page(hh, 'tt_Step5()')
+check('R5 t = 2.2261 on df 10, t crit 2.228: the decision line prints both to 3 decimals ("2.226 is not beyond ±2.228")'
+      ' and the Report line keeps 2 ("= 2.23")',
+      has(p5, 't obt = 2.226 is not beyond t crit = ±2.228') and has(p5, 'Report t(10) = 2.23'), lines(p5))
+
+
+def s_cancel_form(h):
+    h.choose(2)                                          # example 1
+    h.press('Enter')
+    h.choose(1)                                          # Edit the numbers
+    h.choose(1)                                          # type ...
+    h.answer(CANCEL)                                     # ... and cancel the form
+    h.press('Enter')
+    h.choose(7)
+
+
+hh, res, err = run(s_cancel_form)
+st1 = [p for p in hh.pages if U(p.lines()[0]).startswith('Step 1')]
+st4 = None
+check('R6 example 1, Edit the numbers, form cancelled: the names ("Hispanic"), the outcome line and the example (ttEX 1)'
+      ' are kept',
+      err is None and g(hh, 'ttEX') == 1 and g(hh, 'ttG1') == 'Hispanic' and len(st1) >= 2 and
+      has(st1[-1], 'Outcome: age at arrest (years), JDCC') and has(st1[-1], 'Hispanic'), (err, g(hh, 'ttEX'), g(hh, 'ttG1')))
+
+
+def s_dep_cancel(h):
+    h.choose(2)                                          # example 1 (pooled)
+    h.press('Enter')
+    h.choose(4)                                          # Choose the test
+    h.tap(230, 71)                                       # dependent
+    h.tap(290, 230)                                      # OK
+    h.choose(2)                                          # type the differences ...
+    h.answer(CANCEL)                                     # ... cancelled: the old test and names stay
+    h.press('Enter')
+    h.choose(7)
+
+
+hh, res, err = run(s_dep_cancel)
+check('R6 Choose the test -> dependent -> form cancelled: the pooled test, its names and example stay',
+      err is None and g(hh, 'ttTY') == 1 and g(hh, 'ttEX') == 1 and g(hh, 'ttG1') == 'Hispanic' and
+      U(res) == 'TTestLab: t(73) = -2.20, p = 0.031, two-tailed', (err, res, g(hh, 'ttTY'), g(hh, 'ttG1')))
+
+
+def s_frac_n(h):
+    h.choose(1)
+    h.tap(90, 71)                                        # independent
+    h.tap(40, 133)                                       # equal variances
+    h.tap(290, 230)                                      # OK
+    h.choose(1)                                          # type
+    h.answer({'ttM1': 5, 'ttS1': 2, 'ttN1': 10.5, 'ttM2': 4, 'ttS2': 2, 'ttN2': 10})
+    h.choose(1)
+    h.choose(3)
+    soft(h, 2)
+
+
+hh, res, err = run(s_frac_n)
+st2 = [p for p in hh.pages if U(p.lines()[0]).startswith('Step 2')]
+check('R7 a typed N1 of 10.5 is 10: df 18 ("= 10 + 10 - 2 = 18"), t(18)',
+      err is None and g(hh, 'ttN1') == 10 and g(hh, 'ttDF') == 18 and st2 and has(st2[-1], '= 10 + 10 - 2 = 18') and
+      U(res).startswith('TTestLab: t(18) ='), (err, res, g(hh, 'ttN1'), lines(st2[-1]) if st2 else None))
+
+hh = H()
+calc(hh, ttTY=3, ttSRC=2, ttX1=[1, 2.5], ttX2=[1.5, 2])
+p3 = page(hh, 'tt_Step3()')
+# the dashed line: LINE_P columns at the window's edges, x = 12 (ttPL) and 308 (ttPR), in red
+reds = sorted(set(int(sh.args[0]) for sh in p3.shapes if sh.cmd == 'LINE_P' and sh.args[0] == sh.args[2]
+                  and sh.args[0] in (12, 308) and sh.args[4] == hh.globals_['ttRED']))
+check('R8 2 pairs at .05 (t crit 12.706, beyond the window of ±12): step 3 says so in the rule, draws a "t crit" label at'
+      ' each edge, and the dashed line is at the window\'s edge (x = 12 and 308)',
+      abs(g(hh, 'ttTC') - 12.7062) < 1e-3 and has(p3, "(t crit lies beyond the plot.)") and
+      lines(p3).count('t crit') == 2 and not has(p3, 'Red = the rejection region') and
+      reds == [12, 308], (lines(p3), reds))
+hh = H()
+hh.execute('tt_Example(1)')
+hh.execute('tt_Calc()')
+p3 = page(hh, 'tt_Step3()')
+check('R8 example 1 (t crit 1.993, inside the window): no edge label, the rule still names the red region',
+      lines(p3).count('t crit') == 0 and has(p3, 'Red = the rejection region (α).'), lines(p3))
+
+hh = H()
+calc(hh, ttTY=3, ttSRC=1, ttMD=1, ttSDv=-1, ttNP=5)
+check('R9 a negative typed sD: "An SD cannot be negative."', g(hh, 'ttOK') == 0 and g(hh, 'ttMSG') == 'An SD cannot be negative.',
+      g(hh, 'ttMSG'))
+hh = H()
+calc(hh, ttTY=3, ttSRC=1, ttMD=1, ttSDv=0, ttNP=5)
+check('R9 sD = 0 still gets its own message', g(hh, 'ttMSG').startswith('Every pair differs by the same amount'), g(hh, 'ttMSG'))
+
+hh = H()
+put(hh, ttTY=3, ttSRC=2, ttX1=[5], ttX2=[3])
+cerr = None
+try:
+    hh.execute('tt_Calc()')
+except Exception as e:                                   # noqa: BLE001
+    cerr = '%s: %s' % (type(e).__name__, str(e)[:80])
+check('R10 one pair in D1/D2 given to tt_Calc directly: refused ("at least 2 pairs"), no division by zero',
+      cerr is None and g(hh, 'ttOK') == 0 and 'at least 2 pairs' in g(hh, 'ttMSG'), (cerr, g(hh, 'ttMSG')))
+
+hh = H()
+pg = page(hh, 'tt_Help()')
+hp1 = hh.pages[0]
+check('R11 help 1: "sample 1 (or x₁) in D1, sample 2 (or x₂) in D2"', has(hp1, 'sample 1 (or x₁) in D1, sample 2 (or x₂) in D2'),
+      lines(hp1))
+hh = H()
+hh.execute('tt_Example(2)')
+hh.execute('tt_Calc()')
+p1 = page(hh, 'tt_Step1()')
+check('R11 example 2\'s pairs print with one decimal count per column: 1.30, 1.00, 1.10 beside 1.25 and 0.76',
+      all(has(p1, v) for v in ('1.30', '1.25', '0.86', '0.94', '2.26', '1.00', '0.76', '0.99', '1.10', '1.85')) and
+      not any(x in ('1.3', '1.1') for x in lines(p1)), lines(p1))
+cd = {k: hh.execute('tt_ColDec(%s)' % k) for k in ('{1.30,1.25,0.86}', '{1,2,3}', '{1.5,2,3.25}', '{0.182,1}', '{3.28798,1}')}
+check('R11 tt_ColDec: {1.30,1.25,0.86} -> 2, {1,2,3} -> 0, {1.5,2,3.25} -> 2, {0.182,1} -> 3, {3.28798,1} -> 5',
+      list(cd.values()) == [2, 0, 2, 3, 5], cd)
+check('R11 tt_FixD(2, 0) = "2", tt_FixD(1, 2) = "1.00", tt_FixD(1.3, 2) = "1.30"',
+      hh.execute('tt_FixD(2,0)') == '2' and hh.execute('tt_FixD(1,2)') == '1.00' and hh.execute('tt_FixD(1.3,2)') == '1.30')
+hh = H()
+calc(hh, ttTY=2, ttSRC=1, ttM1=4.8185, ttS1=3.28798, ttN1=270, ttM2=5.5476, ttS2=3.74872, ttN2=146)
+p5 = page(hh, 'tt_Step5()')
+trl = [x for x in lines(p5) if x.startswith('(Table row')]
+check('R11 the table-row line reads "(Table row 120, ±1.980, decides the other way.)" (47 characters)',
+      trl == ['(Table row 120, ±1.980, decides the other way.)'] and len(trl[0]) <= 48, trl)
+hh = H()
+calc(hh, ttTY=3, ttSRC=1, ttMD=0.5, ttSDv=1, ttNP=5)
+p4 = page(hh, 'tt_Step4()')
+ys = {t.text.split(' ')[0]: t.y for t in p4.texts if t.text.startswith('SE = ') or t.text.startswith('t obt')}
+check('R11 step 4 for a typed summary: the SE and t lines sit right under the summary (y 60 and 73), not after a 100-px gap',
+      ys.get('SE') == 60 and ys.get('t') == 73, ys)
+hh = H()
+hh.execute('tt_Example(2)')
+hh.execute('tt_Calc()')
+p4 = page(hh, 'tt_Step4()')
+ys = {t.text.split(' ')[0]: t.y for t in p4.texts if t.text.startswith('SE = ') or t.text.startswith('t obt')}
+check('R11 step 4 for raw pairs: the SE and t lines stay under the table (y 141 and 154)', ys.get('SE') == 141 and ys.get('t') == 154, ys)
+
+
+def s_help_start(h):
+    h.choose(5)                                          # Help from the start menu
+    h.press('Enter')                                     # page 2
+    h.press('Enter')                                     # back ...
+    h.choose(0)                                          # ... to the start menu: cancel it
+
+
+hh, res, err = run(s_help_start)
+check('R11 Help from the start menu returns to that menu (cancel there gives "TTestLab: cancelled"; beta 1a went on to'
+      ' example 1)', err is None and res == 'TTestLab: cancelled' and
+      [U(p.lines()[0]) for p in hh.pages] == ['TTestLab help 1/2: keys', 'TTestLab help 2/2: the numbers'], (err, res))
+
 # ===================================================================== G. static
 print('=== G. static checks')
 code = [ln.split('//')[0] for ln in SRC.split('\n')]
@@ -765,7 +1013,7 @@ check('G1 every routine is defined before its first use (no forward references)'
 # ===================================================================== D. layout
 print('=== D. layout (text_overlap_v1 over every screen above)')
 rep = OV.report()
-tag = [t for t in rep if t.startswith('TTestLab_beta1a')]
+tag = [t for t in rep if t.startswith('TTestLab_beta1b')]
 f = rep[tag[0]] if tag else None
 firm = []
 if f:

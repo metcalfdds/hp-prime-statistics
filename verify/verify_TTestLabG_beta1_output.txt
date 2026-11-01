@@ -1,0 +1,105 @@
+=== A. the arithmetic against SciPy
+PASS A1 pooled and separate SE, t and df equal SciPy's ttest_ind_from_stats (and the textbook formulas) in 288 cases: equal and unequal N, equal and unequal SD, smaller group with the larger SD and the reverse (worst relative difference 4.3e-16)
+PASS A1 SDs of 1E-200 and 1E200 (divided by the larger before squaring): the same t and df as at SD ~ 1, SE scaled
+PASS A2 dependent samples from pairs in D1/D2 (tz_Pairs): x-bar D, sD, t, df = N - 1, p in all three tails and Cohen's d (mean / sD) equal SciPy's ttest_rel, 72 cases, N from 2 to 200 (worst 2.2e-14)
+PASS A2 dependent samples from the mean and SD of the differences: t = 1.328993 (by hand 1.328993), df 4, SE sD/sqrt(N)
+PASS A3 p for H1 mu1 != mu2, mu1 < mu2 and mu1 > mu2 (lower tails only), pooled and separate, equals SciPy (worst 2.8e-16); t = 0 gives p = 1 two-tailed, not 2 x 0.5 rounded
+PASS A3 equal means: t = 0, p = 1.0 two-tailed
+PASS A4 t critical (-STUDENT_ICDF of a lower tail, checked by STUDENT_CDF) equals SciPy for every column of the table, both tails, df 1 to 1000 and fractional df: 162 values, worst 0.0e+00
+PASS A4 the fallback (STUDENT_ICDF fails inside IFERR, bisection on STUDENT_CDF, as CICatcher's cqTCrit): the same t critical to 3.3e-16 (df 1 at alpha .0005: 636.619)
+PASS A5 step 3's printed-table note: a whole df past 30 takes the next smaller row; a fractional df is rounded down first; df 30 and below: no note (pooled, df 73, separate, df 72.44, pairs, df 4, pairs, df 30, pairs, df 31)
+PASS A5 step 3 gives the exact t crit for the df, nothing from a table row: "t crit = ±1.993   (exact, for df = 73)"
+PASS A5 step 2, separate variances: the hand shortcut df (the smaller N - 1) and its t crit, larger than at Welch's df, in four cases (both tails and one-tailed either way): [(44, 31, '±2.042'), (270, 146, '±1.976'), (5, 1000, '3.747'), (3, 7, '-4.303')]
+=== B. the four examples
+PASS B0 the draft numbers: 182 dates Jan-Jun, 184 Jul-Dec, the numbers 1-366 once each; 1 on September 14 (day 258), 2 on April 24 (day 115), 366 on June 8 (day 160)
+PASS B1 Darwin's pairs (Darwin 1876): 8 x the differences are Fisher's 1935 figures [49, -67, 8, 16, 6, 23, 28, 41, 14, 29, 56, 24, 75, 60, -48]
+PASS B1 Darwin: t 2.1480 (SciPy 2.1480), df 14, t crit 2.1448, reject; p 0.04970 (SciPy 0.04970); d 0.555
+PASS B1 Darwin step 1: the first 7 pairs with 3 decimals each column (19.125), "... and 8 more pairs", the names, the outcome and its source
+PASS B1 Darwin step 5: reject; p rounds to alpha at 3 decimals, so its 4 significant digits too: "(p = 0.04970: just below α = 0.050.)"; Report t(14) = 2.15, p = 0.050
+PASS B2 the draft lottery: means 206.3242 and 160.9239, SDs 106.1437 and 100.7567 (NumPy 206.3242, 160.9239, 106.1437, 100.7567), N 182 and 184
+PASS B2 the draft lottery, separate variances: t 4.1959 (SciPy 4.1959), df 362.562 (SciPy 362.562), reject; p 3.42e-05 (SciPy 3.42e-05)
+PASS B2 draft step 1: means and SDs worked out from the 366 numbers, to 4 significant digits (206.3, not 206.32418); the names; the outcome and its source
+PASS B2 draft step 2: Welch's df worked (362.56) and the hand shortcut beside it: df 181, t crit ±1.973
+PASS B2 draft step 3: the exact t crit at df 362.56 and the note "Round df down to 362"
+PASS B2 draft step 4: the SDs and means in the working to 4 significant digits; t obt 4.20
+PASS B2 draft step 5: reject, sample 1 (born Jan-Jun) higher on average, p < 0.001, no near-alpha note
+PASS B3 age at arrest (pooled, two-tailed .05): t = -2.1954 (SciPy -2.1954), df 73, exact t crit 1.993, reject; p 0.0313; d -0.515
+PASS B3 step 4 shows the working with the numbers in and the exact t, and no rounding note
+PASS B3 step 1: typed numbers shown as typed (1.45, 1.11), the names, the outcome
+PASS B4 matched jails (dependent, one-tailed H1 mu1 < mu2, .05): x-bar D 0.182, sum of squares 0.37508, sD 0.30622, SE 0.13695, t 1.3290 (SciPy 1.3290), df 4, t crit -2.132, retain; p 0.8727
+PASS B4 step 4: the differences, their deviations and squares, the sum .3751 ("sum", not the unverified sigma glyph), sD, SE, t obt; no rounding note
+PASS B4 step 5: retain, and the samples differ the other way from H1 (t > 0, H1 predicted < 0)
+PASS B the near-alpha note above alpha: 2.226 vs 2.228 retains with "(p = 0.05018: just above α = 0.050.)"
+=== C. screens, the flowchart, the forms, D1/D2, refusals, menu, help
+PASS C1 each example opens on step 1; soft keys 1-5 and Left/Right step through; Esc quits with the result string: [(1, 'TTestLabG: t(14) = 2.15, p = 0.050, two-tailed'), (2, 'TTestLabG: t(362.56) = 4.20, p < 0.001, two-tailed'), (3, 'TTestLabG: t(73) = −2.20, p = 0.031, two-tailed'), (4, 'TTestLabG: t(4) = 1.33, p = 0.873, one-tailed')]
+PASS C1 step 1 of example 3 (age at arrest): test, tails, alpha; H0 and H1; the numbers in two columns
+PASS C1 step 3 of example 3: the exact t crit, the printed-table note, the either/or rule, the menu of steps
+PASS C1 step 5 of example 3: reject, the direction in the samples' names, the report line, d, the p legend
+PASS C1 step 3 of example 4 (matched jails): one-tailed lower, "t crit = -2.132" exact for df 4, rule "if t obt < -2.132", no printed-table note at df 4
+PASS C1 step 1 of example 4: H1 mu1 < mu2, the five pairs, and the source on screen
+PASS C1 step 1 with 12 pairs (beta 1a): 7 rows, "... and 5 more pairs" on the 8th, the outcome under them
+PASS C1 step 1, dependent samples typed as a summary: the outcome under the box
+PASS C2 step 3's curve: 223 pixel columns filled (76 of them pale red), pale red exactly where |t| > t crit (two-tailed), pale blue elsewhere
+PASS C3 the flowchart (two questions): tapped boxes and soft keys give pooled / separate / dependent; Back undoes; OK waits for an answer: [('Yes, Yes (boxes)', 1.0), ('Yes, No (boxes)', 2.0), ('No (box)', 3.0), ('Yes, No (soft keys)', 2.0), ('Yes, Back, No, OK', 3.0), ('OK too early, then Yes, Yes', 1.0)]
+PASS C3 Esc leaves the flowchart (returns 0)
+PASS C3 the flowchart's texts and soft keys: its title, both questions, three tests, the hint that separate is the default ("Not sure ... Answer No")
+PASS C4 flowchart -> separate -> typed numbers -> one-tailed mu1 > mu2 -> alpha .05: "TTestLabG: t(265.92) = -4.35, p > 0.999, one-tailed" (p 1.0000)
+PASS C4 the form: six plain labels with help lines
+PASS C5 raw scores in D1 and D2 (7 and 10 scores, pooled, two-tailed, alpha .02): t 3.3067 (SciPy 3.3067), p 0.0048, names "D1"/"D2"
+PASS C6 pairs from D1 and D2 reproduce example 2 (t 1.3290, df 4)
+PASS C6 dependent samples from typed x-bar D, sD and N pairs: t 1.3290, df 4; step 1 shows the summary
+PASS C7 D1/D2 missing, too short or unequal for pairs: a box says what to do, and the program ends cleanly: [('D1 empty', 'TTestLabG: cancelled'), ('D1 one score', 'TTestLabG: cancelled'), ('pairs unequal', 'TTestLabG: cancelled')]
+PASS C7 numbers that give no t (N < 2, SD < 0, both SDs 0): the reason in a box, then the menu: [('N 1', ['Each group needs N of at least 2.']), ('SD < 0', ['An SD cannot be negative.']), ('both SD 0', ['Both SDs are 0: every score is the same, so there is no t.'])]
+PASS C7 dependent samples with sD = 0: "Every pair differs by the same amount (sD = 0): there is no t."
+PASS C7 no message box runs past 5 lines (Lessons Learned s3)
+PASS C8 the menu: tails/alpha changes the test in place; pooled -> separate keeps the numbers; a cancelled switch to dependent keeps the separate test; Quit: "TTestLabG: t(72.44) = -2.30, p = 0.024, two-tailed"
+PASS C9 help: two pages (keys, with DataLoad for a long data set; the numbers, the printed-table rule, the Inference app as a check), then back to the start menu
+PASS C9 the start menu cancelled: "TTestLabG: cancelled"
+=== E. the "Pooled or separate?" page
+PASS E1 the page says why the tests agree or differ for each mix of N and SD: [('N1 = N2', True, 1.084652, 1.084652), ('s1 = s2', True, 1.414214, 1.414214), ('small n, big s', True, 1.448572, 0.784465), ('big n, big s', True, 0.778868, 1.414214)]
+PASS E2 the claims, simulated (20,000 pairs of samples each, H0 true, alpha .05; pooled, separate): {'smaller group, larger SD': (0.29, 0.048), 'larger group, larger SD': (0.001, 0.052)} -- pooled rejects too often in the first, too seldom in the second; separate stays near .05
+PASS E3 dependent samples: the page explains instead (one SD, of the differences)
+=== F. a finger still on a form's OK
+PASS F1 Menu > Edit the numbers > OK with the finger left on OK (soft-key slot 6, Menu): the menu does not open again (1 menu, None)
+PASS F1 control: a copy whose tz_Settle drains keys only opens the menu a second time (2), as PowerViz v2.5h did on Roger's calculator
+=== R. the independent review's findings (each check fails on beta 1a)
+PASS R1 tails chosen, alpha list cancelled: nothing changes (step 1 still "two-tailed", t crit ±1.993, and the result line "p = 0.031, two-tailed")
+PASS R1 tails and alpha both chosen: both change (t crit -1.666, p = 0.016, one-tailed)
+PASS R2 a typed dependent summary, then a refused D1/D2 pairs read: the source stays "summary" (tzSRC 1), step 1 draws again with "N pairs = 5", no error
+PASS R3 "Pooled or separate?" with numbers that gave no t (N1 = 1): a box "give no t", no division by zero
+PASS R3 the same with both SDs 0
+PASS R4 tz_FmtP: 0 and an underflow print "< 0.001" (so does 0.0005, below the floor); 1 prints "1.000"; 0.9996 "> 0.999"; 0.0314 "0.031"
+PASS R4 10,000 pairs at d = 0.5 (t = 50, p underflows): step 5 reports "p < 0.001", never "p = 0.000"
+PASS R4 t = 0: "p = 1.000"
+PASS R5 t = 2.2261 on df 10, t crit 2.228: the decision line prints both to 3 decimals ("2.226 is not beyond ±2.228") and the Report line keeps 2 ("= 2.23")
+PASS R6 example 3, Edit the numbers, form cancelled: the names ("Hispanic"), the outcome line and the example (tzEX 3) are kept
+PASS R6 Choose the test -> dependent -> form cancelled: the pooled test, its names and example stay
+PASS R7 a typed N1 of 10.5 is 10: df 18 ("= 10 + 10 - 2 = 18"), t(18)
+PASS R8 2 pairs at .05 (t crit 12.706, beyond the window of ±12): step 3 says so in the rule, draws a "t crit" label at each edge, and the dashed line is at the window's edge (x = 12 and 308)
+PASS R8 example 3 (t crit 1.993, inside the window): no edge label, the rule still names the red region
+PASS R9 a negative typed sD: "An SD cannot be negative."
+PASS R9 sD = 0 still gets its own message
+PASS R10 one pair in D1/D2 given to tz_Calc directly: refused ("at least 2 pairs"), no division by zero
+PASS R11 help 1: "sample 1 (or x₁) in D1, sample 2 (or x₂) in D2"
+PASS R11 example 4's pairs print with one decimal count per column: 1.30, 1.00, 1.10 beside 1.25 and 0.76
+PASS R11 tz_ColDec: {1.30,1.25,0.86} -> 2, {1,2,3} -> 0, {1.5,2,3.25} -> 2, {0.182,1} -> 3, {3.28798,1} -> 5
+PASS R11 tz_FixD(2, 0) = "2", tz_FixD(1, 2) = "1.00", tz_FixD(1.3, 2) = "1.30"
+PASS R11 (the general version) no table-row line on step 5: the exact df decides alone, where TTestLab printed "(Table row 120, ±1.980, decides the other way.)"
+PASS R11 step 4 for a typed summary: the SE and t lines sit right under the summary (y 60 and 73), not after a 100-px gap
+PASS R11 step 4 for raw pairs: the SE and t lines stay under the table (y 141 and 154)
+PASS R11 Help from the start menu returns to that menu (cancel there gives "TTestLabG: cancelled"; beta 1a went on to example 1)
+=== N. the general version: the default test, the menus, no lecture words
+PASS N1 a fresh start holds the separate-variances test (tzTY 2): the default, where TTestLab started pooled
+PASS N2 the start menu: the flowchart, the four examples, Help
+PASS N2 the menu names this program: its last item is "Quit TTestLabG" (beta 1's first build, on the Virtual Calculator, still said "Quit TTestLab")
+PASS N2 the menu's Examples: Darwin's plants, the draft lottery, age at arrest, matched jails; choosing the draft lottery from Darwin's pairs switches test and data: "TTestLabG: t(362.56) = 4.20, p < 0.001, two-tailed"
+PASS N3 no string a student can see names the lecture, Figure 11.2, Table 11.x, Levene's test or the SPSS drug-use example (439 strings read)
+=== G. static checks
+PASS G1 no "!=" in the code (Lessons Learned: "<>" on the device); 47 routines, all tagged tz_; 48 file-level variables, all tagged tz; one EXPORT, TTESTLABG
+PASS G1 only verified glyphs in the code's strings (Lessons Learned s5): ±²×αμ₁₂√≠
+PASS G1 every routine is defined before its first use (no forward references)
+=== D. layout (text_overlap_v1 over every screen above)
+   screens: 115 distinct of 350; marginal findings: 0 collisions, 0 straddles, 0 overruns
+PASS D1 no firm overlap, frame straddle or overrun on any TTestLabG screen drawn (['TTestLabG_beta1.txt'])
+
+93 PASS, 0 FAIL

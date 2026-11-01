@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// TTESTLAB - beta 1a
+// TTESTLAB - beta 1b
 // ============================================================
 // FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
 //   the file and credit the author if you pass it on.  Not for
@@ -12,7 +12,36 @@
 // (C) 2026 Roger D Metcalf.  Written with AI assistance (Anthropic
 //   Claude); every formula checked against SciPy before delivery.
 // Firmware: written for the HP Prime G2 and G1 on the 2026-09-09
-//   firmware.  beta 1a has run only in the PC harness.
+//   firmware.  beta 1a ran on the Virtual Calculator 2.4.2 (31 Oct
+//   2026): Check clean, example 1 to the end, and the lists DataLoad
+//   had filled (t(421.19) = -1.68).  beta 1b ran there too, the same
+//   night: six of the review's items (its CHANGES file says which).
+//
+// beta 1b (31 Oct 2026, from the independent second review of beta 1a,
+//   REVIEW2_TTestLab_beta1a.md; all eleven findings):
+//   1. Tails and alpha change together: a cancelled alpha list used to
+//      leave new tails on old numbers ("one-tailed" over the two-tailed
+//      t crit and p).
+//   2. The data source (ttSRC), the group names and the example are
+//      changed only when new numbers arrived: a refused D1/D2 read or a
+//      cancelled form used to leave ttSRC = 2 with no pairs (the next
+//      page read past an empty list) and strip the example's names.
+//   3. "Pooled or separate?" refuses when the numbers on screen gave no
+//      t (it divided by zero with N = 1 or both SDs 0).
+//   4. A p that underflows to 0 prints "< 0.001", never "0.000"; a p
+//      of exactly 1 prints "1.000".
+//   5. The decision line prints t obt to 3 decimals, like t crit beside
+//      it ("2.23 is not beyond 2.228" read as a contradiction).
+//   6. A typed N is its whole part (10.5 -> 10), as the pairs form did.
+//   7. When t crit lies past the plot's window (2 pairs: 12.706) the
+//      dashed line sits at the window's edge with a red "t crit" label,
+//      and step 3's rule says t crit lies beyond the plot.
+//   8. A negative typed sD gets "An SD cannot be negative."
+//   9. The pairs guard runs before the SD of the differences is formed.
+//  10. Text: "sample 1" in help; the pairs print with one decimal count
+//      per column (1.30, 1.00, 1.10 as the lecture's table); the
+//      table-row line shortened; no 100-px gap in step 4 for a typed
+//      summary; Help from the start menu returns to that menu.
 //
 // beta 1a (31 Oct 2026): for the public repository, step 1 names each
 //   example's source on screen, as its data rule asks: "assault rate,
@@ -188,13 +217,16 @@ BEGIN
  RETURN STRING(ROUND(fv,fd),2,fd);
 END;
 
-// A probability: "< 0.001" below the floor, "> 0.999" above it.
+// A probability: "< 0.001" below the floor (a 0, which only an
+// underflow of STUDENT_CDF can give, is below it too: a true p is never
+// 0, Lessons Learned s3), "> 0.999" above it, "1.000" for exactly 1.
 LOCAL tt_FmtP(pv, pd)
 BEGIN
  LOCAL thr;
  thr := 10^(-pd);
- IF pv <> 0 AND ABS(pv) < thr THEN RETURN "< "+STRING(thr,2,pd); END;
- IF pv <= 1 AND ROUND(pv,pd) >= 1 THEN RETURN "> "+STRING(1-thr,2,pd); END;
+ IF pv < thr THEN RETURN "< "+STRING(thr,2,pd); END;
+ IF pv >= 1 THEN RETURN STRING(1,2,pd); END;
+ IF ROUND(pv,pd) >= 1 THEN RETURN "> "+STRING(1-thr,2,pd); END;
  RETURN STRING(pv,2,pd);
 END;
 
@@ -207,16 +239,41 @@ BEGIN
  RETURN " = "+rs;
 END;
 
+// The fewest decimals (0-5) that hold a typed number exactly
+LOCAL tt_NDec(nv)
+BEGIN
+ LOCAL nd, nk;
+ nk := 5;
+ FOR nd FROM 4 DOWNTO 0 DO
+  IF ABS(nv*10^nd - ROUND(nv*10^nd,0)) < 0.000001 THEN nk := nd; END;
+ END;
+ RETURN nk;
+END;
+
+// The decimals a column of typed values needs: the most any of them
+// needs, so the pairs print as the lecture's Table 11.3 does, 1.30 and
+// 1.00 beside 1.25 (review 11)
+LOCAL tt_ColDec(cl)
+BEGIN
+ LOCAL cq, cm;
+ cm := 0;
+ FOR cq FROM 1 TO SIZE(cl) DO cm := MAX(cm, tt_NDec(cl(cq))); END;
+ RETURN cm;
+END;
+
+// A value with a given number of decimals (0: no point)
+LOCAL tt_FixD(fv, fk)
+BEGIN
+ IF fk == 0 THEN RETURN STRING(ROUND(fv,0),1,0); END;
+ RETURN STRING(ROUND(fv,fk),2,fk);
+END;
+
 // A number as it was typed: no trailing zeros, at most 5 decimals
 // (1.45 stays 1.45, 44 stays 44, SPSS's 3.28798 stays 3.28798).
 LOCAL tt_Num(nv)
 BEGIN
- LOCAL nd, nk, ns;
- nk := 5;
- FOR nd FROM 4 DOWNTO 0 DO
-  // the fewest decimals that hold the number exactly
-  IF ABS(nv*10^nd - ROUND(nv*10^nd,0)) < 0.000001 THEN nk := nd; END;
- END;
+ LOCAL nk, ns;
+ nk := tt_NDec(nv);
  IF nk == 0 THEN RETURN STRING(ROUND(nv,0),1,0); END;
  ns := STRING(ROUND(nv,nk),2,nk);
  IF nk == 5 THEN
@@ -379,9 +436,13 @@ BEGIN
  LOCAL cr, cbk;
  ttOK := 1; ttMSG := "";
  IF ttTY == 3 THEN
-  IF ttSRC == 2 THEN tt_Pairs(); END;
+  // the guard before the SD of the differences is formed (it divides
+  // by N - 1): review 10
+  IF ttSRC == 2 THEN ttNP := SIZE(ttX1); END;
   IF ttNP < 2 THEN ttOK := 0; ttMSG := "A dependent-samples t test needs at least 2 pairs."; RETURN 0; END;
-  IF ttSDv <= 0 THEN ttOK := 0; ttMSG := "Every pair differs by the same amount (sD = 0): there is no t."; RETURN 0; END;
+  IF ttSRC == 2 THEN tt_Pairs(); END;
+  IF ttSDv < 0 THEN ttOK := 0; ttMSG := "An SD cannot be negative."; RETURN 0; END;
+  IF ttSDv == 0 THEN ttOK := 0; ttMSG := "Every pair differs by the same amount (sD = 0): there is no t."; RETURN 0; END;
   ttSE := ttSDv/ttNP^.5;
   ttDF := ttNP-1;
   ttT := ttMD/ttSE;
@@ -516,11 +577,16 @@ BEGIN
   cs := STRING(ctk,1,0);
   TEXTOUT_P(cs,G1,ctx-3*DIM(cs),cy1+4,1,ttGRAY);
  END;
- // t critical: dashed red line(s)
+ // t critical: dashed red line(s).  Past the window (2 pairs at .05:
+ // 12.706) the line sits at the window's edge, with its name, so the
+ // page never shows a rule with nothing red (review 8).
  FOR cs FROM -1 TO 1 STEP 2 DO
   IF (ttTL == 0) OR (ttTL == cs) THEN
-   ctx := ttPL + IP((cs*ttTC+cxr)/(2*cxr)*(ttPR-ttPL));
+   ctx := ttPL + IP((MAX(-cxr,MIN(cxr,cs*ttTC))+cxr)/(2*cxr)*(ttPR-ttPL));
    FOR cpx FROM cy0 TO cy1 STEP 4 DO LINE_P(G1,ctx,cpx,ctx,MIN(cy1,cpx+1),ttRED); END;
+   IF ttTC > cxr THEN
+    TEXTOUT_P("t crit",G1,IFTE(cs < 0,ttPL+3,ttPR-38),cy0+2,1,ttRED);
+   END;
   END;
  END;
  // t obtained: a magenta line, its value above it
@@ -529,7 +595,7 @@ BEGIN
   LINE_P(G1,ctx,cy0,ctx,cy1,ttMAG);
   LINE_P(G1,ctx+1,cy0,ctx+1,cy1,ttMAG);
   cs := "t obt = "+tt_Fmt(ttT,2);
-  cdec := MIN(ttPR-IP(5.5*DIM(cs)), MAX(ttPL, ctx-IP(2.75*DIM(cs))));
+  cdec := MIN(ttPR-IP(6.5*DIM(cs)), MAX(ttPL, ctx-IP(2.75*DIM(cs))));
   TEXTOUT_P(cs,G1,cdec,cy0-11,1,ttMAG);
  END;
 END;
@@ -537,7 +603,7 @@ END;
 // ---------------- step 1: the hypotheses and the data ----------------
 LOCAL tt_Step1()
 BEGIN
- LOCAL sy, sj, sn, sxd;
+ LOCAL sy, sj, sn, sk1, sk2;
  tt_Frame("Step 1. The hypotheses");
  TEXTOUT_P(tt_TName()+", "+tt_TailS()+", "+tt_AlS(),G1,8,30,1,ttGRAY);
  TEXTOUT_P("H"+CHAR(8320)+": μ"+CHAR(8321)+" = μ"+CHAR(8322)+"   (the population means are equal)",G1,8,46,1,ttBLUE);
@@ -570,11 +636,12 @@ BEGIN
    TEXTOUT_P(ttG1+" (x"+CHAR(8321)+")",G1,60,77,1,ttGRAY);
    TEXTOUT_P(ttG2+" (x"+CHAR(8322)+")",G1,190,77,1,ttGRAY);
    sn := MIN(ttNP,7);
+   sk1 := tt_ColDec(ttX1); sk2 := tt_ColDec(ttX2);
    FOR sj FROM 1 TO sn DO
     sy := 77 + 13*sj;
     TEXTOUT_P(STRING(sj,1,0),G1,14,sy,1,ttBLK);
-    TEXTOUT_P(tt_Num(ttX1(sj)),G1,60,sy,1,ttBLK);
-    TEXTOUT_P(tt_Num(ttX2(sj)),G1,190,sy,1,ttBLK);
+    TEXTOUT_P(tt_FixD(ttX1(sj),sk1),G1,60,sy,1,ttBLK);
+    TEXTOUT_P(tt_FixD(ttX2(sj),sk2),G1,190,sy,1,ttBLK);
    END;
    IF ttNP > 7 THEN TEXTOUT_P("... and "+STRING(ttNP-7,1,0)+" more pairs",G1,60,181,1,ttGRAY); END;
    // the outcome and its source, inside the box under the pairs
@@ -638,7 +705,11 @@ BEGIN
    TEXTOUT_P("Rule: if t obt > "+tt_Fmt(ttTC,3)+",",G1,8,74,1,ttBLK);
   END;
  END;
- TEXTOUT_P("  reject H"+CHAR(8320)+".  Red = the rejection region (α).",G1,8,87,1,ttBLK);
+ IF ttTC > 12 THEN
+  TEXTOUT_P("  reject H"+CHAR(8320)+".  (t crit lies beyond the plot.)",G1,8,87,1,ttBLK);
+ ELSE
+  TEXTOUT_P("  reject H"+CHAR(8320)+".  Red = the rejection region (α).",G1,8,87,1,ttBLK);
+ END;
  sbk := tt_BookCell();
  IF sbk > 0 THEN
   TEXTOUT_P("(Row "+STRING(ttDFT,1,0)+" exact: "+tt_Fmt(tt_Crit(ttDFT),3)+"; lecture's table: "+tt_Fmt(sbk,3)+".)",G1,8,99,1,ttGRAY);
@@ -721,8 +792,10 @@ BEGIN
   ELSE
    TEXTOUT_P(CHAR(57344)+"D = "+tt_Num(ttMD)+",  sD = "+tt_Num(ttSDv)+",  N pairs = "+tt_Num(ttNP),G1,8,40,1,ttBLK);
   END;
-  TEXTOUT_P("SE = sD/√N = "+tt_Sig(ttSDv)+"/√"+tt_Num(ttNP)+" = "+tt_Sig(ttSE),G1,8,141,1,ttBLUE);
-  TEXTOUT_P("t obt = "+CHAR(57344)+"D/SE = "+tt_Sig(ttMD)+"/"+tt_Sig(ttSE)+" = "+tt_Fmt(ttT,2),G1,8,154,1,ttMAG);
+  // under the pairs' table, or right under the typed summary
+  sy := IFTE(ttSRC == 2,141,60);
+  TEXTOUT_P("SE = sD/√N = "+tt_Sig(ttSDv)+"/√"+tt_Num(ttNP)+" = "+tt_Sig(ttSE),G1,8,sy,1,ttBLUE);
+  TEXTOUT_P("t obt = "+CHAR(57344)+"D/SE = "+tt_Sig(ttMD)+"/"+tt_Sig(ttSE)+" = "+tt_Fmt(ttT,2),G1,8,sy+13,1,ttMAG);
  END;
  tt_BookNote(176);
  tt_ShowSteps();
@@ -733,7 +806,7 @@ LOCAL tt_Step5()
 BEGIN
  tt_Frame("Step 5. Decision and conclusion");
  IF ttREJ THEN
-  TEXTOUT_P("t obt = "+tt_Fmt(ttT,2)+" is beyond t crit = "+tt_CritS(ttTC)+":",G1,8,30,1,ttRED);
+  TEXTOUT_P("t obt = "+tt_Fmt(ttT,3)+" is beyond t crit = "+tt_CritS(ttTC)+":",G1,8,30,1,ttRED);
   TEXTOUT_P("REJECT H"+CHAR(8320)+".",G1,8,43,1,ttRED);
   IF ttTL == 0 THEN
    TEXTOUT_P("The population means differ significantly:",G1,8,58,1,ttBLK);
@@ -743,7 +816,7 @@ BEGIN
   // which way, in the samples' own names (sample 1 minus sample 2)
   TEXTOUT_P("sample 1 ("+ttG1+") is "+IFTE(ttT < 0,"lower","higher")+" on average.",G1,8,71,1,ttBLK);
  ELSE
-  TEXTOUT_P("t obt = "+tt_Fmt(ttT,2)+" is not beyond t crit = "+tt_CritS(ttTC)+":",G1,8,30,1,ttGRN);
+  TEXTOUT_P("t obt = "+tt_Fmt(ttT,3)+" is not beyond t crit = "+tt_CritS(ttTC)+":",G1,8,30,1,ttGRN);
   TEXTOUT_P("RETAIN H"+CHAR(8320)+".",G1,8,43,1,ttGRN);
   TEXTOUT_P("No significant difference: no support for H"+CHAR(8321)+".",G1,8,58,1,ttBLK);
   // one-tailed, and the samples differ the opposite way to H1's
@@ -753,7 +826,7 @@ BEGIN
  END;
  // the printed table's row can decide differently from the exact df
  IF ttREJ <> ttREJB THEN
-  TEXTOUT_P("(Table row "+STRING(ttDFT,1,0)+", "+tt_CritS(ttTB)+", would decide the other way.)",G1,8,84,1,ttGRAY);
+  TEXTOUT_P("(Table row "+STRING(ttDFT,1,0)+", "+tt_CritS(ttTB)+", decides the other way.)",G1,8,84,1,ttGRAY);
  END;
  TEXTOUT_P("Report "+tt_TDf()+" = "+tt_Fmt(ttT,2)+", p"+tt_Rel(tt_FmtP(ttP,3))+", "+tt_TailS(),G1,8,97,1,ttMAG);
  TEXTOUT_P("Cohen's d = "+tt_Fmt(ttD,2)+IFTE(ttTY == 3,"  ("+CHAR(57344)+"D / sD)","  (pooled s)"),G1,8,110,1,ttMAG);
@@ -769,6 +842,13 @@ BEGIN
  LOCAL cw, ctl;
  IF ttTY == 3 THEN
   MSGBOX("Pooled or separate variances is a question for INDEPENDENT samples. Dependent samples have one SD, of the differences.");
+  tt_Settle();
+  RETURN 0;
+ END;
+ // numbers that gave no t (N = 1, both SDs 0) would divide by zero
+ // here (review 3)
+ IF ttOK == 0 THEN
+  MSGBOX("The numbers on screen give no t: Edit the numbers first.");
   tt_Settle();
   RETURN 0;
  END;
@@ -958,24 +1038,26 @@ END;
 // columns.  Returns 0 if a menu was cancelled.
 LOCAL tt_AskTails()
 BEGIN
- LOCAL ak, aa, al;
+ LOCAL ak, aa, al, at;
  ak := 0;
  CHOOSE(ak,"Tails",{"Two-tailed: μ₁ ≠ μ₂","One-tailed: μ₁ < μ₂","One-tailed: μ₁ > μ₂"});
  tt_Settle();
  IF ak == 0 THEN RETURN 0; END;
- ttTL := IFTE(ak == 1,0,IFTE(ak == 2,-1,1));
+ // the new tails wait here until an alpha is chosen too: a cancelled
+ // alpha list leaves tails and alpha as they were (review 1)
+ at := IFTE(ak == 1,0,IFTE(ak == 2,-1,1));
  aa := 0;
- IF ttTL == 0 THEN
+ IF at == 0 THEN
   CHOOSE(aa,"α (two-tailed)",{"0.20","0.10","0.05","0.02","0.01","0.001"});
   al := {0.20,0.10,0.05,0.02,0.01,0.001};
-  IF aa > 0 THEN ttAL := al(aa); END;
  ELSE
   CHOOSE(aa,"α (one-tailed)",{"0.10","0.05","0.025","0.01","0.005","0.0005"});
   al := {0.10,0.05,0.025,0.01,0.005,0.0005};
-  IF aa > 0 THEN ttAL := al(aa); END;
  END;
  tt_Settle();
- RETURN IFTE(aa > 0,1,0);
+ IF aa == 0 THEN RETURN 0; END;
+ ttTL := at; ttAL := al(aa);
+ RETURN 1;
 END;
 
 // The numbers for the test chosen.  Returns 1 when they are in and
@@ -992,17 +1074,22 @@ BEGIN
  END;
  tt_Settle();
  IF ds == 0 THEN RETURN 0; END;
- ttEX := 0; ttG1 := "Group 1"; ttG2 := "Group 2"; ttDV := "";
+ // The source, the names and the example change only once new numbers
+ // are in: a cancelled form or a refused D1/D2 read leaves everything
+ // as it was (review 2 and 6).  The forms write into the variables
+ // themselves only on OK.
  IF ttTY <> 3 THEN
   IF ds == 1 THEN
-   ttSRC := 1;
    dok := INPUT({ttM1,ttS1,ttN1,ttM2,ttS2,ttN2},"Two independent samples",
     {"Mean 1:","SD 1:","N 1:","Mean 2:","SD 2:","N 2:"},
     {"Sample 1 mean","Sample 1 SD (s, with N - 1)","Sample 1 size","Sample 2 mean","Sample 2 SD (s, with N - 1)","Sample 2 size"});
    tt_Settle();
    IF dok == 0 THEN RETURN 0; END;
+   // a whole N, as the pairs form takes it (review 7)
+   ttN1 := IP(ttN1); ttN2 := IP(ttN2);
+   ttSRC := 1;
+   ttG1 := "Group 1"; ttG2 := "Group 2";
   ELSE
-   ttSRC := 2;
    dl1 := tt_ReadD(1); dl2 := tt_ReadD(2);
    IF SIZE(dl1) < 2 OR SIZE(dl2) < 2 THEN
     MSGBOX("Put sample 1 in D1 and sample 2 in D2 of the Statistics 1Var app: at least 2 scores in each.");
@@ -1012,11 +1099,11 @@ BEGIN
    dr1 := tt_MSN(dl1); dr2 := tt_MSN(dl2);
    ttM1 := dr1(1); ttS1 := dr1(2); ttN1 := dr1(3);
    ttM2 := dr2(1); ttS2 := dr2(2); ttN2 := dr2(3);
+   ttSRC := 2;
    ttG1 := "D1"; ttG2 := "D2";
   END;
  ELSE
   IF ds == 1 THEN
-   ttSRC := 2;
    dl1 := tt_ReadD(1); dl2 := tt_ReadD(2);
    IF SIZE(dl1) < 2 OR SIZE(dl1) <> SIZE(dl2) THEN
     MSGBOX("Put the pairs in D1 and D2 of the Statistics 1Var app, a pair per row: the same number of values in each, at least 2.");
@@ -1024,17 +1111,21 @@ BEGIN
     RETURN 0;
    END;
    ttX1 := dl1; ttX2 := dl2;
+   ttSRC := 2;
    ttG1 := "D1"; ttG2 := "D2";
   ELSE
-   ttSRC := 1;
    dm := ttMD; dsd := ttSDv; dn := ttNP;
    dok := INPUT({dm,dsd,dn},"Dependent samples",{"Mean xD:","SD sD:","N pairs:"},
     {"Mean of the differences x1 - x2","SD of the differences (N - 1)","Number of pairs"});
    tt_Settle();
    IF dok == 0 THEN RETURN 0; END;
    ttMD := dm; ttSDv := dsd; ttNP := IP(dn);
+   ttSRC := 1;
+   ttG1 := "Group 1"; ttG2 := "Group 2";
   END;
  END;
+ // new numbers: no longer one of the examples
+ ttEX := 0; ttDV := "";
  RETURN 1;
 END;
 
@@ -1086,7 +1177,7 @@ BEGIN
  TEXTOUT_P("separate side by side, choose the test, examples",G1,8,101,1,ttBLUE);
  TEXTOUT_P("The flowchart: tap Yes or No; OK = go on",G1,8,117,1,ttBLK);
  TEXTOUT_P("Your own scores: Apps, Statistics 1Var, Num:",G1,8,133,1,ttBLK);
- TEXTOUT_P("sample (or x"+CHAR(8321)+") in D1, sample 2 (or x"+CHAR(8322)+") in D2",G1,8,146,1,ttBLK);
+ TEXTOUT_P("sample 1 (or x"+CHAR(8321)+") in D1, sample 2 (or x"+CHAR(8322)+") in D2",G1,8,146,1,ttBLK);
  TEXTOUT_P("Teaching aid; not for clinical or legal use.",G1,8,166,1,ttRED);
  TEXTOUT_P("any key or tap = next page",G1,8,222,1,ttFOOT);
  BLIT_P(G0,0,0,G1);
@@ -1123,7 +1214,8 @@ BEGIN
   IF tt_AskData() THEN tt_Calc(); END;
  END;
  IF ms == 2 THEN
-  IF tt_AskTails() THEN tt_Calc(); END;
+  tt_AskTails();
+  tt_Calc();
  END;
  IF ms == 3 THEN tt_Compare(); END;
  IF ms == 4 THEN
@@ -1203,9 +1295,13 @@ EXPORT TTESTLAB()
 BEGIN
  LOCAL ms, mt;
  tt_Init();
- ms := 0;
- CHOOSE(ms,"TTestLab: t tests in 5 steps",{"Choose the test (Figure 11.2)","Example: age at arrest","Example: matched jails","Example: drug use by sex","Help"});
- tt_Settle();
+ // Help returns to this menu (it used to go on to example 1 unasked)
+ REPEAT
+  ms := 0;
+  CHOOSE(ms,"TTestLab: t tests in 5 steps",{"Choose the test (Figure 11.2)","Example: age at arrest","Example: matched jails","Example: drug use by sex","Help"});
+  tt_Settle();
+  IF ms == 5 THEN tt_Help(); END;
+ UNTIL ms <> 5;
  IF ms == 0 THEN RETURN "TTestLab: cancelled"; END;
  IF ms == 1 THEN
   mt := tt_Flow();
@@ -1215,10 +1311,6 @@ BEGIN
   IF tt_AskTails() == 0 THEN RETURN "TTestLab: cancelled"; END;
  END;
  IF ms >= 2 AND ms <= 4 THEN tt_Example(ms-1); END;
- IF ms == 5 THEN
-  tt_Help();
-  tt_Example(1);
- END;
  tt_Calc();
  tt_Steps();
  IF ttOK == 0 THEN RETURN "TTestLab"; END;

@@ -2,13 +2,13 @@
 
 *HP Prime statistics: a one-page guide for first-time visitors. Version 2, 27 October 2026. Prepared for HHC 2026: welcome!*
 
-This repository holds **28 teaching programs** for the HP Prime, written in PPL with MicroPython where it helps. It also holds **a set of notes on how the Prime actually behaves**, found by testing and not by reading the manual. The programs were written for university statistics and forensic science courses. The notes are useful to anyone who writes PPL.
+This repository holds **30 teaching programs** for the HP Prime, written in PPL with MicroPython where it helps. It also holds **a set of notes on how the Prime actually behaves**, found by testing and not by reading the manual. The programs were written for university statistics and forensic science courses. The notes are useful to anyone who writes PPL.
 
 Everything here is free for educational and personal use ([LICENSE](LICENSE.txt)).
 
 ## If you have five minutes: read the notes
 
-[**docs/lessons-learned_v7za.md**](docs/lessons-learned_v7za.md) is the most useful file here, even if you never run a statistics program. It covers hard limits, commands that behave differently from the manual, touch and graphics idioms, `WAIT(-1)` and soft keys, the MicroPython bridge and how it fails silently, how to call the CAS from a program safely, numerical methods for 12-digit reals, and testing on the Virtual Calculator. Theories that turned out wrong are kept, marked as disproved.
+[**docs/lessons-learned_v7zf.md**](docs/lessons-learned_v7zf.md) is the most useful file here, even if you never run a statistics program. It covers hard limits, commands that behave differently from the manual, touch and graphics idioms, `WAIT(-1)` and soft keys, the MicroPython bridge and how it fails silently, how to call the CAS from a program safely, numerical methods for 12-digit reals, and testing on the Virtual Calculator. Theories that turned out wrong are kept, marked as disproved.
 
 Three findings that save the most time:
 
@@ -19,6 +19,8 @@ Three findings that save the most time:
 The notes are written so they can also be given to an AI coding assistant as background before it writes PPL for you. They were written with and for Claude Code and read best there; they are meant to help any assistant, but have not been tried with another. `CLAUDE.md` at the top of the repository is the working brief a Claude Code session reads on its own. For a model with a small context window, [docs/ppl-rules-for-any-assistant.md](docs/ppl-rules-for-any-assistant.md) is the same knowledge as about 3,000 words of flat rules, ending in a small program that passes the gate.
 
 ## If you have a calculator: try these first
+
+No calculator? The [starter pack](starter-pack/README.md) puts all 30 on HP's free Virtual Calculator for Windows in one copy, with no Connectivity Kit. Your own data goes in through the [Data Loader](data-loader/README.md) page and DataLoad, not by typing. Neither shortcut is in HP's manuals: [docs/two-shortcuts.md](docs/two-shortcuts.md) says how they work and who found them. Newest: the [Prime Loader](prime-loader/README.md) page puts one chapter's programs on the Virtual Calculator: one click in Edge or Chrome, a few in Firefox, and nothing to check afterwards.
 
 Install by pasting the `.txt` file into a new program in the HP Connectivity Kit ([full steps](README.md#installing)). Do not rename a `.txt` to `.hpprgm`. Each of these shows off the touch screen:
 
@@ -40,6 +42,10 @@ The full list of programs, with what each one does, is in the [README](README.md
 - Every program passes a four-tool lint gate and runs in a PC harness that presses keys and taps like a student. Its numbers are checked against SciPy, statsmodels and exact arithmetic. A review on 19 October 2026 made about 82,000 such checks and found no wrong formula.
 - Earlier versions ran in two rounds on the **HP Prime Virtual Calculator**. Its reports are in [docs/dev/](docs/dev/).
 - **The current versions have had only a quick, cursory try on a G1 and a G2**, not a systematic run of their checklists. That includes the eight programs added in October 2026 (RankLab, AnovaLab, SeizureLab, SurvLab, FitCheck, ResampLab, AgreeLab and RiskLab), which also each had an independent second review before release; the two 22 October versions (StudRange beta 15e, TrendTest beta 3f) have not yet run on a calculator. Earlier versions of ChiTable, NormExplorer, StudRange and BayesTree were tested on both.
+- **31 October 2026: all 28 current versions load and compile on the Virtual Calculator** from the starter pack (Check: "No errors in the program"), and TTestLab, BurrLab (its MicroPython fit) and CentralLimit started there. That is a load test, not a run of their checklists ([the notes](docs/changes/StarterPack_v1_NOTES.md)).
+- **31 October 2026: DataLoad (new) ran on the Virtual Calculator** in three versions: both kinds of load on the Rossi data and on a text-coded matrix with blanks, its summaries equal to Python's, and TTestLab reading the lists it filled ([the notes](docs/changes/DataLoad_beta1_NOTES.md)). Not yet on a G1 or G2.
+- **31 October 2026, night: TTestLab had its independent review** ([docs/dev/review2-TTestLab-beta1a.md](docs/dev/review2-TTestLab-beta1a.md)): the arithmetic was right throughout, and ten faults in its dialogs and wording (a cancelled α list leaving a one-tailed label on two-tailed numbers, a crash after a refused D1/D2 read, "p = 0.000") were fixed in beta 1b, which ran on the Virtual Calculator.
+- **31 October 2026, night: TTestLabG (new), the general version of TTestLab**, built from it for an intro course in any subject: separate variances by default, t critical exact for the df with the printed table as a note, Darwin's plants and the 1970 draft lottery among its examples. 93 checks; **ran on the Virtual Calculator** beside TTestLab ([the notes](docs/changes/TTestLabG_beta1_NOTES.md)). Not yet on a G1 or G2, and not yet reviewed as a program of its own.
 - Each version has a device-test checklist in [docs/changes/](docs/changes/), ordered from least to most risky.
 
 ## If you would like to help

@@ -4,7 +4,7 @@ These notes, like the Lessons Learned, were written with and for Claude Code and
 
 ## What this is
 
-Twenty-eight teaching programs for the HP Prime calculator in PPL (five carry MicroPython), each a plain `.txt` file in `programs/`, with a four-tool gate, a PC harness, one verify script per program version, a change note and device checklist per version, and the Lessons Learned document on how the Prime actually behaves. Read `START_HERE.md`, then `docs/lessons-learned_v7za.md` (or the newest letter) before writing any PPL. The author is Roger Metcalf; the HP programs are his, and every change goes through a pull request he merges.
+Thirty teaching programs for the HP Prime calculator in PPL (five carry MicroPython), each a plain `.txt` file in `programs/`, and the HP Prime Data Loader web page (`data-loader/`) that feeds one of them, DataLoad; with a four-tool gate, a PC harness, one verify script per program version, a change note and device checklist per version, and the Lessons Learned document on how the Prime actually behaves. Read `START_HERE.md`, then `docs/lessons-learned_v7zf.md` (or the newest letter) before writing any PPL. The author is Roger Metcalf; the HP programs are his, and every change goes through a pull request he merges.
 
 ## How to work here cheaply
 
@@ -40,10 +40,14 @@ The gate (`tools/ppl_gate_v1c.py`) finds the kit only as a zip, `Community_Libra
 ## Conventions
 
 - A changed program gets the next letter (`beta 15d` → `beta 15e`), replaces the old file in `programs/` (git keeps the old one), updates its header and its "What changed" block, and gets `docs/changes/<name>_CHANGES.md` (why, what changed with line numbers, verification, gate, device checklist, unresolved), a `verify/verify_<name>.py` with its output beside it, a line in `verify/README.md`, and a bullet in the README's test-status note plus its row in the program list.
+- **After any change in `programs/`, rebuild the starter pack** with the next number, in two passes (`docs/changes/StarterPack_v5_NOTES.md`): build without `--checked` (`python3 tools/make_starter_pack_v4.py v6 --kit $HPKIT`); load it on the Virtual Calculator (close it, copy the files in, start it), Check each changed program, close it, and copy those files back into the checked-files folder; then build again with `--checked FOLDER`, which stops unless every program has a checked file holding its exact source. Move the older zip out of `starter-pack/`, and rebuild the Prime Loader from the new pack (`prime-loader/build_loader_v1b.py`, then its test). A pack that lags `programs/` gives students old versions.
+- **The data loader** (`data-loader/`): edit `page_template_v3.html` or `dl_core_v1.js` under a new version number, rebuild the page with its `build_page_vN.py`, and run `node tests/test_core_v1.js` (the encoder against hp-prime-kit's, the Rossi file byte for byte) and `node tests/page_check_v3.js` (the page in Chromium; Playwright). A change to what the page writes must be loaded with DataLoad on the Virtual Calculator before it is called tested.
 - Lessons Learned is versioned by letter too (`v7y` → `v7z`), with a "What changed" block at the top; the links in `README.md`, `docs/README.md` and `START_HERE.md` are updated with it.
 - Executable code stays ASCII (`ppl_check_v4.py`'s E5); π is `3.14159265359`. Strings may carry any glyph GfxProbe has shown renders. Every routine and local name carries the program's prefix (`st_`, `cs`, `tr`, `dm` …) so the fleet shares one name pool safely.
 - Compute upper tails as lower tails or as finite sums of positive terms; never `1 - CDF` where the p may be small.
 - Nothing is reported as device-tested unless it ran on the Virtual Calculator, a G1 or a G2; the harness is a PC model.
+- **General and advanced versions** (31 Oct 2026). A program's general version (TTestLabG for TTestLab) is built from the advanced one by a script of exact replacements (`tools/make_tlg1_v1.py`): a new name and tag, the companion guide's conventions, general examples. Change the advanced program first, then rebuild the general one with the script's next version, and derive its verify script from the advanced one's the same way, reading every failure before changing an expectation.
+- **A verify script must drive every cancel and refusal path** (Esc at each menu, Cancel on each form, each refused read), not only the arithmetic: TTestLab's 59 arithmetic checks passed while ten dialog faults waited for the independent review (31 Oct 2026). A new program gets that review before it is called finished.
 
 ## GitHub
 

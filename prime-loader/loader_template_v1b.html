@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HP Prime Loader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* PrimeLoader v1b (1 Nov 2026): every step explains, in plain words, what is happening and why (Roger: "give verbose
+   explanations for students and we have to make things as simple as possible for them"); Firefox and Safari get their
+   own route (download one zip, Windows' Extract All into the calculator's folder) instead of a warning, because many
+   schools require Firefox; a "Something not working?" section.  v1a: with a checked pack the next steps say tap and
+   Run, no Check.  v1 (1 Nov 2026).  Three steps, top to bottom: pick the chapter, close the calculator, load.  The chapter
+   cards are the working surface.  Colours are the Data Loader's, which echo the fleet's screens (curve blue, frame
+   orange, mean green), so a student who uses both recognizes them. */
+:root {
+  --paper: #f6f8fb; --surface: #ffffff; --ink: #172033; --muted: #5a6478; --line: #d9dfea;
+  --accent: #003cc8; --frame: #e04000; --good: #008c3c; --warn-bg: #fff3e8; --good-bg: #e9f7ef;
+  --accent-soft: #e6edff;
+  --display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1420; --surface: #172033; --ink: #e8edf6; --muted: #9aa6bc; --line: #2b3650;
+    --accent: #7d9cff; --frame: #ff8a55; --good: #43d081; --warn-bg: #3a2717; --good-bg: #13301f;
+    --accent-soft: #1f2d52; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1420; --surface: #172033; --ink: #e8edf6; --muted: #9aa6bc; --line: #2b3650;
+  --accent: #7d9cff; --frame: #ff8a55; --good: #43d081; --warn-bg: #3a2717; --good-bg: #13301f;
+  --accent-soft: #1f2d52; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }      /* .panel's display:grid must not show a hidden panel */
+html, body { margin: 0; }
+body { background: var(--paper); color: var(--ink); font: 16px/1.5 var(--body); }
+main { max-width: 980px; margin: 0 auto; padding: 28px 16px 48px; display: grid; gap: 20px; }
+header h1 { font: 600 2rem/1.15 var(--display); margin: 0 0 6px; letter-spacing: 0.2px; }
+header p { margin: 0; color: var(--muted); max-width: 66ch; }
+.step { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 18px 20px;
+        display: grid; gap: 12px; }
+.step > h2 { font: 600 1.2rem/1.2 var(--display); margin: 0; display: flex; align-items: center; gap: 10px; }
+.stepnum { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
+           border: 2px solid var(--frame); color: var(--frame); font: 600 0.95rem var(--display); flex: none; }
+.note { color: var(--muted); font-size: 0.92rem; margin: 0; max-width: 72ch; }
+.chapters { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.card { text-align: left; display: grid; gap: 4px; align-content: start; padding: 12px 12px 12px;
+        border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink);
+        font: inherit; cursor: pointer; min-height: 92px; }
+.card:hover { border-color: var(--accent); }
+.card[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft);
+                              box-shadow: inset 0 0 0 1.5px var(--accent); }
+.card:disabled { cursor: default; opacity: 0.55; }
+.card:disabled:hover { border-color: var(--line); }
+.card .num { font: 600 0.8rem var(--display); color: var(--frame); letter-spacing: 0.4px; }
+.card .title { font: 600 1rem/1.25 var(--display); }
+.card .progs { font-size: 0.82rem; color: var(--muted); }
+.card .soon { font-size: 0.8rem; color: var(--muted); font-style: italic; }
+.wide { grid-column: 1 / -1; min-height: 0; }
+button, .filebtn { font: 500 0.95rem var(--body); border-radius: 8px; padding: 8px 14px; cursor: pointer;
+                   border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600;
+                 padding: 12px 22px; font-size: 1.05rem; }
+:root[data-theme="dark"] button.primary { color: #0f1420; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) button.primary { color: #0f1420; } }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+button:focus-visible, input:focus-visible, summary:focus-visible, .filebtn:focus-within {
+  outline: 3px solid var(--accent); outline-offset: 2px; }
+.filebtn { position: relative; display: inline-block; }
+.filebtn input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.summary { margin: 0; font-weight: 500; }
+.summary b { font-family: var(--mono); font-weight: 500; }
+details { border-top: 1px solid var(--line); padding-top: 10px; }
+summary { cursor: pointer; color: var(--accent); font-weight: 500; }
+.picklist { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 4px 16px; margin-top: 10px; }
+.picklist label { display: flex; gap: 8px; align-items: baseline; font-size: 0.92rem; }
+.picklist small { color: var(--muted); }
+.datarow label { display: flex; gap: 8px; align-items: baseline; }
+.status { margin: 0; font-weight: 500; }
+.status.ok { color: var(--good); }
+.status.bad { color: var(--frame); }
+.panel { border-radius: 8px; padding: 12px 14px; margin: 0; display: grid; gap: 8px; }
+.panel.warn { background: var(--warn-bg); }
+.panel.done { background: var(--good-bg); }
+.panel h3 { margin: 0; font: 600 1.05rem var(--display); }
+.panel ol, .panel ul { margin: 0; padding-left: 1.3em; display: grid; gap: 4px; }
+kbd { font: 500 0.85em var(--mono); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px;
+      padding: 0 5px; background: var(--surface); }
+code { font-family: var(--mono); font-size: 0.9em; background: var(--accent-soft); padding: 0 4px; border-radius: 4px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.two h3 { margin: 0 0 6px; font: 600 1rem var(--display); }
+@media (max-width: 720px) { .two { grid-template-columns: 1fr; } header h1 { font-size: 1.6rem; } }
+footer { color: var(--muted); font-size: 0.85rem; display: grid; gap: 6px; max-width: 80ch; }
+footer a, .step a { color: var(--accent); }
+.why { color: var(--muted); font-size: 0.92rem; margin: 0; max-width: 74ch; }
+.why b { color: var(--ink); font-weight: 600; }
+.do { margin: 0; font-weight: 500; max-width: 74ch; }
+.mode { border-radius: 10px; padding: 14px 16px; display: grid; gap: 6px; background: var(--accent-soft); }
+.mode h2 { font: 600 1.1rem var(--display); margin: 0; }
+.mode p { margin: 0; max-width: 74ch; }
+ol.steps { margin: 0; padding-left: 1.4em; display: grid; gap: 10px; max-width: 76ch; }
+ol.steps li > p { margin: 2px 0 0; }
+.help details { border-top: 1px solid var(--line); padding: 10px 0 0; }
+.help details:first-of-type { border-top: 0; padding-top: 0; }
+.help summary { color: var(--ink); font-weight: 600; }
+.help details > div { display: grid; gap: 6px; padding: 8px 0 4px 18px; max-width: 74ch; }
+.help details p, .help details ol { margin: 0; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>HP Prime Loader</h1>
+    <p>This page puts the programs for your chapter of the book onto the <b>HP Prime Virtual Calculator</b>, HP's free calculator program for your computer. You don't need to type anything into the calculator or know how it works inside. Pick your chapter, follow the steps below, and the programs will be waiting for you the next time you start the calculator.</p>
+  </header>
+
+  <section class="mode" id="mode-auto" aria-labelledby="ma">
+    <h2 id="ma">You're using Edge or Chrome: this page can do the copying for you</h2>
+    <p>When you click <b>Load</b>, the page puts the programs straight onto the Virtual Calculator. It asks your permission first, and it can only touch the one folder you choose.</p>
+  </section>
+  <section class="mode" id="mode-manual" aria-labelledby="mm" hidden>
+    <h2 id="mm">You're using <span id="brname">Firefox</span>: that's fine, it just takes a few more clicks</h2>
+    <p><b>Why it's different:</b> <span class="brname2">Firefox</span> never lets a web page put files into a folder on your computer. That is a safety choice its makers made on purpose, so nothing on this page can change it. Instead, the page gives you <b>one file to download</b>, and Windows itself unpacks it into the calculator's folder. It takes about two minutes, and you only do it once per chapter.</p>
+    <p class="why">If you would rather have the page do the copying, open it in Microsoft Edge instead, which every Windows computer has. "Something not working?" at the bottom of the page says how.</p>
+  </section>
+
+  <section class="step" aria-labelledby="s0">
+    <h2 id="s0">Before you start</h2>
+    <p class="do">The HP Prime Virtual Calculator must be installed on this computer, and you must have started it at least once.</p>
+    <p class="why"><b>Why:</b> the first time the calculator starts, it makes a folder in your Documents called <b>HP Prime</b>, and that is where it keeps its programs. If you have never started it, start it now and then close it again. This page is for Windows; Macs have not been tested yet.</p>
+  </section>
+
+  <section class="step" aria-labelledby="s1">
+    <h2 id="s1"><span class="stepnum">1</span>Pick your chapter</h2>
+    <p class="why">Each card below is one chapter of the book. The names under the chapter's title are the programs that chapter uses. <b>Tap your chapter</b>: it turns blue. Tap it again to unpick it. You can pick more than one chapter, but fewer programs make the calculator easier to find your way around, so pick only what you need right now.</p>
+    <div class="chapters" id="chapters"></div>
+    <p class="summary" id="summary" role="status"></p>
+    <div class="datarow">
+      <label><input type="checkbox" id="rossi"> <span>Also add the sample data set: <span id="rossiwhat"></span>.</span></label>
+      <p class="why" style="margin-top:4px">A <b>data set</b> is a table of numbers from a real study. You only need one if the book or your instructor tells you to use it. It goes into the calculator's matrix M1; the program <b>DataLoad</b> then moves it into the calculator's statistics lists.</p>
+    </div>
+    <div class="row">
+      <label class="filebtn" for="ownfile">Add a data file you were given (M1.hpmat)<input type="file" id="ownfile" accept=".hpmat" multiple></label>
+      <span class="note" id="ownlist"></span>
+    </div>
+    <p class="why">Use this only if your instructor gave you a data file, or you made one with the <a href="../data-loader/README.md">Data Loader</a>. Its name must be M0.hpmat to M9.hpmat.</p>
+    <details>
+      <summary>Pick programs one by one instead (for instructors)</summary>
+      <div class="picklist" id="picklist"></div>
+    </details>
+  </section>
+
+  <section class="step" aria-labelledby="s2">
+    <h2 id="s2"><span class="stepnum">2</span>Close the Virtual Calculator</h2>
+    <p class="do">If the calculator is open, close it: click the small word <b>Calculator</b> at the top left of its window, then <b>Exit</b>. Or just click the <b>X</b> at the top right of its window. If it isn't open, go on to step 3.</p>
+    <p class="why"><b>Why:</b> the calculator reads its programs only when it starts, and when it closes it saves everything it remembers. If it is open while the programs go in, then when you close it later it saves its old memory right over the new programs, and they are gone. Closed first, it picks them up the next time it starts.</p>
+  </section>
+
+  <section class="step" id="step3auto" aria-labelledby="s3">
+    <h2 id="s3"><span class="stepnum">3</span>Load</h2>
+    <div class="row">
+      <button type="button" class="primary" id="load" disabled>Load onto the Virtual Calculator</button>
+      <button type="button" id="repick" hidden>Choose a different folder</button>
+    </div>
+    <div id="firsttime">
+      <p class="why"><b>The first time you click Load:</b></p>
+      <ol class="steps why">
+        <li>A window opens showing your <b>Documents</b> folder. Click the folder <b>HP Prime</b> once, then click <b>Select Folder</b>. (Ignore "Upload from mobile".) This tells the page where the calculator keeps its programs.</li>
+        <li>Your browser asks whether to let this page edit files there. Click <b>Edit files</b> (or <b>Allow</b>). This lets the page work in that one folder and nowhere else.</li>
+      </ol>
+      <p class="why">After that, the page remembers the folder and doesn't ask again.</p>
+    </div>
+    <p class="why"><b>What Load does:</b> it checks that the calculator is closed. It moves any programs already on the calculator into a backup folder (<code>HP Prime\Loader backups</code>), so nothing is lost and your calculator holds only this chapter's programs. Then it copies your chapter's programs on and checks each one. HP's own apps and settings are never touched. It takes a few seconds.</p>
+    <p class="status" id="status" role="status" aria-live="polite"></p>
+    <div class="panel warn" id="running" hidden>
+      <h3>The Virtual Calculator looks open</h3>
+      <p class="note" style="color:inherit">Close it: click the small word <b>Calculator</b> at the top left of its window, then <b>Exit</b> (or click the <b>X</b> at the top right of its window). Then click <b>Try again</b>.</p>
+      <p class="note" style="color:inherit">If you are sure it is closed, click <b>It is closed: load</b>. (The calculator leaves a small marker file while it is open; if it ever crashed, that marker can be left behind.)</p>
+      <div class="row"><button type="button" id="again">Try again</button><button type="button" id="force">It is closed: load</button></div>
+    </div>
+    <div class="panel done" id="done" hidden>
+      <h3>Done. Now start the Virtual Calculator.</h3>
+      <ol id="nextsteps"></ol>
+      <p class="note" style="color:inherit"><b>What just happened:</b></p>
+      <ul class="note" id="report"></ul>
+    </div>
+  </section>
+
+  <section class="step" id="step3manual" aria-labelledby="s3m" hidden>
+    <h2 id="s3m"><span class="stepnum">3</span>Download the programs and unpack them into the calculator</h2>
+    <ol class="steps">
+      <li><b>Click this button:</b>
+        <div class="row" style="margin-top:6px"><button type="button" class="primary" id="download2" disabled>Download the programs</button><span class="status" id="dlstatus2" role="status"></span></div>
+        <p class="why">Your browser saves one file, called <b id="zipname">HP_Prime_programs.zip</b>, in your <b>Downloads</b> folder. A zip file is a bundle: several files packed into one so they download together.</p></li>
+      <li><b>Open your Downloads folder.</b>
+        <p class="why">In <span class="brname2">Firefox</span>: click the downloads arrow at the top right of the window, then the small folder icon next to the file. Or open <b>File Explorer</b> (the yellow folder on the taskbar) and click <b>Downloads</b> on the left.</p></li>
+      <li><b>Right-click the zip file and choose Extract All…</b>
+        <p class="why">"Extract" means unpack. Windows will ask where to put the files: the next step points it at the calculator's folder.</p></li>
+      <li><b>Click Browse…, then open Documents, then HP Prime, then Calculators, then Prime, and click Select Folder.</b>
+        <p class="why">The long box above Browse should now end in <code>\HP Prime\Calculators\Prime</code>. That <b>Prime</b> folder is where the calculator keeps its programs. It reads them from there each time it starts.</p></li>
+      <li><b>Click Extract.</b>
+        <p class="why">If Windows says files with the same name are already there, choose <b>Replace the files in the destination</b>: the new ones are the up-to-date programs. A window showing the folder may pop up afterwards; you can close it.</p></li>
+      <li><b>Start the Virtual Calculator.</b> Press <kbd>Shift</kbd>, then <kbd>Program</kbd> (the <kbd>1</kbd> key). Your programs are listed: <b id="manualprogs">…</b>. Tap one, then tap <b>Run</b>. That's all.
+        <p class="why" id="manualcheck">If one ever says Syntax Error, or Run does nothing: tap it, tap <b>Edit</b>, tap <b>Check</b>, tap <b>OK</b>, press <kbd>Esc</kbd>, then tap <b>Run</b>. Once is enough.</p>
+        <p class="why" id="manualapp" hidden><b>CentralLimit</b> is an app rather than a program: press <kbd>Apps</kbd>, move to CentralLimit without touching it, and tap <b>Start</b>. Then press <kbd>View</kbd> for its menu.</p>
+        <p class="why" id="manualdata" hidden>Your data is in matrix M1: open the <b>Statistics 1Var</b> app once (<kbd>Apps</kbd>), then run <b>DataLoad</b> to put the columns into its lists.</p></li>
+    </ol>
+    <p class="why"><b>Unlike Load in Edge</b>, unpacking adds programs without taking any away: programs already on your calculator stay there.</p>
+  </section>
+
+  <section class="step help" aria-labelledby="s5">
+    <h2 id="s5">Something not working?</h2>
+    <details><summary>The page says it can't put files on the calculator, or I want to open it in Edge</summary><div>
+      <p>Firefox and Safari don't allow any web page to put files into a folder, so the page shows the download steps instead. Those work fine. To have the page do the copying for you, open it in <b>Microsoft Edge</b>:</p>
+      <ol><li>If you opened this page from a file on your computer: right-click the file, choose <b>Open with</b>, then <b>Microsoft Edge</b>.</li>
+          <li>If you opened it from a link: click in the address bar at the top of this window, copy the address (<kbd>Ctrl</kbd>+<kbd>C</kbd>), open Edge (the blue-green swirl on the taskbar or Start menu), click its address bar, paste (<kbd>Ctrl</kbd>+<kbd>V</kbd>) and press <kbd>Enter</kbd>.</li></ol>
+    </div></details>
+    <details><summary>There's no folder called HP Prime in my Documents</summary><div>
+      <p>Start the Virtual Calculator once and close it again: its first start makes the folder. If you still can't find it, your computer may keep Documents in OneDrive: on the left of the window, look under <b>OneDrive</b> → <b>Documents</b>.</p>
+    </div></details>
+    <details><summary>The page says the calculator looks open, but I closed it</summary><div>
+      <p>Look at the taskbar at the bottom of the screen: if the calculator's icon is still there, it may be open on another screen or minimized. Close it there. If it really is closed, click <b>It is closed: load</b>.</p>
+    </div></details>
+    <details><summary>A program says "Syntax Error", or Run does nothing</summary><div>
+      <p>Press <kbd>Shift</kbd>, then <kbd>Program</kbd>. Tap the program, tap <b>Edit</b>, tap <b>Check</b> (bottom right). The calculator says "No errors in the program". Tap <b>OK</b>, press <kbd>Esc</kbd>, then tap <b>Run</b>. This rebuilds the program for your calculator; you only ever need to do it once per program.</p>
+      <p>If you typed the program's name in the calculator's Home screen instead, type it exactly as listed, capitals included (for example <code>TTESTLABG</code>). Tapping it in the program list is easier.</p>
+    </div></details>
+    <details><summary>I want back the programs I had before</summary><div>
+      <p>Load in Edge moves them to <code>Documents\HP Prime\Loader backups</code>, in a folder named with the date and time. Close the calculator, then copy the ones you want from there into <code>Documents\HP Prime\Calculators\Prime</code>, and start the calculator.</p>
+    </div></details>
+    <details><summary>Another way, with HP's Connectivity Kit (also for a real HP Prime, G1 or G2)</summary><div>
+      <p>HP's free <b>Connectivity Kit</b> is the other way to put programs on a calculator. It works the same way for the Virtual Calculator and for a real HP Prime (the older G1 or the newer G2), and for a real Prime it is the only way. Use it if the Kit is already installed on your computer, or if you have a real Prime.</p>
+      <div class="panel warn">
+        <p style="margin:0"><b>First, make sure Bonjour is running.</b> The Connectivity Kit uses a small Apple program called <b>Bonjour</b> to find calculators, the Virtual Calculator included (HP includes Bonjour with the Kit). On some computers Bonjour gets stopped, and then the Kit may not see your calculator at all, or may misbehave. To check it:</p>
+        <ol>
+          <li>Press the <kbd>Windows</kbd> key, type <b>Services</b>, and open the <b>Services</b> app.</li>
+          <li>Find <b>Bonjour Service</b> in the list. The list is in alphabetical order, so it is near the top.</li>
+          <li>Look at its <b>Status</b> column: it should say <b>Running</b>. If it doesn't, right-click <b>Bonjour Service</b> and choose <b>Start</b>. Windows may ask for an administrator's permission; on a school computer, ask your instructor or the IT help desk.</li>
+        </ol>
+        <p class="why" style="margin:0">Instructors: the hp-prime-statistics repository has a small launcher (<code>tools/windows-launcher</code>) that checks Bonjour, starts it if needed, and then opens the Kit.</p>
+      </div>
+      <ol>
+        <li>Pick your chapter above, click the button below to download the files, and unzip them (right-click the zip, <b>Extract All…</b>, <b>Extract</b>).</li>
+        <li>Start the <b>Connectivity Kit</b>.</li>
+        <li>Start the <b>Virtual Calculator</b>. Or, for a real Prime (G1 or G2), plug it into the computer with its USB cable and turn it on.</li>
+        <li>On the left of the Kit's window, under <b>Calculators</b>, you will see <b>Virtual Prime</b> (or your real calculator). Drag each program file from the unzipped folder and drop it right on that name. The calculator takes it in straight away; nothing needs checking.</li>
+      </ol>
+      <p class="why">Drop the files on the calculator's name, not into the <b>Content</b> box below it: Content is only the Kit's own shelf. If the mouse pointer shows a circle with a line through it, the Kit may be set to run as administrator: right-click its shortcut, <b>Properties</b>, <b>Compatibility</b>, and clear "Run this program as an administrator".</p>
+      <div class="row"><button type="button" id="download" disabled>Download the files (.zip)</button><span class="status" id="dlstatus" role="status"></span></div>
+    </div></details>
+  </section>
+
+  <footer>
+    <p>Loading programs by copying them into the Virtual Calculator's folder was found by <a href="https://github.com/JordiRigau/hp-prime-kit">hp-prime-kit</a> (Jordi Rigau). This page, the programs and the Data Loader are from <a href="https://github.com/metcalfdds/hp-prime-statistics">hp-prime-statistics</a>, by Roger Metcalf, written with Claude (Anthropic). Free for educational and personal use. © 2026 Roger Metcalf.</p>
+    <p id="packline"></p>
+  </footer>
+</main>
+
+<script>
+/*LOADERCORE*/
+</script>
+<script>
+/*DLCORE*/
+</script>
+<script>
+'use strict';
+const CAT = /*CATALOG*/;
+const PACK_B64 = /*PACK*/;
+const $ = id => document.getElementById(id);
+const canWrite = typeof window.showDirectoryPicker === 'function';
+// The browser's name, for the manual route's wording only (never to decide anything: canWrite decides).
+const browserName = /Firefox\//.test(navigator.userAgent) ? 'Firefox'
+  : (/Safari\//.test(navigator.userAgent) && !/Chrom(e|ium)\//.test(navigator.userAgent)) ? 'Safari' : 'this browser';
+
+const state = { chapters: new Set(), picked: new Set(), testchooser: false, everything: false, own: [] };
+let packFiles = null;                     // Map(path -> bytes), unpacked on first use
+
+async function pack() {
+  if (!packFiles) {
+    const bin = atob(PACK_B64), b = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i);
+    packFiles = await LoaderCore.unzip(b);
+  }
+  return packFiles;
+}
+
+// ---------- step 1: what to load ----------
+function selection() {
+  const s = new Set();
+  if (state.everything) Object.keys(CAT.programs).forEach(p => s.add(p));
+  for (const n of state.chapters) CAT.chapters.find(c => c.num === n).programs.forEach(p => s.add(p));
+  if (state.testchooser) s.add(CAT.always);
+  state.picked.forEach(p => s.add(p));
+  return [...s].sort((a, b) => a.localeCompare(b));
+}
+function dataChosen() {
+  const d = [];
+  if ($('rossi').checked) d.push({ path: CAT.data.rossi.file, src: CAT.data.rossi.file });
+  for (const f of state.own) d.push({ path: f.name, bytes: f.bytes });
+  return d;
+}
+
+function card(html, pressed, onToggle, disabled) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'card'; b.innerHTML = html;
+  b.setAttribute('aria-pressed', pressed ? 'true' : 'false');
+  if (disabled) b.disabled = true;
+  b.addEventListener('click', () => { onToggle(); b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); refresh(); });
+  return b;
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+function buildChapters() {
+  const box = $('chapters');
+  for (const c of CAT.chapters) {
+    const progs = c.programs.length ? c.programs.join(', ') : '';
+    const soon = c.coming ? (c.programs.length ? 'Coming: ' + c.coming : 'Its program (' + c.coming + ') is still being written') : '';
+    const html = '<span class="num">CHAPTER ' + c.num + '</span><span class="title">' + esc(c.title) + '</span>' +
+      (progs ? '<span class="progs">' + esc(progs) + '</span>' : '') + (soon ? '<span class="soon">' + esc(soon) + '</span>' : '');
+    box.appendChild(card(html, false, () => { state.chapters.has(c.num) ? state.chapters.delete(c.num) : state.chapters.add(c.num); }, c.programs.length === 0));
+  }
+  const tc = CAT.programs[CAT.always];
+  box.appendChild(card('<span class="num">ANY CHAPTER</span><span class="title">Which test?</span><span class="progs">' + esc(CAT.always) + ', a flowchart you tap</span>',
+    false, () => { state.testchooser = !state.testchooser; }));
+  const all = Object.keys(CAT.programs).length;
+  const e = card('<span class="num">EVERYTHING</span><span class="title">All ' + all + ' programs</span><span class="progs">For instructors, or to explore. It is a lot for one calculator.</span>',
+    false, () => { state.everything = !state.everything; });
+  box.appendChild(e);
+}
+
+function buildPicklist() {
+  const box = $('picklist');
+  for (const [name, p] of Object.entries(CAT.programs).sort((a, b) => a[0].localeCompare(b[0]))) {
+    const l = document.createElement('label');
+    const cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = name;
+    cb.addEventListener('change', () => { cb.checked ? state.picked.add(name) : state.picked.delete(name); refresh(); });
+    l.appendChild(cb);
+    const s = document.createElement('span'); s.innerHTML = '<b>' + esc(name) + '</b> <small>' + esc(p.what) + '</small>';
+    l.appendChild(s); box.appendChild(l);
+  }
+}
+
+function zipName() {
+  // One chapter: HP_Prime_Chapter_11.zip; several: HP_Prime_Chapters_7_11.zip; anything else: HP_Prime_programs.zip
+  const ch = [...state.chapters].sort((a, b) => a - b);
+  if (ch.length && !state.everything && !state.testchooser && state.picked.size === 0)
+    return ch.length === 1 ? 'HP_Prime_Chapter_' + ch[0] + '.zip' : 'HP_Prime_Chapters_' + ch.join('_') + '.zip';
+  return 'HP_Prime_programs.zip';
+}
+
+function refresh() {
+  const sel = selection(), data = dataChosen();
+  const bytes = sel.reduce((s, p) => s + CAT.programs[p].bytes, 0);
+  if (sel.length === 0 && data.length === 0) $('summary').textContent = 'Nothing picked yet.';
+  else $('summary').innerHTML = (sel.length ? 'Will load <b>' + esc(sel.join(', ')) + '</b> (' + sel.length + ' program' + (sel.length > 1 ? 's' : '') + ', ' + (bytes / 1e6).toFixed(1) + ' MB)' : 'Will load no programs') +
+    (data.length ? ' and the data ' + esc(data.map(d => d.path.replace('.hpmat', '')).join(', ')) : '') + '.';
+  const any = sel.length > 0 || data.length > 0;
+  $('load').disabled = !any || !canWrite;
+  $('download').disabled = !any;
+  $('download2').disabled = !any;
+  $('zipname').textContent = zipName();
+  const progs = sel.filter(p => CAT.programs[p].home);
+  $('manualprogs').textContent = progs.length ? progs.join(', ') : '(pick a chapter in step 1)';
+  $('manualapp').hidden = !sel.includes('CentralLimit');
+  $('manualdata').hidden = data.length === 0;
+  if (!progs.every(p => CAT.checked[p]))
+    $('manualcheck').innerHTML = '<b>The first time you run each one:</b> tap its name, tap <b>Edit</b>, tap <b>Check</b> (it says "No errors in the program"), tap <b>OK</b>, press <kbd>Esc</kbd>, then tap <b>Run</b>. After that, just tap it and tap <b>Run</b>.';
+}
+
+$('ownfile').addEventListener('change', async ev => {
+  const refused = [];
+  for (const f of ev.target.files) {
+    // "M1 (2).hpmat" is how a browser names a second download of M1.hpmat: it is still M1.
+    const m = /^(M[0-9])(\s*\(\d+\))?\.hpmat$/i.exec(f.name);
+    if (!m) { refused.push(f.name); continue; }
+    const name = m[1].toUpperCase() + '.hpmat';
+    state.own = state.own.filter(o => o.name !== name);
+    state.own.push({ name: name, bytes: new Uint8Array(await f.arrayBuffer()) });
+  }
+  const msg = [];
+  if (state.own.length) msg.push('Your data: ' + state.own.map(o => o.name).join(', ') + '.');
+  if (refused.length) msg.push('Not added: ' + refused.join(', ') + '. A data file must be named M0.hpmat to M9.hpmat, as the Data Loader names it.');
+  $('ownlist').textContent = msg.join(' ');
+  ev.target.value = '';
+  refresh();
+});
+$('rossi').addEventListener('change', refresh);
+
+// ---------- step 3: the folder, remembered between visits ----------
+function idb() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open('prime-loader', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('kv');
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  });
+}
+async function idbGet(k) {
+  try { const db = await idb(); return await new Promise(res => { const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => res(undefined); }); }
+  catch (e) { return undefined; }
+}
+async function idbSet(k, v) {
+  try { const db = await idb(); await new Promise(res => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = res; t.onerror = res; }); }
+  catch (e) { /* remembering is a convenience only */ }
+}
+
+async function folder(forcePick) {
+  if (!forcePick) {
+    const h = await idbGet('hpprime');
+    if (h) {
+      try {
+        let p = await h.queryPermission({ mode: 'readwrite' });
+        if (p !== 'granted') p = await h.requestPermission({ mode: 'readwrite' });
+        if (p === 'granted') { const loc = await LoaderCore.locate(h); if (loc.ok) return loc; }
+      } catch (e) { /* fall through to picking */ }
+    }
+  }
+  const picked = await window.showDirectoryPicker({ id: 'hpprime', mode: 'readwrite', startIn: 'documents' });
+  const loc = await LoaderCore.locate(picked);
+  if (loc.ok) { await idbSet('hpprime', loc.base); $('repick').hidden = false; $('firsttime').hidden = true; }
+  return loc;
+}
+
+function say(text, kind) { const s = $('status'); s.textContent = text; s.className = 'status' + (kind ? ' ' + kind : ''); }
+
+async function load(force, forcePick) {
+  $('running').hidden = true; $('done').hidden = true;
+  const sel = selection(), data = dataChosen();
+  $('load').disabled = true;
+  try {
+    say('Waiting for the folder ...');
+    const loc = await folder(forcePick);
+    if (!loc.ok) { say(loc.why, 'bad'); return; }
+    if (!force && await LoaderCore.isRunning(loc.base)) { say(''); $('running').hidden = false; return; }
+    say('Unpacking ...');
+    const pf = await pack();
+    const files = [];
+    for (const p of sel) for (const f of CAT.programs[p].files) files.push({ path: f, data: pf.get(f) });
+    for (const d of data) files.push({ path: d.path, data: d.src ? pf.get(d.src) : d.bytes });
+    say('Moving the old programs to the backup ...');
+    const move = await LoaderCore.plan(loc.calc, data.map(d => d.path));
+    const b = await LoaderCore.backup(loc.base, loc.calc, move, new Date());
+    say('Loading ' + files.length + ' file' + (files.length > 1 ? 's' : '') + ' ...');
+    const written = await LoaderCore.install(loc.calc, files);
+    say('Loaded ' + sel.length + ' program' + (sel.length === 1 ? '' : 's') + (data.length ? ' and ' + data.length + ' data file' + (data.length > 1 ? 's' : '') : '') + ', every file read back and checked.', 'ok');
+    showDone(sel, data, b, written);
+  } catch (e) {
+    if (e && e.name === 'AbortError') say('No folder was chosen, so nothing was loaded.', 'bad');
+    else if (e && (e.name === 'NotAllowedError' || e.name === 'SecurityError'))
+      say('The browser was not allowed to change that folder. Click Load again and choose Edit files (or Allow) when it asks. If it says the folder has system files, open Documents and choose HP Prime inside it.', 'bad');
+    else say('Something went wrong: ' + (e && e.message ? e.message : e) + '. Nothing is lost: anything moved is in HP Prime\\Loader backups.', 'bad');
+  } finally {
+    refresh();
+  }
+}
+
+function showDone(sel, data, b, written) {
+  const ol = $('nextsteps'); ol.innerHTML = '';
+  const li = h => { const x = document.createElement('li'); x.innerHTML = h; ol.appendChild(x); };
+  li('Start the <b>HP Prime Virtual Calculator</b> (from the Start menu, or its icon on your desktop or taskbar).');
+  const progs = sel.filter(p => CAT.programs[p].home);
+  if (progs.length) {
+    const ready = progs.every(p => CAT.checked[p]);
+    li('Press <kbd>Shift</kbd>, then <kbd>Program</kbd> (the <kbd>1</kbd> key). This opens the <b>Program Catalog</b>, the calculator\'s list of programs. Yours are: <b>' + esc(progs.join(', ')) + '</b>.' +
+       (ready ? ' Tap one, then tap <b>Run</b> at the bottom right. That is all.' : ''));
+    if (ready)
+      li('<span class="note" style="color:inherit">If one ever says Syntax Error, or <b>Run</b> does nothing: tap it, tap <b>Edit</b>, tap <b>Check</b>, tap <b>OK</b>, press <kbd>Esc</kbd>, then tap <b>Run</b>. Once is enough.</span>');
+    else
+      li('<b>The first time you run each one:</b> tap its name, tap <b>Check</b> at the bottom of the screen (it says "No errors in the program"), tap <b>OK</b>, press <kbd>Esc</kbd>, then tap <b>Run</b>. After that, just tap it and tap <b>Run</b>.');
+  }
+  if (sel.includes('CentralLimit')) li('<b>CentralLimit</b> is an app: press <kbd>Apps</kbd>, move to CentralLimit without touching it, and tap <b>Start</b>. Then press <kbd>View</kbd> for its menu.');
+  if (data.length) li('Your data is in matrix ' + esc(data.map(d => d.path.replace('.hpmat', '')).join(', ')) + '. Open the <b>Statistics 1Var</b> app once (<kbd>Apps</kbd>), then run <b>DataLoad</b> to put the columns into its lists.');
+  const ul = $('report'); ul.innerHTML = '';
+  const r = h => { const x = document.createElement('li'); x.innerHTML = h; ul.appendChild(x); };
+  r('These files went onto the calculator, and each was read back and checked: ' + esc(written.join(', ')) + '.');
+  if (b.folder) r('What was on the calculator before was moved, not deleted, to <code>Documents\\HP Prime\\' + esc(b.folder) + '</code>: ' + esc(b.moved.join(', ')) + '. To get one back, close the calculator and copy it from there into <code>Documents\\HP Prime\\Calculators\\Prime</code>.');
+  else r('The calculator had no programs on it before, so nothing needed moving.');
+  $('done').hidden = false;
+}
+
+$('load').addEventListener('click', () => load(false, false));
+$('repick').addEventListener('click', () => load(false, true));
+$('again').addEventListener('click', () => load(false, false));
+$('force').addEventListener('click', () => load(true, false));
+
+// ---------- the zip, for a real Prime or another browser ----------
+async function download(statusId) {
+  const st = $(statusId);
+  st.textContent = 'Making the file ...';
+  try {
+    const pf = await pack(), files = [];
+    for (const p of selection()) for (const f of CAT.programs[p].files) files.push({ name: f, data: pf.get(f) });
+    for (const d of dataChosen()) files.push({ name: d.path, data: d.src ? pf.get(d.src) : d.bytes });
+    const z = DLCore.zip(files), name = zipName();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([z], { type: 'application/zip' }));
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    st.textContent = 'Downloaded ' + name + ' (' + files.length + ' file' + (files.length > 1 ? 's' : '') + '). Now go on to the next step.';
+  } catch (e) { st.textContent = 'Could not make the file: ' + (e && e.message ? e.message : e); }
+}
+$('download').addEventListener('click', () => download('dlstatus'));
+$('download2').addEventListener('click', () => download('dlstatus2'));
+
+// ---------- start ----------
+buildChapters();
+buildPicklist();
+$('rossiwhat').textContent = CAT.data.rossi.what;
+$('packline').textContent = 'Program files from ' + CAT.pack + ' (' + CAT.pack_sha256 + ').';
+if (!canWrite) {
+  $('mode-auto').hidden = true; $('mode-manual').hidden = false;
+  $('step3auto').hidden = true; $('step3manual').hidden = false;
+  $('brname').textContent = browserName === 'this browser' ? 'a browser that cannot write to folders' : browserName;
+  document.querySelectorAll('.brname2').forEach(e => { e.textContent = browserName === 'this browser' ? 'This browser' : browserName; });
+}
+idbGet('hpprime').then(h => { if (h) { $('repick').hidden = false; $('firsttime').hidden = true; } });
+refresh();
+</script>
+</body>
+</html>

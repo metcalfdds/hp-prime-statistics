@@ -4,7 +4,7 @@
 
 *A note from Roger: I am very sorry I cannot be with you at HHC 2026 in person this year, and I send my regrets and my best wishes for a wonderful conference. I hope you enjoy exploring what is here, and I would love to hear from you through [GitHub issues](https://github.com/metcalfdds/hp-prime-statistics/issues).*
 
-Thank you for stopping by. Here is a set of **28 teaching programs for the HP Prime**, written for university statistics, research methods, criminal justice, and forensic science courses, plus **a long set of notes on how we believe the Prime really behaves**: what we found the hard way on a G1, a G2, and the Virtual Calculator--things all the manuals do not tell us.
+Thank you for stopping by. Here is a set of **30 teaching programs for the HP Prime**, written for university statistics, research methods, criminal justice, and forensic science courses, plus **a long set of notes on how we believe the Prime really behaves**: what we found the hard way on a G1, a G2, and the Virtual Calculator--things all the manuals do not tell us.
 
 Most of the programs are built around the touch screen. You drag a bound on a statistical distribution curve and the shading follows, pour balls through a Galton board with a finger, rotate a 3-D bivariate normal distribution wireframe plot, slide a cut-off along an ROC curve and watch who gets flagged "high risk". The aim is to let students *see* the statistics move.
 
@@ -26,22 +26,32 @@ Hundreds of community PPL programs from several HP-related public forums were re
 
 **New here?** [START_HERE.md](START_HERE.md) is a one-page guide: what to read in five minutes, five programs to try first, and how to help.
 
+**No calculator? Try all 30 on HP's free Virtual Calculator.** Download the **[starter pack](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v5.zip)** (one 1.4 MB zip, for the Virtual Calculator on Windows). Unzip it, copy one folder's files into the Virtual Calculator's own folder, and start it: the programs are in its Program Catalog, CentralLimit already made into its app. No Connectivity Kit, and no copying and pasting of code. [The steps](starter-pack/README.md) fit on one page.
+
+**Your own data, without typing it in.** The **[HP Prime Data Loader](data-loader/README.md)** is one web page that works offline: paste columns from Excel, SPSS or a CSV file, and it writes the calculator's own matrix file. On the calculator, **DataLoad** puts each column, or each group's scores, into the Statistics lists that the other programs read, and draws a box plot of each. The starter pack carries DataLoad and a sample data set (new, 31 October 2026).
+
+**Neither shortcut is in HP's manuals.** [Two shortcuts the manuals don't mention](docs/two-shortcuts.md) says how each one works, what we found when we tried it, and who found what. Loading by copying files we learned from [hp-prime-kit](https://github.com/JordiRigau/hp-prime-kit); two other community projects use it too. The Data Loader route is new here, designed and written by Claude.
+
+**Newest, for students: the [HP Prime Loader](prime-loader/README.md)** (1 November 2026). One web page, offline: pick your chapter, click Load, start the Virtual Calculator, tap a program, tap Run. In Edge or Chrome it moves whatever was on the calculator to a backup and puts on only that chapter's programs (and data, if you like); in Firefox, which many schools require and which never lets a page write into a folder, it walks the student through downloading one file and unpacking it into the calculator with Windows' Extract All. Every step explains itself in plain words. Nothing needs checking: since starter pack v5 every program is the file the Virtual Calculator wrote back after checking it, and such a file runs at once (measured 1 November 2026). Tried on Roger's computer in Edge, with Extract All and through the Connectivity Kit; 56 checks in Chromium.
+
 ### What is here, at a glance
 
 | Area | Programs |
 | --- | --- |
 | **Distributions** | NormExplorer, Norm3, BurrLab, StatDist (27 distributions), StudRange (Tukey's q) |
 | **Sampling, estimation and power** | CentralLimit (an app), SampDist, CICatcher, GaltonBoard, PowerViz |
-| **Tables and tests** | ChiTable, TrendTest, TTestLab (t tests in five steps), TestChooser (a tappable flowchart), EpiStats |
+| **Tables and tests** | ChiTable, TrendTest, TTestLab (t tests in five steps) and TTestLabG (its general version), TestChooser (a tappable flowchart), EpiStats |
 | **Correlation and regression** | ScatterLab, BiNorm3D |
 | **Bayes and forensic science** | BayesTree, DNAMixLR, ErrorRate Lab |
 | **Criminal justice and forensic statistics** (new, October 2026) | RankLab, AnovaLab, SeizureLab, SurvLab, FitCheck, ResampLab, AgreeLab, RiskLab |
+| **Getting your data in** (new, 31 October 2026) | DataLoad, with the [Data Loader](data-loader/README.md) web page |
 
-Together, these 28 programs currently run to more than **82,000 lines**: 56,100 of PPL code, 1,160 of MicroPython (in five of them), and 21,200 lines of comments, written so a student can follow what each part does. The largest is EpiStats at about 6,100 lines -- I wrote the original, elementary, unsophisticated version of this program for coursework I had in Harvard's STAT S-103 Intro to Epidemiology & Biostats and Claude took it to a whole other level, and I hope future students in that class or other similar classes will find it helpful; and then eight other late October programs average about 3,000 lines each. These were built with tremendous assistance from Anthropic Claude (mostly Opus 5.5 and Fable 5.1) over **many** months of intense, but fun, work.
+Together, these 30 programs currently run to more than **84,000 lines**: 57,900 of PPL code, 1,160 of MicroPython (in five of them), and 21,800 lines of comments, written so a student can follow what each part does. The largest is EpiStats at about 6,100 lines -- I wrote the original, elementary, unsophisticated version of this program for coursework I had in Harvard's STAT S-103 Intro to Epidemiology & Biostats and Claude took it to a whole other level, and I hope future students in that class or other similar classes will find it helpful; and then eight other late October programs average about 3,000 lines each. These were built with tremendous assistance from Anthropic Claude (mostly Opus 5.5 and Fable 5.1) over **many** months of intense, but fun, work.
 
 And around the programs:
 
-- **[The notes](docs/lessons-learned_v7za.md)**: hard limits, commands that differ from the manual, touch and graphics idioms, the MicroPython bridge and how it fails silently, calling the CAS safely, numerical methods for 12-digit reals. Useful even if you never run a statistics program, and written so you can hand them to an AI assistant before it writes PPL for you.
+- **[The notes](docs/lessons-learned_v7zf.md)**: hard limits, commands that differ from the manual, touch and graphics idioms, the MicroPython bridge and how it fails silently, calling the CAS safely, numerical methods for 12-digit reals. Useful even if you never run a statistics program, and written so you can hand them to an AI assistant before it writes PPL for you.
+- **[Two shortcuts the manuals don't mention](docs/two-shortcuts.md)**: loading the Virtual Calculator by copying files into its folder, and a big data set as one matrix file, with who found what.
 - **[Tools](tools/)**: the checks every program passes before it is pasted (a lint gate, a fleet-wide name check, a check that no two lines of text overlap on screen, a PC harness that drives a program like a student), in plain Python 3.
 - **[Diagnostics](diagnostics/)**: small probe programs that test what your own calculator does.
 - **[How fast is the Prime?](#how-fast-is-the-prime-what-we-measured)**: what we timed on a G1 and a G2, and why a slow Prime may only need a reset.
@@ -58,7 +68,7 @@ Everything here is **free for educational and personal use**. See [LICENSE](LICE
 
 Three different questions, with three different answers:
 
-- **Is the arithmetic right? Yes, as far as we can test it, I think so.** Every program passes the lint gate and runs in the PC harness, with its numbers extensively checked against SciPy, stats models, and exact arithmetic. Where a program refers to published data, it has been able to reproduce the published results. Every program has also had an independent review.
+- **Is the arithmetic right? Yes, as far as we can test it, I think so.** Every program passes the lint gate and runs in the PC harness, with its numbers extensively checked against SciPy, stats models, and exact arithmetic. Where a program refers to published data, it has been able to reproduce the published results. Every program but the newest, DataLoad and TTestLabG (31 October 2026), has also had an independent review (TTestLabG is built from TTestLab, which has); TTestLab's (`docs/dev/review2-TTestLab-beta1a.md`) found ten faults in its dialogs and wording that its 59 arithmetic checks had not, all fixed the same night in beta 1b.
   
 - **Do they run on a real calculator? Yes, we think so, but we are still checking.** Every program has run and been extensively tested on the HP Prime Virtual Calculator by Claude, and the current versions have had cursory checks on a G1 and a G2 by human me. The full device checklists, one per version in [docs/changes/](docs/changes/), are still being worked through, and some screens, especially graphics, can be slow. **Reports from your own calculator are the most welcome contribution of all.** The full dated record is in [docs/test-status.md](docs/test-status.md).
   
@@ -76,12 +86,14 @@ Remember, too, these programs are **works-in-progress**--some parts, especially 
 
 Every program is a plain `.txt` file, on purpose.
 
+**On the Virtual Calculator, the [starter pack](starter-pack/README.md) is quicker:** all 30 programs as ready-made calculator files, CentralLimit already made into its app, copied into the calculator's folder while it is closed. Since v5 nothing needs checking: every file in the pack was checked on the Virtual Calculator before it was packed. The [Prime Loader](prime-loader/README.md) does the copying, chapter by chapter. The steps below are for a G1 or G2, or for one program at a time.
+
 1. Open the **HP Connectivity Kit** and connect your calculator.
 2. Create a new program in the Program Catalog.
 3. Open this repository's `.txt` file in any text editor, select all, copy.
 4. Paste into the Connectivity Kit's program editor, and sync.
 
-**Do not rename the file to `.hpprgm`.** That format is binary (UTF-16LE with a header), and a `.txt` renamed to it will not import. Pasting is the reliable route.
+**Do not rename the file to `.hpprgm`.** That format is binary (UTF-16LE with a header), and a `.txt` renamed to it will not import. Pasting is the reliable route. (The starter pack's `.hpprgm` files are built properly, by `tools/make_starter_pack_v4.py`, and read back against their source.)
 
 **Install only one version of each program.** Every program on a Prime shares one pool of routine names, so two versions of the same program on one calculator can run each other's code. Delete the old one first.
 
@@ -101,7 +113,7 @@ Every program is a plain `.txt` file, on purpose.
 
 **CentralLimit is an app, not a plain program.** The installation steps are in its header. On the Virtual Calculator the Connectivity Kit route worked too, once the app's copy of Statistics 1Var exists (step 1 in the header): Application Library → double-click CentralLimit → Program tab → paste → save. Starting the app shows the stock Numeric view; the calculator's **View** key opens the app's own menu.
 
-**MicroPython.** StudRange, NormExplorer, GaltonBoard, CentralLimit and ErrorRate carry a `#PYTHON … #END` block inside the program file. There is **no separate `.py` file**, and nothing goes into the Python app. With Python firmware (2.1.14566, April 2021, or later) the Python part runs, and a badge on screen says so. Without it, the programs fall back to pure PPL automatically.
+**MicroPython.** BurrLab, StudRange, NormExplorer, GaltonBoard and ErrorRate carry a `#PYTHON … #END` block inside the program file. There is **no separate `.py` file**, and nothing goes into the Python app. With Python firmware (2.1.14566, April 2021, or later) the Python part runs, and a badge on screen says so. Without it, the programs fall back to pure PPL automatically.
 
 ---
 
@@ -161,12 +173,18 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 
 **TrendTest** (beta 3g): chi-square for linear trend in a 2 × k table. **Drag a dot** to change a level's proportion and watch the trend test respond. Includes a confidence band and Wilson intervals.
 
-**TTestLab** (beta 1a, new 31 October 2026): the t tests of a criminal-justice statistics course, worked the way a lecture works them, in **five steps, a screen each**: the hypotheses and the data; the distribution and df; the critical value and the decision rule on a t curve with the rejection region shaded; the standard error and t obtained with the numbers put in; the decision, with t obtained and the p value drawn on the curve, and Cohen's d.
+**TTestLab** (beta 1b, new 31 October 2026): the t tests of a criminal-justice statistics course, worked the way a lecture works them, in **five steps, a screen each**: the hypotheses and the data; the distribution and df; the critical value and the decision rule on a t curve with the rejection region shaded; the standard error and t obtained with the numbers put in; the decision, with t obtained and the p value drawn on the curve, and Cohen's d.
 - **Pooled-variances, separate-variances (Welch, SPSS's "Equal variances not assumed") and dependent-samples t**, with any mix of equal or unequal SDs and Ns, from each group's mean, SD and N or from raw scores in D1 and D2; two-tailed or one-tailed either way.
 - **Which t test?** A tappable flowchart: are the samples independent? are the variances equal?
 - **Pooled or separate?** Both tests side by side, and what goes wrong with the pooled test when the smaller group has the larger SD.
 - **The printed t table beside the exact value** (df 73 reads row 60), and where a hand calculation rounded too early, what that did to t.
 - Examples: age at arrest (JDCC), matched jails (Census of Jails), and drug use by sex from an SPSS output, which it matches to SPSS's printed t = −4.351 on 265.924 df.
+
+**TTestLabG** (beta 1, new 31 October 2026): **the general version of TTestLab**, for an intro course in any subject and the companion guide in progress. The same five steps, arithmetic and screens (built from TTestLab beta 1b by `tools/make_tlg1_v1.py`), with its own name so both can sit on one calculator, and these differences:
+- **Separate variances (Welch) is the default**; pooled stays a choice. The flowchart says: not sure the variances are equal? Answer No.
+- **t critical is the exact one for the df.** A printed table is a note: a df it lacks takes the next smaller row (the larger t crit); a fractional df is rounded down first. Step 2 also gives the hand shortcut for separate variances, the smaller N − 1.
+- **A p that rounds to α prints its 4 significant digits** ("p = 0.04970: just below α = 0.050"), and means worked out from raw scores print to 4 significant digits.
+- Examples: **Darwin's plants** (his 1876 *Zea mays* pairs, crossed and self-fertilised), **the 1970 draft lottery** (Selective Service: were the birthdays drawn at random?), age at arrest (JDCC) and matched jails (Census of Jails). Ran on the Virtual Calculator beside TTestLab; 93 checks: [TTestLabG_beta1_NOTES.md](docs/changes/TTestLabG_beta1_NOTES.md).
 
 **TestChooser** (beta 2c): which statistical test? It is a tappable flowchart: tap the outcome's scale and the design, and the path draws itself to a test. There is also a tappable table, and a 20-case criminal-justice and forensic quiz. After Glantz's *Primer of Biostatistics*. Its t-test pages point to TTestLab.
 
@@ -220,6 +238,10 @@ Data sources for every preset are listed, with the checks made on them, in [docs
 **AgreeLab** (beta 1b): examiner agreement. Cohen's kappa on touch tiles (drag a count off the diagonal and watch kappa fall), weighted kappa, Fleiss' kappa, the six intraclass correlations and a Bland-Altman plot; the "kappa paradox" explained. Data: Landis & Koch's two neurologists, Fleiss (1971), Bland & Altman (1986), Shrout & Fleiss (1979).
 
 **RiskLab** (beta 1b): the statistics behind recidivism risk tools. Logistic regression, the ROC curve with a draggable cut-off and a live 2 × 2 table, calibration, and fairness by group, using ProPublica's published COMPAS data from Broward County (as counts) and the Rossi study. It shows, with real numbers, why a score cannot be both equally calibrated and equally wrong for two groups whose base rates differ.
+
+### Getting your data in (new, 31 October 2026)
+
+**DataLoad** (beta 1b): typing a long data set into a calculator is not feasible, so this does it from a spreadsheet. The **[HP Prime Data Loader](data-loader/README.md)**, one web page that works offline, turns columns pasted from Excel, SPSS or a CSV file into the calculator's own matrix file (M1 to M9). DataLoad then puts the matrix's columns into the Statistics 1Var lists D1-D9 (or the Statistics 2Var lists C1-C9), either column by column or as scores by group (the SPSS layout: each group's scores to its own list, the smallest code to D1), leaves out blank cells, and offers to clear lists left from an earlier load, which AnovaLab, RankLab and AgreeLab would otherwise read as more groups. Then a box plot of every list and a histogram of any list you tap, with the Statistics 1Var app's own quartiles. On the Virtual Calculator it loaded the Rossi re-arrest data (432 x 5) and a text-coded matrix with blanks, its summaries matched Python, and TTestLab read the lists it filled (t(421.19) = -1.68, p = 0.094, as SciPy gives). Not yet run on a G1 or G2, and not yet independently reviewed. How this route compares with the copy-and-paste route HP describes, and who found what: [Two shortcuts](docs/two-shortcuts.md).
 
 *FDAES (forensic dental age estimation) is held back from this repository for now.*
 
@@ -286,7 +308,7 @@ Short programs for finding out what your own calculator does.
 
 ## The notes
 
-[**docs/lessons-learned_v7za.md**](docs/lessons-learned_v7za.md) is the substantial document here: everything learned the expensive way across dozens and dozens of build iterations on G1 and G2 hardware. It covers:
+[**docs/lessons-learned_v7zf.md**](docs/lessons-learned_v7zf.md) is the substantial document here: everything learned the expensive way across dozens and dozens of build iterations on G1 and G2 hardware. It covers:
 - hard limits;
 - command behaviour that contradicts the manual;
 - graphics and input idioms;
@@ -318,7 +340,7 @@ A few things from it that are hard to find elsewhere:
 - **Data columns are reachable from a standalone program; app settings are not.** `D1`, `C1` and `C2` can be read and written. `H1Type` and `SetSample` are a syntax error at paste time.
 - **The desktop emulator runs the real ROM**, so any difference you see on hardware is necessarily timing, memory or display. No amount of further emulator testing will find it.
 
-[docs/changes/](docs/changes/) has one file per program version: what changed, the lint and verification output, and the device-test checklist. [docs/dev/](docs/dev/) has the fleet review and the CAS plan that drove the 16 October versions, and the reports of the two emulator rounds of 17 October.
+[docs/changes/](docs/changes/) has one file per program version: what changed, the lint and verification output, and the device-test checklist. [docs/dev/](docs/dev/) has the fleet review and the CAS plan that drove the 16 October versions, the reports of the two emulator rounds of 17 October, and the independent second reviews (`review2-*.md`).
 
 ---
 
@@ -328,7 +350,12 @@ A few things from it that are hard to find elsewhere:
 - the fleet-wide name-collision check;
 - the built-in-name and structure checks;
 - the gate that runs them all;
-- a PC run harness that drives a program with scripted keys, taps and drags, with SciPy behind the statistics built-ins and desktop Giac behind `CAS(...)`, made to behave as the Prime's firmware does where the emulator showed a difference.
+- a PC run harness that drives a program with scripted keys, taps and drags, with SciPy behind the statistics built-ins and desktop Giac behind `CAS(...)`, made to behave as the Prime's firmware does where the emulator showed a difference;
+- the starter-pack builder, which turns `programs/` into ready-made Virtual Calculator files and reads each one back against its source.
+
+[data-loader/](data-loader/) has the Data Loader page, its number encoder and its tests (20,011 numbers against hp-prime-kit's encoder, and the page itself in Chromium).
+
+[prime-loader/](prime-loader/) has the Prime Loader page, its source, the build script that embeds the starter pack's files and the chapter list, and its Chromium test.
 
 **On Windows, a Connectivity Kit launcher that starts Bonjour first:** [tools/windows-launcher/](tools/windows-launcher/). If the Kit sometimes fails to see your calculator because Apple's Bonjour Service has stopped, double-click `Start_HP_Prime.cmd` instead of the Kit's own shortcut.
 
@@ -346,6 +373,8 @@ Hundreds of community PPL programs from several HP-related public forums were re
 
 The interesting studentized range algorithm is after Dunlap, Powell & Konnerth (1977). Accuracy figures were verified against SciPy, and several were also cross-checked against historical sources: Harter's 1960 tables of the studentized range, and the worked examples HP printed in the manuals for its own 1970s statistics programs on the HP-41, HP-55, HP-65 and HP-67/97 ([docs/historical-cross-checks.md](docs/historical-cross-checks.md)). Our StudRange program demonstrates the advantage of MicroPython in some situations--under PPL only, the complex calculation takes about a minute on a G2, but the Python version runs in a couple of seconds. 
 
-Several MicroPython findings credited in the notes come from [JordiRigau/hp-prime-kit](https://github.com/JordiRigau/hp-prime-kit), measured independently on a different G2.
+Several MicroPython findings credited in the notes come from [JordiRigau/hp-prime-kit](https://github.com/JordiRigau/hp-prime-kit), measured independently on a different G2. The kit is also where we learned that the Virtual Calculator can be loaded by copying files into its own folder, the method the starter pack uses. The `.hpmat` matrix file the Data Loader writes is the one the kit documents. [abaccin's hpprime-stoichiometry](https://github.com/abaccin/hpprime-stoichiometry) and [Rudicito's HP-DOOM](https://github.com/Rudicito/HP-DOOM) use the same folder copy.
+
+The Data Loader and DataLoad, the route for big data sets, are new. Roger asked for "some sort of 'data loader'"; Claude (Opus 5.5) designed, wrote and tested them on 31 October 2026 ([docs/two-shortcuts.md](docs/two-shortcuts.md)).
 
 Corrections and reproductions are welcome. Where a claim here is unverified, it says so.  © 2026 Roger D Metcalf
