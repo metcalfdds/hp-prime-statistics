@@ -20,7 +20,7 @@ The notes are written so they can also be given to an AI coding assistant as bac
 
 ## If you have a calculator: try these first
 
-No calculator? The [starter pack](starter-pack/README.md) puts all 30 on HP's free Virtual Calculator for Windows in one copy, with no Connectivity Kit. Your own data goes in through the [Data Loader](data-loader/README.md) page and DataLoad, not by typing. Neither shortcut is in HP's manuals: [docs/two-shortcuts.md](docs/two-shortcuts.md) says how they work and who found them. Newest: the [Prime Loader](prime-loader/README.md) page puts one chapter's programs on the Virtual Calculator: one click in Edge or Chrome, a few in Firefox, and nothing to check afterwards.
+No calculator? The [starter pack](starter-pack/README.md) puts all 30 on HP's free Virtual Calculator for Windows in one copy, with no Connectivity Kit. Your own data goes in through the [Data Loader](data-loader/README.md) page and DataLoad, not by typing. Neither shortcut is in HP's manuals: [docs/two-shortcuts.md](docs/two-shortcuts.md) says how they work and who found them. Newest: the [Prime Loader](https://metcalfdds.github.io/hp-prime-statistics/prime-loader/) page ([how it works](prime-loader/README.md)) puts one chapter's programs on the Virtual Calculator: one click in Edge or Chrome, a few in Firefox, and nothing to check afterwards.
 
 Install by pasting the `.txt` file into a new program in the HP Connectivity Kit ([full steps](README.md#installing)). Do not rename a `.txt` to `.hpprgm`. Each of these shows off the touch screen:
 

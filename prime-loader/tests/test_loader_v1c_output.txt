@@ -1,0 +1,61 @@
+# node tests/test_loader_v1c.js PrimeLoader_v1c.html ../starter-pack/HP_Prime_Statistics_Starter_Pack_v5.zip  (2026-11-01, Chromium 141, Playwright)
+PASS 15 chapter cards and 2 more
+PASS chapter 1 is disabled (its program is still to come)
+PASS Load is disabled before anything is picked
+PASS the Data Loader link is the Data Loader page on GitHub Pages
+PASS index.html beside the page sends the browser on to it
+PASS Edge/Chrome route shown, Firefox route hidden; running and done panels hidden
+PASS plain-language sections present: before you start, why for step 2, six help topics
+PASS chapter 11 picks TTestLabG, DataLoad, ResampLab
+PASS running calculator: the warning shows, the done panel does not
+PASS running calculator: nothing written
+PASS after loading, the running warning is gone
+PASS loaded byte for byte: TTestLabG.hpprgm
+PASS loaded byte for byte: DataLoad.hpprgm
+PASS loaded byte for byte: ResampLab.hpprgm
+PASS only the chapter's programs are on the calculator
+PASS the old app is gone from the calculator
+PASS backup folder named by date and time
+PASS backup holds the old programs byte for byte
+PASS backup holds the old app, both files
+PASS HP's apps, settings, lists and M1 left alone
+PASS nothing written outside Prime and the backup
+PASS next steps name the programs
+PASS checked pack: tap and Run, Check only as a fallback
+PASS the picker was used once
+PASS after a reload the folder is remembered (no second pick)
+PASS loaded byte for byte: SampDist.hpprgm
+PASS loaded byte for byte: GaltonBoard.hpprgm
+PASS loaded byte for byte: CentralLimit.hpappdir/CentralLimit.hpapp
+PASS loaded byte for byte: CentralLimit.hpappdir/CentralLimit.hpappnote
+PASS loaded byte for byte: CentralLimit.hpappdir/CentralLimit.hpappprgm
+PASS the sample data is M1, byte for byte
+PASS chapter 11's programs went to a second backup
+PASS the old M1 is in a backup, byte for byte
+PASS next steps: CentralLimit is an app; the data and DataLoad
+PASS own data listed
+PASS own data written as M3
+PASS loading only data clears the programs too (a clean slate)
+PASS a badly named data file is refused with a reason
+PASS picking Calculators explains which folder to pick
+PASS picking an unrelated folder explains which folder to pick
+PASS picking Documents finds HP Prime inside it
+PASS cancelling the picker says nothing was loaded
+PASS Kit help: the Bonjour reminder shows first, with how to check it
+PASS everything downloads as HP_Prime_programs.zip
+PASS zip of everything: all 30 programs and the app, byte for byte
+PASS everything: 29 programs and the app on the calculator
+PASS Firefox: its own route shows, the Edge route is hidden
+PASS Firefox: named, with the reason in plain words
+PASS Firefox: Download is off until a chapter is picked
+PASS Firefox: the steps name the zip and the programs
+PASS Firefox: the download is HP_Prime_Chapter_12.zip
+PASS Firefox: the zip holds the chapter's programs at its top level, byte for byte
+PASS Firefox: the status says what to do next
+PASS Firefox: two chapters make HP_Prime_Chapters_7_12.zip; the app note shows for CentralLimit
+PASS Firefox: the data note shows when data is picked
+PASS Firefox: no errors in the page
+PASS opens as a local file without errors
+PASS no errors in the page
+
+58 PASS, 0 FAIL
