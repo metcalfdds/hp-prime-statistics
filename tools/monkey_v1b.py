@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
-"""monkey_v1a.py -- throws random use at an HP Prime program in the PC harness (ppl_run_v3e.py) and reports every way
+"""monkey_v1b.py -- throws random use at an HP Prime program in the PC harness (ppl_run_v3e.py) and reports every way
 it broke.  Roger Metcalf & Claude, 1 Nov 2026.
 
 WHY.  The companion book's programs "simply must work": students who don't want to be there will press anything, type
 anything and cancel anything.  The verify scripts drive every path a careful student takes; this drives the paths a
 careless one takes.  (The book's vetting standard, point 6.)
+
+v1b (1 Nov 2026, evening): the harness gets prime_facts_v1.py's device facts first (STRING(x, 2, d) is "Invalid
+input" on the Prime for d of 13 or more, which the harness printed: SampDist v2.3d crashed so at sigma = 1E12 on the
+Virtual Calculator).  Everything else is v1a's; the same seed gives the same run.
 
 v1a (1 Nov 2026): the matrices M0-M9 exist in every run, as on the Prime (an unused matrix holds one zero; v1 left
 them undefined, so DataLoad crashed on M1 in all 400 runs, the harness's gap, not DataLoad's); with --lists, M1
@@ -36,7 +40,7 @@ WHAT COUNTS AS BROKEN (each run gets one verdict):
 Each broken run is saved with its seed, so `--replay SEED` reruns exactly that run and prints its trace.
 
 RUN
-  python3 monkey_v1a.py PROGRAM.txt CALL [--runs 300] [--events 120] [--seed 1] [--seconds 20] [--lists]
+  python3 monkey_v1b.py PROGRAM.txt CALL [--runs 300] [--events 120] [--seed 1] [--seconds 20] [--lists]
                         [--replay SEED] [--out report.json] [--writes D,C,M1 ...]
     CALL      the program's main call as typed in Home, e.g. "TTESTLABG()"
     --lists   give the program random Statistics lists D1 and D2 in some runs
@@ -60,6 +64,8 @@ for cand in (os.environ.get('TTL_TOOLS', ''), HERE, os.path.join(HERE, 'tools'),
         break
 os.environ.setdefault('HPKIT', '/tmp/kit/hp-prime-kit-HEAD')
 import ppl_run_v3e as R                      # noqa: E402
+import prime_facts_v1                        # noqa: E402  (v1b: the device facts the harness does not model yet)
+prime_facts_v1.apply()
 from ppl_run_v3e import Harness, ACCEPT, CANCEL, KEY   # noqa: E402
 
 HOME_VARS = [c for c in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'] + ['L%d' % i for i in range(10)] + \

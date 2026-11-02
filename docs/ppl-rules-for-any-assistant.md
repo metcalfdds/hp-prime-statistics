@@ -8,7 +8,7 @@
 
 - PPL is the HP Prime's own language. It is **not** Python, TI-BASIC or BASIC. Blocks are `BEGIN … END;`, `IF … THEN … ELSE … END;`, `FOR i FROM a TO b DO … END;`, `WHILE … DO … END;`, `REPEAT … UNTIL …;`, `CASE IF … THEN … END; … DEFAULT … END;`. Every statement ends with `;`. Assignment is `:=`. Equality test is `==`. Not-equal is `<>`. Comments are `//` to end of line.
 - A program file holds one or more routines. `EXPORT Name()` makes a routine appear in the program catalog; helpers are declared without `EXPORT`. Every routine in every program on the calculator shares one name pool, matched ignoring case, so helper names must be unique across programs: prefix them (`tbCalc`, `tbShow`).
-- Reals carry 12 significant digits. There is no integer type. Lists are `{1, 2, 3}`, indexed from 1, `L(2)`. Strings are `"…"`, `DIM(s)` is the length, `+` concatenates, `MID`, `LEFT`, `RIGHT`, `INSTRING` are the tools.
+- Reals carry 12 significant digits, so `x := x + step` leaves x unchanged once the step is below x's last digit: a stepped loop can then run for ever. There is no integer type. Lists are `{1, 2, 3}`, indexed from 1, `L(2)`. Strings are `"…"`, `DIM(s)` is the length, `+` concatenates, `MID`, `LEFT`, `RIGHT`, `INSTRING` are the tools.
 - Use PPL for everything that draws or reacts to keys. Use MicroPython only for a compute-heavy engine that needs a real speed-up, and keep a pure-PPL fallback (section 8). Use the CAS only for exact or symbolic text, behind a guard (section 9).
 
 ## 2. Structure and syntax that the Prime rejects
@@ -33,7 +33,7 @@
 
 ## 4. Numbers and built-ins
 
-- `STRING(value, 2, d)` prints `d` fixed decimals. Mode 1 ignores `d`. A value below 10^(-d) in mode 2 prints in scientific form, so print a tiny p as `"p < 0.0001"` instead of letting it switch.
+- `STRING(value, 2, d)` prints `d` fixed decimals. Mode 1 ignores `d`. A value below 10^(-d) in mode 2 prints in scientific form, so print a tiny p as `"p < 0.0001"` instead of letting it switch. **`d` can be at most 12**: `STRING(0.5, 2, 13)` is "Invalid input", so cap a number of decimals worked out from the data. `STRING(value, 3, d)` is scientific: `STRING(0.00015, 3, 1)` is "1.5ᴇ-4".
 - `ROUND(x, d)` rounds halves away from zero. `IP`, `FP`, `FLOOR`, `CEILING` exist. `x^0.5` is the square root to use in code (the √ sign is not ASCII).
 - **Never compute an upper tail as `1 - CDF`**: with 12 digits the difference is exactly 0 once the tail is below about 5E-13. Normal upper tail: `NORMALD_CDF(m, s, 2*m - t)`. Chi-square with 1 df: `2*NORMALD_CDF(0, 1, -(x^0.5))`; with 2 df: `EXP(-x/2)`; with more df, the finite sum of positive terms (even df: `EXP(-x/2)` times `1 + h + h^2/2! + …` with `h = x/2`; odd df: `2*NORMALD_CDF(0,1,-(x^0.5)) + (2*x/3.14159265359)^0.5 * EXP(-x/2) * (1 + x/3 + x^2/15 + …)`). A right-tail quantile is `-NORMALD_ICDF(0, 1, alpha)`, not `NORMALD_ICDF(0, 1, 1 - alpha)`.
 - Build probabilities from **positive terms**; an alternating sum loses all its digits when the answer is small.
@@ -44,6 +44,7 @@
 - Not available: `GEOMETRIC*` (compute `p*(1-p)^(k-1)` by hand), `LNGAMMA` outside the CAS (carry a Lanczos helper).
 - `INSTRING(s, sub)` with `s = ""` is a **run-time error**. Guard every call: `IF DIM(s) > 0 THEN … END;`. `INSTRING("abc", "")` returns 1, so an empty search string loops forever in a replace routine; guard that too.
 - `LEFT(s, 0)` and `RIGHT(s, 0)` return the **whole string**, not `""`. Guard a count that can be 0.
+- **Not equal is `<>`.** `!=` is a factorial and a test: `3 != 0` gives 0, and `999 != 0` stops with "Numerical overflow".
 - `AND` and `OR` stop evaluating once the left side decides, so `DIM(s) > 0 AND INSTRING(s, "a") > 0` is safe.
 - A trailing-zero stripper must check that the string contains a `.` first; `STRING(140000000000, 2, 1)` has none.
 

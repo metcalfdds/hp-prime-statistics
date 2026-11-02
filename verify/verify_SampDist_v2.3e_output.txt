@@ -1,0 +1,43 @@
+=== A. the arithmetic against SciPy
+PASS A1 sd_prob, the four regions, 216 cases: SciPy to 0.0e+00
+PASS A2 sd_crit, the three tails at six alphas: SciPy to 0.0e+00 (relative)
+PASS A2 alpha = 1E-300: the upper critical value is finite (37.0471, SciPy 37.0471) and the two-tailed pair symmetric (v2.3d took ICDF(1 - alpha) = ICDF(1), infinity)
+PASS A3 Find probability from the menu, the four regions (N(100, 15), n = 30): EP_SD_P = SciPy: [(1, None, 0.033944577, np.float64(0.033944577)), (2, None, 0.072063517, np.float64(0.072063517)), (3, None, 0.726678322, np.float64(0.726678322)), (4, None, 0.273321678, np.float64(0.273321678))]
+PASS A4 Find critical value from the menu, the three tails at alpha .05: EP_SD_LO/HI = SciPy: [(1, None, 95.495383, 95.495383, [np.float64(95.495383), np.float64(95.495383)]), (2, None, 104.504617, 104.504617, [np.float64(104.504617), np.float64(104.504617)]), (3, None, 94.632418, 105.367582, [np.float64(94.632418), np.float64(105.367582)])]
+=== B. every mode and Help from the menu
+PASS B1 each mode and Help, from the menu and back to it, with no error: [('probability', None, 2), ('critical', None, 2), ('compare', None, 9), ('watch', None, 99), ('help', None, 2)]
+=== M. the monkey test's findings (1 Nov 2026; each check fails on v2.3d)
+   v2.3d for the controls: git history
+PASS M1 all 10 forms take real numbers only: every field is {name,[0]} (28 fields), so the form refuses a typed list; v2.3d's were bare names
+PASS M2 probability, mu = 1E300: the box "A number you typed has more than 50 digi...", the program back at its menu; v2.3d: PPLError: division by zero
+PASS M2 probability, mu = -1E300, sigma = 0.05: the box "A number you typed has more than 50 digi...", the program back at its menu; v2.3d: PPLError: division by zero
+PASS M2 critical value, mu = 100, n = 1E300: the box "A number you typed has more than 50 digi...", the program back at its menu; v2.3d: PPLError: division by zero
+PASS M2 critical value, mu = 1E40, sigma = 1: the box "σ/√n is too small next to μ for the calc...", the program back at its menu; v2.3d: PPLError: division by zero
+PASS M2 compare, sigma = 1E-300: the box "σ/√n is too small next to μ for the calc...", the program back at its menu; v2.3d: PPLError: division by zero
+PASS M2 compare, mu = 1E300: the box "A number you typed has more than 50 digi...", the program back at its menu; v2.3d: PPLError: division by zero
+PASS M2 watch, mu = 25, sigma = 1E-300: the box "σ/√n is too small next to μ for the calc...", the program back at its menu; v2.3d: PPLError: division by zero
+PASS M2 watch, mu = 0.01, sigma = 30, n = 1E300: the box "A number you typed has more than 50 digi...", the program back at its menu; v2.3d: PPLError: division by zero
+PASS M2 probability, mu = 1E9, sigma = 0.001: the box "σ/√n is too small next to μ for the calc...", the program back at its menu; v2.3d gave no box and drew (no error: the harness has 16 digits); its tick loop in 12 digits: stuck at 1000000000.00 after 5 steps (half up), stuck at 999999999.996 after 1 steps (half even); on the Virtual Calculator v2.3d drew nothing for two minutes, until On: "Program interrupted" (1 Nov 2026)
+PASS M3 the lines: sigma-x-bar of 1E-9 accepted, 9.9E-10 refused; at mu = +-1E9, 10 accepted and 9.99 refused; 9.99E49 accepted, -1E50 refused: [(0.0, 0), (1.0, 1), (0.0, 0), (1.0, 1), (1.0, 1), (0.0, 0), (1.0, 1)]
+PASS M4 the live graph at mu = 1E9, sigma = 100: n x 4 goes 1, 4, 16, 64 and stops before 256 (sigma-x-bar 6.25 < 10), saying "n stops here: ..." (sigma-x-bar left at 12.5)
+PASS M4 control: v2.3d went on to n = 1024 (sigma-x-bar 3.125) with no note
+PASS M5 the live graph's mu, sigma form with mu = 1E40, sigma = 1: "σ/√n is too small next to μ fo... Nothing changed.", and sigma-x-bar stays 2.7386
+PASS M6 a bound of -1E60: "A bound you typed has more than 50 digits ...", and the program is back at its menu
+PASS M7 the largest and smallest numbers accepted draw in every mode with no error and no box (STRING refusing 13 decimals, as on the Prime): [('probability, mu = 1E18, sigma = 1E10', None), ('probability, mu = 1E18, sigma = 1E10, n = 1, a bound of 9.9E49', None), ('critical, mu = 0, sigma = 1E-9', None), ('critical, mu = 1E18, sigma = 1E10, n = 1', None), ('compare, mu = 1E9, sigma = 1000', None), ('compare, mu = 0, sigma = 1E10, n = 1, 2, 3', None), ('watch, mu = 1E12, sigma = 1E10, n = 1E12', None), ('watch, mu = 0, sigma = 1E10, n = 1', None)]
+PASS M9 probability, sigma = 1E12, n = 1: "σ can be at most 1E10: a larger σ ne..."; v2.3d: PPLError: Invalid input: STRING(x, 2, 13) -- the Prime takes at most 12 decimals (Virtual Calculator, 1 Nov 2026; prime_facts_v1)
+PASS M9 critical value, sigma = 1.0000001E10: "σ can be at most 1E10: a larger σ ne..."
+PASS M9 compare, sigma = 1E12, n = 1E6, 4E6, 1.6E7 (every sigma/sqrt(n) at most 1E9: sigma itself is the line): "σ can be at most 1E10: a larger σ ne..."
+PASS M9 watch, sigma = 5E11: "σ can be at most 1E10: a larger σ ne..."; v2.3d: PPLError: Invalid input: STRING(x, 2, 13) -- the Prime takes at most 12 decimals (Virtual Calculator, 1 Nov 2026; prime_facts_v1)
+PASS M9 the live graph's mu, sigma form with sigma = 1E11: "σ can be at most 1E10: a large... Nothing changed.", sigma-x-bar stays 2.7386
+PASS M10 every density label ends left of the axis (6 px a character, the program's own estimate) and the panel's sigma line is at most 50 characters, at sigma = 15,000, 1E10 and 1E-9: [('probability, sigma = 15,000, n = 3', [('5.0ᴇ−5', 0.0), ('1.0ᴇ−4', 0.0)], 44), ('probability, sigma = 1E10, n = 1', [('1ᴇ−11', 5.0), ('2ᴇ−11', 5.0)], 38), ('probability, sigma = 1E-9, n = 1', [('1.0ᴇ8', 5.0), ('2.0ᴇ8', 5.0)], 41), ('watch, sigma = 1E10, n = 1', [('1ᴇ−11', 5.0), ('2ᴇ−11', 5.0)], 38)]
+PASS M10 control: v2.3d's labels at sigma = 15,000 ran into the axis ([('0.00005', 0.0), ('0.00010', 0.0)]) and its sigma line at 1E10 was 57 characters
+PASS M8 every new box within 4 lines at 32 characters a line: [4, 4, 3, 4, 4, 3, 3]
+=== G. static checks
+PASS G1 28 routines; every one but the EXPORT is tagged sd_; no "!="
+PASS G1 the glyphs in the code's strings are the program's own set: ×αμσ—₁₂₃√≥
+=== D. layout (text_overlap_v1 over every screen above)
+   screens: 346 distinct of 477
+PASS D1 no firm overlap, frame straddle or overrun on any SampDist screen drawn (['SampDist_v2.3e.txt'])
+
+33 PASS, 0 FAIL
+exit 0

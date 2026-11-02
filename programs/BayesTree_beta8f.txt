@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// BAYESTREE - beta 8e
+// BAYESTREE - beta 8f
 // ============================================================
 // FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
 //   the file and credit the author if you pass it on.  Not for
@@ -12,16 +12,65 @@
 // beta 3 was tested on an HP Prime G2 and G1, both on the
 //   2026-09-09 firmware, plus the desktop Virtual Calculator.
 //   beta 4, beta 5, beta 6, beta 7, beta 8, beta 8a, beta 8b, 8c,
-//   8d and beta 8e have NOT yet been run on hardware.  beta 7 ran on
+//   8d, beta 8e and beta 8f have NOT yet been run on hardware.  beta 7 ran on
 //   the HP Prime Virtual Calculator (2.4.2, build 2026-09-09, 17 Oct
 //   2026); beta 8b fixed what that run found.  beta 8b ran there in
 //   round 2 the same day: its soft keys fire, every pair on the tree
 //   adds up and the CAS gave real exact answers; beta 8c fixes what
 //   round 2 found, and passed the retest there that afternoon;
-//   beta 8d and beta 8e have not run there (beta 8e: the PC harness
+//   beta 8d, beta 8e and beta 8f have not run there (the PC harness
 //   only).  beta 8 is the first version that calls the CAS;
 //   its call form (beta 8a) is the one CASProbe beta 1b found on the
 //   same emulator, see bt_Cas below.
+//
+// beta 8f (1 Nov 2026) - what changed: the monkey test (random keys,
+//   taps, cancels and odd values typed into the forms, 400 runs in the
+//   PC harness).  Line numbers are beta 8e's.
+//   * A DIVISION BY ZERO ON A NODE'S PAGE.  With two tests and a small
+//     N, test 1's positives can round to 0 people, and the tree's root
+//     then holds 0.  A tap on a node opened its page, which printed
+//     the node's share of N as count/N = 0/0 (1398): "Error: X/0".
+//     The page now says "(N is 0 here)" in its place.
+//   * A PROPORTION OUTSIDE 0 TO 1 IS REFUSED WITH A SENTENCE.  The
+//     Values form (2687-2689) and the Second test form (2758-2759)
+//     moved a typed 7 (meant as 70 %) to 0.999 without a word, so the
+//     tree showed a test the student had not asked for.  A prior, sens
+//     or spec below 0 or above 1 is now refused: "sens is a proportion
+//     from 0 to 1: type 0.7 for 70 %.  Nothing changed."  Values from 0
+//     to 1 are kept inside the program's limits as before (prior 0.0001
+//     to 0.999, sens and spec 0.01 to 0.999).
+//   * N AND THE COUNTS.  An N below 10 became 10 without a word (2690),
+//     and a negative count became 0 (2729).  An N outside 10 to
+//     1,000,000, a negative count and four counts that add to more
+//     than 1,000,000 are refused with a sentence.  (A limit, so that a
+//     typed 1E300 never reaches the arithmetic; a million people is far
+//     more than the lesson needs.)
+//   * EVERY FORM FIELD TAKES NUMBERS ONLY ({name,[0]}).  A typed list
+//     went into the arithmetic (47 of the 400 runs).  On the Virtual
+//     Calculator a list typed into such a field gets "Error: Invalid
+//     input" and the field keeps its value (TTestLab, 1 Nov 2026).
+//   * TWO LINES THAT RAN INTO THEIR NEIGHBOURS (the overlap check over
+//     this version's test screens).  The tree's "odds 999.000 × LR+ =
+//     998001.000" (3020, prior 0.999) ran into the spec number at x 168:
+//     odds of 100 or more are now whole numbers (bt_fmtO), "odds 999 ×
+//     LR+ = 998001", and with two near-certain tests, whose line would
+//     still be too long, the word "odds" is left out.  The Diagnostics
+//     page's "diagnostic OR = 998001   (sens or spec at its 0.999 cap)"
+//     (1519) ran past the right edge; it reads "(at the 0.999 cap)".
+//   * "!=" IS NOT "NOT EQUAL" ON THE PRIME.  bt_fmtp's floor (721) was
+//     "IF pv != 0 AND ...".  On the Virtual Calculator, typed in Home,
+//     {3!=0, 0!=0, 3<>0, 0<>0} gave {0, 0, 1, 0} and 999!=0 gave "Error:
+//     Numerical overflow": "!" is the factorial and "=" a test.  So the
+//     floor never ran there ("PPV = 9.991ᴇ-4" on the tree where the PC
+//     harness showed "PPV < 0.001"), and BayesTree at prior, sens and
+//     spec 0.999 ended with "Error: Numerical overflow" when Esc was
+//     pressed.  It is "<>" now, as PowerViz's has been since v2.5i.
+//   * THE TWO-TEST BREADCRUMB LEFT A PIECE OF A TRY BEHIND.  A try that
+//     ran past x 102 was painted over to x 103 only (2828, 2832), so the
+//     end of its last number (">.999" from x 80) stayed beside the
+//     slider's "prior 0.999" (prior 0.999, two tests of 0.999).  It is
+//     now painted over as far as it reached.
+//   Nothing else changed.
 //
 // beta 8e (19 Oct 2026) - what changed: the fleet review of 19 Oct
 //   2026 (findings_E: B1, B2, B3, B5, B6, B7).  Line numbers are
@@ -718,7 +767,11 @@ bt_fmtp(pv, dg)
 BEGIN
   LOCAL thr;
   thr := 10^(-dg);
-  IF pv != 0 AND ABS(pv) < thr THEN
+  // beta 8f: <>, not != (on the Prime "!=" is a factorial and an "=":
+  // 3!=0 gives 0 and 999!=0 "Numerical overflow" (Virtual Calculator,
+  // 1 Nov 2026), so this floor never ran there: "PPV = 9.991ᴇ-4" where
+  // the PC harness showed "PPV < 0.001")
+  IF pv <> 0 AND ABS(pv) < thr THEN
     IF pv > 0 THEN RETURN "< " + STRING(thr,2,dg); END;
     RETURN "> -" + STRING(thr,2,dg);
   END;
@@ -1051,6 +1104,33 @@ BEGIN
     END;
   END;
   RETURN 1/(1 + bpL);
+END;
+
+// beta 8f: why a typed proportion cannot be used, or "" when it can.
+// A prior, sens or spec is a proportion from 0 to 1; a student who
+// types 7 or 70 for 70 % is told so, and nothing changes (beta 8e
+// moved it to 0.999 without a word).  pbN names the value, pbX is the
+// example ("0.7 for 70 %").  A number with more than 50 digits gets
+// the fleet's sentence for it.
+bt_PBad(pbV, pbN, pbX)
+BEGIN
+  IF ABS(pbV) >= 1E50 THEN
+    RETURN "A number you typed has more than 50 digits: too large to work with.";
+  END;
+  IF pbV < 0 OR pbV > 1 THEN
+    RETURN pbN + " is a proportion from 0 to 1: type " + pbX + ".";
+  END;
+  RETURN "";
+END;
+
+// beta 8f: an odds on the tree's odds line.  Below 100 as before
+// (bt_fmtp, three decimals); from 100 up as a whole number, so that
+// "odds 999.000 × LR+ = 998001.000" (prior 0.999) no longer runs into
+// the spec number at x 168: "odds 999 × LR+ = 998001".
+bt_fmtO(foV)
+BEGIN
+  IF foV >= 100 THEN RETURN bt_fmtc(foV); END;
+  RETURN bt_fmtp(foV, 3);
 END;
 
 // What the exact texts depend on (beta 8): the number of tests, the
@@ -1395,7 +1475,14 @@ BEGIN
   // counts get their count and their share of N on the big line
   IF niId == 1 THEN niV := "count = " + bt_fmtc(niN); END;
   IF niId >= 2 AND niId <= 7 THEN
-    niV := "count = " + bt_fmtc(niN) + "  (" + bt_fmtp(niN/niNN,3) + " of N)";
+    // beta 8f: with two tests and a small N, test 1's positives can round
+    // to 0 people, and then N on the tree is 0: no share to print (0/0
+    // was "Error: X/0")
+    IF niNN > 0 THEN
+      niV := "count = " + bt_fmtc(niN) + "  (" + bt_fmtp(niN/niNN,3) + " of N)";
+    ELSE
+      niV := "count = " + bt_fmtc(niN) + "  (N is 0 here)";
+    END;
   END;
 
   // composed on G1 (cleared to white), shown with one blit (beta 6)
@@ -1516,7 +1603,9 @@ BEGIN
     // a big DOR as a whole number (998001 at 0.999 / 0.999), else 3 decimals
     IF dor >= 1000 THEN sDOR := bt_fmtc(dor); ELSE sDOR := bt_fmtp(dor,3); END;
     IF se >= 0.9985 OR sp >= 0.9985 THEN
-      sDOR := sDOR + "   (sens or spec at its 0.999 cap)";
+      // beta 8f: "(sens or spec at its 0.999 cap)" ran past the right
+      // edge (58 characters from x 14); the sens and spec lines say which
+      sDOR := sDOR + "   (at the 0.999 cap)";
     ELSE
       sDOR := sDOR + "   (LR+/LR−)";
     END;
@@ -2574,6 +2663,8 @@ BEGIN
   LOCAL lvL,lqL;          // beta 8b: the rounded counts and shares on the tree
   LOCAL btStale;          // beta 8b: 1 = this click ends a tap already handled
   LOCAL btWT;             // beta 8c: how long the last WAIT(-1) took (ms)
+  LOCAL btBad;            // beta 8f: why a typed value was refused ("" = none)
+  LOCAL btOdL;            // beta 8f: the odds line under the root
 
   // defaults (change via the menu: Enter values)
   prior := 0.1; sens := 0.90; spec := 0.95;
@@ -2680,14 +2771,30 @@ BEGIN
       // this stage's numbers, for the views below
       bkL := bt_Book(prior, NP, sens, spec);
       IF menuIdx == 1 THEN
+        // beta 8f: {name,[0]}: each field takes a number only (a typed list
+        // gets "Invalid input" from the form itself)
         pr2 := prior; se2 := sens; sp2 := spec; np2 := NP;
-        IF INPUT({pr2, se2, sp2, np2}, "Exact Values",
+        IF INPUT({{pr2,[0]}, {se2,[0]}, {sp2,[0]}, {np2,[0]}}, "Exact Values",
           {"prior:", "sens:", "spec:", "N:"},
           {"P(D+), in (0,1)", "P(T+|D+)", "P(T−|D−)", "People at the tree root"}) == 1 THEN
-          prior := MIN(0.999, MAX(0.0001, pr2));
-          sens  := MIN(0.999, MAX(0.01, se2));
-          spec  := MIN(0.999, MAX(0.01, sp2));
-          NP    := MAX(10, IP(np2));
+          // beta 8f: a value outside its range is refused with a sentence,
+          // and nothing changes (beta 8e moved it to the nearest end
+          // without a word: a sens of 7, meant as 70 %, became 0.999)
+          btBad := bt_PBad(pr2, "The prior", "0.02 for 2 %");
+          IF DIM(btBad) == 0 THEN btBad := bt_PBad(se2, "sens", "0.7 for 70 %"); END;
+          IF DIM(btBad) == 0 THEN btBad := bt_PBad(sp2, "spec", "0.95 for 95 %"); END;
+          IF DIM(btBad) == 0 AND (np2 < 10 OR np2 > 1000000) THEN
+            btBad := "N is the number of people at the root of the tree: 10 to 1,000,000.";
+          END;
+          IF DIM(btBad) > 0 THEN
+            MSGBOX(btBad + " Nothing changed.");
+          ELSE
+            // inside 0 to 1, the program's limits as before
+            prior := MIN(0.999, MAX(0.0001, pr2));
+            sens  := MIN(0.999, MAX(0.01, se2));
+            spec  := MIN(0.999, MAX(0.01, sp2));
+            NP    := IP(np2);
+          END;
         END;
       END;
       IF menuIdx == 3 THEN
@@ -2723,19 +2830,35 @@ BEGIN
         // whole number ("N = 19.8" before).
         lvL := bt_RCnt(bkL);
         tp := lvL(4); fn := lvL(5); btFP := lvL(6); tn := lvL(7);
-        IF INPUT({tp, fn, btFP, tn}, "Leaf Counts (2x2)",
+        IF INPUT({{tp,[0]}, {fn,[0]}, {btFP,[0]}, {tn,[0]}}, "Leaf Counts (2x2)",
           {"T+ D+:", "T− D+:", "T+ D−:", "T− D−:"},
           {"true positives", "false negatives", "false positives", "true negatives"}) == 1 THEN
-          tp := MAX(0,IP(tp)); fn := MAX(0,IP(fn)); btFP := MAX(0,IP(btFP)); tn := MAX(0,IP(tn));
-          IF tp+fn <= 0 OR btFP+tn <= 0 THEN
-            MSGBOX("Need D+ row and D− row each > 0");
+          // beta 8f: a negative count, or four that add to more than
+          // 1,000,000 people, is refused with a sentence (beta 8e made a
+          // negative count 0 without a word).  Each is checked alone
+          // first, so a 51-digit count never reaches the sum.
+          btBad := "";
+          IF MIN(MIN(tp, fn), MIN(btFP, tn)) < 0 THEN
+            btBad := "A count is a number of people: 0 or more.";
           ELSE
-            NP := tp+fn+btFP+tn;
-            prior := (tp+fn)/NP;
-            sens  := MIN(0.999, MAX(0.001, tp/(tp+fn)));
-            spec  := MIN(0.999, MAX(0.001, tn/(btFP+tn)));
-            prior := MIN(0.999, MAX(0.0001, prior));
-            btNS := 1;          // beta 7: four counts describe ONE test
+            IF MAX(MAX(tp, fn), MAX(btFP, tn)) > 1000000 OR tp + fn + btFP + tn > 1000000 THEN
+              btBad := "The four counts add to more than 1,000,000 people: too many for the tree.";
+            END;
+          END;
+          tp := IP(tp); fn := IP(fn); btFP := IP(btFP); tn := IP(tn);
+          IF DIM(btBad) > 0 THEN
+            MSGBOX(btBad + " Nothing changed.");
+          ELSE
+            IF tp+fn <= 0 OR btFP+tn <= 0 THEN
+              MSGBOX("Need D+ row and D− row each > 0");
+            ELSE
+              NP := tp+fn+btFP+tn;
+              prior := (tp+fn)/NP;
+              sens  := MIN(0.999, MAX(0.001, tp/(tp+fn)));
+              spec  := MIN(0.999, MAX(0.001, tn/(btFP+tn)));
+              prior := MIN(0.999, MAX(0.0001, prior));
+              btNS := 1;          // beta 7: four counts describe ONE test
+            END;
           END;
         END;
       END;
@@ -2749,14 +2872,22 @@ BEGIN
         // starts from test 1's positives.  Choosing it again edits
         // test 2.  Prefilled with the test now on screen.
         se2 := sens; sp2 := spec;
-        IF INPUT({se2, sp2}, "Second test",
+        IF INPUT({{se2,[0]}, {sp2,[0]}}, "Second test",
           {"sens 2:", "spec 2:"},
           {"P(T+|D+) of test 2", "P(T−|D−) of test 2"}) == 1 THEN
-          IF btNS == 1 THEN
-            btSSe := {sens}; btSSp := {spec}; btNS := 2;
+          // beta 8f: refused with a sentence outside 0 to 1, as on the
+          // Values form; nothing changes, and test 1 stays the only test
+          btBad := bt_PBad(se2, "sens 2", "0.7 for 70 %");
+          IF DIM(btBad) == 0 THEN btBad := bt_PBad(sp2, "spec 2", "0.95 for 95 %"); END;
+          IF DIM(btBad) > 0 THEN
+            MSGBOX(btBad + " Nothing changed.");
+          ELSE
+            IF btNS == 1 THEN
+              btSSe := {sens}; btSSp := {spec}; btNS := 2;
+            END;
+            sens := MIN(0.999, MAX(0.01, se2));
+            spec := MIN(0.999, MAX(0.01, sp2));
           END;
-          sens := MIN(0.999, MAX(0.01, se2));
-          spec := MIN(0.999, MAX(0.01, sp2));
         END;
       END;
       IF menuIdx == 9 THEN
@@ -2822,14 +2953,18 @@ BEGIN
       // it runs past x 102 (the slider panel starts at 104), that try is
       // painted over and the crumb drawn again without the leading zeros,
       // then, if it still does not fit, at two decimals 2 px apart.
+      // beta 8f: a try is painted over as far as it reached (MAX(103,
+      // bcX)); to x 103 only, the end of its last number stayed beside
+      // the slider's "prior 0.999" (prior 0.999, two tests of 0.999).
+      // The slider panel is drawn after this, so nothing of it is lost.
       bcL := {prior, prEf, ppv};
       bcX := bt_Crumb(bcL, 0, 3);
       IF bcX > 102 THEN
-        RECT_P(G1, 0, 0, 103, 22, RGB(255,255,255), RGB(255,255,255));
+        RECT_P(G1, 0, 0, MAX(103, bcX), 22, RGB(255,255,255), RGB(255,255,255));
         bcX := bt_Crumb(bcL, 1, 3);
       END;
       IF bcX > 102 THEN
-        RECT_P(G1, 0, 0, 103, 22, RGB(255,255,255), RGB(255,255,255));
+        RECT_P(G1, 0, 0, MAX(103, bcX), 22, RGB(255,255,255), RGB(255,255,255));
         bcX := bt_Crumb(bcL, 2, 2);
       END;
     ELSE
@@ -3017,7 +3152,13 @@ BEGIN
       IF btNS > 1 THEN TEXTOUT_P("(test 2)", G1, 4, 174, 1, cGry); END;
     END;
     // beta 8d: bt_Eq -- the relation without "=" ("PPV < 0.001")
-    TEXTOUT_P("odds " + bt_fmtp(podd,3) + " × LR+" + bt_Eq(bt_fmtp(posto,3)), G1, 4, 192, 1, cTx);
+    // beta 8f: odds of 100 or more as whole numbers (bt_fmtO), so the
+    // line ends before the spec number at x 168 (at most 26 characters);
+    // only with two near-certain tests ("998001 × LR+ = 997002999")
+    // would it still be too long, and then the word "odds" is left out
+    btOdL := bt_fmtO(podd) + " × LR+" + bt_Eq(bt_fmtO(posto));
+    IF DIM(btOdL) <= 21 THEN btOdL := "odds " + btOdL; END;
+    TEXTOUT_P(btOdL, G1, 4, 192, 1, cTx);
     // key legend: house form, dodger blue; it ends above y 218, where
     // the soft keys are (beta 7)
     TEXTOUT_P("⇆ = spec, ⇅ = sens, +/- = prior", G1, 4, 204, 1, RGB(30,144,255));

@@ -1,0 +1,1 @@
+StatDist_v2.7g.txt: 1794 runs over 27 families; 0 broken (in 0 families), 851 refused with a box, 943 drawn

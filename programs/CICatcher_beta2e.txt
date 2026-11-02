@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// CICATCHER - beta 2d
+// CICATCHER - beta 2e
 // Confidence intervals: "95 % of WHAT?"
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
@@ -17,7 +17,8 @@
 //   legal purposes.
 //
 // Firmware: written for the 2026-09-09 firmware (2.4.2).  This
-//   version (beta 2c) has run on the PC harness only (ppl_run_v3e,
+//   version (beta 2e) has run on the PC harness and the Virtual
+//   Calculator (2.4.2, 1 Nov 2026); beta 2c and 2d ran on the PC harness only (ppl_run_v3e,
 //   verify_CICatcher_beta2c.py): NOT on the emulator, NOT on
 //   hardware.  No version has run on hardware yet.  On the HP Prime
 //   Virtual Calculator (2.4.2, build 2026-09-09, the calculators'
@@ -41,6 +42,27 @@
 //   the main menu's "New setup: interval, population, n" is now
 //   "New: interval, population, n"; nothing else a user sees
 //   changed, apart from help page 4's last line).
+//
+// beta 2e (1 Nov 2026) - what changed: the monkey test (random keys,
+//   taps, cancels and odd values typed into the forms, 1,000 runs in
+//   the PC harness).  Line numbers are beta 2d's.
+//   * A DIVISION BY ZERO.  A typed sigma of 1E-300 left the window
+//     mu +/- 6.5 sigma/sqrt(n) with zero width in 12 digits, and cqWindow
+//     (988) divided by it ("Error: X/0" on the calculator).  The setup
+//     form now refuses, with a sentence, a mu or sigma with more than 50
+//     digits and a sigma/sqrt(n) below 0.000000001 or below
+//     |mu|/100,000,000 (new cqBadMsg); so does a new n on the n form
+//     (cqAskN) that would make sigma/sqrt(n) that small.  Above that line
+//     the window holds about 1,300 distinct 12-digit numbers.
+//   * EVERY FORM FIELD TAKES NUMBERS ONLY ({name,[0]}, the User Guide's
+//     allowed-types form; 1632, 1694, 1696).  A typed list went on into
+//     the arithmetic (111 of 400 runs in the first pass).  On the
+//     Virtual Calculator such a field refuses {1,2} with "Error:
+//     Invalid input" and keeps its value.
+//   * AXIS LABELS THAT WOULD TOUCH (cqDrawAxis, 1229-1230): one that would
+//     run into the label before it is left out; its tick stays.  At a
+//     large mu the labels are long (1000000040 beside 1000000060).
+//   Nothing else changed.
 //
 // beta 2d (20 Oct 2026): symbols instead of spelled-out names, on screen
 //   only (Roger, 20 Oct 2026: "use the symbols we developed"; every
@@ -400,6 +422,30 @@ BEGIN
   IF nnF <= 2 THEN RETURN 2 * 10^nnE; END;
   IF nnF <= 5 THEN RETURN 5 * 10^nnE; END;
   RETURN 10^(nnE + 1);
+END;
+
+// beta 2e: why a mean interval's typed mu, sigma and n cannot be
+// drawn, or "" when they can.  The window is mu +/- 6.5 sigma/sqrt(n)
+// and the calculator keeps 12 digits: a typed sigma of 1E-300 gave it
+// zero width, and cqWindow divided by it (the monkey test, 1 Nov
+// 2026).  A sigma/sqrt(n) of at least 0.000000001 and at least
+// |mu|/100,000,000 keeps about 1,300 distinct numbers across the
+// window and the tick labels within 9 decimals (STRING takes at most
+// 12).  A number with more than 50 digits would pass the Prime's
+// 1E499 when the sample's spread squares it.
+cqBadMsg(bmM, bmS, bmN)
+BEGIN
+  LOCAL bmE;
+  IF ABS(bmM) >= 1E50 OR bmS >= 1E50 THEN
+    RETURN "A number you typed has more than 50 digits: too large to work with.";
+  END;
+  bmE := bmS / bmN^0.5;
+  IF bmE < 0.000000001 OR bmE < ABS(bmM)*0.00000001 THEN
+    RETURN cqSgS + "/" + CHAR(8730) + "n is too small next to " + cqMuS +
+      " for the calculator's 12 digits. Use a larger " + cqSgS +
+      ", a smaller n or a " + cqMuS + " nearer 0.";
+  END;
+  RETURN "";
 END;
 
 // Wait for the finger to lift -- but never for more than a second.
@@ -1207,6 +1253,7 @@ END;
 cqDrawAxis()
 BEGIN
   LOCAL daK, daK0, daK1, daTV, daX, daS;
+  LOCAL daLX, daR;
   IF cqType >= 3 THEN
     IF cqWL < 0 THEN
       daX := cqPXi(0);
@@ -1220,6 +1267,7 @@ BEGIN
   // ticks at whole multiples of the step: k * step, so 0 is 0
   daK0 := CEILING(cqWL / cqStp - 0.000001);
   daK1 := FLOOR(cqWR / cqStp + 0.000001);
+  daR := -99;
   FOR daK FROM daK0 TO daK1 DO
     daTV := daK * cqStp;
     daX := cqPXi(daTV);
@@ -1227,7 +1275,13 @@ BEGIN
       LINE_P(G1, daX, cqPT, daX, cqPB, cqGRID);
       LINE_P(G1, daX, cqAY, daX, cqAY + 3, cqGRAY);
       daS := STRING(daTV, 2, cqTDec);
-      TEXTOUT_P(daS, G1, MAX(0, daX - 3 * DIM(daS)), cqAY + 4, 1, cqGRAY);
+      daLX := MAX(0, daX - 3 * DIM(daS));
+      // beta 2e: a label that would touch the one before it is left
+      // out (long labels at a large mu); its tick stays
+      IF daLX >= daR + 4 THEN
+        TEXTOUT_P(daS, G1, daLX, cqAY + 4, 1, cqGRAY);
+        daR := daLX + 6 * DIM(daS);
+      END;
     END;
   END;
   LINE_P(G1, cqPL, cqAY, cqPR, cqAY, #000000h);
@@ -1625,15 +1679,23 @@ END;
 // mix two methods; one run = one method.
 cqAskN()
 BEGIN
-  LOCAL nkN, nkLo, nkH, nkOK;
+  LOCAL nkN, nkLo, nkH, nkOK, nkM;
   nkN := cqN;
   IF cqType <= 2 THEN nkLo := 2; ELSE nkLo := 5; END;
   nkH := "Whole number, " + STRING(nkLo, 2, 0) + " to 100; starts a fresh run";
-  nkOK := INPUT({nkN}, "Sample size", {"n:"}, {nkH});
+  // beta 2e: {nkN,[0]}: a number only (a typed list is refused by the
+  // form itself)
+  nkOK := INPUT({{nkN,[0]}}, "Sample size", {"n:"}, {nkH});
   IF nkOK == 1 THEN
     IF FP(nkN) <> 0 OR nkN < nkLo OR nkN > 100 THEN
       MSGBOX("n must be a whole number from " + STRING(nkLo, 2, 0) + " to 100.");
       RETURN;
+    END;
+    // beta 2e: a larger n narrows the window; refused where sigma/sqrt(n)
+    // would get too small for 12 digits (cqBadMsg)
+    IF cqType <= 2 THEN
+      nkM := cqBadMsg(cqMu, cqSg, nkN);
+      IF DIM(nkM) > 0 THEN MSGBOX(nkM + " n did not change."); RETURN; END;
     END;
     IF nkN <> cqN THEN
       cqN := nkN;
@@ -1691,9 +1753,10 @@ BEGIN
   suGo := 1;
   WHILE suGo == 1 DO
     IF suTy <= 2 THEN
-      suOK := INPUT({suTr, suSD, suNn, suLv}, "Population and sample", {suL1, suL2, suL3, suL4}, {suH1, suH2, suH3, suH4});
+      // beta 2e: {name,[0]} -- numbers only
+      suOK := INPUT({{suTr,[0]}, {suSD,[0]}, {suNn,[0]}, {suLv,[0]}}, "Population and sample", {suL1, suL2, suL3, suL4}, {suH1, suH2, suH3, suH4});
     ELSE
-      suOK := INPUT({suTr, suNn, suLv}, "Population and sample", {suL1, suL3, suL4}, {suH1, suH3, suH4});
+      suOK := INPUT({{suTr,[0]}, {suNn,[0]}, {suLv,[0]}}, "Population and sample", {suL1, suL3, suL4}, {suH1, suH3, suH4});
     END;
     IF suOK <> 1 THEN RETURN 0; END;
     suMsg := "";
@@ -1709,6 +1772,9 @@ BEGIN
       IF FP(suNn) <> 0 OR suNn < 2 OR suNn > 100 THEN
         suMsg := "n must be a whole number from 2 to 100 (a t interval needs 2 or more).";
       END;
+      // beta 2e: numbers the window cannot draw (cqBadMsg), once the
+      // others are right
+      IF suMsg == "" THEN suMsg := cqBadMsg(suTr, suSD, suNn); END;
     ELSE
       IF suTr < 0.01 OR suTr > 0.99 THEN
         suMsg := "p must be from 0.01 to 0.99.";

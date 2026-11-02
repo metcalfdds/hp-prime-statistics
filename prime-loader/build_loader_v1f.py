@@ -1,8 +1,18 @@
 #!/usr/bin/env python3
-"""build_loader_v1d.py -- assembles PrimeLoader_v1d.html: the page template, the loader's core, the Data Loader's core
+"""build_loader_v1f.py -- assembles PrimeLoader_v1f.html: the page template, the loader's core, the Data Loader's core
 (for its zip writer), the chapter list, and every program file from a starter pack, embedded so the page works offline.
 
-    python3 build_loader_v1d.py PACK.zip [OUT.html] [--kit PATH]
+    python3 build_loader_v1f.py PACK.zip [OUT.html] [--kit PATH]
+
+v1f (1 Nov 2026, night): starter pack v8, whose CICatcher beta 2e, Norm3 v2.4d, NormExplorer beta 42e and StatDist
+v2.7h carry the monkey test's third round (every form field takes a real number only; numbers the program cannot
+draw are refused with a sentence; StatDist's limits family by family) and what testing them on the Virtual Calculator
+found.  The catalog names those versions.  The page template is v1c's, unchanged.
+
+v1e (1 Nov 2026, evening): starter pack v7, whose SampDist v2.3e and BayesTree beta 8f carry the monkey test's fixes
+(every form field takes a real number only; numbers the program cannot draw or use are refused with a sentence) and
+what testing them on the Virtual Calculator found.  The catalog names those versions.  The page template is v1c's,
+unchanged.
 
 v1d (1 Nov 2026): starter pack v6, whose TTestLab beta 1c and TTestLabG beta 1a carry the monkey test's fixes
 (every form field takes a real number only; a number with more than 50 digits, or a typed N over 1,000,000, is
@@ -36,7 +46,7 @@ KIT = os.environ.get('HPKIT', '/tmp/kit/hp-prime-kit-HEAD')
 if '--kit' in argv:
     i = argv.index('--kit'); KIT = argv[i + 1]; del argv[i:i + 2]
 PACK = argv[0]
-OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v1d.html')
+OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v1f.html')
 SITE = 'https://metcalfdds.github.io/hp-prime-statistics/'
 sys.path.insert(0, KIT)
 from hpkit import program as kitprog            # hp-prime-kit (MIT, JordiRigau/hp-prime-kit)
@@ -45,10 +55,10 @@ from hpkit import program as kitprog            # hp-prime-kit (MIT, JordiRigau/
 PROGRAMS = {
   'AgreeLab':     ('AgreeLab.hpprgm', 'beta 1b', 'Examiner agreement: kappa and its cousins', 'AgreeLab'),
   'AnovaLab':     ('AnovaLab.hpprgm', 'beta 1a', 'ANOVA: one-way and two-way, and tests for variances', 'AnovaLab'),
-  'BayesTree':    ('BayesTree.hpprgm', 'beta 8e', 'Bayes as a tree of 1,000 people: slide the prevalence', 'BayesTree'),
+  'BayesTree':    ('BayesTree.hpprgm', 'beta 8f', 'Bayes as a tree of 1,000 people: slide the prevalence', 'BayesTree'),
   'BiNorm3D':     ('BiNorm3D.hpprgm', 'beta 1b', 'Correlation in 3-D: turn the bivariate normal with a finger', 'BiNorm3D'),
   'BurrLab':      ('BurrLab.hpprgm', 'beta 1i', 'A model for long right tails (Burr XII)', 'BurrLab'),
-  'CICatcher':    ('CICatcher.hpprgm', 'beta 2d', 'Fifty confidence intervals: how many catch the truth?', 'CICatcher'),
+  'CICatcher':    ('CICatcher.hpprgm', 'beta 2e', 'Fifty confidence intervals: how many catch the truth?', 'CICatcher'),
   'CentralLimit': ('CentralLimit.hpappdir', 'beta 3d', 'The central limit theorem, one sample at a time (an app)', None),
   'ChiTable':     ('ChiTable.hpprgm', 'beta 3e', 'Chi-square for a two-way table: drag the bars', 'ChiTable'),
   'DNAMixLR':     ('DNAMixLR.hpprgm', 'beta 3e', 'Likelihood ratios for DNA mixtures', 'DNAMixLR'),
@@ -57,16 +67,16 @@ PROGRAMS = {
   'ErrorRate':    ('ErrorRate.hpprgm', 'beta 1e', 'Error rates from proficiency tests', 'ErrorRate'),
   'FitCheck':     ('FitCheck.hpprgm', 'beta 1a', 'Goodness of fit: does the data match the model?', 'FitCheck'),
   'GaltonBoard':  ('GaltonBoard.hpprgm', 'beta 3e', 'Pour balls through pegs: the binomial becomes normal', 'GaltonBoard'),
-  'Norm3':        ('Norm3.hpprgm', 'v2.4b', 'Drag x and watch the normal area', 'Norm3'),
-  'NormExplorer': ('NormExplorer.hpprgm', 'beta 42c', 'The normal curve: areas, z scores, your own data', 'NormExp'),
+  'Norm3':        ('Norm3.hpprgm', 'v2.4d', 'Drag x and watch the normal area', 'Norm3'),
+  'NormExplorer': ('NormExplorer.hpprgm', 'beta 42e', 'The normal curve: areas, z scores, your own data', 'NormExp'),
   'PowerViz':     ('PowerViz.hpprgm', 'v2.5k', 'Power: drag the curves and watch alpha, beta and power', 'POWERVIZ'),
   'RankLab':      ('RankLab.hpprgm', 'beta 1b', 'Rank tests: sign, Wilcoxon, Mann-Whitney, Kruskal-Wallis', 'RankLab'),
   'ResampLab':    ('ResampLab.hpprgm', 'beta 1c', 'Permutation tests and the bootstrap, drawn as they run', 'ResampLab'),
   'RiskLab':      ('RiskLab.hpprgm', 'beta 1b', 'Risk scores and ROC curves', 'RiskLab'),
-  'SampDist':     ('SampDist.hpprgm', 'v2.3d', 'The sampling distribution of the mean', 'SampDist'),
+  'SampDist':     ('SampDist.hpprgm', 'v2.3e', 'The sampling distribution of the mean', 'SampDist'),
   'ScatterLab':   ('ScatterLab.hpprgm', 'beta 2d', 'Build a scatterplot with your finger; fit the line', 'ScatterLab'),
   'SeizureLab':   ('SeizureLab.hpprgm', 'beta 1b', 'How many units of a drug seizure to test?', 'SeizureLab'),
-  'StatDist':     ('StatDist.hpprgm', 'v2.7f', '27 distributions, each a plot you can touch', 'StatDist'),
+  'StatDist':     ('StatDist.hpprgm', 'v2.7h', '27 distributions, each a plot you can touch', 'StatDist'),
   'StudRange':    ('StudRange.hpprgm', 'beta 15f', "Tukey's q, the studentized range", 'StudRange'),
   'SurvLab':      ('SurvLab.hpprgm', 'beta 1b', 'Time to an event: survival curves', 'SurvLab'),
   'TTestLab':     ('TTestLab.hpprgm', 'beta 1c', 't tests in five steps (the advanced version)', 'TTESTLAB'),
@@ -183,7 +193,7 @@ redirect = ('<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n
             '<link rel="canonical" href="' + SITE + 'prime-loader/' + page + '">\n'
             '<style>body{font:16px/1.5 system-ui,sans-serif;margin:2rem;color:#172033;background:#f6f8fb}'
             '@media (prefers-color-scheme:dark){body{color:#e8edf6;background:#0f1420}a{color:#7d9cff}}</style>\n'
-            '</head>\n<body>\n<!-- Written by build_loader_v1d.py: sends the browser on to the current Prime Loader, so the '
+            '</head>\n<body>\n<!-- Written by build_loader_v1f.py: sends the browser on to the current Prime Loader, so the '
             'address .../prime-loader/ never changes. -->\n'
             '<p>Opening the HP Prime Loader&hellip; If nothing happens, <a href="' + page + '">click here</a>.</p>\n'
             '</body>\n</html>\n')

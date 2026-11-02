@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// NORM3 - v2.4b
+// NORM3 - v2.4d
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
 //   (Anthropic Claude); concept, direction and all hardware
@@ -15,12 +15,58 @@
 //   forensic, clinical or legal use; do not rely on its results for
 //   legal purposes.
 //
-// Firmware: this version has NOT yet been run on hardware or on
-//   the emulator: v2.4b has run only in the PC harness
-//   (ppl_run_v3e).  v2.4 passed the HP Prime Virtual Calculator
-//   (build 2026-09-09, 16-17 Oct 2026); v2.4a never ran there.
+// Firmware: v2.4d and v2.4c ran on the HP Prime Virtual Calculator
+//   (2.4.2, build 2026-09-09, 1 Nov 2026; see below), not yet on
+//   hardware; v2.4b ran only in the PC harness (ppl_run_v3e).  v2.4 passed the
+//   HP Prime Virtual Calculator (build 2026-09-09, 16-17 Oct 2026);
+//   v2.4a never ran there.
 //   Written for the 2026-09-09 firmware (2.4.2); none of its
 //   commands is new in 2.4.x, so older firmware should also work.
+//
+// What changed in v2.4d (1 Nov 2026, night; line numbers are v2.4c's)
+//   * DENSITY LABELS THAT DO NOT FIT LEFT OF THE AXIS are written in
+//     units of a power of ten, and the power is printed at the top of
+//     the axis, inside the plot: at sigma = 1000 the labels read 1 2 3 4
+//     5 under "x1E-4" (712-718).  The margin is 24 px; a label is about
+//     5.5 px a character and 3 px for the point (new n3_YWd, after
+//     n3_NiceNum).  Found on the Virtual Calculator while testing v2.4c:
+//     "0.0005" ... at sigma = 1000 (an everyday sigma: any sigma above
+//     about 50 gives five characters), "0.00000000005" at 1E10 and
+//     "500000000" at 1E-9 ran over the axis.  The PC overlap check
+//     compares text with text only, so a label over a line passed it.
+//     Labels that fit (sigma = 1, 10, 15) are drawn exactly as before.
+//   * The banner, the firmware lines and the help page's title say
+//     v2.4d.  Nothing else changed.
+//
+// What changed in v2.4c (1 Nov 2026; line numbers are v2.4b's) -- the
+//   monkey test's round and what the Virtual Calculator showed.
+//   * "<>", NOT "!=" (n3_fmtp, 255).  On the Prime "!=" is a factorial
+//     and a test: typed in Home on the Virtual Calculator, {3!=0, 0!=0,
+//     3<>0, 0<>0} gave {0, 0, 1, 0} and 999!=0 "Error: Numerical
+//     overflow" (1 Nov 2026).  So the floor "IF pv != 0 AND ..." never
+//     ran there, and a tiny pdf or area printed in the Prime's
+//     scientific form instead of "< 0.0001".  BayesTree beta 8e had the
+//     same line, and ended with "Numerical overflow" at 0.999.
+//   * NUMBERS NORM3 CANNOT DRAW ARE REFUSED with a sentence, before
+//     anything is drawn (415): a list or other non-number for mu, sigma
+//     or x0; a number with more than 50 digits; a sigma above 1E10 (the
+//     density labels would need 13 or more decimals, and STRING(x, 2, d)
+//     takes at most 12: "Invalid input" on the Virtual Calculator); and
+//     a sigma below 0.000000001 or below |mu|/100,000,000 (the window
+//     mu +/- 4 sigma would hold too few 12-digit numbers: SampDist
+//     v2.3d's tick loop never ended there).  The sigma keys keep sigma
+//     inside the same limits (908): sigma- stops at 0.0001 or at
+//     |mu|/100,000,000, whichever is larger, and never raises a smaller
+//     sigma typed at the start (v2.4b's MAX(0.0001, sigma/1.25) did);
+//     sigma+ stops at 1E10.
+//   * AN x LABEL THAT WOULD TOUCH THE ONE BEFORE IT, the "x" caption or
+//     the right edge is left out; its tick stays (643-644).  At a large
+//     mu or a small sigma the labels are long ("1000000010").
+//   * "0 = re-centre" is shown only where the title leaves room for it
+//     (761-769): at a large mu the title ("Normal  mu = 1000000002.50,
+//     sigma = 11.250") ran into it.
+//   * The banner, the firmware lines and the help page's title say
+//     v2.4c.  Nothing else changed.
 //
 // What changed in v2.4b (19 Oct 2026; line numbers are v2.4a's)
 //   -- N1 of the fleet review (19 Oct 2026), the rule Roger set for
@@ -252,7 +298,9 @@ n3_fmtp(pv, dg)
 BEGIN
   LOCAL thr;
   thr := 10^(-dg);
-  IF pv != 0 AND ABS(pv) < thr THEN
+  // v2.4c: <>, not != (on the Prime "!=" is a factorial and a test:
+  // 3!=0 gives 0; the Virtual Calculator, 1 Nov 2026)
+  IF pv <> 0 AND ABS(pv) < thr THEN
     IF pv > 0 THEN RETURN "< " + STRING(thr,2,dg); END;
     RETURN "> -" + STRING(thr,2,dg);
   END;
@@ -330,6 +378,16 @@ BEGIN
   RETURN nf * 10^expv;
 END;
 
+// ---- v2.4d: how wide a small-font number label is, in pixels ----
+// About 5.5 px a character and 3 px for the decimal point (the Virtual
+// Calculator, 1 Nov 2026: "0.03" is 20 px wide and fits the 24 px left of
+// the axis; "0.0005" is 30 px and ran over it).
+n3_YWd(ywS)
+BEGIN
+  IF INSTRING(ywS, ".") > 0 THEN RETURN 5.5*(SIZE(ywS) - 1) + 3; END;
+  RETURN 5.5*SIZE(ywS);
+END;
+
 // ---- wait for the finger to lift, but never for more than a second ----
 // MOUSE(1) is -1 while nothing touches the screen.  Without the time limit
 // a stuck or phantom touch would hold the program here for ever, and the
@@ -369,7 +427,7 @@ BEGIN
   hpB := RGB(0,0,0); hpO := RGB(255,69,0); hpG := RGB(90,90,90);
   RECT_P(G1, 0, 0, 319, 239, RGB(255,255,255));
   RECT_P(G1, 2, 2, 317, 237, hpO, RGB(255,240,220));
-  TEXTOUT_P("Norm3 v2.4b  -  touch and keys", G1, 8, 6, 2, hpO);
+  TEXTOUT_P("Norm3 v2.4d  -  touch and keys", G1, 8, 6, 2, hpO);
   TEXTOUT_P("TOUCH (in the plot)", G1, 8, 26, 1, hpO);
   TEXTOUT_P("Drag: x₀ follows your finger, with the blue", G1, 8, 38, 1, hpB);
   TEXTOUT_P("  area, both P values and the magenta point.", G1, 8, 50, 1, hpB);
@@ -402,6 +460,7 @@ BEGIN
   LOCAL cTx,cGrid,cMn,cGy,cOrg;
   LOCAL kk,showMode,lastcy,cy;
   LOCAL stp,ystp,nfrac,ynfrac;
+  LOCAL n3Yk,n3YS;
   LOCAL tickx,ticky,xv,yv;
   LOCAL n3Pdf,n3Cdf,n3Lbl,n3X0;
   LOCAL n3M,n3M1,n3Ev,n3Act,n3Quit;
@@ -411,12 +470,32 @@ BEGIN
   LOCAL n3Anim,n3SdA,n3SdB,n3C,n3Off;
   LOCAL n3Zp,n3Za,n3Zs,n3K,n3Mx;
   LOCAL n3XS,n3XT;
+  LOCAL n3TL,n3TR,n3Tt;
 
-  IF sd <= 0 THEN RETURN "σ must be > 0"; END;
   // x₀ arrives as the third argument; the program works on an ASCII copy,
   // n3X0, so that no new non-ASCII name appears in the code (house rule:
   // no new Unicode in executable code; x₀ stays as the Home signature).
   n3X0 := x₀;
+  // v2.4c: what Norm3 cannot draw is refused here, with a sentence (the
+  // monkey test and the Virtual Calculator, 1 Nov 2026).  TYPE 0 is a
+  // real number; a list typed for μ would reach the arithmetic.
+  IF TYPE(mu) <> 0 OR TYPE(sd) <> 0 OR TYPE(n3X0) <> 0 THEN
+    RETURN "Norm3 takes three numbers: Norm3(μ, σ, x₀)";
+  END;
+  IF sd <= 0 THEN RETURN "σ must be > 0"; END;
+  IF ABS(mu) >= 1E50 OR sd >= 1E50 OR ABS(n3X0) >= 1E50 THEN
+    RETURN "A number you typed has more than 50 digits: too large to work with.";
+  END;
+  // above 1E10 the density labels need 13 or more decimals, and
+  // STRING(x, 2, d) takes at most 12 ("Invalid input")
+  IF sd > 10000000000 THEN
+    RETURN "σ can be at most 1E10: a larger σ needs density labels with more decimals than the calculator prints.";
+  END;
+  // the window μ ± 4σ must hold enough 12-digit numbers for the curve and
+  // the tick loop (in SampDist v2.3d the loop never ended there)
+  IF sd < 0.000000001 OR sd < ABS(mu)*0.00000001 THEN
+    RETURN "σ is too small next to μ for the calculator's 12 digits. Use a larger σ or a μ nearer 0.";
+  END;
 
   // ---- constants (screen 320x240, origin top-left, y increases DOWN) ----
   // Rows ABOVE the plot: 1 = title (μ, σ), 11 = x₀ / z / pdf readout,
@@ -634,6 +713,10 @@ BEGIN
     LINE_P(G1, LFT, BOT, RGT, BOT, cAx);
     LINE_P(G1, LFT, BOT, LFT, TOPy, cAx);
     xv := CEILING(xmin/stp)*stp;
+    // v2.4c: n3TR is where the last label drawn ends, less the 4 px kept
+    // between labels: the "x" caption at x 8 ends about 14, and a label may
+    // start at 15, as in v2.4b
+    n3TR := 11;
     WHILE xv <= xmax + stp/1000 DO
       tickx := LFT + IP((xv - xmin)/(xmax - xmin)*W);
       IF tickx >= LFT AND tickx <= RGT THEN
@@ -641,16 +724,45 @@ BEGIN
         // BELOW the axis, centred under the tick: font 1 runs about 6 px a
         // character, so 3*SIZE(label) is half the label's width.
         n3Lbl := STRING(xv,2,nfrac);
-        TEXTOUT_P(n3Lbl, G1, tickx - 3*SIZE(n3Lbl), BOT+4, 1, cGy);
+        n3TL := tickx - 3*SIZE(n3Lbl);
+        // v2.4c: a label that would touch the one before it (or the "x"
+        // caption, or pass the right edge) is left out; its tick stays.
+        // At a large μ or a small σ the labels are long (1000000010).
+        IF n3TL >= n3TR + 4 AND n3TL + 6*SIZE(n3Lbl) <= 319 THEN
+          TEXTOUT_P(n3Lbl, G1, n3TL, BOT+4, 1, cGy);
+          n3TR := n3TL + 6*SIZE(n3Lbl);
+        END;
       END;
       xv := xv + stp;
+    END;
+    // v2.4d: if any density label would be wider than the 24 px left of
+    // the axis ("0.0005" at sigma = 1000, "500000000" at sigma = 1E-9),
+    // every label is written in units of 10^n3Yk (1 2 3 4 5) and "x1E-4"
+    // goes at the top of the axis.  n3Yk = 0: the labels as before.
+    n3Yk := 0;
+    yv := ystp;
+    WHILE yv < ymax DO
+      IF n3_YWd(STRING(yv,2,ynfrac)) > 20 THEN n3Yk := FLOOR(LOG(ystp)); END;
+      yv := yv + ystp;
     END;
     yv := ystp;
     WHILE yv < ymax DO
       ticky := BOT - IP(yv/ymax*H);
       LINE_P(G1, LFT-3, ticky, LFT, ticky, cAx);
-      TEXTOUT_P(STRING(yv,2,ynfrac), G1, 1, ticky-4, 1, cGy);
+      IF n3Yk == 0 THEN
+        TEXTOUT_P(STRING(yv,2,ynfrac), G1, 1, ticky-4, 1, cGy);
+      ELSE
+        TEXTOUT_P(STRING(ROUND(yv/ALOG(n3Yk),0),2,0), G1, 1, ticky-4, 1, cGy);
+      END;
       yv := yv + ystp;
+    END;
+    IF n3Yk <> 0 THEN
+      // the power of ten as the Prime writes it: STRING(x, 3, 1) gives
+      // "1.0E-4" (small capital E), and the ".0" is taken out (SampDist
+      // v2.3e's labels, seen on the Virtual Calculator)
+      n3YS := STRING(ALOG(n3Yk),3,1);
+      IF MID(n3YS, 2, 2) == ".0" THEN n3YS := LEFT(n3YS, 1) + MID(n3YS, 4, SIZE(n3YS) - 3); END;
+      TEXTOUT_P(CHAR(215) + n3YS, G1, LFT+3, TOPy+1, 1, cGy);   // CHAR(215) is the times sign
     END;
 
     // ---- z-ruler: z = -3..3 at μ + k*σ, under the x labels ----
@@ -698,13 +810,15 @@ BEGIN
     // v2.4b: n3_Fx rounds before STRING (never the scientific form), and
     // n3_Eq writes " = 1.000" or, for a σ too small for three decimals,
     // " < 0.001": "Normal  μ = 0.000, σ < 0.001" after 31 σ- presses
-    TEXTOUT_P("Normal  μ"+n3_Eq(n3_Fx(mu,3))+", σ"+n3_Eq(n3_Fx(sd,3)),
-              G1, 4, 1, 1, cAx);
+    n3Tt := "Normal  μ"+n3_Eq(n3_Fx(mu,3))+", σ"+n3_Eq(n3_Fx(sd,3));
+    TEXTOUT_P(n3Tt, G1, 4, 1, 1, cAx);
     n3Lo := mu - 4*sd; n3Hi := mu + 4*sd;
     IF n3X0 < n3Lo THEN n3Lo := n3X0 - 0.5*sd; END;
     IF n3X0 > n3Hi THEN n3Hi := n3X0 + 0.5*sd; END;
     n3Off := ABS(n3Lo - xmin) + ABS(n3Hi - xmax);
-    IF n3Off > (xmax - xmin)/10 THEN
+    // v2.4c: only where the title leaves room (a large μ makes it long:
+    // "Normal  μ = 1000000002.50, σ = 11.250" ran into it)
+    IF n3Off > (xmax - xmin)/10 AND 4 + 6*DIM(n3Tt) <= 232 THEN
       TEXTOUT_P("0 = re-centre", G1, 236, 1, 1, cOrg);
     END;
     // Row 2: x₀, z and the pdf -- a HEIGHT at x₀, not a probability (it
@@ -905,7 +1019,14 @@ BEGIN
     IF n3Act == 3 OR n3Act == 4 THEN
       // start the σ animation: from σ to the new σ over four frames
       n3SdA := sd;
-      IF n3Act == 3 THEN n3SdB := MAX(0.0001, sd/1.25); ELSE n3SdB := sd*1.25; END;
+      // v2.4c: inside the limits checked at the start.  σ- stops at
+      // 0.0001 or |μ|/100,000,000, whichever is larger, and never raises a
+      // smaller σ typed at the start; σ+ stops at 1E10.
+      IF n3Act == 3 THEN
+        n3SdB := MAX(sd/1.25, MIN(sd, MAX(0.0001, ABS(mu)*0.00000001)));
+      ELSE
+        n3SdB := MIN(sd*1.25, MAX(sd, 10000000000));
+      END;
       n3Anim := 5;
       n3Msg := 0;
     END;

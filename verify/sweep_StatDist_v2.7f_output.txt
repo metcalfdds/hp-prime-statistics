@@ -1,0 +1,205 @@
+1 mu 1e+300 Unsupported: ROUND given a number, a number is not covered
+1 mu -1e+300 Unsupported: ROUND given a number, a number is not covered
+1 sg 1e-300 PPLError: Invalid input: STRING(x, 2, 300) -- the Prime takes at most 12 decimals (Virtual Calculator, 1 Nov 2026; prime_facts_v1)
+1 sg 1e+300 Unsupported: ^ between a number and a number is not covered
+1 x_val 1e+300 Unsupported: ROUND given a number, a number is not covered
+1 x_val -1e+300 Unsupported: ROUND given a number, a number is not covered
+2 a_param -1e+300 Unsupported: ^ between a number and a number is not covered
+2 b_param 1e+300 Unsupported: ^ between a number and a number is not covered
+2 x_val 1e+300 Unsupported: ROUND given a number, a number is not covered
+2 x_val -1e+300 Unsupported: ROUND given a number, a number is not covered
+3 lambda 1e-300 PPLError: division by zero
+3 lambda 1e+49 PPLError: Invalid input: STRING(x, 2, 49) -- the Prime takes at most 12 decimals (Virtual Calculator, 1 Nov 2026; prime_facts_v1)
+3 lambda 1e+300 Unsupported: ^ between a number and a number is not covered
+3 x_val 1e+300 Unsupported: ROUND given a number, a number is not covered
+4 ksh 1e-300 Unsupported: EXP given a number is not covered
+4 ksh 1e-12 Unsupported: EXP given a number is not covered
+4 ksh 1e-06 Unsupported: EXP given a number is not covered
+4 ksh 0.0001 Unsupported: EXP given a number is not covered
+4 ksh 0.001 Unsupported: EXP given a number is not covered
+4 ksh 1000.0 Unsupported: ^ between a number and a number is not covered
+4 ksh 100000.0 Unsupported: ^ between a number and a number is not covered
+4 ksh 1000000.0 Unsupported: ^ between a number and a number is not covered
+4 ksh 1e+49 Unsupported: ^ between a number and a number is not covered
+4 ksh 1e+300 Unsupported: ^ between a number and a number is not covered
+4 stS 1e-300 Unsupported: ^ between a number and a number is not covered
+4 stS 1e+300 Unsupported: ^ between a number and a number is not covered
+4 x_val 1e+300 Unsupported: ^ between a number and a number is not covered
+5 mu 1000.0 Unsupported: EXP given a number is not covered
+5 mu 100000.0 Unsupported: EXP given a number is not covered
+5 mu 1000000.0 Unsupported: EXP given a number is not covered
+5 mu 1000000000000.0 Unsupported: EXP given a number is not covered
+5 mu 1e+49 Unsupported: EXP given a number is not covered
+5 mu 1e+300 Unsupported: EXP given a number is not covered
+5 sg 100.0 Unsupported: EXP given a number is not covered
+5 sg 1000.0 Unsupported: EXP given a number is not covered
+5 sg 100000.0 Unsupported: EXP given a number is not covered
+5 sg 1000000.0 Unsupported: EXP given a number is not covered
+5 sg 1000000000000.0 Unsupported: EXP given a number is not covered
+5 sg 1e+49 Unsupported: EXP given a number is not covered
+5 sg 1e+300 Unsupported: ^ between a number and a number is not covered
+5 x_val 1e+300 Unsupported: ROUND given a number, a number is not covered
+6 mu 1e+300 Unsupported: ROUND given a number, a number is not covered
+6 mu -1e+300 Unsupported: ROUND given a number, a number is not covered
+6 bb 1e-300 PPLError: Invalid input: STRING(x, 2, 300) -- the Prime takes at most 12 decimals (Virtual Calculator, 1 Nov 2026; prime_facts_v1)
+6 bb 1e+300 Unsupported: ^ between a number and a number is not covered
+6 x_val 1e+300 Unsupported: ROUND given a number, a number is not covered
+6 x_val -1e+300 Unsupported: ROUND given a number, a number is not covered
+7 x_val 1e+300 Unsupported: ROUND given a number, a number is not covered
+7 x_val -1e+300 Unsupported: ROUND given a number, a number is not covered
+8 x_val 1e+300 Unsupported: ROUND given a number, a number is not covered
+9 df1 1e+49 Unsupported: IP given a number is not covered
+9 df1 1e+300 Unverified: FISHER_CDF(1E300, 15, 2) has no value here (SciPy answers nan)
+9 df2 1e+300 Unsupported: ^ between a number and a number is not covered
+9 x_val 1e+300 Unsupported: ROUND given a number, a number is not covered
+10 stC 1e-300 Unsupported: ^ between a number and a number is not covered
+10 stC 1e-12 Unsupported: ^ between a number and a number is not covered
+10 stC 1e-06 Unsupported: ^ between a number and a number is not covered
+10 stC 0.0001 Unsupported: ^ between a number and a number is not covered
+10 stC 0.001 Unsupported: ^ between a number and a number is not covered
+10 stC 100.0 Unsupported: ^ between a number and a number is not covered
+10 stC 1000.0 Unsupported: ^ between a number and a number is not covered
+10 stC 100000.0 Unsupported: ^ between a number and a number is not covered
+10 stC 1000000.0 Unsupported: ^ between a number and a number is not covered
+10 stC 1e+49 Unsupported: ^ between a number and a number is not covered
+10 stC 1e+300 Unsupported: ^ between a number and a number is not covered
+10 stK 1e-300 Unsupported: ^ between a number and a number is not covered
+10 stK 1e-12 Unsupported: ^ between a number and a number is not covered
+10 stK 1e-06 Unsupported: ^ between a number and a number is not covered
+10 stK 0.0001 Unsupported: ^ between a number and a number is not covered
+10 stK 0.001 Unsupported: ^ between a number and a number is not covered
+10 stK 100.0 Unsupported: ^ between a number and a number is not covered
+10 stK 1000.0 Unsupported: ^ between a number and a number is not covered
+10 stK 100000.0 Unsupported: ^ between a number and a number is not covered
+10 stK 1000000.0 Unsupported: ^ between a number and a number is not covered
+10 stK 1000000000000.0 Unsupported: ^ between a number and a number is not covered
+10 stK 1e+49 Unsupported: ^ between a number and a number is not covered
+10 stK 1e+300 Unsupported: ^ between a number and a number is not covered
+10 stS 1e-300 Unsupported: ^ between a number and a number is not covered
+10 stS 1e+300 Unsupported: ^ between a number and a number is not covered
+10 x_val 1e+300 Unsupported: ^ between a number and a number is not covered
+11 mu 1e+300 Unsupported: ROUND given a number, a number is not covered
+11 mu -1e+300 Unsupported: ROUND given a number, a number is not covered
+11 be 1e-300 PPLError: Invalid input: STRING(x, 2, 300) -- the Prime takes at most 12 decimals (Virtual Calculator, 1 Nov 2026; prime_facts_v1)
+11 be 1e+300 Unsupported: ^ between a number and a number is not covered
+11 x_val 1e+300 Unsupported: ROUND given a number, a number is not covered
+11 x_val -1e+300 Unsupported: ROUND given a number, a number is not covered
+12 xm 1e-300 PPLError: division by zero
+12 al 1e-300 Unsupported: ^ between a number and a number is not covered
+12 al 1e-12 Unsupported: ^ between a number and a number is not covered
+12 al 1e-06 Unsupported: ^ between a number and a number is not covered
+12 al 0.0001 Unsupported: ^ between a number and a number is not covered
+12 al 0.001 Unsupported: ^ between a number and a number is not covered
+12 al 1000.0 Unsupported: ^ between a number and a number is not covered
+12 al 100000.0 Unsupported: ^ between a number and a number is not covered
+12 al 1000000.0 Unsupported: ^ between a number and a number is not covered
+12 al 1000000000000.0 Unsupported: ^ between a number and a number is not covered
+12 al 1e+49 Unsupported: ^ between a number and a number is not covered
+12 al 1e+300 Unsupported: ^ between a number and a number is not covered
+12 x_val 1e+300 Unsupported: ^ between a number and a number is not covered
+13 sg 1e-300 PPLError: division by zero
+13 sg 1e+300 Unsupported: ^ between a number and a number is not covered
+13 x_val 1e+300 Unsupported: ^ between a number and a number is not covered
+14 mu 1e-300 Unsupported: ^ between a number and a number is not covered
+14 mu 1e-12 Unsupported: ^ between a number and a number is not covered
+14 mu 1e-06 Unsupported: ^ between a number and a number is not covered
+14 mu 0.0001 Unsupported: ^ between a number and a number is not covered
+14 mu 0.001 Unsupported: ^ between a number and a number is not covered
+14 mu 0.05 Unsupported: ^ between a number and a number is not covered
+14 mu 0.1 Unsupported: ^ between a number and a number is not covered
+14 mu 0.3 Unsupported: ^ between a number and a number is not covered
+14 mu 3.0 Unsupported: ^ between a number and a number is not covered
+14 mu 10.0 Unsupported: ^ between a number and a number is not covered
+14 mu 100.0 Unsupported: ^ between a number and a number is not covered
+14 mu 1000.0 Unsupported: ^ between a number and a number is not covered
+14 mu 100000.0 Unsupported: ^ between a number and a number is not covered
+14 mu 1e+300 Unsupported: ROUND given a number, a number is not covered
+14 mu -1e+300 Unsupported: ROUND given a number, a number is not covered
+14 mu -1000.0 Unsupported: ^ between a number and a number is not covered
+14 mu -100.0 Unsupported: ^ between a number and a number is not covered
+14 mu -0.3 Unsupported: ^ between a number and a number is not covered
+14 sc 1e-300 PPLError: Invalid input: STRING(x, 2, 300) -- the Prime takes at most 12 decimals (Virtual Calculator, 1 Nov 2026; prime_facts_v1)
+14 sc 1e-06 Unsupported: ^ between a number and a number is not covered
+14 sc 0.0001 Unsupported: ^ between a number and a number is not covered
+14 sc 0.001 Unsupported: ^ between a number and a number is not covered
+14 sc 0.05 Unsupported: ^ between a number and a number is not covered
+14 sc 0.1 Unsupported: ^ between a number and a number is not covered
+14 sc 0.3 Unsupported: ^ between a number and a number is not covered
+14 sc 3.0 Unsupported: ^ between a number and a number is not covered
+14 sc 10.0 Unsupported: ^ between a number and a number is not covered
+14 sc 100.0 Unsupported: ^ between a number and a number is not covered
+14 sc 1000.0 Unsupported: ^ between a number and a number is not covered
+14 sc 100000.0 Unsupported: ^ between a number and a number is not covered
+14 sc 1000000.0 Unsupported: ^ between a number and a number is not covered
+14 sc 1e+300 Unsupported: ^ between a number and a number is not covered
+14 x_val 1e-300 Unsupported: ^ between a number and a number is not covered
+14 x_val 1e-12 Unsupported: ^ between a number and a number is not covered
+14 x_val 1e-06 Unsupported: ^ between a number and a number is not covered
+14 x_val 0.0001 Unsupported: ^ between a number and a number is not covered
+14 x_val 0.001 Unsupported: ^ between a number and a number is not covered
+14 x_val 0.05 Unsupported: ^ between a number and a number is not covered
+14 x_val 0.1 Unsupported: ^ between a number and a number is not covered
+14 x_val 0.3 Unsupported: ^ between a number and a number is not covered
+14 x_val 3.0 Unsupported: ^ between a number and a number is not covered
+14 x_val 10.0 Unsupported: ^ between a number and a number is not covered
+14 x_val 100.0 Unsupported: ^ between a number and a number is not covered
+14 x_val 1000.0 Unsupported: ^ between a number and a number is not covered
+14 x_val 1e+300 Unsupported: ROUND given a number, a number is not covered
+14 x_val -1e+300 Unsupported: ROUND given a number, a number is not covered
+14 x_val -1000.0 Unsupported: ^ between a number and a number is not covered
+14 x_val -100.0 Unsupported: ^ between a number and a number is not covered
+14 x_val -0.3 Unsupported: ^ between a number and a number is not covered
+15 stN 1e+49 FREEZE
+15 stN 1e+300 FREEZE
+16 lambda 1e+49 FREEZE
+16 lambda 1e+300 FREEZE
+16 k_val 1e+49 FREEZE
+16 k_val 1e+300 FREEZE
+17 stP 1e-300 PPLError: division by zero
+17 k_val 1e+49 FREEZE
+17 k_val 1e+300 FREEZE
+18 trA -1e+300 Unsupported: ^ between a number and a number is not covered
+18 trB 1e+300 Unsupported: ^ between a number and a number is not covered
+18 x_val 1e+300 Unsupported: ROUND given a number, a number is not covered
+18 x_val -1e+300 Unsupported: ROUND given a number, a number is not covered
+19 cLoc 1e+300 Unsupported: ^ between a number and a number is not covered
+19 cLoc -1e+300 Unsupported: ^ between a number and a number is not covered
+19 cScl 1e-300 Unsupported: ^ between a number and a number is not covered
+19 cScl 1e+300 Unsupported: ROUND given a number, a number is not covered
+19 x_val 1e+300 Unsupported: ^ between a number and a number is not covered
+19 x_val -1e+300 Unsupported: ^ between a number and a number is not covered
+20 frA 1e-300 Unsupported: ^ between a number and a number is not covered
+20 frA 1e-12 Unsupported: ^ between a number and a number is not covered
+20 frA 1e-06 Unsupported: ^ between a number and a number is not covered
+20 frA 0.0001 Unsupported: ^ between a number and a number is not covered
+20 frA 0.001 Unsupported: ^ between a number and a number is not covered
+20 frA 1000.0 Unsupported: ^ between a number and a number is not covered
+20 frA 100000.0 Unsupported: ^ between a number and a number is not covered
+20 frA 1000000.0 Unsupported: ^ between a number and a number is not covered
+20 frA 1e+49 Unsupported: ^ between a number and a number is not covered
+20 frA 1e+300 Unsupported: ^ between a number and a number is not covered
+20 frS 1e+300 Unsupported: ^ between a number and a number is not covered
+20 frM 1e+300 Unsupported: ROUND given a number, a number is not covered
+20 frM -1e+300 Unsupported: ROUND given a number, a number is not covered
+20 x_val 1e-300 Unsupported: ^ between a number and a number is not covered
+20 x_val 1e+300 Unsupported: ROUND given a number, a number is not covered
+20 x_val -1e+300 Unsupported: ROUND given a number, a number is not covered
+21 gmBr 1e-300 Unsupported: ^ between a number and a number is not covered
+21 x_val 1e+300 Unsupported: ROUND given a number, a number is not covered
+22 mxA 1e-300 Unsupported: ^ between a number and a number is not covered
+22 mxA 1e+300 Unsupported: ^ between a number and a number is not covered
+22 x_val 1e+300 Unsupported: ^ between a number and a number is not covered
+23 erK 1e+300 Unsupported: ROUND given a number, a number is not covered
+23 erL 1e-300 PPLError: division by zero
+23 erL 1e+300 Unsupported: ^ between a number and a number is not covered
+23 x_val 1e+300 Unsupported: ROUND given a number, a number is not covered
+24 gaT 1e+300 Unsupported: ^ between a number and a number is not covered
+24 x_val 1e+300 Unsupported: ROUND given a number, a number is not covered
+25 btA 1e+300 Unsupported: ^ between a number and a number is not covered
+25 btB 1e+300 Unsupported: ^ between a number and a number is not covered
+26 nbR 1e+49 FREEZE
+26 nbR 1e+300 FREEZE
+26 nbP 1e-300 PPLError: division by zero
+26 k_val 1e+49 FREEZE
+26 k_val 1e+300 FREEZE
+StatDist_v2.7f.txt: 1794 runs over 27 families; 204 broken (in 26 families), 585 refused with a box, 1005 drawn

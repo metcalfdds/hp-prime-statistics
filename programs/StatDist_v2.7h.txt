@@ -1,7 +1,7 @@
 #pragma mode(separator(.,;) integer(h32))
 
 // ============================================================
-// STATDIST - v2.7f
+// STATDIST - v2.7h
 // Probabilities, densities and moments for 27 distributions,
 // each drawn as a plot you can touch
 // ============================================================
@@ -21,8 +21,9 @@
 //   forensic, clinical or legal use; do not rely on its results
 //   for legal purposes.
 //
-// Firmware: this version has NOT yet been run on hardware or on
-//   the emulator.  On the HP Prime Virtual Calculator (build
+// Firmware: v2.7h and v2.7g have run on the PC harness and on the HP
+//   Prime Virtual Calculator (2.4.2, 1 Nov 2026), not yet on hardware;
+//   v2.7f ran on the PC harness only.  On the HP Prime Virtual Calculator (build
 //   2026-09-09, the calculators' own firmware): v2.6 ran in round 1
 //   (16-17 Oct 2026; v2.7b fixed what it found), and v2.7b in round 2
 //   (17 Oct 2026): F(2.5, 7.5) and chi-square(2.5) gave 0.800427 and
@@ -33,6 +34,65 @@
 //   (ppl_run_v3e, 19 Oct 2026), not on the emulator or a calculator.
 //   Written for the 2026-09-09 firmware (2.4.2); none of its commands
 //   is new in 2.4.x, so older firmware should also work.
+//
+// v2.7h (1 Nov 2026, night): THE AXIS LABELS (st_Draw; new st_LWd before
+//   it).  Seen on the Virtual Calculator while testing v2.7g, at a
+//   normal sigma of 1E-7: the density labels 4000000 ... were cut by
+//   TEXTOUT_P's width limit to "400000" -- a wrong number -- and the x
+//   labels -0.0000003 ... were printed over each other.
+//   * No label is clipped any more.  An x label that would touch the
+//     one before it, or run more than 3 px past the right edge, is left
+//     out; its tick stays (as in Norm3, CICatcher, NormExplorer and
+//     SampDist).
+//   * If a density label would be wider than the 35 px left of the
+//     axis, every label on that axis is written in the Prime's
+//     scientific form, STRING(x, 3, 1) without a ".0": "4E6", "5E-5"
+//     (small capital E), as SampDist v2.3e writes its labels; one that
+//     still does not fit is left out.  v2.7g left out
+//     every density label with 5 decimals or more (any scale above about
+//     2000); those now show as "5E-5".  A label is about 5.5 px a
+//     character and 3 px for the point (st_LWd; "0.03" is 20 px wide on
+//     the Virtual Calculator).  STRING(x, 2, d) is asked only for d up
+//     to 12 (the Prime refuses 13).
+//   Labels that fit are drawn exactly as before.  The help page's title
+//   says v2.7h.  Nothing else changed.
+//
+// v2.7g (1 Nov 2026): what random use found -- the monkey test
+//   (docs/dev/monkey-fleet-2026-11-01.md: 400 random runs of v2.7f,
+//   56 broken) and a sweep of every parameter of all 27 families
+//   over the decades from 1E-300 to 1E300.  Line numbers are v2.7f's.
+//   * "<>", NOT "!=" (st_fmtp 547, st_fmtv 575).  On the Prime "!="
+//     is a factorial and a test: {3!=0, 0!=0, 3<>0, 0<>0} gave
+//     {0, 0, 1, 0} on the Virtual Calculator, and 999!=0 "Numerical
+//     overflow" (1 Nov 2026).  So st_fmtp's floor never ran (a tiny
+//     value printed in the Prime's scientific form), a value of 254 or
+//     more stopped with "Numerical overflow" (254! passes 1E499), and
+//     st_fmtv never passed an "undef ..." moment through: it went on
+//     into st_fmtp, where a string has no factorial.
+//   * EVERY FORM FIELD TAKES A REAL NUMBER ONLY ({name,[0]}, all 56
+//     forms).  A typed list went on into the arithmetic (43 runs).
+//   * WHAT THE PLOT CAN DRAW, REFUSED IN A SENTENCE (new section 4b:
+//     st_BigMsg, st_LimX, st_Rng, st_FitWin, st_LimP; asked first by
+//     st_AskAB, which every form ends in, 2073).  A number of 50
+//     digits or more; a discrete family's k past 1E9 (at k = 1E49 a
+//     zoom centred the window there, and st_Draw's tick counter,
+//     n + 1, never moved on); a shape outside the range where its family's
+//     formulas stay finite (Weibull k, LogNormal mu and sigma, F df,
+//     Burr C and K, Pareto alpha, Frechet alpha, binomial n, Poisson
+//     lambda, geometric p, negative binomial r and p: Poisson
+//     lambda = 1E300 and binomial n = 1E300 never finished); and a
+//     window (the one st_Fit fits, now st_FitWin) that reaches past
+//     1E50 or is too narrow for 12 digits.  In v2.7f these stopped
+//     with an overflow, a division by zero or STRING's "Invalid
+//     input" for 300 decimals.
+//   * FOUR DENSITIES WITHOUT OVERFLOW, the same numbers: the Burr's in
+//     logarithms (1301-1304), the Pareto's as (alpha/x)(x_m/x)^alpha
+//     (1312-1315), the logistic's from |z| (1322-1326), the Frechet's
+//     u = z^(-alpha) in logarithms, also in its CDF and right tail
+//     (1355-1359, 1494-1497, 1691-1693).
+//   * Zoom- stops at 500 times the fitted window (st_Zoom 3557, new
+//     stFW), where those formulas stay finite.
+//   * The help page's title says v2.7g.  Nothing else changed.
 //
 // v2.7f (20 Oct 2026): symbols instead of spelled-out names, on screen
 //   only (Roger, 20 Oct 2026: "use the symbols we developed").  In the
@@ -384,7 +444,9 @@
 //      st_Name, st_Use, st_Disc, st_Def, st_Sup, st_pdf, st_cdf,
 //      st_sf (the right tail, v2.7e), st_qbis, st_dq, st_icdf,
 //      st_Mom, st_ParStr, st_DefAB, st_ABHelp
-//   5. the forms: st_get_tail_type, st_AskAB, one st_ask_* per
+//   5. the limits (v2.7g): st_BigMsg, st_LimX, st_Rng, st_FitWin,
+//      st_LimP; the
+//      forms: st_get_tail_type, st_AskAB, one st_ask_* per
 //      distribution (with its typical use), st_Ask
 //   6. help: st_show_help
 //   7. the plot: window, caches, drawing, touch, options, st_Plot,
@@ -442,6 +504,8 @@ LOCAL stPh, stAct, stDrg, stDisc, stZm;
 //              much probability lies outside the window
 //  stMu, stVr  mean and variance (a STRING when they do not exist)
 LOCAL stLo, stHi, stGs, stTk, stYmx, stCut;
+//  stFW  (v2.7g) the width st_Fit chose; Zoom- stops at 500 times it
+LOCAL stFW;
 LOCAL stPd, stCd, stPy, stNy, stMu, stVr;
 //  stSv  (v2.7e) the RIGHT tail P(X > x) at the same places as stCd,
 //        so a drag reads P(X > x) from a list as it reads F(x); it is
@@ -493,7 +557,7 @@ BEGIN
   stW := stPR - stPL; stH := stPB - stPT;
   stOvN := 0; stOvT := 0; stOvC := 0; stClip := 0;
   stDrg := 0; stZm := 0; stPh := 0; stAct := 2;
-  stCut := {0, 0};
+  stCut := {0, 0}; stFW := 1;
   stLast := "no plot drawn yet";
   stGX := MAKELIST(0, K, 1, 6, 1); stGY := MAKELIST(0, K, 1, 6, 1);
   stGSel := 1;
@@ -544,7 +608,10 @@ st_fmtp(pv, dg)
 BEGIN
   LOCAL thr;
   thr := 10^(-dg);
-  IF pv != 0 AND ABS(pv) < thr THEN
+  // v2.7g: "<>", NOT "!=".  On the Prime "pv != 0" is a factorial
+  // and a test, (pv!) == 0: never true, and "Numerical overflow" for a
+  // pv of 254 or more (Virtual Calculator, 1 Nov 2026)
+  IF pv <> 0 AND ABS(pv) < thr THEN
     IF pv > 0 THEN RETURN "< " + STRING(thr,2,dg); END;
     RETURN "> -" + STRING(thr,2,dg);
   END;
@@ -572,7 +639,9 @@ END;
 // TYPE() first.  TYPE(x)==0 means a real number.
 st_fmtv(vv, dg)
 BEGIN
-  IF TYPE(vv) != 0 THEN RETURN vv; END;
+  // v2.7g: "<>", NOT "!=" (st_fmtp): "TYPE(vv) != 0" was never true
+  // on the Prime, so an "undef ..." string went on into st_fmtp
+  IF TYPE(vv) <> 0 THEN RETURN vv; END;
   RETURN st_fmtp(vv, dg);
 END;
 
@@ -1252,7 +1321,7 @@ END;
 // window reaches x < 0 for distributions that live on x >= 0).
 st_pdf(dId, dPl, dX)
 BEGIN
-  LOCAL pr1, pr2, pr3, zz;
+  LOCAL pr1, pr2, pr3, zz, pdL;
   pr1 := dPl(1); pr2 := dPl(2); pr3 := dPl(3);
   CASE
     // 1 Normal(mu, sigma): the built-in
@@ -1298,9 +1367,16 @@ BEGIN
       RETURN EXP((pr1/2)*LN(pr1) + (pr2/2)*LN(pr2) + (pr1/2 - 1)*LN(dX) - ((pr1 + pr2)/2)*LN(pr1*dX + pr2) + st_lngamma((pr1 + pr2)/2) - st_lngamma(pr1/2) - st_lngamma(pr2/2));
     END;
     // 10 Burr XII(C, K, S): K C (x/S)^C / (x (1 + (x/S)^C)^(K+1))
+    // v2.7g: in logarithms.  With t = (x/S)^C the density is
+    //   (C K / x) t / (1 + t)^(K + 1) = (C K / x) e^(L - (K+1) ln(1+t)),
+    // L = ln t; past L = 30, ln(1 + t) is L to 12 digits.  The direct
+    // form overflowed: (1 + t)^(K + 1) passes 1E499 on a zoomed-out
+    // window (C = 100, K = 100).
     IF dId == 10 THEN
       IF dX <= 0 THEN RETURN 0; END;
-      RETURN (pr2*pr1*(dX/pr3)^pr1)/(dX*(1 + (dX/pr3)^pr1)^(pr2 + 1));
+      zz := pr1*LN(dX/pr3);
+      IF zz > 30 THEN pdL := zz; ELSE pdL := LN(1 + EXP(zz)); END;
+      RETURN (pr2*pr1/dX)*EXP(zz - (pr2 + 1)*pdL);
     END;
     // 11 Gumbel max(mu, beta): (1/beta) e^(-(z + e^-z)), z = (x - mu)/beta
     IF dId == 11 THEN
@@ -1309,9 +1385,11 @@ BEGIN
       RETURN EXP(-(zz + EXP(-zz)))/pr2;
     END;
     // 12 Pareto(x_m, alpha): alpha x_m^alpha / x^(alpha+1), x >= x_m
+    // v2.7g: (alpha/x)(x_m/x)^alpha, the same number; the ratio is at
+    // most 1, where x_m^alpha alone overflowed (x_m = 10, alpha = 1000)
     IF dId == 12 THEN
       IF dX < pr1 THEN RETURN 0; END;
-      RETURN pr2*pr1^pr2/dX^(pr2 + 1);
+      RETURN (pr2/dX)*(pr1/dX)^pr2;
     END;
     // 13 Rayleigh(sigma): (x/sigma^2) e^(-x^2/(2 sigma^2))
     IF dId == 13 THEN
@@ -1319,9 +1397,11 @@ BEGIN
       RETURN (dX/pr1^2)*EXP(-dX^2/(2*pr1^2));
     END;
     // 14 Logistic(mu, s): e^-z / (s (1 + e^-z)^2), z = (x - mu)/s
+    // v2.7g: from |z| (the density is symmetric), so e^(-|z|) is at
+    // most 1; (1 + e^(-z))^2 overflowed for z below -350
     IF dId == 14 THEN
-      zz := (dX - pr1)/pr2;
-      IF ABS(zz) > 600 THEN RETURN 0; END;
+      zz := ABS((dX - pr1)/pr2);
+      IF zz > 600 THEN RETURN 0; END;
       RETURN EXP(-zz)/(pr2*(1 + EXP(-zz))^2);
     END;
     // 15 Binomial(n, p): the built-in, as v2.5 used it
@@ -1352,10 +1432,16 @@ BEGIN
       RETURN 1/(3.14159265358979*pr2*(1 + zz^2));
     END;
     // 20 Frechet(alpha, s, m): (alpha/s) z^(-1-alpha) e^(-z^-alpha), z = (x - m)/s
+    // v2.7g: u = z^(-alpha) in logarithms; past u = 665 the density
+    // is 0 to 12 digits (it holds e^(-u)), where z^(-1 - alpha) alone
+    // overflowed near x = m
     IF dId == 20 THEN
       IF dX <= pr3 THEN RETURN 0; END;
       zz := (dX - pr3)/pr2;
-      RETURN (pr1/pr2)*zz^(-1 - pr1)*EXP(-zz^(-pr1));
+      pdL := -pr1*LN(zz);
+      IF pdL > 6.5 THEN RETURN 0; END;
+      pdL := EXP(pdL);
+      RETURN (pr1/pr2)*pdL*EXP(-pdL)/zz;
     END;
     // 21 Gompertz(eta, b): b eta e^(eta + b x - eta e^(b x)), x >= 0
     IF dId == 21 THEN
@@ -1491,9 +1577,12 @@ BEGIN
     // 19 Cauchy: 1/2 + arctan(z)/pi (arctan in radians, any angle mode)
     IF dId == 19 THEN RETURN 0.5 + st_atan((dX - pr1)/pr2)/3.14159265358979; END;
     // 20 Frechet: e^(-z^-alpha)
+    // v2.7g: u in logarithms, as in st_pdf: past u = 665, F is 0
     IF dId == 20 THEN
       IF dX <= pr3 THEN RETURN 0; END;
-      RETURN EXP(-((dX - pr3)/pr2)^(-pr1));
+      zz := -pr1*LN((dX - pr3)/pr2);
+      IF zz > 6.5 THEN RETURN 0; END;
+      RETURN EXP(-EXP(zz));
     END;
     // 21 Gompertz: 1 - e^(-eta (e^(b x) - 1))
     IF dId == 21 THEN
@@ -1690,7 +1779,10 @@ BEGIN
     //    as the Gumbel
     IF dId == 20 THEN
       IF dX <= pr3 THEN RETURN 1; END;
-      sfU := ((dX - pr3)/pr2)^(-pr1);
+      // v2.7g: u in logarithms, as in st_pdf: past u = 665, S is 1
+      sfU := -pr1*LN((dX - pr3)/pr2);
+      IF sfU > 6.5 THEN RETURN 1; END;
+      sfU := EXP(sfU);
       IF sfU < 0.0001 THEN RETURN sfU - sfU^2/2 + sfU^3/6; END;
       RETURN 1 - EXP(-sfU);
     END;
@@ -2051,6 +2143,135 @@ END;
 // The INPUT title carries the distribution's typical use.
 // ============================================================
 
+// ============================================================
+// 4b. WHAT THE PLOT CAN DRAW (v2.7g, 1 Nov 2026)
+// Random use found numbers the plot could not draw (the monkey
+// test, docs/dev/monkey-fleet-2026-11-01.md): a typed 1E300 or
+// 1E-300 overflowed a power or an EXP, left the window with no
+// width, or asked STRING for 300 decimals ("Invalid input" on the
+// Prime above 12); a Poisson with lambda = 1E300 and a binomial with
+// n = 1E300 never finished.  Every form now ends in st_AskAB, which
+// asks st_LimP first: a number of 50 digits or more is refused with
+// the house sentence; then each family's shape parameters must lie
+// where its formulas stay finite; then the window the plot would fit
+// (st_FitWin, the one st_Fit uses) must reach less than 1E50 and be
+// wide enough for 12 digits -- the line Norm3, NormExplorer,
+// CICatcher and SampDist draw.  Each refusal is one sentence, and the
+// form is left as it was.
+// ============================================================
+
+// "" for a number the program can use; the house sentence for one of
+// 50 digits or more.  Param bmV: tagged.
+st_BigMsg(bmV)
+BEGIN
+  IF ABS(bmV) >= 1E50 THEN
+    RETURN "A number you typed has more than 50 digits: too large to work with.";
+  END;
+  RETURN "";
+END;
+
+// "" for an x, a or b the plot can use; else why not.  50 digits or
+// more is refused for every family; a discrete family's k must also
+// stay within 1E9, where k + 1 is still a new 12-digit number.  At
+// k = 1E49 a zoom centred the window on k, and the tick loop's
+// counter, n := n + 1 near 1E49, never moved on: a Poisson, geometric
+// or negative binomial with such an x never finished after a zoom.
+st_LimX(lxI, lxV)
+BEGIN
+  IF ABS(lxV) >= 1E50 THEN RETURN st_BigMsg(lxV); END;
+  IF st_Disc(lxI) == 1 AND ABS(lxV) > 1000000000 THEN
+    RETURN "k can be at most 1000000000 here.";
+  END;
+  RETURN "";
+END;
+
+// "" when rgV lies in rgLo .. rgHi; otherwise rgS, the sentence that
+// names the family, the parameter and the range (written out in full:
+// st_fmtx would print 0.000001 as "< 0.0001").
+st_Rng(rgV, rgLo, rgHi, rgS)
+BEGIN
+  IF rgV < rgLo OR rgV > rgHi THEN RETURN rgS; END;
+  RETURN "";
+END;
+
+// The window st_Fit fits to a continuous distribution, before it is
+// stretched to show x: the support with a 5 % margin when the support
+// is finite at both ends; else the 0.1 % to 99.9 % quantiles, each
+// side cut at 8 interquartile ranges beyond its quartile, and a
+// finite end of the support close by taken as the edge.  Returns
+// {lo, hi}.  (Moved here from st_Fit, unchanged, so that st_LimP
+// tests the very window the plot will draw.)
+st_FitWin(fwI, fwP)
+BEGIN
+  LOCAL fwS, fwQ1, fwQ9, fwQa, fwQb, fwIq;
+  LOCAL fwLo, fwHi, fwW;
+  fwS := st_Sup(fwI, fwP);
+  IF fwS(1) > -1E299 AND fwS(2) < 1E299 THEN
+    fwW := fwS(2) - fwS(1);
+    RETURN {fwS(1) - 0.05*fwW, fwS(2) + 0.05*fwW};
+  END;
+  fwQ1 := st_icdf(fwI, fwP, 0.001);
+  fwQ9 := st_icdf(fwI, fwP, 0.999);
+  fwQa := st_icdf(fwI, fwP, 0.25);
+  fwQb := st_icdf(fwI, fwP, 0.75);
+  fwIq := fwQb - fwQa;
+  fwLo := MAX(fwQ1, fwQa - 8*fwIq);
+  fwHi := MIN(fwQ9, fwQb + 8*fwIq);
+  IF fwS(1) > -1E299 AND fwLo - fwS(1) < 0.1*(fwHi - fwLo) THEN fwLo := fwS(1); END;
+  RETURN {fwLo, fwHi};
+END;
+
+// "" when distribution lmI with parameters lmP can be drawn;
+// otherwise why not, in one sentence.  The family's own form has
+// already checked its rules (sigma > 0, 0 < p < 1, k whole ...).
+st_LimP(lmI, lmP)
+BEGIN
+  LOCAL lmA, lmB, lmC, lmW, lmM, lmS;
+  lmA := lmP(1); lmB := lmP(2); lmC := lmP(3);
+  lmS := st_BigMsg(MAX(ABS(lmA), MAX(ABS(lmB), ABS(lmC))));
+  IF DIM(lmS) > 0 THEN RETURN lmS; END;
+  // each family's shapes, where its formulas stay finite on the plot
+  // and on every zoom (a zoom-out stops at 500 fitted windows, st_Zoom)
+  lmS := "";
+  CASE
+    IF lmI == 4 THEN lmS := st_Rng(lmA, 0.05, 100, "For the Weibull, k must be from 0.05 to 100 here."); END;
+    IF lmI == 5 THEN
+      lmS := st_Rng(lmA, -100, 100, "For the LogNormal, " + CHAR(956) + " must be from -100 to 100 here.");
+      IF DIM(lmS) == 0 THEN lmS := st_Rng(lmB, 0, 10, "For the LogNormal, " + CHAR(963) + " can be at most 10 here."); END;
+    END;
+    IF lmI == 9 THEN
+      lmS := st_Rng(lmA, 0, 1000000, "For the F, df1 can be at most 1000000 here.");
+      IF DIM(lmS) == 0 THEN lmS := st_Rng(lmB, 0, 1000000, "For the F, df2 can be at most 1000000 here."); END;
+    END;
+    IF lmI == 10 THEN
+      lmS := st_Rng(lmA, 0.2, 100, "For the Burr, C must be from 0.2 to 100 here.");
+      IF DIM(lmS) == 0 THEN lmS := st_Rng(lmB, 0.2, 100, "For the Burr, K must be from 0.2 to 100 here."); END;
+    END;
+    IF lmI == 12 THEN lmS := st_Rng(lmB, 0.05, 100, "For the Pareto, " + CHAR(945) + " must be from 0.05 to 100 here."); END;
+    IF lmI == 15 THEN lmS := st_Rng(lmA, 1, 100000, "For the binomial, n can be at most 100000 here."); END;
+    IF lmI == 16 THEN lmS := st_Rng(lmA, 0, 100000, "For the Poisson, " + CHAR(955) + " can be at most 100000 here."); END;
+    IF lmI == 17 THEN lmS := st_Rng(lmA, 0.000001, 1, "For the geometric, p must be at least 0.000001 here."); END;
+    IF lmI == 20 THEN lmS := st_Rng(lmA, 0.05, 100, "For the Frechet, " + CHAR(945) + " must be from 0.05 to 100 here."); END;
+    IF lmI == 26 THEN
+      lmS := st_Rng(lmA, 1, 1000, "For the negative binomial, r can be at most 1000 here.");
+      IF DIM(lmS) == 0 THEN lmS := st_Rng(lmB, 0.001, 1, "For the negative binomial, p must be at least 0.001 here."); END;
+    END;
+  END;
+  IF DIM(lmS) > 0 THEN RETURN lmS; END;
+  // the window the plot would fit, against 50 digits and 12 digits
+  IF st_Disc(lmI) == 0 THEN
+    lmW := st_FitWin(lmI, lmP);
+    lmM := MAX(ABS(lmW(1)), ABS(lmW(2)));
+    IF lmM >= 1E50 THEN
+      RETURN "These values spread the distribution past 1E50: too large to draw.";
+    END;
+    IF lmW(2) - lmW(1) < MAX(0.000000001, lmM*0.00000001) THEN
+      RETURN "These values make the distribution too narrow for the calculator's 12 digits. Widen it, or move it nearer 0.";
+    END;
+  END;
+  RETURN "";
+END;
+
 // Returns 1=lower, 2=upper, 3=between, 0=cancel
 st_get_tail_type()
 BEGIN
@@ -2073,24 +2294,32 @@ END;
 st_AskAB(dId, abPl, abX, abTl, abFull)
 BEGIN
   LOCAL a_val, b_val, abD, abH, abHa, abHb;
-  LOCAL abSp, abT, okI;
+  LOCAL abSp, abT, okI, abM;
+  // v2.7g: what the plot can draw (st_LimP), first: st_DefAB below
+  // already works with the parameters.  Then x (the tails).
+  abM := st_LimP(dId, abPl);
+  IF DIM(abM) == 0 AND abTl <> 3 THEN abM := st_LimX(dId, abX); END;
+  IF DIM(abM) > 0 THEN MSGBOX(abM); RETURN 0; END;
   abD := st_DefAB(dId, abPl);
   a_val := abD(1); b_val := abD(2);
   IF abTl == 3 AND abFull == 1 THEN
     abH := st_ABHelp(dId);
     abHa := abH(1); abHb := abH(2);
     IF st_Disc(dId) == 1 THEN
-      okI := INPUT({a_val, b_val}, "Between Bounds", {"Lower k:", "Upper k:"},
+      okI := INPUT({{a_val,[0]}, {b_val,[0]}}, "Between Bounds", {"Lower k:", "Upper k:"},
         {abHa, abHb}, {abD(1), abD(2)});
       IF okI == 0 THEN RETURN 0; END;
       a_val := st_Int(a_val, "lower k");
       b_val := st_Int(b_val, "upper k");
     ELSE
-      okI := INPUT({a_val, b_val}, "Between Bounds", {"Lower (a):", "Upper (b):"},
+      okI := INPUT({{a_val,[0]}, {b_val,[0]}}, "Between Bounds", {"Lower (a):", "Upper (b):"},
         {abHa, abHb}, {abD(1), abD(2)});
       IF okI == 0 THEN RETURN 0; END;
     END;
   END;
+  // v2.7g: a typed bound of 50 digits or more (or a k past 1E9)
+  abM := st_LimX(dId, MAX(ABS(a_val), ABS(b_val)));
+  IF DIM(abM) > 0 THEN MSGBOX(abM); RETURN 0; END;
   IF b_val < a_val THEN abT := a_val; a_val := b_val; b_val := abT; END;
   IF st_Disc(dId) == 1 THEN
     abSp := st_Sup(dId, abPl);
@@ -2105,12 +2334,12 @@ BEGIN
   LOCAL mu, sg, x_val, okI;
   mu := aCur(1); sg := aCur(2); x_val := aCur(4);
   IF aTl == 3 THEN
-    okI := INPUT({mu, sg}, "Normal: test scores, errors",
+    okI := INPUT({{mu,[0]}, {sg,[0]}}, "Normal: test scores, errors",
       {"Mean (μ):", "Std Dev (σ):"},
       {"Location", "Scale > 0"}, {0, 1});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({mu, sg, x_val}, "Normal: test scores, errors",
+    okI := INPUT({{mu,[0]}, {sg,[0]}, {x_val,[0]}}, "Normal: test scores, errors",
       {"Mean (μ):", "Std Dev (σ):", "X value:"},
       {"Location", "Scale > 0", "Value to evaluate"},
       {0, 1, 0});
@@ -2126,12 +2355,12 @@ BEGIN
   LOCAL a_param, b_param, x_val, okI;
   a_param := aCur(1); b_param := aCur(2); x_val := aCur(4);
   IF aTl == 3 THEN
-    okI := INPUT({a_param, b_param}, "Uniform: time within a shift",
+    okI := INPUT({{a_param,[0]}, {b_param,[0]}}, "Uniform: time within a shift",
       {"Min (a):", "Max (b):"},
       {"Lower bound", "Upper bound > a"}, {0, 1});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({a_param, b_param, x_val}, "Uniform: time within a shift",
+    okI := INPUT({{a_param,[0]}, {b_param,[0]}, {x_val,[0]}}, "Uniform: time within a shift",
       {"Min (a):", "Max (b):", "X value:"},
       {"Lower bound", "Upper bound > a", "Value to evaluate"},
       {0, 1, 0.5});
@@ -2147,12 +2376,12 @@ BEGIN
   LOCAL lambda, x_val, okI;
   lambda := aCur(1); x_val := aCur(4);
   IF aTl == 3 THEN
-    okI := INPUT({lambda}, "Exponential: time to incident",
+    okI := INPUT({{lambda,[0]}}, "Exponential: time to incident",
       {"Rate (λ):"},
       {"Rate > 0"}, {1});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({lambda, x_val}, "Exponential: time to incident",
+    okI := INPUT({{lambda,[0]}, {x_val,[0]}}, "Exponential: time to incident",
       {"Rate (λ):", "X value:"},
       {"Rate > 0", "Value ≥ 0"}, {1, 0});
     IF okI == 0 THEN RETURN 0; END;
@@ -2170,12 +2399,12 @@ BEGIN
   LOCAL ksh, stS, x_val, okI;
   ksh := aCur(1); stS := aCur(2); x_val := aCur(4);
   IF aTl == 3 THEN
-    okI := INPUT({ksh, stS}, "Weibull: time to re-offence",
+    okI := INPUT({{ksh,[0]}, {stS,[0]}}, "Weibull: time to re-offence",
       {"Shape k:", "Scale λ:"},
       {"k > 0", "λ > 0"}, {2, 1});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({ksh, stS, x_val}, "Weibull: time to re-offence",
+    okI := INPUT({{ksh,[0]}, {stS,[0]}, {x_val,[0]}}, "Weibull: time to re-offence",
       {"Shape k:", "Scale λ:", "X value:"},
       {"k > 0", "λ > 0", "x ≥ 0"}, {2, 1, 1});
     IF okI == 0 THEN RETURN 0; END;
@@ -2192,12 +2421,12 @@ BEGIN
   LOCAL mu, sg, x_val, okI;
   mu := aCur(1); sg := aCur(2); x_val := aCur(4);
   IF aTl == 3 THEN
-    okI := INPUT({mu, sg}, "LogNormal: sentence lengths",
+    okI := INPUT({{mu,[0]}, {sg,[0]}}, "LogNormal: sentence lengths",
       {"μ (log-mean):", "σ (log-sd):"},
       {"μ real", "σ > 0"}, {0, 1});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({mu, sg, x_val}, "LogNormal: sentence lengths",
+    okI := INPUT({{mu,[0]}, {sg,[0]}, {x_val,[0]}}, "LogNormal: sentence lengths",
       {"μ (log-mean):", "σ (log-sd):", "X value:"},
       {"μ real", "σ > 0", "x > 0"}, {0, 1, 1});
     IF okI == 0 THEN RETURN 0; END;
@@ -2213,12 +2442,12 @@ BEGIN
   LOCAL mu, bb, x_val, okI;
   mu := aCur(1); bb := aCur(2); x_val := aCur(4);
   IF aTl == 3 THEN
-    okI := INPUT({mu, bb}, "Laplace: age-estimate errors",
+    okI := INPUT({{mu,[0]}, {bb,[0]}}, "Laplace: age-estimate errors",
       {"Location μ:", "Scale b:"},
       {"μ real", "b > 0"}, {0, 1});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({mu, bb, x_val}, "Laplace: age-estimate errors",
+    okI := INPUT({{mu,[0]}, {bb,[0]}, {x_val,[0]}}, "Laplace: age-estimate errors",
       {"Location μ:", "Scale b:", "X value:"},
       {"μ real", "b > 0", "Value"}, {0, 1, 0});
     IF okI == 0 THEN RETURN 0; END;
@@ -2233,12 +2462,12 @@ BEGIN
   LOCAL df, x_val, okI;
   df := aCur(1); x_val := aCur(4);
   IF aTl == 3 THEN
-    okI := INPUT({df}, "Student t: small-sample means",
+    okI := INPUT({{df,[0]}}, "Student t: small-sample means",
       {"df:"},
       {"df > 0"}, {10});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({df, x_val}, "Student t: small-sample means",
+    okI := INPUT({{df,[0]}, {x_val,[0]}}, "Student t: small-sample means",
       {"df:", "X value:"},
       {"df > 0", "Value to evaluate"}, {10, 0});
     IF okI == 0 THEN RETURN 0; END;
@@ -2255,12 +2484,12 @@ BEGIN
   IF aTl == 3 THEN
     // v2.7b: "df:" (the emulator cut "Degrees of freedom:" to "Degrees
     // of fr..."); any df > 0, whole or not
-    okI := INPUT({df}, "χ²: goodness of fit",
+    okI := INPUT({{df,[0]}}, "χ²: goodness of fit",
       {"df:"},
       {"0 < df ≤ 5000 (need not be whole)"}, {10});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({df, x_val}, "χ²: goodness of fit",
+    okI := INPUT({{df,[0]}, {x_val,[0]}}, "χ²: goodness of fit",
       {"df:", "X value:"},
       {"0 < df ≤ 5000 (need not be whole)", "Value ≥ 0"}, {10, 5});
     IF okI == 0 THEN RETURN 0; END;
@@ -2285,12 +2514,12 @@ BEGIN
   IF aTl == 3 THEN
     // v2.7b: short labels ("Denominator df:" would be cut); the help
     // line says which df is which
-    okI := INPUT({df1, df2}, "Fisher F: ANOVA variances",
+    okI := INPUT({{df1,[0]}, {df2,[0]}}, "Fisher F: ANOVA variances",
       {"df1:", "df2:"},
       {"Numerator df > 0", "Denominator df > 0"}, {10, 15});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({df1, df2, x_val}, "Fisher F: ANOVA variances",
+    okI := INPUT({{df1,[0]}, {df2,[0]}, {x_val,[0]}}, "Fisher F: ANOVA variances",
       {"df1:", "df2:", "X value:"},
       {"Numerator df > 0", "Denominator df > 0", "Value ≥ 0"}, {10, 15, 1});
     IF okI == 0 THEN RETURN 0; END;
@@ -2309,12 +2538,12 @@ BEGIN
   LOCAL stC, stK, stS, x_val, okI;
   stC := aCur(1); stK := aCur(2); stS := aCur(3); x_val := aCur(4);
   IF aTl == 3 THEN
-    okI := INPUT({stC, stK, stS}, "Burr XII: time to re-arrest",
+    okI := INPUT({{stC,[0]}, {stK,[0]}, {stS,[0]}}, "Burr XII: time to re-arrest",
       {"Shape C:", "Shape K:", "Scale S:"},
       {"C > 0", "K > 0", "S > 0"}, {2, 2, 1});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({stC, stK, stS, x_val}, "Burr XII: time to re-arrest",
+    okI := INPUT({{stC,[0]}, {stK,[0]}, {stS,[0]}, {x_val,[0]}}, "Burr XII: time to re-arrest",
       {"Shape C:", "Shape K:", "Scale S:", "X value:"},
       {"C > 0", "K > 0", "S > 0", "x > 0"}, {2, 2, 1, 1});
     IF okI == 0 THEN RETURN 0; END;
@@ -2332,12 +2561,12 @@ BEGIN
   LOCAL mu, be, x_val, okI;
   mu := aCur(1); be := aCur(2); x_val := aCur(4);
   IF aTl == 3 THEN
-    okI := INPUT({mu, be}, "Gumbel (max): worst day",
+    okI := INPUT({{mu,[0]}, {be,[0]}}, "Gumbel (max): worst day",
       {"Location μ:", "Scale β:"},
       {"μ real", "β > 0"}, {0, 1});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({mu, be, x_val}, "Gumbel (max): worst day",
+    okI := INPUT({{mu,[0]}, {be,[0]}, {x_val,[0]}}, "Gumbel (max): worst day",
       {"Location μ:", "Scale β:", "X value:"},
       {"μ real", "β > 0", "Value"}, {0, 1, 0});
     IF okI == 0 THEN RETURN 0; END;
@@ -2352,12 +2581,12 @@ BEGIN
   LOCAL xm, al, x_val, okI;
   xm := aCur(1); al := aCur(2); x_val := aCur(4);
   IF aTl == 3 THEN
-    okI := INPUT({xm, al}, "Pareto: offending (80/20)",
+    okI := INPUT({{xm,[0]}, {al,[0]}}, "Pareto: offending (80/20)",
       {"Scale x_m:", "Shape α:"},
       {"x_m > 0", "α > 0"}, {1, 3});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({xm, al, x_val}, "Pareto: offending (80/20)",
+    okI := INPUT({{xm,[0]}, {al,[0]}, {x_val,[0]}}, "Pareto: offending (80/20)",
       {"Scale x_m:", "Shape α:", "X value:"},
       {"x_m > 0", "α > 0", "x ≥ x_m"}, {1, 3, 2});
     IF okI == 0 THEN RETURN 0; END;
@@ -2374,11 +2603,11 @@ BEGIN
   LOCAL sg, x_val, okI;
   sg := aCur(1); x_val := aCur(4);
   IF aTl == 3 THEN
-    okI := INPUT({sg}, "Rayleigh: shot miss distance",
+    okI := INPUT({{sg,[0]}}, "Rayleigh: shot miss distance",
       {"Scale σ:"}, {"σ > 0"}, {1.5});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({sg, x_val}, "Rayleigh: shot miss distance",
+    okI := INPUT({{sg,[0]}, {x_val,[0]}}, "Rayleigh: shot miss distance",
       {"Scale σ:", "X value:"}, {"σ > 0", "x ≥ 0"}, {1.5, 2});
     IF okI == 0 THEN RETURN 0; END;
     IF x_val < 0 THEN MSGBOX("Error: x must be ≥ 0"); RETURN 0; END;
@@ -2393,12 +2622,12 @@ BEGIN
   LOCAL mu, sc, x_val, okI;
   mu := aCur(1); sc := aCur(2); x_val := aCur(4);
   IF aTl == 3 THEN
-    okI := INPUT({mu, sc}, "Logistic: risk scores",
+    okI := INPUT({{mu,[0]}, {sc,[0]}}, "Logistic: risk scores",
       {"Location μ:", "Scale s:"},
       {"μ real", "s > 0"}, {0, 1});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({mu, sc, x_val}, "Logistic: risk scores",
+    okI := INPUT({{mu,[0]}, {sc,[0]}, {x_val,[0]}}, "Logistic: risk scores",
       {"Location μ:", "Scale s:", "X value:"},
       {"μ real", "s > 0", "Value"}, {0, 1, 0});
     IF okI == 0 THEN RETURN 0; END;
@@ -2415,12 +2644,12 @@ BEGIN
   LOCAL stN, stP, k_val, okI;
   stN := aCur(1); stP := aCur(2); k_val := aCur(4);
   IF aTl == 3 THEN
-    okI := INPUT({stN, stP}, "Binomial: convictions in n",
+    okI := INPUT({{stN,[0]}, {stP,[0]}}, "Binomial: convictions in n",
       {"n (trials):", "p (success):"},
       {"Trials", "0 < p < 1"}, {20, 0.5});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({stN, stP, k_val}, "Binomial: convictions in n",
+    okI := INPUT({{stN,[0]}, {stP,[0]}, {k_val,[0]}}, "Binomial: convictions in n",
       {"n (trials):", "p (success):", "k (successes):"},
       {"Trials", "0 < p < 1", "Successes"}, {20, 0.5, 10});
     IF okI == 0 THEN RETURN 0; END;
@@ -2439,12 +2668,12 @@ BEGIN
   LOCAL lambda, k_val, okI;
   lambda := aCur(1); k_val := aCur(4);
   IF aTl == 3 THEN
-    okI := INPUT({lambda}, "Poisson: calls per shift",
+    okI := INPUT({{lambda,[0]}}, "Poisson: calls per shift",
       {"λ (rate):"},
       {"Rate > 0"}, {5});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({lambda, k_val}, "Poisson: calls per shift",
+    okI := INPUT({{lambda,[0]}, {k_val,[0]}}, "Poisson: calls per shift",
       {"λ (rate):", "k (events):"},
       {"Rate > 0", "Events"}, {5, 3});
     IF okI == 0 THEN RETURN 0; END;
@@ -2462,12 +2691,12 @@ BEGIN
   LOCAL stP, k_val, okI;
   stP := aCur(1); k_val := aCur(4);
   IF aTl == 3 THEN
-    okI := INPUT({stP}, "Geometric: searches to 1st hit",
+    okI := INPUT({{stP,[0]}}, "Geometric: searches to 1st hit",
       {"p (success):"},
       {"0 < p < 1"}, {0.3});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({stP, k_val}, "Geometric: searches to 1st hit",
+    okI := INPUT({{stP,[0]}, {k_val,[0]}}, "Geometric: searches to 1st hit",
       {"p (success):", "k (trial):"},
       {"0 < p < 1", "Trial of 1st success (≥1)"}, {0.3, 3});
     IF okI == 0 THEN RETURN 0; END;
@@ -2486,13 +2715,13 @@ BEGIN
   LOCAL trA, trC, trB, x_val, okI;
   trA := aCur(1); trC := aCur(2); trB := aCur(3); x_val := aCur(4);
   IF aTl == 3 THEN
-    okI := INPUT({trA, trC, trB}, "Triangular: min, likeliest, max",
+    okI := INPUT({{trA,[0]}, {trC,[0]}, {trB,[0]}}, "Triangular: min, likeliest, max",
       {"Min (a):", "Mode (c):", "Max (b):"},
       {"Smallest possible value", "Most likely value", "Largest possible value"},
       {2, 5, 12});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({trA, trC, trB, x_val}, "Triangular: min, likeliest, max",
+    okI := INPUT({{trA,[0]}, {trC,[0]}, {trB,[0]}, {x_val,[0]}}, "Triangular: min, likeliest, max",
       {"Min (a):", "Mode (c):", "Max (b):", "X value:"},
       {"Smallest possible value", "Most likely value", "Largest possible value", "Value to evaluate"},
       {2, 5, 12, 5});
@@ -2512,12 +2741,12 @@ BEGIN
   LOCAL cLoc, cScl, x_val, okI;
   cLoc := aCur(1); cScl := aCur(2); x_val := aCur(4);
   IF aTl == 3 THEN
-    okI := INPUT({cLoc, cScl}, "Cauchy: ratio of errors",
+    okI := INPUT({{cLoc,[0]}, {cScl,[0]}}, "Cauchy: ratio of errors",
       {"Location (x₀):", "Scale:"},
       {"The median", "Scale > 0 (half the IQR)"}, {0, 1});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({cLoc, cScl, x_val}, "Cauchy: ratio of errors",
+    okI := INPUT({{cLoc,[0]}, {cScl,[0]}, {x_val,[0]}}, "Cauchy: ratio of errors",
       {"Location (x₀):", "Scale:", "X value:"},
       {"The median", "Scale > 0 (half the IQR)", "Value to evaluate"},
       {0, 1, 1});
@@ -2534,13 +2763,13 @@ BEGIN
   LOCAL frA, frS, frM, x_val, okI;
   frA := aCur(1); frS := aCur(2); frM := aCur(3); x_val := aCur(4);
   IF aTl == 3 THEN
-    okI := INPUT({frA, frS, frM}, "Frechet: largest losses",
+    okI := INPUT({{frA,[0]}, {frS,[0]}, {frM,[0]}}, "Frechet: largest losses",
       {"Shape (α):", "Scale (s):", "Location (m):"},
       {"α > 0 (mean needs α > 1)", "s > 0", "Smallest possible value"},
       {3, 1, 0});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({frA, frS, frM, x_val}, "Frechet: largest losses",
+    okI := INPUT({{frA,[0]}, {frS,[0]}, {frM,[0]}, {x_val,[0]}}, "Frechet: largest losses",
       {"Shape (α):", "Scale (s):", "Location (m):", "X value:"},
       {"α > 0 (mean needs α > 1)", "s > 0", "Smallest possible value", "Value to evaluate"},
       {3, 1, 0, 1});
@@ -2560,13 +2789,13 @@ BEGIN
   LOCAL gmEt, gmBr, x_val, okI;
   gmEt := aCur(1); gmBr := aCur(2); x_val := aCur(4);
   IF aTl == 3 THEN
-    okI := INPUT({gmEt, gmBr}, "Gompertz: years lived past 20",
+    okI := INPUT({{gmEt,[0]}, {gmBr,[0]}}, "Gompertz: years lived past 20",
       {"Shape (η):", "Rate (b):"},
       {"η > 0 (smaller = longer lives)", "b > 0 (doubling time ln2/b)"},
       {0.01, 0.085});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({gmEt, gmBr, x_val}, "Gompertz: years lived past 20",
+    okI := INPUT({{gmEt,[0]}, {gmBr,[0]}, {x_val,[0]}}, "Gompertz: years lived past 20",
       {"Shape (η):", "Rate (b):", "X value:"},
       {"η > 0 (smaller = longer lives)", "b > 0 (doubling time ln2/b)", "x ≥ 0"},
       {0.01, 0.085, 50});
@@ -2586,11 +2815,11 @@ BEGIN
   LOCAL mxA, x_val, okI;
   mxA := aCur(1); x_val := aCur(4);
   IF aTl == 3 THEN
-    okI := INPUT({mxA}, "Maxwell: 3-D miss distance",
+    okI := INPUT({{mxA,[0]}}, "Maxwell: 3-D miss distance",
       {"Scale (a):"}, {"a > 0 (the sd of each axis)"}, {1});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({mxA, x_val}, "Maxwell: 3-D miss distance",
+    okI := INPUT({{mxA,[0]}, {x_val,[0]}}, "Maxwell: 3-D miss distance",
       {"Scale (a):", "X value:"}, {"a > 0 (the sd of each axis)", "x ≥ 0"},
       {1, 1.5});
     IF okI == 0 THEN RETURN 0; END;
@@ -2607,12 +2836,12 @@ BEGIN
   LOCAL erK, erL, x_val, okI;
   erK := aCur(1); erL := aCur(2); x_val := aCur(4);
   IF aTl == 3 THEN
-    okI := INPUT({erK, erL}, "Erlang: time to the k-th call",
+    okI := INPUT({{erK,[0]}, {erL,[0]}}, "Erlang: time to the k-th call",
       {"Shape k:", "Rate (λ):"},
       {"Whole number ≥ 1", "λ > 0"}, {3, 1});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({erK, erL, x_val}, "Erlang: time to the k-th call",
+    okI := INPUT({{erK,[0]}, {erL,[0]}, {x_val,[0]}}, "Erlang: time to the k-th call",
       {"Shape k:", "Rate (λ):", "X value:"},
       {"Whole number ≥ 1", "λ > 0", "x ≥ 0"}, {3, 1, 2});
     IF okI == 0 THEN RETURN 0; END;
@@ -2632,12 +2861,12 @@ BEGIN
   LOCAL gaK, gaT, x_val, okI;
   gaK := aCur(1); gaT := aCur(2); x_val := aCur(4);
   IF aTl == 3 THEN
-    okI := INPUT({gaK, gaT}, "Gamma: case processing time",
+    okI := INPUT({{gaK,[0]}, {gaT,[0]}}, "Gamma: case processing time",
       {"Shape (k):", "Scale (θ):"},
       {"0 < k ≤ 5000 (any, not just whole)", "θ > 0"}, {2.5, 2});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({gaK, gaT, x_val}, "Gamma: case processing time",
+    okI := INPUT({{gaK,[0]}, {gaT,[0]}, {x_val,[0]}}, "Gamma: case processing time",
       {"Shape (k):", "Scale (θ):", "X value:"},
       {"0 < k ≤ 5000 (any, not just whole)", "θ > 0", "x ≥ 0"}, {2.5, 2, 4});
     IF okI == 0 THEN RETURN 0; END;
@@ -2660,12 +2889,12 @@ BEGIN
   LOCAL btA, btB, x_val, okI;
   btA := aCur(1); btB := aCur(2); x_val := aCur(4);
   IF aTl == 3 THEN
-    okI := INPUT({btA, btB}, "Beta: clearance rates",
+    okI := INPUT({{btA,[0]}, {btB,[0]}}, "Beta: clearance rates",
       {"Shape (α):", "Shape (β):"},
       {"α > 0", "β > 0"}, {2, 5});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({btA, btB, x_val}, "Beta: clearance rates",
+    okI := INPUT({{btA,[0]}, {btB,[0]}, {x_val,[0]}}, "Beta: clearance rates",
       {"Shape (α):", "Shape (β):", "X value:"},
       {"α > 0", "β > 0", "0 ≤ x ≤ 1"}, {2, 5, 0.3});
     IF okI == 0 THEN RETURN 0; END;
@@ -2682,12 +2911,12 @@ BEGIN
   LOCAL nbR, nbP, k_val, okI;
   nbR := aCur(1); nbP := aCur(2); k_val := aCur(4);
   IF aTl == 3 THEN
-    okI := INPUT({nbR, nbP}, "Neg. binomial: stops, r arrests",
+    okI := INPUT({{nbR,[0]}, {nbP,[0]}}, "Neg. binomial: stops, r arrests",
       {"r (successes):", "p (success):"},
       {"Whole number ≥ 1", "0 < p < 1"}, {3, 0.4});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({nbR, nbP, k_val}, "Neg. binomial: stops, r arrests",
+    okI := INPUT({{nbR,[0]}, {nbP,[0]}, {k_val,[0]}}, "Neg. binomial: stops, r arrests",
       {"r (successes):", "p (success):", "k (failures):"},
       {"Whole number ≥ 1", "0 < p < 1", "Failures before the r-th success"},
       {3, 0.4, 4});
@@ -2712,13 +2941,13 @@ BEGIN
   IF aTl == 3 THEN
     // v2.7b: shorter labels (the long ones would be cut); the help
     // lines say what each number is
-    okI := INPUT({hgN, hgK, hgM}, "Hypergeometric: seized packets",
+    okI := INPUT({{hgN,[0]}, {hgK,[0]}, {hgM,[0]}}, "Hypergeometric: seized packets",
       {"N (pop.):", "K (pos. in N):", "n (drawn):"},
       {"Population size, 1 to 1000", "Positives in N, 0 to N", "Drawn, 1 to N"},
       {50, 40, 6});
     IF okI == 0 THEN RETURN 0; END;
   ELSE
-    okI := INPUT({hgN, hgK, hgM, k_val}, "Hypergeometric: seized packets",
+    okI := INPUT({{hgN,[0]}, {hgK,[0]}, {hgM,[0]}, {k_val,[0]}}, "Hypergeometric: seized packets",
       {"N (pop.):", "K (pos. in N):", "n (drawn):", "k (pos. in n):"},
       {"Population size, 1 to 1000", "Positives in N, 0 to N", "Drawn, 1 to N", "Positives drawn, 0 ≤ k ≤ n"},
       {50, 40, 6, 5});
@@ -2776,7 +3005,7 @@ END;
 // v2.5: a drawn page; v2.6 adds every gesture and soft key (two pages).
 st_show_help()
 BEGIN
-  st_Page("Statistical Distributions v2.7f", {
+  st_Page("Statistical Distributions v2.7h", {
     "Probabilities for 27 distributions.",
     "Gallery: tap a family (or arrows),",
     "Menus: the tail first, then the form.",
@@ -2975,8 +3204,7 @@ END;
 // Norm3 keeps x0 visible.
 st_Fit(fiStr)
 BEGIN
-  LOCAL fiS, fiQ1, fiQ9, fiQa, fiQb, fiIq;
-  LOCAL fiLo, fiHi, fiW, fiN, fiMo;
+  LOCAL fiS, fiLo, fiHi, fiW, fiN, fiMo;
   stZm := 0;
   fiS := st_Sup(stId, stPar);
   IF stDisc == 1 THEN
@@ -3006,19 +3234,10 @@ BEGIN
       fiHi := fiLo + 250;
     END;
   ELSE
-    IF fiS(1) > -1E299 AND fiS(2) < 1E299 THEN
-      fiW := fiS(2) - fiS(1);
-      fiLo := fiS(1) - 0.05*fiW; fiHi := fiS(2) + 0.05*fiW;
-    ELSE
-      fiQ1 := st_icdf(stId, stPar, 0.001);
-      fiQ9 := st_icdf(stId, stPar, 0.999);
-      fiQa := st_icdf(stId, stPar, 0.25);
-      fiQb := st_icdf(stId, stPar, 0.75);
-      fiIq := fiQb - fiQa;
-      fiLo := MAX(fiQ1, fiQa - 8*fiIq);
-      fiHi := MIN(fiQ9, fiQb + 8*fiIq);
-      IF fiS(1) > -1E299 AND fiLo - fiS(1) < 0.1*(fiHi - fiLo) THEN fiLo := fiS(1); END;
-    END;
+    // v2.7g: the window comes from st_FitWin (section 4b), the same
+    // one st_LimP has already found drawable
+    fiW := st_FitWin(stId, stPar);
+    fiLo := fiW(1); fiHi := fiW(2);
     IF fiStr == 1 THEN
       fiW := fiHi - fiLo;
       IF stTl == 3 THEN
@@ -3032,6 +3251,7 @@ BEGIN
     IF fiHi <= fiLo THEN fiHi := fiLo + 1; END;
   END;
   stLo := fiLo; stHi := fiHi;
+  stFW := stHi - stLo;               // v2.7g: for the zoom-out cap
   st_Grid();
   st_CutCalc();
 END;
@@ -3331,11 +3551,20 @@ BEGIN
   TEXTOUT_P(pnN, G1, 6, 205, 1, pnC, 308);
 END;
 
+// ---- v2.7h: how wide a small-font number label is, in pixels ----
+// About 5.5 px a character and 3 px for the decimal point (the Virtual
+// Calculator, 1 Nov 2026: "0.03" is 20 px wide).
+st_LWd(lwS)
+BEGIN
+  IF INSTRING(lwS, ".") > 0 THEN RETURN 5.5*(DIM(lwS) - 1) + 3; END;
+  RETURN 5.5*DIM(lwS);
+END;
+
 // ---- compose one frame in G1, blit it once, then the soft keys ----
 st_Draw()
 BEGIN
   LOCAL dwPx, dwV, dwN, dwS, dwD, dwY;
-  LOCAL dwYs, dwF;
+  LOCAL dwYs, dwF, dwX, dwR, dwSc;
   DIMGROB_P(G1, 320, 240, #FFFFFFh);
   // title: the name in blue, the typical use in grey
   dwS := st_Name(stId);
@@ -3345,6 +3574,7 @@ BEGIN
   dwD := MAX(0, -FLOOR(LOG(stTk)));
   dwN := CEILING(stLo/stTk - 0.000001);
   dwV := dwN*stTk;
+  dwR := -99;                     // v2.7h: where the last x label drawn ends
   WHILE dwV <= stHi + stTk/1000 DO
     dwPx := st_Px(dwV);
     IF dwPx >= stPL AND dwPx <= stPR THEN
@@ -3352,7 +3582,17 @@ BEGIN
       LINE_P(G1, dwPx, stPB, dwPx, stPB + 3, #000000h);
       IF ABS(dwV) < stTk/1000 THEN dwV := 0; END;   // no "-0.0"
       dwS := STRING(dwV, 2, dwD);
-      TEXTOUT_P(dwS, G1, dwPx - 3*DIM(dwS), stPB + 4, 1, stGRY, 60);
+      // v2.7h: never clipped (v2.7g cut each label at 60 px); a label
+      // that would touch the one before it or run past the right edge
+      // is left out, its tick stays ("-0.0000003" ... at sigma = 1E-7
+      // were printed over each other on the Virtual Calculator).  The
+      // right edge allows 3 px over the estimate: "3000" at x = 298, as
+      // every version has drawn it
+      dwX := dwPx - 3*DIM(dwS);
+      IF dwX >= dwR + 3 AND dwX + st_LWd(dwS) <= 322 THEN
+        TEXTOUT_P(dwS, G1, MAX(0, dwX), stPB + 4, 1, stGRY);
+        dwR := dwX + st_LWd(dwS);
+      END;
     END;
     dwN := dwN + 1;
     dwV := dwN*stTk;
@@ -3360,12 +3600,30 @@ BEGIN
   // the y grid and labels (a density's scale, or a pmf's)
   dwYs := st_Nice(stYmx/4);
   dwD := MAX(0, -FLOOR(LOG(dwYs)));
+  // v2.7h: never clipped (v2.7g's width limit cut "4000000" to
+  // "400000").  If any label would be wider than the 35 px left of the
+  // axis, every label on it is written in the scientific form, "4E6",
+  // "5E-5" (small capital E), as SampDist v2.3e's; one still too wide is
+  // left out.  STRING(x, 2, d) only for d up to 12 (the Prime refuses 13).
+  dwSc := 0;
+  IF dwD > 12 THEN dwSc := 1; END;
+  dwV := dwYs;
+  WHILE dwV < stYmx AND dwSc == 0 DO
+    IF st_LWd(STRING(dwV, 2, dwD)) > 35 THEN dwSc := 1; END;
+    dwV := dwV + dwYs;
+  END;
   dwV := dwYs;
   WHILE dwV < stYmx DO
     dwY := stPB - IP(dwV/stYmx*stH + 0.5);
     LINE_P(G1, stPL + 1, dwY, stPR, dwY, stGRID);
     LINE_P(G1, stPL - 3, dwY, stPL, dwY, #000000h);
-    IF dwD <= 4 THEN TEXTOUT_P(STRING(dwV, 2, dwD), G1, 1, dwY - 4, 1, stGRY, stPL - 4); END;
+    IF dwSc == 0 THEN
+      dwS := STRING(dwV, 2, dwD);
+    ELSE
+      dwS := STRING(dwV, 3, 1);
+      IF MID(dwS, 2, 2) == ".0" THEN dwS := LEFT(dwS, 1) + MID(dwS, 4, DIM(dwS) - 3); END;
+    END;
+    IF st_LWd(dwS) <= 35 THEN TEXTOUT_P(dwS, G1, 1, dwY - 4, 1, stGRY); END;
     dwV := dwV + dwYs;
   END;
   // the distribution, with its shading
@@ -3553,7 +3811,9 @@ BEGIN
     IF stHi > zmS(2) THEN stHi := zmS(2); stLo := MAX(zmS(1), stHi - zmN + 1); END;
   ELSE
     zmH := (stHi - stLo)*zmF/2;
-    IF zmH < 0.000000001*(1 + ABS(zmC)) OR zmH > 1E12 THEN RETURN 0; END;
+    // v2.7g: and never wider than 500 fitted windows (stFW), where
+    // every family's formulas stay finite (section 4b)
+    IF zmH < 0.000000001*(1 + ABS(zmC)) OR zmH > 1E12 OR zmH > 250*stFW THEN RETURN 0; END;
     stLo := zmC - zmH; stHi := zmC + zmH;
   END;
   st_Grid();

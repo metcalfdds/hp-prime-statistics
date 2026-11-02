@@ -1,0 +1,45 @@
+=== R. beta 8f against beta 8e, screen for screen, where nothing was meant to change
+   beta 8e: git history
+PASS R1 50 states x (eight views and the 13 node pages) = 450 runs, 4294 screens: beta 8f's text is beta 8e's on every screen, but for the two lines that ran into their neighbours, with the same summary, and no error in either
+PASS R2 the odds line: odds of 100 or more as whole numbers (966 lines differ from beta 8e's), every line at most 26 characters, so it ends before the spec number at x 168; "odds" left out only with two near-certain tests
+PASS R3 the Diagnostics page's DOR line reads "(at the 0.999 cap)" (24 screens), inside the screen (part D)
+=== B. the exact answers with the desktop CAS (icas)
+PASS B1 the Exact page and the tree's exact panel, three cases (one test, two tests, forensic), with the desktop CAS: identical in both versions, no error (CAS calls [3, 6, 6])
+=== M. the monkey test's findings (1 Nov 2026; each check fails on beta 8e)
+PASS M1 all 3 forms take real numbers only: every field is {name,[0]} (10 fields), so the form refuses a typed list; beta 8e's were bare names
+PASS M2 two tests at N = 10 (test 1's positives: 0.01 people, the root 0): all 13 node pages open, and the six count pages say "count = 0  (N is 0 here)"; beta 8e: PPLError: division by zero
+PASS M3 the monkey's own run, seed 11000398 (sens 7 typed, then taps), replayed: beta 8f OK, beta 8e CRASH
+PASS M4 Values, prior 25: "The prior is a proportion from 0 to 1: type ...", nothing changed; beta 8e: no box, and 9 (prior 0.999, sens 0.900, spec 0.950)
+PASS M4 Values, prior -0.1: "The prior is a proportion from 0 to 1: type ...", nothing changed; beta 8e: no box, and 0 (prior < 0.001, sens 0.900, spec 0.950)
+PASS M4 Values, sens 7: "sens is a proportion from 0 to 1: type 0.7 f...", nothing changed; beta 8e: no box, and 0 (prior 0.100, sens 0.999, spec 0.950)
+PASS M4 Values, sens 70: "sens is a proportion from 0 to 1: type 0.7 f...", nothing changed; beta 8e: no box, and 0 (prior 0.100, sens 0.999, spec 0.950)
+PASS M4 Values, spec 98.6: "spec is a proportion from 0 to 1: type 0.95 ...", nothing changed; beta 8e: no box, and 9 (prior 0.100, sens 0.900, spec 0.999)
+PASS M4 Values, spec 1.0001: "spec is a proportion from 0 to 1: type 0.95 ...", nothing changed; beta 8e: no box, and 9 (prior 0.100, sens 0.900, spec 0.999)
+PASS M4 Values, sens 1E60: "A number you typed has more than 50 digits: ...", nothing changed; beta 8e: no box, and 0 (prior 0.100, sens 0.999, spec 0.950)
+PASS M4 Values, N 9.9: "N is the number of people at the root of the...", nothing changed; beta 8e: no box, and a different tree
+PASS M4 Values, N -5: "N is the number of people at the root of the...", nothing changed; beta 8e: no box, and a different tree
+PASS M4 Values, N 1000001: "N is the number of people at the root of the...", nothing changed; beta 8e: no box, and a different tree
+PASS M4 Values, N 1E60: "N is the number of people at the root of the...", nothing changed; beta 8e: no box, and a different tree
+PASS M4 Second test, sens 2 = 7: "sens 2 is a proportion from 0 to 1: type 0.7...", nothing changed; beta 8e: no box, and 8 (prior 0.667, sens 0.999, spec 0.950), after 2 tests from prior 0.100
+PASS M4 Second test, spec 2 = -0.5: "spec 2 is a proportion from 0 to 1: type 0.9...", nothing changed; beta 8e: no box, and 8 (prior 0.667, sens 0.900, spec 0.010), after 2 tests from prior 0.100
+PASS M5 the ends accepted as before, no box, every screen as in beta 8e (but for part R's odds line: a prior of 1 is 0.999, odds 999): prior, sens, spec 0 and 1; N 10, 1,000,000 and 10.7 (cut to 10): [True, True, True, True, True, True, True, True, True]
+PASS M6 Enter counts, a count of -3: "A count is a number of people: 0 or more...", nothing changed; beta 8e: no box, 0 (prior 0.091, sens 0.999, spec 0.950)
+PASS M6 Enter counts, counts 400,000 + 300,000 + 200,000 + 100,001: "The four counts add to more than 1,000,0...", nothing changed; beta 8e: no box, 0 (prior 0.700, sens 0.571, spec 0.333)
+PASS M6 Enter counts, a count of 1E60: "The four counts add to more than 1,000,0...", nothing changed; beta 8e: no box, 0 (prior < 0.001, sens 0.900, spec 0.999)
+PASS M6 counts adding to exactly 1,000,000 accepted, every screen as in beta 8e (PPV = 0.800, NPV = 0.800 (prior 0.500, sens 0.800, spec 0.800))
+PASS M7 Cancel on each form changes nothing and shows no box, as in beta 8e: [('Values', True), ('Counts', True), ('Second test', True)]
+PASS M8 every new box within 4 lines at 32 characters a line: [2, 3, 3, 3, 3, 3, 3, 3, 3]
+=== G. static checks
+PASS G1 only BayesTree, bt_DiagView, bt_NodeInfo, bt_fmtp and the new bt_PBad and bt_fmtO differ from beta 8e (and bt_BEp's block, which the new routines follow): ['BayesTree', 'bt_BEp', 'bt_DiagView', 'bt_NodeInfo', 'bt_PBad', 'bt_fmtO', 'bt_fmtp']
+PASS G1 bt_fmtp differs from beta 8e in one code line, "pv != 0" written "pv <> 0"
+PASS G1 bt_BEp's code is beta 8e's, character for character (only the comment above bt_PBad follows it)
+PASS G2 52 routines; every one but the EXPORT is tagged bt_
+PASS G4 no "!=" in the code (on the Prime it is a factorial and an "=": {3!=0, 0!=0} gave {0, 0} and 999!=0 "Numerical overflow", Virtual Calculator, 1 Nov 2026); beta 8e had 1
+PASS G2 at most six names on every LOCAL line
+PASS G3 the glyphs in the code's strings are beta 8e's own set: ×κ—₁₂→⇅⇆−√≤
+=== D. layout (text_overlap_v1 over every screen above)
+   screens: 721 distinct of 4478
+PASS D1 no firm overlap, frame straddle or overrun on any beta 8f screen drawn (beta 8e, on the same runs: 4: ['0.010', '>.999', 'diagnostic OR = 10.091   (sens or spec a'])
+
+35 PASS, 0 FAIL
+exit 0

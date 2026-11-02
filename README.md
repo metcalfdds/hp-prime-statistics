@@ -28,7 +28,7 @@ Hundreds of community PPL programs from several HP-related public forums were re
 
 **New here?** [START_HERE.md](START_HERE.md) is a one-page guide: what to read in five minutes, five programs to try first, and how to help.
 
-**No calculator? Try all 30 on HP's free Virtual Calculator.** Download the **[starter pack](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v6.zip)** (one 1.4 MB zip, for the Virtual Calculator on Windows). Unzip it, copy one folder's files into the Virtual Calculator's own folder, and start it: the programs are in its Program Catalog, CentralLimit already made into its app. No Connectivity Kit, and no copying and pasting of code. [The steps](starter-pack/README.md) fit on one page.
+**No calculator? Try all 30 on HP's free Virtual Calculator.** Download the **[starter pack](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v7.zip)** (one 1.4 MB zip, for the Virtual Calculator on Windows). Unzip it, copy one folder's files into the Virtual Calculator's own folder, and start it: the programs are in its Program Catalog, CentralLimit already made into its app. No Connectivity Kit, and no copying and pasting of code. [The steps](starter-pack/README.md) fit on one page.
 
 **Your own data, without typing it in.** The **[HP Prime Data Loader](data-loader/README.md)** is one web page that works offline: paste columns from Excel, SPSS or a CSV file, and it writes the calculator's own matrix file. On the calculator, **DataLoad** puts each column, or each group's scores, into the Statistics lists that the other programs read, and draws a box plot of each. The starter pack carries DataLoad and a sample data set (new, 31 October 2026).
 
@@ -52,7 +52,7 @@ Together, these 30 programs currently run to more than **84,000 lines**: 57,900 
 
 And around the programs:
 
-- **[The notes](docs/lessons-learned_v7zg.md)**: hard limits, commands that differ from the manual, touch and graphics idioms, the MicroPython bridge and how it fails silently, calling the CAS safely, numerical methods for 12-digit reals. Useful even if you never run a statistics program, and written so you can hand them to an AI assistant before it writes PPL for you.
+- **[The notes](docs/lessons-learned_v7zi.md)**: hard limits, commands that differ from the manual, touch and graphics idioms, the MicroPython bridge and how it fails silently, calling the CAS safely, numerical methods for 12-digit reals. Useful even if you never run a statistics program, and written so you can hand them to an AI assistant before it writes PPL for you.
 - **[Two shortcuts the manuals don't mention](docs/two-shortcuts.md)**: loading the Virtual Calculator by copying files into its folder, and a big data set as one matrix file, with who found what.
 - **[Tools](tools/)**: the checks every program passes before it is pasted (a lint gate, a fleet-wide name check, a check that no two lines of text overlap on screen, a PC harness that drives a program like a student), in plain Python 3.
 - **[Diagnostics](diagnostics/)**: small probe programs that test what your own calculator does.
@@ -74,7 +74,7 @@ Three different questions, with three different answers:
   
 - **Do they run on a real calculator? Yes, we think so, but we are still checking.** Every program has run and been extensively tested on the HP Prime Virtual Calculator by Claude, and the current versions have had cursory checks on a G1 and a G2 by human me. The full device checklists, one per version in [docs/changes/](docs/changes/), are still being worked through, and some screens, especially graphics, can be slow. **Reports from your own calculator are the most welcome contribution of all.** The full dated record is in [docs/test-status.md](docs/test-status.md).
   
-- **Do they survive careless use? We now test that too** (1 November 2026). The **monkey test** (`tools/monkey_v1a.py`) drives a program the way a student who doesn't want to be there might: random keys, taps, menu picks and cancels, and odd values typed into the forms (a list where a number belongs, 1E300, 0, negatives). TTestLab and TTestLabG now pass 1,000 random runs with none broken. The first pass over the other book programs found what to fix next: [docs/dev/monkey-fleet-2026-11-01.md](docs/dev/monkey-fleet-2026-11-01.md).
+- **Do they survive careless use? We now test that too** (1 November 2026). The **monkey test** (`tools/monkey_v1b.py`) drives a program the way a student who doesn't want to be there might: random keys, taps, menu picks and cancels, and odd values typed into the forms (a list where a number belongs, 1E300, 0, negatives). TTestLab, TTestLabG, SampDist, BayesTree, CICatcher, Norm3, NormExplorer and StatDist now pass 1,000 random runs with none broken; trying the fixes on the Virtual Calculator found three things the PC model of the calculator cannot show (`!=` is not "not equal" on the Prime, `STRING` takes at most 12 decimals, and a loop step can vanish in 12 digits). StatDist's 27 distributions were also swept parameter by parameter from 1E−300 to 1E300. The first pass over the other book programs found what to fix next: [docs/dev/monkey-fleet-2026-11-01.md](docs/dev/monkey-fleet-2026-11-01.md).
 
 - **Can they be used on real cases? No!** Software used in casework must first be formally validated: tested on known samples under a laboratory's quality system, with its limits documented, certified, and then used by a qualified analyst. None of these programs has been through that process.
   
@@ -129,16 +129,16 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 
 ### Distributions
 
-**NormExplorer** (beta 42c): a normal-distribution workbench.
+**NormExplorer** (beta 42e): a normal-distribution workbench.
 - Any μ and σ, four kinds of probability question and three inverse ones, a z-formula solver, Cohen's d, and a standardize animation.
 - A live explorer: drag either bound of a shaded interval. "More" brings up a second page, so the arrow keys can move a bound, μ or σ.
 - Reads your own data from the Statistics apps.
 
-**Norm3** (v2.4b, it takes arguments; the Program Catalog asks for them): drag x₀ and watch the area and the S-curve together. Tap the S-curve for the inverse.
+**Norm3** (v2.4d, it takes arguments; the Program Catalog asks for them): drag x₀ and watch the area and the S-curve together. Tap the S-curve for the inverse.
 
 **BurrLab** (beta 1i; replaces Burr3): the Burr XII as the model for a long right tail. Fit it to data by maximum likelihood, in PPL or MicroPython (or both, timed side by side), and see it ranked by AIC against the lognormal, Weibull, gamma, exponential and Lomax; drag C and K and watch it turn into the Pareto, the log-logistic or the Weibull; watch a running mean wander forever when the tail is too heavy for a mean to exist; ask how rare a value is. Data: BJS months served, Rossi weeks to re-arrest, Danish fire claims. **Why the Burr XII, and how the fit differs from fitting a normal:** [docs/burrlab-guide.md](docs/burrlab-guide.md).
 
-**StatDist** (v2.7f): 27 distributions, each result a plot you can touch. Drag x or k, the shading follows, and the window snaps to round values. Overlays show the normal approximation, N(0, 1) behind t, and the CDF as an S-curve. A Gallery opens six examples with one tap.
+**StatDist** (v2.7h): 27 distributions, each result a plot you can touch. Drag x or k, the shading follows, and the window snaps to round values. Overlays show the normal approximation, N(0, 1) behind t, and the CDF as an S-curve. A Gallery opens six examples with one tap.
 
 **StudRange** (beta 15f): the studentized range (Tukey's q).
 - p from q, the critical value from α, Tukey HSD, and an interactive plot.
@@ -151,12 +151,12 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 
 **CentralLimit** (beta 3d, an app; **see the install warning under [Installing](#installing-note-in-particular-the-instructions-for-centrallimit-because-it-is-an-app-not-a-program)**): watch one sample happen, its members lighting up and their mean dropping into the pile. Then drag along the top panel to choose n, and see the square-root law on its own page. After Colin Croft's HP 39G aplet (2003).
 
-**SampDist** (v2.3d): the sampling distribution of x̄, with the population drawn faintly behind it.
+**SampDist** (v2.3e): the sampling distribution of x̄, with the population drawn faintly behind it.
 - **n×4** halves the width.
 - The nearer bound follows your finger.
 - "Watch sample means" drops forty of them onto the axis.
 
-**CICatcher** (beta 2d): fifty confidence intervals stack up, blue if it catches the truth (the green line) and red if it misses. **Drag the confidence level**: every interval stretches or shrinks, and the catch count updates exactly without new samples. Covers z, t, Wald, Wilson and the exact Clopper–Pearson interval.
+**CICatcher** (beta 2e): fifty confidence intervals stack up, blue if it catches the truth (the green line) and red if it misses. **Drag the confidence level**: every interval stretches or shrinks, and the catch count updates exactly without new samples. Covers z, t, Wald, Wilson and the exact Clopper–Pearson interval.
 
 **GaltonBoard** (beta 3e): Galton's quincunx.
 - **Pour mode:** hold a finger on the funnel and a stream of balls cascades through the pegs.
@@ -206,7 +206,7 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 
 ### Bayes and forensic science
 
-**BayesTree** (beta 8e): a natural-frequency Bayes tree.
+**BayesTree** (beta 8f): a natural-frequency Bayes tree.
 - **Slide the prevalence** and the tree and a mosaic re-flow: watch a 95 %-accurate test's PPV collapse at low prevalence.
 - Sensitivity and specificity can be dragged on the branches.
 - A Fagan nomogram, a second test, and forensic labels.
@@ -312,7 +312,7 @@ Short programs for finding out what your own calculator does.
 
 ## The notes
 
-[**docs/lessons-learned_v7zg.md**](docs/lessons-learned_v7zg.md) is the substantial document here: everything learned the expensive way across dozens and dozens of build iterations on G1 and G2 hardware. It covers:
+[**docs/lessons-learned_v7zi.md**](docs/lessons-learned_v7zi.md) is the substantial document here: everything learned the expensive way across dozens and dozens of build iterations on G1 and G2 hardware. It covers:
 - hard limits;
 - command behaviour that contradicts the manual;
 - graphics and input idioms;

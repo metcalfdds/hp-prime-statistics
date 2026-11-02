@@ -1,0 +1,35 @@
+=== R. v2.4d against v2.4b, screen for screen, ordinary arguments and every key
+   v2.4b: git history
+PASS R1 9 calls x 2 key sets (every key: mu, sigma, x0, re-centre; taps and the menu): 392 screens, every text and the summary identical to v2.4b's but for x labels left out (and, v2.4d, density labels in units of a power of ten, written out for the comparison), no error
+PASS R2 the x labels left out in those ordinary runs are exactly the ones that would touch the "x" caption or the label drawn before them (v2.4b printed them overlapping); 5 left out, e.g. [('0.4992', 6.0), ('0.4996', 75.0), ('0.5000', 144.0), ('0.5004', 214.0)]
+=== M. the findings (1 Nov 2026; each check fails on v2.4b)
+PASS M1 Norm3({1,2},1,0): "Norm3 takes three numbers: Norm3(μ, σ, x...", nothing drawn; v2.4b: Unsupported: - between a list and a number is not covered
+PASS M1 Norm3(0,{1},0): "Norm3 takes three numbers: Norm3(μ, σ, x...", nothing drawn; v2.4b: Unsupported: <= between a list and a number is not covered
+PASS M1 Norm3(0,1,{0,1}): "Norm3 takes three numbers: Norm3(μ, σ, x...", nothing drawn; v2.4b: Unsupported: < between a list and a number is not covered
+PASS M1 Norm3(1E300,1,0): "A number you typed has more than 50 digi...", nothing drawn; v2.4b: Norm3: N(1.000ᴇ300, 1.000), P(X ≤ 0.00) 
+PASS M1 Norm3(0,1E300,0): "A number you typed has more than 50 digi...", nothing drawn; v2.4b: PPLError: Invalid input: STRING(x, 2, 301) -- the Prime takes at most 12 decimals (Virtual Calculator, 1 Nov 2026; prime_facts_v1)
+PASS M1 Norm3(0,1,-1E60): "A number you typed has more than 50 digi...", nothing drawn; v2.4b: Norm3: N(0.000, 1.000), P(X ≤ −1.00ᴇ60) 
+PASS M1 Norm3(0,1E12,0): "σ can be at most 1E10: a larger σ needs ...", nothing drawn; v2.4b: PPLError: Invalid input: STRING(x, 2, 13) -- the Prime takes at most 12 decimals (Virtual Calculator, 1 Nov 2026; prime_facts_v1)
+PASS M1 Norm3(0,1E-300,0): "σ is too small next to μ for the calcula...", nothing drawn; v2.4b: PPLError: Invalid input: STRING(x, 2, 300) -- the Prime takes at most 12 decimals (Virtual Calculator, 1 Nov 2026; prime_facts_v1)
+PASS M1 Norm3(1E40,1,1E40): "σ is too small next to μ for the calcula...", nothing drawn; v2.4b: PPLError: division by zero
+PASS M1 Norm3(1E9,0.001,1E9): "σ is too small next to μ for t..."; v2.4b drew in the harness (16 digits), and its tick loop in 12 digits is stuck (SampDist v2.3d's same loop never ended on the Virtual Calculator)
+PASS M2 the ends of what is accepted draw, with every key, and no error (STRING refusing 13 decimals as on the Prime): [('Norm3(0,0.000000001,0)', None), ('Norm3(1E9,10,1E9)', None), ('Norm3(0,1E10,0)', None), ('Norm3(9.9E17,1E10,9.9E17)', None), ('Norm3(0,1,9.9E49)', None)]
+PASS M3 sigma+ twenty times from 1E10: sigma stays 1E10 (10000000000.0), no error; v2.4b: PPLError: Invalid input: STRING(x, 2, 13) -- the Prime takes at most 12 decimals (Virtual Calculator, 1 Nov 2026; prime_facts_v1)
+PASS M3 sigma- twenty times at mu = 1E9, sigma = 10: sigma stays 10 (|mu|/100,000,000); v2.4b went to 0.1153
+PASS M3 sigma- once from a typed 0.00001: sigma stays 0.00001 (1e-05); v2.4b raised it to 0.0001
+PASS M3 ordinary sigma keys unchanged: Norm3(0,1,0), sigma- three times and sigma+ twice: sigma 0.8, as v2.4b's
+PASS M4 every new sentence within 4 lines at 32 characters (they return to Home, where a line holds more): [2, 3, 4, 3]
+=== G. static checks
+PASS G1 only Norm3, n3_fmtp, n3_Help and (v2.4d) the new n3_YWd differ from v2.4b, code for code: ['Norm3', 'n3_Help', 'n3_YWd', 'n3_fmtp']
+PASS G2 no "!=" in the code (on the Prime a factorial and a test); v2.4b had 1: ['IF pv != 0 AND ABS(pv) < thr THEN']
+PASS G2 n3_fmtp differs from v2.4b in its one line, "pv != 0" written "pv <> 0"
+PASS G3 no new non-ASCII character in the code outside strings (the house rule): code glyphs μσ₀⇅⇆−≤, v2.4b's μσ₀⇅⇆−≤
+=== D. layout (text_overlap_v1 over every screen above)
+   screens: 848 distinct of 866
+PASS D1 no firm overlap, straddle or overrun on any v2.4d screen drawn, the ends of what is accepted included (v2.4b, on its own runs: 59, ['0', '0.000000001', '0.000000002'])
+=== Y. v2.4d: density labels written in units of a power of ten when they do not fit left of the axis
+PASS Y1 Norm3(0, sigma, 0) at 29 sigmas from 1E-9 to 1E10: every density label at most 20 px wide (the 24 px left of the axis); where v2.4b and v2.4c had a wider one (21 sigmas) the labels are their values in units of the power printed at the top of the axis, e.g. [(1e-09, '×1ᴇ8', '5'), (1e-08, '×1ᴇ7', '5'), (1e-07, '×1ᴇ6', '5')]; elsewhere exactly theirs
+PASS Y2 v2.4b drew labels wider than the margin at 21 of those sigmas, sigma = 1000 among them (v2.4c, the same: "0.0005" over the axis on the Virtual Calculator), e.g. [(1e-09, '500000000'), (1e-08, '50000000'), (1e-07, '5000000')]
+
+25 PASS, 0 FAIL
+exit 0

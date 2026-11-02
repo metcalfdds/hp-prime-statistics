@@ -1,5 +1,5 @@
 // ============================================================
-// NORM EXPLORER - beta 42c
+// NORM EXPLORER - beta 42e
 // Normal distribution workbench for the HP Prime
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
@@ -23,8 +23,9 @@
 //   firmware, 16-17 Oct 2026; most of its checklist passed).
 //   Beta 42a ran on the Virtual Calculator and on the G1 and G2
 //   (20 Oct 2026; on the G1 the standardize animation was slow,
-//   which beta 42b fixes).  Beta 42b has run on the PC harness
-//   only (ppl_run_v3e), not yet on a calculator.
+//   which beta 42b fixes).  Beta 42b and 42c ran on the PC harness
+//   only (ppl_run_v3e).  Beta 42d and 42e have run on the PC harness
+//   and on the Virtual Calculator (2.4.2, 1 Nov 2026).
 //
 // Delivered as .txt on purpose: paste into the Connectivity Kit
 //   editor.  .hpprgm is binary and imports badly.
@@ -33,10 +34,11 @@
 //   (written for beta 42; beta 42a's display changes are listed in
 //   NormExplorer_beta42a_CHANGES.md, beta 42b's in
 //   NormExplorer_beta42b_CHANGES.md, beta 42c's in
-//   NormExplorer_beta42c_CHANGES.md).
+//   NormExplorer_beta42c_CHANGES.md, beta 42d's in
+//   NormExplorer_beta42d_CHANGES.md).
 // Run NormExp() from the Program Catalog.
 // ============================================================
-// MAP OF THE FILE  (3769 lines; this is where things live)
+// MAP OF THE FILE  (4104 lines; this is where things live)
 //
 //   Constants, session globals ............ top, after this block
 //   File-level state: curve caches, touch records, palette (beta 42)
@@ -44,6 +46,9 @@
 //   ne_Fx / ne_PStr / ne_Eq  numbers as text that never turn
 //                      scientific; "< 0.0001" for a tiny area
 //   ne_Btw .............. the area between two x's, digits kept
+//   ne_BigMsg / ne_BadDist / ne_SgMin / ne_Snap (beta 42d)
+//                      what the 12 digits can draw, said in a
+//                      sentence; the Explorer's steps kept on it
 //   ne_AutoWin .......... plot window: mu +/- 4 sigma, widened to
 //                      include shading and the second curve
 //   ne_SampBins ......... normal sampler, PPL, Marsaglia polar
@@ -87,10 +92,91 @@
 // ============================================================
 
 // =====================================================
-// NORM EXPLORER — beta 42c
+// NORM EXPLORER — beta 42e
 // NORMAL DISTRIBUTION WORKBENCH
 // HP Prime (PPL + optional MicroPython sampler)
 // =====================================================
+// beta 42e (1 Nov 2026, night): A DENSITY LABEL WIDER THAN THE MARGIN
+//   (38 px left of the axis) puts every label on that axis in the
+//   Prime's scientific form, STRING(x, 3, 1) without a ".0": "6E-5"
+//   (small capital E) for "0.00006", as SampDist v2.3e writes its
+//   labels; a label that still does not fit is left out, its grid line
+//   stays (ne_NormDraw's
+//   y grid, beta 42d's 3469; new ne_YWd after ne_Fx: about 5.5 px a
+//   character and 3 px for the point).  Seen on the Virtual Calculator
+//   while testing beta 42d: at sigma = 10000 "0.00006" ran over the
+//   axis and into the mu box; any sigma above about 2000 gives labels
+//   of 7 characters or more, and sigma below about 0.0000001 integers
+//   of 7 digits.  Labels that fit are drawn exactly as before.  The
+//   banner and firmware lines say beta 42e.  Nothing else changed.
+//
+// beta 42d (1 Nov 2026): what random use found (the monkey tests,
+//   docs/dev/monkey-fleet-2026-11-01.md: 400 runs of beta 42c, 47
+//   broken).  Line numbers are beta 42c's.
+//   (1) TYPED FIELDS.  Every INPUT field is {name,[0]}: it takes a
+//       real number and nothing else (the 15 forms, 26 fields:
+//       1607, 1675, 1755, 1799, 1864, 1891, 1921, 1947, 1974,
+//       2081, 2104, 2124, 2144, 2198, 2208).  A typed list used to
+//       be accepted and crashed later, wherever it met a number
+//       (30 runs).  The Virtual Calculator refuses a list in such a
+//       field with "Invalid input" and keeps the field's value
+//       (TTestLab, 1 Nov 2026).
+//   (2) WHAT 12 DIGITS CAN DRAW, REFUSED IN A SENTENCE.  New
+//       ne_BigMsg and ne_BadDist (after ne_Btw), the lines Norm3
+//       v2.4c, CICatcher beta 2e and SampDist v2.3e draw:
+//         - 50 digits or more (1E300): mu + 4 sigma was mu, the
+//           window had no width and the drawing divided by zero
+//           (3 runs: a typed mu, a mu solved from z = -1E300);
+//         - sigma above 1E10: the density labels need 13 decimals
+//           or more, which STRING refuses on the Prime (5 runs, at
+//           sigma = 1.23E12 and 1E12);
+//         - sigma too small next to mu (below 1E-9, or below
+//           |mu|/100,000,000): the tick step is lost in the 12th
+//           digit and the tick loop never ends (SampDist v2.3d on
+//           the Virtual Calculator).
+//       Menu 1 (1610), the Z-formula solver (2084-2157: the three
+//       typed numbers, then the mu and sigma it would set, then the
+//       value it solved for), the bounds of menu 3 (1756, 1800),
+//       mu2 (2199), the custom window (1677: also one too narrow
+//       for 12 digits) and every data route (ne_BinData 2351,
+//       ne_TwoGroups 2448, ne_ResidLoad 2484, ne_ZtoD2 2546: a
+//       value of 50 digits or more, then the fitted mean and s).
+//   (3) THE EXPLORER STAYS INSIDE THOSE LINES.  The sigma keys and
+//       the sigma drag stop at 1E10 and at the narrowest sigma the
+//       12 digits can draw (new ne_SgMin); the mu drag and keys
+//       keep |mu| within 100,000,000 sigma, so leaving the Explorer
+//       never gives a window too narrow to draw.  Its steps are
+//       rounded to the step's own decimals (new ne_Snap) instead of
+//       to 6 decimals (1426-1498), which rounded a sigma below
+//       0.000001 to 0 -- a division by zero.
+//   (4) DIAGNOSTICS TAKES A TAP (2748-2750).  The page read keys
+//       only, so a tap did nothing (9 runs); it now waits with
+//       ne_WaitAny like every other page, "Any key or tap".
+//   Found while checking (2), at the large and small ends:
+//   (5) x LABELS THAT WOULD OVERLAP ARE LEFT OUT (3225-3236).  At
+//       sigma = 1E10 the labels are 12 characters (72 px) wide and
+//       34 px apart, and printed on top of each other; one that
+//       would overlap the label before it, or run off the right
+//       edge, is now left out.  Its tick stays.  At the usual
+//       windows every label is drawn, as before.
+//   (6) s FROM DEVIATIONS, AND SAMPLE SUMS OF z.  The Prime keeps
+//       12 digits, and s = sqrt((sum x^2 - n xbar^2)/(n - 1))
+//       subtracts two nearly equal numbers: for data near
+//       1,000,000 with s = 1 each square needs 13 digits, and the
+//       difference was mostly rounding.  ne_BinData (2354-2361),
+//       ne_TwoGroups (2434-2446) and ne_ZtoD2 (2544-2549) now take
+//       s from the deviations x - xbar (a second pass).  The
+//       samplers (ne_SampBins 828-856, SAMPBINSPY) now add up the
+//       standard normal z behind each value, not the value itself,
+//       and ne_Histo (2320-2322) turns those sums into xbar and s:
+//       the sample readout was wrong at mu = 1E9, sigma = 10, and
+//       the Python sampler's "%.6f" printed the sum of squares of
+//       a sample with sigma = 0.0001 as 0.000002.  At N(0,1)
+//       every number is as before.
+//   Not changed: writing z-scores into D2 (menu 6) is the
+//   program's purpose there, announced on screen.  At the far ends
+//   of what is accepted (|mu| or sigma near 1E10, sigma near 1E-9)
+//   some readouts are long enough to run past the right edge.
 // beta 42c (20 Oct 2026): symbols instead of spelled-out names, on screen
 //   only (Roger, 20 Oct 2026: "use the symbols we developed").  In the
 //   text the student sees, the z-score message's "x-bar" now
@@ -506,6 +592,10 @@ ne_Fx();
 ne_PStr();
 ne_Eq();
 ne_Btw();
+ne_BigMsg();                  // beta 42d
+ne_BadDist();
+ne_SgMin();
+ne_Snap();
 
 // ---- session state: the distribution ----
 EXPORT NE_MU, NE_SG;             // the distribution N(μ,σ)
@@ -724,6 +814,15 @@ BEGIN
   RETURN STRING(fxR, 2, fxD);
 END;
 
+// beta 42e: how wide a small-font number label is, in pixels: about
+// 5.5 px a character and 3 px for the decimal point (the Virtual
+// Calculator, 1 Nov 2026: "0.03" is 20 px; "0.00006" ran over the axis)
+ne_YWd(ywS)
+BEGIN
+  IF INSTRING(ywS, ".") > 0 THEN RETURN 5.5*(DIM(ywS) - 1) + 3; END;
+  RETURN 5.5*DIM(ywS);
+END;
+
 // A quantity that cannot be negative -- an area (probability), a
 // density, sigma, s, an expected count, a width.  When it is
 // positive but would round to zero at d decimals, "0.0000" would
@@ -768,6 +867,80 @@ BEGIN
     RETURN NORMALD_CDF(btM, btS, 2*btM - btA) - NORMALD_CDF(btM, btS, 2*btM - btB);
   END;
   RETURN NORMALD_CDF(btM, btS, btB) - NORMALD_CDF(btM, btS, btA);
+END;
+
+
+// =====================================================
+//  WHAT THE 12 DIGITS CAN DRAW (beta 42d, 1 Nov 2026)
+//
+//  The Prime keeps 12 significant digits, and three kinds of
+//  value break the drawing.  Each is refused with a sentence
+//  BEFORE anything changes (random-use tests, 1 Nov 2026):
+//    - a number of 50 digits or more.  1E300 + 4 sigma is 1E300,
+//      so the plot window had no width and the drawing divided
+//      by zero;
+//    - sigma above 1E10.  The curve's peak is then below 4E-11,
+//      and its density labels need 13 decimals or more, which
+//      STRING refuses on the Prime ("Invalid input");
+//    - sigma too small next to mu.  At mu = 1E9, sigma = 0.001
+//      the tick step is lost in the 12th digit: x + step rounds
+//      back to x and the tick loop never ends (SampDist v2.3d did
+//      exactly that on the Virtual Calculator).
+//  Norm3 v2.4c, CICatcher beta 2e and SampDist v2.3e draw the
+//  same lines, with the same sentences.
+// =====================================================
+
+// "" for a typed number the program can use; the house sentence
+// for one of 50 digits or more
+ne_BigMsg(bgV)
+BEGIN
+  IF ABS(bgV) >= 1E50 THEN
+    RETURN "A number you typed has more than 50 digits: too large to work with.";
+  END;
+  RETURN "";
+END;
+
+// "" when N(bdM, bdS) can be drawn; otherwise why not, in one
+// sentence.  The caller has already checked bdS > 0.  bdD = 1 when
+// the mean and s came from data, so the sentence speaks of the data.
+ne_BadDist(bdM, bdS, bdD)
+BEGIN
+  IF ABS(bdM) >= 1E50 OR bdS >= 1E50 THEN
+    IF bdD == 1 THEN RETURN "The data's mean or s reaches 1E50: too large to work with."; END;
+    RETURN "These values give a μ or σ of 1E50 or more: too large to work with.";
+  END;
+  IF bdS > 10000000000 THEN
+    IF bdD == 1 THEN
+      RETURN "The data's s is above 1E10: a larger s needs density labels with more decimals than the calculator prints.";
+    END;
+    RETURN "σ can be at most 1E10: a larger σ needs density labels with more decimals than the calculator prints.";
+  END;
+  IF bdS < ne_SgMin(bdM) THEN
+    IF bdD == 1 THEN
+      RETURN "The data's s is too small next to their mean for the calculator's 12 digits. Subtract one number from every value.";
+    END;
+    RETURN "σ is too small next to μ for the calculator's 12 digits. Use a larger σ or a μ nearer 0.";
+  END;
+  RETURN "";
+END;
+
+// The narrowest sigma the 12 digits can draw around a mean smMU:
+// 1E-9, or |mu| / 100,000,000 if that is larger.  At that sigma the
+// tick step (about sigma) is still 10,000 times the 12th digit of
+// the numbers it is added to.
+ne_SgMin(smMU)
+BEGIN
+  RETURN MAX(0.000000001, ABS(smMU)*0.00000001);
+END;
+
+// A value on the grid of the step snS, rounded to the decimals that
+// step needs (6 at least, 12 at most), which removes the last-digit
+// remainder k*step can leave.  Through beta 42c the Explorer rounded
+// to 6 decimals always, and a sigma below 0.000001 then rounded to
+// 0: the next drawing divided by zero.
+ne_Snap(snV, snS)
+BEGIN
+  RETURN ROUND(snV, MIN(12, MAX(6, 2 - FLOOR(LOG(snS)))));
 END;
 
 
@@ -824,8 +997,13 @@ ne_SampBins(sbMU, sbSG, sbN, sbLO, sbW)
 BEGIN
   LOCAL sbMade, sbV1, sbV2, sbS, sbF;
   LOCAL sbB, sbCnt, sbVal;
-  LOCAL sbSum, sbSq;
-  sbCnt := MAKELIST(0, K, 1, NBINS+2, 1);   // counts, then sum and sum sq
+  LOCAL sbSum, sbSq, sbZ;
+  // the counts, then (beta 42d) the sum of the z's and of their
+  // squares: z is the standard normal deviate behind each value,
+  // value = mu + sigma*z.  ne_Histo turns the two sums into xbar and
+  // s; sums of the values themselves lost their digits in 12-digit
+  // arithmetic once mu was large next to sigma (mu = 1E9, sigma = 10)
+  sbCnt := MAKELIST(0, K, 1, NBINS+2, 1);
   sbSum := 0; sbSq := 0;
   sbMade := 0;
   WHILE sbMade < sbN DO
@@ -836,15 +1014,17 @@ BEGIN
     UNTIL sbS > 0 AND sbS < 1;
     sbF := √(-2*LN(sbS)/sbS);
     // first of the pair
-    sbVal := sbMU + sbSG*sbV1*sbF;
-    sbSum := sbSum + sbVal; sbSq := sbSq + sbVal*sbVal;
+    sbZ := sbV1*sbF;
+    sbVal := sbMU + sbSG*sbZ;
+    sbSum := sbSum + sbZ; sbSq := sbSq + sbZ*sbZ;
     sbB := FLOOR((sbVal - sbLO) / sbW) + 1;
     IF sbB >= 1 AND sbB <= NBINS THEN sbCnt(sbB) := sbCnt(sbB) + 1; END;
     sbMade := sbMade + 1;
     // second of the pair, only if we still need it (handles odd n)
     IF sbMade < sbN THEN
-      sbVal := sbMU + sbSG*sbV2*sbF;
-      sbSum := sbSum + sbVal; sbSq := sbSq + sbVal*sbVal;
+      sbZ := sbV2*sbF;
+      sbVal := sbMU + sbSG*sbZ;
+      sbSum := sbSum + sbZ; sbSq := sbSq + sbZ*sbZ;
       sbB := FLOOR((sbVal - sbLO) / sbW) + 1;
       IF sbB >= 1 AND sbB <= NBINS THEN sbCnt(sbB) := sbCnt(sbB) + 1; END;
       sbMade := sbMade + 1;
@@ -913,8 +1093,8 @@ def main():
     bw  = float(ppl("NEpw"))
 
     cnt = [0] * nb
-    tot = 0.0      # running sum, for x-bar
-    tot2 = 0.0     # running sum of squares, for s
+    tot = 0.0      # running sum of z, for x-bar (beta 42d: of z, not x)
+    tot2 = 0.0     # running sum of z squared, for s
     made = 0
     while made < n:
         # Marsaglia polar: reject until the point lands in the unit disc
@@ -928,16 +1108,21 @@ def main():
         for v in (v1, v2):
             if made >= n:
                 break
-            val = mu + sg * v * f
-            tot += val
-            tot2 += val * val
+            z = v * f            # beta 42d: the standard normal deviate,
+            val = mu + sg * z    # and the value drawn from it
+            tot += z
+            tot2 += z * z
             b = int(math.floor((val - blo) / bw))
             if 0 <= b < nb:
                 cnt[b] += 1
             made += 1
 
-    # Hand back nb + 2 values: the bin counts, then the sum and the
-    # sum of squares, so PPL can form x-bar and s exactly.
+    # Hand back nb + 2 values: the bin counts, then the sum of the
+    # z's and of their squares, so PPL can form x-bar and s exactly.
+    # beta 42d: sums of z, not of the values.  At mu = 1E9 the values'
+    # squares are 1E18 and their small differences are lost; and at
+    # sigma = 0.0001 "%.6f" printed the sum of squares as 0.000002.
+    # The z's are near 1 whatever mu and sigma are.
     #
     # Built by concatenation rather than ",".join(): on the G2 that
     # join raises "expects a list of str/bytes objects consistent
@@ -1397,12 +1582,19 @@ BEGIN
           // the press (no jump at the first reading), kept on screen
           exNew := exMUp + (exPX - exPX0) / (NPRGT - NPLFT) * exSpan;
           exNew := MAX(NE_WLO, MIN(NE_WHI, exNew));
+          // beta 42d: |mu| at most 100,000,000 sigma (ne_SgMin), or
+          // the window on the way out would be too narrow for 12
+          // digits (a far shading bound widens this frozen window)
+          exNew := MAX(-NE_SG*100000000, MIN(NE_SG*100000000, exNew));
           IF exNew <> NE_MU THEN NE_MU := exNew; exRedo := 1; END;
         END;
         IF exG == 4 THEN
           // sigma grows as the shoulder is pulled AWAY from the mean
           exNew := exSGp + exSide * (exPX - exPX0) / (NPRGT - NPLFT) * exSpan;
           exNew := MAX(exSStep, MIN(exSpan, exNew));
+          // beta 42d: and inside what the 12 digits can draw: at most
+          // 1E10, at least ne_SgMin (never past where it started)
+          exNew := MAX(MIN(exNew, MAX(exSGp, 10000000000)), MIN(exSGp, ne_SgMin(NE_MU)));
           IF exNew <> NE_SG THEN
             NE_SG := exNew;
             // sigma changes the peak height: the y-scale follows,
@@ -1422,11 +1614,13 @@ BEGIN
         // ---------------- the finger lifted ----------------
         // mu and sigma snap to the same round grid the arrows use
         exDown := 0;
+        // beta 42d: rounded to the step's own decimals (ne_Snap)
         IF exG == 3 THEN
-          NE_MU := ROUND(ROUND(NE_MU / exStep, 0) * exStep, 6);
+          NE_MU := ne_Snap(ROUND(NE_MU / exStep, 0) * exStep, exStep);
         END;
         IF exG == 4 THEN
-          NE_SG := MAX(exSStep, ROUND(ROUND(NE_SG / exSStep, 0) * exSStep, 6));
+          exNew := MAX(exSStep, ne_Snap(ROUND(NE_SG / exSStep, 0) * exSStep, exSStep));
+          NE_SG := MAX(exNew, MIN(NE_SG, ne_SgMin(NE_MU)));
           NE_YMX := NORMALD(NE_MU, NE_SG, NE_MU) / 0.62;
           // beta 42a (D-NE-5): the arrows' steps follow the new
           // sigma, exactly as Centre refits them: sigma/4 and
@@ -1454,11 +1648,14 @@ BEGIN
     // ← → move whatever page 2 chose; by default (0) and for "mu"
     // that is the mean, as it always was.
     IF (exK == 7 OR exK == 8) AND (exArw == 0 OR exArw == 3) THEN
+      // beta 42d: rounded to the step's own decimals (ne_Snap), and
+      // |mu| kept within 100,000,000 sigma, as for the drag
       IF exK == 7 THEN                                       // Left
-        NE_MU := ROUND((CEILING(NE_MU/exStep - 0.000001) - 1) * exStep, 6);
+        NE_MU := ne_Snap((CEILING(NE_MU/exStep - 0.000001) - 1) * exStep, exStep);
       ELSE                                                   // Right
-        NE_MU := ROUND((FLOOR(NE_MU/exStep + 0.000001) + 1) * exStep, 6);
+        NE_MU := ne_Snap((FLOOR(NE_MU/exStep + 0.000001) + 1) * exStep, exStep);
       END;
+      NE_MU := MAX(-NE_SG*100000000, MIN(NE_SG*100000000, NE_MU));
       exRedo := 1;
     END;
     // a bound moves to the next multiple of its step (sigma/10,
@@ -1466,10 +1663,10 @@ BEGIN
     IF (exK == 7 OR exK == 8) AND (exArw == 1 OR exArw == 2) THEN
       IF NE_XM == 0 THEN NE_XM := 1; END;      // a bound needs shading
       IF exArw == 1 THEN exNew := NE_XO; ELSE exNew := NE_XB; END;
-      IF exK == 7 THEN
-        exNew := ROUND((CEILING(exNew/exBStp - 0.000001) - 1) * exBStp, 6);
+      IF exK == 7 THEN                       // beta 42d: ne_Snap
+        exNew := ne_Snap((CEILING(exNew/exBStp - 0.000001) - 1) * exBStp, exBStp);
       ELSE
-        exNew := ROUND((FLOOR(exNew/exBStp + 0.000001) + 1) * exBStp, 6);
+        exNew := ne_Snap((FLOOR(exNew/exBStp + 0.000001) + 1) * exBStp, exBStp);
       END;
       IF exArw == 1 THEN NE_XO := exNew; ELSE NE_XB := exNew; END;
       // two bounds keep a <= b: stepping one past the other swaps
@@ -1488,14 +1685,19 @@ BEGIN
     // box.  The x-window stays frozen either way -- that is what
     // makes moving mu look like motion.  Mu needs no refit: a
     // normal's peak height does not depend on it.
+    // beta 42d: sigma stops at 1E10 going up, and at the narrowest
+    // the 12 digits can draw (ne_SgMin) going down; each step is
+    // rounded to its own decimals (ne_Snap), not to 6
     IF exK == 2 THEN                                         // Up
-      NE_SG := ROUND((FLOOR(NE_SG/exSStep + 0.000001) + 1) * exSStep, 6);
+      exNew := ne_Snap((FLOOR(NE_SG/exSStep + 0.000001) + 1) * exSStep, exSStep);
+      NE_SG := MIN(exNew, MAX(NE_SG, 10000000000));
       NE_YMX := NORMALD(NE_MU, NE_SG, NE_MU) / 0.62;
       exRedo := 1;
     END;
     IF exK == 12 THEN                                        // Down
-      NE_SG := MAX(exSStep,
-        ROUND((CEILING(NE_SG/exSStep - 0.000001) - 1) * exSStep, 6));
+      exNew := MAX(exSStep,
+        ne_Snap((CEILING(NE_SG/exSStep - 0.000001) - 1) * exSStep, exSStep));
+      NE_SG := MAX(exNew, MIN(NE_SG, ne_SgMin(NE_MU)));
       NE_YMX := NORMALD(NE_MU, NE_SG, NE_MU) / 0.62;
       exRedo := 1;
     END;
@@ -1602,13 +1804,21 @@ END;
 // =====================================================
 ne_SetDist()
 BEGIN
-  LOCAL sdMU, sdSG;
+  LOCAL sdMU, sdSG, sdMsg;
+  // beta 42d: {name,[0]} -- each field takes a real number only
   sdMU := NE_MU; sdSG := NE_SG;
-  IF INPUT({sdMU, sdSG}, "Session Distribution", {"μ:", "σ:"},
+  IF INPUT({{sdMU,[0]}, {sdSG,[0]}}, "Session Distribution", {"μ:", "σ:"},
     {"Mean — any value, e.g. 100 for IQ",
      "Std dev, must be > 0, e.g. 15"}) == 1 THEN
     IF sdSG <= 0 THEN
       MSGBOX("σ must be positive.");
+      RETURN;
+    END;
+    // beta 42d: what the 12 digits can draw (ne_BadDist)
+    sdMsg := ne_BigMsg(MAX(ABS(sdMU), sdSG));
+    IF DIM(sdMsg) == 0 THEN sdMsg := ne_BadDist(sdMU, sdSG, 0); END;
+    IF DIM(sdMsg) > 0 THEN
+      MSGBOX(sdMsg);
       RETURN;
     END;
     NE_MU := sdMU; NE_SG := sdSG;
@@ -1672,10 +1882,20 @@ BEGIN
 
   IF swT == 3 THEN
     swLO := NE_WLO; swHI := NE_WHI;
-    IF INPUT({swLO, swHI}, "Custom Window", {"xmin:", "xmax:"},
+    IF INPUT({{swLO,[0]}, {swHI,[0]}}, "Custom Window", {"xmin:", "xmax:"},
       {"Left edge of the plot", "Right edge, must exceed xmin"}) == 1 THEN
+      // beta 42d: 50 digits or more, and a window narrower than the
+      // 12 digits can tick (the same line as ne_SgMin)
+      IF DIM(ne_BigMsg(MAX(ABS(swLO), ABS(swHI)))) > 0 THEN
+        MSGBOX(ne_BigMsg(1E50));
+        RETURN;
+      END;
       IF swHI <= swLO THEN
         MSGBOX("xmax must be greater than xmin.");
+        RETURN;
+      END;
+      IF swHI - swLO < ne_SgMin(MAX(ABS(swLO), ABS(swHI))) THEN
+        MSGBOX("This window is too narrow for the calculator's 12 digits. Make it wider.");
         RETURN;
       END;
       NE_WLO := swLO; NE_WHI := swHI; NE_WA := 0;
@@ -1752,8 +1972,12 @@ BEGIN
     // blank, and a string field displays its quotation marks as
     // editable text, so 0 is the cleanest neutral starting point.
     pcA := 0;
-    IF INPUT({pcA}, "Boundary", {"x:"},
+    IF INPUT({{pcA,[0]}}, "Boundary", {"x:"},
       {"The cut point on the x-axis"}) == 0 THEN RETURN; END;
+    IF DIM(ne_BigMsg(pcA)) > 0 THEN              // beta 42d
+      MSGBOX(ne_BigMsg(pcA));
+      RETURN;
+    END;
     NE_X := pcA;
     NE_Z := (pcA - NE_MU) / NE_SG;
     // beta 42a (D-NE-1, D-NE-2).  The numbers print through ne_Fx,
@@ -1796,8 +2020,12 @@ BEGIN
   // ---- two boundaries: between or outside ----
   IF pcT == 3 OR pcT == 4 THEN
     pcA := 0; pcB := 0;                  // plain 0, not mu -/+ sigma
-    IF INPUT({pcA, pcB}, "Two Boundaries", {"a:", "b:"},
+    IF INPUT({{pcA,[0]}, {pcB,[0]}}, "Two Boundaries", {"a:", "b:"},
       {"Lower bound", "Upper bound"}) == 0 THEN RETURN; END;
+    IF DIM(ne_BigMsg(MAX(ABS(pcA), ABS(pcB)))) > 0 THEN   // beta 42d
+      MSGBOX(ne_BigMsg(1E50));
+      RETURN;
+    END;
     IF pcB < pcA THEN pcTmp := pcA; pcA := pcB; pcB := pcTmp; END;
     // beta 42a: between a and b by ne_Btw, from the side of the mean
     // that keeps the digits (F(b) - F(a) was 0 on the Prime with both
@@ -1861,7 +2089,7 @@ BEGIN
   // ---- percentile ----
   IF icT == 1 THEN
     icP := 0.90;
-    IF INPUT({icP}, "Percentile → x", {"area:"},
+    IF INPUT({{icP,[0]}}, "Percentile → x", {"area:"},
       {"Area to the LEFT, strictly between 0 and 1"}) == 0 THEN RETURN; END;
     IF icP <= 0 OR icP >= 1 THEN
       MSGBOX("Area must be strictly between 0 and 1.");
@@ -1888,7 +2116,7 @@ BEGIN
   // ---- right-tail critical value ----
   IF icT == 2 THEN
     icP := 0.05;
-    IF INPUT({icP}, "Critical Value", {"α:"},
+    IF INPUT({{icP,[0]}}, "Critical Value", {"α:"},
       {"Area in the RIGHT tail, e.g. .05 or .01"}) == 0 THEN RETURN; END;
     IF icP <= 0 OR icP >= 1 THEN
       MSGBOX("Alpha must be strictly between 0 and 1.");
@@ -1918,7 +2146,7 @@ BEGIN
   // alpha quantile itself and comes out negative.
   IF icT == 3 THEN
     icP := 0.05;
-    IF INPUT({icP}, "Critical Value", {"α:"},
+    IF INPUT({{icP,[0]}}, "Critical Value", {"α:"},
       {"Area in the LEFT tail, e.g. .05 or .01"}) == 0 THEN RETURN; END;
     IF icP <= 0 OR icP >= 1 THEN
       MSGBOX("Alpha must be strictly between 0 and 1.");
@@ -1944,7 +2172,7 @@ BEGIN
   // outside (mode 4), and each tail carries its own alpha/2.
   IF icT == 4 THEN
     icP := 0.05;
-    IF INPUT({icP}, "Two-tailed Critical Values", {"α:"},
+    IF INPUT({{icP,[0]}}, "Two-tailed Critical Values", {"α:"},
       {"Total area in BOTH tails, e.g. .05 or .01"}) == 0 THEN RETURN; END;
     IF icP <= 0 OR icP >= 1 THEN
       MSGBOX("Alpha must be strictly between 0 and 1.");
@@ -1971,7 +2199,7 @@ BEGIN
   // ---- central interval ----
   IF icT == 5 THEN
     icC := 0.95;
-    IF INPUT({icC}, "Central Interval", {"C:"},
+    IF INPUT({{icC,[0]}}, "Central Interval", {"C:"},
       {"Central proportion: .95 or 95 both work"}) == 0 THEN RETURN; END;
     // beta 42a (D-NE-4): 1 and above is read as a percent, so a typed
     // 1 is a 1% interval, as "95 both work" implies -- through beta 42
@@ -2058,7 +2286,7 @@ END;
 // =====================================================
 ne_ZSolve()
 BEGIN
-  LOCAL zsT, zsZ, zsX, zsM, zsS;
+  LOCAL zsT, zsZ, zsX, zsM, zsS, zsMsg;
   // mu and sigma come from the SESSION distribution, so whatever
   // was set in menu 2 (or solved for here last time) is already in
   // the boxes.  x and z are the solver's own, carried across visits.
@@ -2078,14 +2306,24 @@ BEGIN
 
   // ---- solve for z ----
   IF zsT == 1 THEN
-    IF INPUT({zsX, zsM, zsS}, "Enter the three knowns",
+    IF INPUT({{zsX,[0]}, {zsM,[0]}, {zsS,[0]}}, "Enter the three knowns",
       {"x:", "μ:", "σ:"},
       {"Raw score", "Mean", "Std dev (must be > 0)"}) == 0 THEN RETURN; END;
     IF zsS <= 0 THEN
       MSGBOX("σ must be positive.");
       RETURN;
     END;
+    // beta 42d: here and in the three solves below, first the typed
+    // numbers (50 digits or more), then the mu and sigma the solve
+    // would set for the session (ne_BadDist), then the value solved
+    zsMsg := ne_BigMsg(MAX(ABS(zsX), MAX(ABS(zsM), zsS)));
+    IF DIM(zsMsg) == 0 THEN zsMsg := ne_BadDist(zsM, zsS, 0); END;
+    IF DIM(zsMsg) > 0 THEN MSGBOX(zsMsg); RETURN; END;
     zsZ := (zsX - zsM) / zsS;
+    IF ABS(zsZ) >= 1E50 THEN
+      MSGBOX("These values give z beyond 1E50: too large to work with.");
+      RETURN;
+    END;
     ne_ZSStore(zsX, zsM, zsS, zsZ);
     // beta 42a (D-NE-1): rounded before STRING (ne_Fx), here and in
     // the three panels below; sigma cannot be negative, so a sigma
@@ -2101,14 +2339,21 @@ BEGIN
 
   // ---- solve for x ----
   IF zsT == 2 THEN
-    IF INPUT({zsZ, zsM, zsS}, "Enter the three knowns",
+    IF INPUT({{zsZ,[0]}, {zsM,[0]}, {zsS,[0]}}, "Enter the three knowns",
       {"z:", "μ:", "σ:"},
       {"Standard score", "Mean", "Std dev (must be > 0)"}) == 0 THEN RETURN; END;
     IF zsS <= 0 THEN
       MSGBOX("σ must be positive.");
       RETURN;
     END;
+    zsMsg := ne_BigMsg(MAX(ABS(zsZ), MAX(ABS(zsM), zsS)));
+    IF DIM(zsMsg) == 0 THEN zsMsg := ne_BadDist(zsM, zsS, 0); END;
+    IF DIM(zsMsg) > 0 THEN MSGBOX(zsMsg); RETURN; END;
     zsX := zsM + zsZ * zsS;
+    IF ABS(zsX) >= 1E50 THEN
+      MSGBOX("These values give x beyond 1E50: too large to work with.");
+      RETURN;
+    END;
     ne_ZSStore(zsX, zsM, zsS, zsZ);
     ne_ZPanel("Solve for x",
       "z = " + ne_Fx(zsZ, 4) + "   μ = " + ne_Fx(zsM, 4),
@@ -2121,14 +2366,18 @@ BEGIN
 
   // ---- solve for μ ----
   IF zsT == 3 THEN
-    IF INPUT({zsX, zsZ, zsS}, "Enter the three knowns",
+    IF INPUT({{zsX,[0]}, {zsZ,[0]}, {zsS,[0]}}, "Enter the three knowns",
       {"x:", "z:", "σ:"},
       {"Raw score", "Standard score", "Std dev (must be > 0)"}) == 0 THEN RETURN; END;
     IF zsS <= 0 THEN
       MSGBOX("σ must be positive.");
       RETURN;
     END;
+    zsMsg := ne_BigMsg(MAX(ABS(zsX), MAX(ABS(zsZ), zsS)));
+    IF DIM(zsMsg) > 0 THEN MSGBOX(zsMsg); RETURN; END;
     zsM := zsX - zsZ * zsS;
+    zsMsg := ne_BadDist(zsM, zsS, 0);          // the solved mu, with sigma
+    IF DIM(zsMsg) > 0 THEN MSGBOX(zsMsg); RETURN; END;
     ne_ZSStore(zsX, zsM, zsS, zsZ);
     ne_ZPanel("Solve for μ",
       "x = " + ne_Fx(zsX, 4) + "   z = " + ne_Fx(zsZ, 4),
@@ -2141,20 +2390,28 @@ BEGIN
 
   // ---- solve for σ ----
   IF zsT == 4 THEN
-    IF INPUT({zsX, zsM, zsZ}, "Enter the three knowns",
+    IF INPUT({{zsX,[0]}, {zsM,[0]}, {zsZ,[0]}}, "Enter the three knowns",
       {"x:", "μ:", "z:"},
       {"Raw score", "Mean", "Standard score (must be nonzero)"}) == 0 THEN RETURN; END;
     IF zsZ == 0 THEN
       MSGBOX("z cannot be 0 when solving for σ.");
       RETURN;
     END;
+    zsMsg := ne_BigMsg(MAX(ABS(zsX), MAX(ABS(zsM), ABS(zsZ))));
+    IF DIM(zsMsg) > 0 THEN MSGBOX(zsMsg); RETURN; END;
     zsS := (zsX - zsM) / zsZ;
+    IF ABS(zsS) >= 1E50 THEN
+      MSGBOX("These values give σ beyond 1E50: too large to work with.");
+      RETURN;
+    END;
     // (sigma here is zero or negative, a signed value: ne_Fx)
     IF zsS <= 0 THEN
       MSGBOX("These values give σ = " + ne_Fx(zsS, 4) +
         ", which is not positive. Check the sign of z: it must match the sign of x − μ.");
       RETURN;
     END;
+    zsMsg := ne_BadDist(zsM, zsS, 0);          // beta 42d: the solved sigma
+    IF DIM(zsMsg) > 0 THEN MSGBOX(zsMsg); RETURN; END;
     ne_ZSStore(zsX, zsM, zsS, zsZ);
     ne_ZPanel("Solve for σ",
       "x = " + ne_Fx(zsX, 4) + "   μ = " + ne_Fx(zsM, 4),
@@ -2195,8 +2452,14 @@ BEGIN
   IF c2T == 0 THEN RETURN; END;
   IF c2T == 1 THEN
     c2M2 := NE_CFG(3);
-    IF INPUT({c2M2}, "Second Curve", {"μ₂:"},
+    IF INPUT({{c2M2,[0]}}, "Second Curve", {"μ₂:"},
       {"Mean of comparison curve; d = (μ₂−μ)/σ"}) == 1 THEN
+      // beta 42d: 50 digits or more.  A far mu2 only WIDENS the
+      // window around mu, so it needs no other limit.
+      IF DIM(ne_BigMsg(c2M2)) > 0 THEN
+        MSGBOX(ne_BigMsg(c2M2));
+        RETURN;
+      END;
       NE_CFG(3) := c2M2; NE_CFG(4) := 1;
       ne_AutoWin();
       ne_ShowCurve();
@@ -2205,7 +2468,7 @@ BEGIN
   IF c2T == 2 THEN NE_CFG(4) := 0; ne_AutoWin(); END;
   IF c2T == 3 THEN
     c2A := 0.05;
-    IF INPUT({c2A}, "Power Picture", {"α:"},
+    IF INPUT({{c2A,[0]}}, "Power Picture", {"α:"},
       {"Right-tail area under curve 1, e.g. .05"}) == 0 THEN RETURN; END;
     IF c2A <= 0 OR c2A >= 1 THEN
       MSGBOX("α must be strictly between 0 and 1.");
@@ -2247,7 +2510,7 @@ END;
 // =====================================================
 ne_Histo()
 BEGIN
-  LOCAL hsT, hsN, hsOK, hsChk;
+  LOCAL hsT, hsN, hsOK, hsChk, hsZ;
   // beta 42a (D-NE-3): the house CHOOSE idiom.  The index starts
   // at 0, CHOOSE writes the pick into it (Esc leaves it 0), and
   // only the index is tested; CHOOSE's return value is not used.
@@ -2314,12 +2577,15 @@ BEGIN
     END;
     NE_HN := hsN;
     // The two elements after the bins are the sum and the sum of
-    // squares of every value drawn.  s uses the n-1 divisor: these
-    // are a SAMPLE's statistics, estimating the mu and sigma that
-    // produced them.
-    NE_HXB := NE_BINS(NBINS+1) / hsN;
+    // squares of the z's behind the values drawn (beta 42d: value =
+    // mu + sigma*z, ne_SampBins).  So xbar = mu + sigma*zbar, and
+    // s = sigma times the s of the z's.  s uses the n-1 divisor:
+    // these are a SAMPLE's statistics, estimating the mu and sigma
+    // that produced them.
+    hsZ := NE_BINS(NBINS+1) / hsN;               // the mean of the z's
+    NE_HXB := NE_MU + NE_SG*hsZ;
     IF hsN > 1 THEN
-      NE_HS := √(MAX(0, (NE_BINS(NBINS+2) - hsN*NE_HXB*NE_HXB) / (hsN - 1)));
+      NE_HS := NE_SG*√(MAX(0, (NE_BINS(NBINS+2) - hsN*hsZ*hsZ) / (hsN - 1)));
     ELSE
       NE_HS := 0;
     END;
@@ -2346,10 +2612,21 @@ END;
 ne_BinData(bdL)
 BEGIN
   LOCAL bdN, bdI, bdV, bdSum, bdSq, bdB;
-  LOCAL bdXB, bdS, bdCnt;
+  LOCAL bdXB, bdS, bdCnt, bdMsg, bdQ;
 
   bdN := SIZE(bdL);
   IF bdN < 2 THEN RETURN 0; END;
+
+  // beta 42d: a value of 50 digits or more is refused before any
+  // sum (1E300 squared is past the Prime's largest number), and so is
+  // a fitted mean and s the 12 digits cannot draw (ne_BadDist).  The
+  // sentence is shown here and -1 returned; nothing has changed yet.
+  FOR bdI FROM 1 TO bdN DO
+    IF ABS(bdL(bdI)) >= 1E50 THEN
+      MSGBOX("A value in the data has more than 50 digits: too large to work with.");
+      RETURN -1;
+    END;
+  END;
 
   bdSum := 0; bdSq := 0;
   FOR bdI FROM 1 TO bdN DO
@@ -2358,8 +2635,26 @@ BEGIN
     bdSq := bdSq + bdV*bdV;
   END;
   bdXB := bdSum / bdN;
-  bdS := √(MAX(0, (bdSq - bdN*bdXB*bdXB) / (bdN - 1)));
+  // beta 42d: s from the deviations about the mean, in a second
+  // pass, not from the sum of squares.  sum(x^2) - n*xbar^2 takes
+  // the difference of two nearly equal numbers, and the Prime keeps
+  // 12 digits: for data near 1,000,000 with s = 1 each square needs
+  // 13 digits, and that difference was mostly rounding.  The
+  // deviations x - xbar are small, so their squares keep every
+  // digit that matters.  (bdSum and bdSq still go into the last two
+  // slots of the bins, as before; nothing reads them for data.)
+  bdQ := 0;
+  FOR bdI FROM 1 TO bdN DO
+    bdV := bdL(bdI) - bdXB;
+    bdQ := bdQ + bdV*bdV;
+  END;
+  bdS := √(bdQ / (bdN - 1));
   IF bdS <= 0 THEN RETURN 0; END;
+  bdMsg := ne_BadDist(bdXB, bdS, 1);
+  IF DIM(bdMsg) > 0 THEN
+    MSGBOX(bdMsg);
+    RETURN -1;
+  END;
 
   NE_MU := bdXB; NE_SG := bdS;
   NE_XM := 0;
@@ -2391,7 +2686,7 @@ END;
 // =====================================================
 ne_DataLoad()
 BEGIN
-  LOCAL dlN;
+  LOCAL dlN, dlR;
   dlN := 0;
   IFERR dlN := SIZE(D1); THEN dlN := 0; END;
   IF dlN < 2 THEN
@@ -2399,10 +2694,12 @@ BEGIN
     RETURN;
   END;
   NE_CFG(4) := 0;                          // a single group: no 2nd curve
-  IF ne_BinData(D1) == 0 THEN
+  // beta 42d: 1 fitted, 0 no spread, -1 refused (its sentence shown)
+  dlR := ne_BinData(D1);
+  IF dlR == 0 THEN
     MSGBOX("Every value in D1 is the same, so s = 0 and no curve can be fitted.");
-    RETURN;
   END;
+  IF dlR <> 1 THEN RETURN; END;
   ne_ShowCurve();
 END;
 
@@ -2421,7 +2718,7 @@ END;
 ne_TwoGroups()
 BEGIN
   LOCAL tgN1, tgN2, tgI, tgV, tgS1, tgS2;
-  LOCAL tgM1, tgM2, tgQ1, tgQ2, tgSP;
+  LOCAL tgM1, tgM2, tgQ1, tgQ2, tgSP, tgMsg;
 
   tgN1 := 0; tgN2 := 0;
   IFERR tgN1 := SIZE(C1); THEN tgN1 := 0; END;
@@ -2430,24 +2727,50 @@ BEGIN
     MSGBOX("Put group 1 in C1 and group 2 in C2 of the Statistics 2Var app — at least two values each.");
     RETURN;
   END;
-
-  tgM1 := 0; tgQ1 := 0;
-  FOR tgI FROM 1 TO tgN1 DO
-    tgV := C1(tgI); tgM1 := tgM1 + tgV; tgQ1 := tgQ1 + tgV*tgV;
+  // beta 42d: a value of 50 digits or more, before any sum
+  FOR tgI FROM 1 TO MAX(tgN1, tgN2) DO
+    IF tgI <= tgN1 THEN
+      IF ABS(C1(tgI)) >= 1E50 THEN tgN1 := -1; END;
+    END;
+    IF tgI <= tgN2 AND tgN1 > 0 THEN
+      IF ABS(C2(tgI)) >= 1E50 THEN tgN1 := -1; END;
+    END;
+    IF tgN1 < 0 THEN
+      MSGBOX("A value in C1 or C2 has more than 50 digits: too large to work with.");
+      RETURN;
+    END;
   END;
+
+  // beta 42d: each variance from the deviations about its mean, in
+  // a second pass (why: ne_BinData); tgS1 and tgS2 are variances
+  tgM1 := 0;
+  FOR tgI FROM 1 TO tgN1 DO tgM1 := tgM1 + C1(tgI); END;
   tgM1 := tgM1 / tgN1;
-  tgS1 := MAX(0, (tgQ1 - tgN1*tgM1*tgM1) / (tgN1 - 1));
-
-  tgM2 := 0; tgQ2 := 0;
-  FOR tgI FROM 1 TO tgN2 DO
-    tgV := C2(tgI); tgM2 := tgM2 + tgV; tgQ2 := tgQ2 + tgV*tgV;
+  tgQ1 := 0;
+  FOR tgI FROM 1 TO tgN1 DO
+    tgV := C1(tgI) - tgM1; tgQ1 := tgQ1 + tgV*tgV;
   END;
+  tgS1 := tgQ1 / (tgN1 - 1);
+
+  tgM2 := 0;
+  FOR tgI FROM 1 TO tgN2 DO tgM2 := tgM2 + C2(tgI); END;
   tgM2 := tgM2 / tgN2;
-  tgS2 := MAX(0, (tgQ2 - tgN2*tgM2*tgM2) / (tgN2 - 1));
+  tgQ2 := 0;
+  FOR tgI FROM 1 TO tgN2 DO
+    tgV := C2(tgI) - tgM2; tgQ2 := tgQ2 + tgV*tgV;
+  END;
+  tgS2 := tgQ2 / (tgN2 - 1);
 
   tgSP := √(((tgN1-1)*tgS1 + (tgN2-1)*tgS2) / (tgN1 + tgN2 - 2));
   IF tgSP <= 0 THEN
     MSGBOX("Both groups have zero spread, so no curves can be fitted.");
+    RETURN;
+  END;
+  // beta 42d: both curves are drawn with sp; each mean against it
+  tgMsg := ne_BadDist(tgM1, tgSP, 1);
+  IF DIM(tgMsg) == 0 THEN tgMsg := ne_BadDist(tgM2, tgSP, 1); END;
+  IF DIM(tgMsg) > 0 THEN
+    MSGBOX(tgMsg);
     RETURN;
   END;
 
@@ -2473,13 +2796,20 @@ END;
 ne_ResidLoad()
 BEGIN
   LOCAL rlN, rlI, rlXB, rlYB, rlSXY, rlSXX;
-  LOCAL rlB, rlA, rlR, rlXMx, rlScl;
+  LOCAL rlB, rlA, rlR, rlXMx, rlScl, rlOK;
 
   rlN := 0;
   IFERR rlN := MIN(SIZE(C1), SIZE(C2)); THEN rlN := 0; END;
   IF rlN < 3 THEN
     MSGBOX("Put x in C1 and y in C2 of the Statistics 2Var app — at least three pairs.");
     RETURN;
+  END;
+  // beta 42d: a value of 50 digits or more, before any sum
+  FOR rlI FROM 1 TO rlN DO
+    IF ABS(C1(rlI)) >= 1E50 OR ABS(C2(rlI)) >= 1E50 THEN
+      MSGBOX("A value in C1 or C2 has more than 50 digits: too large to work with.");
+      RETURN;
+    END;
   END;
 
   rlXB := 0; rlYB := 0;
@@ -2514,10 +2844,11 @@ BEGIN
 
   rlR := MAKELIST(C2(K) - (rlA + rlB * C1(K)), K, 1, rlN, 1);
   NE_CFG(4) := 0;
-  IF ne_BinData(rlR) == 0 THEN
+  rlOK := ne_BinData(rlR);                 // beta 42d: 1, 0 or -1
+  IF rlOK == 0 THEN
     MSGBOX("The residuals have no spread — the points lie exactly on a line.");
-    RETURN;
   END;
+  IF rlOK <> 1 THEN RETURN; END;
   ne_ShowCurve();
 END;
 
@@ -2540,13 +2871,24 @@ BEGIN
     MSGBOX("Put your data in list D1 of the Statistics 1Var app first.");
     RETURN;
   END;
-
-  zdSum := 0; zdSq := 0;
+  // beta 42d: a value of 50 digits or more, before any sum
   FOR zdI FROM 1 TO zdN DO
-    zdV := D1(zdI); zdSum := zdSum + zdV; zdSq := zdSq + zdV*zdV;
+    IF ABS(D1(zdI)) >= 1E50 THEN
+      MSGBOX("A value in D1 has more than 50 digits: too large to work with.");
+      RETURN;
+    END;
   END;
+
+  // beta 42d: s from the deviations about the mean, in a second
+  // pass (why: ne_BinData)
+  zdSum := 0;
+  FOR zdI FROM 1 TO zdN DO zdSum := zdSum + D1(zdI); END;
   zdXB := zdSum / zdN;
-  zdS := √(MAX(0, (zdSq - zdN*zdXB*zdXB) / (zdN - 1)));
+  zdSq := 0;
+  FOR zdI FROM 1 TO zdN DO
+    zdV := D1(zdI) - zdXB; zdSq := zdSq + zdV*zdV;
+  END;
+  zdS := √(zdSq / (zdN - 1));
   IF zdS <= 0 THEN
     MSGBOX("Every value in D1 is the same, so s = 0 and z is undefined.");
     RETURN;
@@ -2745,9 +3087,10 @@ BEGIN
   TEXTOUT_P("the Terminal (Shift-View) for a Python", 20, 183, 1, NGRAY);
   TEXTOUT_P("traceback after drawing a histogram.", 20, 196, 1, NGRAY);
 
-  TEXTOUT_P("Any key: back to the menu", 20, 214, 1, NGRAY);
-  REPEAT dgK := GETKEY; UNTIL dgK > -1;
-  REPEAT dgK := GETKEY; UNTIL dgK == -1;
+  // beta 42d: a tap as well as a key (ne_WaitAny, as on every other
+  // page); through beta 42c this page read keys only
+  TEXTOUT_P("Any key or tap: back to the menu", 20, 214, 1, NGRAY);
+  dgK := ne_WaitAny();
 END;
 
 
@@ -3050,6 +3393,7 @@ BEGIN
   LOCAL ndB, ndBL, ndBR, ndBH, ndBarH, ndPy2;
   LOCAL ndPA, ndPB, ndMP, ndK, ndSp, ndQ;
   LOCAL ndC1, ndCut, ndCH, ndExp, ndW, ndHD;
+  LOCAL ndLR, ndYSc;
 
   LFT := NPLFT; RGT := NPRGT; TOP := NPTOP; BOT := NPBOT;
   PW := RGT - LFT; PH := BOT - TOP;
@@ -3141,11 +3485,27 @@ BEGIN
   END;
   ndYStp := ne_NiceNum(ndYmx / 4, 1);
   ndYDec := MAX(0, -FLOOR(LOG(ndYStp)));
+  // beta 42e: if any density label would be wider than the 34 px from
+  // x = 2 to the axis ("0.00006" at sigma = 10000), every label on the
+  // axis is written in the scientific form ("6E-5"), as SampDist v2.3e's;
+  // one still too wide is left out, its grid line stays
+  ndYSc := 0;
+  ndYV := ndYStp;
+  WHILE ndYV < ndYmx DO
+    IF ne_YWd(ne_Fx(ndYV, ndYDec)) > 34 THEN ndYSc := 1; END;
+    ndYV := ndYV + ndYStp;
+  END;
   ndYV := ndYStp;
   WHILE ndYV < ndYmx DO
     ndTY := BOT - IP(ndYV / ndYmx * PH);
     LINE_P(G1, LFT+1, ndTY, RGT, ndTY, NGRID);
-    TEXTOUT_P(ne_Fx(ndYV, ndYDec), G1, 2, ndTY-4, 1, NGRAY);   // beta 42a: rounded first
+    IF ndYSc == 0 THEN
+      ndLbl := ne_Fx(ndYV, ndYDec);   // beta 42a: rounded first
+    ELSE
+      ndLbl := STRING(ndYV, 3, 1);
+      IF MID(ndLbl, 2, 2) == ".0" THEN ndLbl := LEFT(ndLbl, 1) + MID(ndLbl, 4, DIM(ndLbl) - 3); END;
+    END;
+    IF ne_YWd(ndLbl) <= 34 THEN TEXTOUT_P(ndLbl, G1, 2, ndTY-4, 1, NGRAY); END;
     ndYV := ndYV + ndYStp;
   END;
 
@@ -3221,6 +3581,7 @@ BEGIN
   // ---- axes + ticks ----
   LINE_P(G1, LFT, BOT, RGT, BOT, NBLACK);
   LINE_P(G1, LFT, TOP, LFT, BOT, NBLACK);
+  ndLR := -99;                                   // beta 42d: no label drawn yet
   ndXV := CEILING(ndMin / ndStp) * ndStp;
   WHILE ndXV <= ndMax + ndStp/1000 DO
     ndTX := LFT + IP((ndXV - ndMin) / ndSpan * PW);
@@ -3231,7 +3592,16 @@ BEGIN
     // centre the label under its tick: labels run 3 or 4 digits
     // wide for distributions like N(500,100).  beta 42: one row
     // higher (BOT+5, was BOT+7) to leave room for the z-ruler.
-    TEXTOUT_P(ndLbl, G1, ndTX - 3*SIZE(ndLbl), BOT+5, 1, NBLACK);
+    // beta 42d: a label that would overlap the one before it (ndLR
+    // is where the last one drawn ends; 6 px a character) or run
+    // off the right edge is left out, and its tick stays.  At
+    // sigma = 1E10 the labels are 12 characters (72 px) wide and
+    // only 34 px apart.  Labels that merely come close, as at the
+    // usual windows, are all drawn, as before.
+    IF ndTX - 3*SIZE(ndLbl) > ndLR AND ndTX + 3*SIZE(ndLbl) <= 319 THEN
+      TEXTOUT_P(ndLbl, G1, ndTX - 3*SIZE(ndLbl), BOT+5, 1, NBLACK);
+      ndLR := ndTX + 3*SIZE(ndLbl);
+    END;
     ndXV := ndXV + ndStp;
   END;
 

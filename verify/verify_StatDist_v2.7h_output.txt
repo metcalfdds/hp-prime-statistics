@@ -1,0 +1,57 @@
+=== R. v2.7g against v2.7f, screen for screen, every family with its default values
+   v2.7f: git history
+PASS R1 27 families x 3 tails (81 runs; the plot's every key, the Numbers page, the Formula page): 2349 screens, every text, box and the result identical to v2.7f's, no error
+PASS R2 Help (4 pages): identical to v2.7f's but for the title on each, "Statistical Distributions v2.7h": [(['Statistical Distributions v2.7h'], ['Statistical Distributions v2.7f'])]
+=== M. the findings (1 Nov 2026; each check fails on v2.7f)
+PASS M1 all 56 forms take real numbers only: every field is {name,[0]} (133 fields); v2.7f's were bare names
+PASS M2 no "!=" in the code (on the Prime a factorial and a test: never true, and "Numerical overflow" from 254 on); v2.7f had 2: ['IF pv != 0 AND ABS(pv) < thr THEN', 'IF TYPE(vv) != 0 THEN RETURN vv; END;']
+PASS M3 Normal, mu = 1E300: "A number you typed has more than 50 digi...", back to the menu; v2.7f: Unsupported: ROUND given a number, a number is not covered
+PASS M3 Normal, sigma = 1E-300: "These values make the distribution too n...", back to the menu; v2.7f: PPLError: Invalid input: STRING(x, 2, 300) -- the Prime takes at most 12 decimals (Virtual Calculato
+PASS M3 Normal, x = 1E300: "A number you typed has more than 50 digi...", back to the menu; v2.7f: Unsupported: ROUND given a number, a number is not covered
+PASS M3 Uniform, b = 1E300: "A number you typed has more than 50 digi...", back to the menu; v2.7f: Unsupported: ^ between a number and a number is not covered
+PASS M3 Exponential, lambda = 1E49: "These values make the distribution too n...", back to the menu; v2.7f: PPLError: Invalid input: STRING(x, 2, 49) -- the Prime takes at most 12 decimals (Virtual Calculator
+PASS M3 Exponential, lambda = 1E-300: "These values spread the distribution pas...", back to the menu; v2.7f: PPLError: division by zero
+PASS M3 Weibull, k = 0.001: "For the Weibull, k must be from 0.05 to ...", back to the menu; v2.7f: Unsupported: EXP given a number is not covered
+PASS M3 Weibull, scale = 1E-300: "These values make the distribution too n...", back to the menu; v2.7f: Unsupported: ^ between a number and a number is not covered
+PASS M3 LogNormal, mu = 1000: "For the LogNormal, μ must be from -100 t...", back to the menu; v2.7f: Unsupported: EXP given a number is not covered
+PASS M3 LogNormal, sigma = 1000: "For the LogNormal, σ can be at most 10 h...", back to the menu; v2.7f: Unsupported: EXP given a number is not covered
+PASS M3 Laplace, b = 1E-300: "These values make the distribution too n...", back to the menu; v2.7f: PPLError: Invalid input: STRING(x, 2, 300) -- the Prime takes at most 12 decimals (Virtual Calculato
+PASS M3 F, df1 = 1E49: "For the F, df1 can be at most 1000000 he...", back to the menu; v2.7f: Unsupported: IP given a number is not covered
+PASS M3 Burr, C = 0.001: "For the Burr, C must be from 0.2 to 100 ...", back to the menu; v2.7f: Unsupported: ^ between a number and a number is not covered
+PASS M3 Burr, K = 1000: "For the Burr, K must be from 0.2 to 100 ...", back to the menu; v2.7f: Unsupported: ^ between a number and a number is not covered
+PASS M3 Gumbel, beta = 1E-300: "These values make the distribution too n...", back to the menu; v2.7f: PPLError: Invalid input: STRING(x, 2, 300) -- the Prime takes at most 12 decimals (Virtual Calculato
+PASS M3 Pareto, alpha = 1000: "For the Pareto, α must be from 0.05 to 1...", back to the menu; v2.7f: Unsupported: ^ between a number and a number is not covered
+PASS M3 Pareto, x_m = 1E-300: "These values make the distribution too n...", back to the menu; v2.7f: PPLError: division by zero
+PASS M3 Rayleigh, sigma = 1E-300: "These values make the distribution too n...", back to the menu; v2.7f: PPLError: division by zero
+PASS M3 Logistic, s = 1E-300: "These values make the distribution too n...", back to the menu; v2.7f: PPLError: Invalid input: STRING(x, 2, 300) -- the Prime takes at most 12 decimals (Virtual Calculato
+PASS M3 binomial, n = 1E49: "For the binomial, n can be at most 10000...", back to the menu; v2.7f: FREEZE: no end after 30 s
+PASS M3 Poisson, lambda = 1E49: "For the Poisson, λ can be at most 100000...", back to the menu; v2.7f: FREEZE: no end after 30 s
+PASS M3 geometric, p = 1E-300: "For the geometric, p must be at least 0....", back to the menu; v2.7f: PPLError: division by zero
+PASS M3 triangular, min = -1E300: "A number you typed has more than 50 digi...", back to the menu; v2.7f: Unsupported: ^ between a number and a number is not covered
+PASS M3 Cauchy, location = 1E300: "A number you typed has more than 50 digi...", back to the menu; v2.7f: Unsupported: ^ between a number and a number is not covered
+PASS M3 Frechet, alpha = 0.001: "For the Frechet, α must be from 0.05 to ...", back to the menu; v2.7f: Unsupported: ^ between a number and a number is not covered
+PASS M3 Erlang, lambda = 1E-300: "These values spread the distribution pas...", back to the menu; v2.7f: PPLError: division by zero
+PASS M3 Poisson, k = 1E49: "k can be at most 1000000000 here....", back to the menu; v2.7f: FREEZE: no end after 30 s
+PASS M3 geometric, k = 1E49: "k can be at most 1000000000 here....", back to the menu; v2.7f: FREEZE: no end after 30 s
+PASS M3 negative binomial, r = 1E49: "For the negative binomial, r can be at m...", back to the menu; v2.7f: FREEZE: no end after 30 s
+PASS M3 negative binomial, p = 1E-300: "For the negative binomial, p must be at ...", back to the menu; v2.7f: PPLError: division by zero
+PASS M3 Normal, mu = 1E40, sigma = 1: "These values make the distribution too n...", back to the menu; v2.7f drew it in the harness (16 digits), but in 12 its window, mu -/+ 3.09, is 1.00000000000E+40 to 1.00000000000E+40 (no width) and its tick counter n + 1 is n at 1E40 (True): the tick loop never ends, as SampDist v2.3d's did on the Virtual Calculator
+=== A. the four rewritten densities (and the Frechet CDF and right tail) against SciPy and v2.7f
+PASS A1 148 values of the Burr, Pareto and logistic densities and the Frechet density, CDF and right tail, inside the windows and far out: each within 1E-9 of SciPy (relative), no overflow
+PASS A2 where v2.7f gave a finite number (144 of them), v2.7g gives the same to 12 digits
+=== G. static checks
+PASS G1 beyond the typed fields of the 27 st_ask_* forms (27 changed only there), only these routines differ from v2.7f, code for code: ['st_AskAB', 'st_BigMsg', 'st_Draw', 'st_Fit', 'st_FitWin', 'st_Init', 'st_LWd', 'st_LimP', 'st_LimX', 'st_Rng', 'st_Zoom', 'st_cdf', 'st_fmtp', 'st_fmtv', 'st_pdf', 'st_sf', 'st_show_help']
+PASS G2 148 routines, every one tagged st_ (but the entry StatDist); at most six names on a LOCAL line
+=== D. layout (text_overlap_v1: the R runs and the ends of the new ranges, on both versions)
+PASS M4 the ends of every new range, and the values v2.7f could not draw, draw with Zoom- twelve times and the Numbers page: no error, no box: []
+   StatDist_v2.7h.txt: 1081 distinct screens of 2196
+   StatDist_v2.7f.txt: 1075 distinct screens of 2082
+PASS D1 the same runs on both versions: no layout spot (kind, routine, row) with a firm overlap, straddle or overrun on a v2.7g screen that v2.7f's screens do not also have (v2.7g: 2 spots, v2.7f: 3)
+PASS M5 every new box within 4 lines at 32 characters a line: [3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 3, 2]
+=== Y. v2.7h: axis labels never clipped, never over each other; wide density labels in the scientific form
+PASS Y1 17 plots at the far scales (normal sigma 1E-9 .. 1E40 and others): density labels at most 35 px wide, x labels not over each other and inside the screen, every x label one v2.7f drew; density labels v2.7f's where they fitted, else the scientific form (10 plots, e.g. [('normal sigma 1e-09', '4ᴇ8'), ('normal sigma 1e-08', '4ᴇ7'), ('normal sigma 1e-07', '4ᴇ6')])
+PASS Y2 v2.7f (and v2.7g, the same) had a density label wider than the margin (clipped by TEXTOUT_P's width limit: "4000000" showed as "400000" on the Virtual Calculator) or x labels over each other in 10 of those plots, normal sigma 1E-7 among them: [('normal sigma 1e-09', '100000000'), ('normal sigma 1e-08', '10000000'), ('normal sigma 1e-07', '1000000')]
+PASS Y3 st_Draw clips no label (no width limit on its TEXTOUT_P calls for labels) and asks STRING(x, 2, d) for a density label only with d at most 12 (the Prime refuses 13)
+
+45 PASS, 0 FAIL
+exit 0

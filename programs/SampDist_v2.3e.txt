@@ -26,12 +26,48 @@
 //   5  Help
 // Exports EP_SD_* so results are readable in Home after the menu is cancelled.
 //
-// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  v2.3d has
-//   NOT yet been run on hardware or on the emulator, only in the PC
-//   harness (ppl_run_v3e, 19 Oct 2026); v2.3 passed the emulator's round
-//   (17 Oct 2026).  See the checklist at the end, SampDist_v2.3d_CHANGES.md,
-//   SampDist_v2.3b_CHANGES.md, SampDist_v2.3a_CHANGES.md and
-//   SampDist_v2.3_CHANGES.md.
+// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  v2.3e has
+//   run in the PC harness only so far; v2.3 passed the emulator's round
+//   (17 Oct 2026), and v2.3d's checked file ran on the Virtual Calculator
+//   (1 Nov 2026).  See the checklist at the end, SampDist_v2.3e_CHANGES.md
+//   and the earlier CHANGES files.
+//
+// v2.3e (1 Nov 2026): from the monkey test (400 runs of random keys,
+//   taps, menu picks and typed values; 20 crashed and 127 more broke):
+//   * Every form field takes a real number only: {name,[0]}, the User
+//     Guide's allowed-types form.  A list typed as μ ({1,2}) went on into
+//     the arithmetic; on the calculator the form now refuses it with
+//     "Invalid input" (seen on the Virtual Calculator, TTestLab beta 1c).
+//   * The crashes were all one fault: a curve too narrow for the window's
+//     own arithmetic.  At μ = 1E300 (or σ = 1E-300, or n = 1E300) the
+//     window μ ± 4σx-bar has zero width in 12 digits, and the grid
+//     divided by it ("Error: X/0" on the calculator); a little above
+//     that, x + step rounds back to x and the tick loop never ends (μ =
+//     1E9, σ = 0.001, n = 1: no graph for two minutes on the Virtual
+//     Calculator, 1 Nov 2026).  Each form now
+//     refuses, with a sentence, a number with more than 50 digits
+//     (sd_Big) and a σx-bar = σ/√n below 0.000000001 or below
+//     |μ|/100,000,000 (sd_Narrow; sd_BadMsg says which).  In the live
+//     graph, n+, n- and n×4 stop where σx-bar would get that small.
+//   * σ can be at most 1E10 (sd_BadMsg).  STRING(x, 2, d) is "Invalid
+//     input" on the Prime for 13 or more decimals (Virtual Calculator,
+//     1 Nov 2026), and the density axis's labels take more decimals the
+//     larger σ is: v2.3d stopped with that error at σ = 1E12.
+//   * The upper-tail critical values are -NORMALD_ICDF(0, 1, α), not
+//     NORMALD_ICDF(0, 1, 1 - α) (Lessons Learned s3: 1 - α is exactly 1
+//     for a tiny α, and ICDF(1) is infinity).  The same number for every
+//     α the panel shows.
+//   * An x tick label that would touch the one before it is left out
+//     (sd_axes, sd_drawCmp); its tick stays.  At a large μ the labels are
+//     long (999999600 beside 999999700, a test of the new limits) and ran
+//     into each other.
+//   * A density label wider than the margin (7 characters or more:
+//     "0.00015" at σ = 15,000 touched the axis on the Virtual
+//     Calculator) is written STRING(x, 3, 1), "1.5ᴇ-4", or "1ᴇ-11" for
+//     a whole mantissa, and left out if it still does not fit (sd_axes); the
+//     panel's σ line, when longer than 50 characters (σ of 1E8 and up),
+//     leaves out its σ/√n step (sd_compose, sd_watch).
+//   Nothing else changed.
 //
 // v2.3d (28 Oct 2026): layout only (overlap sweep, 28 Oct 2026).  In
 //   Compare sample sizes (sd_drawCmp) the x-axis tick labels at y 177
@@ -536,6 +572,7 @@ sd_axes(axG, xlo, xhi, ymx)
 BEGIN
   LOCAL LFT, RGT, TOPy, BOT, W, H;
   LOCAL stp, nfrac, xv, tickx, axL, axY;
+  LOCAL axX, axR;
   LFT := 40; RGT := 314; TOPy := 20; BOT := 150;
   W := RGT - LFT; H := BOT - TOPy;
   LINE_P(axG, LFT, BOT, RGT, BOT, RGB(0,0,0));
@@ -543,13 +580,21 @@ BEGIN
   stp := sd_NiceNum((xhi - xlo)/6, 1);
   nfrac := MAX(0, -FLOOR(LOG(stp)));
   xv := CEILING(xlo/stp)*stp;
+  axR := -99;
   WHILE xv <= xhi + stp/1000 DO
     tickx := LFT + IP((xv - xlo)/(xhi - xlo)*W);
     IF tickx >= LFT AND tickx <= RGT THEN
       LINE_P(axG, tickx, BOT, tickx, BOT+3, RGB(0,0,0));
       axL := STRING(xv,2,nfrac);
       // centred on the tick, but never past the right edge of the screen
-      TEXTOUT_P(axL, axG, MIN(tickx - 3*SIZE(axL), 318 - 6*SIZE(axL)), BOT+4, 1, RGB(90,90,90));
+      axX := MIN(tickx - 3*SIZE(axL), 318 - 6*SIZE(axL));
+      // v2.3e: a label that would touch the one before it is left out
+      // (long labels at a large μ, 999999600 beside 999999700); its tick
+      // stays
+      IF axX >= axR + 4 THEN
+        TEXTOUT_P(axL, axG, axX, BOT+4, 1, RGB(90,90,90));
+        axR := axX + 6*SIZE(axL);
+      END;
     END;
     xv := xv + stp;
   END;
@@ -562,7 +607,22 @@ BEGIN
     axY := BOT - IP(xv/ymx*H);
     LINE_P(axG, LFT - 3, axY, LFT, axY, RGB(0,0,0));
     axL := STRING(xv,2,nfrac);
-    TEXTOUT_P(axL, axG, MAX(0, LFT - 5 - 6*SIZE(axL)), axY - 5, 1, RGB(90,90,90));
+    // v2.3e: a label wider than the margin left of the axis (7 characters
+    // or more: "0.00015" at σ = 15,000, which touched the axis on the
+    // Virtual Calculator; "400000000" at σx-bar = 0.000000001) is written
+    // in scientific form, STRING(x, 3, 1): "1.5ᴇ-4", "4.0ᴇ8" (both seen
+    // there, 1 Nov 2026).  A whole mantissa loses its ".0" ("1.0ᴇ-11"
+    // becomes "1ᴇ-11"; the ᴇ is one character), and a label that still
+    // does not fit is left out; its tick stays.
+    IF SIZE(axL) > 6 THEN
+      axL := STRING(xv,3,1);
+      IF SIZE(axL) > 6 AND MID(axL, 2, 2) == ".0" THEN
+        axL := LEFT(axL, 1) + MID(axL, 4, SIZE(axL) - 3);
+      END;
+    END;
+    IF SIZE(axL) <= 6 THEN
+      TEXTOUT_P(axL, axG, MAX(0, LFT - 5 - 6*SIZE(axL)), axY - 5, 1, RGB(90,90,90));
+    END;
     xv := xv + stp;
   END;
 END;
@@ -599,12 +659,13 @@ BEGIN
       lo := mu + zlo*se; hi := lo;
     END;
     IF tailK == 2 THEN
-      zlo := NORMALD_ICDF(0,1,1-alp);
+      // v2.3e: the upper tail mirrored, -ICDF(α), never ICDF(1 - α)
+      zlo := -NORMALD_ICDF(0,1,alp);
       lo := mu + zlo*se; hi := lo;
     END;
     DEFAULT
       zlo := NORMALD_ICDF(0,1,alp/2);
-      zhi := NORMALD_ICDF(0,1,1-alp/2);
+      zhi := -NORMALD_ICDF(0,1,alp/2);
       lo := mu + zlo*se; hi := mu + zhi*se;
   END;
   RETURN {lo, hi};
@@ -642,6 +703,52 @@ BEGIN
     fxP := MAX(0.0000001, MIN(0.9999999, fxP));
   END;
   RETURN {fxL, fxH, fxA, fxP};
+END;
+
+// ---- v2.3e: numbers the graph cannot draw ----
+// A typed number with more than 50 digits: its square, which the
+// densities take, would pass the Prime's 1E499 (an infinity, with no
+// error).
+sd_Big(bv)
+BEGIN
+  RETURN IFTE(ABS(bv) >= 1E50, 1, 0);
+END;
+
+// σx-bar too small for the window's arithmetic.  The window is about
+// 8 σx-bar wide around μ and the calculator keeps 12 digits, so below
+// |μ|/100,000,000 the window's two ends round to the same number and
+// the grid divides by zero (the monkey test: μ = 1E300, σ = 1E-300,
+// n = 1E300); a little above that, xv + step rounds back to xv and the
+// tick loop never ends (v2.3d at μ = 1E9, σ = 0.001, n = 1: no graph
+// for two minutes on the Virtual Calculator, then On: "Program
+// interrupted", 1 Nov 2026).  Below 0.000000001 the tick labels would
+// need more decimals than a fixed STRING holds (at most 12).
+sd_Narrow(mu, se)
+BEGIN
+  RETURN IFTE(se < 0.000000001 OR se < ABS(mu)*0.00000001, 1, 0);
+END;
+
+// The sentence for a form whose numbers cannot be drawn, or "".  Called
+// after the form's own checks (σ > 0, n ≥ 1 and whole): it says
+// nothing about those.
+sd_BadMsg(mu, sg, nn)
+BEGIN
+  IF sg <= 0 OR nn < 1 THEN RETURN ""; END;
+  IF sd_Big(mu) OR sd_Big(sg) OR sd_Big(nn) THEN
+    RETURN "A number you typed has more than 50 digits: too large to work with.";
+  END;
+  // v2.3e: σ above 1E10 makes the density ticks so small that their
+  // labels need 13 or more decimals, and STRING(x, 2, d) takes at most
+  // 12 ("Invalid input": v2.3d stopped so at σ = 1E12 on the Virtual
+  // Calculator, 1 Nov 2026).  σ, not σ/√n: n- in the live graph can go
+  // back to n = 1.
+  IF sg > 10000000000 THEN
+    RETURN "σ can be at most 1E10: a larger σ needs density labels with more decimals than the calculator prints.";
+  END;
+  IF sd_Narrow(mu, sg/SQRT(nn)) THEN
+    RETURN "σ/√n is too small next to μ for the calculator's 12 digits. Use a larger σ, a smaller n or a μ nearer 0.";
+  END;
+  RETURN "";
 END;
 
 // ---- compose one frame of the result graph in G1, blit, soft keys ----
@@ -741,6 +848,12 @@ BEGIN
   // is σ/√n and NOT σ is the one thing this program exists to teach (v2.2)
   s3 := "σ = " + STRING(sg,2,2) + ",  σ" + CHAR(57344) + " = " +
         STRING(sg,2,2) + "/√" + STRING(nn,2,0) + " = " + STRING(se,2,4);
+  // v2.3e: a line too long for the panel (a σ of 100,000,000 or more:
+  // the Virtual Calculator cut "...= 10000000000.0" at its right edge)
+  // leaves out the σ/√n step
+  IF DIM(s3) > 50 THEN
+    s3 := "σ = " + STRING(sg,2,2) + ",  σ" + CHAR(57344) + " = " + STRING(se,2,4);
+  END;
   // the fourth line: a message if there is one, else the key help (the
   // footer lives here now -- the soft-key strip takes y 218-239)
   cpN := note;
@@ -778,6 +891,7 @@ BEGIN
   LOCAL ix, tmp, nl, iok, ch, cb;
   LOCAL mu2, sg2, nn2, al2, lo2, hi2;
   LOCAL zlo, zhi, mtx;
+  LOCAL bm;
 
   LFT := 40; RGT := 314; TOPy := 20; BOT := 150;
   W := RGT - LFT; H := BOT - TOPy;
@@ -951,6 +1065,13 @@ BEGIN
           note := "n" + CHAR(215) + "4 stops at n = 1600";
         END;
       END;
+      // v2.3e: no n whose σx-bar the window's 12 digits cannot hold
+      IF nn2 <> nn THEN
+        IF sd_Narrow(mu, sg/SQRT(nn2)) THEN
+          note := "n stops here: σ/√n would be too small to draw";
+          nn2 := nn;
+        END;
+      END;
       IF nn2 <> nn THEN
         nn := nn2;
         IF 2.5*sg/SQRT(nn) > ww THEN
@@ -968,12 +1089,12 @@ BEGIN
       note := "";
       mu2 := mu; sg2 := sg; nn2 := nn; al2 := alp;
       IF crit THEN
-        iok := INPUT({mu2, sg2, nn2, al2}, "Critical Values",
+        iok := INPUT({{mu2,[0]}, {sg2,[0]}, {nn2,[0]}, {al2,[0]}}, "Critical Values",
                      {"μ:", "σ:", "n:", "α:"},
                      {"Population mean", "Population SD (> 0)",
                       "Sample size, whole number ≥ 1", "Tail area, e.g. 0.05"});
       ELSE
-        iok := INPUT({mu2, sg2, nn2}, "Population Parameters",
+        iok := INPUT({{mu2,[0]}, {sg2,[0]}, {nn2,[0]}}, "Population Parameters",
                      {"μ:", "σ:", "n:"},
                      {"Population mean", "Population SD (> 0)",
                       "Sample size, whole number ≥ 1"});
@@ -981,28 +1102,35 @@ BEGIN
       REPEAT kk := GETKEY; UNTIL kk == -1;
       sd_Drain();
       IF iok THEN
+        bm := sd_BadMsg(mu2, sg2, nn2);
         CASE
           IF sg2 <= 0 THEN MSGBOX("σ must be > 0; nothing changed"); END;
           IF nn2 < 1 THEN MSGBOX("n must be ≥ 1; nothing changed"); END;
           IF nn2 - IP(nn2) > 0 THEN MSGBOX("n must be a whole number; nothing changed"); END;
           IF al2 <= 0 OR al2 >= 1 THEN MSGBOX("α must be between 0 and 1; nothing changed"); END;
+          IF DIM(bm) > 0 THEN MSGBOX(bm + " Nothing changed."); END;
           DEFAULT
             mu := mu2; sg := sg2; nn := nn2; alp := al2;
             IF crit == 0 THEN
               lo2 := lo; hi2 := hi;
               IF tailK <= 2 THEN
-                iok := INPUT({lo2}, "Enter the boundary", {"a:"},
+                iok := INPUT({{lo2,[0]}}, "Enter the boundary", {"a:"},
                              {"Boundary value on the " + CHAR(57344) + " scale"});
               ELSE
-                iok := INPUT({lo2, hi2}, "Enter the bounds", {"a:", "b:"},
+                iok := INPUT({{lo2,[0]}, {hi2,[0]}}, "Enter the bounds", {"a:", "b:"},
                              {"Lower bound", "Upper bound"});
               END;
               REPEAT kk := GETKEY; UNTIL kk == -1;
               sd_Drain();
               IF iok THEN
-                IF tailK >= 3 AND hi2 < lo2 THEN tmp := lo2; lo2 := hi2; hi2 := tmp; END;
-                lo := lo2;
-                IF tailK >= 3 THEN hi := hi2; END;
+                // v2.3e: a bound too large to work with keeps the old bounds
+                IF sd_Big(lo2) OR sd_Big(hi2) THEN
+                  MSGBOX("A bound you typed has more than 50 digits: too large to work with. The bounds did not change.");
+                ELSE
+                  IF tailK >= 3 AND hi2 < lo2 THEN tmp := lo2; lo2 := hi2; hi2 := tmp; END;
+                  lo := lo2;
+                  IF tailK >= 3 THEN hi := hi2; END;
+                END;
               END;
             END;
             fresh := 1;
@@ -1054,6 +1182,7 @@ BEGIN
   LOCAL mm, mm1, dn, cx, hl, bg;
   LOCAL x0, y0, mv, skip, go, rd;
   LOCAL qg, pc, dd, best;
+  LOCAL dcX, dcR;
 
   LFT := 30; RGT := 314; TOPy := 22; BOT := 172;
   W := RGT - LFT; H := BOT - TOPy;
@@ -1168,12 +1297,18 @@ BEGIN
       LINE_P(G2, LFT, BOT, RGT, BOT, cAx);
       LINE_P(G2, LFT, BOT, LFT, TOPy, cAx);
       xv := CEILING(xlo/stp)*stp;
+      dcR := -99;
       WHILE xv <= xhi + stp/1000 DO
         tickx := LFT + IP((xv - xlo)/(xhi - xlo)*W);
         IF tickx >= LFT AND tickx <= RGT THEN
           LINE_P(G2, tickx, BOT, tickx, BOT+3, cAx);
           dcLbl := STRING(xv,2,nfrac);
-          TEXTOUT_P(dcLbl, G2, tickx - 3*SIZE(dcLbl), BOT+5, 1, RGB(90,90,90));
+          dcX := tickx - 3*SIZE(dcLbl);
+          // v2.3e: a label that would touch the one before it is left out
+          IF dcX >= dcR + 4 THEN
+            TEXTOUT_P(dcLbl, G2, dcX, BOT+5, 1, RGB(90,90,90));
+            dcR := dcX + 6*SIZE(dcLbl);
+          END;
         END;
         xv := xv + stp;
       END;
@@ -1264,11 +1399,11 @@ END;
 sd_modeProb()
 BEGIN
   LOCAL mu, sg, nn, se, iok;
-  LOCAL lo, hi, tailK, pv;
+  LOCAL lo, hi, tailK, pv, bm;
   LOCAL zlo, zhi, tmp;
 
   mu := 0; sg := 1; nn := 30;
-  iok := INPUT({mu, sg, nn}, "Population Parameters",
+  iok := INPUT({{mu,[0]}, {sg,[0]}, {nn,[0]}}, "Population Parameters",
                {"μ:", "σ:", "n:"},
                {"Population mean", "Population SD (> 0)",
                 "Sample size, whole number ≥ 1"});
@@ -1276,6 +1411,9 @@ BEGIN
   IF sg <= 0 THEN MSGBOX("σ must be > 0"); RETURN; END;
   IF nn < 1 THEN MSGBOX("n must be ≥ 1"); RETURN; END;
   IF nn - IP(nn) > 0 THEN MSGBOX("n must be a whole number"); RETURN; END;
+  // v2.3e: numbers the graph cannot draw (sd_BadMsg)
+  bm := sd_BadMsg(mu, sg, nn);
+  IF DIM(bm) > 0 THEN MSGBOX(bm); RETURN; END;
 
   se := sg / SQRT(nn);
 
@@ -1289,15 +1427,18 @@ BEGIN
 
   lo := mu - se; hi := mu + se;
   IF tailK == 1 OR tailK == 2 THEN
-    iok := INPUT({lo}, "Enter the boundary", {"a:"},
+    iok := INPUT({{lo,[0]}}, "Enter the boundary", {"a:"},
                  {"Boundary value on the " + CHAR(57344) + " scale"});
     IF iok == 0 THEN RETURN; END;
     hi := lo;
   ELSE
-    iok := INPUT({lo, hi}, "Enter the bounds", {"a:", "b:"},
+    iok := INPUT({{lo,[0]}, {hi,[0]}}, "Enter the bounds", {"a:", "b:"},
                  {"Lower bound", "Upper bound"});
     IF iok == 0 THEN RETURN; END;
     IF hi < lo THEN tmp := lo; lo := hi; hi := tmp; END;
+  END;
+  IF sd_Big(lo) OR sd_Big(hi) THEN
+    MSGBOX("A bound you typed has more than 50 digits: too large to work with."); RETURN;
   END;
 
   // NORMALD_CDF is evaluated on the x-bar scale directly — standardising first
@@ -1329,12 +1470,12 @@ END;
 sd_modeCrit()
 BEGIN
   LOCAL mu, sg, nn, se, iok;
-  LOCAL alp, tailK, pv;
+  LOCAL alp, tailK, pv, bm;
   LOCAL zlo, zhi, lo, hi;
 
   mu := 0; sg := 1; nn := 30; alp := 0.05;
   // ONE form rather than two sequential prompts: fewer cancel paths.
-  iok := INPUT({mu, sg, nn, alp}, "Critical Values",
+  iok := INPUT({{mu,[0]}, {sg,[0]}, {nn,[0]}, {alp,[0]}}, "Critical Values",
                {"μ:", "σ:", "n:", "α:"},
                {"Population mean", "Population SD (> 0)",
                 "Sample size, whole number ≥ 1", "Tail area, e.g. 0.05"});
@@ -1343,6 +1484,9 @@ BEGIN
   IF nn < 1 THEN MSGBOX("n must be ≥ 1"); RETURN; END;
   IF nn - IP(nn) > 0 THEN MSGBOX("n must be a whole number"); RETURN; END;
   IF alp <= 0 OR alp >= 1 THEN MSGBOX("α must be between 0 and 1"); RETURN; END;
+  // v2.3e: numbers the graph cannot draw (sd_BadMsg)
+  bm := sd_BadMsg(mu, sg, nn);
+  IF DIM(bm) > 0 THEN MSGBOX(bm); RETURN; END;
 
   se := sg / SQRT(nn);
 
@@ -1357,12 +1501,13 @@ BEGIN
       lo := mu + zlo*se; hi := lo; zhi := zlo; pv := alp;
     END;
     IF tailK == 2 THEN
-      zlo := NORMALD_ICDF(0,1,1-alp);
+      // v2.3e: the upper tail mirrored, -ICDF(α), never ICDF(1 - α)
+      zlo := -NORMALD_ICDF(0,1,alp);
       lo := mu + zlo*se; hi := lo; zhi := zlo; pv := alp;
     END;
     DEFAULT
       zlo := NORMALD_ICDF(0,1,alp/2);
-      zhi := NORMALD_ICDF(0,1,1-alp/2);
+      zhi := -NORMALD_ICDF(0,1,alp/2);
       lo := mu + zlo*se; hi := mu + zhi*se; pv := 1 - alp;
   END;
 
@@ -1379,13 +1524,13 @@ END;
 sd_modeCompare()
 BEGIN
   LOCAL mu, sg, n1, n2, n3, iok;
-  LOCAL se1, se2, se3;
+  LOCAL se1, se2, se3, bm;
 
   // Defaults 10, 40, 160: each n is 4x the one before, so the picture
   // shows exactly the "4x n halves σx-bar" rule printed under it.  The old
   // 5 / 30 / 100 showed a 6x and a 3.3x, which the slogan did not describe.
   mu := 100; sg := 15; n1 := 10; n2 := 40; n3 := 160;
-  iok := INPUT({mu, sg, n1, n2, n3}, "Compare Sample Sizes",
+  iok := INPUT({{mu,[0]}, {sg,[0]}, {n1,[0]}, {n2,[0]}, {n3,[0]}}, "Compare Sample Sizes",
                {"μ:", "σ:", "n₁:", "n₂:", "n₃:"},
                {"Population mean", "Population SD (> 0)",
                 "Small n", "Medium n", "Large n"});
@@ -1398,6 +1543,10 @@ BEGIN
   IF n1 - IP(n1) > 0 OR n2 - IP(n2) > 0 OR n3 - IP(n3) > 0 THEN
     MSGBOX("every n must be a whole number"); RETURN;
   END;
+  // v2.3e: numbers the graph cannot draw; the largest n gives the
+  // narrowest curve (sd_BadMsg)
+  bm := sd_BadMsg(mu, sg, MAX(n1, MAX(n2, n3)));
+  IF DIM(bm) > 0 THEN MSGBOX(bm); RETURN; END;
 
   se1 := sg / SQRT(n1);
   se2 := sg / SQRT(n2);
@@ -1425,13 +1574,13 @@ BEGIN
   LOCAL bn, yl, fr, nf, skip, kk;
   LOCAL mm, mm1, t0, cnt, e1, e2;
   LOCAL hy, bx1, bx2, mbar, sd2, drct;
-  LOCAL s1, s2, s3, s4, yf;
+  LOCAL s1, s2, s3, s4, yf, bm;
 
   LFT := 40; RGT := 314; TOPy := 20; BOT := 150;
   W := RGT - LFT; H := BOT - TOPy;
 
   mu := 100; sg := 15; nn := 30;
-  iok := INPUT({mu, sg, nn}, "Watch Sample Means",
+  iok := INPUT({{mu,[0]}, {sg,[0]}, {nn,[0]}}, "Watch Sample Means",
                {"μ:", "σ:", "n:"},
                {"Population mean", "Population SD (> 0)",
                 "Draws per sample, whole number ≥ 1"});
@@ -1439,6 +1588,9 @@ BEGIN
   IF sg <= 0 THEN MSGBOX("σ must be > 0"); RETURN; END;
   IF nn < 1 THEN MSGBOX("n must be ≥ 1"); RETURN; END;
   IF nn - IP(nn) > 0 THEN MSGBOX("n must be a whole number"); RETURN; END;
+  // v2.3e: numbers the graph cannot draw (sd_BadMsg)
+  bm := sd_BadMsg(mu, sg, nn);
+  IF DIM(bm) > 0 THEN MSGBOX(bm); RETURN; END;
 
   se := sg / SQRT(nn);
   drct := 0;
@@ -1561,6 +1713,10 @@ BEGIN
         "   (σ" + CHAR(57344) + " = " + STRING(se,2,4) + ")";
   s3 := "one draw: σ = " + STRING(sg,2,2) + ";  a mean of " +
         STRING(nn,2,0) + ": σ" + CHAR(57344) + " = " + STRING(se,2,4);
+  // v2.3e: too long for the panel at a large σ or n: the short form
+  IF DIM(s3) > 50 THEN
+    s3 := "σ = " + STRING(sg,2,2) + ";  σ" + CHAR(57344) + " = " + STRING(se,2,4);
+  END;
   s4 := "bars one σ" + CHAR(57344) + " wide, total area 1";
   IF drct THEN s4 := "n > 100: each mean drawn from N(μ, σ" + CHAR(57344) + ")"; END;
   TEXTOUT_P("40 means of n = " + STRING(nn,2,0) + " draws from N(" +

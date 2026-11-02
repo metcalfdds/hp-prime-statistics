@@ -1,0 +1,27 @@
+=== R. beta 2e against beta 2d, screen for screen, with ordinary numbers
+   beta 2d: git history
+PASS R1 8 sessions (all five interval types; +10, +1, +50, the level, a line picked, the n form, Help, Reset): 312 screens, every text and the summary identical to beta 2d's, no error
+=== M. the monkey test's findings (1 Nov 2026; each check fails on beta 2d)
+PASS M1 all 3 forms take real numbers only: every field is {name,[0]} (8 fields); beta 2d's were bare names
+PASS M2 z, sigma = 1E-300: "σ/√n is too small next to μ for the ...", the form back (Cancel then: "CICatcher: no interval chosen"); beta 2d: no box, PPLError: Invalid input: STRING(x, 2, 301) -- the Prime takes at most 12 decimals (Virtual Calculator, 1 Nov 2026; prime_facts_v1)
+PASS M2 t, sigma = 1E-300: "σ/√n is too small next to μ for the ...", the form back (Cancel then: "CICatcher: no interval chosen"); beta 2d: no box, PPLError: division by zero
+PASS M2 z, mu = 1E300: "A number you typed has more than 50 ...", the form back (Cancel then: "CICatcher: no interval chosen"); beta 2d: no box, PPLError: division by zero
+PASS M2 t, mu = -1E300: "A number you typed has more than 50 ...", the form back (Cancel then: "CICatcher: no interval chosen"); beta 2d: no box, PPLError: division by zero
+PASS M2 z, sigma = 1E300: "A number you typed has more than 50 ...", the form back (Cancel then: "CICatcher: no interval chosen"); beta 2d: no box, CICatcher: no intervals drawn (z, μ = 0, σ = 1ᴇ300, n = 20)
+PASS M2 z, mu = 1E40, sigma = 1: "σ/√n is too small next to μ for the ...", the form back (Cancel then: "CICatcher: no interval chosen"); beta 2d: no box, PPLError: division by zero
+PASS M2 after the box, sigma = 2 typed into the form that came back: the run goes on (CICatcher: 10 of 10 caught the truth (100.0 %) at 95 %, z, μ)
+PASS M3 the lines: sigma/sqrt(n) of 1E-9 accepted, 9.9E-10 refused; at mu = +-1E9, 10 accepted and 9.99 refused; 9.99E49 accepted, 1E50 refused: ['', 'N', '', 'N', '', 'B', 'B']
+PASS M4 the n form at mu = 1E9, sigma = 50: n = 100 (sigma/sqrt(n) = 5) refused, "... n did not change.", n stays 2; beta 2d took it ( σ = 50, n = 100; see CQ_COVER)
+PASS M4 the same form with n = 4 (sigma/sqrt(n) = 25): accepted, no box ( 1000000000, σ = 50, n = 4; see CQ_COVER)
+PASS M5 the largest and smallest numbers accepted run (setup, +10 twice, +50) with no error and no box, with STRING refusing 13 decimals as on the Prime: [('z, mu = 9.9E49, sigma = 9.9E49, n = 2', None), ('t, mu = -9.9E49, sigma = 9.9E49, n = 100', None), ('z, mu = 0, sigma/sqrt(n) = 1E-9', None), ('t, mu = 1E9, sigma/sqrt(n) = 10', None), ('t, mu = 0.001, sigma = 1E-8, n = 100', None)]
+PASS M6 every new box within 4 lines at 32 characters a line: [4, 3, 4]
+=== G. static checks
+PASS G1 only cqAskN, cqSetup, cqDrawAxis and the new cqBadMsg differ from beta 2d, code for code: ['cqAskN', 'cqBadMsg', 'cqDrawAxis', 'cqSetup']
+PASS G2 63 routines, every one tagged cq; at most six names on a LOCAL line; no "!=" (a factorial and a test on the Prime)
+PASS G3 the code is ASCII, as beta 2d's is (its glyphs are built with CHAR(); only comments carry others)
+=== D. layout (text_overlap_v1 over every screen above)
+   CICatcher_beta2e.txt: 323 distinct screens of 426
+   CICatcher_beta2d.txt: 242 distinct screens of 334
+PASS D1 no firm overlap, frame straddle or overrun on any beta 2e screen drawn, mu = 1E9 included (beta 2d on the same runs: 6, ['1000000000', '1000000010', '1000000020'])
+
+18 PASS, 0 FAIL

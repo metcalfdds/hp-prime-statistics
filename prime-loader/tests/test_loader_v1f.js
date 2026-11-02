@@ -1,4 +1,4 @@
-// test_loader_v1d.js -- drives PrimeLoader_v1d.html in Chromium against a mock Virtual Calculator folder.
+// test_loader_v1f.js -- drives PrimeLoader_v1f.html in Chromium against a mock Virtual Calculator folder.
 // Roger Metcalf & Claude, 1 Nov 2026.
 //
 // The browser's folder picker cannot be driven by a test, so it is replaced by one that returns a folder in the
@@ -6,7 +6,11 @@
 // Calculator: Calculators\Prime with HP's apps, settings, old programs and a matrix; Temp with the lock file.  Every file
 // the page writes is compared byte for byte with the starter pack it was built from.
 //
-//   node tests/test_loader_v1d.js PrimeLoader_v1d.html PACK.zip
+//   node tests/test_loader_v1f.js PrimeLoader_v1f.html PACK.zip
+// v1f (1 Nov 2026, night): v1e's checks, unchanged, run on the page built from starter pack v8 (CICatcher beta 2e,
+//   Norm3 v2.4c, NormExplorer beta 42d, StatDist v2.7g).
+// v1e (1 Nov 2026, evening): v1d's checks, unchanged, run on the page built from starter pack v7 (SampDist v2.3e,
+//   BayesTree beta 8f).
 // v1d (1 Nov 2026): v1c's checks, run on the page built from starter pack v6 (TTestLab beta 1c, TTestLabG beta 1a).
 //   One change: before 'own data listed' it waits up to 5 s for the page to list the file; in one run of four the
 //   check read the list before the page had read the file.

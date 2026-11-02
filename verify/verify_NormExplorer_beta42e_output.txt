@@ -1,0 +1,62 @@
+=== R. beta 42d against beta 42c, screen for screen, every menu item with ordinary numbers
+   beta 42c: git history
+PASS R1 6 sessions over every menu item (the Explorer with every key, soft key and drags; 4 areas, 5 quantiles, 4 solves, compare and power, simulate, D1, C1/C2, residuals, z-scores, every window item, the animation, Help, reset): 152 screens, every text, box, menu title and the result identical to beta 42c's, no error
+PASS R2 the Diagnostics page, left with a key: identical to beta 42c's but for its footer, "Any key or tap: back to the menu" (was "Any key: ..."): [(['Any key or tap: back to the menu'], ['Any key: back to the menu'])]
+=== M. the monkey test's findings (1 Nov 2026; each check fails on beta 42c)
+PASS M1 all 15 forms take real numbers only: every field is {name,[0]} (26 fields); beta 42c's were bare names
+PASS M2 menu 1, mu = 1E300: "A number you typed has more than 5...", the session unchanged (NormExp — N(0.00, 1.00)), and drawing goes on; beta 42c: no box
+PASS M2 menu 1, mu = -1E300: "A number you typed has more than 5...", the session unchanged (NormExp — N(0.00, 1.00)), and drawing goes on; beta 42c: no box
+PASS M2 menu 1, sigma = 1E300: "A number you typed has more than 5...", the session unchanged (NormExp — N(0.00, 1.00)), and drawing goes on; beta 42c: PPLError: Invalid input: STRING(x, 2, 301) -- the Prime takes at most 12 decimals (Virtual Calculator, 1 Nov 2026; prime_facts_v1)
+PASS M2 menu 1, sigma = 1.23E12: "σ can be at most 1E10: a larger σ ...", the session unchanged (NormExp — N(0.00, 1.00)), and drawing goes on; beta 42c: PPLError: Invalid input: STRING(x, 2, 13) -- the Prime takes at most 12 decimals (Virtual Calculator, 1 Nov 2026; prime_facts_v1)
+PASS M2 menu 1, sigma = 1E-300: "σ is too small next to μ for the c...", the session unchanged (NormExp — N(0.00, 1.00)), and drawing goes on; beta 42c: no box
+PASS M2 menu 1, mu = 1E9, sigma = 0.001: "σ is too small next to μ for the c...", the session unchanged (NormExp — N(0.00, 1.00)), and drawing goes on; beta 42c: no box
+PASS M2 solve mu: z = -1E300, sigma = 1: "A number you typed has more than 5...", the session unchanged (NormExp — N(0.00, 1.00)), and drawing goes on; beta 42c: no box
+PASS M2 solve x: mu = 1E300: "A number you typed has more than 5...", the session unchanged (NormExp — N(0.00, 1.00)), and drawing goes on; beta 42c: no box
+PASS M2 solve z: sigma = 1E12: "σ can be at most 1E10: a larger σ ...", the session unchanged (NormExp — N(0.00, 1.00)), and drawing goes on; beta 42c: PPLError: Invalid input: STRING(x, 2, 13) -- the Prime takes at most 12 decimals (Virtual Calculator, 1 Nov 2026; prime_facts_v1)
+PASS M2 solve z: x = 1E49, sigma = 1E-9: "These values give z beyond 1E50: t...", the session unchanged (NormExp — N(0.00, 1.00)), and drawing goes on; beta 42c: no box
+PASS M2 solve x: z = 1E49, sigma = 1E10: "These values give x beyond 1E50: t...", the session unchanged (NormExp — N(0.00, 1.00)), and drawing goes on; beta 42c: no box
+PASS M2 solve mu: z = 1E49, sigma = 1E10: "These values give a μ or σ of 1E50...", the session unchanged (NormExp — N(0.00, 1.00)), and drawing goes on; beta 42c: no box
+PASS M2 solve sigma: x = 1E49, z = 1E-49: "These values give σ beyond 1E50: t...", the session unchanged (NormExp — N(0.00, 1.00)), and drawing goes on; beta 42c: PPLError: Invalid input: STRING(x, 2, 99) -- the Prime takes at most 12 decimals (Virtual Calculator, 1 Nov 2026; prime_facts_v1)
+PASS M2 solve sigma: x = 1, z = 1E12: "σ is too small next to μ for the c...", the session unchanged (NormExp — N(0.00, 1.00)), and drawing goes on; beta 42c: no box
+PASS M2 menu 3, x = 1E300: "A number you typed has more than 5...", the session unchanged (NormExp — N(0.00, 1.00)), and drawing goes on; beta 42c: no box
+PASS M2 menu 3, a = -1E300: "A number you typed has more than 5...", the session unchanged (NormExp — N(0.00, 1.00)), and drawing goes on; beta 42c: no box
+PASS M2 menu 7, mu2 = 1E300: "A number you typed has more than 5...", the session unchanged (NormExp — N(0.00, 1.00)), and drawing goes on; beta 42c: no box
+PASS M2 custom window 0 .. 1E-300: "This window is too narrow for the ...", the session unchanged (NormExp — N(0.00, 1.00)), and drawing goes on; beta 42c: PPLError: Invalid input: STRING(x, 2, 301) -- the Prime takes at most 12 decimals (Virtual Calculator, 1 Nov 2026; prime_facts_v1)
+PASS M2 custom window 1E9 .. 1E9 + 0.001: "This window is too narrow for the ...", the session unchanged (NormExp — N(0.00, 1.00)), and drawing goes on; beta 42c: no box
+PASS M2 custom window -1E300 .. 0: "A number you typed has more than 5...", the session unchanged (NormExp — N(0.00, 1.00)), and drawing goes on; beta 42c: no box
+PASS M2 D1 with 1E300: "A value in the data has more than ...", the session unchanged (NormExp — N(0.00, 1.00)), and drawing goes on; beta 42c: Every value in D1 is the same,
+PASS M2 D1 with s = 1E11: "The data's s is above 1E10: a larg...", the session unchanged (NormExp — N(0.00, 1.00)), and drawing goes on; beta 42c: no box
+PASS M2 D1 at 1E9, s = 0.01 (12 digits each): "The data's s is too small next to ...", the session unchanged (NormExp — N(0.00, 1.00)), and drawing goes on; beta 42c: no box
+PASS M2 C1 with -1E300 (two groups): "A value in C1 or C2 has more than ...", the session unchanged (NormExp — N(0.00, 1.00)), and drawing goes on; beta 42c: no box
+PASS M2 C2 with 1E300 (residuals): "A value in C1 or C2 has more than ...", the session unchanged (NormExp — N(0.00, 1.00)), and drawing goes on; beta 42c: Unsupported: FLOOR given a number is not covered
+PASS M2 D1 with 1E300 (z-scores): "A value in D1 has more than 50 dig...", the session unchanged (NormExp — N(0.00, 1.00)), and drawing goes on; beta 42c: Every value in D1 is the same,
+PASS M3 the lines: sigma 1E-9 accepted, 9.9E-10 refused; at mu = +-1E9 sigma 10 accepted, 9.99 refused; sigma 1E10 accepted at mu = 1E18, 1E10 + 1 refused; 50 digits refused, 9.99E49 not: ['', 'N', '', 'N', '', 'W', 'N', 'G', '', 'B']
+PASS M4 sigma up twenty times from 1E10 in the Explorer: sigma stays 1E10 (10000000000.0), no error; beta 42c: sigma 30000000000.0
+PASS M4 sigma down, Centre, five times at mu = 1E9, sigma = 10: sigma stays 10, the narrowest 12 digits draw there (10.0); beta 42c went to 0.0001
+PASS M4 sigma up once from 1E-8: sigma 1.1E-8 (1.1e-08), drawn with no error; beta 42c rounded it to 6 decimals: 0.0, Unverified: NORMALD(0, 0, 0): sigma = 0, not > 0 -- the device has not been seen to answer this
+PASS M4 sigma down three times from 1E-9: sigma stays 1E-9 (1e-09), no error
+PASS M4 a shading bound at 1E40 (N(0,1)): mu dragged to the far right stops at 100,000,000 sigma (100000000.0); with the shading off the auto window draws; beta 42c: mu 9.632352941176471e+39, PPLError: division by zero
+PASS M5 Diagnostics, then a tap: back to the menu, the run ends normally (NormExp: z = 0.0000, x = 0.000); beta 42c: HarnessStall: ne_DiagPage is waiting (polled by GETKEY) but the next queued event is Tap(1
+PASS M6 the ends of what is accepted, through the Explorer, both areas, the five quantiles, compare and power, a sample, the animation, the wide and custom windows, Diagnostics and the solver: no error, no box (STRING refusing 13 decimals as on the Prime): [('N(0, 1e-09)', None, []), ('N(0, 1e+10)', None, []), ('N(1e+18, 1e+10)', None, []), ('N(-1e+18, 1e+10)', None, []), ('N(1e+09, 10)', None, []), ('N(-1e+09, 10)', None, []), ('N(0.001, 1e-09)', None, [])]
+PASS M6 N(0,1) with bounds, mu2 and a custom window at +-9.9E49: drawn, no error, no box (ok)
+PASS M8 D1 = 100,000,001 ... 100,000,010 (s = 3.0277): the fitted curve and readout say s = 3.03 (['s = 3.03']); beta 42c, from the sum of squares: ['s = 2.98']
+PASS M8 two groups near 100,000,000 (s1 = 1.58, s2 = 1.92): pooled sigma 1.76 and d = 1.25 (['μ = 100000003.00', 'σ = 1.76', 'd = 1.25']); beta 42c: ['μ = 100000003.00', 'σ = 1.41', 'd = 1.56']
+PASS M8 a simulated sample from N(1E9, 10), n = 200 and 1000 (the PPL sampler): s within 1.5 of 10 ([[10.15], [9.95]]); beta 42c, from sums of the values: [['s = 0.00'], ['s = 0.00']]
+PASS M7 every new box within 4 lines at 32 characters a line: [3, 4, 3, 3, 2, 2, 2, 3, 3, 4, 4, 3, 2]
+=== G. static checks
+PASS G1 only these routines differ from beta 42c, code for code (comments aside): ['ne_BadDist', 'ne_BigMsg', 'ne_BinData', 'ne_Compare2', 'ne_DataLoad', 'ne_DiagPage', 'ne_Explorer', 'ne_Histo', 'ne_InvCalc', 'ne_NormDraw', 'ne_ProbCalc', 'ne_ResidLoad', 'ne_SampBins', 'ne_SetDist', 'ne_SetWin', 'ne_SgMin', 'ne_Snap', 'ne_TwoGroups', 'ne_YWd', 'ne_ZSolve', 'ne_ZtoD2']
+PASS G2 no "!=" in the code (a factorial and a test on the Prime); the four new helpers forward-declared with the rest (40 declarations)
+PASS G3 no new non-ASCII character in the code outside strings: —√ (beta 42c: —√)
+PASS G4 the MicroPython sampler differs from beta 42c's in its sums only (code, comments aside): added ['z = v * f', 'val = mu + sg * z', 'tot += z', 'tot2 += z * z'], gone ['val = mu + sg * v * f', 'tot += val', 'tot2 += val * val']
+=== D. layout (text_overlap_v1: the R sessions and the ends of what is accepted, run again on both versions)
+   NormExplorer_beta42e.txt: 320 distinct screens of 387
+   NormExplorer_beta42c.txt: 320 distinct screens of 387
+PASS D1 the same runs on both versions: no firm overlap, frame straddle or overrun on a beta 42d screen that beta 42c does not also have (beta 42d: 18 kinds, beta 42c: 113), no error on either
+PASS D2 x labels printed over each other: beta 42d none, beta 42c 74 kinds (e.g. [('0', '100000000'), ('0', '10000000000')])
+=== Y. beta 42e: density labels in the scientific form when they do not fit left of the axis
+PASS Y1 the Explorer at N(0, sigma), 27 sigmas from 1E-9 to 1E10: every density label at most 34 px wide (x 2 to the axis at 38); where beta 42c's and 42d's were wider (13 sigmas) they are the same values in the scientific form, e.g. [(1e-09, '6ᴇ8'), (1e-08, '6ᴇ7'), (1e-07, '6ᴇ6')]; elsewhere exactly theirs
+PASS Y2 beta 42c drew labels wider than the margin at 13 of those sigmas, sigma = 10000 among them (beta 42d, the same: "0.00006" over the axis and into the mu box on the Virtual Calculator), e.g. [(1e-09, '600000000'), (1e-08, '60000000'), (1e-07, '6000000')]
+PASS Y3 the scientific form is STRING(x, 3, 1) without its ".0" (SampDist v2.3e's, seen on the Virtual Calculator), and a label is drawn only when it fits
+
+51 PASS, 0 FAIL
+exit 0

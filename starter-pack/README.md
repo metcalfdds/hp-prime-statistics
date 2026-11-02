@@ -1,10 +1,10 @@
 # Starter pack for the Virtual Calculator
 
-*v6, 2026-11-01. Built by `tools/make_starter_pack_v4.py` from `programs/`; do not edit this page by hand.*
+*v8, 2026-11-01. Built by `tools/make_starter_pack_v4.py` from `programs/`; do not edit this page by hand.*
 
-All 30 programs in one zip, ready for the free **HP Prime Virtual Calculator** on a Windows PC: no Connectivity Kit, no copying and pasting. Download **[HP_Prime_Statistics_Starter_Pack_v6.zip](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v6.zip)** (one file).
+All 30 programs in one zip, ready for the free **HP Prime Virtual Calculator** on a Windows PC: no Connectivity Kit, no copying and pasting. Download **[HP_Prime_Statistics_Starter_Pack_v8.zip](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v8.zip)** (one file).
 
-*How this pack was tested on the Virtual Calculator: [docs/changes/StarterPack_v6_NOTES.md](../docs/changes/StarterPack_v6_NOTES.md).*
+*How this pack was tested on the Virtual Calculator: [docs/changes/StarterPack_v8_NOTES.md](../docs/changes/StarterPack_v8_NOTES.md).*
 
 ### What you need
 - A Windows PC with the HP Prime Virtual Calculator (64-bit). It is a free download from hpcalc.org, which lists Hewlett-Packard as its author. The pack was tested on the Virtual Calculator 2.4.2 (build 2026-09-09), 64-bit.
@@ -38,10 +38,10 @@ All 30 programs in one zip, ready for the free **HP Prime Virtual Calculator** o
 |---|---|---|---|---|---|
 | AgreeLab | beta 1b | 2,957 | `AgreeLab` |  | `3b5c24757688` |
 | AnovaLab | beta 1a | 3,772 | `AnovaLab` |  | `68c695871bb1` |
-| BayesTree | beta 8e | 3,223 | `BayesTree` |  | `c1f9a5f34aec` |
+| BayesTree | beta 8f | 3,364 | `BayesTree` |  | `8b7b6ea9f1f1` |
 | BiNorm3D | beta 1b | 1,214 | `BiNorm3D` |  | `742dc06b3f6b` |
 | BurrLab | beta 1i | 4,381 | `BurrLab` | MicroPython | `e8989b06a5a2` |
-| CICatcher | beta 2d | 2,066 | `CICatcher` |  | `faf0e15bd41d` |
+| CICatcher | beta 2e | 2,132 | `CICatcher` |  | `c301fd817b8f` |
 | CentralLimit | beta 3d | 2,725 | (an app) | app on Statistics 1Var | `9dc7d25fb7c5` |
 | ChiTable | beta 3e | 3,583 | `ChiTable` |  | `5f0b58ea262e` |
 | DNAMixLR | beta 3e | 3,372 | `DNAMixLR` |  | `0f79501fc017` |
@@ -50,16 +50,16 @@ All 30 programs in one zip, ready for the free **HP Prime Virtual Calculator** o
 | ErrorRate | beta 1e | 2,778 | `ErrorRate` | MicroPython | `6888230189a6` |
 | FitCheck | beta 1a | 3,232 | `FitCheck` |  | `4a809a3b9819` |
 | GaltonBoard | beta 3e | 2,399 | `GaltonBoard` | MicroPython | `b0cb709e2b89` |
-| Norm3 | v2.4b | 941 | `Norm3` |  | `58a82076a36c` |
-| NormExplorer | beta 42c | 3,774 | `NormExp` | MicroPython | `eeca78c2111e` |
+| Norm3 | v2.4d | 1,062 | `Norm3` |  | `ad35545f4fdb` |
+| NormExplorer | beta 42e | 4,144 | `NormExp` | MicroPython | `91cbdbb86af3` |
 | PowerViz | v2.5k | 3,846 | `POWERVIZ` |  | `7921ceeb4a0e` |
 | RankLab | beta 1b | 3,734 | `RankLab` |  | `fffcad282d48` |
 | ResampLab | beta 1c | 2,936 | `ResampLab` |  | `bb571c744b47` |
 | RiskLab | beta 1b | 3,102 | `RiskLab` |  | `a949b5181bfe` |
-| SampDist | v2.3d | 1,694 | `SampDist` |  | `7a3869963926` |
+| SampDist | v2.3e | 1,850 | `SampDist` |  | `f0cf52265f6e` |
 | ScatterLab | beta 2d | 2,139 | `ScatterLab` |  | `3db5304d0c11` |
 | SeizureLab | beta 1b | 2,802 | `SeizureLab` |  | `27ccda7bad26` |
-| StatDist | v2.7f | 4,712 | `StatDist` |  | `4594ba1793b8` |
+| StatDist | v2.7h | 4,972 | `StatDist` |  | `25b5780a721d` |
 | StudRange | beta 15f | 2,584 | `StudRange` | MicroPython | `a689bc28f64b` |
 | SurvLab | beta 1b | 2,672 | `SurvLab` |  | `e62650dabde0` |
 | TTestLabG | beta 1a | 1,393 | `TTESTLABG` |  | `43108258f901` |
