@@ -1,0 +1,24 @@
+=== R. beta 3f against beta 3e, screen for screen, with ordinary use
+   beta 3e: ../programs/GaltonBoard_beta3e.txt
+PASS R1 4 sessions (every drop, overlays, SD colours, R and p typed, the arrows, Pascal's counts, bars, help, reset): 280 screens, every text, box and the summary identical to beta 3e's but for the help's two lines about the big drop (on 1 help screens), no error
+=== M. the monkey test's findings and round 4's label check (2 Nov 2026; each check fails on beta 3e)
+PASS M1 both forms take real numbers only: ['{{srR,[0]}}', '{{spP,[0]}}']; beta 3e: ['{srR}', '{spP}']
+PASS M2 the bin panel covers the left readouts ("n = 0", the mean, s at x = 4): no firm overlap on its screens; beta 3e: [[('n = 0', 'Bin 6 (6 right bounces of 8)', 'gbBinInfo'), ('\ue000 = (no balls)', 'observed: no balls yet', 'gbBinInfo')], [('n = 1111', 'Bin 4 (4 right bounces of 8)', 'gbBinInfo'), ('\ue000 = 3.95', 'observed: 313 of 1111 = 0.282', 'gbBinInfo')]]
+PASS M3 Pascal's counts during an animated drop: the old count is wholly erased under the new one ("9" under "10"), no firm overlap on any screen (counts up to ['19']); beta 3e: [('9', '10', 'gbPour'), ('9', '10', 'gbPour')]
+PASS M4 a peg's clearing box (x from -25 to -3 of the peg's centre) misses the peg (-2 to +2) and its left neighbour (-26 or further), and holds every count of 1 to 4 characters (drawn from -5 - 5n)
+PASS M5 the board holds at most 5,000 balls (Roger, 2 Nov 2026): from n = 4,995 a drop of 100 or a x10 pour stops at 5,000, from 4,990 a pour stops itself there, a full board drops nothing, and each shows "5000 balls: the board is full (Menu, Reset)" with both overlays on; below the limit nothing changes; beta 3e: n = [5095.0, 5100.0, 5000.0, 5001.0, 5005.0, 'no end within 60 s', 'no end within 60 s', 10000.0, 4100.0]
+PASS M6 the lines of gbRoom: room for [5000.0, 1.0, 0.0, 0.0, 0.0] balls at n = 0, 4,999, 5,000, 5,001 and 1E300
+PASS M8 the menu's MicroPython item reads "Fill to 5,000 (MicroPython)" and drops at most 5,000
+PASS M7 the full board's line fits the footer: 43 characters, 236 px at 5.5 px a character (the footer takes 312)
+=== G. static checks
+PASS G1 only these differ from beta 3e, code for code (comments aside): the forms, the panel, the peg counts, and the limit (the new gbRoom and gbFull, the four drops, the menu item and the help's two lines): ['gbBigDrop', 'gbBinInfo', 'gbDropAnim', 'gbDropFast', 'gbFull', 'gbHelp', 'gbMenu', 'gbPegLbl', 'gbPour', 'gbRoom', 'gbSetP', 'gbSetRows']
+PASS G2 no "!=" in the code (a factorial and a test on the Prime)
+PASS G3 no character in the code that beta 3e's code does not already have: ['⇅', '⇆', '≤']
+PASS G4 the header names beta 3f: "// GALTONBOARD - beta 3f"
+=== D. layout (text_overlap_v1 and label_fit_v1 over every screen above)
+   GaltonBoard_beta3f.txt: 325 distinct screens of 652
+   GaltonBoard_beta3e.txt: 8951 distinct screens of 9303
+PASS D1 no firm overlap, frame straddle or overrun on any beta 3f screen drawn (beta 3e on the same runs: 10)
+PASS D2 no number cut short by its width argument on any beta 3f screen (label_fit_v1; beta 3e on the same runs: 0)
+
+15 PASS, 0 FAIL

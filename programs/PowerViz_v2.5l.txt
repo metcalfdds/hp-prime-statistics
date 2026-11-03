@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// POWERVIZ - v2.5k
+// POWERVIZ - v2.5l
 // ============================================================
 // FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
 //   the file and credit the author if you pass it on.  Not for
@@ -19,7 +19,7 @@
 //   firmware.  Earlier versions ran on both calculators; whether
 //   v2.1 ran with the "LOCAL pv_Name()" routine heads is for
 //   Roger to confirm (LocalHeadProbe beta 1 passed on the emulator).
-//   v2.2 to v2.5k have NOT yet had a full run on a G1 or G2;
+//   v2.2 to v2.5l have NOT yet had a full run on a G1 or G2;
 //   Roger's first try on the calculator (31 Oct 2026, v2.5h) found
 //   the two faults v2.5i fixes.  On the HP
 //   Prime Virtual Calculator 2.4.2 (build 2026-09-09, the
@@ -27,10 +27,51 @@
 //   and v2.5a's "Where n comes from" page showed "exact (CAS)" and
 //   n = ((σ×zα+σ×zβ)/(μ₁−μ₀))^2 (round 2; the CAS never failed
 //   there, so the decimal fallback was not reached).  v2.5b, v2.5c and
-//   v2.5d have not run there yet (v2.5d to v2.5k have run only
+//   v2.5d have not run there yet (v2.5d to v2.5l have run only
 //   in the PC harness).  v2.5 is the first version that calls the CAS;
 //   its call form (v2.5a) is the one CASProbe beta 1b found on the
 //   emulator, see pv_Cas below.
+//
+// v2.5l (2 Nov 2026): the monkey test's fixes.  tools/monkey_v1b.py
+//   ran v2.5k 1,000 times with random keys, taps, menu picks, form
+//   entries and Statistics lists: 736 runs ended normally and 264
+//   broke.  241 were a list typed into a number field (a plain INPUT
+//   name takes any type, and the list went on into IP, MAX and the
+//   arithmetic); 20 a mean or sigma of 1E300 (squares past the
+//   calculator's range, and one division by zero on the Levene page);
+//   3 a sigma of 1E-300 (readouts asking STRING for 302 decimals, which
+//   the Prime refuses with "Invalid input": at most 12).
+//   * Every form field takes a real number only, {name,[0]}: the Edit
+//     form of each of the five tests, the n forms and the effect form.
+//     On the Virtual Calculator such a field refuses a typed list with
+//     "Invalid input" and keeps its value (TTestLab beta 1c, 1 Nov
+//     2026).
+//   * A mean or sigma PowerViz cannot draw is refused with a sentence,
+//     and nothing changes (pv_BadMsg): above 1,000,000 (bigger units
+//     do the job; 1E300 squared past the Prime's 1E499, an infinity with
+//     no error, and 13-digit numbers ran out of the readouts), a sigma
+//     below 0.000001 or below |mu| x 0.000001 (the plot is the means
+//     +/- 6 SE in data units, and with n up to 5000 the SE can be
+//     sigma/71: in 12 digits a tick step below the 12th digit of the
+//     means stops the tick loop for ever, as SampDist v2.3d did on the
+//     Virtual Calculator, 1 Nov 2026, and the readouts' decimals,
+//     worked out from sigma/20, must stay at 12 or fewer), in test 5
+//     a sigma2 outside 0.01 to 100 times sigma1, and means that differ
+//     by less than a billionth of sigma (the n for 80% power passed the
+//     Prime's largest number: 1E612 at mu0 = 1E-300, mu1 = 0, sigma =
+//     999999).  Equal means are still allowed; the arrows and the
+//     drag take such means as equal (pv_Snap0).  Checked on the Edit
+//     form (once as typed, once after its own clamps, so a sigma of 0
+//     reset to 1 is checked too) and on the effect form.
+//   * At the largest and smallest numbers accepted every text keeps to
+//     its place: an x label that would overlap the one before it, or run
+//     off the screen, is left out (pv_TxW measures a label); a readout
+//     cell, the d label and a formula-page number of 8 digits or more
+//     are written in the scientific form when they would not fit
+//     (pv_Fit, pv_NumD); the formula page's round-up line drops
+//     "(whole people)" when it would run off the screen.
+//   No number, layout or other logic changed for the values the forms
+//   accept.  Harness only so far.
 //
 // v2.5k (31 Oct 2026): what the Levene power page is, and is not.
 //   Roger compared PowerViz with his SPSS output (Levene F = 6.847,
@@ -993,6 +1034,11 @@ END;
 LOCAL pv_NumD(ndv)
 BEGIN
  LOCAL ndd, ndk;
+ // v2.5l: 8 digits or more in the scientific form, 4 decimals: at the
+ // extremes the forms accept the formula page wrote all 50 digits of a
+ // sigma of 9.9E49 and ran far off the screen.  Display only (the CAS
+ // text is built by pv_IStr and pv_RatS).
+ IF ABS(ndv) >= 10000000 THEN RETURN STRING(ndv,3,4); END;
  ndk := 4;
  FOR ndd FROM 0 TO 3 DO
   IF ndk == 4 AND ABS(ndv*10^ndd - ROUND(ndv*10^ndd,0)) < 0.000001 THEN ndk := ndd; END;
@@ -1435,11 +1481,45 @@ END;
 // Cohen's h = 2asin(sqrt p1) - 2asin(sqrt p0).  Benchmarks for both:
 // 0.2 small, 0.5 medium, 0.8 large.  v2.4: the word is printed too,
 // "d = 0.33, small", from the value as shown (2 decimals).
+// v2.5l: the width of a line of font-1 text in pixels: about 5.5 px a
+// character and 3 px for a decimal point (Lessons Learned v7zi s6: "0.03"
+// is 20 px on the Virtual Calculator).
+LOCAL pv_TxW(twS)
+BEGIN
+ LOCAL twI, twW;
+ twW:=0;
+ FOR twI FROM 1 TO DIM(twS) DO
+  twW:=twW+IFTE(MID(twS,twI,1)==".",3,5.5);
+ END;
+ RETURN twW;
+END;
+
+// v2.5l: a readout's text, or the same number in the scientific form
+// with as many decimals as fit, when the text is wider than its place
+// (ftW px): at the extremes the forms accept, "-1000000.00" ran into the
+// next column's "-999999.00".  At everyday values the text is returned
+// unchanged.
+LOCAL pv_Fit(ftS, ftV, ftW)
+BEGIN
+ LOCAL ftK;
+ IF pv_TxW(ftS)<=ftW THEN RETURN ftS; END;
+ ftK:=6;
+ REPEAT
+  ftK:=ftK-1;
+  ftS:=STRING(ftV,3,ftK);
+ UNTIL ftK==0 OR pv_TxW(ftS)<=ftW;
+ RETURN ftS;
+END;
+
 LOCAL pv_DLbl()
 BEGIN
- LOCAL dlv;
+ LOCAL dlv, dlh, dlw;
  dlv := ROUND(pv_EffSz(),2);
- RETURN IFTE(pv_MeanT()==1,"d","h")+" = "+pv_FMT(dlv,2)+", "+pv_EffWord(dlv);
+ // v2.5l: the label starts at x 144 and POWER at x 248: the number is
+ // written in the scientific form when the whole label would reach it
+ dlh := IFTE(pv_MeanT()==1,"d","h")+" = ";
+ dlw := ", "+pv_EffWord(dlv);
+ RETURN dlh+pv_Fit(pv_FMT(dlv,2),dlv,100-pv_TxW(dlh+dlw))+dlw;
 END;
 
 // both together, for the curve views' subtitle
@@ -1456,23 +1536,33 @@ END;
 // else the symbols, else the value alone).  Tests 1-4 ignore slx.
 LOCAL pv_SELine(slx)
 BEGIN
- LOCAL sdd, sqg2, pbl, nst, sel;
+ LOCAL sdd, sqg2, pbl, nst, sel, ses;
  sdd := MAX(2, 2-FLOOR(LOG(SE0)));
  sqg2 := SQG;
  nst := STRING(NN,1,0);
+ // v2.5l: tests 1-4 give way to the n80 text too: the symbols with the
+ // value, else the value alone (sigma = 1,000,000 ran "SE0 = sigma/sqrt
+ // n = 1000000/sqrt 30 = ..." into "n80 = 2474").  Measured at 5.5 px
+ // for every character, decimal points included, as the overlap check
+ // does: by pv_TxW (3 px a point) test 4's "SE0 = sqrt(2x0.975x0.025/
+ // 4990) = 0.00313" fitted with 8 px to spare, and the check saw it
+ // reach "n80 = 3826" (round 4's label check under random use).
+ sel := ""; ses := "";
  CASE
   IF TT==1 THEN
-   RETURN "SE₀ = σ/"+sqg2+"n = "+pv_NumS(SG)+"/"+sqg2+nst+" = "+pv_FMT(SE0,sdd);
+   sel := "SE₀ = σ/"+sqg2+"n = "+pv_NumS(SG)+"/"+sqg2+nst+" = "+pv_FMT(SE0,sdd);
+   ses := "SE₀ = σ/"+sqg2+"n = "+pv_FMT(SE0,sdd);
   END;
   IF TT==2 THEN
-   RETURN "SE₀ = σ"+sqg2+"(2/n) = "+pv_NumS(SG)+sqg2+"(2/"+nst+") = "+pv_FMT(SE0,sdd);
+   sel := "SE₀ = σ"+sqg2+"(2/n) = "+pv_NumS(SG)+sqg2+"(2/"+nst+") = "+pv_FMT(SE0,sdd);
+   ses := "SE₀ = σ"+sqg2+"(2/n) = "+pv_FMT(SE0,sdd);
   END;
   IF TT==3 THEN
-   RETURN "SE₀ = "+sqg2+"("+pv_NumS(PP0)+CHAR(215)+pv_NumS(1-PP0)+"/"+nst+") = "+pv_FMT(SE0,sdd);
+   sel := "SE₀ = "+sqg2+"("+pv_NumS(PP0)+CHAR(215)+pv_NumS(1-PP0)+"/"+nst+") = "+pv_FMT(SE0,sdd);
   END;
   IF TT==4 THEN
    pbl := (PP0+PP1)/2;           // the pooled proportion under H0
-   RETURN "SE₀ = "+sqg2+"(2"+CHAR(215)+pv_NumS(pbl)+CHAR(215)+pv_NumS(1-pbl)+"/"+nst+") = "+pv_FMT(SE0,sdd);
+   sel := "SE₀ = "+sqg2+"(2"+CHAR(215)+pv_NumS(pbl)+CHAR(215)+pv_NumS(1-pbl)+"/"+nst+") = "+pv_FMT(SE0,sdd);
   END;
   IF TT==5 THEN
    // v2.5g: "SE₀ = √(10²/40+20²/20) = 4.74"; 6.5 px a character
@@ -1483,7 +1573,9 @@ BEGIN
    RETURN sel;
   END;
  END;
- RETURN "";
+ IF DIM(ses) > 0 AND 8+5.5*DIM(sel) > slx-2 THEN sel := ses; END;
+ IF DIM(sel) > 0 AND 8+5.5*DIM(sel) > slx-2 THEN sel := "SE₀ = "+pv_FMT(SE0,sdd); END;
+ RETURN sel;
 END;
 
 // The n80 readout: "n₈₀ = 56", "n₈₀ > 5000" or "n₈₀: no effect".
@@ -1696,11 +1788,11 @@ BEGIN
   ELSE
    p5d := pv_MuDec();
    TEXTOUT_P("μ",G1,6,178,1,cgry);
-   TEXTOUT_P(pv_FMT(MM0,p5d),G1,20,178,1,cblk);
-   TEXTOUT_P(pv_FMT(MM1,p5d),G1,80,178,1,cblk);
+   TEXTOUT_P(pv_Fit(pv_FMT(MM0,p5d),MM0,56),G1,20,178,1,cblk);
+   TEXTOUT_P(pv_Fit(pv_FMT(MM1,p5d),MM1,58),G1,80,178,1,cblk);
    TEXTOUT_P("σ",G1,6,191,1,cgry);
-   TEXTOUT_P(pv_NumS(SG),G1,20,191,1,cblk);
-   TEXTOUT_P(pv_NumS(IFTE(TT==5,SG2,SG)),G1,80,191,1,cblk);
+   TEXTOUT_P(pv_Fit(pv_NumS(SG),SG,56),G1,20,191,1,cblk);
+   TEXTOUT_P(pv_Fit(pv_NumS(IFTE(TT==5,SG2,SG)),IFTE(TT==5,SG2,SG),58),G1,80,191,1,cblk);
    p5a:=5;
   END;
   HX1:={4,4,4,142,142,142,0};
@@ -1722,11 +1814,11 @@ BEGIN
   ELSE
    p5d := pv_MuDec();
    TEXTOUT_P("μ₀",G1,6,165,1,cgry);
-   TEXTOUT_P(pv_FMT(MM0,p5d),G1,30,165,1,cblk);
+   TEXTOUT_P(pv_Fit(pv_FMT(MM0,p5d),MM0,108),G1,30,165,1,cblk);
    TEXTOUT_P("μ₁",G1,6,178,1,cgry);
-   TEXTOUT_P(pv_FMT(MM1,p5d),G1,30,178,1,cblk);
+   TEXTOUT_P(pv_Fit(pv_FMT(MM1,p5d),MM1,108),G1,30,178,1,cblk);
    TEXTOUT_P("σ",G1,6,191,1,cgry);
-   TEXTOUT_P(pv_NumS(SG),G1,30,191,1,cblk);
+   TEXTOUT_P(pv_Fit(pv_NumS(SG),SG,108),G1,30,191,1,cblk);
    p5a:=5;
   END;
   HX1:={4,4,4,142,142,142,0,4};
@@ -1773,6 +1865,7 @@ BEGIN
  LOCAL bA, bX, bY, bW, pA, pX;
  LOCAL pY, pWd, lx, ly, ytp, ybt;   // v2.5: pW -> pWd (PW is the power; see CHANGES)
  LOCAL ar0, ar1, ary, arl, ars;     // v2.5h: the d arrow
+ LOCAL tlS, tlX, tlR, hx0, hx1;     // v2.5l: a tick label, its x, the last one's right end; H0/H1's x
 
  span:=XMX-XMN;
 
@@ -1910,10 +2003,21 @@ BEGIN
  END;
 
  // ----- H0 / H1 labels at the curve peaks (from PowerCalc) -----
+ // v2.5l: side by side, 16 px apart, when the peaks nearly coincide (a
+ // small effect drew one label on the other); H1 on its own side of H0
  cpx:=PXL+IP((M0v-XMN)/span*(PXR-PXL));
- TEXTOUT_P("H₀",G1,MAX(PXL,cpx-8),PYT-8,1,cnul);
+ hx0:=MAX(PXL,cpx-8);
  cpx:=PXL+IP((M1v-XMN)/span*(PXR-PXL));
- TEXTOUT_P("H₁",G1,MIN(PXR-12,cpx-4),PYT-8,1,calt);
+ hx1:=MIN(PXR-12,cpx-4);
+ IF ABS(hx1-hx0)<16 THEN
+  IF (M1v>=M0v AND hx0+16<=PXR-12) OR hx0-16<PXL THEN
+   hx1:=hx0+16;
+  ELSE
+   hx1:=hx0-16;
+  END;
+ END;
+ TEXTOUT_P("H₀",G1,hx0,PYT-8,1,cnul);
+ TEXTOUT_P("H₁",G1,hx1,PYT-8,1,calt);
 
  // ----- dotted color-keyed verticals at the H0 / H1 centers -----
  cpx:=PXL+IP((M0v-XMN)/span*(PXR-PXL));
@@ -1961,11 +2065,21 @@ BEGIN
  LINE_P(G1,PXL,PYB,PXR,PYB,cgry);
 
  // ----- labeled tick marks (gray, fixed decimals) -----
+ // v2.5l: a label that would overlap the one before it (4 px apart at
+ // least) or run past the screen's right edge is left out; every tick
+ // mark is still drawn.  Widths from pv_TxW (font 1).  At everyday
+ // values every label is drawn, as before.
  tk:=CEILING(XMN/stp)*stp;
+ tlR:=-1000;
  WHILE tk<=XMX DO
   cpx:=PXL+IP((tk-XMN)/span*(PXR-PXL));
   LINE_P(G1,cpx,PYB,cpx,PYB+3,cgry);
-  TEXTOUT_P(pv_FMT(tk,dec),G1,cpx-9,PYB+5,1,cgry);
+  tlS:=pv_FMT(tk,dec);
+  tlX:=cpx-9;
+  IF tlX>=tlR+4 AND tlX+pv_TxW(tlS)<=319 THEN
+   TEXTOUT_P(tlS,G1,tlX,PYB+5,1,cgry);
+   tlR:=tlX+pv_TxW(tlS);
+  END;
   tk:=tk+stp;
  END;
 
@@ -2063,7 +2177,7 @@ LOCAL pv_PCDraw(kind, selc)
 BEGIN
  LOCAL w2, h2, i2, tickx, ticky, x0p;
  LOCAL nv, pyv, lastpy, cc, ev, lbs;
- LOCAL cmk;
+ LOCAL cmk, cmx;
  w2:=PCR-PCL; h2:=PCB-PCT;
 
  DIMGROB_P(G1,320,240,cwht);
@@ -2121,7 +2235,18 @@ BEGIN
  FOR i2 FROM PCL+1 TO PCR STEP 4 DO
   PIXON_P(G1,i2,ticky,cgrn);
  END;
- TEXTOUT_P("0.80",G1,PCR-26,ticky-12,1,cgrn);
+ // v2.5l: at the line's left end when the formula's n label (drawn below,
+ // at the top right) would run into it: with n80 near 5000 (a small
+ // effect) "formula: 4946.0 -> 4947" lay over "0.80"
+ cmx:=PCR-26;
+ IF kind==1 AND PN80>0 AND NCF>0 AND NCF<100000 THEN
+  x0p:=PCL+IP((PN80-2)/(PNMX-2)*w2);
+  lbs:="formula: "+pv_NCFS()+" "+CHAR(8594)+" "+pv_IStr(MAX(2,CEILING(NCF)));
+  tickx:=x0p+4;
+  IF x0p>PCR-100 THEN tickx:=x0p-6*DIM(lbs)-3; END;
+  IF MAX(PCL+2,tickx)+pv_TxW(lbs)>=PCR-30 THEN cmx:=PCL+3; END;
+ END;
+ TEXTOUT_P("0.80",G1,cmx,ticky-12,1,cgrn);
 
  IF kind==1 THEN
   // n80: a green dotted vertical where power first reaches 0.80
@@ -2347,48 +2472,124 @@ BEGIN
 END;
 
 // ---------------- edit forms (with help strings, from PowerCalc) ----------------
+// v2.5l: numbers PowerViz cannot draw (the monkey test, 2 Nov 2026), as
+// a sentence, or "" when they can be drawn.
+// * A mean or sigma above 1,000,000: v2.5k took anything, and a sigma of
+//   1E300 squared past the Prime's 1E499 (an infinity with no error; the
+//   Levene page then divided by zero), while numbers of 13 digits and
+//   more ran out of the readout box, the d label and the formula page.
+//   A power analysis needs no bigger numbers: a student can use bigger
+//   units.
+// * A sigma too small next to the means: the plot's window is the means
+//   +/- 6 SE in data units, and with n up to 5000 the SE can be
+//   sigma/71; in 12 digits the tick loop (tk := tk + stp) stops moving
+//   once the step is below the 12th digit of the means (SampDist v2.3d
+//   did so on the Virtual Calculator), and the readouts' decimals,
+//   worked out from sigma/20, must stay at 12 or fewer (v2.5k asked
+//   STRING for 302 decimals at a sigma of 1E-300).  So sigma >= 0.000001
+//   and sigma >= |mu| x 0.000001.
+// * Test 5: sigma2 from 0.01 to 100 times sigma1 (beyond, the two
+//   curves' labels fell on each other and the best-split line ran off the
+//   formula page).
+// * Means that differ, but by less than a billionth of the larger
+//   sigma: the n for 80% power is ((za u + zb w)/|mu1 - mu0|)^2, and
+//   at mu0 = 1E-300, mu1 = 0, sigma = 999999 that is about 1E612, past
+//   the largest number the Prime holds (the monkey test, 2 Nov 2026).
+//   Above the line, n stays below about 1E25.  Equal means are allowed:
+//   no effect, and the panel says no n is enough.
+// A sigma of 0 or less is left to the form's own clamp, which says so
+// and resets it.
+LOCAL pv_BadMsg(bm0, bm1, bs1, bs2)
+BEGIN
+ LOCAL bmM, bmR, bmD;
+ bmM:=MAX(ABS(bm0),ABS(bm1));
+ IF bmM>1000000 OR bs1>1000000 OR bs2>1000000 THEN
+  RETURN "Means and σ can be at most 1,000,000: use bigger units (thousands, millions).";
+ END;
+ IF bs1<=0 OR bs2<=0 THEN RETURN ""; END;
+ IF MIN(bs1,bs2)<MAX(0.000001,bmM*0.000001) THEN
+  RETURN "σ is too small next to the means for the calculator's 12 digits. Use a larger σ or means nearer 0.";
+ END;
+ bmR:=bs2/bs1;
+ IF bmR<0.01 OR bmR>100 THEN
+  RETURN "σ₂ must be from 0.01 to 100 times σ₁.";
+ END;
+ bmD:=ABS(bm1-bm0);
+ IF bmD>0 AND bmD<MAX(bs1,bs2)*0.000000001 THEN
+  RETURN "The means differ by under a billionth of σ: no n could tell them apart.";
+ END;
+ RETURN "";
+END;
+
+// v2.5l: means that differ by less than a billionth of the larger
+// sigma are taken as equal (no effect).  The arrows and the drag snap
+// mu1 to the grid of the effect step; with mu0 off that grid (1E-300)
+// mu1 = 0 left a difference of 1E-300, and the n for 80% power,
+// ((za u + zb w)/delta)^2, was about 1E612, past the Prime's largest
+// number (the monkey test, 2 Nov 2026).  Typed, such means are refused
+// with a sentence (pv_BadMsg).
+LOCAL pv_Snap0()
+BEGIN
+ IF pv_MeanT()==1 THEN
+  IF MM1<>MM0 AND ABS(MM1-MM0)<MAX(SG,IFTE(TT==5,SG2,SG))*0.000000001 THEN MM1:=MM0; END;
+ END;
+END;
+
 LOCAL pv_EditForm()
 BEGIN
- LOCAL efok, efv;
+ LOCAL efok, efv, efs, efm;
  LOCAL e5a, e5b;                  // v2.5g: test 5's n1 and n2 as typed
  efok := 1;
  // v2.5g, test 5: the form shows n2 as it is now (n1 at the kept
  // ratio); pv_Set5 takes the pair after OK
  e5a := NN; e5b := pv_N2(NN);
+ // v2.5l: what the form's variables held, put back if its numbers are
+ // refused (pv_BadMsg)
+ efs := {MM0,MM1,SG,SG2,NN,AL,PP0,PP1,NN2,KN1};
  CASE
   IF TT==1 THEN
-   efok:=INPUT({MM0,MM1,SG,NN,AL},"One-Sample Mean",
+   efok:=INPUT({{MM0,[0]},{MM1,[0]},{SG,[0]},{NN,[0]},{AL,[0]}},"One-Sample Mean",
     {"μ₀:","μ₁:","σ:","n:","α:"},
     {"Null mean","Alternative mean","Population SD (>0)",
      "Sample size (≥2)","Significance level"});
   END;
   IF TT==2 THEN
-   efok:=INPUT({MM0,MM1,SG,NN,AL},"Two-Sample Means",
+   efok:=INPUT({{MM0,[0]},{MM1,[0]},{SG,[0]},{NN,[0]},{AL,[0]}},"Two-Sample Means",
     {"μ grp1:","μ grp2:","σ:","n/group:","α:"},
     {"Group 1 mean","Group 2 mean","Common SD (>0)",
      "Per-group sample size (≥2)","Significance level"});
   END;
   IF TT==3 THEN
-   efok:=INPUT({PP0,PP1,NN,AL},"One Proportion",
+   efok:=INPUT({{PP0,[0]},{PP1,[0]},{NN,[0]},{AL,[0]}},"One Proportion",
     {"p₀ (null):","p₁ (alt):","n:","α:"},
     {"Null proportion","Alternative proportion",
      "Sample size (≥2)","Significance level"});
   END;
   IF TT==4 THEN
-   efok:=INPUT({PP0,PP1,NN,AL},"Two Proportions",
+   efok:=INPUT({{PP0,[0]},{PP1,[0]},{NN,[0]},{AL,[0]}},"Two Proportions",
     {"p grp1:","p grp2:","n/group:","α:"},
     {"Group 1 proportion","Group 2 proportion",
      "Per-group sample size (≥2)","Significance level"});
   END;
   IF TT==5 THEN
    // v2.5g: seven fields; n1 and n2 go into LOCALs (pv_Set5 below)
-   efok:=INPUT({MM0,MM1,SG,SG2,e5a,e5b,AL},"Two Means, unequal σ & n",
+   efok:=INPUT({{MM0,[0]},{MM1,[0]},{SG,[0]},{SG2,[0]},{e5a,[0]},{e5b,[0]},{AL,[0]}},"Two Means, unequal σ & n",
     {"μ grp1:","μ grp2:","σ grp1:","σ grp2:","n grp1:","n grp2:","α:"},
     {"Group 1 mean","Group 2 mean","Group 1 SD (>0)","Group 2 SD (>0)",
      "Group 1 sample size (≥2)","Group 2 sample size (≥2)","Significance level"});
   END;
  END;
  IF efok==0 THEN RETURN 0; END;   // Cancel: values untouched
+ // v2.5l: a number the plot cannot draw, as typed (pv_BadMsg)
+ IF pv_MeanT()==1 THEN
+  efm := pv_BadMsg(MM0,MM1,SG,IFTE(TT==5,SG2,SG));
+  IF DIM(efm)>0 THEN
+   MSGBOX(efm+" Nothing changed.");
+   MM0:=efs(1); MM1:=efs(2); SG:=efs(3); SG2:=efs(4); NN:=efs(5);
+   AL:=efs(6); PP0:=efs(7); PP1:=efs(8); NN2:=efs(9); KN1:=efs(10);
+   RETURN 0;
+  END;
+ END;
  // sanity clamps.  v2.3: every clamp that CHANGES a typed value now
  // says so first, in a one-line box, so a student learns why the
  // plot does not show what was entered.  A value already in range
@@ -2428,6 +2629,16 @@ BEGIN
    SG2:=1;
   END;
  END;
+ // v2.5l: and again after the clamps (a sigma of 0 is now 1)
+ IF pv_MeanT()==1 THEN
+  efm := pv_BadMsg(MM0,MM1,SG,IFTE(TT==5,SG2,SG));
+  IF DIM(efm)>0 THEN
+   MSGBOX(efm+" Nothing changed.");
+   MM0:=efs(1); MM1:=efs(2); SG:=efs(3); SG2:=efs(4); NN:=efs(5);
+   AL:=efs(6); PP0:=efs(7); PP1:=efs(8); NN2:=efs(9); KN1:=efs(10);
+   RETURN 0;
+  END;
+ END;
  pv_SyncA();                        // re-seat the alpha ladder
  RETURN 1;
 END;
@@ -2442,7 +2653,7 @@ BEGIN
   // v2.5g: test 5 has two sample sizes, both in one form; the typed
   // pair sets the ratio n2/n1 that the arrows then keep (pv_Set5)
   env:=NN; en2:=pv_N2(NN);
-  enok:=INPUT({env,en2},"Sample sizes",{"n grp1:","n grp2:"},
+  enok:=INPUT({{env,[0]},{en2,[0]}},"Sample sizes",{"n grp1:","n grp2:"},
    {"Group 1: a whole number from 2 to 5000","Group 2: 0.1 to 10 times group 1"});
   IF enok==0 THEN RETURN 0; END;
   pv_Set5(env, en2);
@@ -2450,7 +2661,7 @@ BEGIN
  END;
  env:=NN;
  enl:=IFTE(TT==1 OR TT==3,"n:","n/group:");
- enok:=INPUT({env},"Sample size",{enl},{"A whole number from 2 to 5000"});
+ enok:=INPUT({{env,[0]}},"Sample size",{enl},{"A whole number from 2 to 5000"});
  IF enok==0 THEN RETURN 0; END;
  enc:=MIN(5000,MAX(2,IP(env)));
  IF enc<>env THEN
@@ -2463,7 +2674,7 @@ END;
 // A tap on the effect cell (v2.4): a one-field form for mu1 or p1.
 LOCAL pv_EditEff()
 BEGIN
- LOCAL eev, eeok, eel, eeh, eec;
+ LOCAL eev, eeok, eel, eeh, eec, eem;
  IF pv_MeanT()==1 THEN
   eev:=MM1;
   eel:=IFTE(TT==1,"μ₁:","μ grp2:");
@@ -2473,9 +2684,15 @@ BEGIN
   eel:=IFTE(TT==3,"p₁ (alt):","p grp2:");
   eeh:="A proportion, 0.02 to 0.98";
  END;
- eeok:=INPUT({eev},pv_TName(),{eel},{eeh});
+ eeok:=INPUT({{eev,[0]}},pv_TName(),{eel},{eeh});
  IF eeok==0 THEN RETURN 0; END;
  IF pv_MeanT()==1 THEN
+  // v2.5l: a mean the plot cannot draw next to sigma (pv_BadMsg)
+  eem := pv_BadMsg(MM0,eev,SG,IFTE(TT==5,SG2,SG));
+  IF DIM(eem)>0 THEN
+   MSGBOX(eem+" The mean did not change.");
+   RETURN 0;
+  END;
   MM1:=eev;
  ELSE
   eec:=MIN(0.98,MAX(0.02,eev));
@@ -2537,7 +2754,8 @@ LOCAL pv_Formula()
 BEGIN
  LOCAL fza, fzb, fln, fcl, ft0;
  LOCAL fdl, fs1, fs2, fs3, fnc, fok;
- LOCAL fdn, fii, fnl, fk5;
+ LOCAL fdn, fii, fnl, fk5, fwl, fwc;
+ LOCAL fwt, fwj;
 
  fza := -NORMALD_ICDF(0,1,AL/TL);        // the plot's own critical z (v2.5g: mirrored)
  fzb := NORMALD_ICDF(0,1,0.8);           // power 0.80
@@ -2719,7 +2937,14 @@ BEGIN
      // v2.5g: n1 rounded up, and the n2 that goes with it
      fln := CONCAT(fln, {"Round UP: n₁ = "+pv_IStr(fnc)+", n₂ = "+pv_IStr(pv_N2(fnc))+fs2});
     ELSE
-     fln := CONCAT(fln, {"Round UP (whole people): n = "+pv_IStr(fnc)+fs2});
+     // v2.5l: "(whole people)" dropped when the line would run past the
+     // screen's edge (x 8 + its width > 316): a 5-digit n beside
+     // "n80 > 5000" cut the last 0 of 5000
+     IF 8+pv_TxW("Round UP (whole people): n = "+pv_IStr(fnc)+fs2)>316 THEN
+      fln := CONCAT(fln, {"Round UP: n = "+pv_IStr(fnc)+fs2});
+     ELSE
+      fln := CONCAT(fln, {"Round UP (whole people): n = "+pv_IStr(fnc)+fs2});
+     END;
     END;
    END;
   END;
@@ -2766,6 +2991,18 @@ BEGIN
  fs3 := "decimal";
  IF pvCasOK==1 THEN fs3 := "exact (CAS)"; END;
  TEXTOUT_P(fs3,G1,236,9,1,cfot);
+ // v2.5l: a line that would run past the screen's right edge is wrapped
+ // (pv_Wrap, 54 characters), its colour going with it: at the largest
+ // numbers the forms accept, "(no CAS) sigma1 = 1000000, sigma2 = ..."
+ // ran off the page.  Everyday lines fit and are drawn as before.
+ fwl := {}; fwc := {};
+ FOR fii FROM 1 TO SIZE(fln) DO
+  fwt := {fln(fii)};
+  IF 8+pv_TxW(fln(fii)) > 316 THEN fwt := pv_Wrap(fln(fii), 54); END;
+  fwl := CONCAT(fwl, fwt);
+  FOR fwj FROM 1 TO SIZE(fwt) DO fwc := CONCAT(fwc, {fcl(fii)}); END;
+ END;
+ fln := fwl; fcl := fwc;
  // up to 15 lines of the small font, 13 px apart: y 30 ... 212
  FOR fii FROM 1 TO MIN(15, SIZE(fln)) DO
   TEXTOUT_P(fln(fii),G1,8,17+13*fii,1,fcl(fii));
@@ -3561,6 +3798,7 @@ BEGIN
   END;
   PP1:=MIN(0.98,MAX(0.02,PP1));
  END;
+ pv_Snap0();                       // v2.5l: a difference of 1E-300 is none
 END;
 
 LOCAL pv_StepN(dd)
@@ -3714,7 +3952,7 @@ BEGIN
     IF pv_MeanT()==1 THEN
      IF TT==2 OR TT==5 THEN vx:=vx+MM0; END;   // the axis is the difference
      vx:=ROUND(ROUND(vx/es,0)*es,6);
-     IF vx<>MM1 THEN MM1:=vx; nw:=1; END;
+     IF vx<>MM1 THEN MM1:=vx; pv_Snap0(); nw:=1; END;   // v2.5l: pv_Snap0
     ELSE
      IF TT==4 THEN vx:=vx+PP0; END;
      vx:=MIN(0.98,MAX(0.02,ROUND(ROUND(vx/es,0)*es,6)));

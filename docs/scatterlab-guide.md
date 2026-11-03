@@ -14,11 +14,13 @@ Run `ScatterLab()` from the Program Catalog. Install as `.txt` through the Conne
 |---|---|
 | Top line | what the data are: "Your points", "SYNTHETIC: …" (orange) for the built-in example, or "From Statistics 2Var: x = C1, y = C2" |
 | Plot (left) | blue squares = your points; **magenta** = the least-squares line; **green cross** = the mean point (x̄, ȳ); **orange** segments = residuals (when Resid is on); **red** line and handles = your own line (Guess). The selected point has a red frame, the far-out point an orange one |
-| Panel (right) | n, r, r², the equation y-hat = b₀ + b₁x with its numbers, SSE, x̄ and y-bar, the mode, residuals on/off. **Tap the equation** for "least squares as calculus" |
+| Panel (right) | n, r, r², the equation ŷ = b₀ + b₁x with its numbers, SSE, x̄ and ȳ (letters since beta 2f; earlier versions spelled out "y-hat" and "y-bar"), the mode, residuals on/off. **Tap the equation** for "least squares as calculus" |
 | Two note lines | what just happened, or the selected point's coordinates, residual and leverage h, or what to do next; the second line is the key legend |
 | Bottom strip | soft keys **Add · Del · Resid · Guess · Data · Menu** |
 
 The window starts at 0–10 by 0–10. Loading data fits it to the data; **Fit** (in the menu, or the 0 key) fits it again. While you drag, the window never moves — otherwise a moving point would look like a moving axis.
+
+**Very large, very small or far-off numbers (beta 2f).** An axis label never shows a number cut short. When the numbers on an axis are too long for its labels, the axis is labelled another way, and a note at the axis says how: **"×1ᴇ5"** means the labels are in units of 100,000 (a label of 3 is 300,000), and **"y = 1000000 + label"** means each label is how far the tick is above 1,000,000 (a label of 4 is 1,000,004). The x note sits at the bottom right inside the plot, the y note at the top left. A point the plot cannot hold is refused with a sentence and not added: a number of 50 digits or more, or x or y values closer together than the calculator's 12 digits can tell apart; loading C1 and C2 is refused the same way. The side panel never cuts a number either: a line too long for it, such as an SSE of 18,053,333,333, is written in the scientific form, "SSE = 1.8053ᴇ10" (1.8053 × 10¹⁰).
 
 With fewer than 3 points, or with every point on the same x, there is no line: the panel says **"need at least 3 points with different x"** instead of r and the line. If every y is the same, the line is flat and the panel says **"r undefined: every y equal"** (r would be 0/0).
 
@@ -106,7 +108,7 @@ While a far-out point is on the plot, the second note line describes whichever p
 
 **Statistics 2Var.** C1 and C2 exist only after the Statistics 2Var app has been opened once on the calculator; until then, Load says so instead of failing. After Save, quit ScatterLab and **open Statistics 2Var yourself** (Apps key): the Num view shows the data, the Symb view picks the fit (Linear), Plot draws it, Stats gives r. ScatterLab does not launch the app for you. Comparing the app's numbers with ScatterLab's is a good check, and a good habit.
 
-The example, for reference: n = 16, x̄ = 16.30, ȳ = 33.26, **y-hat = 16.64 + 1.020x** (exactly a = 3186173/191520, b = 2441/2394), r = 0.751, r² = 0.564, SSE = 422.7, SST = 970.3 (p = 0.0008 for the slope, if a class asks — the program itself does not test it).
+The example, for reference: n = 16, x̄ = 16.30, ȳ = 33.26, **ŷ = 16.64 + 1.020x** (exactly a = 3186173/191520, b = 2441/2394), r = 0.751, r² = 0.564, SSE = 422.7, SST = 970.3 (p = 0.0008 for the slope, if a class asks — the program itself does not test it).
 
 ## The arithmetic
 
@@ -122,7 +124,7 @@ Centring before squaring keeps every digit when the numbers are large (crime cou
 
 1. **What r measures** — direction and strength of a straight-line pattern; no units; one far-out point can change it.
 2. **r²: the share explained** — SST, SSE, r² = 1 − SSE/SST, and how Guess shows it.
-3. **Residuals and least squares** — residual = y − y-hat; the line minimises SSE and passes through (x̄, ȳ); Menu > Least squares as calculus for the derivation.
+3. **Residuals and least squares** — residual = y − ŷ; the line minimises SSE and passes through (x̄, ȳ); Menu > Least squares as calculus for the derivation.
 4. **Leverage** — h, the 4/n rule of thumb, what to try with the far-out point.
 5. **Correlation is not causation** — ice-cream sales and assaults both rise in summer because both follow the temperature (a lurking variable); county poverty and property crime also travel with density, policing, reporting and age mix; county figures describe counties, not people (the ecological fallacy); the example data are synthetic.
 6. **Touch, keys and Statistics 2Var** — and "tap the equation: least squares as calculus".

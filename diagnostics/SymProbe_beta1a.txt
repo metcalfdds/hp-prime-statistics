@@ -1,0 +1,60 @@
+#pragma mode( separator(.,;) integer(h32) )
+// SymProbe beta 1 (2 Nov 2026): which decorated letters the Prime's font holds.
+// beta 1a (2 Nov 2026): the pragma line, as every program in the fleet has; nothing
+// else changed.  Like any program copied in as a file, it must be Checked once
+// (Program Catalog, Edit, Check) before it runs: unchecked, its name in Home gives
+// "Error: Syntax Error" (Lessons Learned, section 16).
+// Rows: y with circumflex U+0177 (375) and y with macron U+0233 (563), in fonts 1 and 2;
+// HP's private-use glyphs U+E000 to U+E01F (57344-57375), to see what follows x-bar and p-hat;
+// overlays: a letter drawn, then a macron or circumflex drawn at the same spot.
+// Any key or tap ends it.  Pure ASCII: every glyph is built with CHAR().
+EXPORT SymProbe()
+BEGIN
+  LOCAL spI, spS, spX;
+  RECT_P(G0, 0, 0, 319, 239, #FFFFFFh);
+  // row 1-2: the two precomposed Latin letters, beside x-bar and p-hat for comparison
+  spS := "375:" + CHAR(375) + "  563:" + CHAR(563) + "  562:" + CHAR(562) + "  xbar:" + CHAR(57344) + "  phat:" + CHAR(57345);
+  TEXTOUT_P(spS, G0, 2, 2, 2, #000000h, 316);
+  TEXTOUT_P(spS, G0, 2, 20, 1, #000000h, 316);
+  // rows 3-6: the private-use area, 16 to a row, font 2 then font 1
+  spS := "E00x:";
+  FOR spI FROM 0 TO 15 DO spS := spS + " " + CHAR(57344 + spI); END;
+  TEXTOUT_P(spS, G0, 2, 36, 2, #0000C8h, 316);
+  TEXTOUT_P(spS, G0, 2, 54, 1, #0000C8h, 316);
+  spS := "E01x:";
+  FOR spI FROM 16 TO 31 DO spS := spS + " " + CHAR(57344 + spI); END;
+  TEXTOUT_P(spS, G0, 2, 70, 2, #C80000h, 316);
+  TEXTOUT_P(spS, G0, 2, 88, 1, #C80000h, 316);
+  // rows 7-8: overlays at the same x, font 2 (y = 108) and font 1 (y = 132)
+  // y+175 (macron), y+713 (modifier macron), y+710 (modifier circumflex), y+94 (^), d+175, d+713
+  FOR spI FROM 0 TO 1 DO
+    spX := 2;
+    TEXTOUT_P("y", G0, spX, 108 + 24 * spI, 2 - spI, #000000h); TEXTOUT_P(CHAR(175), G0, spX, 108 + 24 * spI, 2 - spI, #000000h);
+    spX := 30;
+    TEXTOUT_P("y", G0, spX, 108 + 24 * spI, 2 - spI, #000000h); TEXTOUT_P(CHAR(713), G0, spX, 108 + 24 * spI, 2 - spI, #000000h);
+    spX := 58;
+    TEXTOUT_P("y", G0, spX, 108 + 24 * spI, 2 - spI, #000000h); TEXTOUT_P(CHAR(710), G0, spX, 108 + 24 * spI, 2 - spI, #000000h);
+    spX := 86;
+    TEXTOUT_P("y", G0, spX, 108 + 24 * spI, 2 - spI, #000000h); TEXTOUT_P(CHAR(94), G0, spX, 108 + 24 * spI, 2 - spI, #000000h);
+    spX := 114;
+    TEXTOUT_P("d", G0, spX, 108 + 24 * spI, 2 - spI, #000000h); TEXTOUT_P(CHAR(175), G0, spX, 108 + 24 * spI, 2 - spI, #000000h);
+    spX := 142;
+    TEXTOUT_P("d", G0, spX, 108 + 24 * spI, 2 - spI, #000000h); TEXTOUT_P(CHAR(713), G0, spX, 108 + 24 * spI, 2 - spI, #000000h);
+    spX := 170;
+    TEXTOUT_P(CHAR(57344), G0, spX, 108 + 24 * spI, 2 - spI, #000000h);
+    spX := 198;
+    TEXTOUT_P(CHAR(57345), G0, spX, 108 + 24 * spI, 2 - spI, #000000h);
+  END;
+  // row 9: each overlay's parts side by side, font 2, so their own heights show
+  spS := "y" + CHAR(175) + " " + "y" + CHAR(713) + " " + "y" + CHAR(710) + " " + "y^ d" + CHAR(175) + "  macron alone:" + CHAR(175) + CHAR(713) + " hat:" + CHAR(710);
+  TEXTOUT_P(spS, G0, 2, 158, 2, #008C00h, 316);
+  // row 10: the end x of one letter, the advance each glyph takes, font 2 and font 1
+  spS := "w2: y=" + STRING(TEXTOUT_P("y", G0, 2, 222, 2, #FFFFFFh) - 2, 2, 0) + " d=" + STRING(TEXTOUT_P("d", G0, 2, 222, 2, #FFFFFFh) - 2, 2, 0);
+  spS := spS + " 175=" + STRING(TEXTOUT_P(CHAR(175), G0, 2, 222, 2, #FFFFFFh) - 2, 2, 0) + " 710=" + STRING(TEXTOUT_P(CHAR(710), G0, 2, 222, 2, #FFFFFFh) - 2, 2, 0);
+  spS := spS + " xbar=" + STRING(TEXTOUT_P(CHAR(57344), G0, 2, 222, 2, #FFFFFFh) - 2, 2, 0);
+  spS := spS + " | w1: y=" + STRING(TEXTOUT_P("y", G0, 2, 222, 1, #FFFFFFh) - 2, 2, 0) + " 175=" + STRING(TEXTOUT_P(CHAR(175), G0, 2, 222, 1, #FFFFFFh) - 2, 2, 0);
+  RECT_P(G0, 0, 220, 319, 239, #FFFFFFh);
+  TEXTOUT_P(spS, G0, 2, 182, 1, #5A5A5Ah, 316);
+  TEXTOUT_P("SymProbe beta 1: any key or tap ends", G0, 2, 222, 1, #5A5A5Ah, 316);
+  WAIT(-1);
+END;

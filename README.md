@@ -52,7 +52,7 @@ Together, these 30 programs currently run to more than **84,000 lines**: 57,900 
 
 And around the programs:
 
-- **[The notes](docs/lessons-learned_v7zi.md)**: hard limits, commands that differ from the manual, touch and graphics idioms, the MicroPython bridge and how it fails silently, calling the CAS safely, numerical methods for 12-digit reals. Useful even if you never run a statistics program, and written so you can hand them to an AI assistant before it writes PPL for you.
+- **[The notes](docs/lessons-learned_v7zj.md)**: hard limits, commands that differ from the manual, touch and graphics idioms, the MicroPython bridge and how it fails silently, calling the CAS safely, numerical methods for 12-digit reals. Useful even if you never run a statistics program, and written so you can hand them to an AI assistant before it writes PPL for you.
 - **[Two shortcuts the manuals don't mention](docs/two-shortcuts.md)**: loading the Virtual Calculator by copying files into its folder, and a big data set as one matrix file, with who found what.
 - **[Tools](tools/)**: the checks every program passes before it is pasted (a lint gate, a fleet-wide name check, a check that no two lines of text overlap on screen, a PC harness that drives a program like a student), in plain Python 3.
 - **[Diagnostics](diagnostics/)**: small probe programs that test what your own calculator does.
@@ -74,7 +74,7 @@ Three different questions, with three different answers:
   
 - **Do they run on a real calculator? Yes, we think so, but we are still checking.** Every program has run and been extensively tested on the HP Prime Virtual Calculator by Claude, and the current versions have had cursory checks on a G1 and a G2 by human me. The full device checklists, one per version in [docs/changes/](docs/changes/), are still being worked through, and some screens, especially graphics, can be slow. **Reports from your own calculator are the most welcome contribution of all.** The full dated record is in [docs/test-status.md](docs/test-status.md).
   
-- **Do they survive careless use? We now test that too** (1 November 2026). The **monkey test** (`tools/monkey_v1b.py`) drives a program the way a student who doesn't want to be there might: random keys, taps, menu picks and cancels, and odd values typed into the forms (a list where a number belongs, 1E300, 0, negatives). TTestLab, TTestLabG, SampDist, BayesTree, CICatcher, Norm3, NormExplorer and StatDist now pass 1,000 random runs with none broken; trying the fixes on the Virtual Calculator found three things the PC model of the calculator cannot show (`!=` is not "not equal" on the Prime, `STRING` takes at most 12 decimals, and a loop step can vanish in 12 digits). StatDist's 27 distributions were also swept parameter by parameter from 1E−300 to 1E300. The first pass over the other book programs found what to fix next: [docs/dev/monkey-fleet-2026-11-01.md](docs/dev/monkey-fleet-2026-11-01.md).
+- **Do they survive careless use? We now test that too** (1 November 2026). The **monkey test** (`tools/monkey_v1b.py`) drives a program the way a student who doesn't want to be there might: random keys, taps, menu picks and cancels, and odd values typed into the forms (a list where a number belongs, 1E300, 0, negatives). TTestLab, TTestLabG, SampDist, BayesTree, CICatcher, Norm3, NormExplorer, StatDist, PowerViz, ScatterLab, ChiTable and GaltonBoard now pass 1,000 random runs with none broken; trying the fixes on the Virtual Calculator found three things the PC model of the calculator cannot show (`!=` is not "not equal" on the Prime, `STRING` takes at most 12 decimals, and a loop step can vanish in 12 digits). StatDist's 27 distributions were also swept parameter by parameter from 1E−300 to 1E300. Every program's labels were then checked under random use, which found crowded or cut labels in 15 of 30 at values no test script had tried ([docs/dev/label-check-2026-11-02.md](docs/dev/label-check-2026-11-02.md)). The first pass over the other book programs found what to fix next: [docs/dev/monkey-fleet-2026-11-01.md](docs/dev/monkey-fleet-2026-11-01.md).
 
 - **Can they be used on real cases? No!** Software used in casework must first be formally validated: tested on known samples under a laboratory's quality system, with its limits documented, certified, and then used by a qualified analyst. None of these programs has been through that process.
   
@@ -158,17 +158,17 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 
 **CICatcher** (beta 2e): fifty confidence intervals stack up, blue if it catches the truth (the green line) and red if it misses. **Drag the confidence level**: every interval stretches or shrinks, and the catch count updates exactly without new samples. Covers z, t, Wald, Wilson and the exact Clopper–Pearson interval.
 
-**GaltonBoard** (beta 3e): Galton's quincunx.
+**GaltonBoard** (beta 3f): Galton's quincunx. The board holds 5,000 balls; then it shows the results.
 - **Pour mode:** hold a finger on the funnel and a stream of balls cascades through the pegs.
 - **Drag sideways** to change p.
-- **Drop 100,000** runs in MicroPython.
+- **Fill to 5,000** runs in MicroPython.
 - Tap a bar for its binomial probability and the normal area.
 
-**PowerViz** (v2.5k): **drag the H₁ curve**, and the α, β and power regions reshade live; a magenta arrow shows the effect size, d. Drag the critical line to set α, and drag up or down for n. n₈₀ appears in the panel and on the power-versus-n curve; the readout shows each group's n, μ and σ side by side and the t obtained with its df, as SPSS prints it (Welch's in the unequal-σ test). Five tests: one mean; two means with equal σ and n; **two means with unequal σ and unequal n**, where each group has its own σ and n and the formula page shows the best split, n₂/n₁ = σ₂/σ₁; one proportion; and two proportions. **Levene's test:** how often it would notice unequal spreads at your n (simulated, from the σ's and n's: SPSS's Levene F needs every score, and the page says so), beside the exact F test, and **two real samples** (the 1970 draft lottery, insect sprays, or your own D1 and D2) with Levene's test, the pooled and Welch t tests and Cohen's d, each read out in plain words for students.
+**PowerViz** (v2.5l): **drag the H₁ curve**, and the α, β and power regions reshade live; a magenta arrow shows the effect size, d. Drag the critical line to set α, and drag up or down for n. n₈₀ appears in the panel and on the power-versus-n curve; the readout shows each group's n, μ and σ side by side and the t obtained with its df, as SPSS prints it (Welch's in the unequal-σ test). Five tests: one mean; two means with equal σ and n; **two means with unequal σ and unequal n**, where each group has its own σ and n and the formula page shows the best split, n₂/n₁ = σ₂/σ₁; one proportion; and two proportions. **Levene's test:** how often it would notice unequal spreads at your n (simulated, from the σ's and n's: SPSS's Levene F needs every score, and the page says so), beside the exact F test, and **two real samples** (the 1970 draft lottery, insect sprays, or your own D1 and D2) with Levene's test, the pooled and Welch t tests and Cohen's d, each read out in plain words for students.
 
 ### Tables and tests
 
-**ChiTable** (beta 3e): chi-square for a 2 × 2, 2 × 3 or 3 × 2 table.
+**ChiTable** (beta 3f): chi-square for a 2 × 2, 2 × 3 or 3 × 2 table.
 - The full statistics: expected counts, G², Cramér's V, adjusted residuals, and for a 2 × 2 Fisher, RR, OR and the risk difference with Newcombe's interval.
 - **Drag an observed bar**, and every expected bar moves with χ² and p.
 - **Drag the critical line** on the χ² curve.
@@ -200,7 +200,7 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 
 ### Correlation and regression
 
-**ScatterLab** (beta 2d): build a scatterplot with your finger. Add, drag or delete points, and the least-squares line, r, r², SSE and the residuals follow. Guess mode lets you fit a line by eye first, then shows that least squares really does have the smallest SSE.
+**ScatterLab** (beta 2f): build a scatterplot with your finger. Add, drag or delete points, and the least-squares line, r, r², SSE and the residuals follow. Guess mode lets you fit a line by eye first, then shows that least squares really does have the smallest SSE.
 
 **BiNorm3D** (beta 1b): the bivariate normal as a wireframe you turn with a finger. It adds a contour view, and a slice that shows regression to the mean.
 
@@ -312,7 +312,7 @@ Short programs for finding out what your own calculator does.
 
 ## The notes
 
-[**docs/lessons-learned_v7zi.md**](docs/lessons-learned_v7zi.md) is the substantial document here: everything learned the expensive way across dozens and dozens of build iterations on G1 and G2 hardware. It covers:
+[**docs/lessons-learned_v7zj.md**](docs/lessons-learned_v7zj.md) is the substantial document here: everything learned the expensive way across dozens and dozens of build iterations on G1 and G2 hardware. It covers:
 - hard limits;
 - command behaviour that contradicts the manual;
 - graphics and input idioms;

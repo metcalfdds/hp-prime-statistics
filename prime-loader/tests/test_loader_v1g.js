@@ -1,4 +1,4 @@
-// test_loader_v1f.js -- drives PrimeLoader_v1f.html in Chromium against a mock Virtual Calculator folder.
+// test_loader_v1g.js -- drives PrimeLoader_v1g.html in Chromium against a mock Virtual Calculator folder.
 // Roger Metcalf & Claude, 1 Nov 2026.
 //
 // The browser's folder picker cannot be driven by a test, so it is replaced by one that returns a folder in the
@@ -6,7 +6,9 @@
 // Calculator: Calculators\Prime with HP's apps, settings, old programs and a matrix; Temp with the lock file.  Every file
 // the page writes is compared byte for byte with the starter pack it was built from.
 //
-//   node tests/test_loader_v1f.js PrimeLoader_v1f.html PACK.zip
+//   node tests/test_loader_v1g.js PrimeLoader_v1g.html PACK.zip
+// v1g (2 Nov 2026): v1f's checks, unchanged, run on the page built from starter pack v9 (PowerViz v2.5l, ScatterLab
+//   beta 2e, ChiTable beta 3f, GaltonBoard beta 3f).
 // v1f (1 Nov 2026, night): v1e's checks, unchanged, run on the page built from starter pack v8 (CICatcher beta 2e,
 //   Norm3 v2.4c, NormExplorer beta 42d, StatDist v2.7g).
 // v1e (1 Nov 2026, evening): v1d's checks, unchanged, run on the page built from starter pack v7 (SampDist v2.3e,

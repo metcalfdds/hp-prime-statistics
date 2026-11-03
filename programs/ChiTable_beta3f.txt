@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// CHITABLE - beta 3e
+// CHITABLE - beta 3f
 // Chi-square test for a 2 x 2, 2 x 3 or 3 x 2 table
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
@@ -38,6 +38,33 @@
 //   beta 1l (its fixes are all kept here) has not been re-run.
 //
 // Run ChiTable() from the Program Catalog.
+//
+// beta 3f (2 Nov 2026): the monkey test's fixes.  tools/monkey_v1b.py
+//   ran beta 3e 1,000 times with random keys, taps, menu picks and form
+//   entries: 894 runs ended normally and 106 broke, every one of them
+//   on a list typed into a count or alpha field (a plain INPUT name
+//   takes any type, and the list went on into ROUND and the tests).
+//   * Every form field takes a real number only, {name,[0]}: the
+//     Values form (all four or six counts), the one-cell form and the
+//     alpha form.  On the Virtual Calculator such a field refuses a
+//     typed list with "Invalid input" and keeps its value (TTestLab
+//     beta 1c, 1 Nov 2026).
+//   * A typed alpha must be from 0.0001 to below 1 (it had only to be
+//     between 0 and 1).  The critical value is CHISQUARE_ICDF(df,
+//     1 - alpha), and in the Prime's 12 digits 1 - alpha is 1 for an
+//     alpha below about 5E-13, which makes the critical value infinite
+//     with no error (Lessons Learned v7m's audit, which named this
+//     form for ChiTable's next version).  There is no upper-tail
+//     quantile to mirror it with, so the typed alpha keeps to the range
+//     the alpha drag on the curve already keeps to (0.0001 to 0.5;
+//     a typed alpha may still be up to just below 1, as before).
+//   * The observed chi-square's label on the curve page goes to the
+//     left of its line when the line nears the right edge, as the
+//     critical value's label already did ("chi2 = 12.91" ran past the
+//     screen's right edge when the observed value set the window: the
+//     window ends at 1.15 x chi2, so the line can stand 35 px from the
+//     edge; found by the round-4 label check under random use).
+//   No number or other logic changed.  Harness only so far.
 //
 // beta 3e (20 Oct 2026): symbols instead of spelled-out names, on screen
 //   only (Roger, 20 Oct 2026: "use the symbols we developed").  In the
@@ -1719,17 +1746,17 @@ BEGIN
   akOK := 0;
   CASE
     IF csNR == 2 AND csNC == 2 THEN
-      akOK := INPUT({a1, a2, a3, a4}, "All four counts",
+      akOK := INPUT({{a1,[0]}, {a2,[0]}, {a3,[0]}, {a4,[0]}}, "All four counts",
         {"Row 1 Col 1:", "Row 1 Col 2:", "Row 2 Col 1:", "Row 2 Col 2:"},
         {akH, akH, akH, akH});
     END;
     IF csNR == 2 AND csNC == 3 THEN
-      akOK := INPUT({a1, a2, a3, a4, a5, a6}, "All six counts",
+      akOK := INPUT({{a1,[0]}, {a2,[0]}, {a3,[0]}, {a4,[0]}, {a5,[0]}, {a6,[0]}}, "All six counts",
         {"Row 1 Col 1:", "Row 1 Col 2:", "Row 1 Col 3:", "Row 2 Col 1:", "Row 2 Col 2:", "Row 2 Col 3:"},
         {akH, akH, akH, akH, akH, akH});
     END;
     DEFAULT
-      akOK := INPUT({a1, a2, a3, a4, a5, a6}, "All six counts",
+      akOK := INPUT({{a1,[0]}, {a2,[0]}, {a3,[0]}, {a4,[0]}, {a5,[0]}, {a6,[0]}}, "All six counts",
         {"Row 1 Col 1:", "Row 1 Col 2:", "Row 2 Col 1:", "Row 2 Col 2:", "Row 3 Col 1:", "Row 3 Col 2:"},
         {akH, akH, akH, akH, akH, akH});
   END;
@@ -1819,7 +1846,7 @@ BEGIN
       enC := csSel - (enR - 1) * csNC;
       enV := csO(csSel);
       enLbl := "Row " + STRING(enR, 2, 0) + ", Col " + STRING(enC, 2, 0) + ":";
-      enOK := INPUT({enV}, "Observed count", {enLbl}, {"A whole number, 0 or more"});
+      enOK := INPUT({{enV,[0]}}, "Observed count", {enLbl}, {"A whole number, 0 or more"});
       IF enOK == 1 THEN
         IF enV < 0 THEN
           MSGBOX("A count cannot be negative.");
@@ -2808,7 +2835,7 @@ END;
 csCvDraw(cdDrag)
 BEGIN
   LOCAL cdV, cdN, cdPx, cdX2, cdXc, cdLx;
-  LOCAL cdPy, cdLast, cdS;
+  LOCAL cdPy, cdLast, cdS, cdQx;
   DIMGROB_P(G1, 320, 240, #FFFFFFh);
   TEXTOUT_P(csX2S + " curve for df = " + STRING(csDF, 2, 0) + ", and the observed " + csX2S, G1, 6, 4, 2, #000000h, 308);
   // ---- x ticks and grid ----
@@ -2853,7 +2880,10 @@ BEGIN
     TEXTOUT_P(CHAR(8592) + " drag " + CHAR(8594), G1, cdLx, csPT + 26, 1, csRED, 70);
   END;
   LINE_P(G1, cdX2, csPT, cdX2, csPB, csMAG);
-  TEXTOUT_P(csX2S + " = " + STRING(ROUND(csX2, 2), 2, 2), G1, cdX2 + 3, csPT + 14, 1, csMAG, 70);
+  // beta 3f: to the left of its line near the right edge, as crit's
+  cdQx := cdX2 + 3;
+  IF cdX2 > csPR - 72 THEN cdQx := cdX2 - 72; END;
+  TEXTOUT_P(csX2S + " = " + STRING(ROUND(csX2, 2), 2, 2), G1, cdQx, csPT + 14, 1, csMAG, 70);
   // ---- readout: moved up from y 204 / 216 to 192 / 204 (the soft
   // keys take the bottom strip and the old footer) ----
   TEXTOUT_P("Shaded tail = p-value: " + csPStr(csP), G1, 6, 192, 1, csMAG, 308);
@@ -3297,11 +3327,15 @@ END;
 csSetAlpha()
 BEGIN
   LOCAL alV, alLbl;
+  // beta 3f: a real number only ({alV,[0]}), and from 0.0001 to below 1:
+  // CHISQUARE_ICDF(df, 1 - alpha) is infinite, with no error, once 1 -
+  // alpha rounds to 1 in 12 digits (alpha below about 5E-13); 0.0001 is
+  // where the alpha drag on the curve stops too.
   alV := csAlpha;
   alLbl := csAl + ":";
-  IF INPUT({alV}, "Significance level", {alLbl}, {"Between 0 and 1; 0.05 is usual, 0.01 is strict"}) == 1 THEN
-    IF alV <= 0 OR alV >= 1 THEN
-      MSGBOX(csAl + " must be strictly between 0 and 1.");
+  IF INPUT({{alV,[0]}}, "Significance level", {alLbl}, {"From 0.0001 to below 1; 0.05 is usual"}) == 1 THEN
+    IF alV < 0.0001 OR alV >= 1 THEN
+      MSGBOX(csAl + " must be from 0.0001 to below 1 (0.05 is usual, 0.01 is strict). It did not change.");
       RETURN;
     END;
     csAlpha := alV;

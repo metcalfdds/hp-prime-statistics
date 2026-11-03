@@ -1,0 +1,37 @@
+=== R. v2.5l against v2.5k, screen for screen, with ordinary numbers
+   v2.5k: ../programs/PowerViz_v2.5k.txt
+PASS R1 the five tests (first form, arrows, +/-, the n form, Power vs n, Power vs effect, the formula, Would Levene notice?, 1/2-sided, the exit box): 135 screens, every text, box and the returned power identical to v2.5k's, no error
+=== M. the monkey test's findings (2 Nov 2026; each check fails on v2.5k)
+PASS M1 all 8 forms take real numbers only: every field is {name,[0]} (29 fields); v2.5k's were bare names
+PASS M2 one-sample, sigma = 1E300: "Means and σ can be at most 1,000,000: us...", the values kept (True), the plot drawn; v2.5k: Unsupported: ^ between a number and a number is not covered
+PASS M2 one-sample, mu1 = 1E300: "Means and σ can be at most 1,000,000: us...", the values kept (True), the plot drawn; v2.5k: no box, 1-Sample Mean (z) n = 30  α = 0.050  1-s
+PASS M2 two-sample, mu0 = -1E300: "Means and σ can be at most 1,000,000: us...", the values kept (True), the plot drawn; v2.5k: no box, 2-Sample Means (z) n = 30 per group  α =
+PASS M2 one-sample, sigma = 1E-300: "σ is too small next to the means for the...", the values kept (True), the plot drawn; v2.5k: PPLError: Invalid input: STRING(x, 2, 302) -- the Prime takes at most 12 decimals (Virtual Calculator, 1 Nov 2026; prime_facts_v1)
+PASS M2 two-sample, mu0 = 1E6, sigma = 0.5: "σ is too small next to the means for the...", the values kept (True), the plot drawn; v2.5k: no box, 2-Sample Means (z) n = 30 per group  α =
+PASS M2 unequal, sigma2 = 1E-300: "σ is too small next to the means for the...", the values kept (True), the plot drawn; v2.5k: no box, 2 Means, σ₁≠σ₂ (z) n₁ = 40, n₂ = 20  α =
+PASS M2 unequal, sigma1 = 1E300, mu2 = 1E300: "Means and σ can be at most 1,000,000: us...", the values kept (True), the plot drawn; v2.5k: no box, 2 Means, σ₁≠σ₂ (z) n₁ = 40, n₂ = 20  α =
+PASS M2 one-sample, mu0 = 1234567890123: "Means and σ can be at most 1,000,000: us...", the values kept (True), the plot drawn; v2.5k: no box, 1-Sample Mean (z) n = 30  α = 0.050  1-s
+PASS M2 unequal, sigma2 = 101 sigma1: "σ₂ must be from 0.01 to 100 times σ₁. No...", the values kept (True), the plot drawn; v2.5k: no box, 2 Means, σ₁≠σ₂ (z) n₁ = 40, n₂ = 20  α =
+PASS M2 unequal, sigma2 = 0.009 sigma1: "σ₂ must be from 0.01 to 100 times σ₁. No...", the values kept (True), the plot drawn; v2.5k: no box, 2 Means, σ₁≠σ₂ (z) n₁ = 40, n₂ = 20  α =
+PASS M2 two-sample, mu0 = 1E-300, mu1 = 0, sigma = 999999: "The means differ by under a billionth of...", the values kept (True), the plot drawn; v2.5k: Unsupported: ^ between a number and a number is not covered
+PASS M3 the lines of pv_BadMsg: means and sigma up to 1,000,000 accepted, above refused; sigma 0.000001 accepted, 0.00000099 refused; at |mu| = 1E6, 1 accepted and 0.99 refused; sigma2/sigma1 from 0.01 to 100; a sigma of 0 or less left to the clamp; means apart by 1E-9 of the larger sigma accepted, by less refused, equal accepted: ['', 'N', '', 'N', 'B', '', 'B', '', 'R', '', 'R', '', 'B', '', 'C', '', '', 'C', 'C']
+PASS M4 test 5, sigma1 = 1000 with sigma2 = 0: the clamp's box ("σ₂ must be positive ... reset to 1"), then the refusal after it (sigma2 = 1 is below 0.01 sigma1), the values kept; v2.5k: the clamp only (['σ₂ must be positive (you entered 0.000): reset to 1'])
+PASS M5 the effect form (a tap on the effect cell): 1E300, -1E60, 1,000,001 and 1E8 refused (above 1,000,000), 3 at sigma = 0.000002 refused (too far from 0), each with a sentence and the mean kept; 106 and -1,000,000 taken; v2.5k took them all: [(1e+300, 1, True), (-1e+60, 2, True), (1000001.0, 1, True), (100000000.0, 5, True), (3.0, 1, True), (106.0, 1, True), (-1000000.0, 2, True)]
+PASS M6 the corners of the ranges accepted, and a small effect, run every page (arrows, +/-, n = 5000, Power vs n, Power vs effect, the formula, Would Levene notice?, 1/2-sided) with no error and no refusal, STRING refusing 13 decimals as on the Prime: [('mu -1E6 and 1E6, sigma 1E6', None), ('mu 0 and 0.000001, sigma 0.0', None), ('mu -1E6 and -999999, sigma 1', None), ('unequal: mu 1E6, sigmas 1 an', None), ('unequal: sigmas 1E6 and 1E4,', None), ('d = 1E6 (mu 0 and 1E6, sigma', None), ('d = 1E-9 (mu 0 and 0.001, si', None), ('a small effect, d = 0.025 (1', None), ('unequal: sigma2 = 100 sigma1', None), ('two-sample, mu -1E6 and 1E6,', None), ('mu 999999.999 and 999999, si', None)]
+PASS M7 and on every one of those screens every text keeps to its place: no firm overlap and nothing off the screen (v2.5k on the same runs: 27, e.g. [('2000000', 'off the screen'), ('0.0000010', 'off the screen'), ('−1000000.00', '−999999.00')])
+PASS M10 the SE line gives way to the n80 text at 5.5 px a character, decimal points included (round 4's label check under random use: "SE0 = sqrt(2x0.975x0.025/4990) = 0.00313" reached "n80 = 3826"): no firm overlap, the line shortened to [['SE₀ = 0.00313'], ['SE₀ = 0.00312'], ['SE₀ = √(0.98×0.02/4990) = 0.00198']]; v2.5k: [[('SE₀ = √(2×0.975×0.025/4990) = 0.00313', 'n₈₀ = 3013 (3012.95)')], [('SE₀ = √(2×0.975×0.025/5000) = 0.00312', 'n₈₀ = 3013 (3012.95)')], []]
+PASS M9 the arrows (the monkey test's retest of this version, seed 1000164): two-sample, mu0 = 1E-300, sigma = 999999, then the arrows step mu1 (15) onto 0, a difference of 1E-300: taken as equal means (mu1 = mu0), and the next step goes on to -50000, with no error; v2.5k: ['Unsupported: ^ between a number and a nu', 'Unsupported: ^ between a number and a nu', 'Unsupported: ^ between a number and a nu']
+PASS M8 every new box within 4 lines at 32 characters a line: [4, 4, 2, 4, 4, 3, 4]
+=== G. static checks
+PASS G1 only these differ from v2.5k, code for code (comments aside): the forms (pv_EditForm, pv_EditN, pv_EditEff), the new pv_BadMsg, pv_Snap0 (with its two calls, pv_StepEff and pv_Touch), pv_TxW and pv_Fit, and the layouts (pv_Draw, pv_Panel, pv_DLbl, pv_SELine, pv_PCDraw, pv_Formula, pv_NumD): ['pv_BadMsg', 'pv_DLbl', 'pv_Draw', 'pv_EditEff', 'pv_EditForm', 'pv_EditN', 'pv_Fit', 'pv_Formula', 'pv_NumD', 'pv_PCDraw', 'pv_Panel', 'pv_SELine', 'pv_Snap0', 'pv_StepEff', 'pv_Touch', 'pv_TxW']
+PASS G5 every new routine is defined above its first call (the one call to a routine further down is v2.5k's own: [('pv_FMT', 'pv_NCFS')])
+PASS G2 no "!=" in the code (a factorial and a test on the Prime)
+PASS G3 no glyph on screen that v2.5k does not already show (Lessons Learned v7v: diff the non-ASCII set): new []
+PASS G4 the header names v2.5l: "// POWERVIZ - v2.5l"
+=== D. layout (text_overlap_v1 and label_fit_v1 over every screen above)
+   PowerViz_v2.5l.txt: 322 distinct screens of 594
+   PowerViz_v2.5k.txt: 340 distinct screens of 498
+PASS D1 no firm overlap, frame straddle or overrun on any v2.5l screen drawn, the extremes included (v2.5k on the same runs: 32)
+PASS D2 no number cut short by its width argument on any v2.5l screen (label_fit_v1; v2.5k on the same runs: 0)
+
+28 PASS, 0 FAIL

@@ -1,0 +1,23 @@
+=== R. beta 3f against beta 3e, screen for screen, with ordinary counts
+   beta 3e: ../programs/ChiTable_beta3e.txt
+PASS R1 10 sessions (the three shapes typed, a cell typed alone, alpha 0.01 and 0.10, the five examples, every page and plot): 109 screens, every text, box and the summary identical to beta 3e's, no error
+=== M. the monkey test's findings (2 Nov 2026; each check fails on beta 3e)
+PASS M1 all 5 forms take real numbers only: every field is {name,[0]} (18 fields); beta 3e's were bare names
+PASS M2 alpha = 1e-17 typed: "α must be from 0.0001 to below...", alpha stays 0.05 and the critical value is finite (3.8415); beta 3e: no box, alpha 1e-17, critical value 0.0, Unverified: CHISQUARE_ICDF(1, 1): p = 1 outside (0,1) -- the device has not been seen to answer this
+PASS M2 alpha = 1e-300 typed: "α must be from 0.0001 to below...", alpha stays 0.05 and the critical value is finite (3.8415); beta 3e: no box, alpha 1e-300, critical value 0.0, Unverified: CHISQUARE_ICDF(1, 1): p = 1 outside (0,1) -- the device has not been seen to answer this
+PASS M3 the alpha range: 0.0001 and 0.9999 accepted; 0.00009999, 1, 0 and -0.05 refused with the box, alpha unchanged: [(0.0001, 'ok'), (9.999e-05, 'refused'), (0.9999, 'ok'), (1.0, 'refused'), (0.0, 'refused'), (-0.05, 'refused')]
+PASS M4 the largest and smallest alpha accepted, on three example tables, every page and plot: no error, a finite critical value, and no box but the Fisher plot's own note on the 2 x 3 and 3 x 2 tables: [(0.0001, 1, 15.1367), (0.0001, 3, 18.4207), (0.0001, 4, 18.4207), (0.9999, 1, 0.0), (0.9999, 3, 0.0002), (0.9999, 4, 0.0002)]
+PASS M5 the new box within 4 lines at 32 characters a line: [3]
+PASS M6 the observed chi-square's label on the curve page stays on the screen when the observed value sets the window (it goes left of its line near the right edge, as crit's does): [[('χ² = 73.64', 164.0, 219.0)], [('χ² = 20.00', 181.0, 236.0)], [('χ² = 67.20', 191.0, 246.0)]]; beta 3e kept it right of the line, past x = 320 at 40, 2, 3, 41: [[('χ² = 73.64', 239.0, 294.0)], [('χ² = 20.00', 256.0, 311.0)], [('χ² = 67.20', 266.0, 321.0)]]
+=== G. static checks
+PASS G1 only csAskAll, csCvDraw, csEntry and csSetAlpha differ from beta 3e, code for code (comments aside): ['csAskAll', 'csCvDraw', 'csEntry', 'csSetAlpha']
+PASS G2 no "!=" in the code (a factorial and a test on the Prime)
+PASS G3 the code is ASCII, as beta 3e's is (its glyphs are built with CHAR(); only comments carry others)
+PASS G4 the header names beta 3f: "// CHITABLE - beta 3f"
+=== D. layout (text_overlap_v1 and label_fit_v1 over every screen above)
+   ChiTable_beta3f.txt: 113 distinct screens of 217
+   ChiTable_beta3e.txt: 101 distinct screens of 133
+PASS D1 no firm overlap, frame straddle or overrun on any beta 3f screen drawn, alpha 0.0001 and 0.9999 included (beta 3e on the same runs: 1)
+PASS D2 no number cut short by its width argument on any beta 3f screen (label_fit_v1; beta 3e on the same runs: 0)
+
+14 PASS, 0 FAIL

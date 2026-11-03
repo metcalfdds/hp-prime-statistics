@@ -1,0 +1,31 @@
+=== R. beta 2f against beta 2d, screen for screen, with ordinary data
+   beta 2d: ../programs/ScatterLab_beta2d.txt
+PASS R1 4 sessions (the example and every menu item; three ordinary C1/C2 loads): 67 screens, every text, box and the summary identical to beta 2d's once its two letters are read as the words, no error
+=== M. the monkey test's findings, and the labels (2 Nov 2026; each check fails on beta 2d)
+PASS M1 the one form takes real numbers only: ['{{tpX,[0]}, {tpY,[0]}}']; beta 2d: ['{tpX, tpY}']
+PASS M2 typed points, x = 1E300: "A number you typed has more than 5...", 0 point(s) kept, no error; beta 2d: no box, n = 1.0
+PASS M2 typed points, y = -1E300: "A number you typed has more than 5...", 0 point(s) kept, no error; beta 2d: no box, n = 1.0
+PASS M2 typed points, x = 0, 1E-300, 2E-300: "That point is too close to the oth...", 1 point(s) kept, no error; beta 2d: PPLError: division by zero
+PASS M2 typed points, y = 0, 1E-300, 2E-300 at x = 1, 2, 3: "That point is too close to the oth...", 1 point(s) kept, no error; beta 2d: PPLError: division by zero
+PASS M2 typed points, x = 1E9 and 1E9 + 1E-3: "That point is too close to the oth...", 1 point(s) kept, no error; beta 2d: no box, n = 2.0
+PASS M3 the lines of slTiny: a spread of 1E-9 is enough at 0, 9.9E-10 is not; at 1E9, 11 is enough and 10 is not (1E-8 of 1000000010 is 10.0000001); no spread is no spread: [0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0]
+PASS M4 loading C1, C2: a number of 50 digits, x or y too close together: refused with a sentence, nothing loaded; beta 2d loaded them: [('y = 1E300', True, 'Unsupported: FLOOR given a number is not covered'), ('x = 0, 1E-300, 2E-300', True, 'PPLError: division by zero'), ('y within 5E-10', True, 'loaded')]
+PASS M5 axis labels never cut: no number cut short by its width on any screen, the axis labelled in units or from its lowest tick instead ([['x1E5'], ['x1E-4'], ['x1E3'], ['y = 1000000 + label'], ['x1E49', 'x1E50']]); beta 2d cut 33 labels, e.g. [['100000', '200000'], ['0.0005', '0.0010'], ['−10000', '−15000']]
+PASS M6 the corner: the bottom y label is left out where the first x label would run into it: no firm overlap; beta 2d: [[('50', '15')], [('−60', '−30')], [('500', '−1000')], [('−10', '0.0')]]
+PASS M7 the largest and smallest accepted (points at +-9.9E49, spreads of 1E-9 at 0 and 11 at 1E9, a y spread of 2E-8 at 1; the far point makes 4): every point added, the fit, a far point, guess, the calculus page, with no error, no box, no overlap and no number cut: [('+-9.9E49', None, 4.0), ('a spread of 1E-9 at 0', None, 4.0), ('a spread of 11 at 1E9', None, 4.0), ('a y spread of 2E-8 at 1', None, 4.0)]
+PASS M9 the side panel's numbers fit its 86 px: no line cut short at a digit on any screen (label_fit_v1 looks at every line since 2 Nov, evening), the SSE in the scientific form when too long ([['SSE = 1.8053ᴇ10'], ['SSE = 3.7813ᴇ12'], ['SSE = 1.475'], ['SSE = 2.0750ᴇ14']]); beta 2d cut 38 lines (beta 2e too, on the Virtual Calculator: "SSE = 1805333333" for 18053333333)
+PASS M10 y-hat and y-bar as letters: the tour shows ŷ 36 times and ȳ 32 times, the words never (0 texts); the summary in Home "ScatterLab: n = 17, ŷ = 16.64 + 1.020 x,"; beta 2d: the words in 68 texts
+PASS M8 every new box within 4 lines at 32 characters a line: [3, 3, 3, 4]
+=== G. static checks
+PASS G1 only these differ from beta 2d, code for code (comments aside): ['slAutoWin', 'slAxes', 'slFit', 'slFitN', 'slFitT', 'slInit', 'slLab', 'slLabMode', 'slLabNote', 'slLoadC', 'slMeas', 'slPanel', 'slPtMsg', 'slSetRes', 'slTiny', 'slTypePt']
+PASS G2 no "!=" in the code (a factorial and a test on the Prime)
+PASS G3 the code is ASCII, as beta 2d's is (its glyphs are built with CHAR(); only comments carry others)
+PASS G4 the header names beta 2f: "// SCATTERLAB - beta 2f"
+=== D. layout (text_overlap_v1 and label_fit_v1 over every screen above)
+   ScatterLab_beta2f.txt: 229 distinct screens of 406
+   ScatterLab_beta2d.txt: 159 distinct screens of 274
+PASS D1 no firm overlap, frame straddle or overrun on any beta 2f screen drawn (beta 2d on the same runs: 10)
+PASS D2 no number cut short by its width argument on any beta 2f screen (label_fit_v1; beta 2d on the same runs: 114)
+
+21 PASS, 0 FAIL
+rc=0

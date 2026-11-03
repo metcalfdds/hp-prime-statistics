@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// SCATTERLAB - beta 2d
+// SCATTERLAB - beta 2f
 // A scatterplot you build with your finger: the least-squares
 // line, r, r-squared and the residuals follow every point
 // ============================================================
@@ -29,6 +29,60 @@
 //   Prime Virtual Calculator (build 2026-09-09, 17 Oct 2026).
 //
 // Run ScatterLab() from the Program Catalog.
+//
+// beta 2f (2 Nov 2026): the monkey test's fixes, and numbers that are
+//   never cut.  tools/monkey_v1b.py ran beta 2d 1,000 times with
+//   random keys, taps, menu picks and form entries: 978 runs ended
+//   normally and 22 broke, all at "Type a point": 9 a list typed into x
+//   or y (a plain INPUT name takes any type), 13 a typed 1E300 (its
+//   square, and the window fitted to it, passed the doubles' range).
+//   * The point form takes real numbers only, {name,[0]}.  On the
+//     Virtual Calculator such a field refuses a typed list with
+//     "Invalid input" and keeps its value (TTestLab beta 1c, 1 Nov
+//     2026).
+//   * A point the plot cannot hold is refused with a sentence and not
+//     added (slPtMsg): a number of 50 digits or more (its square passes
+//     the Prime's 1E499), or one that leaves the x or the y values too
+//     close together for 12 digits: a spread above 0 but below
+//     0.000000001, or below the values' size x 0.00000001 (slTiny).  At
+//     x = 0, 1E-300 and 2E-300 the sums of squares fall below 1E-499,
+//     become 0, and the slope divides by it; the window's ticks would
+//     need 302 decimals, and STRING takes 12.  Loading C1 and C2 is
+//     refused the same way, with nothing loaded.
+//   * The window and the fit treat such a spread as none (slAutoWin,
+//     slFit), so points left that close by a deletion draw too.
+//   * Axis labels too wide for their place are never cut (Lessons
+//     Learned v7zi section 6: a number cut short is a wrong number).
+//     The y labels have 26 px left of the axis, and beta 2d cut
+//     "100000" to "10000" there, "-10000" to "-1000" and "0.0015" to
+//     "0.001" (label_fit_v1 found them; StatDist v2.7g's "4000000" was
+//     the same fault).  When a label does not fit, every label on that
+//     axis is written in units of a power of ten, with the power at the
+//     axis ("x1E5", as in Norm3 v2.4d), or, when even that is too wide
+//     (values far from 0 next to their spread), as the distance from
+//     the lowest tick, with "y = 1000000 + label" at the axis
+//     (slLabMode, slLab, slLabNote; chosen once per window, in
+//     slSetRes).  At everyday values the labels are as before.
+//   * The bottom y label is left out when the first x label would run
+//     into it (beta 2d drew "50" over "15" with x from 100 to 300, and
+//     "-60" over "-30" with x and y either side of 0).
+//   * The side panel's numbers fit its 86 px (slFitN, slFitT): a line
+//     too wide, or a number of 1E12 or more (which slSig writes with
+//     no decimals, "4E12" for 3.78E12), is written in the scientific
+//     form with up to four decimals, "SSE = 1.8053E10".  Beta 2e, the same day, had everything above;
+//     on the Virtual Calculator its panel printed SSE = 18053333333 as
+//     "SSE = 1805333333", the last digit cut off by the panel's width:
+//     a number ten times too small.  The PC check had looked only at
+//     labels that are a number alone (label_fit_v1 now looks at every
+//     line).  Beta 2e was never committed.
+//   * y-hat and y-bar are their own letters now, CHAR(375) and
+//     CHAR(563) (U+0177, U+0233), not the words "y-hat" and "y-bar":
+//     the Prime's font holds both (SymProbe beta 1 drew them in fonts
+//     1 and 2 on the Virtual Calculator, 2 Nov 2026).  Roger, 2 Nov:
+//     a symbol not in the Chars menu gets a custom character, as
+//     x-bar and p-hat did; these two need none.
+//   No number changed; lines that named y-hat or y-bar are shorter.
+//   Harness and the Virtual Calculator's font check so far.
 //
 // beta 2d (20 Oct 2026): symbols instead of spelled-out names, on screen
 //   only (Roger, 20 Oct 2026: "use the symbols we developed").  In the
@@ -228,9 +282,8 @@
 //   of variable text passes a width, so nothing runs off the edge.
 //   The glyphs used are the verified ones: CHAR(57344) x-bar,
 //   CHAR(8320)/CHAR(8321) subscripts 0 and 1, CHAR(178) the
-//   superscript 2, CHAR(8646)/CHAR(8645) the arrow pairs.  y-hat
-//   and y-bar are spelled out (slYHAT, slYBAR in slInit) until a
-//   probe verifies a glyph for them.
+//   superscript 2, CHAR(8646)/CHAR(8645) the arrow pairs, CHAR(375)
+//   y-hat and CHAR(563) y-bar (beta 2f; SymProbe beta 1 drew both).
 // ============================================================
 
 
@@ -255,6 +308,7 @@ LOCAL slX, slY, slN, slSel, slLev, slMax;
 // ---- the window: frozen except on Fit, a data load or a far point ----
 LOCAL slXlo, slXhi, slYlo, slYhi, slXs, slYs;
 LOCAL slXe, slYe;
+LOCAL slXk, slYk;                  // beta 2f: how each axis's labels are written (slLabMode)
 //  slXs, slYs  tick steps;  slXe, slYe  a touched point snaps to
 //  a multiple of 10^slXe (x) and 10^slYe (y), one decade below
 //  the tick step, so tapped data come out as 12.3, not 12.2947
@@ -610,12 +664,115 @@ END;
 // THE WINDOW
 // ------------------------------------------------------------
 
+// beta 2f: a spread of values too small for 12 digits: above 0 but below
+// 0.000000001, or below the values' size x 0.00000001.  The fit and the
+// window treat it as no spread at all, and a typed point or a load that
+// would make one is refused (slPtMsg, slLoadC).
+slTiny(tnLo, tnHi)
+BEGIN
+  IF tnHi - tnLo <= 0 THEN RETURN 0; END;
+  IF tnHi - tnLo < MAX(0.000000001, MAX(ABS(tnLo), ABS(tnHi)) * 0.00000001) THEN RETURN 1; END;
+  RETURN 0;
+END;
+
+// beta 2f: the width of a line of font-1 text in pixels: about 5.5 px a
+// character and 3 px for a decimal point (Lessons Learned v7zi s6: "0.03"
+// is 20 px on the Virtual Calculator).
+slMeas(msS)
+BEGIN
+  LOCAL msI, msW;
+  msW := 0;
+  FOR msI FROM 1 TO DIM(msS) DO
+    IF MID(msS, msI, 1) == "." THEN msW := msW + 3; ELSE msW := msW + 5.5; END;
+  END;
+  RETURN msW;
+END;
+
+// beta 2f: a panel line, fnP + the number fnV + fnS, that fits fnW px
+// (2 px to spare): as slSig writes it when that fits, else with the
+// number in the scientific form, 4, 3, 2, 1 or no decimals ("SSE =
+// 1.8053E10").  Beta 2e cut "SSE = 18053333333" to "SSE = 1805333333"
+// at the panel's 86 px on the Virtual Calculator: never cut a number.
+// slSig's own text is not used when it is already scientific: at 1E12
+// and above STRING(x, 2, 0) is, with no decimals ("4E12" for 3.78E12).
+// CHAR(7431) is the small capital E of the Prime's scientific form.
+slFitN(fnP, fnV, fnS, fnW)
+BEGIN
+  LOCAL fnT, fnK;
+  fnT := fnP + slSig(fnV) + fnS;
+  IF INSTRING(fnT, CHAR(7431)) == 0 AND slMeas(fnT) <= fnW - 2 THEN RETURN fnT; END;
+  FOR fnK FROM 4 DOWNTO 0 DO
+    fnT := fnP + STRING(fnV, 3, fnK) + fnS;
+    IF slMeas(fnT) <= fnW - 2 THEN RETURN fnT; END;
+  END;
+  RETURN fnT;
+END;
+
+// beta 2f: the slope term, as slSgnT writes it ("+ 1.020 x"), fitted to
+// fnW px after the two spaces that indent it.
+slFitT(ftV, ftW)
+BEGIN
+  IF ftV >= 0 OR ABS(ftV) < 0.00001 THEN RETURN slFitN("  + ", ftV, " x", ftW); END;
+  RETURN slFitN("  - ", ABS(ftV), " x", ftW);
+END;
+
+// beta 2f: an axis label in mode lbK: 0 the value as before (slFx with
+// lbD decimals); 1 the value in units of 10^lbE (the tick step is 1, 2
+// or 5 times 10^lbE, so it is a whole number); 2 the distance from the
+// lowest tick lbO, in the same units.
+slLab(lbV, lbK, lbE, lbO, lbD)
+BEGIN
+  LOCAL lbR;
+  IF lbK == 0 THEN RETURN slFx(lbV, lbD); END;
+  IF lbK == 1 THEN lbR := ROUND(lbV / 10^lbE, 0); ELSE lbR := ROUND((lbV - lbO) / 10^lbE, 0); END;
+  IF lbR == 0 THEN lbR := 0; END;
+  RETURN STRING(lbR, 2, 0);
+END;
+
+// beta 2f: the first mode (0, 1, 2) in which every label of the axis
+// from lmLo to lmHi in steps of lmS fits in lmW px.  The labels are
+// never cut: a number cut short is a wrong number (beta 2d cut "100000"
+// to "10000" at the y axis, StatDist v2.7g "4000000" to "400000").
+slLabMode(lmLo, lmHi, lmS, lmW)
+BEGIN
+  LOCAL lmE, lmD, lmK, lmN, lmV, lmM;
+  lmE := FLOOR(LOG(lmS) + 0.000001);
+  lmD := MAX(0, -lmE);
+  FOR lmK FROM 0 TO 1 DO
+    lmM := 0; lmN := 0; lmV := lmLo;
+    WHILE lmV <= lmHi + lmS / 1000 AND lmN < 41 DO
+      lmM := MAX(lmM, slMeas(slLab(lmV, lmK, lmE, lmLo, lmD)));
+      lmN := lmN + 1;
+      lmV := lmLo + lmN * lmS;
+    END;
+    IF lmM <= lmW THEN RETURN lmK; END;
+  END;
+  RETURN 2;
+END;
+
+// beta 2f: the note at an axis whose labels are not the values
+// themselves: "x1E5" (mode 1), or "y = 1000000 + label" (mode 2, with
+// the unit after it when it is not 1).
+slLabNote(lnA, lnK, lnE, lnO)
+BEGIN
+  LOCAL lnU;
+  lnU := "";
+  IF lnE <> 0 THEN lnU := CHAR(215) + "1" + CHAR(7431) + STRING(lnE, 2, 0); END;
+  IF lnK == 1 THEN RETURN lnU; END;
+  IF DIM(lnU) > 0 THEN lnU := " " + lnU; END;
+  RETURN lnA + " = " + slFx(lnO, MAX(0, -lnE)) + " + label" + lnU;
+END;
+
 // The snap exponents follow the tick steps: a step of 1, 2 or 5
 // snaps to 0.1; a step of 10 to 1; a step of 0.5 to 0.01.
+// beta 2f: and how each axis's labels are written, once per window
+// (x labels have 39 px, centred; y labels the 26 px left of the axis).
 slSetRes()
 BEGIN
   slXe := FLOOR(LOG(slXs) + 0.000001) - 1;
   slYe := FLOOR(LOG(slYs) + 0.000001) - 1;
+  slXk := slLabMode(slXlo, slXhi, slXs, 39);
+  slYk := slLabMode(slYlo, slYhi, slYs, 26);
 END;
 
 // The default window, 0 to 10 both ways, ticks every 1.
@@ -643,11 +800,12 @@ BEGIN
   awZX := 0; IF awX1 >= 0 THEN awZX := 1; END;
   awZY := 0; IF awY1 >= 0 THEN awZY := 1; END;
   // no spread at all: open up a little room around the value
-  IF awX2 - awX1 <= 0 THEN
+  // beta 2f: a spread too small for 12 digits (slTiny) counts as none
+  IF awX2 - awX1 <= 0 OR slTiny(awX1, awX2) THEN
     awP := MAX(1, ABS(awX1) * 0.1);
     awX1 := awX1 - awP; awX2 := awX2 + awP;
   END;
-  IF awY2 - awY1 <= 0 THEN
+  IF awY2 - awY1 <= 0 OR slTiny(awY1, awY2) THEN
     awP := MAX(1, ABS(awY1) * 0.1);
     awY1 := awY1 - awP; awY2 := awY2 + awP;
   END;
@@ -721,11 +879,13 @@ BEGIN
     // is on the RANGE of x, not on Sxx: with every x equal, x-bar
     // can still differ from x in the last digit and leave Sxx a
     // hair above 0, which would give a slope made of rounding.
-    IF slN >= 3 AND ftX2 > ftX1 THEN
+    // beta 2f: and a spread too small for 12 digits (slTiny) is none:
+    // the sums of squares of x = 0, 1E-300, 2E-300 fall below 1E-499
+    IF slN >= 3 AND ftX2 > ftX1 AND slTiny(ftX1, ftX2) == 0 THEN
       slOK := 1;
       slB1 := slSxy / slSxx;
       // every y the same: the line is flat and r is 0/0, undefined
-      IF ftY2 > ftY1 THEN
+      IF ftY2 > ftY1 AND slTiny(ftY1, ftY2) == 0 THEN
         slRdef := 1;
         slR := slSxy / (slSxx * slSyy)^0.5;
         slR := MAX(-1, MIN(1, slR));
@@ -796,10 +956,16 @@ END;
 slAxes()
 BEGIN
   LOCAL axV, axN, axQ, axD, axS, axSk;
-  LOCAL axW;
+  LOCAL axW, axE, axT, axL;
   // ---- x: vertical grid lines, labels under the box ----
   axD := MAX(0, -FLOOR(LOG(slXs) + 0.000001));
-  axW := MAX(DIM(STRING(slXlo, 2, axD)), DIM(STRING(slXhi, 2, axD)));
+  axE := FLOOR(LOG(slXs) + 0.000001);
+  IF slXk == 0 THEN
+    axW := MAX(DIM(STRING(slXlo, 2, axD)), DIM(STRING(slXhi, 2, axD)));
+  ELSE
+    axW := MAX(DIM(slLab(slXlo, slXk, axE, slXlo, axD)), DIM(slLab(slXhi, slXk, axE, slXlo, axD)));
+  END;
+  axL := 999;
   axSk := 1;
   IF slXs / (slXhi - slXlo) * (slPR - slPL) < 6 * axW + 6 THEN axSk := 2; END;
   axN := 0; axV := slXlo;
@@ -809,14 +975,16 @@ BEGIN
     IF (axN MOD axSk) == 0 THEN
       // beta 2b: slFx -- a tick that should be 0 but carries a last-digit
       // remainder (lo + n x step) would print in scientific form
-      axS := slFx(axV, axD);
+      axS := slLab(axV, slXk, axE, slXlo, axD);   // beta 2f: in the axis's mode
       TEXTOUT_P(axS, G1, axQ - 3 * DIM(axS), slPB + 3, 1, slGRAY, 40);
+      IF axN == 0 THEN axL := axQ - 3 * DIM(axS); END;   // beta 2f: where the first one starts
     END;
     axN := axN + 1;
     axV := slXlo + axN * slXs;          // no drift from repeated adding
   END;
   // ---- y: horizontal grid lines, labels right-aligned at the left ----
   axD := MAX(0, -FLOOR(LOG(slYs) + 0.000001));
+  axE := FLOOR(LOG(slYs) + 0.000001);
   axSk := 1;
   IF slYs / (slYhi - slYlo) * (slPB - slPT) < 12 THEN axSk := 2; END;
   axN := 0; axV := slYlo;
@@ -824,11 +992,29 @@ BEGIN
     axQ := slPy(axV);
     LINE_P(G1, slPL, axQ, slPR, axQ, slGRID);
     IF (axN MOD axSk) == 0 THEN
-      axS := slFx(axV, axD);
-      TEXTOUT_P(axS, G1, MAX(1, slPL - 3 - 6 * DIM(axS)), axQ - 5, 1, slGRAY, 28);
+      axS := slLab(axV, slYk, axE, slYlo, axD);   // beta 2f: in the axis's mode
+      // beta 2f: the bottom label is left out unless it ends before the
+      // first x label starts (the two rows overlap in height), measured
+      // at 5.5 px for every character, decimal points included, as the
+      // overlap check does (beta 2d drew "50" over "15" at x from 100
+      // to 300).  The "0" and "0" of an origin corner still fit.
+      IF axN > 0 OR axL >= MAX(1, slPL - 3 - 6 * DIM(axS)) + 5.5 * DIM(axS) THEN
+        TEXTOUT_P(axS, G1, MAX(1, slPL - 3 - 6 * DIM(axS)), axQ - 5, 1, slGRAY, 28);
+      END;
     END;
     axN := axN + 1;
     axV := slYlo + axN * slYs;
+  END;
+  // ---- beta 2f: the note of an axis whose labels are in units of a
+  //      power of ten or measured from the lowest tick: y's at the top
+  //      left inside the box, x's at the bottom right ----
+  IF slXk > 0 THEN
+    axT := slLabNote("x", slXk, FLOOR(LOG(slXs) + 0.000001), slXlo);
+    TEXTOUT_P(axT, G1, slPR - 3 - slMeas(axT), slPB - 12, 1, slGRAY);
+  END;
+  IF slYk > 0 THEN
+    axT := slLabNote("y", slYk, FLOOR(LOG(slYs) + 0.000001), slYlo);
+    TEXTOUT_P(axT, G1, slPL + 3, slPT + 2, 1, slGRAY);
   END;
   // ---- the frame ----
   LINE_P(G1, slPL, slPT, slPR, slPT, #000000h);
@@ -851,13 +1037,13 @@ BEGIN
     IF slShow == 0 THEN
       // guessing: the student's own line, its SSE, the target
       TEXTOUT_P("your line:", G1, pnX, 36, 1, slRED, pnW);
-      TEXTOUT_P(slYHAT + " = " + slSig(slGA), G1, pnX, 49, 1, slRED, pnW);
-      TEXTOUT_P("  " + slSgnT(slGB), G1, pnX, 62, 1, slRED, pnW);
+      TEXTOUT_P(slFitN(slYHAT + " = ", slGA, "", pnW), G1, pnX, 49, 1, slRED, pnW);   // beta 2f: fitted
+      TEXTOUT_P(slFitT(slGB, pnW), G1, pnX, 62, 1, slRED, pnW);
       TEXTOUT_P("your SSE =", G1, pnX, 78, 1, slRED, pnW);
-      TEXTOUT_P("  " + slSig(slGSSE), G1, pnX, 91, 1, slRED, pnW);
+      TEXTOUT_P(slFitN("  ", slGSSE, "", pnW), G1, pnX, 91, 1, slRED, pnW);
       IF slOK == 1 THEN
         TEXTOUT_P("least-sq SSE", G1, pnX, 107, 1, slMAG, pnW);
-        TEXTOUT_P("  " + slSig(slSSE), G1, pnX, 120, 1, slMAG, pnW);
+        TEXTOUT_P(slFitN("  ", slSSE, "", pnW), G1, pnX, 120, 1, slMAG, pnW);
       END;
       pnS := "Reveal LS";
     ELSE
@@ -868,12 +1054,12 @@ BEGIN
           TEXTOUT_P("r = " + slFx(slR, 3), G1, pnX, 36, 1, slMAG, pnW);
           TEXTOUT_P("r" + slSQ + " = " + slFx(slR2, 3), G1, pnX, 49, 1, slMAG, pnW);
         END;
-        TEXTOUT_P(slYHAT + " = " + slSig(slB0), G1, pnX, 62, 1, slMAG, pnW);
-        TEXTOUT_P("  " + slSgnT(slB1), G1, pnX, 75, 1, slMAG, pnW);
+        TEXTOUT_P(slFitN(slYHAT + " = ", slB0, "", pnW), G1, pnX, 62, 1, slMAG, pnW);   // beta 2f: fitted
+        TEXTOUT_P(slFitT(slB1, pnW), G1, pnX, 75, 1, slMAG, pnW);
         TEXTOUT_P("least-sq SSE", G1, pnX, 88, 1, slMAG, pnW);
-        TEXTOUT_P("  " + slSig(slSSE), G1, pnX, 101, 1, slMAG, pnW);
+        TEXTOUT_P(slFitN("  ", slSSE, "", pnW), G1, pnX, 101, 1, slMAG, pnW);
       END;
-      TEXTOUT_P("yours = " + slSig(slGSSE), G1, pnX, 116, 1, slRED, pnW);
+      TEXTOUT_P(slFitN("yours = ", slGSSE, "", pnW), G1, pnX, 116, 1, slRED, pnW);
       pnS := "Hide LS";
     END;
     // the button: tap it, or press Enter
@@ -891,9 +1077,9 @@ BEGIN
       TEXTOUT_P("r undefined:", G1, pnX, 36, 1, slMAG, pnW);
       TEXTOUT_P("every y equal", G1, pnX, 49, 1, slMAG, pnW);
     END;
-    TEXTOUT_P(slYHAT + " = " + slSig(slB0), G1, pnX, 65, 1, slMAG, pnW);
-    TEXTOUT_P("  " + slSgnT(slB1), G1, pnX, 78, 1, slMAG, pnW);
-    TEXTOUT_P("SSE = " + slSig(slSSE), G1, pnX, 94, 1, slORNG, pnW);
+    TEXTOUT_P(slFitN(slYHAT + " = ", slB0, "", pnW), G1, pnX, 65, 1, slMAG, pnW);   // beta 2f: fitted
+    TEXTOUT_P(slFitT(slB1, pnW), G1, pnX, 78, 1, slMAG, pnW);
+    TEXTOUT_P(slFitN("SSE = ", slSSE, "", pnW), G1, pnX, 94, 1, slORNG, pnW);
   ELSE
     // the guard: no r and no line until there is something to fit
     TEXTOUT_P("need at least", G1, pnX, 40, 1, slRED, pnW);
@@ -901,8 +1087,8 @@ BEGIN
     TEXTOUT_P("different x", G1, pnX, 66, 1, slRED, pnW);
   END;
   IF slN > 0 THEN
-    TEXTOUT_P(slXBAR + " = " + slSig(slXb), G1, pnX, 120, 1, slGRN, pnW);
-    TEXTOUT_P(slYBAR + " = " + slSig(slYb), G1, pnX, 133, 1, slGRN, pnW);
+    TEXTOUT_P(slFitN(slXBAR + " = ", slXb, "", pnW), G1, pnX, 120, 1, slGRN, pnW);   // beta 2f: fitted
+    TEXTOUT_P(slFitN(slYBAR + " = ", slYb, "", pnW), G1, pnX, 133, 1, slGRN, pnW);
   END;
   IF slMode == 2 THEN
     TEXTOUT_P("mode: Del", G1, pnX, 149, 1, slRED, pnW);
@@ -1364,7 +1550,8 @@ END;
 // read is inside IFERR (NormExplorer's shape).
 slLoadC()
 BEGIN
-  LOCAL lcN, lcI, lcU;
+  LOCAL lcN, lcI, lcU, lcB, lcX1, lcX2;
+  LOCAL lcY1, lcY2;
   lcN := 0;
   IFERR lcN := MIN(SIZE(C1), SIZE(C2)); THEN lcN := 0; END;
   IF lcN < 1 THEN
@@ -1372,6 +1559,24 @@ BEGIN
     RETURN;
   END;
   lcU := MIN(lcN, slMax);
+  // beta 2f: numbers the plot cannot hold are refused, and nothing is
+  // loaded: 50 digits or more, or x or y values too close together for
+  // 12 digits (slTiny)
+  lcB := 0;
+  lcX1 := C1(1); lcX2 := lcX1; lcY1 := C2(1); lcY2 := lcY1;
+  FOR lcI FROM 1 TO lcU DO
+    IF ABS(C1(lcI)) >= 1E50 OR ABS(C2(lcI)) >= 1E50 THEN lcB := 1; END;
+    lcX1 := MIN(lcX1, C1(lcI)); lcX2 := MAX(lcX2, C1(lcI));
+    lcY1 := MIN(lcY1, C2(lcI)); lcY2 := MAX(lcY2, C2(lcI));
+  END;
+  IF lcB == 1 THEN
+    MSGBOX("C1 or C2 holds a number of 50 digits or more: too large to work with. Nothing was loaded.");
+    RETURN;
+  END;
+  IF slTiny(lcX1, lcX2) OR slTiny(lcY1, lcY2) THEN
+    MSGBOX("The x or y values in C1, C2 are too close together for the calculator's 12 digits. Nothing was loaded.");
+    RETURN;
+  END;
   FOR lcI FROM 1 TO lcU DO
     slX(lcI) := C1(lcI);
     slY(lcI) := C2(lcI);
@@ -1446,15 +1651,42 @@ END;
 
 // Type a point (the keyboard way to add one).  A typed point
 // outside the window refits the window, and the note says so.
+// beta 2f: a typed point the plot cannot hold, as a sentence, or "": a
+// number of 50 digits or more (its square passes the Prime's 1E499), or
+// one that leaves the x or the y values too close together for 12
+// digits (slTiny).
+slPtMsg(pmX, pmY)
+BEGIN
+  LOCAL pmI, pmX1, pmX2, pmY1, pmY2;
+  IF ABS(pmX) >= 1E50 OR ABS(pmY) >= 1E50 THEN
+    RETURN "A number you typed has more than 50 digits: too large to work with.";
+  END;
+  pmX1 := pmX; pmX2 := pmX; pmY1 := pmY; pmY2 := pmY;
+  FOR pmI FROM 1 TO slN DO
+    pmX1 := MIN(pmX1, slX(pmI)); pmX2 := MAX(pmX2, slX(pmI));
+    pmY1 := MIN(pmY1, slY(pmI)); pmY2 := MAX(pmY2, slY(pmI));
+  END;
+  IF slTiny(pmX1, pmX2) OR slTiny(pmY1, pmY2) THEN
+    RETURN "That point is too close to the others for the calculator's 12 digits.";
+  END;
+  RETURN "";
+END;
+
 slTypePt()
 BEGIN
-  LOCAL tpX, tpY, tpI;
+  LOCAL tpX, tpY, tpI, tpM;
   IF slN >= slMax THEN
     MSGBOX("40 points is the limit: delete one first.");
     RETURN;
   END;
   tpX := 0; tpY := 0;
-  IF INPUT({tpX, tpY}, "Type a point", {"x:", "y:"}, {"The point's x value", "The point's y value"}) == 1 THEN
+  IF INPUT({{tpX,[0]}, {tpY,[0]}}, "Type a point", {"x:", "y:"}, {"The point's x value", "The point's y value"}) == 1 THEN
+    // beta 2f: a point the plot cannot hold is refused (slPtMsg)
+    tpM := slPtMsg(tpX, tpY);
+    IF DIM(tpM) > 0 THEN
+      MSGBOX(tpM + " The point was not added.");
+      RETURN;
+    END;
     tpI := slAddPt(tpX, tpY);
     slSel := tpI;
     IF tpX < slXlo OR tpX > slXhi OR tpY < slYlo OR tpY > slYhi THEN
@@ -2077,12 +2309,13 @@ BEGIN
   slRvX1 := -1; slRvY1 := -1; slRvX2 := -1; slRvY2 := -1;
   // glyphs: x-bar (U+E000), subscripts 0 and 1 (U+2080, U+2081),
   // superscript 2 (U+00B2), the arrow pairs (U+21C6, U+21C5) --
-  // all verified.  y-hat and y-bar have no verified glyph yet.
+  // all verified; y-hat U+0177 and y-bar U+0233 too (SymProbe beta 1,
+  // Virtual Calculator, 2 Nov 2026, fonts 1 and 2).
   slXBAR := CHAR(57344);
   slSUB0 := CHAR(8320); slSUB1 := CHAR(8321);
   slSQ := CHAR(178);
   slLR := CHAR(8646); slUD := CHAR(8645);
-  slYHAT := "y-hat"; slYBAR := "y-bar";
+  slYHAT := CHAR(375); slYBAR := CHAR(563);   // beta 2f: the font's own letters
   // the points: two lists of 40, the first slN in use
   slMax := 40;
   slX := MAKELIST(0, K, 1, slMax, 1);

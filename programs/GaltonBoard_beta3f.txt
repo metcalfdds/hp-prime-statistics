@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// GALTONBOARD - beta 3e
+// GALTONBOARD - beta 3f
 // Galton's quincunx (bean machine) for the HP Prime
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
@@ -37,6 +37,39 @@
 //   CAS's fallback (the "decimal" badge) has never been needed on
 //   the emulator.  The MicroPython part still needs the G1 and G2,
 //   with the Terminal open (Lessons Learned section 9).
+//
+// beta 3f (2 Nov 2026): the monkey test's fixes (the book's vetting
+//   point 6, "bulletproof under careless and random use";
+//   tools/monkey_v1b.py, docs/dev/monkey-fleet-2026-11-01.md).
+//   * The two forms (rows R, chance p) take a real number only,
+//     {name,[0]}: a typed list went on into IP() and the range test.
+//     On the Virtual Calculator such a field refuses a typed list with
+//     "Invalid input" and keeps its value (TTestLab beta 1c, 1 Nov
+//     2026).
+//   * The bin panel (a tap on a bar) starts at x = 2, not 6: the
+//     left readouts ("n = 0", the mean, s) start at x = 4, and their
+//     first two pixels showed beside the panel's edge (round 4's label
+//     check under random use, text_overlap_v1).
+//   * A peg's count, redrawn as a ball passes, stands 1 px further
+//     left and clears from 25 px left of the peg to 3 px short of it
+//     (was 24 to 4), so the old number ("9" before "10") is wholly
+//     erased at the widest glyphs too.  The peg (2 px each side of its
+//     centre) and the peg to its left (28 px or more away) are not
+//     touched.
+//   * The board holds at most 5,000 balls (Roger, 2 Nov 2026: "a
+//     reasonable limit on number of balls a student can collect--above
+//     the threshold just display the results", then "maybe limit to
+//     5,000 or so?").  5,000 is already the PPL fallback's cap; past it
+//     the bars change little a student can see, the wait stays short
+//     (on a G1 the x100 key takes about half a second, so 5,000 by PPL
+//     about 25 s), and a pour left running no longer runs for ever.
+//     Every drop takes at most what is left (gbRoom), a pour stops when
+//     the board is full, and a full board shows its results: both
+//     overlays on, and the line "5000 balls: the board is full (Menu,
+//     Reset)" (gbFull).  The MicroPython drop (menu item 5, "Drop
+//     100,000") is now "Fill to 5,000": it fills what is left.  Reset
+//     the counts, or a new R or p, starts a new board.
+//   No number or other layout changed.  Harness only so far.
 //
 // beta 3e (20 Oct 2026): symbols instead of spelled-out names, on screen
 //   only (Roger, 20 Oct 2026: "use the symbols we developed"; every
@@ -840,8 +873,11 @@ BEGIN
     plS := gbKfmt(GB_PEG(plR, plJ + 1));
     plC := gbBLUE;
   END;
-  IF plClr == 1 THEN RECT_P(G3, plX - 24, plY - 8, plX - 4, plY + 2, gbWHT, gbWHT); END;
-  TEXTOUT_P(plS, G3, plX - 4 - 5 * DIM(plS), plY - 8, 1, plC);
+  // beta 3f: the box reaches 1 px nearer the peg and the count stands
+  // 1 px further left, so the old count is wholly erased (the overlap
+  // check saw the edge of a "9" under a new "10")
+  IF plClr == 1 THEN RECT_P(G3, plX - 25, plY - 8, plX - 3, plY + 2, gbWHT, gbWHT); END;
+  TEXTOUT_P(plS, G3, plX - 5 - 5 * DIM(plS), plY - 8, 1, plC);
 END;
 
 // A ball passed peg j of row r: count it, and refresh its number if
@@ -1376,12 +1412,32 @@ END;
 // DROPPING BALLS
 // ------------------------------------------------------------
 
+// beta 3f: the board holds at most 5,000 balls (Roger, 2 Nov 2026:
+// "a reasonable limit on number of balls a student can collect--above
+// the threshold just display the results", "maybe limit to 5,000 or
+// so?").  gbRoom is what is left,
+// and every drop takes at most that; gbFull shows a full board's
+// results: both overlays on (binomial and normal against the bars),
+// and a line saying so in the footer.
+gbRoom()
+BEGIN
+  RETURN MAX(0, 5000 - gbN);
+END;
+
+gbFull()
+BEGIN
+  gbOvl := 2;
+  gbMsg := "5000 balls: the board is full (Menu, Reset)";
+  gbMsgC := gbRED;
+END;
+
 // Drop one ball with animation and the Bernoulli string.  Each frame
 // copies G2 into G1, draws the ball, its trail and the string, and
-// shows G1.  Returns the bin.
+// shows G1.  Returns the bin (-1: the board is full, no ball).
 gbDropAnim()
 BEGIN
   LOCAL daGo, daK, daS;
+  IF gbRoom() < 1 THEN gbFull(); RETURN -1; END;   // beta 3f
   gbNewBall(1);
   gbBOn := 1; gbBL1 := ""; gbBL2 := "";
   gbMsg := "one ball: at every peg R (right, chance p) or L";
@@ -1422,7 +1478,9 @@ END;
 gbPour(poMode, poMax)
 BEGIN
   LOCAL poI, poOn, poLive, poFr, poNew, poK;
-  LOCAL poM, poM1, poT, poSl, poN;
+  LOCAL poM, poM1, poT, poSl, poN, poFul;
+  IF gbRoom() < 1 THEN gbDrain(); gbFull(); RETURN 0; END;   // beta 3f: full
+  poFul := 0;
   IF poMode == 2 THEN gbDrain(); END;          // the tap that started it
   REPEAT poK := GETKEY; UNTIL poK == -1;
   FOR poI FROM 1 TO 8 DO gbQR(poI) := -1; END;
@@ -1431,6 +1489,8 @@ BEGIN
   WHILE poOn == 1 OR poLive > 0 DO
     poT := TICKS;
     poFr := poFr + 1;
+    // beta 3f: no new ball once those landed and in the air fill the board
+    IF poOn == 1 AND gbN + poLive >= 5000 THEN poOn := 0; poFul := 1; END;
     // a new ball every third frame while pouring, at most 8 in the air
     IF poOn == 1 AND poLive < 8 AND (poFr MOD 3) == 1 THEN
       poSl := 0;
@@ -1485,6 +1545,7 @@ BEGIN
   REPEAT poK := GETKEY; UNTIL poK == -1;
   gbMsg := "poured " + STRING(poNew, 2, 0) + " balls: n = " + STRING(gbN, 2, 0);
   gbMsgC := gbFOOT;
+  IF poFul == 1 OR gbRoom() < 1 THEN gbFull(); END;   // beta 3f
   RETURN poNew;
 END;
 
@@ -1493,6 +1554,9 @@ END;
 gbDropFast(dfN)
 BEGIN
   LOCAL dfI, dfR, dfK;
+  // beta 3f: at most what the board has room for
+  dfN := MIN(dfN, gbRoom());
+  IF dfN < 1 THEN gbFull(); RETURN 0; END;
   // say what is happening; 1000 balls take a few seconds on a G1
   RECT_P(G0, 60, 100, 260, 140, gbORNG, gbLORN);
   TEXTOUT_P("Dropping " + STRING(dfN, 2, 0) + " balls ...", G0, 76, 112, 2, gbORNG);
@@ -1504,6 +1568,7 @@ BEGIN
     END;
     gbRecord(dfK);
   END;
+  IF gbRoom() < 1 THEN gbFull(); END;          // beta 3f
 END;
 
 
@@ -1582,6 +1647,9 @@ gbBigDrop(bgN)
 BEGIN
   LOCAL bgL, bgT, bgOK, bgChk, bgI, bgS;
   LOCAL bgR, bgJ, bgC, bgM;
+  // beta 3f: at most what the board has room for
+  bgN := MIN(bgN, gbRoom());
+  IF bgN < 1 THEN gbFull(); RETURN 0; END;
   bgL := gbR * (gbR + 1) / 2;                  // pegs on the board
   RECT_P(G0, 16, 90, 303, 150, gbORNG, gbLORN);
   TEXTOUT_P("Dropping " + STRING(bgN, 2, 0) + " balls in MicroPython", G0, 26, 98, 2, gbORNG);
@@ -1639,6 +1707,10 @@ BEGIN
     gbMsgC := gbORNG;
   END;
   gbMsg := gbEng + ", " + STRING(bgM, 2, 0) + " balls in " + STRING(bgT, 2, 0) + " ms";
+  // beta 3f: the drop that fills the board keeps its line (the engine
+  // and the time are the point of it) and says so; both overlays on, as
+  // gbFull does
+  IF gbRoom() < 1 THEN gbOvl := 2; gbMsg := gbMsg + ": board full"; END;
   RETURN bgOK;
 END;
 
@@ -1653,7 +1725,7 @@ gbSetRows()
 BEGIN
   LOCAL srR;
   srR := gbR;
-  IF INPUT({srR}, "Rows of pegs", {"R:"},
+  IF INPUT({{srR,[0]}}, "Rows of pegs", {"R:"},
     {"3 to 12 rows; the bins are 0 .. R right bounces"}) == 1 THEN
     srR := IP(srR);
     IF srR < 3 OR srR > 12 THEN
@@ -1674,7 +1746,7 @@ gbSetP()
 BEGIN
   LOCAL spP;
   spP := gbP;
-  IF INPUT({spP}, "Chance of a right bounce", {"p:"},
+  IF INPUT({{spP,[0]}}, "Chance of a right bounce", {"p:"},
     {"Between 0.05 and 0.95; 0.5 is Galton's board"}) == 1 THEN
     IF spP < 0.05 OR spP > 0.95 THEN
       MSGBOX("p must be between 0.05 and 0.95 so that every bin is possible.");
@@ -1791,7 +1863,7 @@ BEGIN
     // the panel.  beta 3: from y 14 to 127 (was 16 to 122) with the
     // lines 13 px apart, to hold the exact line; it still ends above
     // the bars' count labels (y 127 and below) and the red frame (132)
-    RECT_P(G1, 6, 14, 313, 127, gbORNG, gbLORN);
+    RECT_P(G1, 2, 14, 317, 127, gbORNG, gbLORN);   // beta 3f: from x 2, over the readouts at x 4
     biS := " right bounces of ";
     IF biK == 1 THEN biS := " right bounce of "; END;
     TEXTOUT_P("Bin " + STRING(biK, 2, 0) + " (" + STRING(biK, 2, 0) + biS + STRING(gbR, 2, 0) + ")", G1, 14, 17, 2, gbBLUE);
@@ -2115,8 +2187,8 @@ BEGIN
   TEXTOUT_P("C(R,k) of them (R up to 8).", G1, 12, 142, 1, gbBLUE);
   TEXTOUT_P("Keys: - = 1, + = 100, 0 = pour, arrows = p and", G1, 12, 159, 1, #000000h);
   TEXTOUT_P("rows (both clear), Ent = menu, Esc = quit.", G1, 12, 172, 1, #000000h);
-  TEXTOUT_P("Menu: Pascal's triangle, SD colours, Drop", G1, 12, 189, 1, gbGRAY);
-  TEXTOUT_P("100,000 (MicroPython; PPL fallback 5,000).", G1, 12, 202, 1, gbGRAY);
+  TEXTOUT_P("Menu: Pascal's triangle, SD colours, and", G1, 12, 189, 1, gbGRAY);
+  TEXTOUT_P("MicroPython (the board holds 5,000 balls).", G1, 12, 202, 1, gbGRAY);
   TEXTOUT_P("Any key or tap: exact answers (page 3)", G1, 12, 224, 1, gbFOOT);
   BLIT_P(G0, 0, 0, G1);
   gbWaitAny();
@@ -2160,7 +2232,7 @@ BEGIN
     "Drop 10 balls (watch)",
     "Drop 100 balls (fast)",
     "Drop 1000 balls (fast)",
-    "Drop 100,000 (MicroPython)",
+    "Fill to 5,000 (MicroPython)",
     "Rows of pegs R",
     "Chance of a right bounce p",
     "Overlay: none/binom/+normal",
@@ -2177,7 +2249,7 @@ BEGIN
   IF mnI == 2 THEN gbPour(3, 10); END;
   IF mnI == 3 THEN gbDropFast(100); END;
   IF mnI == 4 THEN gbDropFast(1000); END;
-  IF mnI == 5 THEN gbBigDrop(100000); END;
+  IF mnI == 5 THEN gbBigDrop(5000); END;      // beta 3f: the board holds 5,000
   IF mnI == 6 THEN gbSetRows(); END;
   IF mnI == 7 THEN gbSetP(); END;
   IF mnI == 8 THEN gbOvl := (gbOvl + 1) MOD 3; END;
