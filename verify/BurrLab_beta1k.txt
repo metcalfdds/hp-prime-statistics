@@ -14,6 +14,21 @@
 // hardware testing are Roger D. Metcalf's; the code, drafting and
 // source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
 
+// BurrLab - beta 1k  (2 Nov 2026, night) -- x0 stays on the plot.
+//   Roger, beta 1j on the Virtual Calculator: on Explore, x0 could be
+//   stepped out to the hundreds of thousands, and the plot went with it.
+//   The window followed x0 (it reached at least 1.15 x0) and each arrow
+//   step was a fortieth of the window, so every press made the next one
+//   bigger.  Now the window is the curve's own (the 0.995 quantile, at
+//   most 50 S) and x0 stops at its right edge; when C, K or S shrink the
+//   window, x0 comes back inside it.  C and K keep their range, 0.2 to
+//   50; they move the curve, and the window follows the curve.  S now
+//   stops at 1,000, not 1,000,000 (Roger: cap S at something less), so
+//   the x axis runs to 50,000 at most: arrows, drag and the Fit pages'
+//   S key alike.  An S already above 1,000 (a fit to data in large
+//   units) is not pulled down by an up press; it just goes no higher.
+//   A value farther out: How rare is this? (Fit pages) takes any value.
+//
 // BurrLab - beta 1j  (2 Nov 2026, night) -- commas in big numbers.
 //   Roger, 2 Nov 2026: "always put comma delimiters in big numbers". 
 //   STRING never groups digits, whatever Home's setting, so a new routine,
@@ -2658,15 +2673,21 @@ BEGIN
   RETURN ROUND(buPts(2 * raLo - 2) + (buPts(2 * raLo) - buPts(2 * raLo - 2)) * (raX - raX1) / (raX2 - raX1), 0);
 END;
 
-// The x-window: the 0.995 quantile, at most 50 S, and x0 on screen.
+// The x-window: the 0.995 quantile, at most 50 S.  beta 1k: the window
+// no longer stretches to x0 (stepping x0 stretched it, and every step
+// grew with it); x0 is brought back inside instead, to the last step
+// (a 40th of the window, as an arrow press) that fits.
 // Held while a finger is down (buFrz = 1), refitted on the lift.
 bu_Window()
 BEGIN
-  LOCAL wnQ, wnW;
+  LOCAL wnQ, wnW, wnS;
   IF buFrz == 1 THEN RETURN 0; END;
   wnQ := bu_Quant(0.995, buC, buK, buS);
   wnW := MIN(wnQ, 50 * buS);
-  wnW := MAX(wnW, buX0 * 1.15);
+  IF buX0 > wnW THEN
+    wnS := bu_Nice(wnW / 40);
+    buX0 := MAX(wnS, FLOOR(wnW / wnS) * wnS);
+  END;
   IF wnW < wnQ THEN buCap := 1; ELSE buCap := 0; END;
   IF wnW <> buXmax THEN buXmax := wnW; buRe := 1; END;
   RETURN 1;
@@ -2909,12 +2930,15 @@ BEGIN
   IF buSel == 1 THEN buC := MAX(0.2, MIN(50, ROUND(buC + 0.1 * esDir, 2))); buRe := 1; END;
   IF buSel == 2 THEN buK := MAX(0.2, MIN(50, ROUND(buK + 0.1 * esDir, 2))); buRe := 1; END;
   IF buSel == 3 THEN
-    IF esDir > 0 THEN buS := MIN(1000000, buS * 1.1); ELSE buS := MAX(0.01, buS / 1.1); END;
+    // beta 1k: S stops at 1,000 (it was 1,000,000); one already above stays
+    IF esDir > 0 THEN buS := MAX(buS, MIN(1000, buS * 1.1)); ELSE buS := MAX(0.01, buS / 1.1); END;
     buRe := 1;
   END;
   IF buSel == 4 THEN
     esStp := bu_Nice(buXmax / 40);
     buX0 := MAX(esStp, ROUND(buX0 / esStp, 0) * esStp + esStp * esDir);
+    // beta 1k: x0 stops at the plot's right edge (the window is the curve's)
+    IF buX0 > buXmax THEN buX0 := MAX(esStp, FLOOR(buXmax / esStp) * esStp); END;
   END;
 END;
 
@@ -3000,7 +3024,7 @@ BEGIN
           // C and K: 0.01 a pixel; S: x1.02 a pixel (Burr3's rates)
           IF buSel == 1 THEN buC := MAX(0.2, MIN(50, ROUND(exP0 + 0.01 * (exTX - exPX), 2))); END;
           IF buSel == 2 THEN buK := MAX(0.2, MIN(50, ROUND(exP0 + 0.01 * (exTX - exPX), 2))); END;
-          IF buSel == 3 THEN buS := MAX(0.01, MIN(1000000, exP0 * 1.02^(exTX - exPX))); END;
+          IF buSel == 3 THEN buS := MAX(0.01, MIN(MAX(1000, exP0), exP0 * 1.02^(exTX - exPX))); END;   // beta 1k: 1,000
           buRe := 1;
         END;
       END;
@@ -3271,7 +3295,7 @@ BEGIN
       IF fmK == 2 THEN fmAct := 4; END;
       IF fmK == 42 THEN fmAct := 5; END;
       IF fmK == 45 THEN buS := MAX(0.01, buS / 1.1); buRe := 1; fmMode := 0; END;
-      IF fmK == 50 THEN buS := MIN(1000000, buS * 1.1); buRe := 1; fmMode := 0; END;
+      IF fmK == 50 THEN buS := MAX(buS, MIN(1000, buS * 1.1)); buRe := 1; fmMode := 0; END;   // beta 1k: 1,000
       IF fmK == 4 THEN fmRun := 0; END;
       IF fmK == 30 THEN fmAct := 30; END;
       REPEAT fmK := GETKEY; UNTIL fmK == -1;
@@ -4338,7 +4362,7 @@ BEGIN
     IF hpPg == 1 THEN
       hpY := bu_Para("The Burr XII is a flexible model for a long right tail: sentences served, waits to re-arrest, insurance losses, incomes. Two shapes C and K and a scale S. Its tail is a power law: P(X > x) falls like x^(-K C).", 24, buBLK);
       hpY := bu_Para("The mean exists only if K" + buTIMES + "C > 1, the variance only if K" + buTIMES + "C > 2: with a heavy enough tail the sample mean never settles (menu 4).", hpY + 2, buRED);
-      hpY := bu_Para("Explore: soft keys choose C, K, S or x" + CHAR(8320) + "; arrows step it; drag sideways in the plot to slide it; tap to put x" + CHAR(8320) + " there. The window freezes while a finger is down and refits on the lift. A yellow hourglass at the top right: still computing.", hpY + 2, buGRAY);
+      hpY := bu_Para("Explore: soft keys choose C, K, S or x" + CHAR(8320) + "; arrows step it; drag sideways in the plot to slide it; tap to put x" + CHAR(8320) + " there; it stops at the right edge. The window freezes while a finger is down and refits on the lift. A yellow hourglass at the top right: still computing.", hpY + 2, buGRAY);
     END;
     IF hpPg == 2 THEN
       hpY := bu_Para("Family tree: C = 1 is Pareto II (Lomax); K = 1 is the log-logistic (Fisk); K " + buARR + " " + buINF + " with S = Sw K^(1/C) is the Weibull. Tap the map to set (C, K); its colours are the moment cases.", 24, buBLK);
@@ -4374,7 +4398,7 @@ END;
 bu_Opening()
 BEGIN
   LOCAL opY;
-  bu_Frame("BurrLab beta 1j: the long right tail");
+  bu_Frame("BurrLab beta 1k: the long right tail");
   opY := bu_Para("A teaching lab for Statistics for Criminal Justice: what a heavy tail is, the Burr XII fitted to real criminal-justice data (BJS months served, Rossi weeks to re-arrest) and to the textbook Danish fire losses, and how it compares with the usual rivals.", 26, buBLK);
   opY := bu_Para("Touch: drag, tap, soft keys. Keys: arrows, +/-, 0, Enter = menu, Esc = back.", opY + 2, buGRAY);
   opY := bu_Para("DISCLAIMER: a teaching and demonstration aid. Not validated for forensic, clinical or legal use; do not rely on its results for legal purposes.", opY + 4, buRED);

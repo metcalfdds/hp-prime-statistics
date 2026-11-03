@@ -1,5 +1,5 @@
 // ============================================================
-// NORM EXPLORER - beta 42f
+// NORM EXPLORER - beta 42g
 // Normal distribution workbench for the HP Prime
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
@@ -96,6 +96,16 @@
 // NORMAL DISTRIBUTION WORKBENCH
 // HP Prime (PPL + optional MicroPython sampler)
 // =====================================================
+// beta 42g (2 Nov 2026, night): alpha from 0.001 to 0.2; menu items
+//   that fit.  Roger: "for alpha we dont need like 0.00001 or
+//   something--use real world values like 0.001, 0.01, 0.05, 0.1, 0.2
+//   and so forth".  The three critical-value forms and the power
+//   picture took any alpha between 0 and 1; now 0.001 to 0.2, as in
+//   AnovaLab ("x at a percentile" keeps any area between 0 and 1: that
+//   is not an alpha).  And "some of the menu items run out of the
+//   box": two of 32 and 34 characters now read "My data: D1
+//   (Statistics 1Var)" and "Regression residuals: C1, C2".
+//
 // beta 42f (2 Nov 2026, night): commas in big numbers.
 //   Roger, 2 Nov 2026: "always put comma delimiters in big numbers". 
 //   STRING never groups digits, whatever Home's setting, so a new routine,
@@ -2171,9 +2181,10 @@ BEGIN
   IF icT == 2 THEN
     icP := 0.05;
     IF INPUT({{icP,[0]}}, "Critical Value", {"α:"},
-      {"Area in the RIGHT tail, e.g. .05 or .01"}) == 0 THEN RETURN; END;
-    IF icP <= 0 OR icP >= 1 THEN
-      MSGBOX("Alpha must be strictly between 0 and 1.");
+      {"Area in the RIGHT tail: 0.001 to 0.2"}) == 0 THEN RETURN; END;
+    // beta 42g: 0.001 to 0.2 (Roger: real-world alphas)
+    IF icP < 0.001 OR icP > 0.2 THEN
+      MSGBOX("α must be from 0.001 to 0.2 (0.05 is usual).");
       RETURN;
     END;
     // beta 42a: Phi^-1(1 - p) is exactly -Phi^-1(p) (the normal curve
@@ -2201,9 +2212,10 @@ BEGIN
   IF icT == 3 THEN
     icP := 0.05;
     IF INPUT({{icP,[0]}}, "Critical Value", {"α:"},
-      {"Area in the LEFT tail, e.g. .05 or .01"}) == 0 THEN RETURN; END;
-    IF icP <= 0 OR icP >= 1 THEN
-      MSGBOX("Alpha must be strictly between 0 and 1.");
+      {"Area in the LEFT tail: 0.001 to 0.2"}) == 0 THEN RETURN; END;
+    // beta 42g: 0.001 to 0.2 (Roger: real-world alphas)
+    IF icP < 0.001 OR icP > 0.2 THEN
+      MSGBOX("α must be from 0.001 to 0.2 (0.05 is usual).");
       RETURN;
     END;
     icZ := NORMALD_ICDF(0, 1, icP);
@@ -2227,9 +2239,10 @@ BEGIN
   IF icT == 4 THEN
     icP := 0.05;
     IF INPUT({{icP,[0]}}, "Two-tailed Critical Values", {"α:"},
-      {"Total area in BOTH tails, e.g. .05 or .01"}) == 0 THEN RETURN; END;
-    IF icP <= 0 OR icP >= 1 THEN
-      MSGBOX("Alpha must be strictly between 0 and 1.");
+      {"Area in BOTH tails together: 0.001 to 0.2"}) == 0 THEN RETURN; END;
+    // beta 42g: 0.001 to 0.2 (Roger: real-world alphas)
+    IF icP < 0.001 OR icP > 0.2 THEN
+      MSGBOX("α must be from 0.001 to 0.2 (0.05 is usual).");
       RETURN;
     END;
     // beta 42a: -Phi^-1(alpha/2) rather than Phi^-1(1 - alpha/2), the
@@ -2523,9 +2536,10 @@ BEGIN
   IF c2T == 3 THEN
     c2A := 0.05;
     IF INPUT({{c2A,[0]}}, "Power Picture", {"α:"},
-      {"Right-tail area under curve 1, e.g. .05"}) == 0 THEN RETURN; END;
-    IF c2A <= 0 OR c2A >= 1 THEN
-      MSGBOX("α must be strictly between 0 and 1.");
+      {"Right-tail area under curve 1: 0.001 to 0.2"}) == 0 THEN RETURN; END;
+    // beta 42g: 0.001 to 0.2 (Roger: real-world alphas)
+    IF c2A < 0.001 OR c2A > 0.2 THEN
+      MSGBOX("α must be from 0.001 to 0.2 (0.05 is usual).");
       RETURN;
     END;
     // beta 42a: x* = mu - Phi^-1(alpha) sigma, the same cut as
@@ -2570,9 +2584,9 @@ BEGIN
   // only the index is tested; CHOOSE's return value is not used.
   hsT := 0;
   CHOOSE(hsT, "Data & Histogram", {
-    "My data from D1  (Statistics 1Var)",
+    "My data: D1 (Statistics 1Var)",
     "Two groups from C1, C2  (2Var)",
-    "Regression residuals from C1, C2",
+    "Regression residuals: C1, C2",
     "Write z-scores of D1 into D2",
     "Normal probability plot of D1",
     "Simulate a sample",

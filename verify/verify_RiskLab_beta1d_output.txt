@@ -1,0 +1,19 @@
+=== RiskLab beta 1d against beta 1c (../programs/RiskLab_beta1c.txt)
+=== G. static
+PASS G1 only the two menus (rl_PresetMenu, rl_MyData) and the title page (rl_Open) differ from beta 1c: ['rl_MyData', 'rl_Open', 'rl_PresetMenu']
+PASS G2 the header names beta 1d
+PASS G3 no new "!=" and nothing new for the CAS
+=== X. the menus
+PASS XM every menu item at most 30 characters: 19 items, the longest 30 ("D1 = Y 0/1, D2-D5 = predictors")
+=== R. the monkey, 30 seeds on both versions
+   R1: 0 seed(s) take another path; 0 of them because the new version refused a value with this round's sentence ([]), 0 because a message is rewritten on purpose ([])
+PASS R0 the runs ran: 30 of 30 new-version runs ended OK or by the clock ({'OK': 30})
+PASS R1 30 seeds ({'OK': 30}): each run takes the old version's path: the same ending, number of screens, boxes and summary once the commas are out (0 accepted as the script says)
+INFO R2 every screen's texts the old version's once the commas are out, but 30 screen(s): where a number with its commas no longer fit and the program wrote it another way, or where this version changes a text on purpose (its change note says which); the first: [(5000, 0, ['beta 1c, 28 Oct 2026.  Help is in the menu.'], ['beta 1d, 2 Nov 2026.  Help is in the menu.']), (5001, 0, ['beta 1c, 28 Oct 2026.  Help is in the menu.'], ['beta 1d, 2 Nov 2026.  Help is in the menu.']), (5002, 0, ['beta 1c, 28 Oct 2026.  Help is in the menu.'], ['beta 1d, 2 Nov 2026.  Help is in the menu.'])]
+PASS M  every number of four or more digits drawn is grouped: 34 different grouped numbers drawn (2,483, 2,795, 6,553, 7,298 …); 0 drawn without their commas or with them twice, 0 of them accepted as the script says
+PASS C  every text handed to the CAS or EXPR is the old version's, call for call (0 calls on the new version's runs; a run that took another path is R1's)
+PASS Y  no year, or other number the program writes as text, is drawn with a comma, nor a name with digits in it ("x1000")
+PASS D  no new firm overlap, straddle or overrun (old 0, new 0) and no new number cut (old 0, new 0)
+
+10 PASS, 0 FAIL
+rc=0

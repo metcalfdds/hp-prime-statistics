@@ -1,0 +1,20 @@
+=== PowerViz v2.5n against v2.5m (../programs/PowerViz_v2.5m.txt)
+=== G. static
+PASS G1 only the edit form (pv_EditForm) differ from v2.5m: ['pv_EditForm']
+PASS G2 the header names v2.5n
+PASS G3 no new "!=" and nothing new for the CAS
+=== X. alpha
+PASS X1 the five edit forms: alpha 0.3 and 0.0005 reset to 0.05 with a sentence, 0.2 and 0.001 kept
+PASS X2 v2.5m kept 0.3
+=== R. the monkey, 30 seeds on both versions
+   R1: 8 seed(s) take another path; 8 of them because the new version refused a value with this round's sentence ([5003, 5009, 5010, 5012, 5014, 5015, 5019, 5025]), 0 because a message is rewritten on purpose ([])
+PASS R0 the runs ran: 30 of 30 new-version runs ended OK or by the clock ({'OK': 30})
+PASS R1 30 seeds ({'OK': 30}): each run takes the old version's path: the same ending, number of screens, boxes and summary once the commas are out (8 accepted as the script says)
+INFO R2 every screen's texts the old version's once the commas are out, but 0 screen(s): where a number with its commas no longer fit and the program wrote it another way, or where this version changes a text on purpose (its change note says which); the first: []
+PASS M  every number of four or more digits drawn is grouped: 40 different grouped numbers drawn (1,000, 2,000, 2,500, 3,000 …); 0 drawn without their commas or with them twice, 0 of them accepted as the script says
+PASS C  every text handed to the CAS or EXPR is the old version's, call for call (20 calls on the new version's runs; a run that took another path is R1's)
+PASS Y  no year, or other number the program writes as text, is drawn with a comma, nor a name with digits in it ("x1000")
+PASS D  no new firm overlap, straddle or overrun (old 0, new 0) and no new number cut (old 0, new 0)
+
+11 PASS, 0 FAIL
+rc=0

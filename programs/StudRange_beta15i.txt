@@ -1,5 +1,5 @@
 // ============================================================
-// STUDRANGE - beta 15g
+// STUDRANGE - beta 15i
 // Studentized range (Tukey q) - MicroPython engine with a PPL
 //   fallback, in one program
 // ============================================================
@@ -58,6 +58,32 @@
 //   which engine answered: an engine badge on every result page
 //   and on the plot, and a Diagnostics item that probes the
 //   bridge live.  StudRangePy is retired by this version.
+//
+// beta 15i (2 Nov 2026, night): alpha, k, df and m keep to their ranges.
+//   Roger: "for alpha we dont need like 0.00001 or something--use real
+//   world values like 0.001, 0.01, 0.05, 0.1, 0.2 and so forth".  A
+//   typed alpha was clamped without a word to 0.0001 ... 0.5 (Critical
+//   value, Tukey HSD; 0.001 ... 0.5 on the plot), so a student who
+//   typed 5 for 5 % got alpha = 0.5.  Now alpha must be from 0.001 to
+//   0.2, as in AnovaLab, and anything else is refused with a sentence;
+//   the plot's alpha drag stops at 0.2.  k had no upper limit in
+//   P-value, Critical value and Tukey HSD (a caps probe gave it 1E9):
+//   now a whole number from 2 to 100, the reach of the printed tables;
+//   the plot's k, clamped to 2 ... 20 without a word, is refused with a
+//   sentence outside them.
+//   df had no cap: on the PPL engine df 1E12 gave q crit 3.6232 for
+//   k = 4, alpha = .05 (the right value, df 1,000,000 or infinity, is
+//   3.6332), and 1E300 stopped the program (division by zero); on the
+//   calculator's 12 digits the PPL engine loses digits sooner.  Now df
+//   is from 1 to 100,000, or 0 for infinity (the program's own stand-in
+//   for infinity is 100,000, and there q crit is the infinity value to
+//   four decimals); a negative df, read as infinity without a word, is
+//   refused.  Tukey HSD's m (per group) is a whole number from 2 to
+//   1,000, so the automatic df k(m - 1) stays below 100,000; the plot's
+//   H0 simulation m, clamped to 2 ... 30 without a word, is refused with
+//   a sentence outside them.
+//   (Beta 15h, a first build of the same night, had the alpha and k
+//   caps only; it was never shipped.)
 //
 // beta 15g (2 Nov 2026, night): commas in big numbers.
 //   Roger, 2 Nov 2026: "always put comma delimiters in big numbers". 
@@ -1547,10 +1573,14 @@ BEGIN
   IF INPUT({tq,tk,tv},"P-value from q",
      {"q:","k:","df:"},
      {"Observed studentized range statistic",
-      "Number of means spanned (Tukey: all k)",
-      "df error (1+ with Python, 3+ PPL; 0 = ∞)"})==0 THEN RETURN 0; END;
-  tk:=MAX(2,IP(tk));
-  tv:=IP(MAX(0,tv));
+      "Number of means spanned, 2 to 100 (Tukey: all k)",
+      "df error, 1 to 100,000 (0 = ∞; PPL: 3+)"})==0 THEN RETURN 0; END;
+  // beta 15i: k outside 2 ... 100 is refused (it was taken as typed)
+  IF tk<2 OR tk>100 OR FP(tk)<>0 THEN MSGBOX("k must be a whole number from 2 to 100."); RETURN 0; END;
+  // beta 15i: df from 1 to 100,000, or 0 for infinity (no cap before:
+  // df 1E12 gave a wrong q crit; a negative df was read as infinity)
+  IF tv<0 OR (tv>0 AND tv<1) OR tv>100000 THEN MSGBOX("df must be from 1 to 100,000, or 0 for ∞."); RETURN 0; END;
+  tv:=IP(tv);
   RECT_P(G0,RGB(255,255,255));
   TEXTOUT_P("Computing (full precision)...",G0,50,110,3,RGB(0,60,200));
   // beta 15: the MicroPython engine first (64 x 96 Simpson)
@@ -1608,11 +1638,17 @@ BEGIN
   ta:=0.05; tk:=3; tv:=12;
   IF INPUT({ta,tk,tv},"Critical value q(α)",
      {"α:","k:","df:"},
-     {"Significance level (upper tail)",
-      "Number of means",
-      "df error (1+ with Python, 3+ PPL; 0 = ∞)"})==0 THEN RETURN 0; END;
-  ta:=MIN(0.5,MAX(1E-4,ta)); tk:=MAX(2,IP(tk));
-  tv:=IP(MAX(0,tv));
+     {"From 0.001 to 0.2; 0.05 is usual (upper tail)",
+      "Number of means, 2 to 100",
+      "df error, 1 to 100,000 (0 = ∞; PPL: 3+)"})==0 THEN RETURN 0; END;
+  // beta 15i: alpha and k outside their ranges are refused with a
+  // sentence (alpha was clamped to 0.0001 ... 0.5 without a word)
+  IF ta<0.001 OR ta>0.2 THEN MSGBOX("α must be from 0.001 to 0.2 (0.05 is usual)."); RETURN 0; END;
+  IF tk<2 OR tk>100 OR FP(tk)<>0 THEN MSGBOX("k must be a whole number from 2 to 100."); RETURN 0; END;
+  // beta 15i: df from 1 to 100,000, or 0 for infinity (no cap before:
+  // df 1E12 gave a wrong q crit; a negative df was read as infinity)
+  IF tv<0 OR (tv>0 AND tv<1) OR tv>100000 THEN MSGBOX("df must be from 1 to 100,000, or 0 for ∞."); RETURN 0; END;
+  tv:=IP(tv);
   RECT_P(G0,RGB(255,255,255));
   TEXTOUT_P("Solving (full precision)...",G0,50,110,3,RGB(0,60,200));
   // beta 15: the MicroPython engine first (secant, about 1.5 s)
@@ -1673,12 +1709,19 @@ BEGIN
   ta:=0.05; tk:=4; tm:=8; tmse:=1; tvo:=0;
   IF INPUT({ta,tk,tm,tmse,tvo},"Tukey HSD",
      {"α:","k:","m:","MSE:","df:"},
-     {"Significance level",
-      "Number of group means",
-      "Sample size per group (equal n)",
+     {"From 0.001 to 0.2; 0.05 is usual",
+      "Number of group means, 2 to 100",
+      "Sample size per group, 2 to 1,000",
       "Mean square error from ANOVA",
-      "df error (0 = auto: k(m-1))"})==0 THEN RETURN 0; END;
-  ta:=MIN(0.5,MAX(1E-4,ta)); tk:=MAX(2,IP(tk)); tm:=MAX(2,IP(tm));
+      "df error, 1 to 100,000 (0 = auto: k(m-1))"})==0 THEN RETURN 0; END;
+  // beta 15i: alpha and k outside their ranges are refused (as above)
+  IF ta<0.001 OR ta>0.2 THEN MSGBOX("α must be from 0.001 to 0.2 (0.05 is usual)."); RETURN 0; END;
+  IF tk<2 OR tk>100 OR FP(tk)<>0 THEN MSGBOX("k must be a whole number from 2 to 100."); RETURN 0; END;
+  // beta 15i: m a whole number from 2 to 1,000, so the automatic df
+  // k(m-1) stays below 100,000; a typed df above 100,000 is refused
+  // (no cap before; an m below 2 was made 2 without a word)
+  IF tm<2 OR tm>1000 OR FP(tm)<>0 THEN MSGBOX("m must be a whole number from 2 to 1,000."); RETURN 0; END;
+  IF tvo>100000 THEN MSGBOX("df must be from 1 to 100,000, or 0 for auto: k(m-1)."); RETURN 0; END;
   tmse:=MAX(1E-12,tmse);
   // beta 15: "auto" is df < 1 (beta 14: df < 3, when df 1-2 were illegal)
   IF tvo<1 THEN vv:=tk*(tm-1); ELSE vv:=IP(tvo); END;
@@ -1937,10 +1980,14 @@ BEGIN
   IF INPUT({tk,tv,qo},"Distribution plot",
      {"k:","df:","q obs:"},
      {"Number of means (2-20)",
-      "df error (1+ with Python, 3+ PPL; 0 = ∞)",
+      "df error, 1 to 100,000 (0 = ∞; PPL: 3+)",
       "Observed q (0 = none)"})==0 THEN RETURN 0; END;
-  tk:=MAX(2,MIN(20,IP(tk)));
-  tv:=IP(MAX(0,tv));
+  // beta 15i: k outside 2 ... 20 is refused (it was clamped without a word)
+  IF tk<2 OR tk>20 OR FP(tk)<>0 THEN MSGBOX("k must be a whole number from 2 to 20."); RETURN 0; END;
+  // beta 15i: df from 1 to 100,000, or 0 for infinity (no cap before:
+  // df 1E12 gave a wrong q crit; a negative df was read as infinity)
+  IF tv<0 OR (tv>0 AND tv<1) OR tv>100000 THEN MSGBOX("df must be from 1 to 100,000, or 0 for ∞."); RETURN 0; END;
+  tv:=IP(tv);
   qo:=MAX(0,qo);
 
   nn:=64; qmax:=6; ymax:=0;
@@ -2297,7 +2344,8 @@ BEGIN
         END;
         IF pmDrag==2 THEN
           // alpha = 1 - (the CDF height of the finger)
-          pmA:=ROUND(MAX(0.001,MIN(0.99,1-(py2-pmMY)/(py2-py1))),3);
+          // beta 15i: at most 0.2 (Roger: real-world alphas)
+          pmA:=ROUND(MAX(0.001,MIN(0.2,1-(py2-pmMY)/(py2-py1))),3);
           ai:=0;
           FOR pmJ FROM 1 TO 5 DO
             IF alad(pmJ)==pmA THEN ai:=pmJ; END;
@@ -2380,8 +2428,15 @@ BEGIN
     IF pmAct==5 THEN
       pmTv:=tv;
       pmOK:=INPUT({pmTv},"Degrees of freedom",{"df:"},
-        {"df error (1+ with Python, 3+ PPL; 0 = ∞)"});
-      IF pmOK>0 THEN tv:=IP(MAX(0,pmTv)); pmRb:=1; END;
+        {"df error, 1 to 100,000 (0 = ∞; PPL: 3+)"});
+      // beta 15i: df from 1 to 100,000, or 0 for infinity (as on the forms)
+      IF pmOK>0 THEN
+        IF pmTv<0 OR (pmTv>0 AND pmTv<1) OR pmTv>100000 THEN
+          MSGBOX("df must be from 1 to 100,000, or 0 for ∞.");
+        ELSE
+          tv:=IP(pmTv); pmRb:=1;
+        END;
+      END;
     END;
     IF pmAct==7 THEN
       IF qc<=qmax THEN qo:=qc; END;
@@ -2389,12 +2444,17 @@ BEGIN
     IF pmAct==8 THEN
       pmTv:=pmA;
       pmOK:=INPUT({pmTv},"Significance level",{"α:"},
-        {"Any α from 0.001 to 0.5"});
+        {"From 0.001 to 0.2; 0.05 is usual"});
       IF pmOK>0 THEN
-        pmA:=ROUND(MIN(0.5,MAX(0.001,pmTv)),4);
-        ai:=0;
-        FOR pmJ FROM 1 TO 5 DO
-          IF alad(pmJ)==pmA THEN ai:=pmJ; END;
+        // beta 15i: refused outside 0.001 ... 0.2 (was clamped to 0.5)
+        IF pmTv<0.001 OR pmTv>0.2 THEN
+          MSGBOX("α must be from 0.001 to 0.2 (0.05 is usual).");
+        ELSE
+          pmA:=ROUND(pmTv,4);
+          ai:=0;
+          FOR pmJ FROM 1 TO 5 DO
+            IF alad(pmJ)==pmA THEN ai:=pmJ; END;
+          END;
         END;
       END;
     END;
@@ -2407,12 +2467,17 @@ BEGIN
       pmOK:=INPUT({pmTv},"H0 simulation",{"m:"},
         {"Group size m (2 to 30); df = k(m-1)"});
       IF pmOK>0 THEN
-        pmSM:=MAX(2,MIN(30,IP(pmTv)));
-        IF tk*(pmSM-1)<>tv THEN
-          MSGBOX("k = "+sr_Cm(STRING(tk,2,0))+" groups of m = "+sr_Cm(STRING(pmSM,2,0))+" give df = k(m-1) = "+sr_Cm(STRING(tk*(pmSM-1),2,0))+"."+CHAR(10)+"The plot is rebuilt for that df.");
-          tv:=tk*(pmSM-1); pmRb:=1;
+        // beta 15i: m outside 2 ... 30 is refused (it was clamped without a word)
+        IF pmTv<2 OR pmTv>30 OR FP(pmTv)<>0 THEN
+          MSGBOX("m must be a whole number from 2 to 30.");
+        ELSE
+          pmSM:=pmTv;
+          IF tk*(pmSM-1)<>tv THEN
+            MSGBOX("k = "+sr_Cm(STRING(tk,2,0))+" groups of m = "+sr_Cm(STRING(pmSM,2,0))+" give df = k(m-1) = "+sr_Cm(STRING(tk*(pmSM-1),2,0))+"."+CHAR(10)+"The plot is rebuilt for that df.");
+            tv:=tk*(pmSM-1); pmRb:=1;
+          END;
+          pmSGo:=1;
         END;
-        pmSGo:=1;
       END;
     END;
     IF pmAct==10 THEN
@@ -2436,7 +2501,14 @@ BEGIN
     IF pmAct==14 THEN
       pmTv:=tk;
       pmOK:=INPUT({pmTv},"Number of means",{"k:"},{"k from 2 to 20"});
-      IF pmOK>0 THEN tk:=MAX(2,MIN(20,IP(pmTv))); pmRb:=1; END;
+      // beta 15i: refused outside 2 ... 20 (was clamped without a word)
+      IF pmOK>0 THEN
+        IF pmTv<2 OR pmTv>20 OR FP(pmTv)<>0 THEN
+          MSGBOX("k must be a whole number from 2 to 20.");
+        ELSE
+          tk:=pmTv; pmRb:=1;
+        END;
+      END;
     END;
     // after an action: empty the keys and let the finger lift
     // (never after a plain drag sample -- pmAct is 0 then)

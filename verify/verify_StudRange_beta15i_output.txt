@@ -1,0 +1,25 @@
+=== StudRange beta 15i against beta 15g (../programs/StudRange_beta15g.txt)
+=== G. static
+PASS G1 only the four forms that take alpha, k, df or m (sr_PvMode, sr_CritMode, sr_HSDMode, sr_PlotMode) differ from beta 15g: ['sr_CritMode', 'sr_HSDMode', 'sr_PlotMode', 'sr_PvMode']
+PASS G2 the header names beta 15i
+PASS G3 no new "!=" and nothing new for the CAS
+=== X. alpha, k, df and m
+PASS X1 22 typed values out of range are refused with a sentence and nothing is computed
+PASS X2 the edges (alpha 0.001 and 0.2, k 2 and 100, df 1, 100,000 and 0, m 2 and 1,000, the plot's k 20 and df 100,000) are taken
+PASS X3 beta 15g took those values without a word (alpha 5, k 1E9, the plot's k 25, df 1E12, m 1,001)
+PASS X4 the plot: a typed alpha outside 0.001 ... 0.2 is refused, the drag stops at 0.2, a typed k outside 2 ... 20 is refused; the help lines say the ranges
+PASS X5 the plot's df key refuses df outside 1 ... 100,000 (0 = infinity) and its H0 simulation m outside 2 ... 30, with a sentence (both were clamped without a word); every df help line says the range
+PASS X6 q crit (k 4, alpha .05, the PPL engine) at df 100,000 is the infinity value to four decimals (q crit = 3.6332, q crit = 3.6332); beta 15g at df 1E12 gave q crit = 3.6232
+=== R. the monkey, 30 seeds on both versions
+   R1: 14 seed(s) take another path; 14 of them because the new version refused a value with this round's sentence ([5000, 5001, 5003, 5006, 5008, 5010, 5012, 5015, 5017, 5018, 5019, 5022, 5023, 5029]), 0 because a message is rewritten on purpose ([])
+   R1: seed 5000, after the refusal, reached the harness's edge: < between a list and a number is not covered
+PASS R0 the runs ran: 28 of 30 new-version runs ended OK or by the clock ({'END Unsupported': 2, 'OK': 28})
+PASS R1 30 seeds ({'END Unsupported': 2, 'OK': 28}): each run takes the old version's path: the same ending, number of screens, boxes and summary once the commas are out (14 accepted as the script says)
+INFO R2 every screen's texts the old version's once the commas are out, but 0 screen(s): where a number with its commas no longer fit and the program wrote it another way, or where this version changes a text on purpose (its change note says which); the first: []
+PASS M  every number of four or more digits drawn is grouped: 0 different grouped numbers drawn; 0 drawn without their commas or with them twice, 0 of them accepted as the script says
+PASS C  every text handed to the CAS or EXPR is the old version's, call for call (0 calls on the new version's runs; a run that took another path is R1's)
+PASS Y  no year, or other number the program writes as text, is drawn with a comma, nor a name with digits in it ("x1000")
+PASS D  no new firm overlap, straddle or overrun (old 0, new 0) and no new number cut (old 0, new 0)
+
+15 PASS, 0 FAIL
+rc=0

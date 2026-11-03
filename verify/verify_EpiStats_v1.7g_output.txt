@@ -1,0 +1,23 @@
+=== EpiStats v1.7g against v1.7f (../programs/EpiStats_v1.7f.txt)
+=== G. static
+PASS G1 only the four sample-size forms, the four-value form (es_AskAll), the one-cell form (es_Grid), the results page (es_ReadPage) and the menu's title (EpiStats) differ from v1.7f: ['EpiStats', 'es_AskAll', 'es_Grid', 'es_ReadPage', 'es_SS_OneMean', 'es_SS_OneProportion', 'es_SS_TwoMeans', 'es_SS_TwoProportions']
+PASS G2 the header names v1.7g
+PASS G3 no new "!=" and nothing new for the CAS
+=== X. alpha and counts
+PASS X1 the four sample-size forms refuse alpha 0.3 and 0.0005 and take 0.2 and 0.001
+PASS X2 v1.7f took alpha 0.3
+PASS X3 the four-value form refuses 10,000,000 and 1E100 with a sentence and takes 9,999,999
+PASS X4 rows of 110,000: v1.7g cuts nothing and leaves the two totals out of the small table (v1.7f cut ['110,000'])
+PASS X5 the one-cell form refuses above 9,999,999 and says so in its help line
+=== R. the monkey, 30 seeds on both versions
+   R1: 7 seed(s) take another path; 7 of them because the new version refused a value with this round's sentence ([5000, 5002, 5004, 5009, 5018, 5019, 5026]), 0 because a message is rewritten on purpose ([])
+PASS R0 the runs ran: 24 of 30 new-version runs ended OK or by the clock ({'OK': 24, 'END Unsupported': 6})
+PASS R1 30 seeds ({'OK': 24, 'END Unsupported': 6}): each run takes the old version's path: the same ending, number of screens, boxes and summary once the commas are out (7 accepted as the script says)
+INFO R2 every screen's texts the old version's once the commas are out, but 0 screen(s): where a number with its commas no longer fit and the program wrote it another way, or where this version changes a text on purpose (its change note says which); the first: []
+PASS M  every number of four or more digits drawn is grouped: 6 different grouped numbers drawn (54,322, 999,999, 3,139, 9,999,999 …); 0 drawn without their commas or with them twice, 0 of them accepted as the script says
+PASS C  every text handed to the CAS or EXPR is the old version's, call for call (4 calls on the new version's runs; a run that took another path is R1's)
+PASS Y  no year, or other number the program writes as text, is drawn with a comma, nor a name with digits in it ("x1000")
+PASS D  no new firm overlap, straddle or overrun (old 20, new 8) and no new number cut (old 0, new 0)
+
+14 PASS, 0 FAIL
+rc=0

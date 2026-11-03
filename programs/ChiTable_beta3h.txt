@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// CHITABLE - beta 3g
+// CHITABLE - beta 3h
 // Chi-square test for a 2 x 2, 2 x 3 or 3 x 2 table
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
@@ -38,6 +38,16 @@
 //   beta 1l (its fixes are all kept here) has not been re-run.
 //
 // Run ChiTable() from the Program Catalog.
+//
+// beta 3h (2 Nov 2026, night): alpha from 0.001 to 0.2.
+//   Roger: "for alpha we dont need like 0.00001 or something--use real
+//   world values like 0.001, 0.01, 0.05, 0.1, 0.2 and so forth".  A
+//   typed alpha could be from 0.0001 to just below 1, and the drag on
+//   the curve went from 0.0001 to 0.5; both now keep to 0.001 ... 0.2,
+//   the ends of the arrows' ladder (0.001, 0.005, 0.01, 0.02, 0.05,
+//   0.1, 0.2), as AnovaLab's alpha does.
+//   And a count above 9,999,999 no longer suggests entering the data
+//   divided by 10: that changes chi-square and p (the N / 10 page).
 //
 // beta 3g (2 Nov 2026, night): commas in big numbers.
 //   Roger, 2 Nov 2026: "always put comma delimiters in big numbers". 
@@ -1841,7 +1851,7 @@ BEGIN
     END;
   END;
   IF akBig == 1 THEN
-    MSGBOX("Counts above 9,999,999 do not fit the table: enter the data divided by 10.");
+    MSGBOX("Counts above 9,999,999 do not fit the table.");
   END;
   RETURN 1;
 END;
@@ -1917,7 +1927,7 @@ BEGIN
           // keeps its old count (a typed 1E9 ran out of its cell and off
           // the exact page; x10 N already stops N at 9,999,999)
           IF ROUND(enV, 0) > 9999999 THEN
-            MSGBOX("Counts above 9,999,999 do not fit the table: enter the data divided by 10.");
+            MSGBOX("Counts above 9,999,999 do not fit the table.");
           ELSE
             // beta 3d: the typed value is rounded to 2 decimals BEFORE
             // STRING.  STRING(x, 2, 2) prints scientific form when
@@ -3014,9 +3024,10 @@ BEGIN
               cvXv := MIN(MAX(cvM1(1), csPL + 1), csPR);
               cvXv := (cvXv - csPL) / (csPR - csPL) * csCvX;
               cvA := 1 - CHISQUARE_CDF(csDF, cvXv);
-              // keep alpha sensible: 0.0001 to 0.5
-              IF cvA > 0.5 THEN cvA := 0.5; cvXv := CHISQUARE_ICDF(csDF, 0.5); END;
-              IF cvA < 0.0001 THEN cvA := 0.0001; cvXv := CHISQUARE_ICDF(csDF, 0.9999); END;
+              // keep alpha to 0.001 ... 0.2, the ladder's ends (beta 3h; it was
+              // 0.0001 ... 0.5)
+              IF cvA > 0.2 THEN cvA := 0.2; cvXv := CHISQUARE_ICDF(csDF, 0.8); END;
+              IF cvA < 0.001 THEN cvA := 0.001; cvXv := CHISQUARE_ICDF(csDF, 0.999); END;
               IF cvXv <> csCrit THEN
                 csAlpha := cvA; csCrit := cvXv;
                 csCvDraw(1);                 // nothing re-shaded: the line and the verdict move
@@ -3401,9 +3412,10 @@ BEGIN
   // where the alpha drag on the curve stops too.
   alV := csAlpha;
   alLbl := csAl + ":";
-  IF INPUT({{alV,[0]}}, "Significance level", {alLbl}, {"From 0.0001 to below 1; 0.05 is usual"}) == 1 THEN
-    IF alV < 0.0001 OR alV >= 1 THEN
-      MSGBOX(csAl + " must be from 0.0001 to below 1 (0.05 is usual, 0.01 is strict). It did not change.");
+  // beta 3h: 0.001 to 0.2, the ladder's ends (Roger: real-world alphas)
+  IF INPUT({{alV,[0]}}, "Significance level", {alLbl}, {"From 0.001 to 0.2; 0.05 is usual"}) == 1 THEN
+    IF alV < 0.001 OR alV > 0.2 THEN
+      MSGBOX(csAl + " must be from 0.001 to 0.2 (0.05 is usual, 0.01 is strict). It did not change.");
       RETURN;
     END;
     csAlpha := alV;

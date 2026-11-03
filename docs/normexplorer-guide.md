@@ -167,9 +167,9 @@ Pick the unknown — z, x, μ or σ — and enter the other three. The answer is
 
 | Choice | What it does |
 |---|---|
-| My data from D1 (Statistics 1Var) | Fits N(x̄, s) to the list D1 (s with the n − 1 divisor), makes it the session curve and draws your data as a histogram of 32 bins over x̄ ± 4s, on the density scale |
+| My data: D1 (Statistics 1Var) | Fits N(x̄, s) to the list D1 (s with the n − 1 divisor), makes it the session curve and draws your data as a histogram of 32 bins over x̄ ± 4s, on the density scale |
 | Two groups from C1, C2 (2Var) | A curve for each group, both drawn with the pooled s; Cohen's d in the corner |
-| Regression residuals from C1, C2 | Least-squares line of C2 on C1, then the residuals through the same view — the normality assumption behind slope inference, shown rather than told |
+| Regression residuals: C1, C2 | Least-squares line of C2 on C1, then the residuals through the same view — the normality assumption behind slope inference, shown rather than told |
 | Write z-scores of D1 into D2 | So the next step can be done with the calculator's own apps |
 | Normal probability plot of D1 | Opens Statistics 1Var (set Plot1 to Normal Probability, then Plot, Autoscale) |
 | Simulate a sample | n = 200, 1000 or 5000 from the session N(μ, σ); the sample's own x̄ and s appear beside μ and σ — they differ on every draw, which is the lesson |

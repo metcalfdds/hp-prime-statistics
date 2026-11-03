@@ -1,6 +1,6 @@
 #pragma mode( separator(.,;) integer(h32) )
 // ============================================================
-// EPISTATS - v1.7f
+// EPISTATS - v1.7g
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
 //   (Anthropic Claude); concept, direction and all hardware
@@ -27,6 +27,16 @@
 //   "exact (CAS)", = 53/120, SE = 0.6646.  The CAS never failed
 //   there, so the fallback fixed in v1.7b has run only in the PC
 //   harness (ppl_run_v3d).
+//
+// v1.7g (2 Nov 2026, night): alpha from 0.001 to 0.2; counts that fit.
+//   Roger: "for alpha we dont need like 0.00001 or something--use real
+//   world values like 0.001, 0.01, 0.05, 0.1, 0.2 and so forth".  The
+//   four sample-size forms took any alpha between 0 and 1; now 0.001 to
+//   0.2, as in AnovaLab.  A count took any size (a caps probe gave a
+//   cell 1E100, and a total of 100,000 or more was cut short on the
+//   results page's small table): now at most 9,999,999 a value, the
+//   most a grid cell shows whole and ChiTable's limit too, and a total
+//   too wide for that small table's last column is left out, never cut.
 //
 // v1.7f (2 Nov 2026, night): commas in big numbers.
 //   Roger, 2 Nov 2026: "always put comma delimiters in big numbers". 
@@ -685,7 +695,7 @@ BEGIN
         choice := 0;   // v1.2: CHOOSE leaves its index unchanged on cancel
         // v1.4: no numbers in the item strings -- the Prime numbers
         // its CHOOSE items itself (1-9, then A, B, C).
-        CHOOSE(choice, "EpiStats v1.7f ══════════",
+        CHOOSE(choice, "EpiStats v1.7g ══════════",
             "2×2 Table Analysis",
             "Risk Analysis (RR, OR, NNT)",
             "Sensitivity & Specificity",
@@ -1785,6 +1795,16 @@ BEGIN
         MSGBOX("Error: All values must be ≥ 0");
         RETURN 0;
     END;
+    // v1.7g: at most 9,999,999 a value, the most a grid cell shows whole
+    // (font 3 in 68 px) and ChiTable's limit (a caps probe took 1E100)
+    IF MAX(avA, avB, avC, avD) > 9999999 THEN
+        IF esMod == 7 THEN
+            MSGBOX("Values above 9,999,999 do not fit the table: give person-time in larger units (thousands of person-years, say).");
+        ELSE
+            MSGBOX("Values above 9,999,999 do not fit the table.");
+        END;
+        RETURN 0;
+    END;
     // the four grid cells, row by row, from what the form held
     avL := {avA, avB, avC, avD};
     IF esMod == 6 THEN
@@ -1960,13 +1980,17 @@ BEGIN
             gdC := esSel - (gdR - 1) * 2;
             gdV := esCel(esSel);
             gdLbl := es_CellName(esSel) + ":";
-            gdHlp := gdRows(gdR) + " and " + gdCols(gdC) + ": a whole number, 0 or more";
-            IF esMod == 7 AND gdC == 2 THEN gdHlp := gdRows(gdR) + " person-time: any number, 0 or more"; END;
+            gdHlp := gdRows(gdR) + " and " + gdCols(gdC) + ": a whole number, 0 to 9,999,999";
+            IF esMod == 7 AND gdC == 2 THEN gdHlp := gdRows(gdR) + " person-time, 0 to 9,999,999"; END;
             gdOK := INPUT({gdV}, "Count for one cell", {gdLbl}, {gdHlp});
             IF gdOK == 1 THEN
                 IF gdV < 0 THEN
                     MSGBOX("A count cannot be negative.");
                 ELSE
+                  // v1.7g: at most 9,999,999, as the four-value forms
+                  IF gdV > 9999999 THEN
+                    MSGBOX("Values above 9,999,999 do not fit the table.");
+                  ELSE
                     IF esMod == 7 AND gdC == 2 THEN
                         esCel(esSel) := gdV;          // v1.6: person-time, as typed
                     ELSE
@@ -1975,6 +1999,7 @@ BEGIN
                         END;
                         esCel(esSel) := ROUND(gdV, 0);
                     END;
+                  END;
                 END;
             END;
         END;
@@ -2296,6 +2321,7 @@ BEGIN
     LOCAL rpRL, rpCL, rpSf, rpR1, rpR2, rpC1;
     LOCAL rpC2, rpV, rpW, rpSe, rpSp, rpPo;
     LOCAL rpPe, rpK, rpMc, rpQ, rpYu;
+    LOCAL rpTo;
     rpN := rpA + rpB + rpC + rpD;
     rpR1 := rpA + rpB; rpR2 := rpC + rpD;
     rpC1 := rpA + rpC; rpC2 := rpB + rpD;
@@ -2338,7 +2364,10 @@ BEGIN
         TEXTOUT_P(rpRL(rpI), G1, 10, rpY, 1, esBLUE, 82);
         TEXTOUT_P(rpS(2 * rpI - 1) + " = " + es_Cm(STRING(rpV(2 * rpI - 1), 2, 0)) + rpSf(2 * rpI - 1), G1, 96, rpY, 1, #000000h, 96);
         TEXTOUT_P(rpS(2 * rpI) + " = " + es_Cm(STRING(rpV(2 * rpI), 2, 0)) + rpSf(2 * rpI), G1, 196, rpY, 1, #000000h, 84);
-        TEXTOUT_P(es_Cm(STRING(rpV(2 * rpI - 1) + rpV(2 * rpI), 2, 0)), G1, 284, rpY, 1, esGRAY, 32);
+        // v1.7g: a total wider than the 34 px left at the screen's edge
+        // (100,000 and up) is left out, never cut (Lessons Learned)
+        rpTo := es_Cm(STRING(rpV(2 * rpI - 1) + rpV(2 * rpI), 2, 0));
+        IF DIM(rpTo) <= 6 THEN TEXTOUT_P(rpTo, G1, 284, rpY, 1, esGRAY, 34); END;
     END;
     rpY := 90;
     // ---- COHORT: risks, ratios, attributable fractions ----
@@ -5489,7 +5518,7 @@ BEGIN
         {"Proportion 1:", "Proportion 2:", "Alpha (α):", "Power (1-β):"},
         {"Expected proportion in group 1",
          "Expected proportion in group 2",
-         "Significance level (e.g. 0.05)",
+         "From 0.001 to 0.2; 0.05 is usual",
          "Desired power (e.g. 0.80)"},
         {0.5, 0.3, 0.05, 0.8}
     );
@@ -5510,8 +5539,8 @@ BEGIN
     // and 1.  v1.7c never checked them, so alpha = 0 or power = 1 sent
     // NORMALD_ICDF a p of exactly 1 (or 0, or 1.5), which has no finite
     // z; what the Prime does then has never been seen.  Refused first.
-    IF alpha <= 0 OR alpha >= 1 THEN
-        MSGBOX("α must be between 0 and 1 (0.05 is usual).");
+    IF alpha < 0.001 OR alpha > 0.2 THEN
+        MSGBOX("α must be from 0.001 to 0.2 (0.05 is usual).");
         RETURN;
     END;
     IF power <= 0 OR power >= 1 THEN
@@ -5566,7 +5595,7 @@ BEGIN
         {"Mean Difference (δ):", "Std Dev (σ):", "Alpha (α):", "Power (1-β):"},
         {"Expected difference in means",
          "Common standard deviation",
-         "Significance level (e.g. 0.05)",
+         "From 0.001 to 0.2; 0.05 is usual",
          "Desired power (e.g. 0.80)"},
         {1, 2, 0.05, 0.8}
     );
@@ -5585,8 +5614,8 @@ BEGIN
 
     // v1.7d (E1): alpha and power strictly between 0 and 1, checked
     // before NORMALD_ICDF (see es_SS_TwoProportions)
-    IF alpha <= 0 OR alpha >= 1 THEN
-        MSGBOX("α must be between 0 and 1 (0.05 is usual).");
+    IF alpha < 0.001 OR alpha > 0.2 THEN
+        MSGBOX("α must be from 0.001 to 0.2 (0.05 is usual).");
         RETURN;
     END;
     IF power <= 0 OR power >= 1 THEN
@@ -5638,7 +5667,7 @@ BEGIN
         {"Expected p:", "Margin of Error (E):", "Alpha (α):"},
         {"Expected proportion (0.5 = most conservative)",
          "Desired margin of error (± half-width)",
-         "Significance level (e.g. 0.05)"},
+         "From 0.001 to 0.2; 0.05 is usual"},
         {0.5, 0.05, 0.05}
     );
 
@@ -5651,8 +5680,8 @@ BEGIN
 
     // v1.7d (E1): alpha strictly between 0 and 1, checked before
     // NORMALD_ICDF (see es_SS_TwoProportions)
-    IF alpha <= 0 OR alpha >= 1 THEN
-        MSGBOX("α must be between 0 and 1 (0.05 is usual).");
+    IF alpha < 0.001 OR alpha > 0.2 THEN
+        MSGBOX("α must be from 0.001 to 0.2 (0.05 is usual).");
         RETURN;
     END;
 
@@ -5697,7 +5726,7 @@ BEGIN
         {"Std Dev (σ):", "Margin of Error (E):", "Alpha (α):"},
         {"Population standard deviation",
          "Desired margin of error (± half-width)",
-         "Significance level (e.g. 0.05)"},
+         "From 0.001 to 0.2; 0.05 is usual"},
         {10, 2, 0.05}
     );
 
@@ -5710,8 +5739,8 @@ BEGIN
 
     // v1.7d (E1): alpha strictly between 0 and 1, checked before
     // NORMALD_ICDF (see es_SS_TwoProportions)
-    IF alpha <= 0 OR alpha >= 1 THEN
-        MSGBOX("α must be between 0 and 1 (0.05 is usual).");
+    IF alpha < 0.001 OR alpha > 0.2 THEN
+        MSGBOX("α must be from 0.001 to 0.2 (0.05 is usual).");
         RETURN;
     END;
 

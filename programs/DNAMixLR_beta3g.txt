@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// DNAMIXLR - beta 3f
+// DNAMIXLR - beta 3g
 // Likelihood ratio for a DNA mixture, with coancestry (theta)
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
@@ -34,6 +34,18 @@
 //   been needed on the emulator.
 //
 // Run DNAMixLR() from the Program Catalog.
+//
+// beta 3g (2 Nov 2026, night): answers that mean what they say; menu
+//   items that fit.  A yes/no answer other than 1 or 0 (a typed 2, or
+//   1,000,000, which a caps probe tried) was read as "no" without a word,
+//   so the person silently left the hypotheses: now it is refused with a
+//   sentence and nothing changes, as a bad count of unknowns already was.
+//   An allele's name took any number (1,000,000 too): now 1 to 99, the
+//   repeat numbers of STR alleles, with decimals for microvariants
+//   (14.3).  Roger: "some of the menu items run out of the box": the
+//   five hypotheses, 36 to 55 characters, now read "V + S vs V + 1
+//   unknown" and so on, the menu's title saying "Hp vs Hd: V victim, S
+//   suspect" (the box shows about 30 characters).
 //
 // beta 3f (2 Nov 2026, night): commas in big numbers.
 //   Roger, 2 Nov 2026: "always put comma delimiters in big numbers". 
@@ -1511,12 +1523,13 @@ BEGIN
   LOCAL shI, shPres, cuV, cuS, cuT, cuX;
   LOCAL hdV, hdS, hdT, hdX, shOK;
   shI := 0;
-  CHOOSE(shI, "Hypotheses  Hp  vs  Hd", {
-    "Victim + suspect   vs   victim + 1 unknown",
-    "Suspect + 1 unknown   vs   2 unknowns",
-    "Suspect alone   vs   1 unknown  (single source)",
-    "Victim + suspect + 1 unknown   vs   victim + 2 unknowns",
-    "Custom: choose the persons and contributors"});
+  // beta 3g: items of at most 30 characters (longer ones ran out of the box)
+  CHOOSE(shI, "Hp vs Hd: V victim, S suspect", {
+    "V + S vs V + 1 unknown",
+    "S + 1 unknown vs 2 unknowns",
+    "S alone vs 1 unknown",
+    "V+S+1 unknown vs V+2 unknowns",
+    "Custom: persons and unknowns"});
   IF shI == 0 THEN RETURN; END;
   shPres := dmPres;
   CASE
@@ -1530,6 +1543,12 @@ BEGIN
         {"Victim typed?", "Suspect typed?", "Third person typed?"},
         {"A victim whose profile is known", "The suspect", "Another typed person, e.g. a consensual partner"});
       IF shOK == 0 THEN RETURN; END;
+      // beta 3g: a yes/no answer must be 1 or 0; anything else is refused
+      // and nothing changes (it was read as "no" without a word)
+      IF (cuV <> 0 AND cuV <> 1) OR (cuS <> 0 AND cuS <> 1) OR (cuT <> 0 AND cuT <> 1) THEN
+        MSGBOX("Each answer is 1 (yes) or 0 (no).");
+        RETURN;
+      END;
       // beta 3c (B1): a yes/no answer is 1 or 0.  Any other number
       // (a typed 2, say) is "no", because every test in the program
       // asks "== 1"; storing the 2 left the victim untyped in the
@@ -1552,6 +1571,12 @@ BEGIN
       // typed persons) exactly as they were.
       IF IP(cuX) < 0 OR IP(cuX) > 4 OR IP(hdX) < 0 OR IP(hdX) > 4 THEN
         MSGBOX("Unknown contributors: 0 to 4 under each hypothesis.");
+        RETURN;
+      END;
+      // beta 3g: and every yes/no answer 1 or 0 (refused, nothing changes)
+      IF (cuV <> 0 AND cuV <> 1) OR (cuS <> 0 AND cuS <> 1) OR (cuT <> 0 AND cuT <> 1) OR
+         (hdV <> 0 AND hdV <> 1) OR (hdS <> 0 AND hdS <> 1) OR (hdT <> 0 AND hdT <> 1) THEN
+        MSGBOX("Each answer is 1 (yes) or 0 (no).");
         RETURN;
       END;
       // the counts are good: store both hypotheses, each yes/no
@@ -3324,8 +3349,16 @@ BEGIN
   dmM := elM;
 
   // the allele names, as numbers (STR alleles are repeat counts: 12, 13, 14.3 ...)
-  elL := dmAskList(elM, "Allele names (repeat numbers)", "Allele", "The allele's name, e.g. 12 or 14.3", 10);
+  elL := dmAskList(elM, "Allele names (repeat numbers)", "Allele", "The allele's name, 1 to 99: 12 or 14.3", 10);
   IF SIZE(elL) == 0 THEN RETURN; END;
+  // beta 3g: an STR allele's name is its repeat number, about 2 to 50,
+  // with .1 to .3 for a microvariant (a caps probe named one 1,000,000)
+  FOR elI FROM 1 TO elM DO
+    IF elL(elI) < 1 OR elL(elI) >= 100 THEN
+      MSGBOX("An allele's name is its repeat number, from 1 to 99 (14.3 for a microvariant).");
+      RETURN;
+    END;
+  END;
   dmLab := elL;
 
   // population frequencies, which must leave room for the alleles not seen

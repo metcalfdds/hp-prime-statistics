@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// TRENDTEST - beta 3h
+// TRENDTEST - beta 3i
 // Chi-square for linear trend in proportions (2 x k table)
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
@@ -28,6 +28,16 @@
 //   passed the retest that afternoon.  The call form (beta 3a) is
 //   the one CASProbe beta 1b found on the HP Prime Virtual
 //   Calculator (build 2026-09-09, 17 Oct 2026).
+//
+// beta 3i (2 Nov 2026, night): the results table keeps its numbers whole.
+//   A caps probe gave a level a total of 1E12 (shown as "1E12"), and the
+//   results table cut numbers short from about 5,000 a level: with
+//   beta 3h's commas "1,250/5,000" needs 60 px of its column's 52, and
+//   "19,999.0" 42 of the fit column's 40.  The columns are laid out
+//   again (score 48 px, for midranks; cases/n 74; fit 36; p and the CI
+//   to the right), the fit is a whole number from 1,000, and a level's
+//   total can be at most 99,999, refused with a sentence above that.
+//   The widest row then fits: "99,999/99,999", midrank "549,996.5".
 //
 // beta 3h (2 Nov 2026, night): commas in big numbers.
 //   Roger, 2 Nov 2026: "always put comma delimiters in big numbers". 
@@ -1060,7 +1070,7 @@ BEGIN
   IF SIZE(enA) == 0 THEN RETURN 0; END;
 
   enN := trAsk(enK, "Totals (everyone at the level)", "Total n",
-    "How many people are at this level in all", enDN);
+    "How many people are at this level, at most 99,999", enDN);
   IF SIZE(enN) == 0 THEN RETURN 0; END;
 
   // ---- checks that teach ----
@@ -1076,11 +1086,13 @@ BEGIN
       IF enX(enI) <= enX(enI - 1) THEN enBad := 3; END;
     END;
     IF FP(enA(enI)) <> 0 OR FP(enN(enI)) <> 0 THEN enBad := 4; END;
+    IF enN(enI) > 99999 THEN enBad := 5; END;      // beta 3i: the table's reach
   END;
   IF enBad == 1 THEN MSGBOX("Every total n must be above 0."); RETURN 0; END;
   IF enBad == 2 THEN MSGBOX("Cases must be between 0 and the total at that level."); RETURN 0; END;
   IF enBad == 3 THEN MSGBOX("Scores must increase from level 1 to level " + trCm(STRING(enK, 2, 0)) + ": the levels are ordered, and the order is the point of the test."); RETURN 0; END;
   IF enBad == 4 THEN MSGBOX("Cases and totals count people: whole numbers only."); RETURN 0; END;
+  IF enBad == 5 THEN MSGBOX("A level's total can be at most 99,999: the results table shows its numbers whole up to there."); RETURN 0; END;
   IF trSum(enA) == 0 OR trSum(enA) == trSum(enN) THEN
     MSGBOX("Every level has the same outcome (all cases, or none), so there is no trend to test.");
     RETURN 0;
@@ -1162,6 +1174,7 @@ END;
 trPage1()
 BEGIN
   LOCAL rsI, rsY, rsS, rsDec, rsF;
+  LOCAL rsFt;
   DIMGROB_P(G1, 320, 240, #FFFFFFh);
   RECT_P(G1, 4, 4, 315, 217, trORNG, trLORN);
   TEXTOUT_P("χ² test for linear trend", G1, 10, 6, 2, trBLUE);
@@ -1176,23 +1189,27 @@ BEGIN
     TEXTOUT_P(trLbl2, G1, 10, 33, 1, trGRAY, 300);
   END;
   TEXTOUT_P("level", G1, 10, 46, 1, trGRAY);
+  // beta 3i: the columns laid out again so the widest row fits whole
+  // (score 48 px, cases/n 74, fit 36; the CI ends by x = 314)
   TEXTOUT_P("score", G1, 42, 46, 1, trGRAY);
-  TEXTOUT_P("cases/n", G1, 80, 46, 1, trGRAY);
-  TEXTOUT_P("fit", G1, 134, 46, 1, trMAG);
-  TEXTOUT_P("p", G1, 176, 46, 1, trGRAY);
-  TEXTOUT_P("95% CI", G1, 218, 46, 1, trGRAY);
+  TEXTOUT_P("cases/n", G1, 94, 46, 1, trGRAY);
+  TEXTOUT_P("fit", G1, 172, 46, 1, trMAG);
+  TEXTOUT_P("p", G1, 212, 46, 1, trGRAY);
+  TEXTOUT_P("95% CI", G1, 247, 46, 1, trGRAY);
   LINE_P(G1, 10, 57, 309, 57, trGRAY);
   FOR rsI FROM 1 TO trK DO
     rsY := 60 + (rsI - 1) * 12;
     // fit: the cases the weighted line predicts, n * (a + b x)
     rsF := trTot(rsI) * (trA0 + trB * trX(rsI));
     TEXTOUT_P(trCm(STRING(rsI, 2, 0)), G1, 16, rsY, 1, #000000h);
-    TEXTOUT_P(trCm(trXStr(trX(rsI))), G1, 42, rsY, 1, #000000h, 36);
-    TEXTOUT_P(trCm(STRING(trA(rsI), 2, 0)) + "/" + trCm(STRING(trTot(rsI), 2, 0)), G1, 80, rsY, 1, #000000h, 52);
-    // beta 3c: trFx, so a small fit, p or CI end stays in fixed decimals
-    TEXTOUT_P(trCm(trFx(rsF, 1)), G1, 134, rsY, 1, trMAG, 40);
-    TEXTOUT_P(trCm(trFx(trP(rsI), 4)), G1, 176, rsY, 1, trBLUE);
-    TEXTOUT_P("(" + trCm(trFx(trLo(rsI), 3)) + "-" + trCm(trFx(trHi(rsI), 3)) + ")", G1, 218, rsY, 1, trBLUE);
+    TEXTOUT_P(trCm(trXStr(trX(rsI))), G1, 42, rsY, 1, #000000h, 50);
+    TEXTOUT_P(trCm(STRING(trA(rsI), 2, 0)) + "/" + trCm(STRING(trTot(rsI), 2, 0)), G1, 94, rsY, 1, #000000h, 76);
+    // beta 3c: trFx, so a small fit, p or CI end stays in fixed decimals;
+    // beta 3i: a whole number from 1,000 ("99,999" fits the column)
+    IF ABS(rsF) >= 1000 THEN rsFt := trCm(trFx(rsF, 0)); ELSE rsFt := trCm(trFx(rsF, 1)); END;
+    TEXTOUT_P(rsFt, G1, 172, rsY, 1, trMAG, 38);
+    TEXTOUT_P(trCm(trFx(trP(rsI), 4)), G1, 212, rsY, 1, trBLUE);
+    TEXTOUT_P("(" + trCm(trFx(trLo(rsI), 3)) + "-" + trCm(trFx(trHi(rsI), 3)) + ")", G1, 247, rsY, 1, trBLUE);
   END;
   // the tests
   TEXTOUT_P("fit = cases the WLS line predicts (they sum to A)", G1, 10, 134, 1, trMAG, 300);

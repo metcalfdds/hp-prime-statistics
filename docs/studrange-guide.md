@@ -2,6 +2,8 @@
 
 The studentized range distribution (Tukey's q) on the HP Prime: p-values, critical values, the Tukey HSD, an interactive plot of the distribution, an H₀ simulation that shows why Tukey's test exists, and an HSD "yardstick" for your own group means. One program with **two engines**: a MicroPython engine (the fast path) and the PPL engine (the fallback, which needs no Python at all).
 
+**Beta 15i (2 Nov 2026, night):** α is from 0.001 to 0.2, k a whole number from 2 to 100 (the plot: 2 to 20), df from 1 to 100,000 or 0 for ∞, and Tukey HSD's m a whole number from 2 to 1,000; a value outside its range is refused with a sentence and nothing is computed (before, α and the plot's k were changed without a word). `docs/changes/StudRange_beta15i_CHANGES.md`.
+
 **Status: beta 15a has not yet been run on hardware.** Beta 15 ran on the HP Prime Virtual Calculator (2.4.2, build 2026-09-09) on 17 Oct 2026. The Python bridge, the P-value, the HSD (1.3652, as SciPy) and the plot with its drag all passed, but the plot's soft keys did nothing. Beta 15a fixes the soft keys and the Quit line (below); everything else, the Python block included, is unchanged. The PPL program was last run on an HP Prime G2 and G1 (2026-09-09 firmware) at beta 12, and its MicroPython twin StudRangePy at beta 14b (G2). Beta 15 merges the two, and the Python path in particular has to be tried on a calculator **with the Terminal open** — a Python failure on the Prime is silent (see *The two engines*), and the emulator cannot show one. The arithmetic of both engines was verified off-device against `scipy.stats.studentized_range` (see *Accuracy*); the screens were run through the PPL harness, with the Python block executed against the harness's variables, both with Python answering and with Python failing.
 
 Run `StudRange()` from the Program Catalog. Install the `.txt` by pasting it into the Connectivity Kit editor — **paste, do not retype**: the Python block depends on its indentation. There is no separate `.py` file and nothing goes into the Python app. **StudRangePy is retired**: its features are all in this program, and the old file goes to `_superseded`. If StudRangePy is still on your calculator you may delete it.
@@ -18,7 +20,7 @@ Run `StudRange()` from the Program Catalog. Install the `.txt` by pasting it int
 | Help / About | four pages: the formulas, why q and not t, the two engines, the plot's gestures |
 | Quit | returns a summary line to Home, e.g. `StudRange: q crit (k = 4, ν = 28) = 3.8612, p not computed, HSD = 1.3652 (engine: Python)`. It names the k and ν of the q crit it quotes, and says "not computed" for a value you never asked for |
 
-df = 0 means ν = ∞ (the plain range distribution) in the P-value, Critical value and plot forms. In the HSD form, df below 1 means "work it out": k(m − 1).
+df = 0 means ν = ∞ (the plain range distribution) in the P-value, Critical value and plot forms; any other df is from 1 to 100,000 (beta 15i: at 100,000 q crit is the ∞ value to four decimals). In the HSD form, df below 1 means "work it out": k(m − 1).
 
 **Degrees of freedom:** 1 and up when the Python engine answers; 3 and up with the PPL engine. If you ask for df 1 or 2 and Python does not answer, the program says *"df below 3 is not supported: using df = 3. (PPL engine: MicroPython did not answer)"* and carries on with df = 3.
 
@@ -85,7 +87,7 @@ The soft keys are drawn with `DRAWMENU` after each frame; a tap in the bottom st
 
 | Item | |
 |---|---|
-| Set α (any value) | 0.001 to 0.5 |
+| Set α (any value) | 0.001 to 0.2 (beta 15i; 0.5 before) |
 | q obs = q crit | |
 | Change k / Change df | rebuild the cache |
 | H₀ simulation (Python) | below |

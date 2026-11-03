@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// POWERVIZ - v2.5m
+// POWERVIZ - v2.5n
 // ============================================================
 // FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
 //   the file and credit the author if you pass it on.  Not for
@@ -31,6 +31,13 @@
 //   in the PC harness).  v2.5 is the first version that calls the CAS;
 //   its call form (v2.5a) is the one CASProbe beta 1b found on the
 //   emulator, see pv_Cas below.
+//
+// v2.5n (2 Nov 2026, night): alpha from 0.001 to 0.2.
+//   Roger: "for alpha we dont need like 0.00001 or something--use real
+//   world values like 0.001, 0.01, 0.05, 0.1, 0.2 and so forth".  The
+//   edit forms took any alpha between 0 and 1; now 0.001 to 0.2, the
+//   ends of the alpha ladder (ALAD), as in AnovaLab; one outside is
+//   reset to 0.05 with a sentence, as before.
 //
 // v2.5m (2 Nov 2026, night): commas in big numbers.
 //   Roger, 2 Nov 2026: "always put comma delimiters in big numbers". 
@@ -2605,32 +2612,32 @@ BEGIN
    efok:=INPUT({{MM0,[0]},{MM1,[0]},{SG,[0]},{NN,[0]},{AL,[0]}},"One-Sample Mean",
     {"μ₀:","μ₁:","σ:","n:","α:"},
     {"Null mean","Alternative mean","Population SD (>0)",
-     "Sample size (≥2)","Significance level"});
+     "Sample size (≥2)","From 0.001 to 0.2; 0.05 is usual"});
   END;
   IF TT==2 THEN
    efok:=INPUT({{MM0,[0]},{MM1,[0]},{SG,[0]},{NN,[0]},{AL,[0]}},"Two-Sample Means",
     {"μ grp1:","μ grp2:","σ:","n/group:","α:"},
     {"Group 1 mean","Group 2 mean","Common SD (>0)",
-     "Per-group sample size (≥2)","Significance level"});
+     "Per-group sample size (≥2)","From 0.001 to 0.2; 0.05 is usual"});
   END;
   IF TT==3 THEN
    efok:=INPUT({{PP0,[0]},{PP1,[0]},{NN,[0]},{AL,[0]}},"One Proportion",
     {"p₀ (null):","p₁ (alt):","n:","α:"},
     {"Null proportion","Alternative proportion",
-     "Sample size (≥2)","Significance level"});
+     "Sample size (≥2)","From 0.001 to 0.2; 0.05 is usual"});
   END;
   IF TT==4 THEN
    efok:=INPUT({{PP0,[0]},{PP1,[0]},{NN,[0]},{AL,[0]}},"Two Proportions",
     {"p grp1:","p grp2:","n/group:","α:"},
     {"Group 1 proportion","Group 2 proportion",
-     "Per-group sample size (≥2)","Significance level"});
+     "Per-group sample size (≥2)","From 0.001 to 0.2; 0.05 is usual"});
   END;
   IF TT==5 THEN
    // v2.5g: seven fields; n1 and n2 go into LOCALs (pv_Set5 below)
    efok:=INPUT({{MM0,[0]},{MM1,[0]},{SG,[0]},{SG2,[0]},{e5a,[0]},{e5b,[0]},{AL,[0]}},"Two Means, unequal σ & n",
     {"μ grp1:","μ grp2:","σ grp1:","σ grp2:","n grp1:","n grp2:","α:"},
     {"Group 1 mean","Group 2 mean","Group 1 SD (>0)","Group 2 SD (>0)",
-     "Group 1 sample size (≥2)","Group 2 sample size (≥2)","Significance level"});
+     "Group 1 sample size (≥2)","Group 2 sample size (≥2)","From 0.001 to 0.2; 0.05 is usual"});
   END;
  END;
  IF efok==0 THEN RETURN 0; END;   // Cancel: values untouched
@@ -2657,8 +2664,9 @@ BEGIN
    NN:=efv;
   END;
  END;
- IF (AL<=0) OR (AL>=1) THEN
-  MSGBOX("α must be between 0 and 1 (you entered "+pv_Cm(STRING(AL,2,3))+"): reset to 0.05");
+ // v2.5n: 0.001 to 0.2, the ladder's ends (Roger: real-world alphas)
+ IF (AL<0.001) OR (AL>0.2) THEN
+  MSGBOX("α must be from 0.001 to 0.2 (you entered "+pv_Cm(STRING(ROUND(AL,4),2,4))+"): reset to 0.05");
   AL:=0.05;
  END;
  IF pv_MeanT()==0 THEN

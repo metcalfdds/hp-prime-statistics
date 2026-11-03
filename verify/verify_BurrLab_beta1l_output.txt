@@ -1,0 +1,37 @@
+=== BurrLab beta 1l against beta 1k (../programs/BurrLab_beta1k.txt)
+=== G. static
+PASS G1 only the plot routines, bu_TickLbl, bu_XAxis, the two menus' routines and the title page differ from beta 1k; bu_LWd, bu_LogY and bu_YAxis are new: ['BurrLab', 'bu_DrawFam', 'bu_DrawRare', 'bu_ExBase', 'bu_ExFrame', 'bu_FitMenu', 'bu_HazPage', 'bu_Hist', 'bu_LWd', 'bu_LogY', 'bu_Opening', 'bu_QQ', 'bu_SimFrame', 'bu_Surv', 'bu_TickLbl', 'bu_XAxis', 'bu_YAxis']
+PASS G2 the header names beta 1l, the title page too
+PASS G3 no new "!=" and nothing new for the CAS
+PASS G4 bu_YAxis: each number drawn only when at most 28 px wide, with width ['36', '36'] (never cut); fixed decimals only up to 12, and never one that comes out scientific
+PASS G6 bu_LogY comes before its callers ['bu_QQ', 'bu_Surv'] and after bu_LWd; every call of bu_TickLbl (['bu_XAxis', 'bu_Hist', 'bu_QQ', 'bu_Surv']) passes and keeps where the row's last label ends
+PASS G7 every menu item at most 30 characters (Roger: "some of the menu items run out of the box"; the box shows about 30, round 2's rule): 60 items, the longest 29 ("My data: D1 (Statistics 1Var)")
+PASS G5 bu_YAxis comes before its 7 callers and after what it calls (BurrLab declares nothing ahead)
+=== Y1. bu_YAxis alone, 400 axis tops
+PASS Y1 400 tops: every number (times its unit) its tick's value, level with it, <= 28 px, 2 px or more from the edge, grouped, never scientific; in units, whole numbers and the unit in the name; ticks above 0: [2, 3, 4]; axes in plain numbers 107, in units 293; numbers left out (at the top): 38
+   e.g. top 0.093 (Explore's default): ['pdf', '0.08', '0.06', '0.04', '0.02', '0']
+   e.g. top 0.00004: ['pdf (×0.00001)', '3', '2', '1', '0']
+   e.g. top 0.00093 (Explore at S = 1,000): ['pdf (×0.0001)', '8', '6', '4', '2', '0']
+   e.g. top 2.4E13: ['running mean (×1,000,000,000,000)', '20', '15', '10', '5', '0']
+=== Y2. Explore over C, K and S
+PASS Y2 392 Explore screens: the pdf view names its axis "pdf" above it and writes its ticks, no lone top value, no "pdf" at the foot; the CDF view writes nothing left of the axis
+PASS Y2 every pdf view writes at least one tick number above 0 (0 without)
+PASS Y2 no text over another, over the frame or past the screen, and nothing cut
+=== Y3. the other pages on the three presets
+   screens with each axis name: [('data quantile', 2), ('data quantile (log)', 1), ('density', 3), ('density per log10 unit', 3), ('hazard h(x)', 3), ('pdf', 6), ('pdf', 6), ('running mean', 609), ('survival P(X > x) (log)', 3)]
+PASS Y3 each page names its axis and writes "0" and tick numbers (on log scales: its powers of ten): 8 names
+PASS Y3 no text over another, over the frame or past the screen, and nothing cut
+=== Y4. x-axis labels
+PASS Y4 bu_XAxis, 600 ranges on the narrow (Family) and the wide plot: the 0 label always, and no label within 3 px of the one before it
+PASS Y4 Family at S = 1,000: the x labels ['0', '1,000', '3,000', '5,000'], none over another, nothing over anything
+PASS Y4 Explore at C = 0.2, K = 20, S = 0.01 (beta 1k drew "0.000020" over "0.000025" and cut "SD < 0.0001" off its grey row): ['0.000000', '0.000010', '0.000020']; the row now ['mode 0, median < 0.0001, mean < 0.0001, SD < 0.0001']; nothing over anything, nothing cut
+=== R. the monkey, 30 seeds on both versions
+PASS R1 30 seeds ({'OK': 29, 'END Unsupported': 1}): each run takes the old version's path: the same ending, number of screens, boxes and summary once the commas are out (0 accepted as the script says)
+INFO R2 every screen's texts the old version's once the commas are out, but 3754 screen(s): where a number with its commas no longer fit and the program wrote it another way, or where this version changes a text on purpose (its change note says which); the first: [(5000, 2, ['0.093'], ['0.02', '0.04']), (5000, 3, ['0.093'], ['0.02', '0.04']), (5000, 4, ['0.091'], ['0.02', '0.04'])]
+PASS M  every number of four or more digits drawn is grouped: 107 different grouped numbers drawn (1,000, 1,500, 2,000, 1,010 …); 0 drawn without their commas or with them twice, 0 of them accepted as the script says
+PASS C  every text handed to the CAS or EXPR is the old version's, call for call (103 calls on the new version's runs; a run that took another path is R1's)
+PASS Y  no year, or other number the program writes as text, is drawn with a comma, nor a name with digits in it ("x1000")
+PASS D  no new firm overlap, straddle or overrun (old 0, new 0) and no new number cut (old 0, new 0)
+
+21 PASS, 0 FAIL
+rc=0

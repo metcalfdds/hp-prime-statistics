@@ -1,0 +1,22 @@
+=== DNAMixLR beta 3g against beta 3f (../programs/DNAMixLR_beta3f.txt)
+=== G. static
+PASS G1 only the hypotheses (dmSetHyp) and a new locus (dmEnterLocus) differ from beta 3f: ['dmEnterLocus', 'dmSetHyp']
+PASS G2 the header names beta 3g
+PASS G3 no new "!=" and nothing new for the CAS
+=== X. answers and the menu
+PASS X1 yes/no answers of 2, 1,000,000, 0.5 (typed persons) and 7 (Hd) are refused, nothing changing
+PASS X2 beta 3f read 2 as "no" without a word
+PASS X3 an allele named 1,000,000 or 0.5 is refused with a sentence; 12, 14.3, 99.9 and 1 are taken
+PASS XM every menu item at most 30 characters: 19 items, the longest 29 ("V+S+1 unknown vs V+2 unknowns")
+=== R. the monkey, 30 seeds on both versions
+   R1: 2 seed(s) take another path; 2 of them because the new version refused a value with this round's sentence ([5012, 5028]), 0 because a message is rewritten on purpose ([])
+PASS R0 the runs ran: 30 of 30 new-version runs ended OK or by the clock ({'OK': 30})
+PASS R1 30 seeds ({'OK': 30}): each run takes the old version's path: the same ending, number of screens, boxes and summary once the commas are out (2 accepted as the script says)
+INFO R2 every screen's texts the old version's once the commas are out, but 0 screen(s): where a number with its commas no longer fit and the program wrote it another way, or where this version changes a text on purpose (its change note says which); the first: []
+PASS M  every number of four or more digits drawn is grouped: 17 different grouped numbers drawn (1,000, 3,981, 3,982, 100,000 …); 0 drawn without their commas or with them twice, 0 of them accepted as the script says
+PASS C  every text handed to the CAS or EXPR is the old version's, call for call (0 calls on the new version's runs; a run that took another path is R1's)
+PASS Y  no year, or other number the program writes as text, is drawn with a comma, nor a name with digits in it ("x1000")
+PASS D  no new firm overlap, straddle or overrun (old 0, new 0) and no new number cut (old 0, new 0)
+
+13 PASS, 0 FAIL
+rc=0

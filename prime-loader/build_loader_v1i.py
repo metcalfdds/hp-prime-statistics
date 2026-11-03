@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
-"""build_loader_v1h.py -- assembles PrimeLoader_v1h.html: the page template, the loader's core, the Data Loader's core
+"""build_loader_v1i.py -- assembles PrimeLoader_v1i.html: the page template, the loader's core, the Data Loader's core
 (for its zip writer), the chapter list, and every program file from a starter pack, embedded so the page works offline.
 
-    python3 build_loader_v1h.py PACK.zip [OUT.html] [--kit PATH]
+    python3 build_loader_v1i.py PACK.zip [OUT.html] [--kit PATH]
+
+v1i (2 Nov 2026, night): starter pack v11, whose 11 changed programs carry round 6: what a student types is
+kept to sensible ranges, and refused with a sentence outside them (alpha from 0.001 to 0.2 everywhere; StudRange's
+k, df and m; DNAMixLR's yes/no answers and allele names; EpiStats' and TrendTest's counts), and every menu item
+fits its box; BurrLab beta 1l draws a y-axis on every plot page.  The catalog names those versions.  The page
+template is v1c's, unchanged.
 
 v1h (2 Nov 2026, night): starter pack v10, whose 30 programs carry round 5: every number of 1,000 or more on
 the screen shows its commas (12,345.678; never after the decimal point, never in a year, never in text the CAS
@@ -56,43 +62,43 @@ KIT = os.environ.get('HPKIT', '/tmp/kit/hp-prime-kit-HEAD')
 if '--kit' in argv:
     i = argv.index('--kit'); KIT = argv[i + 1]; del argv[i:i + 2]
 PACK = argv[0]
-OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v1h.html')
+OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v1i.html')
 SITE = 'https://metcalfdds.github.io/hp-prime-statistics/'
 sys.path.insert(0, KIT)
 from hpkit import program as kitprog            # hp-prime-kit (MIT, JordiRigau/hp-prime-kit)
 
 # name: (file or app folder, version, what it does in a student's words, the name to type in Home)
 PROGRAMS = {
-  'AgreeLab':     ('AgreeLab.hpprgm', 'beta 1c', 'Examiner agreement: kappa and its cousins', 'AgreeLab'),
+  'AgreeLab':     ('AgreeLab.hpprgm', 'beta 1d', 'Examiner agreement: kappa and its cousins', 'AgreeLab'),
   'AnovaLab':     ('AnovaLab.hpprgm', 'beta 1b', 'ANOVA: one-way and two-way, and tests for variances', 'AnovaLab'),
   'BayesTree':    ('BayesTree.hpprgm', 'beta 8g', 'Bayes as a tree of 1,000 people: slide the prevalence', 'BayesTree'),
   'BiNorm3D':     ('BiNorm3D.hpprgm', 'beta 1c', 'Correlation in 3-D: turn the bivariate normal with a finger', 'BiNorm3D'),
-  'BurrLab':      ('BurrLab.hpprgm', 'beta 1j', 'A model for long right tails (Burr XII)', 'BurrLab'),
+  'BurrLab':      ('BurrLab.hpprgm', 'beta 1l', 'A model for long right tails (Burr XII)', 'BurrLab'),
   'CICatcher':    ('CICatcher.hpprgm', 'beta 2f', 'Fifty confidence intervals: how many catch the truth?', 'CICatcher'),
   'CentralLimit': ('CentralLimit.hpappdir', 'beta 3e', 'The central limit theorem, one sample at a time (an app)', None),
-  'ChiTable':     ('ChiTable.hpprgm', 'beta 3g', 'Chi-square for a two-way table: drag the bars', 'ChiTable'),
-  'DNAMixLR':     ('DNAMixLR.hpprgm', 'beta 3f', 'Likelihood ratios for DNA mixtures', 'DNAMixLR'),
+  'ChiTable':     ('ChiTable.hpprgm', 'beta 3h', 'Chi-square for a two-way table: drag the bars', 'ChiTable'),
+  'DNAMixLR':     ('DNAMixLR.hpprgm', 'beta 3g', 'Likelihood ratios for DNA mixtures', 'DNAMixLR'),
   'DataLoad':     ('DataLoad.hpprgm', 'beta 1c', 'Puts a data file into the Statistics lists, with box plots', 'DATALOAD'),
-  'EpiStats':     ('EpiStats.hpprgm', 'v1.7f', 'Epidemiology: 2 x 2 tables, risk and odds', 'EpiStats'),
+  'EpiStats':     ('EpiStats.hpprgm', 'v1.7g', 'Epidemiology: 2 x 2 tables, risk and odds', 'EpiStats'),
   'ErrorRate':    ('ErrorRate.hpprgm', 'beta 1f', 'Error rates from proficiency tests', 'ErrorRate'),
   'FitCheck':     ('FitCheck.hpprgm', 'beta 1b', 'Goodness of fit: does the data match the model?', 'FitCheck'),
   'GaltonBoard':  ('GaltonBoard.hpprgm', 'beta 3g', 'Pour balls through pegs: the binomial becomes normal', 'GaltonBoard'),
   'Norm3':        ('Norm3.hpprgm', 'v2.4e', 'Drag x and watch the normal area', 'Norm3'),
-  'NormExplorer': ('NormExplorer.hpprgm', 'beta 42f', 'The normal curve: areas, z scores, your own data', 'NormExp'),
-  'PowerViz':     ('PowerViz.hpprgm', 'v2.5m', 'Power: drag the curves and watch alpha, beta and power', 'POWERVIZ'),
+  'NormExplorer': ('NormExplorer.hpprgm', 'beta 42g', 'The normal curve: areas, z scores, your own data', 'NormExp'),
+  'PowerViz':     ('PowerViz.hpprgm', 'v2.5n', 'Power: drag the curves and watch alpha, beta and power', 'POWERVIZ'),
   'RankLab':      ('RankLab.hpprgm', 'beta 1c', 'Rank tests: sign, Wilcoxon, Mann-Whitney, Kruskal-Wallis', 'RankLab'),
   'ResampLab':    ('ResampLab.hpprgm', 'beta 1d', 'Permutation tests and the bootstrap, drawn as they run', 'ResampLab'),
-  'RiskLab':      ('RiskLab.hpprgm', 'beta 1c', 'Risk scores and ROC curves', 'RiskLab'),
-  'SampDist':     ('SampDist.hpprgm', 'v2.3f', 'The sampling distribution of the mean', 'SampDist'),
+  'RiskLab':      ('RiskLab.hpprgm', 'beta 1d', 'Risk scores and ROC curves', 'RiskLab'),
+  'SampDist':     ('SampDist.hpprgm', 'v2.3g', 'The sampling distribution of the mean', 'SampDist'),
   'ScatterLab':   ('ScatterLab.hpprgm', 'beta 2g', 'Build a scatterplot with your finger; fit the line', 'ScatterLab'),
   'SeizureLab':   ('SeizureLab.hpprgm', 'beta 1c', 'How many units of a drug seizure to test?', 'SeizureLab'),
   'StatDist':     ('StatDist.hpprgm', 'v2.7i', '27 distributions, each a plot you can touch', 'StatDist'),
-  'StudRange':    ('StudRange.hpprgm', 'beta 15g', "Tukey's q, the studentized range", 'StudRange'),
+  'StudRange':    ('StudRange.hpprgm', 'beta 15i', "Tukey's q, the studentized range", 'StudRange'),
   'SurvLab':      ('SurvLab.hpprgm', 'beta 1c', 'Time to an event: survival curves', 'SurvLab'),
   'TTestLab':     ('TTestLab.hpprgm', 'beta 1d', 't tests in five steps (the advanced version)', 'TTESTLAB'),
   'TTestLabG':    ('TTestLabG.hpprgm', 'beta 1b', 't tests in five steps', 'TTESTLABG'),
   'TestChooser':  ('TestChooser.hpprgm', 'beta 2d', 'Which test? A flowchart you tap', 'TestChooser'),
-  'TrendTest':    ('TrendTest.hpprgm', 'beta 3h', 'Chi-square for a trend', 'TrendTest'),
+  'TrendTest':    ('TrendTest.hpprgm', 'beta 3i', 'Chi-square for a trend', 'TrendTest'),
 }
 
 # The book's chapters (Chapter Plan, 31 Oct 2026): (number, title, programs now, still to come)
@@ -203,7 +209,7 @@ redirect = ('<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n
             '<link rel="canonical" href="' + SITE + 'prime-loader/' + page + '">\n'
             '<style>body{font:16px/1.5 system-ui,sans-serif;margin:2rem;color:#172033;background:#f6f8fb}'
             '@media (prefers-color-scheme:dark){body{color:#e8edf6;background:#0f1420}a{color:#7d9cff}}</style>\n'
-            '</head>\n<body>\n<!-- Written by build_loader_v1h.py: sends the browser on to the current Prime Loader, so the '
+            '</head>\n<body>\n<!-- Written by build_loader_v1i.py: sends the browser on to the current Prime Loader, so the '
             'address .../prime-loader/ never changes. -->\n'
             '<p>Opening the HP Prime Loader&hellip; If nothing happens, <a href="' + page + '">click here</a>.</p>\n'
             '</body>\n</html>\n')

@@ -14,7 +14,7 @@
 // hardware testing are Roger D. Metcalf's; the code, drafting and
 // source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
 
-// RISKLAB - beta 1c  (2 Nov 2026, night)
+// RISKLAB - beta 1d  (2 Nov 2026, night)
 // The statistics behind risk-assessment instruments in criminal justice
 //   (recidivism tools such as COMPAS, LSI-R and Static-99), for
 //   Statistics for Criminal Justice and research methods: logistic
@@ -42,6 +42,12 @@
 //   sensitivity, specificity, PPV}); -1 where not computed.
 // Written for the 2026-09-09 firmware (HP Prime G2 and G1).  beta 1 has
 //   NOT been run on hardware or the emulator, only in the PC harness.
+// beta 1d (2 Nov 2026, night): menu items that fit their box.
+//   Roger: "some of the menu items run out of the box".  The box shows
+//   about 30 characters (round 2's rule); two items of 34 and 35 now
+//   read "COMPAS, Broward (ProPublica)" and "D1 Y 0/1, D2 score, D3
+//   group".
+//
 // beta 1c (2 Nov 2026, night): commas in big numbers.
 //   Roger, 2 Nov 2026: "always put comma delimiters in big numbers". 
 //   STRING never groups digits, whatever Home's setting, so a new routine,
@@ -2706,7 +2712,7 @@ rl_PresetMenu()
 BEGIN
   LOCAL pmI, pmK;
   pmI := 0;
-  CHOOSE(pmI, "Load a preset", {"COMPAS, Broward County (ProPublica)", "Rossi: age, prio, fin", "Rossi: age, prio, fin, wexp"});
+  CHOOSE(pmI, "Load a preset", {"COMPAS, Broward (ProPublica)", "Rossi: age, prio, fin", "Rossi: age, prio, fin, wexp"});
   REPEAT pmK := GETKEY; UNTIL pmK == -1;
   rl_Drain();
   IF pmI == 0 THEN RETURN; END;
@@ -2878,7 +2884,7 @@ rl_MyData()
 BEGIN
   LOCAL mdI, mdK;
   mdI := 0;
-  CHOOSE(mdI, "Use my data (Statistics 1Var)", {"D1 = Y 0/1, D2-D5 = predictors", "D1 = Y 0/1, D2 = score, D3 = group"});
+  CHOOSE(mdI, "Use my data (Statistics 1Var)", {"D1 = Y 0/1, D2-D5 = predictors", "D1 Y 0/1, D2 score, D3 group"});
   REPEAT mdK := GETKEY; UNTIL mdK == -1;
   rl_Drain();
   IF mdI == 1 THEN rl_MyRows(); END;
@@ -3061,7 +3067,7 @@ BEGIN
   TEXTOUT_P("Not validated for forensic, clinical or legal", G1, 10, 136, 1, rlORNG, 300);
   TEXTOUT_P("use; do not rely on its results for legal", G1, 10, 148, 1, rlORNG, 300);
   TEXTOUT_P("purposes.", G1, 10, 160, 1, rlORNG, 300);
-  TEXTOUT_P("beta 1c, 28 Oct 2026.  Help is in the menu.", G1, 6, 184, 1, rlGRAY, 310);
+  TEXTOUT_P("beta 1d, 2 Nov 2026.  Help is in the menu.", G1, 6, 184, 1, rlGRAY, 310);
   TEXTOUT_P("Any key or tap = menu", G1, 6, 205, 1, rlFOOT, 310);
   BLIT_P(G0, 0, 0, G1);
 END;

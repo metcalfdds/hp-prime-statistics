@@ -26,11 +26,19 @@
 //   5  Help
 // Exports EP_SD_* so results are readable in Home after the menu is cancelled.
 //
-// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  v2.3f has
+// Written for the 2026-09-09 firmware (HP Prime G2 and G1).  v2.3g has
 //   run in the PC harness only so far; v2.3 passed the emulator's round
 //   (17 Oct 2026), and v2.3d's checked file ran on the Virtual Calculator
 //   (1 Nov 2026).  See the checklist at the end, SampDist_v2.3e_CHANGES.md
 //   and the earlier CHANGES files.
+//
+// v2.3g (2 Nov 2026, night): alpha from 0.001 to 0.2.
+//   Roger: "for alpha we dont need like 0.00001 or something--use real
+//   world values like 0.001, 0.01, 0.05, 0.1, 0.2 and so forth".  The
+//   Critical Values forms took any alpha between 0 and 1, and dragging
+//   a critical line gave any tail area from 1E-7 to 0.9999999; both now
+//   keep to 0.001 ... 0.2, as AnovaLab's alpha does (the line stops
+//   where its tail area reaches either end: sd_fix).
 //
 // v2.3f (2 Nov 2026, night): commas in big numbers.
 //   Roger, 2 Nov 2026: "always put comma delimiters in big numbers". 
@@ -755,6 +763,14 @@ BEGIN
     IF tailK == 2 THEN fxP := NORMALD_CDF(mu, se, 2*mu - fxL); END;
     IF tailK == 3 THEN fxP := 2*NORMALD_CDF(mu, se, fxL); END;
     fxP := MAX(0.0000001, MIN(0.9999999, fxP));
+    // v2.3g: alpha keeps to 0.001 ... 0.2 (Roger: real-world alphas); a
+    // line dragged past either end stops where its tail area reaches it
+    IF fxP > 0.2 OR fxP < 0.001 THEN
+      fxP := MAX(0.001, MIN(0.2, fxP));
+      IF tailK == 1 THEN fxL := NORMALD_ICDF(mu, se, fxP); END;
+      IF tailK == 2 THEN fxL := 2*mu - NORMALD_ICDF(mu, se, fxP); END;
+      IF tailK == 3 THEN fxL := NORMALD_ICDF(mu, se, fxP/2); fxH := 2*mu - fxL; END;
+    END;
   END;
   RETURN {fxL, fxH, fxA, fxP};
 END;
@@ -1146,7 +1162,7 @@ BEGIN
         iok := INPUT({{mu2,[0]}, {sg2,[0]}, {nn2,[0]}, {al2,[0]}}, "Critical Values",
                      {"μ:", "σ:", "n:", "α:"},
                      {"Population mean", "Population SD (> 0)",
-                      "Sample size, whole number ≥ 1", "Tail area, e.g. 0.05"});
+                      "Sample size, whole number ≥ 1", "Tail area: from 0.001 to 0.2; 0.05 is usual"});
       ELSE
         iok := INPUT({{mu2,[0]}, {sg2,[0]}, {nn2,[0]}}, "Population Parameters",
                      {"μ:", "σ:", "n:"},
@@ -1161,7 +1177,7 @@ BEGIN
           IF sg2 <= 0 THEN MSGBOX("σ must be > 0; nothing changed"); END;
           IF nn2 < 1 THEN MSGBOX("n must be ≥ 1; nothing changed"); END;
           IF nn2 - IP(nn2) > 0 THEN MSGBOX("n must be a whole number; nothing changed"); END;
-          IF al2 <= 0 OR al2 >= 1 THEN MSGBOX("α must be between 0 and 1; nothing changed"); END;
+          IF al2 < 0.001 OR al2 > 0.2 THEN MSGBOX("α must be from 0.001 to 0.2 (0.05 is usual); nothing changed"); END;
           IF DIM(bm) > 0 THEN MSGBOX(bm + " Nothing changed."); END;
           DEFAULT
             mu := mu2; sg := sg2; nn := nn2; alp := al2;
@@ -1532,12 +1548,12 @@ BEGIN
   iok := INPUT({{mu,[0]}, {sg,[0]}, {nn,[0]}, {alp,[0]}}, "Critical Values",
                {"μ:", "σ:", "n:", "α:"},
                {"Population mean", "Population SD (> 0)",
-                "Sample size, whole number ≥ 1", "Tail area, e.g. 0.05"});
+                "Sample size, whole number ≥ 1", "Tail area: from 0.001 to 0.2; 0.05 is usual"});
   IF iok == 0 THEN RETURN; END;
   IF sg <= 0 THEN MSGBOX("σ must be > 0"); RETURN; END;
   IF nn < 1 THEN MSGBOX("n must be ≥ 1"); RETURN; END;
   IF nn - IP(nn) > 0 THEN MSGBOX("n must be a whole number"); RETURN; END;
-  IF alp <= 0 OR alp >= 1 THEN MSGBOX("α must be between 0 and 1"); RETURN; END;
+  IF alp < 0.001 OR alp > 0.2 THEN MSGBOX("α must be from 0.001 to 0.2 (0.05 is usual)."); RETURN; END;
   // v2.3e: numbers the graph cannot draw (sd_BadMsg)
   bm := sd_BadMsg(mu, sg, nn);
   IF DIM(bm) > 0 THEN MSGBOX(bm); RETURN; END;

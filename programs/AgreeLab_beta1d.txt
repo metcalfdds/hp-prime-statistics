@@ -14,7 +14,7 @@
 // hardware testing are Roger D. Metcalf's; the code, drafting and
 // source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
 
-// AGREELAB - beta 1c  (2 Nov 2026, night)
+// AGREELAB - beta 1d  (2 Nov 2026, night)
 // Agreement and reliability between examiners or raters, for forensic
 //   science and research-methods classes: what each statistic MEANS, with
 //   pictures you can touch.  Launch AgreeLab() from the Program Catalog:
@@ -49,6 +49,12 @@
 // Written for the 2026-09-09 firmware (HP Prime G2 and G1).  beta 1b (and
 //   beta 1, 1a) have NOT been run on hardware or the emulator, only in the
 //   PC harness.
+// beta 1d (2 Nov 2026, night): menu items that fit their box.
+//   Roger: "some of the menu items run out of the box".  The box shows
+//   about 30 characters (round 2's rule); ten items of 31 to 36 are
+//   shorter now (the Tiles menu, My data, the presets).  The presets'
+//   own titles on their pages are as before.
+//
 // beta 1c (2 Nov 2026, night): commas in big numbers.
 //   Roger, 2 Nov 2026: "always put comma delimiters in big numbers". 
 //   STRING never groups digits, whatever Home's setting, so a new routine,
@@ -1986,9 +1992,9 @@ BEGIN
     "Null curve and CI",
     "Weights: ordered categories",
     "Switch linear / quadratic",
-    "Move one count to the diagonal",
-    "Move one count off the diagonal",
-    "Type a count in the selected tile",
+    "One count to the diagonal",
+    "One count off the diagonal",
+    "Type a count in this tile",
     "Clear the table (all 0)",
     "Help",
     "Back to the main menu"});
@@ -2917,7 +2923,7 @@ BEGIN
   mdI := 0;
   CHOOSE(mdI, "Use my data (Statistics 1Var)", {
     "Two raters: D1, D2 = codes 1-6",
-    "Many raters: D1-D9 = category counts",
+    "Many raters: D1-D9 counts",
     "Continuous: D1-D9 = raters"});
   IF mdI == 1 THEN IF ag_MyTwo() == 1 THEN ag_TView(1); END; END;
   IF mdI == 2 THEN IF ag_MyMany() == 1 THEN ag_FView(1); END; END;
@@ -2955,13 +2961,13 @@ BEGIN
   LOCAL prI;
   prI := 0;
   CHOOSE(prI, "Load a preset", {
-    "MS diagnosis: Winnipeg patients",
-    "MS diagnosis: New Orleans patients",
-    "Paradox: lopsided (illustrative)",
-    "Paradox: balanced (illustrative)",
-    "Fleiss 1971: 6 raters, 30 patients",
-    "Peak flow: 2 meters (Bland-Altman)",
-    "Shrout-Fleiss: 4 judges, 6 targets"});
+    "MS diagnosis: Winnipeg",
+    "MS diagnosis: New Orleans",
+    "Paradox: lopsided (made up)",
+    "Paradox: balanced (made up)",
+    "Fleiss 1971: 6 raters",
+    "Bland-Altman: peak flow",
+    "Shrout-Fleiss: 4 judges"});
   IF prI == 1 THEN ag_LdMSW(); ag_TView(1); END;
   IF prI == 2 THEN ag_LdMSN(); ag_TView(1); END;
   IF prI == 3 THEN ag_LdPar(1); ag_TView(1); END;
@@ -2973,7 +2979,7 @@ END;
 
 ag_Hello()
 BEGIN
-  ag_Band("AgreeLab - beta 1c");
+  ag_Band("AgreeLab - beta 1d");
   ag_Tx("Do raters agree beyond chance? How well?", 10, 26, #000000h);
   ag_Tx("Two raters: Cohen's kappa on touch tiles,", 10, 40, agBLUE);
   ag_Tx("weighted kappa; many raters: Fleiss' kappa;", 10, 53, agBLUE);
