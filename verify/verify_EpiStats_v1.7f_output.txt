@@ -1,0 +1,17 @@
+=== EpiStats v1.7f against v1.7e (../programs/EpiStats_v1.7e.txt)
+=== G. static
+PASS G1 the comma routine es_Cm is the fleet's, word for word but its name
+PASS G2 with every es_Cm(...) taken out, the code is the old code routine for routine, but for EpiStats, es_CORPage, es_CORTxt, es_Cm, es_GridDraw, es_Help_About, es_HyperPage, es_SS_Page3, es_Table2x2_Page2
+PASS G3 nothing the CAS or EXPR reads goes through es_Cm
+PASS G4 no new "!=" in the code (a factorial and a test on the Prime; 0 before, in MicroPython text where it is "not equal")
+PASS G5 the code is ASCII where it was (it was not before)
+PASS G6 the header names v1.7f
+=== R, M, Y, D. the monkey, 30 seeds on both versions
+PASS R1 30 seeds ({'OK': 22, 'END Unsupported': 8}): each run takes the old version's path: the same ending, number of screens, boxes and summary once the commas are out (0 accepted as the script says)
+INFO R2 every screen's texts the old version's once the commas are out, but 0 screen(s): where a number with its commas no longer fit and the program wrote it another way, or where this version changes a text on purpose (its change note says which); the first: []
+PASS M  every number of four or more digits drawn is grouped: 6 different grouped numbers drawn (54,322, 999,999, 54,324, 3,139 …); 0 drawn without their commas or with them twice, 0 of them accepted as the script says
+PASS C  every text handed to the CAS or EXPR is the old version's, call for call (6 calls on the new version's runs; a run that took another path is R1's)
+PASS Y  no year, or other number the program writes as text, is drawn with a comma, nor a name with digits in it ("x1000")
+PASS D  no new firm overlap, straddle or overrun (old 20, new 20) and no new number cut (old 0, new 0)
+
+11 PASS, 0 FAIL

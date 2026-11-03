@@ -1,0 +1,32 @@
+HELPER(cmS)
+BEGIN
+  LOCAL cmO, cmI, cmJ, cmN, cmR, cmK;
+  cmN := DIM(cmS);
+  IF cmN < 4 THEN RETURN cmS; END;
+  cmO := ""; cmI := 1;
+  WHILE cmI <= cmN DO
+    IF INSTRING("0123456789", MID(cmS, cmI, 1)) > 0 THEN
+      // a run of digits from cmI to cmJ
+      cmJ := cmI;
+      WHILE cmJ < cmN AND INSTRING("0123456789", MID(cmS, cmJ + 1, 1)) > 0 DO cmJ := cmJ + 1; END;
+      cmR := MID(cmS, cmI, cmJ - cmI + 1);
+      IF DIM(cmR) >= 4 AND (cmI == 1 OR MID(cmS, MAX(1, cmI - 1), 1) <> ".") THEN
+        // the first group takes 1 to 3 digits, then a comma before every three
+        cmK := DIM(cmR) MOD 3;
+        IF cmK == 0 THEN cmK := 3; END;
+        cmO := cmO + LEFT(cmR, cmK);
+        WHILE cmK < DIM(cmR) DO
+          cmO := cmO + "," + MID(cmR, cmK + 1, 3);
+          cmK := cmK + 3;
+        END;
+      ELSE
+        cmO := cmO + cmR;
+      END;
+      cmI := cmJ + 1;
+    ELSE
+      cmO := cmO + MID(cmS, cmI, 1);
+      cmI := cmI + 1;
+    END;
+  END;
+  RETURN cmO;
+END;

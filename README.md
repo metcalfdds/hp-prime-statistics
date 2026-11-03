@@ -52,7 +52,7 @@ Together, these 30 programs currently run to more than **84,000 lines**: 57,900 
 
 And around the programs:
 
-- **[The notes](docs/lessons-learned_v7zj.md)**: hard limits, commands that differ from the manual, touch and graphics idioms, the MicroPython bridge and how it fails silently, calling the CAS safely, numerical methods for 12-digit reals. Useful even if you never run a statistics program, and written so you can hand them to an AI assistant before it writes PPL for you.
+- **[The notes](docs/lessons-learned_v7zk.md)**: hard limits, commands that differ from the manual, touch and graphics idioms, the MicroPython bridge and how it fails silently, calling the CAS safely, numerical methods for 12-digit reals. Useful even if you never run a statistics program, and written so you can hand them to an AI assistant before it writes PPL for you.
 - **[Two shortcuts the manuals don't mention](docs/two-shortcuts.md)**: loading the Virtual Calculator by copying files into its folder, and a big data set as one matrix file, with who found what.
 - **[Tools](tools/)**: the checks every program passes before it is pasted (a lint gate, a fleet-wide name check, a check that no two lines of text overlap on screen, a PC harness that drives a program like a student), in plain Python 3.
 - **[Diagnostics](diagnostics/)**: small probe programs that test what your own calculator does.
@@ -109,7 +109,7 @@ Every program is a plain `.txt` file, on purpose.
 > CentralLimit is an **app** (a copy of Statistics 1Var with its own program), not an ordinary program. Install it this way, in this order:
 > 1. **Delete any ordinary program called CentralLimit** from the calculator (Program Catalog → highlight it → Delete). It may be there from an earlier version, or from pasting it as a plain program by mistake.
 > 2. **Make the app:** Apps → highlight Statistics 1Var *without opening it* → **Save** → name it `CentralLimit` → OK.
-> 3. **Paste the program into the app:** in the Connectivity Kit, Application Library → double-click CentralLimit → **Program** tab → select all → paste `CentralLimit_beta3d.txt` → save. On the calculator, Check it (it is the first entry in the Program Catalog while the app is active).
+> 3. **Paste the program into the app:** in the Connectivity Kit, Application Library → double-click CentralLimit → **Program** tab → select all → paste `CentralLimit_beta3e.txt` → save. On the calculator, Check it (it is the first entry in the Program Catalog while the app is active).
 > 4. **Reset the calculator** (a soft reset: on the Virtual Calculator, its **Calculator menu → Reset**; on a G1 or G2, press the reset button in the small hole on the back with a straightened paper clip). Closing and reopening the Virtual Calculator is not enough. Without the reset, the deleted program's routines can stay in memory and the app keeps opening on its spreadsheet.
 > 5. **Start it:** Apps → highlight CentralLimit *without touching it* → tap **Start**. You should see a welcome page and then its menu. Touching the icon only reopens the spreadsheet; press **View** from there to reach the CentralLimit menu.
 >
@@ -125,22 +125,24 @@ Every program is a plain `.txt` file, on purpose.
 
 **Exact answers from the CAS.** Twelve programs can now show an exact or symbolic answer beside their decimal one: Fisher's p as a fraction, a binomial probability as C(n, k)·pᵏ…, the limit that turns into the rule of three, a least-squares line as exact fractions. The calculator's CAS works it out on demand, the program checks it against its own number, and a badge says "exact (CAS)" or "decimal". If the CAS is busy or fails, the decimal answer stands.
 
+**Commas in big numbers** (2 November 2026). Every number of 1,000 or more that a program writes on the screen now carries its commas (12,345.678; 1,000,000), by APA's rule: never after the decimal point, never in a year ("Fleiss 1971"), and never in text the calculator's CAS reads, where "1,000" would be two numbers. The calculator's `STRING` never puts them in, whatever Home's digit-grouping setting, so each program does it with a small routine of its own. AgreeLab and ResampLab also write d̄ now, drawn as a d with a bar over it, because the calculator's font has no such letter. How it was done and checked: [docs/dev/commas-2026-11-02.md](docs/dev/commas-2026-11-02.md).
+
 Almost every program now responds to a finger: drag a bound, a bar, a curve or a dot and watch the numbers follow. Where a screen needs more than six soft-key actions, the right-hand key reads **More** and pages to the next set, as the NXT key did on the HP 48. Every touch action also has a key route.
 
 ### Distributions
 
-**NormExplorer** (beta 42e): a normal-distribution workbench.
+**NormExplorer** (beta 42f): a normal-distribution workbench.
 - Any μ and σ, four kinds of probability question and three inverse ones, a z-formula solver, Cohen's d, and a standardize animation.
 - A live explorer: drag either bound of a shaded interval. "More" brings up a second page, so the arrow keys can move a bound, μ or σ.
 - Reads your own data from the Statistics apps.
 
-**Norm3** (v2.4d, it takes arguments; the Program Catalog asks for them): drag x₀ and watch the area and the S-curve together. Tap the S-curve for the inverse.
+**Norm3** (v2.4e, it takes arguments; the Program Catalog asks for them): drag x₀ and watch the area and the S-curve together. Tap the S-curve for the inverse.
 
-**BurrLab** (beta 1i; replaces Burr3): the Burr XII as the model for a long right tail. Fit it to data by maximum likelihood, in PPL or MicroPython (or both, timed side by side), and see it ranked by AIC against the lognormal, Weibull, gamma, exponential and Lomax; drag C and K and watch it turn into the Pareto, the log-logistic or the Weibull; watch a running mean wander forever when the tail is too heavy for a mean to exist; ask how rare a value is. Data: BJS months served, Rossi weeks to re-arrest, Danish fire claims. **Why the Burr XII, and how the fit differs from fitting a normal:** [docs/burrlab-guide.md](docs/burrlab-guide.md).
+**BurrLab** (beta 1j; replaces Burr3): the Burr XII as the model for a long right tail. Fit it to data by maximum likelihood, in PPL or MicroPython (or both, timed side by side), and see it ranked by AIC against the lognormal, Weibull, gamma, exponential and Lomax; drag C and K and watch it turn into the Pareto, the log-logistic or the Weibull; watch a running mean wander forever when the tail is too heavy for a mean to exist; ask how rare a value is. Data: BJS months served, Rossi weeks to re-arrest, Danish fire claims. **Why the Burr XII, and how the fit differs from fitting a normal:** [docs/burrlab-guide.md](docs/burrlab-guide.md).
 
-**StatDist** (v2.7h): 27 distributions, each result a plot you can touch. Drag x or k, the shading follows, and the window snaps to round values. Overlays show the normal approximation, N(0, 1) behind t, and the CDF as an S-curve. A Gallery opens six examples with one tap.
+**StatDist** (v2.7i): 27 distributions, each result a plot you can touch. Drag x or k, the shading follows, and the window snaps to round values. Overlays show the normal approximation, N(0, 1) behind t, and the CDF as an S-curve. A Gallery opens six examples with one tap.
 
-**StudRange** (beta 15f): the studentized range (Tukey's q).
+**StudRange** (beta 15g): the studentized range (Tukey's q).
 - p from q, the critical value from α, Tukey HSD, and an interactive plot.
 - **MicroPython does the arithmetic, PPL is the fallback**, and a badge says which engine ran.
 - Python adds an H₀ simulation that shows why q, and not t, is the right yardstick.
@@ -149,50 +151,50 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 
 ### Sampling, estimation and power
 
-**CentralLimit** (beta 3d, an app; **see the install warning under [Installing](#installing-note-in-particular-the-instructions-for-centrallimit-because-it-is-an-app-not-a-program)**): watch one sample happen, its members lighting up and their mean dropping into the pile. Then drag along the top panel to choose n, and see the square-root law on its own page. After Colin Croft's HP 39G aplet (2003).
+**CentralLimit** (beta 3e, an app; **see the install warning under [Installing](#installing-note-in-particular-the-instructions-for-centrallimit-because-it-is-an-app-not-a-program)**): watch one sample happen, its members lighting up and their mean dropping into the pile. Then drag along the top panel to choose n, and see the square-root law on its own page. After Colin Croft's HP 39G aplet (2003).
 
-**SampDist** (v2.3e): the sampling distribution of x̄, with the population drawn faintly behind it.
+**SampDist** (v2.3f): the sampling distribution of x̄, with the population drawn faintly behind it.
 - **n×4** halves the width.
 - The nearer bound follows your finger.
 - "Watch sample means" drops forty of them onto the axis.
 
-**CICatcher** (beta 2e): fifty confidence intervals stack up, blue if it catches the truth (the green line) and red if it misses. **Drag the confidence level**: every interval stretches or shrinks, and the catch count updates exactly without new samples. Covers z, t, Wald, Wilson and the exact Clopper–Pearson interval.
+**CICatcher** (beta 2f): fifty confidence intervals stack up, blue if it catches the truth (the green line) and red if it misses. **Drag the confidence level**: every interval stretches or shrinks, and the catch count updates exactly without new samples. Covers z, t, Wald, Wilson and the exact Clopper–Pearson interval.
 
-**GaltonBoard** (beta 3f): Galton's quincunx. The board holds 5,000 balls; then it shows the results.
+**GaltonBoard** (beta 3g): Galton's quincunx. The board holds 5,000 balls; then it shows the results.
 - **Pour mode:** hold a finger on the funnel and a stream of balls cascades through the pegs.
 - **Drag sideways** to change p.
 - **Fill to 5,000** runs in MicroPython.
 - Tap a bar for its binomial probability and the normal area.
 
-**PowerViz** (v2.5l): **drag the H₁ curve**, and the α, β and power regions reshade live; a magenta arrow shows the effect size, d. Drag the critical line to set α, and drag up or down for n. n₈₀ appears in the panel and on the power-versus-n curve; the readout shows each group's n, μ and σ side by side and the t obtained with its df, as SPSS prints it (Welch's in the unequal-σ test). Five tests: one mean; two means with equal σ and n; **two means with unequal σ and unequal n**, where each group has its own σ and n and the formula page shows the best split, n₂/n₁ = σ₂/σ₁; one proportion; and two proportions. **Levene's test:** how often it would notice unequal spreads at your n (simulated, from the σ's and n's: SPSS's Levene F needs every score, and the page says so), beside the exact F test, and **two real samples** (the 1970 draft lottery, insect sprays, or your own D1 and D2) with Levene's test, the pooled and Welch t tests and Cohen's d, each read out in plain words for students.
+**PowerViz** (v2.5m): **drag the H₁ curve**, and the α, β and power regions reshade live; a magenta arrow shows the effect size, d. Drag the critical line to set α, and drag up or down for n. n₈₀ appears in the panel and on the power-versus-n curve; the readout shows each group's n, μ and σ side by side and the t obtained with its df, as SPSS prints it (Welch's in the unequal-σ test). Five tests: one mean; two means with equal σ and n; **two means with unequal σ and unequal n**, where each group has its own σ and n and the formula page shows the best split, n₂/n₁ = σ₂/σ₁; one proportion; and two proportions. **Levene's test:** how often it would notice unequal spreads at your n (simulated, from the σ's and n's: SPSS's Levene F needs every score, and the page says so), beside the exact F test, and **two real samples** (the 1970 draft lottery, insect sprays, or your own D1 and D2) with Levene's test, the pooled and Welch t tests and Cohen's d, each read out in plain words for students.
 
 ### Tables and tests
 
-**ChiTable** (beta 3f): chi-square for a 2 × 2, 2 × 3 or 3 × 2 table.
+**ChiTable** (beta 3g): chi-square for a 2 × 2, 2 × 3 or 3 × 2 table.
 - The full statistics: expected counts, G², Cramér's V, adjusted residuals, and for a 2 × 2 Fisher, RR, OR and the risk difference with Newcombe's interval.
 - **Drag an observed bar**, and every expected bar moves with χ² and p.
 - **Drag the critical line** on the χ² curve.
 - An independence morph, a Fisher bar plot, and the Florida death-penalty tables as a Simpson's-paradox page.
 - [docs/chitable-guide.md](docs/chitable-guide.md) is the user's guide.
 
-**TrendTest** (beta 3g): chi-square for linear trend in a 2 × k table. **Drag a dot** to change a level's proportion and watch the trend test respond. Includes a confidence band and Wilson intervals.
+**TrendTest** (beta 3h): chi-square for linear trend in a 2 × k table. **Drag a dot** to change a level's proportion and watch the trend test respond. Includes a confidence band and Wilson intervals.
 
-**TTestLab** (beta 1c, new 31 October 2026; 1 November: every form field takes numbers only, and numbers too large for the calculator to work with are refused with a sentence, after the monkey test below): the t tests of a criminal-justice statistics course, worked the way a lecture works them, in **five steps, a screen each**: the hypotheses and the data; the distribution and df; the critical value and the decision rule on a t curve with the rejection region shaded; the standard error and t obtained with the numbers put in; the decision, with t obtained and the p value drawn on the curve, and Cohen's d.
+**TTestLab** (beta 1d, new 31 October 2026; 1 November: every form field takes numbers only, and numbers too large for the calculator to work with are refused with a sentence, after the monkey test below): the t tests of a criminal-justice statistics course, worked the way a lecture works them, in **five steps, a screen each**: the hypotheses and the data; the distribution and df; the critical value and the decision rule on a t curve with the rejection region shaded; the standard error and t obtained with the numbers put in; the decision, with t obtained and the p value drawn on the curve, and Cohen's d.
 - **Pooled-variances, separate-variances (Welch, SPSS's "Equal variances not assumed") and dependent-samples t**, with any mix of equal or unequal SDs and Ns, from each group's mean, SD and N or from raw scores in D1 and D2; two-tailed or one-tailed either way.
 - **Which t test?** A tappable flowchart: are the samples independent? are the variances equal?
 - **Pooled or separate?** Both tests side by side, and what goes wrong with the pooled test when the smaller group has the larger SD.
 - **The printed t table beside the exact value** (df 73 reads row 60), and where a hand calculation rounded too early, what that did to t.
 - Examples: age at arrest (JDCC), matched jails (Census of Jails), and drug use by sex from an SPSS output, which it matches to SPSS's printed t = −4.351 on 265.924 df.
 
-**TTestLabG** (beta 1a, new 31 October 2026; 1 November: the same fixes as TTestLab beta 1c): **the general version of TTestLab**, for an intro course in any subject and the companion guide in progress. The same five steps, arithmetic and screens (built from TTestLab beta 1c by `tools/make_tlg1_v2.py`), with its own name so both can sit on one calculator, and these differences:
+**TTestLabG** (beta 1b, new 31 October 2026; 1 November: the same fixes as TTestLab beta 1c): **the general version of TTestLab**, for an intro course in any subject and the companion guide in progress. The same five steps, arithmetic and screens (built from TTestLab beta 1c by `tools/make_tlg1_v2.py`), with its own name so both can sit on one calculator, and these differences:
 - **Separate variances (Welch) is the default**; pooled stays a choice. The flowchart says: not sure the variances are equal? Answer No.
 - **t critical is the exact one for the df.** A printed table is a note: a df it lacks takes the next smaller row (the larger t crit); a fractional df is rounded down first. Step 2 also gives the hand shortcut for separate variances, the smaller N − 1.
 - **A p that rounds to α prints its 4 significant digits** ("p = 0.04970: just below α = 0.050"), and means worked out from raw scores print to 4 significant digits.
 - Examples: **Darwin's plants** (his 1876 *Zea mays* pairs, crossed and self-fertilised), **the 1970 draft lottery** (Selective Service: were the birthdays drawn at random?), age at arrest (JDCC) and matched jails (Census of Jails). Ran on the Virtual Calculator beside TTestLab; 106 checks: [TTestLabG_beta1_NOTES.md](docs/changes/TTestLabG_beta1_NOTES.md), [TTestLabG_beta1a_CHANGES.md](docs/changes/TTestLabG_beta1a_CHANGES.md).
 
-**TestChooser** (beta 2c): which statistical test? It is a tappable flowchart: tap the outcome's scale and the design, and the path draws itself to a test. There is also a tappable table, and a 20-case criminal-justice and forensic quiz. After Glantz's *Primer of Biostatistics*. Its t-test pages point to TTestLab.
+**TestChooser** (beta 2d): which statistical test? It is a tappable flowchart: tap the outcome's scale and the design, and the path draws itself to a test. There is also a tappable table, and a 20-case criminal-justice and forensic quiz. After Glantz's *Primer of Biostatistics*. Its t-test pages point to TTestLab.
 
-**EpiStats** (v1.7e): epidemiology.
+**EpiStats** (v1.7f): epidemiology.
 - **2 × 2 tables** in cohort, diagnostic and paired layouts: McNemar, Yule's Q, and a bar for every possible table behind Fisher's test. Call `EpiStats2x2(a,b,c,d)` from Home.
 - **Risk and odds** with Wilson intervals, plus an NNT icon array.
 - **Incidence rates and sample size.**
@@ -200,24 +202,24 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 
 ### Correlation and regression
 
-**ScatterLab** (beta 2f): build a scatterplot with your finger. Add, drag or delete points, and the least-squares line, r, r², SSE and the residuals follow. Guess mode lets you fit a line by eye first, then shows that least squares really does have the smallest SSE.
+**ScatterLab** (beta 2g): build a scatterplot with your finger. Add, drag or delete points, and the least-squares line, r, r², SSE and the residuals follow. Guess mode lets you fit a line by eye first, then shows that least squares really does have the smallest SSE.
 
-**BiNorm3D** (beta 1b): the bivariate normal as a wireframe you turn with a finger. It adds a contour view, and a slice that shows regression to the mean.
+**BiNorm3D** (beta 1c): the bivariate normal as a wireframe you turn with a finger. It adds a contour view, and a slice that shows regression to the mean.
 
 ### Bayes and forensic science
 
-**BayesTree** (beta 8f): a natural-frequency Bayes tree.
+**BayesTree** (beta 8g): a natural-frequency Bayes tree.
 - **Slide the prevalence** and the tree and a mosaic re-flow: watch a 95 %-accurate test's PPV collapse at low prevalence.
 - Sensitivity and specificity can be dragged on the branches.
 - A Fagan nomogram, a second test, and forensic labels.
 
-**DNAMixLR** (beta 3e): the likelihood ratio for a mixed DNA profile, locus by locus, with the NRC II θ correction (Weir et al. 1997; Curran et al. 1999).
+**DNAMixLR** (beta 3f): the likelihood ratio for a mixed DNA profile, locus by locus, with the NRC II θ correction (Weir et al. 1997; Curran et al. 1999).
 - **Drag θ** and watch the LR fall down an ENFSI verbal ladder.
 - Tap a locus for its numbers, and drop loci from the table.
 - A prosecutor's-fallacy page.
 - **A teaching tool only:** casework needs validated software and a qualified analyst.
 
-**ErrorRate Lab** (beta 1e): "Zero errors in 30 proficiency tests: how good is the examiner?"
+**ErrorRate Lab** (beta 1f): "Zero errors in 30 proficiency tests: how good is the examiner?"
 - The **upper 95 % confidence bound** on the error rate, the convention PCAST (2016) asked forensic disciplines to report. The rule of three appears as the limit it is.
 - A Bayesian view.
 - A MicroPython simulation of 10,000 proficiency programmes.
@@ -227,25 +229,25 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 
 Data sources for every preset are listed, with the checks made on them, in [docs/data/](docs/data/).
 
-**RankLab** (beta 1b): the rank tests. Sign test, Wilcoxon signed-rank (exact, ties handled), Mann-Whitney, Kruskal-Wallis with Dunn's pairs, Friedman with Kendall's W, Spearman and Kendall (exact for small n), Hodges-Lehmann. A rank strip you can tap, and the exact null distribution with the observed value marked. Data: the 1970 draft lottery, Darwin's corn, the Rossi re-arrest study, mock-jury sentences, Connecticut judges' ratings.
+**RankLab** (beta 1c): the rank tests. Sign test, Wilcoxon signed-rank (exact, ties handled), Mann-Whitney, Kruskal-Wallis with Dunn's pairs, Friedman with Kendall's W, Spearman and Kendall (exact for small n), Hodges-Lehmann. A rank strip you can tap, and the exact null distribution with the observed value marked. Data: the 1970 draft lottery, Darwin's corn, the Rossi re-arrest study, mock-jury sentences, Connecticut judges' ratings.
 
-**AnovaLab** (beta 1a): one-way ANOVA with Welch, Levene and Bartlett, and Holm, Bonferroni, Scheffé and Tukey-Kramer comparisons; two-way ANOVA for unbalanced designs (Type III); randomized blocks; tests and intervals for variances. Tap two groups to compare them; an interaction plot. Data: mock-jury sentences by attractiveness and crime, the draft lottery by month, insect sprays.
+**AnovaLab** (beta 1b): one-way ANOVA with Welch, Levene and Bartlett, and Holm, Bonferroni, Scheffé and Tukey-Kramer comparisons; two-way ANOVA for unbalanced designs (Type III); randomized blocks; tests and intervals for variances. Tap two groups to compare them; an interaction plot. Data: mock-jury sentences by attractiveness and crime, the draft lottery by month, insect sprays.
 
-**SeizureLab** (beta 1b): how many units of a drug seizure must be tested? Hypergeometric, binomial and Bayesian answers, an operating-characteristic curve you drag, and the total net weight with its interval. Checked against the tables of the ENFSI *Guidelines on Representative Drug Sampling* (2009): 426 of 427 cells agree, and the one that does not is a misprint in the guideline.
+**SeizureLab** (beta 1c): how many units of a drug seizure must be tested? Hypergeometric, binomial and Bayesian answers, an operating-characteristic curve you drag, and the total net weight with its interval. Checked against the tables of the ENFSI *Guidelines on Representative Drug Sampling* (2009): 426 of 427 cells agree, and the one that does not is a misprint in the guideline.
 
-**SurvLab** (beta 1b): time to re-arrest. Kaplan-Meier curves with Greenwood and log-log intervals, a finger cursor that reads S(t), quantiles when the median is never reached, log-rank and Gehan-Breslow tests, hazard ratios and a life table. Data: Rossi, Berk & Lenihan's 432 released prisoners, by financial aid.
+**SurvLab** (beta 1c): time to re-arrest. Kaplan-Meier curves with Greenwood and log-log intervals, a finger cursor that reads S(t), quantiles when the median is never reached, log-rank and Gehan-Breslow tests, hazard ratios and a life table. Data: Rossi, Berk & Lenihan's 432 released prisoners, by financial aid.
 
-**FitCheck** (beta 1a): goodness of fit. Chi-square with cell merging, Benford's law (*Arizona v. Nelson*'s cheques), the exact binomial test (*Castaneda v. Partida*'s grand juries, "29 standard deviations"), Poisson fits (horse kicks, Richmond homicides), and normality: Q-Q plot, Shapiro-Wilk, Anderson-Darling, Lilliefors.
+**FitCheck** (beta 1b): goodness of fit. Chi-square with cell merging, Benford's law (*Arizona v. Nelson*'s cheques), the exact binomial test (*Castaneda v. Partida*'s grand juries, "29 standard deviations"), Poisson fits (horse kicks, Richmond homicides), and normality: Q-Q plot, Shapiro-Wilk, Anderson-Darling, Lilliefors.
 
-**ResampLab** (beta 1c): permutation tests and the bootstrap you can watch. Shuffle once and see the dots move; ×10, ×100, ×1000; exact enumeration when it is small enough; percentile, basic and BCa intervals. Data: mock-jury sentences, Darwin's corn, months served for homicide (BJS).
+**ResampLab** (beta 1d): permutation tests and the bootstrap you can watch. Shuffle once and see the dots move; ×10, ×100, ×1000; exact enumeration when it is small enough; percentile, basic and BCa intervals. Data: mock-jury sentences, Darwin's corn, months served for homicide (BJS).
 
-**AgreeLab** (beta 1b): examiner agreement. Cohen's kappa on touch tiles (drag a count off the diagonal and watch kappa fall), weighted kappa, Fleiss' kappa, the six intraclass correlations and a Bland-Altman plot; the "kappa paradox" explained. Data: Landis & Koch's two neurologists, Fleiss (1971), Bland & Altman (1986), Shrout & Fleiss (1979).
+**AgreeLab** (beta 1c): examiner agreement. Cohen's kappa on touch tiles (drag a count off the diagonal and watch kappa fall), weighted kappa, Fleiss' kappa, the six intraclass correlations and a Bland-Altman plot; the "kappa paradox" explained. Data: Landis & Koch's two neurologists, Fleiss (1971), Bland & Altman (1986), Shrout & Fleiss (1979).
 
-**RiskLab** (beta 1b): the statistics behind recidivism risk tools. Logistic regression, the ROC curve with a draggable cut-off and a live 2 × 2 table, calibration, and fairness by group, using ProPublica's published COMPAS data from Broward County (as counts) and the Rossi study. It shows, with real numbers, why a score cannot be both equally calibrated and equally wrong for two groups whose base rates differ.
+**RiskLab** (beta 1c): the statistics behind recidivism risk tools. Logistic regression, the ROC curve with a draggable cut-off and a live 2 × 2 table, calibration, and fairness by group, using ProPublica's published COMPAS data from Broward County (as counts) and the Rossi study. It shows, with real numbers, why a score cannot be both equally calibrated and equally wrong for two groups whose base rates differ.
 
 ### Getting your data in (new, 31 October 2026)
 
-**DataLoad** (beta 1b): typing a long data set into a calculator is not feasible, so this does it from a spreadsheet. The **[HP Prime Data Loader](data-loader/README.md)**, one web page that works offline, turns columns pasted from Excel, SPSS or a CSV file into the calculator's own matrix file (M1 to M9). DataLoad then puts the matrix's columns into the Statistics 1Var lists D1-D9 (or the Statistics 2Var lists C1-C9), either column by column or as scores by group (the SPSS layout: each group's scores to its own list, the smallest code to D1), leaves out blank cells, and offers to clear lists left from an earlier load, which AnovaLab, RankLab and AgreeLab would otherwise read as more groups. Then a box plot of every list and a histogram of any list you tap, with the Statistics 1Var app's own quartiles. On the Virtual Calculator it loaded the Rossi re-arrest data (432 x 5) and a text-coded matrix with blanks, its summaries matched Python, and TTestLab read the lists it filled (t(421.19) = -1.68, p = 0.094, as SciPy gives). Not yet run on a G1 or G2, and not yet independently reviewed. How this route compares with the copy-and-paste route HP describes, and who found what: [Two shortcuts](docs/two-shortcuts.md).
+**DataLoad** (beta 1c): typing a long data set into a calculator is not feasible, so this does it from a spreadsheet. The **[HP Prime Data Loader](data-loader/README.md)**, one web page that works offline, turns columns pasted from Excel, SPSS or a CSV file into the calculator's own matrix file (M1 to M9). DataLoad then puts the matrix's columns into the Statistics 1Var lists D1-D9 (or the Statistics 2Var lists C1-C9), either column by column or as scores by group (the SPSS layout: each group's scores to its own list, the smallest code to D1), leaves out blank cells, and offers to clear lists left from an earlier load, which AnovaLab, RankLab and AgreeLab would otherwise read as more groups. Then a box plot of every list and a histogram of any list you tap, with the Statistics 1Var app's own quartiles. On the Virtual Calculator it loaded the Rossi re-arrest data (432 x 5) and a text-coded matrix with blanks, its summaries matched Python, and TTestLab read the lists it filled (t(421.19) = -1.68, p = 0.094, as SciPy gives). Not yet run on a G1 or G2, and not yet independently reviewed. How this route compares with the copy-and-paste route HP describes, and who found what: [Two shortcuts](docs/two-shortcuts.md).
 
 *FDAES (forensic dental age estimation) is held back from this repository for now.*
 
@@ -312,7 +314,7 @@ Short programs for finding out what your own calculator does.
 
 ## The notes
 
-[**docs/lessons-learned_v7zj.md**](docs/lessons-learned_v7zj.md) is the substantial document here: everything learned the expensive way across dozens and dozens of build iterations on G1 and G2 hardware. It covers:
+[**docs/lessons-learned_v7zk.md**](docs/lessons-learned_v7zk.md) is the substantial document here: everything learned the expensive way across dozens and dozens of build iterations on G1 and G2 hardware. It covers:
 - hard limits;
 - command behaviour that contradicts the manual;
 - graphics and input idioms;

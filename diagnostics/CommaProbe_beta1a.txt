@@ -1,0 +1,75 @@
+#pragma mode( separator(.,;) integer(h32) )
+// CommaProbe beta 1 (2 Nov 2026): the comma helper on the calculator, and how wide
+// a comma, a point and a digit are in fonts 1, 2 and 3 (TEXTOUT_P returns the x where
+// its text ends).  Roger, 2 Nov 2026: "always put comma delimiters in big numbers".
+// Any key or tap ends it.  Pure ASCII.
+// beta 1a (2 Nov 2026): the pragma line, as every program in the fleet has; nothing
+// else changed.  Copied in as a file, it must be Checked once before it runs.
+// cpCm(cmS): commas in every run of four or more digits not after a decimal point.
+cpCm(cmS)
+BEGIN
+  LOCAL cmO, cmI, cmJ, cmN, cmR, cmK;
+  cmN := DIM(cmS);
+  IF cmN < 4 THEN RETURN cmS; END;
+  cmO := ""; cmI := 1;
+  WHILE cmI <= cmN DO
+    IF INSTRING("0123456789", MID(cmS, cmI, 1)) > 0 THEN
+      cmJ := cmI;
+      WHILE cmJ < cmN AND INSTRING("0123456789", MID(cmS, cmJ + 1, 1)) > 0 DO cmJ := cmJ + 1; END;
+      cmR := MID(cmS, cmI, cmJ - cmI + 1);
+      IF DIM(cmR) >= 4 AND (cmI == 1 OR MID(cmS, MAX(1, cmI - 1), 1) <> ".") THEN
+        cmK := DIM(cmR) MOD 3;
+        IF cmK == 0 THEN cmK := 3; END;
+        cmO := cmO + LEFT(cmR, cmK);
+        WHILE cmK < DIM(cmR) DO
+          cmO := cmO + "," + MID(cmR, cmK + 1, 3);
+          cmK := cmK + 3;
+        END;
+      ELSE
+        cmO := cmO + cmR;
+      END;
+      cmI := cmJ + 1;
+    ELSE
+      cmO := cmO + MID(cmS, cmI, 1);
+      cmI := cmI + 1;
+    END;
+  END;
+  RETURN cmO;
+END;
+
+EXPORT CommaProbe()
+BEGIN
+  LOCAL cbA, cbB, cbI, cbF;
+  LOCAL cbS, cbN, cbY;
+  cbA := {"1234567", "-98765.4321", "1.8053E10", "0.000123", "999", "1000", "12345.678901",
+          "3186173/191520", "n = 1000, p = 0.5", "100000", "1234.5678", "SSE = 18053333333"};
+  cbB := {"1,234,567", "-98,765.4321", "1.8053E10", "0.000123", "999", "1,000", "12,345.678901",
+          "3,186,173/191,520", "n = 1,000, p = 0.5", "100,000", "1,234.5678", "SSE = 18,053,333,333"};
+  RECT_P(G0, 0, 0, 319, 239, #FFFFFFh);
+  cbN := 0; cbY := 2;
+  FOR cbI FROM 1 TO SIZE(cbA) DO
+    cbS := cpCm(cbA(cbI));
+    IF cbS == cbB(cbI) THEN cbN := cbN + 1; END;
+    IF cbI <= 6 THEN
+      TEXTOUT_P(cbS, G0, 2 + 160 * ((cbI - 1) MOD 2), cbY + 13 * IP((cbI - 1) / 2), 1, IFTE(cbS == cbB(cbI), #008C00h, #C80000h), 156);
+    END;
+  END;
+  TEXTOUT_P("cpCm: " + STRING(cbN, 2, 0) + " of " + STRING(SIZE(cbA), 2, 0) + " as expected", G0, 2, 44, 2, #0000C8h, 316);
+  // widths: font 1 to 3, of ",", ".", "0", "1,234,567" and "1234567"
+  FOR cbF FROM 1 TO 3 DO
+    cbS := "f" + STRING(cbF, 2, 0) + ": ,=" + STRING(TEXTOUT_P(",", G0, 2, 224, cbF, #FFFFFFh) - 2, 2, 0);
+    cbS := cbS + " .=" + STRING(TEXTOUT_P(".", G0, 2, 224, cbF, #FFFFFFh) - 2, 2, 0);
+    cbS := cbS + " 0=" + STRING(TEXTOUT_P("0", G0, 2, 224, cbF, #FFFFFFh) - 2, 2, 0);
+    cbS := cbS + " 1=" + STRING(TEXTOUT_P("1", G0, 2, 224, cbF, #FFFFFFh) - 2, 2, 0);
+    cbS := cbS + " 1,234,567=" + STRING(TEXTOUT_P("1,234,567", G0, 2, 224, cbF, #FFFFFFh) - 2, 2, 0);
+    cbS := cbS + " 1234567=" + STRING(TEXTOUT_P("1234567", G0, 2, 224, cbF, #FFFFFFh) - 2, 2, 0);
+    RECT_P(G0, 0, 220, 319, 239, #FFFFFFh);
+    TEXTOUT_P(cbS, G0, 2, 50 + 22 * cbF, 1, #000000h, 316);
+  END;
+  // the look: each font, the same number with and without commas
+  TEXTOUT_P("1,234,567.89  1234567.89", G0, 2, 142, 1, #000000h, 316);
+  TEXTOUT_P("1,234,567.89  1234567.89", G0, 2, 158, 2, #000000h, 316);
+  TEXTOUT_P("1,234,567.89  1234567.89", G0, 2, 178, 3, #000000h, 316);
+  TEXTOUT_P("CommaProbe beta 1: any key or tap ends", G0, 2, 224, 1, #5A5A5Ah, 316);
+  WAIT(-1);
+END;

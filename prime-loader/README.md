@@ -59,7 +59,7 @@ The Edge route, with v1 and starter pack v4 (unchecked files):
 - The calculator, started, listed exactly those three in its Program Catalog.
 - Two things came out of the run. "Calculator menu" was not clear, so the page now says "the small word Calculator at the top left of its window, or its X". And a computer whose default browser is Firefox opens the page there: the page shows its Edge-or-Chrome note.
 
-**In Chromium:** `tests/test_loader_v1g.js`, **58 PASS, 0 FAIL** with starter pack v9 (`tests/test_loader_v1g_output.txt`; v1f's, the same checks, gave 58 with pack v8; v1e's, the same checks, gave 58 with pack v7; v1d's test, which ran four times in a row with pack v6, after the test was made to wait for the own-data list, which one run in four had read too early). It drives the page in Chromium 141 against a mock `HP Prime` folder in the browser's private file system: HP's apps, settings, a list, a matrix, old programs, an old CentralLimit app, and the lock file. The folder picker is replaced by one that returns that folder. Checked:
+**In Chromium:** `tests/test_loader_v1h.js`, **58 PASS, 0 FAIL** with starter pack v10 (`tests/test_loader_v1h_output.txt`; v1g's, the same checks, gave 58 with pack v9; v1f's, the same checks, gave 58 with pack v8; v1e's, the same checks, gave 58 with pack v7; v1d's test, which ran four times in a row with pack v6, after the test was made to wait for the own-data list, which one run in four had read too early). It drives the page in Chromium 141 against a mock `HP Prime` folder in the browser's private file system: HP's apps, settings, a list, a matrix, old programs, an old CentralLimit app, and the lock file. The folder picker is replaced by one that returns that folder. Checked:
 
 - a running calculator is refused, with nothing written;
 - chapter 11, then chapter 7 with the sample data, then your own `M3.hpmat`: every file byte for byte against the pack;
@@ -88,6 +88,8 @@ The page was also looked at in light and dark, at desktop and phone widths: noth
 
 **On the web (1 November 2026):** after the repository went on GitHub Pages, v1b opened from its web address in Chromium worked as Edge/Chrome (a secure page with folder access, no errors) and as Firefox (its own route; chapter 11's zip held the checked TTestLabG, DataLoad and ResampLab). v1c is v1b with the Data Loader link changed and `index.html` added.
 
+**v1h (2 November 2026, night)** is v1g built from starter pack v10, whose 30 programs carry round 5: every number of 1,000 or more on the screen shows its commas, and AgreeLab and ResampLab draw d̄; the page itself is unchanged. All 30 files are checked ones, from the Virtual Calculator on 2 November 2026, night.
+
 **v1g (2 November 2026)** is v1f built from starter pack v9, whose PowerViz v2.5l, ScatterLab beta 2f, ChiTable beta 3f and GaltonBoard beta 3f carry the monkey test's fourth round; the page itself is unchanged, and so are the other 26 programs' files. All four checked files were collected after a Check alone.
 
 **v1f (1 November 2026, night)** is v1e built from starter pack v8, whose CICatcher beta 2e, Norm3 v2.4d, NormExplorer beta 42e and StatDist v2.7h carry the monkey test's third round and what the Virtual Calculator found (density labels over the axis); the page itself is unchanged, and so are the other 26 programs' files. All four checked files were collected after a Check alone.
@@ -102,11 +104,11 @@ The page was also looked at in light and dark, at desktop and phone widths: noth
 
 | File | What it is |
 |---|---|
-| `PrimeLoader_v1g.html` | The page, built: open this one. About 2 MB, all 30 programs inside, checked. |
+| `PrimeLoader_v1h.html` | The page, built: open this one. About 2 MB, all 30 programs inside, checked. |
 | `index.html` | Written by the build: sends a browser at `.../prime-loader/` on to the current page, so the book's link never changes. |
 | `loader_template_v1c.html` | The page's source, with slots for the two cores, the catalog, the files and the Data Loader's web address. |
 | `loader_core_v1.js` | The file work: find the folder, check the lock, back up, clear, write, read back; and the zip reader for the embedded files (every CRC checked). No DOM: the page and the tests share it. |
-| `build_loader_v1g.py` | `python3 build_loader_v1g.py ../starter-pack/HP_Prime_Statistics_Starter_Pack_v9.zip --kit PATH_TO_hp-prime-kit`. Holds the chapter list (from the companion guide's Chapter Plan), each program's one line, and the name to type in Home. Stops if the catalog and the pack disagree, and says how many files are checked. Uses `../data-loader/dl_core_v1.js` for the zip it offers. |
-| `tests/test_loader_v1g.js` | The Chromium test: `node tests/test_loader_v1g.js PrimeLoader_v1g.html ../starter-pack/HP_Prime_Statistics_Starter_Pack_v9.zip` (Playwright). |
+| `build_loader_v1h.py` | `python3 build_loader_v1h.py ../starter-pack/HP_Prime_Statistics_Starter_Pack_v10.zip --kit PATH_TO_hp-prime-kit`. Holds the chapter list (from the companion guide's Chapter Plan), each program's one line, and the name to type in Home. Stops if the catalog and the pack disagree, and says how many files are checked. Uses `../data-loader/dl_core_v1.js` for the zip it offers. |
+| `tests/test_loader_v1h.js` | The Chromium test: `node tests/test_loader_v1h.js PrimeLoader_v1h.html ../starter-pack/HP_Prime_Statistics_Starter_Pack_v10.zip` (Playwright). |
 
 *Free for educational and personal use. © 2026 Roger Metcalf. Written with AI assistance (Anthropic Claude).*

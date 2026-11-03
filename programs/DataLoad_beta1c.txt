@@ -1,0 +1,1060 @@
+#pragma mode( separator(.,;) integer(h32) )
+
+// ============================================================
+// DATALOAD - beta 1c
+// ============================================================
+// FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
+//   the file and credit the author if you pass it on.  Not for
+//   sale or commercial redistribution.  Provided as is.
+// DISCLAIMER: a teaching and demonstration aid. Not validated for
+//   forensic, clinical or legal use; do not rely on its results for
+//   legal purposes.
+// (C) 2026 Roger D Metcalf.  Written with AI assistance (Anthropic
+//   Claude).
+// Firmware: written for the HP Prime G2 and G1 on the 2026-09-09
+//   firmware.  beta 1 ran on the Virtual Calculator 2.4.2 (31 Oct
+//   2026): both loads, the summary, the histograms, a text-coded
+//   matrix, and TTestLab reading what it loaded.  beta 1a (that run's
+//   fixes) ran there too, the same evening.  beta 1b changes one line
+//   (below) and has run in the PC harness.  See its CHANGES file.
+//
+// beta 1c (2 Nov 2026, night): commas in big numbers.
+//   Roger, 2 Nov 2026: "always put comma delimiters in big numbers". 
+//   STRING never groups digits, whatever Home's setting, so a new routine,
+//   dd_Cm, puts a comma every three digits into each run of four or more
+//   digits that does not follow a decimal point: 1234567.25 shows as
+//   1,234,567.25; decimals, exponents, years in the help text and anything
+//   the CAS reads are left alone.  10 calls of the number formatters and
+//   31 of STRING go through it where they are made, so a number is
+//   measured as it is drawn. Otherwise it runs as beta 1b did: the verify
+//   script runs both versions side by side and they take the same path,
+//   screen for screen (any text that differs beyond its commas is counted
+//   there, and the change note says why).  Harness only so far.
+//
+// beta 1b (31 Oct 2026): DataLoad run a second time without loading
+//   returned the first run's line ("DataLoad: M1 col 1 by col 3 ...");
+//   the line is now cleared at the start of every run.
+//
+// beta 1a (31 Oct 2026, from the Virtual Calculator run):
+//   - LISTS LEFT FROM AN EARLIER LOAD.  Loading 2 groups into D1-D2
+//     left D3-D5 holding columns of the matrix loaded before, and
+//     AnovaLab, RankLab and AgreeLab read every list that holds data
+//     as one more group (or rater).  When lists after the new ones
+//     hold data, the menu now offers to clear them (first choice).
+//   - The question names only the lists that hold data ("D1-D5
+//     already hold data" was shown when only D1 and D2 did).
+//   - What each list holds now names its matrix ("M1 col 3 = 0"), so
+//     lists from two different loads cannot be mistaken for one.
+//   - A column that is blank throughout now empties its list instead
+//     of leaving the old values in it.
+//   - The Scores-by-group form's labels fit ("Scores in colu..." was
+//     cut off); American spelling; Help page 3 adds RankLab's groups
+//     and the warning about leftover lists.
+//   - The summary's n column and box plots moved right (x 114 and
+//     150) to make room for the longer descriptions.
+//
+// WHAT IT IS FOR (Roger, 31 Oct 2026: "entering long data sets on a
+//   calculator by hand is just not feasible--maybe we could make some
+//   sort of 'data loader'").  A data set from a spreadsheet, SPSS or a
+//   CSV file reaches the calculator as one of its matrices, M0 to M9:
+//   - on the Virtual Calculator, as a file (M1.hpmat) made by the Data
+//     Loader web page and copied into the calculator's own folder while
+//     it is closed (tested 31 Oct 2026: 432 rows x 5 columns arrived);
+//   - on a G1 or G2, through the Connectivity Kit (its matrix editor,
+//     or the same file dragged onto the calculator: not yet tested).
+//   DataLoad then puts the matrix's columns where the fleet's programs
+//   read their data: the Statistics 1Var lists D1-D9, or the
+//   Statistics 2Var lists C1-C9.  Two ways:
+//   1. COLUMNS: column 1 to D1, column 2 to D2, ... (at most 9).
+//   2. SCORES BY GROUP: one column of scores and one of group codes,
+//      the way SPSS keeps data; each group's scores go to their own
+//      list (group codes sorted: the smallest code to D1).  Ready for
+//      TTestLab, PowerViz, ResampLab (D1, D2) or AnovaLab.
+//   Then it shows every list it filled, with a box plot each, and a
+//   histogram of any list you tap.
+//
+// BLANK CELLS: a column shorter than the others is padded by the web
+//   page with 9.99999999999E499, the Prime's largest real (a number no
+//   data set can hold).  DataLoad leaves out any cell at 1E499 or
+//   above, so each list gets only its own values.
+//
+// QUARTILES: the Prime's own rule (HP Prime User Guide, Statistics
+//   1Var, Computed statistics): Q1 is the median of the values to the
+//   left of the median, Q3 of those to the right, and with an odd n
+//   the median itself is left out.  So the box plots agree with the
+//   Statistics 1Var app's Stats screen.
+//
+// FROM THE LIBRARY (searched 31 Oct 2026): a column of a matrix as a
+//   list is mat2list(col(M, j)) in bestfit3 (hpcalc.org), and
+//   specana writes Statistics_1Var.D3; Lessons Learned s10: D and C
+//   lists are global, readable and writable from a program, but do not
+//   exist until their app has been opened once (hence IFERR).  The
+//   DataLoad probe (DLTest, 31 Oct 2026) copied M1's columns into D1
+//   and D2 with MAKELIST on the Virtual Calculator.  From the fleet's
+//   routine pool: TTestLab's drains, NormExplorer's NiceNum, AnovaLab's
+//   fixed-decimal formatter, TestChooser's soft-key slot.
+//
+// KEYS AND TOUCH (a GETKEY + MOUSE polling loop, Lessons Learned s6):
+//   after every form, menu and box the program drains keys AND waits
+//   for the finger to lift (dd_Settle): a form's OK sits where a soft
+//   key is, and a finger still on it was once read as a tap.
+//
+// NAMES: every routine carries the tag dd_ and every file-level
+//   variable the tag dd (all programs on a Prime share one pool of
+//   routine names, matched ignoring case: Lessons Learned s5).
+// ============================================================
+
+// ---------------- shared state ----------------
+LOCAL ddSRC:=1;          // which matrix: 0-9 (M0-M9)
+LOCAL ddDST:=1;          // where the lists go: 1 D (Statistics 1Var), 2 C (Statistics 2Var)
+LOCAL ddSC:=1, ddGC:=2;  // scores-by-group: the score column, the group column
+LOCAL ddDSC:={};         // what each list holds, as text ("M1 col 1", "M1 col 3 = 0"); 9 slots
+LOCAL ddLAST:="";        // the last load, for the summary line when DataLoad ends
+LOCAL ddCLR:={};         // lists after the new ones that hold data (dd_Confirm)
+// palette (Lessons Learned s13), set in dd_Init
+LOCAL ddCOL:={}, ddLIG:={};        // nine list colors and their light fills
+LOCAL ddORNG, ddLORN, ddGRAY, ddFOOT, ddBLK, ddWHT;
+LOCAL ddGRN, ddRED, ddGRID;
+
+// ---------------- palette ----------------
+// ---- dd_Cm: commas in big numbers (round 5, 2 Nov 2026, night) ----
+// Roger, 2 Nov 2026: "always put comma delimiters in big numbers".  STRING never
+// groups digits, whatever Home's setting, so this inserts a comma every three
+// digits in each run of four or more digits that does not follow a decimal
+// point: "1234567.25" -> "1,234,567.25", "-98765" -> "-98,765"; "0.00012345",
+// "1.8E10" and "1,000" stay as they are.  Only text for the screen comes here,
+// never text the CAS or EXPR reads ("1,000" there is two numbers).
+// Run on the Virtual Calculator: CommaProbe beta 1, 12 of 12 (2 Nov 2026).
+dd_Cm(cmS)
+BEGIN
+  LOCAL cmO, cmI, cmJ, cmN, cmR, cmK;
+  cmN := DIM(cmS);
+  IF cmN < 4 THEN RETURN cmS; END;
+  cmO := ""; cmI := 1;
+  WHILE cmI <= cmN DO
+    IF INSTRING("0123456789", MID(cmS, cmI, 1)) > 0 THEN
+      // a run of digits from cmI to cmJ
+      cmJ := cmI;
+      WHILE cmJ < cmN AND INSTRING("0123456789", MID(cmS, cmJ + 1, 1)) > 0 DO cmJ := cmJ + 1; END;
+      cmR := MID(cmS, cmI, cmJ - cmI + 1);
+      IF DIM(cmR) >= 4 AND (cmI == 1 OR MID(cmS, MAX(1, cmI - 1), 1) <> ".") THEN
+        // the first group takes 1 to 3 digits, then a comma before every three
+        cmK := DIM(cmR) MOD 3;
+        IF cmK == 0 THEN cmK := 3; END;
+        cmO := cmO + LEFT(cmR, cmK);
+        WHILE cmK < DIM(cmR) DO
+          cmO := cmO + "," + MID(cmR, cmK + 1, 3);
+          cmK := cmK + 3;
+        END;
+      ELSE
+        cmO := cmO + cmR;
+      END;
+      cmI := cmJ + 1;
+    ELSE
+      cmO := cmO + MID(cmS, cmI, 1);
+      cmI := cmI + 1;
+    END;
+  END;
+  RETURN cmO;
+END;
+
+LOCAL dd_Init()
+BEGIN
+ // one color per list, D1 to D9 (or C1 to C9), and a light fill each
+ ddCOL := {RGB(0,60,200), RGB(200,0,200), RGB(0,140,60), RGB(255,69,0), RGB(220,0,0), RGB(30,144,255), RGB(120,60,180), RGB(0,128,128), RGB(150,90,30)};
+ ddLIG := {RGB(220,232,255), RGB(245,215,245), RGB(215,240,222), RGB(255,225,210), RGB(255,215,215), RGB(215,235,255), RGB(230,220,245), RGB(210,238,238), RGB(240,228,212)};
+ ddORNG := RGB(255,69,0);     // frames and title bands
+ ddLORN := RGB(255,240,220);  // panel fill
+ ddGRAY := RGB(90,90,90);     // tick labels, secondary text
+ ddFOOT := RGB(30,144,255);   // footers
+ ddBLK := RGB(0,0,0);
+ ddWHT := RGB(255,255,255);
+ ddGRN := RGB(0,140,60);      // the mean
+ ddRED := RGB(220,0,0);       // the median
+ ddGRID := RGB(225,228,235);  // grid lines
+ IF SIZE(ddDSC) < 9 THEN ddDSC := {"", "", "", "", "", "", "", "", ""}; END;
+END;
+
+// ---------------- waiting (from TTestLab, through the routine pool) ----------------
+// Empty the key buffer: the Enter that closed a menu or form must not
+// be read as the next keypress.
+LOCAL dd_Drain()
+BEGIN
+ LOCAL dk;
+ REPEAT dk := GETKEY; UNTIL dk == -1;
+END;
+
+// Wait for the finger to lift, never more than a second (a stuck touch
+// reading must not freeze the program).  MOUSE(1) is -1 when nothing
+// touches the screen.
+LOCAL dd_TDrain()
+BEGIN
+ LOCAL drT;
+ drT := TICKS;
+ REPEAT UNTIL MOUSE(1) == -1 OR TICKS - drT > 1000;
+END;
+
+// After a form, a menu or a box: keys AND the finger.
+LOCAL dd_Settle()
+BEGIN
+ dd_Drain();
+ dd_TDrain();
+END;
+
+// Wait for any key or tap (drain, wait, drain).
+LOCAL dd_WaitAny()
+BEGIN
+ LOCAL waK, waM, waM1;
+ dd_Settle();
+ REPEAT
+  waK := GETKEY;
+  waM := MOUSE;
+  waM1 := waM(1);
+ UNTIL waK > -1 OR SIZE(waM1) > 0;
+ dd_Settle();
+END;
+
+// ---------------- numbers as text ----------------
+// Fixed decimals, rounded first (from AnovaLab): STRING(x, 2, d) prints
+// SCIENTIFIC when 0 < |x| < 10^-d (Lessons Learned s3), and a rounded
+// -0 prints as 0.
+LOCAL dd_Fx(fxV, fxD)
+BEGIN
+ LOCAL fxR;
+ fxR := ROUND(fxV, fxD);
+ IF fxR == 0 THEN fxR := 0; END;
+ RETURN STRING(fxR, 2, fxD);
+END;
+
+// A value with about 4 significant digits and no trailing zeros:
+// 52, 45.85, 0.2639.  Whole numbers print whole.
+LOCAL dd_Num(nv)
+BEGIN
+ LOCAL na, nd, ns;
+ IF nv == 0 THEN RETURN "0"; END;
+ na := ABS(nv);
+ // very large or very small: the Prime's own form
+ // (STRING mode 1 is the Standard form, whatever Home is set to; it
+ // takes no digits argument: Lessons Learned s3)
+ IF na >= 1E11 OR na < 0.0001 THEN RETURN STRING(nv, 1, 0); END;
+ IF FP(nv) == 0 THEN RETURN STRING(nv, 2, 0); END;
+ nd := MAX(0, MIN(4, 3 - FLOOR(LOG(na))));
+ ns := dd_Fx(nv, nd);
+ // strip trailing zeros, but only after a decimal point (Lessons
+ // Learned s3: a fixed string without a "." has no zeros to strip)
+ IF INSTRING(ns, ".") > 0 THEN
+  WHILE RIGHT(ns, 1) == "0" AND DIM(ns) > 1 DO ns := LEFT(ns, DIM(ns) - 1); END;
+  IF RIGHT(ns, 1) == "." AND DIM(ns) > 1 THEN ns := LEFT(ns, DIM(ns) - 1); END;
+ END;
+ RETURN ns;
+END;
+
+// "Nice" number for axis ticks (from NormExplorer): 1, 2 or 5 times a
+// power of ten.  With nnround the nearest; without, the next up.
+LOCAL dd_NiceNum(nnval, nnround)
+BEGIN
+ LOCAL nnexp, nnf, nnnf;
+ IF nnval <= 0 THEN RETURN 1; END;
+ nnexp := FLOOR(LOG(nnval));
+ nnf := nnval / 10^nnexp;
+ IF nnround THEN
+  CASE
+   IF nnf < 1.5 THEN nnnf := 1; END;
+   IF nnf < 3 THEN nnnf := 2; END;
+   IF nnf < 7 THEN nnnf := 5; END;
+   DEFAULT nnnf := 10;
+  END;
+ ELSE
+  CASE
+   IF nnf <= 1 THEN nnnf := 1; END;
+   IF nnf <= 2 THEN nnnf := 2; END;
+   IF nnf <= 5 THEN nnnf := 5; END;
+   DEFAULT nnnf := 10;
+  END;
+ END;
+ RETURN nnnf * 10^nnexp;
+END;
+
+// ---------------- the matrix ----------------
+// The matrix Mk itself (k = 0-9).  A CASE rather than EXPR, so nothing
+// is built from text.
+LOCAL dd_Get(gk)
+BEGIN
+ LOCAL gm;
+ CASE
+  IF gk == 0 THEN gm := M0; END;
+  IF gk == 2 THEN gm := M2; END;
+  IF gk == 3 THEN gm := M3; END;
+  IF gk == 4 THEN gm := M4; END;
+  IF gk == 5 THEN gm := M5; END;
+  IF gk == 6 THEN gm := M6; END;
+  IF gk == 7 THEN gm := M7; END;
+  IF gk == 8 THEN gm := M8; END;
+  IF gk == 9 THEN gm := M9; END;
+  DEFAULT gm := M1;
+ END;
+ RETURN gm;
+END;
+
+// {rows, columns} of a matrix.  SIZE of a matrix gives its two sizes
+// (DLTest, 31 Oct 2026: ss(1) = 432, ss(2) = 5; HP's help prints them
+// as a vector, [2 3]), so they are read by index, whatever kind of
+// object holds them.  A vector has one size: it counts as one column.
+LOCAL dd_Shape(sm)
+BEGIN
+ LOCAL ss, sr, sc;
+ ss := SIZE(sm);
+ IF TYPE(ss) == 0 THEN RETURN {ss, 1}; END;
+ sr := ss(1);
+ IFERR sc := ss(2); THEN sc := 1; END;
+ RETURN {sr, sc};
+END;
+
+// One cell, row i and column j, of a matrix or (when sc == 1 and the
+// matrix is a vector) of a vector.
+LOCAL dd_Cell(cm, crw, cj, cvec)
+BEGIN
+ IF cvec THEN RETURN cm(crw); END;
+ RETURN cm(crw, cj);
+END;
+
+// Is the matrix a vector (one index)?  A matrix's SIZE has a second
+// element; a vector's has none.
+LOCAL dd_IsVec(vm)
+BEGIN
+ LOCAL vs, vc;
+ vs := SIZE(vm);
+ IF TYPE(vs) == 0 THEN RETURN 1; END;
+ vc := 0;
+ IFERR vc := vs(2); THEN vc := 0; END;
+ IF vc > 0 THEN RETURN 0; END;
+ RETURN 1;
+END;
+
+// Is the matrix empty?  The Prime keeps an unused M0-M9 as one zero.
+LOCAL dd_Empty(em)
+BEGIN
+ LOCAL es;
+ es := dd_Shape(em);
+ IF es(1) * es(2) == 0 THEN RETURN 1; END;
+ IF es(1) == 1 AND es(2) == 1 THEN
+  IF dd_Cell(em, 1, 1, dd_IsVec(em)) == 0 THEN RETURN 1; END;
+ END;
+ RETURN 0;
+END;
+
+// A cell counts unless it is a blank (the web page's padding, the
+// Prime's largest real, 9.99999999999E499).
+LOCAL dd_Real(rv)
+BEGIN
+ IF rv >= 1E499 THEN RETURN 0; END;
+ RETURN 1;
+END;
+
+// Column j of the matrix as a list, blanks left out.
+LOCAL dd_Column(km, kj)
+BEGIN
+ LOCAL ks, kv, kl, ki, kvec;
+ ks := dd_Shape(km);
+ kvec := dd_IsVec(km);
+ kl := {};
+ FOR ki FROM 1 TO ks(1) DO
+  kv := dd_Cell(km, ki, kj, kvec);
+  IF dd_Real(kv) THEN kl := CONCAT(kl, {kv}); END;
+ END;
+ RETURN kl;
+END;
+
+// A short description of a matrix for the menus: "432 × 5" or "empty".
+LOCAL dd_Desc(dk)
+BEGIN
+ LOCAL dm, ds;
+ dm := dd_Get(dk);
+ IF dd_Empty(dm) THEN RETURN "empty"; END;
+ ds := dd_Shape(dm);
+ RETURN dd_Cm(STRING(ds(1), 2, 0)) + " " + CHAR(215) + " " + dd_Cm(STRING(ds(2), 2, 0));
+END;
+
+// ---------------- the lists ----------------
+// "D" or "C": the letter of the lists in use.
+LOCAL dd_L()
+BEGIN
+ IF ddDST == 2 THEN RETURN "C"; END;
+ RETURN "D";
+END;
+
+// Read list D_k (or C_k), k = 1-9.  A list that does not exist yet
+// reads as {}.
+LOCAL dd_Read(rk)
+BEGIN
+ LOCAL rl;
+ rl := {};
+ IFERR
+  IF ddDST == 2 THEN
+   CASE
+    IF rk == 1 THEN rl := C1; END;
+    IF rk == 2 THEN rl := C2; END;
+    IF rk == 3 THEN rl := C3; END;
+    IF rk == 4 THEN rl := C4; END;
+    IF rk == 5 THEN rl := C5; END;
+    IF rk == 6 THEN rl := C6; END;
+    IF rk == 7 THEN rl := C7; END;
+    IF rk == 8 THEN rl := C8; END;
+    IF rk == 9 THEN rl := C9; END;
+   END;
+  ELSE
+   CASE
+    IF rk == 1 THEN rl := D1; END;
+    IF rk == 2 THEN rl := D2; END;
+    IF rk == 3 THEN rl := D3; END;
+    IF rk == 4 THEN rl := D4; END;
+    IF rk == 5 THEN rl := D5; END;
+    IF rk == 6 THEN rl := D6; END;
+    IF rk == 7 THEN rl := D7; END;
+    IF rk == 8 THEN rl := D8; END;
+    IF rk == 9 THEN rl := D9; END;
+   END;
+  END;
+ THEN
+  rl := {};
+ END;
+ RETURN rl;
+END;
+
+// The size of list D_k (or C_k), 0 when it is empty or its app has
+// never been opened (Lessons Learned s10).
+LOCAL dd_Size(zk)
+BEGIN
+ LOCAL zl;
+ zl := dd_Read(zk);
+ IF TYPE(zl) <> 6 THEN RETURN 0; END;
+ RETURN SIZE(zl);
+END;
+
+// Write list D_k (or C_k).  Returns 1, or 0 when the calculator
+// refused (its app never opened, or the list too long).
+LOCAL dd_Write(wk, wl)
+BEGIN
+ LOCAL wok;
+ wok := 1;
+ IFERR
+  IF ddDST == 2 THEN
+   CASE
+    IF wk == 1 THEN C1 := wl; END;
+    IF wk == 2 THEN C2 := wl; END;
+    IF wk == 3 THEN C3 := wl; END;
+    IF wk == 4 THEN C4 := wl; END;
+    IF wk == 5 THEN C5 := wl; END;
+    IF wk == 6 THEN C6 := wl; END;
+    IF wk == 7 THEN C7 := wl; END;
+    IF wk == 8 THEN C8 := wl; END;
+    IF wk == 9 THEN C9 := wl; END;
+   END;
+  ELSE
+   CASE
+    IF wk == 1 THEN D1 := wl; END;
+    IF wk == 2 THEN D2 := wl; END;
+    IF wk == 3 THEN D3 := wl; END;
+    IF wk == 4 THEN D4 := wl; END;
+    IF wk == 5 THEN D5 := wl; END;
+    IF wk == 6 THEN D6 := wl; END;
+    IF wk == 7 THEN D7 := wl; END;
+    IF wk == 8 THEN D8 := wl; END;
+    IF wk == 9 THEN D9 := wl; END;
+   END;
+  END;
+ THEN
+  wok := 0;
+ END;
+ RETURN wok;
+END;
+
+// The names of some lists, short: {1,2} -> "D1, D2", {3,4,5} -> "D3-D5",
+// {1,3,4,5,8} -> "D1, D3-D5, D8".  nmL holds list numbers, rising.
+LOCAL dd_Names(nmL)
+BEGIN
+ LOCAL nmS, nmI, nmA, nmB;
+ nmS := "";
+ nmI := 1;
+ WHILE nmI <= SIZE(nmL) DO
+  // a run of numbers one apart: nmL(nmA) .. nmL(nmB)
+  nmA := nmI; nmB := nmI;
+  WHILE nmB < SIZE(nmL) AND nmL(nmB + 1) == nmL(nmB) + 1 DO nmB := nmB + 1; END;
+  IF DIM(nmS) > 0 THEN nmS := nmS + ", "; END;
+  IF nmB - nmA >= 2 THEN
+   nmS := nmS + dd_L() + STRING(nmL(nmA), 2, 0) + "-" + dd_L() + STRING(nmL(nmB), 2, 0);
+  ELSE
+   nmS := nmS + dd_L() + STRING(nmL(nmA), 2, 0);
+   IF nmB > nmA THEN nmS := nmS + ", " + dd_L() + STRING(nmL(nmB), 2, 0); END;
+  END;
+  nmI := nmB + 1;
+ END;
+ RETURN nmS;
+END;
+
+// "D1" or "D1-D4": the lists a load of nk lists fills.
+LOCAL dd_Span(spk)
+BEGIN
+ IF spk > 1 THEN RETURN dd_L() + "1-" + dd_L() + STRING(spk, 2, 0); END;
+ RETURN dd_L() + "1";
+END;
+
+// Before filling lists 1..nk, ask if any list holds data.  Lists
+// 1..nk are replaced.  Lists after nk that hold data are the danger
+// (Virtual Calculator, 31 Oct 2026): AnovaLab, RankLab and AgreeLab
+// read every list that holds data, so a leftover list becomes one
+// more group.  Clearing them is the menu's first choice.
+// Returns 0 to stop, 1 to go on, 2 to go on and clear cfR's lists
+// (kept in ddCLR for the caller).
+LOCAL dd_Confirm(nk)
+BEGIN
+ LOCAL cfA, cfR, cq, cc, cn, ct;
+ cfA := {}; cfR := {};
+ FOR cq FROM 1 TO 9 DO
+  IF dd_Size(cq) > 0 THEN
+   cfA := CONCAT(cfA, {cq});
+   IF cq > nk THEN cfR := CONCAT(cfR, {cq}); END;
+  END;
+ END;
+ ddCLR := cfR;
+ IF SIZE(cfA) == 0 THEN RETURN 1; END;
+ cn := dd_Span(nk);
+ ct := dd_Names(cfA) + IFTE(SIZE(cfA) == 1, " holds data", " hold data");
+ cc := 0;
+ IF SIZE(cfR) == 0 THEN
+  CHOOSE(cc, ct, {"Replace " + cn, "Cancel"});
+  dd_Settle();
+  IF cc == 1 THEN RETURN 1; END;
+  RETURN 0;
+ END;
+ CHOOSE(cc, ct, {"Fill " + cn + ", clear " + dd_Names(cfR), "Fill " + cn + ", keep " + dd_Names(cfR), "Cancel"});
+ dd_Settle();
+ IF cc == 1 THEN RETURN 2; END;
+ IF cc == 2 THEN RETURN 1; END;
+ RETURN 0;
+END;
+
+// After a load that answered "clear": empty the lists in ddCLR.
+// Returns the text for the summary line ("" if none).
+LOCAL dd_ClearRest(crc)
+BEGIN
+ LOCAL crk;
+ IF crc <> 2 OR SIZE(ddCLR) == 0 THEN RETURN ""; END;
+ FOR crk FROM 1 TO SIZE(ddCLR) DO
+  dd_Write(ddCLR(crk), {});
+  ddDSC(ddCLR(crk)) := "";
+ END;
+ RETURN ", " + dd_Names(ddCLR) + " cleared";
+END;
+
+// A message when the calculator refused to write a list.
+LOCAL dd_NoWrite()
+BEGIN
+ IF ddDST == 2 THEN
+  MSGBOX("The calculator would not take the C lists. Open the Statistics 2Var app once (Apps, Statistics 2Var), then run DataLoad again.");
+ ELSE
+  MSGBOX("The calculator would not take the D lists. Open the Statistics 1Var app once (Apps, Statistics 1Var), then run DataLoad again.");
+ END;
+ dd_Settle();
+END;
+
+// ---------------- loading ----------------
+// A small "working" note while a long matrix is copied.
+LOCAL dd_Busy(bt)
+BEGIN
+ RECT_P(G0, 60, 100, 260, 140, ddORNG, ddLORN);
+ TEXTOUT_P(bt, G0, 72, 112, 2, ddBLK);
+END;
+
+// 1. COLUMNS: column j to list j, j = 1 .. at most 9.  Returns the
+// number of lists filled (0 = nothing done).
+LOCAL dd_LoadCols()
+BEGIN
+ LOCAL lm, ls, lk, lj, ll, lrc;
+ lm := dd_Get(ddSRC);
+ IF dd_Empty(lm) THEN
+  MSGBOX("M" + dd_Cm(STRING(ddSRC, 2, 0)) + " is empty. Put your data in it first (Help says how), or choose another matrix.");
+  dd_Settle();
+  RETURN 0;
+ END;
+ ls := dd_Shape(lm);
+ lk := MIN(9, ls(2));
+ IF ls(2) > 9 THEN
+  MSGBOX("M" + dd_Cm(STRING(ddSRC, 2, 0)) + " has " + dd_Cm(STRING(ls(2), 2, 0)) + " columns; " + dd_L() + "1-" + dd_L() + "9 take the first 9.");
+  dd_Settle();
+ END;
+ lrc := dd_Confirm(lk);
+ IF lrc == 0 THEN RETURN 0; END;
+ dd_Busy("Loading " + dd_Cm(STRING(ls(1), 2, 0)) + " rows ...");
+ FOR lj FROM 1 TO lk DO
+  ll := dd_Column(lm, lj);
+  // a column of blanks only gives an empty list (beta 1 left the old
+  // values in it)
+  IF dd_Write(lj, ll) == 0 THEN dd_NoWrite(); RETURN 0; END;
+  ddDSC(lj) := IFTE(SIZE(ll) == 0, "", "M" + dd_Cm(STRING(ddSRC, 2, 0)) + " col " + dd_Cm(STRING(lj, 2, 0)));
+ END;
+ ddLAST := "M" + dd_Cm(STRING(ddSRC, 2, 0)) + " " + CHAR(8594) + " " + dd_Span(lk);
+ ddLAST := ddLAST + " (" + dd_Cm(STRING(ls(1), 2, 0)) + " rows)" + dd_ClearRest(lrc);
+ RETURN lk;
+END;
+
+// The different values in a list, sorted (from AnovaLab's levels,
+// without its cap of 7: here up to 10, so that 10 says "too many").
+LOCAL dd_Levels(lvL)
+BEGIN
+ LOCAL lvS, lvR, lvI;
+ IF SIZE(lvL) == 0 THEN RETURN {}; END;
+ lvS := SORT(lvL);
+ lvR := {lvS(1)};
+ FOR lvI FROM 2 TO SIZE(lvS) DO
+  IF lvS(lvI) <> lvS(lvI - 1) THEN
+   lvR := CONCAT(lvR, {lvS(lvI)});
+   IF SIZE(lvR) > 9 THEN RETURN lvR; END;
+  END;
+ END;
+ RETURN lvR;
+END;
+
+// 2. SCORES BY GROUP: the scores of each group code to their own list,
+// codes sorted (the smallest to list 1).  Returns the number of lists
+// filled (0 = nothing done).
+LOCAL dd_LoadGroups()
+BEGIN
+ LOCAL gm, gs, gsc, ggc, gv, gw;
+ LOCAL gx, gy, gi, gk, glv, gn;
+ LOCAL grc, gok;
+ gm := dd_Get(ddSRC);
+ IF dd_Empty(gm) THEN
+  MSGBOX("M" + dd_Cm(STRING(ddSRC, 2, 0)) + " is empty. Put your data in it first (Help says how), or choose another matrix.");
+  dd_Settle();
+  RETURN 0;
+ END;
+ gs := dd_Shape(gm);
+ IF gs(2) < 2 THEN
+  MSGBOX("Scores by group needs two columns: the scores and the group codes. M" + dd_Cm(STRING(ddSRC, 2, 0)) + " has one.");
+  dd_Settle();
+  RETURN 0;
+ END;
+ // the two columns: last time's, or 1 and 2
+ gsc := ddSC; ggc := ddGC;
+ IF gsc < 1 OR gsc > gs(2) THEN gsc := 1; END;
+ IF ggc < 1 OR ggc > gs(2) THEN ggc := 2; END;
+ // short labels: beta 1's "Scores in column" was cut to "Scores in colu..."
+ gok := INPUT({gsc, ggc}, "Which columns? (M" + dd_Cm(STRING(ddSRC, 2, 0)) + " has " + dd_Cm(STRING(gs(2), 2, 0)) + ")", {"Scores:", "Groups:"}, {"The column number of the scores", "Column of the group codes (0/1, 1/2/3 ...)"});
+ IF gok == 0 THEN
+  dd_Settle();
+  RETURN 0;
+ END;
+ dd_Settle();
+ gsc := ROUND(gsc, 0); ggc := ROUND(ggc, 0);
+ IF gsc < 1 OR gsc > gs(2) OR ggc < 1 OR ggc > gs(2) OR gsc == ggc THEN
+  MSGBOX("Choose two different columns, from 1 to " + dd_Cm(STRING(gs(2), 2, 0)) + ".");
+  dd_Settle();
+  RETURN 0;
+ END;
+ ddSC := gsc; ddGC := ggc;
+ dd_Busy("Sorting " + dd_Cm(STRING(gs(1), 2, 0)) + " rows ...");
+ // the rows where both cells hold a value
+ gx := {}; gy := {};
+ gw := dd_IsVec(gm);
+ FOR gi FROM 1 TO gs(1) DO
+  gv := dd_Cell(gm, gi, gsc, gw);
+  gn := dd_Cell(gm, gi, ggc, gw);
+  IF dd_Real(gv) AND dd_Real(gn) THEN
+   gx := CONCAT(gx, {gv});
+   gy := CONCAT(gy, {gn});
+  END;
+ END;
+ glv := dd_Levels(gy);
+ IF SIZE(glv) == 0 THEN
+  MSGBOX("No row has both a score and a group code.");
+  dd_Settle();
+  RETURN 0;
+ END;
+ IF SIZE(glv) > 9 THEN
+  MSGBOX("Column " + dd_Cm(STRING(ggc, 2, 0)) + " has more than 9 different values, so it is not a group column. Choose the column of group codes.");
+  dd_Settle();
+  RETURN 0;
+ END;
+ grc := dd_Confirm(SIZE(glv));
+ IF grc == 0 THEN RETURN 0; END;
+ dd_Busy("Sorting " + dd_Cm(STRING(gs(1), 2, 0)) + " rows ...");
+ FOR gk FROM 1 TO SIZE(glv) DO
+  gv := {};
+  FOR gi FROM 1 TO SIZE(gy) DO
+   IF gy(gi) == glv(gk) THEN gv := CONCAT(gv, {gx(gi)}); END;
+  END;
+  IF dd_Write(gk, gv) == 0 THEN dd_NoWrite(); RETURN 0; END;
+  ddDSC(gk) := "M" + dd_Cm(STRING(ddSRC, 2, 0)) + " col " + dd_Cm(STRING(ggc, 2, 0)) + " = " + dd_Cm(dd_Num(glv(gk)));
+ END;
+ ddLAST := "M" + dd_Cm(STRING(ddSRC, 2, 0)) + " col " + dd_Cm(STRING(gsc, 2, 0)) + " by col " + dd_Cm(STRING(ggc, 2, 0)) + " " + CHAR(8594) + " " + dd_Span(SIZE(glv)) + dd_ClearRest(grc);
+ RETURN SIZE(glv);
+END;
+
+// ---------------- summary numbers ----------------
+// The median of the sorted list fs between positions fa and fb.
+LOCAL dd_MedS(fs, fa, fb)
+BEGIN
+ LOCAL fn, fm;
+ fn := fb - fa + 1;
+ IF fn <= 0 THEN RETURN fs(fa); END;
+ fm := fa + IP((fn - 1) / 2);
+ IF fn MOD 2 == 1 THEN RETURN fs(fm); END;
+ RETURN (fs(fm) + fs(fm + 1)) / 2;
+END;
+
+// {n, mean, s, min, Q1, median, Q3, max} of a list, the Prime's
+// quartile rule (the median left out of both halves when n is odd).
+// s is 0 when n < 2.
+LOCAL dd_Stats(sl)
+BEGIN
+ LOCAL sn, ss, sm, sv, sj, sh;
+ LOCAL sq1, sq3, smd;
+ sn := SIZE(sl);
+ IF sn == 0 THEN RETURN {0, 0, 0, 0, 0, 0, 0, 0}; END;
+ ss := SORT(sl);
+ // the mean, then the SD from the deviations (two passes)
+ sm := 0;
+ FOR sj FROM 1 TO sn DO sm := sm + ss(sj); END;
+ sm := sm / sn;
+ sv := 0;
+ FOR sj FROM 1 TO sn DO sv := sv + (ss(sj) - sm)^2; END;
+ IF sn > 1 THEN sv := SQRT(sv / (sn - 1)); ELSE sv := 0; END;
+ smd := dd_MedS(ss, 1, sn);
+ IF sn == 1 THEN
+  sq1 := ss(1); sq3 := ss(1);
+ ELSE
+  sh := IP(sn / 2);
+  sq1 := dd_MedS(ss, 1, sh);
+  sq3 := dd_MedS(ss, sn - sh + 1, sn);
+ END;
+ RETURN {sn, sm, sv, ss(1), sq1, smd, sq3, ss(sn)};
+END;
+
+// ---------------- drawing ----------------
+// A page: white, with the orange title band.
+LOCAL dd_Frame(ft)
+BEGIN
+ DIMGROB_P(G1, 320, 240, ddWHT);
+ RECT_P(G1, 2, 2, 317, 24, ddORNG, ddLORN);
+ TEXTOUT_P(ft, G1, 8, 6, 2, ddORNG);
+END;
+
+// x of value bv on a strip from bx0 to bx1 that spans blo..bhi.
+LOCAL dd_X(bv, blo, bhi, bx0, bx1)
+BEGIN
+ IF bhi <= blo THEN RETURN IP((bx0 + bx1) / 2); END;
+ RETURN bx0 + IP((bv - blo) / (bhi - blo) * (bx1 - bx0) + 0.5);
+END;
+
+// A box plot on its own scale (min to max) between x bx0..bx1 and y
+// by0..by1, in color number bc: whiskers, the box from Q1 to Q3 in
+// the light fill, the median in red, the mean as a green square.
+dd_Box(bst, bc, bx0, bx1, by0, by1)
+BEGIN
+ LOCAL bym, bq1, bq3, bmd, bmn, bmx;
+ LOCAL bme;
+ bym := IP((by0 + by1) / 2);
+ bmn := dd_X(bst(4), bst(4), bst(8), bx0, bx1);
+ bq1 := dd_X(bst(5), bst(4), bst(8), bx0, bx1);
+ bmd := dd_X(bst(6), bst(4), bst(8), bx0, bx1);
+ bq3 := dd_X(bst(7), bst(4), bst(8), bx0, bx1);
+ bmx := dd_X(bst(8), bst(4), bst(8), bx0, bx1);
+ bme := dd_X(bst(2), bst(4), bst(8), bx0, bx1);
+ // whiskers and their end ticks
+ LINE_P(G1, bmn, bym, bq1, bym, ddCOL(bc));
+ LINE_P(G1, bq3, bym, bmx, bym, ddCOL(bc));
+ LINE_P(G1, bmn, by0 + 2, bmn, by1 - 2, ddCOL(bc));
+ LINE_P(G1, bmx, by0 + 2, bmx, by1 - 2, ddCOL(bc));
+ // the box (at least 2 px wide so a narrow one still shows)
+ IF bq3 - bq1 < 2 THEN bq3 := bq1 + 2; END;
+ RECT_P(G1, bq1, by0, bq3, by1, ddCOL(bc), ddLIG(bc));
+ // the median: red
+ LINE_P(G1, bmd, by0, bmd, by1, ddRED);
+ // the mean: a small green square
+ RECT_P(G1, bme - 2, bym - 2, bme + 2, bym + 2, ddGRN, ddGRN);
+END;
+
+// THE SUMMARY PAGE: every list D1-D9 (or C1-C9) that holds data, a
+// row each: its name in its color, what it holds, n, and a box plot
+// on its own scale.  Returns the list of the rows' list numbers, so a
+// tap can be matched to a row.
+LOCAL dd_DrawSummary()
+BEGIN
+ LOCAL sk, sy, sst, srows, sl, sd;
+ srows := {};
+ dd_Frame("DataLoad: the " + dd_L() + " lists");
+ FOR sk FROM 1 TO 9 DO
+  sl := dd_Read(sk);
+  IF TYPE(sl) == 6 THEN
+   IF SIZE(sl) > 0 THEN srows := CONCAT(srows, {sk}); END;
+  END;
+ END;
+ IF SIZE(srows) == 0 THEN
+  TEXTOUT_P(dd_L() + "1 to " + dd_L() + "9 are all empty.", G1, 8, 40, 2, ddBLK);
+  TEXTOUT_P("Menu: Columns, or Scores by group, puts", G1, 8, 64, 1, ddBLK);
+  TEXTOUT_P("the columns of a matrix into these lists.", G1, 8, 77, 1, ddBLK);
+  TEXTOUT_P("any key or tap = menu", G1, 8, 222, 1, ddFOOT);
+  BLIT_P(G0, 0, 0, G1);
+  RETURN srows;
+ END;
+ TEXTOUT_P("list", G1, 6, 28, 1, ddGRAY);
+ TEXTOUT_P("holds", G1, 34, 28, 1, ddGRAY);
+ TEXTOUT_P("n", G1, 114, 28, 1, ddGRAY);
+ TEXTOUT_P("box: min to max", G1, 150, 28, 1, ddGRAY);
+ FOR sk FROM 1 TO SIZE(srows) DO
+  sy := 44 + (sk - 1) * 19;
+  sl := dd_Read(srows(sk));
+  sst := dd_Stats(sl);
+  // a pale band behind every other row
+  IF sk MOD 2 == 0 THEN RECT_P(G1, 2, sy - 2, 317, sy + 16, ddGRID, ddGRID); END;
+  TEXTOUT_P(dd_L() + dd_Cm(STRING(srows(sk), 2, 0)), G1, 6, sy, 2, ddCOL(srows(sk)));
+  sd := ddDSC(srows(sk));
+  IF DIM(sd) == 0 THEN sd := "(earlier data)"; END;
+  IF DIM(sd) > 14 THEN sd := LEFT(sd, 14); END;
+  TEXTOUT_P(sd, G1, 34, sy + 2, 1, ddGRAY);
+  TEXTOUT_P(dd_Cm(STRING(sst(1), 2, 0)), G1, 114, sy + 2, 1, ddBLK);
+  dd_Box(sst, srows(sk), 150, 312, sy, sy + 13);
+ END;
+ TEXTOUT_P("tap a row = its histogram, Esc or Enter = menu", G1, 6, 222, 1, ddFOOT);
+ BLIT_P(G0, 0, 0, G1);
+ RETURN srows;
+END;
+
+// THE HISTOGRAM PAGE of list hk: bars about ten "nice" bins wide in the
+// list's color, the mean (green) and median (red, dashed), and the
+// summary numbers underneath.
+LOCAL dd_DrawHisto(hk)
+BEGIN
+ LOCAL hl, hst, hw, hs, hnb, hc;
+ LOCAL hi, hb, hmx, hx0, hx1, hy0;
+ LOCAL hy1, hyt, hytop, hxa, hxb, hyb;
+ LOCAL hlab, hstep, hv, hxm, hd;
+ hl := dd_Read(hk);
+ hst := dd_Stats(hl);
+ hd := ddDSC(hk);
+ IF DIM(hd) == 0 THEN hd := "earlier data"; END;
+ dd_Frame(dd_L() + dd_Cm(STRING(hk, 2, 0)) + ": " + hd);
+ // the bins: a nice width near a tenth of the range
+ IF hst(8) > hst(4) THEN
+  hw := dd_NiceNum((hst(8) - hst(4)) / 10, 1);
+ ELSE
+  hw := MAX(1, ABS(hst(4)) / 10);
+ END;
+ hs := FLOOR(hst(4) / hw) * hw;
+ hnb := FLOOR((hst(8) - hs) / hw) + 1;
+ // never more than 40 bars: widen the bins if the data ask for more
+ WHILE hnb > 40 DO
+  hw := hw * 2;
+  hs := FLOOR(hst(4) / hw) * hw;
+  hnb := FLOOR((hst(8) - hs) / hw) + 1;
+ END;
+ hc := MAKELIST(0, hi, 1, hnb);
+ FOR hi FROM 1 TO SIZE(hl) DO
+  hb := FLOOR((hl(hi) - hs) / hw) + 1;
+  IF hb < 1 THEN hb := 1; END;
+  IF hb > hnb THEN hb := hnb; END;
+  hc(hb) := hc(hb) + 1;
+ END;
+ hmx := MAX(hc);
+ // the plot box
+ hx0 := 40; hx1 := 310; hy0 := 34; hy1 := 168;
+ hyt := dd_NiceNum(hmx / 4, 1);
+ IF hyt < 1 THEN hyt := 1; END;
+ hytop := CEILING(hmx / hyt) * hyt;
+ IF hytop < hmx THEN hytop := hmx; END;
+ // grid lines and count labels on the left
+ FOR hi FROM 0 TO ROUND(hytop / hyt, 0) DO
+  hyb := hy1 - IP(hi * hyt / hytop * (hy1 - hy0));
+  LINE_P(G1, hx0, hyb, hx1, hyb, ddGRID);
+  TEXTOUT_P(dd_Cm(STRING(hi * hyt, 2, 0)), G1, 4, hyb - 6, 1, ddGRAY);
+ END;
+ // the bars
+ FOR hi FROM 1 TO hnb DO
+  IF hc(hi) > 0 THEN
+   hxa := hx0 + IP((hi - 1) / hnb * (hx1 - hx0));
+   hxb := hx0 + IP(hi / hnb * (hx1 - hx0)) - 1;
+   IF hxb < hxa THEN hxb := hxa; END;
+   hyb := hy1 - IP(hc(hi) / hytop * (hy1 - hy0));
+   RECT_P(G1, hxa, hyb, hxb, hy1, ddCOL(hk), ddLIG(hk));
+  END;
+ END;
+ LINE_P(G1, hx0, hy1, hx1, hy1, ddBLK);
+ // bin edges along the axis: about six labels
+ hstep := MAX(1, CEILING(hnb / 6));
+ FOR hi FROM 0 TO hnb STEP hstep DO
+  hv := hs + hi * hw;
+  hxa := hx0 + IP(hi / hnb * (hx1 - hx0));
+  LINE_P(G1, hxa, hy1, hxa, hy1 + 3, ddGRAY);
+  hlab := dd_Cm(dd_Num(hv));
+  TEXTOUT_P(hlab, G1, MAX(0, hxa - 3 * DIM(hlab)), hy1 + 5, 1, ddGRAY);
+ END;
+ // the mean (green, solid) and the median (red, dashed)
+ hxm := hx0 + IP((hst(2) - hs) / (hnb * hw) * (hx1 - hx0));
+ LINE_P(G1, hxm, hy0, hxm, hy1, ddGRN);
+ TEXTOUT_P(CHAR(57344), G1, hxm + 2, hy0, 1, ddGRN);
+ hxm := hx0 + IP((hst(6) - hs) / (hnb * hw) * (hx1 - hx0));
+ FOR hi FROM hy0 + 12 TO hy1 STEP 4 DO PIXON_P(G1, hxm, hi, ddRED); PIXON_P(G1, hxm, hi + 1, ddRED); END;
+ TEXTOUT_P("med", G1, hxm + 2, hy0 + 12, 1, ddRED);
+ // the numbers
+ RECT_P(G1, 2, 184, 317, 216, ddCOL(hk), ddLIG(hk));
+ TEXTOUT_P("n " + dd_Cm(STRING(hst(1), 2, 0)) + "    " + CHAR(57344) + " " + dd_Cm(dd_Num(hst(2))) + "    s " + dd_Cm(dd_Num(hst(3))) + "    bins of " + dd_Cm(dd_Num(hw)), G1, 8, 187, 1, ddBLK);
+ TEXTOUT_P("min " + dd_Cm(dd_Num(hst(4))) + "   Q1 " + dd_Cm(dd_Num(hst(5))) + "   med " + dd_Cm(dd_Num(hst(6))) + "   Q3 " + dd_Cm(dd_Num(hst(7))) + "   max " + dd_Cm(dd_Num(hst(8))), G1, 8, 201, 1, ddBLK);
+ TEXTOUT_P("any key or tap = back to the lists", G1, 6, 222, 1, ddFOOT);
+ BLIT_P(G0, 0, 0, G1);
+END;
+
+// The summary page and its histograms, until Esc or Enter.
+LOCAL dd_Look()
+BEGIN
+ LOCAL lrows, lk, lm, lm1, lr, lgo;
+ lgo := 1;
+ WHILE lgo DO
+  lrows := dd_DrawSummary();
+  dd_Settle();
+  REPEAT
+   lk := GETKEY;
+   lm := MOUSE;
+   lm1 := lm(1);
+  UNTIL lk > -1 OR SIZE(lm1) > 0;
+  IF SIZE(lm1) > 0 THEN
+   dd_TDrain();
+   lr := 0;
+   IF SIZE(lm1) >= 2 THEN
+    IF lm1(2) >= 42 AND lm1(2) < 44 + SIZE(lrows) * 19 THEN
+     lr := IP((lm1(2) - 42) / 19) + 1;
+    END;
+   END;
+   IF lr >= 1 AND lr <= SIZE(lrows) THEN
+    dd_DrawHisto(lrows(lr));
+    dd_WaitAny();
+   ELSE
+    lgo := 0;
+   END;
+  ELSE
+   // a key: any key leaves (Esc, Enter or another)
+   lgo := 0;
+  END;
+ END;
+ dd_Settle();
+END;
+
+// ---------------- choosing ----------------
+// Which matrix?  The menu shows what each holds.
+LOCAL dd_PickMatrix()
+BEGIN
+ LOCAL pc, pk, pl;
+ pl := {};
+ FOR pk FROM 0 TO 9 DO
+  pl := CONCAT(pl, {"M" + dd_Cm(STRING(pk, 2, 0)) + ": " + dd_Desc(pk)});
+ END;
+ pc := 0;
+ CHOOSE(pc, "Which matrix holds the data?", pl);
+ dd_Settle();
+ IF pc > 0 THEN ddSRC := pc - 1; END;
+END;
+
+// ---------------- help ----------------
+LOCAL dd_Help()
+BEGIN
+ dd_Frame("DataLoad help 1/3: what it does");
+ TEXTOUT_P("Copies the columns of a matrix (M0-M9) into", G1, 8, 30, 1, ddBLK);
+ TEXTOUT_P("the lists the fleet's programs read: D1-D9 of", G1, 8, 43, 1, ddBLK);
+ TEXTOUT_P("Statistics 1Var, or C1-C9 of Statistics 2Var.", G1, 8, 56, 1, ddBLK);
+ TEXTOUT_P("COLUMNS: column 1 to D1, column 2 to D2, ...", G1, 8, 74, 1, ddCOL(1));
+ TEXTOUT_P("SCORES BY GROUP: a column of scores and one of", G1, 8, 92, 1, ddCOL(2));
+ TEXTOUT_P("group codes, as SPSS keeps them; each group's", G1, 8, 105, 1, ddCOL(2));
+ TEXTOUT_P("scores to its own list, lowest code to D1.", G1, 8, 118, 1, ddCOL(2));
+ TEXTOUT_P("Blank cells (9.99999999999E499) are left out.", G1, 8, 136, 1, ddBLK);
+ TEXTOUT_P("Then the lists: tap a row for its histogram.", G1, 8, 154, 1, ddBLK);
+ TEXTOUT_P("Quartiles as the Prime's Statistics 1Var: the", G1, 8, 172, 1, ddGRAY);
+ TEXTOUT_P("median of each half (odd n: median left out).", G1, 8, 185, 1, ddGRAY);
+ TEXTOUT_P("any key or tap = next page", G1, 8, 222, 1, ddFOOT);
+ BLIT_P(G0, 0, 0, G1);
+ dd_WaitAny();
+ dd_Frame("DataLoad help 2/3: getting data in");
+ TEXTOUT_P("VIRTUAL CALCULATOR: the Data Loader web page", G1, 8, 30, 1, ddCOL(1));
+ TEXTOUT_P("(hp-prime-statistics on GitHub) turns columns", G1, 8, 43, 1, ddBLK);
+ TEXTOUT_P("pasted from Excel, SPSS or a CSV file into a", G1, 8, 56, 1, ddBLK);
+ TEXTOUT_P("matrix file, M1.hpmat.  Close the calculator,", G1, 8, 69, 1, ddBLK);
+ TEXTOUT_P("copy the file into Documents\\HP Prime\\", G1, 8, 82, 1, ddBLK);
+ TEXTOUT_P("Calculators\\Prime, start it, run DataLoad.", G1, 8, 95, 1, ddBLK);
+ TEXTOUT_P("G1 OR G2: in the Connectivity Kit, open the", G1, 8, 113, 1, ddCOL(3));
+ TEXTOUT_P("calculator's matrix M1 and paste the columns,", G1, 8, 126, 1, ddBLK);
+ TEXTOUT_P("or drag M1.hpmat onto it (not yet tested).", G1, 8, 139, 1, ddBLK);
+ TEXTOUT_P("Or type a few values in the Matrix editor", G1, 8, 157, 1, ddBLK);
+ TEXTOUT_P("(Shift 4) for M1.", G1, 8, 170, 1, ddBLK);
+ TEXTOUT_P("Open Statistics 1Var once before the first load.", G1, 8, 188, 1, ddRED);
+ TEXTOUT_P("any key or tap = next page", G1, 8, 222, 1, ddFOOT);
+ BLIT_P(G0, 0, 0, G1);
+ dd_WaitAny();
+ dd_Frame("DataLoad help 3/3: then run");
+ TEXTOUT_P("D1, D2 (two groups or pairs): TTestLab,", G1, 8, 28, 1, ddCOL(1));
+ TEXTOUT_P("PowerViz, ResampLab, RankLab", G1, 8, 41, 1, ddCOL(1));
+ TEXTOUT_P("D1-D9 (groups): AnovaLab, RankLab", G1, 8, 57, 1, ddCOL(2));
+ TEXTOUT_P("D1-D9 (raters): AgreeLab", G1, 8, 70, 1, ddCOL(2));
+ TEXTOUT_P("D1 (one sample): NormExplorer, BurrLab,", G1, 8, 86, 1, ddCOL(3));
+ TEXTOUT_P("FitCheck, SeizureLab", G1, 8, 99, 1, ddCOL(3));
+ TEXTOUT_P("D1-D3 (outcome, score, group): RiskLab", G1, 8, 115, 1, ddCOL(4));
+ TEXTOUT_P("C1, C2: ScatterLab (x, y), NormExplorer", G1, 8, 131, 1, ddCOL(6));
+ TEXTOUT_P("C1-C3 (time, event, group): SurvLab", G1, 8, 144, 1, ddCOL(6));
+ // the 31 Oct 2026 finding: a list left from an earlier load is read
+ TEXTOUT_P("AnovaLab, RankLab and AgreeLab read EVERY list", G1, 8, 160, 1, ddORNG);
+ TEXTOUT_P("that holds data: clear lists left from before.", G1, 8, 173, 1, ddORNG);
+ TEXTOUT_P("Each program's own help says what goes where.", G1, 8, 189, 1, ddGRAY);
+ TEXTOUT_P("Teaching aid; not for clinical or legal use.", G1, 8, 204, 1, ddRED);
+ TEXTOUT_P("any key or tap = menu", G1, 8, 222, 1, ddFOOT);
+ BLIT_P(G0, 0, 0, G1);
+ dd_WaitAny();
+END;
+
+// ---------------- the menu ----------------
+// Returns 0 to quit, 1 to stay.
+LOCAL dd_Menu()
+BEGIN
+ LOCAL mc, mn, mt, md;
+ md := "Lists: D (Statistics 1Var)";
+ IF ddDST == 2 THEN md := "Lists: C (Statistics 2Var)"; END;
+ mt := "DataLoad: M" + dd_Cm(STRING(ddSRC, 2, 0)) + ", " + dd_Desc(ddSRC);
+ mc := 0;
+ CHOOSE(mc, mt, {"Columns " + CHAR(8594) + " " + dd_L() + "1, " + dd_L() + "2, ...", "Scores by group " + CHAR(8594) + " " + dd_L() + "1, ...", "Look at the " + dd_L() + " lists", "Which matrix? (now M" + dd_Cm(STRING(ddSRC, 2, 0)) + ")", md, "Help", "Quit DataLoad"});
+ dd_Settle();
+ IF mc == 1 THEN
+  mn := dd_LoadCols();
+  IF mn > 0 THEN dd_Look(); END;
+ END;
+ IF mc == 2 THEN
+  mn := dd_LoadGroups();
+  IF mn > 0 THEN dd_Look(); END;
+ END;
+ IF mc == 3 THEN dd_Look(); END;
+ IF mc == 4 THEN dd_PickMatrix(); END;
+ IF mc == 5 THEN
+  // D <-> C: the descriptions belong to the other set of lists
+  IF ddDST == 1 THEN ddDST := 2; ELSE ddDST := 1; END;
+  ddDSC := {"", "", "", "", "", "", "", "", ""};
+ END;
+ IF mc == 6 THEN dd_Help(); END;
+ IF mc == 7 OR mc == 0 THEN RETURN 0; END;
+ RETURN 1;
+END;
+
+// ---------------- main (zero-argument signature) ----------------
+EXPORT DATALOAD()
+BEGIN
+ LOCAL mgo;
+ dd_Init();
+ // the line this run returns (beta 1a returned the last run's line
+ // when this run loaded nothing)
+ ddLAST := "";
+ // start on the first matrix that holds data, M1 if it does
+ IF dd_Empty(dd_Get(ddSRC)) THEN
+  FOR mgo FROM 0 TO 9 DO
+   IF dd_Empty(dd_Get(mgo)) == 0 AND dd_Empty(dd_Get(ddSRC)) THEN ddSRC := mgo; END;
+  END;
+ END;
+ mgo := 1;
+ WHILE mgo DO mgo := dd_Menu(); END;
+ IF DIM(ddLAST) == 0 THEN RETURN "DataLoad: nothing loaded"; END;
+ RETURN "DataLoad: " + ddLAST;
+END;

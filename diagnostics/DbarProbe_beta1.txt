@@ -1,0 +1,24 @@
+#pragma mode( separator(.,;) integer(h32) )
+// DbarProbe beta 1 (2 Nov 2026): where to draw the bar of a hand-made d-bar.
+// The Prime's font has no d with a bar (SymProbe beta 1), so AgreeLab and
+// ResampLab draw a d and then a line above it.  Rows: fonts 1 and 2; columns:
+// the bar 3, 2, 1 and 0 px above the top of the text cell (y - 3 ... y), from
+// the d's left edge to 2 px short of where TEXTOUT_P says it ends; then x-bar,
+// the font's own glyph, for the height of its bar.  Any key or tap ends it.
+EXPORT DbarProbe()
+BEGIN
+  LOCAL dbF, dbO, dbX, dbE, dbY;
+  RECT_P(G0, 0, 0, 319, 239, #FFFFFFh);
+  FOR dbF FROM 1 TO 2 DO
+    dbY := 30 + 70 * (dbF - 1);
+    TEXTOUT_P("font " + STRING(dbF, 2, 0) + ": bar at y-3, y-2, y-1, y; then x-bar", G0, 4, dbY - 24, 1, #5A5A5Ah, 316);
+    FOR dbO FROM 0 TO 3 DO
+      dbX := 10 + 30 * dbO;
+      dbE := TEXTOUT_P("d", G0, dbX, dbY, dbF, #000000h);
+      LINE_P(G0, dbX, dbY - 3 + dbO, dbE - 2, dbY - 3 + dbO, #000000h);
+    END;
+    TEXTOUT_P(CHAR(57344) + "  x  d  b", G0, 140, dbY, dbF, #000000h);
+  END;
+  TEXTOUT_P("DbarProbe beta 1: any key or tap ends", G0, 4, 224, 1, #5A5A5Ah, 316);
+  WAIT(-1);
+END;

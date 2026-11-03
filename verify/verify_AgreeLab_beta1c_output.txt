@@ -1,0 +1,18 @@
+=== AgreeLab beta 1c against beta 1b (../programs/AgreeLab_beta1b.txt)
+=== G. static
+PASS G1 the comma routine ag_Cm is the fleet's, word for word but its name
+PASS G2 with every ag_Cm(...) taken out, the code is the old code routine for routine, but for ag_CDrawBS, ag_Cm, ag_Hello, ag_HelpPage, ag_MyCont, ag_TAdd, ag_TMove, ag_TType, ag_TxDb
+PASS G3 nothing the CAS or EXPR reads goes through ag_Cm
+PASS G4 no new "!=" in the code (a factorial and a test on the Prime; 0 before, in MicroPython text where it is "not equal")
+PASS G5 the code is ASCII as before
+PASS G6 the header names beta 1c
+=== R, M, Y, D. the monkey, 30 seeds on both versions
+PASS R1 30 seeds ({'OK': 30}): each run takes the old version's path: the same ending, number of screens, boxes and summary once the commas are out (0 accepted as the script says)
+INFO R2 every screen's texts the old version's once the commas are out, but 110 screen(s): where a number with its commas no longer fit and the program wrote it another way, or where this version changes a text on purpose (its change note says which); the first: [(5000, 6, ['bias = mean d; limits of agreement = bias ±'], ['bias = ', 'd']), (5000, 16, ['bias = mean d; limits of agreement = bias ±'], ['bias = ', 'd']), (5000, 28, ['bias = mean d; limits of agreement = bias ±'], ['bias = ', 'd'])]
+PASS M  every number of four or more digits drawn is grouped: 4 different grouped numbers drawn (25,572, 40,000, 2,068, 99,999 …); 0 drawn without their commas or with them twice, 0 of them accepted as the script says
+PASS C  every text handed to the CAS or EXPR is the old version's, call for call (0 calls on the new version's runs; a run that took another path is R1's)
+PASS Y  no year, or other number the program writes as text, is drawn with a comma, nor a name with digits in it ("x1000")
+PASS D  no new firm overlap, straddle or overrun (old 0, new 0) and no new number cut (old 0, new 0)
+PASS X1 d-bar: ag_TxDb draws ['bias = ', 'd', ' = 3.20'] and a bar [[48.5, 69.0, 52.0, 69.0, 0.0]] (x from the d's left edge, y = 72 - 3), and both Bland-Altman lines use it; no "mean d" is left on the screen
+
+12 PASS, 0 FAIL

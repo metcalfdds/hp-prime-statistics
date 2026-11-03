@@ -1,6 +1,6 @@
 # HP Prime Data Loader
 
-Typing a long data set into a calculator is not feasible. This page turns columns from a spreadsheet into the calculator's own matrix file, and the program **DataLoad** (`programs/DataLoad_beta1b.txt`, in the starter pack) puts them into the Statistics lists the other programs read.
+Typing a long data set into a calculator is not feasible. This page turns columns from a spreadsheet into the calculator's own matrix file, and the program **DataLoad** (`programs/DataLoad_beta1c.txt`, in the starter pack) puts them into the Statistics lists the other programs read.
 
 ## Using it
 
