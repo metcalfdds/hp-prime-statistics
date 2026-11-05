@@ -4,7 +4,7 @@ A companion to `DATASETS_2026-10-21.md`, under the same rule: the source shown o
 
 | Example | The numbers | Source shown on screen (step 1) | Where they come from |
 | --- | --- | --- | --- |
-| **Age at arrest** (pooled t, two-tailed, α .05) | Hispanic female juveniles: N 44, mean 15.89 years, s 1.45. Non-Hispanic white: N 31, mean 16.57, s 1.11 | "age at arrest (years), JDCC" | Roger's lecture note on t tests (Table 11.1): female juveniles transferred to adult court in the Juvenile Defendants in Criminal Courts (JDCC) data |
+| **Age at arrest** (pooled t, two-tailed, α .05) | Hispanic female juveniles: N 44, mean 15.89 years, s 1.45. Non-Hispanic white: N 31, mean 16.57, s 1.11 | "age at arrest (years), JDCC" | Roger's lecture note on t-tests (Table 11.1): female juveniles transferred to adult court in the Juvenile Defendants in Criminal Courts (JDCC) data |
 | **Matched jails** (dependent t, one-tailed H₁ μ₁ < μ₂, α .05) | Five matched pairs of inmate-on-staff assault rates, low (x₁) and high (x₂) percentage female security staff: 1.30 and 1.00, 1.25 and .76, .86 and .99, .94 and 1.10, 2.26 and 1.85 | "assault rate, Census of Jails" | The lecture note (Table 11.3), from the Census of Jails (COJ) |
 | **Drug use by sex** (separate-variances t, two-tailed, α .05) | Male: N 270, mean 4.8185, SD 3.28798. Female: N 146, mean 6.4247, SD 3.74872 | "amount of drug use experience (SPSS)" | An SPSS output Roger supplied on 31 Oct 2026 (Group Statistics and Independent Samples Test tables). Summary numbers only |
 

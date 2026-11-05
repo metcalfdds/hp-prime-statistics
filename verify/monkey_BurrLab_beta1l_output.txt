@@ -1,0 +1,6 @@
+BurrLab_beta1l.txt  BurrLab(): 1000 runs, 120 events each, 1552 s
+  OK       941
+  HARNESS  59
+  HARNESS x44: RANDSEED is on HP's list of names and is not covered   e.g. --replay 1000008
+  HARNESS x7: ROUND of anything but a number is not covered   e.g. --replay 1000017
+  HARNESS x8: > between a list and a number is not covered   e.g. --replay 1000083

@@ -1,0 +1,9 @@
+EpiStats_v1.7g.txt  EpiStats(): 1000 runs, 120 events each, 651 s
+  OK       838
+  CRASH    1
+  HARNESS  161
+  HARNESS x135: < between a list and a number is not covered   e.g. --replay 1000007
+  HARNESS x24: <= between a list and a number is not covered   e.g. --replay 1000093
+  CRASH x1: PPLError: division by zero   e.g. --replay 1000761
+  HARNESS x1: a non-finite number (inf) has no Prime display form   e.g. --replay 1000844
+  HARNESS x1: ^ between a number and a number is not covered   e.g. --replay 1000960

@@ -1,0 +1,2 @@
+ChiTable_beta3i.txt  ChiTable(): 1000 runs, 120 events each, 449 s
+  OK       1000

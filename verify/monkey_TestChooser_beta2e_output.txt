@@ -1,0 +1,2 @@
+TestChooser_beta2e.txt  TestChooser(): 1000 runs, 120 events each, 106 s
+  OK       1000

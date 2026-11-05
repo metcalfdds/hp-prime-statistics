@@ -1,0 +1,19 @@
+=== EpiStats v1.7h against v1.7g (../programs/EpiStats_v1.7g.txt)
+=== G. static
+PASS G1 all 12 forms, every field typed {name,[0]} (12 forms)
+PASS G2 the header, the menu title and the About page name v1.7h
+PASS G3 only the routines the change note names differ from v1.7g: ['EpiStats', 'es_AskAll', 'es_FmtPct', 'es_Grid', 'es_GridDraw', 'es_Help_About', 'es_IR_Page2', 'es_Module_IncidenceRate', 'es_SS_OneMean', 'es_SS_OneProportion', 'es_SS_TwoMeans', 'es_SS_TwoProportions']
+PASS G4 no new "!=" and nothing new for the CAS
+=== X. sample sizes
+PASS X1 ordinary values give SciPy's n, as v1.7g did; sigma 1E-300 gives n = 1, not 0
+PASS X2 1E-300, effects too small for n <= 100,000,000 and numbers of more than 50 digits are refused with a sentence
+PASS X3 v1.7g crashed on delta = 1E-300 (the monkey's seed 1000761): PPLError: division by zero
+PASS X4 an effect just above the cap is computed (n = 98029605, below 100,000,000)
+PASS X5 the incidence-rate form refuses 1E300 cases and a person-time of 1E-300 or 1E20 (the monkey's seed 1000392), and takes 20 and 10 over 1,000 and 1,000
+=== P. percentages
+PASS P1 es_FmtPct: below -9,999 % and above 99,999 % as words, the rest as before: []
+=== D. layouts (comma_check, 30 seeds)
+PASS D  no new firm overlap, straddle or overrun (old 8, new 8) and no new number cut (old 0, new 0)
+
+11 PASS, 0 FAIL
+rc=0

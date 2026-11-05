@@ -1,0 +1,2 @@
+DNAMixLR_beta3h.txt  DNAMixLR(): 1000 runs, 120 events each, 167 s
+  OK       1000

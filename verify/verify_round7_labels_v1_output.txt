@@ -1,0 +1,19 @@
+=== TTestLab_beta1e.txt against _old/TTestLab_beta1d.txt
+PASS L1 TTestLab_beta1e.txt: the code differs only inside string literals, in 3 line(s)
+PASS L2 TTestLab_beta1e.txt: the new strings are there and the old ones gone (3 pair(s))
+PASS L3 TTestLab_beta1e.txt: the header names the version
+=== TTestLabG_beta1c.txt against _old/TTestLabG_beta1b.txt
+PASS L1 TTestLabG_beta1c.txt: the code differs only inside string literals, in 3 line(s)
+PASS L2 TTestLabG_beta1c.txt: the new strings are there and the old ones gone (3 pair(s))
+PASS L3 TTestLabG_beta1c.txt: the header names the version
+=== ChiTable_beta3i.txt against _old/ChiTable_beta3h.txt
+PASS L1 ChiTable_beta3i.txt: the code differs only inside string literals, in 1 line(s)
+PASS L2 ChiTable_beta3i.txt: the new strings are there and the old ones gone (1 pair(s))
+PASS L3 ChiTable_beta3i.txt: the header names the version
+=== ErrorRate_beta1g.txt against _old/ErrorRate_beta1f.txt
+PASS L1 ErrorRate_beta1g.txt: the code differs only inside string literals, in 1 line(s)
+PASS L2 ErrorRate_beta1g.txt: the new strings are there and the old ones gone (1 pair(s))
+PASS L3 ErrorRate_beta1g.txt: the header names the version
+
+12 PASS, 0 FAIL
+rc=0

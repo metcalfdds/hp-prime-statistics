@@ -1,0 +1,8 @@
+AnovaLab_beta1b.txt  AnovaLab(): 1000 runs, 120 events each, 488 s
+  OK       942
+  CRASH    1
+  HARNESS  57
+  HARNESS x9: ^ between a number and a number is not covered   e.g. --replay 1000017
+  HARNESS x33: < between a list and a number is not covered   e.g. --replay 1000025
+  HARNESS x15: <= between a list and a number is not covered   e.g. --replay 1000139
+  CRASH x1: PPLError: division by zero   e.g. --replay 1000347

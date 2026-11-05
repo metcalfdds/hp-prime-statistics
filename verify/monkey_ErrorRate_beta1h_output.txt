@@ -1,0 +1,2 @@
+ErrorRate_beta1h.txt  ErrorRate(): 1000 runs, 120 events each, 1012 s
+  OK       1000

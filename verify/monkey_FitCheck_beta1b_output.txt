@@ -1,0 +1,6 @@
+FitCheck_beta1b.txt  FitCheck(): 1000 runs, 120 events each, 315 s
+  OK       989
+  HARNESS  11
+  HARNESS x6: < between a list and a number is not covered   e.g. --replay 1000025
+  HARNESS x3: <= between a list and a number is not covered   e.g. --replay 1000767
+  HARNESS x2: ^ between a number and a number is not covered   e.g. --replay 1000818

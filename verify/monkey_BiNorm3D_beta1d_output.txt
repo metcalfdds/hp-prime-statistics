@@ -1,0 +1,2 @@
+BiNorm3D_beta1d.txt  BiNorm3D(): 1000 runs, 120 events each, 660 s
+  OK       1000

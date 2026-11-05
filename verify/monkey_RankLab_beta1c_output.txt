@@ -1,0 +1,4 @@
+RankLab_beta1c.txt  RankLab(): 1000 runs, 120 events each, 861 s
+  OK       992
+  HARNESS  8
+  HARNESS x8: ROUND given a number, a number is not covered   e.g. --replay 1000030

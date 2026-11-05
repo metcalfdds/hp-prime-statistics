@@ -1,0 +1,6 @@
+DNAMixLR_beta3g.txt  DNAMixLR(): 1000 runs, 120 events each, 197 s
+  OK       964
+  HARNESS  36
+  HARNESS x16: < between a list and a number is not covered   e.g. --replay 1000008
+  HARNESS x18: IP given a list is not covered   e.g. --replay 1000090
+  HARNESS x2: <= between a list and a number is not covered   e.g. --replay 1000354

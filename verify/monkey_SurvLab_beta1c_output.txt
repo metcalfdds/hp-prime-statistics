@@ -1,0 +1,4 @@
+SurvLab_beta1c.txt  SurvLab(): 1000 runs, 120 events each, 419 s
+  OK       978
+  HARNESS  22
+  HARNESS x22: <= between a list and a number is not covered   e.g. --replay 1000007

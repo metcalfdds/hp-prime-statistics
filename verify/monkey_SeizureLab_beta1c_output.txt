@@ -1,0 +1,7 @@
+SeizureLab_beta1c.txt  SeizureLab(): 1000 runs, 120 events each, 1007 s
+  OK       924
+  HARNESS  76
+  HARNESS x45: ROUND of anything but a number is not covered   e.g. --replay 1000042
+  HARNESS x24: <= between a list and a number is not covered   e.g. --replay 1000071
+  HARNESS x5: < between a list and a number is not covered   e.g. --replay 1000076
+  HARNESS x2: ^ between a number and a number is not covered   e.g. --replay 1000337

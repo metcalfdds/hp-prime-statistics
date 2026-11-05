@@ -20,12 +20,19 @@ THE FACTS (Virtual Calculator 2.4.2, build 2026-09-09, Rogers-HP, typed in Home,
      read from the screen; it is written as the harness writes mode 2's (Home's minus with home_minus=True,
      CASProbe beta 1c T43b, 17 Oct 2026).
 
+  3. RANDSEED(value) seeds the random numbers (HP Prime User Guide, 2018 edition, Probability - Random:
+     "RANDSEED(value)"; the edition bundled with the Virtual Calculator 2.4.2).  Added 4 Nov 2026: the harness
+     stopped on it as "not covered", so the monkey test could not see past BurrLab's and ResampLab's seed field.
+     Modelled as seeding the harness's own generator; it returns 0.  (This file keeps its name, v1: the verify
+     scripts and the monkey import it by name, Lessons Learned s14 rule 7.)
+
 USE.  import prime_facts_v1; prime_facts_v1.apply()      -- once, before the first Harness is made.
       It returns the harness module.  Applying it twice does nothing more.
 """
 
 FACTS = ['STRING(x, 2, d): "Invalid input" for d >= 13 (Virtual Calculator, 1 Nov 2026)',
-         'STRING(x, 3, d): the small capital E, "4.0\u1d078" (Virtual Calculator, 1 Nov 2026)']
+         'STRING(x, 3, d): the small capital E, "4.0\u1d078" (Virtual Calculator, 1 Nov 2026)',
+         'RANDSEED(value) seeds the random numbers (User Guide 2018; added 4 Nov 2026)']
 
 
 def apply():
@@ -58,6 +65,14 @@ def apply():
         return orig(self, a)
 
     R.Harness._string_home = _string_home
+    # fact 3: RANDSEED
+    ob = R.Harness._build_table
+
+    def _build_table(self):
+        t = ob(self)
+        t['RANDSEED'] = lambda a, site: (self.rng.seed(a[0] if a else 0), 0.0)[1]
+        return t
+    R.Harness._build_table = _build_table
     R.Harness._prime_facts_v1 = True
     return R
 

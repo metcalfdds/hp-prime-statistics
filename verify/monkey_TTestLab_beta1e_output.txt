@@ -1,0 +1,2 @@
+TTestLab_beta1e.txt  TTESTLAB(): 1000 runs, 120 events each, 272 s
+  OK       1000

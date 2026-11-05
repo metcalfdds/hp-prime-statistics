@@ -121,6 +121,35 @@ Norm3 v2.4c, NormExplorer beta 42d and StatDist v2.7g were replaced the same nig
 
 Change notes: `docs/changes/PowerViz_v2.5l_CHANGES.md`, `ScatterLab_beta2f_CHANGES.md`, `ChiTable_beta3f_CHANGES.md`, `GaltonBoard_beta3f_CHANGES.md`.
 
+## Round 5 (4 November 2026): EpiStats and FDAES
+
+EpiStats v1.7g: 838 of 1,000 OK, 161 HARNESS (a list typed into a number field) and 1 CRASH (δ = 1E−300 in the two-means sample size). v1.7h: 1,000 of 1,000. FDAES v3.9c: 977; v3.9d: 1,000 (FDAES is not in this repository). Notes: `docs/changes/EpiStats_v1.7h_CHANGES.md`; Lessons Learned v7zm.
+
+## Round 6 (4 November 2026, night): the sixteen others
+
+`tools/monkey_v1b.py --lists`, 1,000 runs each (StudRange with `--seconds 240` and ErrorRate with `--seconds 120`, because their pages are slow in the harness). RiskLab beta 1d and TestChooser beta 2d: 1,000 of 1,000, unchanged. The other fourteen:
+
+| Program | Before | After |
+| --- | --- | --- |
+| AgreeLab | beta 1d: 975 of 1,000 OK, 25 met a list typed into a number field or a list of 1E300 overflowing | beta 1e: 1,000 of 1,000 |
+| AnovaLab | beta 1b: 942 OK, 57 met a typed list or a list of 1E300, and 1 crashed (sigma0 = 1E-300) | beta 1c: 1,000 of 1,000 |
+| BiNorm3D | beta 1c: 996 OK, 4 met a list typed into a number field | beta 1d: 1,000 of 1,000 |
+| BurrLab | beta 1l: 941 OK; 44 met RANDSEED, which the PC harness did not model (it does now), 15 a typed list | beta 1m: 1,000 of 1,000 |
+| DNAMixLR | beta 3g: 964 OK, 36 met a list typed into a number field | beta 3h: 1,000 of 1,000 |
+| DataLoad | beta 1c: 962 OK, 16 a typed list and 22 a list of 1E300 overflowing on the D lists page | beta 1d: 1,000 of 1,000 |
+| ErrorRate | beta 1g: 819 OK, 181 met a list typed into a number field | beta 1h: 1,000 of 1,000 |
+| FitCheck | beta 1b: 989 OK, 11 met a typed list or a list of 1E300 | beta 1c: 1,000 of 1,000 |
+| RankLab | beta 1c: 992 OK, 8 met a list of 1E300 | beta 1d: 1,000 of 1,000 |
+| ResampLab | beta 1d: 934 OK; 24 met RANDSEED (not modelled then), 42 a typed list or a list of 1E300 | beta 1e: 1,000 of 1,000 |
+| ExhibitLab (SeizureLab) | beta 1c: 924 OK, 76 met a typed list or weights of 1E300 | beta 1d: 1,000 of 1,000 |
+| StudRange | beta 15i: 804 OK, 120 met a list typed into a number field, and 76 had not ended within 20 s (a slow plot in the PC harness: one replayed with 240 s ended normally after 154 s) | beta 15j: 1,000 of 1,000 |
+| SurvLab | beta 1c: 978 OK, 22 met a list typed into a number field | beta 1d: 1,000 of 1,000 |
+| TrendTest | beta 3i: 880 OK, 120 met a list typed into a number field | beta 3j: 1,000 of 1,000 |
+
+The causes were round 4's: a list typed into a number field (each form now types its fields `{name,[0]}`), and 1E300 in a D list, which overflows when squared (a list holding a number of more than 50 digits is now left out or refused with a sentence). One crash: AnovaLab's one-sigma test at σ₀ = 1E−300. `RANDSEED`, which the harness did not model, stopped 44 of BurrLab's runs and 24 of ResampLab's; `tools/prime_facts_v1.py` fact 3 models it now. StudRange's 76 FREEZE verdicts were plots the harness draws slowly. The same night, PowerViz v2.5o, TTestLab beta 1f, TTestLabG beta 1d and TestChooser beta 2e (and AnovaLab, FitCheck and StudRange in the versions above) write "t-test"; the four new versions passed 1,000 of 1,000 too. SeizureLab was renamed ExhibitLab the same night. RankLab beta 1d's own run found two more faults, a typed m₀ of −1E300 and an exponent cut short on the screen, fixed before it shipped; ErrorRate's and StudRange's slow pages ran with a longer time budget. Checks: `verify/verify_round8_v2.py`; outputs: `verify/monkey_<Name>_<version>_output.txt`, before and after.
+
+With that, every program but CentralLimit, an app, has passed.
+
 ## Next
 
 Each program gets a version with the fixes for its causes. Each finding becomes a check in its verify script that fails on the old version (Lessons Learned §14 rule 25), and the program then runs 1,000 monkey runs with 0 broken. The `{name,[0]}` change is the same edit everywhere and was confirmed on the Virtual Calculator first, on TTestLab. Then the fixes, and the largest and smallest values the new version accepts, are tried on the Virtual Calculator (rule 25). Next in line: PowerViz, ScatterLab, ChiTable, GaltonBoard (its 22 long runs first, by replay), then the rest by the table above.

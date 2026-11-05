@@ -1,0 +1,2 @@
+SurvLab_beta1d.txt  SurvLab(): 1000 runs, 120 events each, 327 s
+  OK       1000

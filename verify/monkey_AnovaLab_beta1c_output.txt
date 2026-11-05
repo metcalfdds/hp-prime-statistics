@@ -1,0 +1,2 @@
+AnovaLab_beta1c.txt  AnovaLab(): 1000 runs, 120 events each, 470 s
+  OK       1000

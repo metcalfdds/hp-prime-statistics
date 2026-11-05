@@ -1,0 +1,6 @@
+TrendTest_beta3i.txt  TrendTest(): 1000 runs, 120 events each, 353 s
+  OK       880
+  HARNESS  120
+  HARNESS x66: <= between a list and a number is not covered   e.g. --replay 1000013
+  HARNESS x46: < between a list and a number is not covered   e.g. --replay 1000025
+  HARNESS x8: <= between a number and a list is not covered   e.g. --replay 1000091

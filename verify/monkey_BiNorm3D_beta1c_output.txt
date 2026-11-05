@@ -1,0 +1,4 @@
+BiNorm3D_beta1c.txt  BiNorm3D(): 1000 runs, 120 events each, 596 s
+  OK       996
+  HARNESS  4
+  HARNESS x4: < between a list and a number is not covered   e.g. --replay 1000042

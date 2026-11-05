@@ -1,0 +1,2 @@
+RiskLab_beta1d.txt  RiskLab(): 1000 runs, 120 events each, 459 s
+  OK       1000

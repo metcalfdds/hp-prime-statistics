@@ -1,0 +1,6 @@
+ResampLab_beta1d.txt  ResampLab(): 1000 runs, 120 events each, 640 s
+  OK       934
+  HARNESS  66
+  HARNESS x26: ^ between a number and a number is not covered   e.g. --replay 1000017
+  HARNESS x24: RANDSEED is on HP's list of names and is not covered   e.g. --replay 1000022
+  HARNESS x16: < between a list and a number is not covered   e.g. --replay 1000031

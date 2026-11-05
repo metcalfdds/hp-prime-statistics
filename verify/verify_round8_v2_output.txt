@@ -1,0 +1,84 @@
+=== AgreeLab_beta1e against _old8/AgreeLab_beta1d.txt
+PASS T1 AgreeLab_beta1e: 2 forms, every field typed {name,[0]}
+PASS T2 AgreeLab_beta1e: beyond the typing, only ['ag_Hello', 'ag_ReadD'] differ: ['ag_Hello', 'ag_ReadD']
+PASS T3 AgreeLab_beta1e: the header names the version
+=== AnovaLab_beta1c against _old8/AnovaLab_beta1b.txt
+PASS T1 AnovaLab_beta1c: 5 forms, every field typed {name,[0]}
+PASS T2 AnovaLab_beta1c: beyond the typing, only ['av_Hello', 'av_ReadD', 'av_V1Ask', 'av_V2Ask'] differ: ['av_Hello', 'av_ReadD', 'av_V1Ask', 'av_V2Ask']
+PASS T3 AnovaLab_beta1c: the header names the version
+=== BiNorm3D_beta1d against _old8/BiNorm3D_beta1c.txt
+PASS T1 BiNorm3D_beta1d: 1 forms, every field typed {name,[0]}
+PASS T2 BiNorm3D_beta1d: beyond the typing, only no routines differ: []
+PASS T3 BiNorm3D_beta1d: the header names the version
+=== BurrLab_beta1m against _old8/BurrLab_beta1l.txt
+PASS T1 BurrLab_beta1m: 2 forms, every field typed {name,[0]}
+PASS T2 BurrLab_beta1m: beyond the typing, only ['bu_LoadMine', 'bu_Opening'] differ: ['bu_LoadMine', 'bu_Opening']
+PASS T3 BurrLab_beta1m: the header names the version
+=== DNAMixLR_beta3h against _old8/DNAMixLR_beta3g.txt
+PASS T1 DNAMixLR_beta3h: 15 forms, every field typed {name,[0]}
+PASS T2 DNAMixLR_beta3h: beyond the typing, only no routines differ: []
+PASS T3 DNAMixLR_beta3h: the header names the version
+=== DataLoad_beta1d against _old8/DataLoad_beta1c.txt
+PASS T1 DataLoad_beta1d: 1 forms, every field typed {name,[0]}
+PASS T2 DataLoad_beta1d: beyond the typing, only ['dd_Stats'] differ: ['dd_Stats']
+PASS T3 DataLoad_beta1d: the header names the version
+=== ErrorRate_beta1h against _old8/ErrorRate_beta1g.txt
+PASS T1 ErrorRate_beta1h: 4 forms, every field typed {name,[0]}
+PASS T2 ErrorRate_beta1h: beyond the typing, only no routines differ: []
+PASS T3 ErrorRate_beta1h: the header names the version
+=== FitCheck_beta1c against _old8/FitCheck_beta1b.txt
+PASS T1 FitCheck_beta1c: 2 forms, every field typed {name,[0]}
+PASS T2 FitCheck_beta1c: beyond the typing, only ['fc_Opening', 'fc_ReadD1', 'fc_ReadD2'] differ: ['fc_Opening', 'fc_ReadD1', 'fc_ReadD2']
+PASS T3 FitCheck_beta1c: the header names the version
+=== RankLab_beta1d against _old8/RankLab_beta1c.txt
+PASS T1 RankLab_beta1d: 1 forms, every field typed {name,[0]}
+PASS T2 RankLab_beta1d: beyond the typing, only ['rk_MyData', 'rk_Num', 'rk_ReadD', 'rk_Welcome'] differ: ['rk_MyData', 'rk_Num', 'rk_ReadD', 'rk_Welcome']
+PASS T3 RankLab_beta1d: the header names the version
+=== ResampLab_beta1e against _old8/ResampLab_beta1d.txt
+PASS T1 ResampLab_beta1e: 1 forms, every field typed {name,[0]}
+PASS T2 ResampLab_beta1e: beyond the typing, only ['rs_Mine', 'rs_Splash'] differ: ['rs_Mine', 'rs_Splash']
+PASS T3 ResampLab_beta1e: the header names the version
+=== ExhibitLab_beta1d against _old8/SeizureLab_beta1c.txt
+PASS T1 ExhibitLab_beta1d: 3 forms, every field typed {name,[0]}
+PASS T2 ExhibitLab_beta1d: beyond the typing, only ['sz_WtLoad'] differ: ['sz_WtLoad']
+PASS T3 ExhibitLab_beta1d: the header names the version
+=== StudRange_beta15j against _old8/StudRange_beta15i.txt
+PASS T1 StudRange_beta15j: 13 forms, every field typed {name,[0]}
+PASS T2 StudRange_beta15j: beyond the typing, only no routines differ: []
+PASS T3 StudRange_beta15j: the header names the version
+=== SurvLab_beta1d against _old8/SurvLab_beta1c.txt
+PASS T1 SurvLab_beta1d: 1 forms, every field typed {name,[0]}
+PASS T2 SurvLab_beta1d: beyond the typing, only no routines differ: []
+PASS T3 SurvLab_beta1d: the header names the version
+=== TrendTest_beta3j against _old8/TrendTest_beta3i.txt
+PASS T1 TrendTest_beta3j: 5 forms, every field typed {name,[0]}
+PASS T2 TrendTest_beta3j: beyond the typing, only no routines differ: []
+PASS T3 TrendTest_beta3j: the header names the version
+=== PowerViz_v2.5o against _old8/PowerViz_v2.5n.txt
+PASS T1 PowerViz_v2.5o: 8 forms, every field typed {name,[0]}
+PASS T2 PowerViz_v2.5o: beyond the typing, only no routines differ: []
+PASS T3 PowerViz_v2.5o: the header names the version
+PASS T4 PowerViz_v2.5o: the old file with its 18 "t test" made "t-test", the header and the note; nothing else
+=== TTestLab_beta1f against _old8/TTestLab_beta1e.txt
+PASS T1 TTestLab_beta1f: 2 forms, every field typed {name,[0]}
+PASS T2 TTestLab_beta1f: beyond the typing, only no routines differ: []
+PASS T3 TTestLab_beta1f: the header names the version
+PASS T4 TTestLab_beta1f: the old file with its 9 "t test" made "t-test", the header and the note; nothing else
+=== TTestLabG_beta1d against _old8/TTestLabG_beta1c.txt
+PASS T1 TTestLabG_beta1d: 2 forms, every field typed {name,[0]}
+PASS T2 TTestLabG_beta1d: beyond the typing, only no routines differ: []
+PASS T3 TTestLabG_beta1d: the header names the version
+PASS T4 TTestLabG_beta1d: the old file with its 8 "t test" made "t-test", the header and the note; nothing else
+=== TestChooser_beta2e against _old8/TestChooser_beta2d.txt
+PASS T1 TestChooser_beta2e: 0 forms, every field typed {name,[0]}
+PASS T2 TestChooser_beta2e: beyond the typing, only no routines differ: []
+PASS T3 TestChooser_beta2e: the header names the version
+PASS T4 TestChooser_beta2e: the old file with its 13 "t test" made "t-test", the header and the note; nothing else
+=== X. the extra fixes, in the harness
+PASS X1 the list readers leave out a list holding 1E300, with its sentence, and return an ordinary list as it is
+PASS X2 ResampLab, BurrLab and ExhibitLab refuse own data holding 1E300, with the sentence
+PASS X3 AnovaLab's one-sigma test refuses sigma0 = 1E-300 with a sentence and takes 10
+PASS X4 DataLoad's SD: the old value for ordinary lists (statistics.stdev), and a finite SD for 1E300, -1E300, 5
+PASS X5 RankLab: m0 beyond 1E50 refused with a sentence, 3 taken, and 1E300 shown as 1ᴇ300; beta 1c fails it
+
+63 PASS, 0 FAIL

@@ -1,0 +1,2 @@
+StudRange_beta15j.txt  StudRange(): 1000 runs, 120 events each, 4828 s
+  OK       1000

@@ -1,0 +1,2 @@
+RankLab_beta1d.txt  RankLab(): 1000 runs, 120 events each, 1021 s
+  OK       1000

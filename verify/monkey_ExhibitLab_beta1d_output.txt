@@ -1,0 +1,2 @@
+ExhibitLab_beta1d.txt  ExhibitLab(): 1000 runs, 120 events each, 838 s
+  OK       1000

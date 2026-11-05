@@ -1,0 +1,8 @@
+ErrorRate_beta1g.txt  ErrorRate(): 1000 runs, 120 events each, 1036 s
+  OK       819
+  HARNESS  181
+  HARNESS x54: FP given a list is not covered   e.g. --replay 1000008
+  HARNESS x27: > between a number and a list is not covered   e.g. --replay 1000042
+  HARNESS x55: >= between a list and a number is not covered   e.g. --replay 1000055
+  HARNESS x24: * between a number and a list is not covered   e.g. --replay 1000077
+  HARNESS x21: > between a list and a number is not covered   e.g. --replay 1000143

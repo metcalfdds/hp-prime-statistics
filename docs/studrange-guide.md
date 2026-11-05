@@ -100,15 +100,15 @@ The two Python items are **hidden** when the cache was built by the PPL engine.
 
 ### The H₀ simulation (Python only)
 
-Asks for a group size m. The simulation's df is k(m − 1), so if that differs from the plot's df the program says so and rebuilds the plot for it. It then draws **2,000 replicates** of k groups of m values, all from the **same** normal population (H₀ true; `urandom`, Marsaglia's polar method), and for each replicate computes Tukey's q — and checks whether **any** of the k(k − 1)/2 pairwise t tests would reject at α (t crit from `STUDENT_ICDF`, checked, or bisection on `STUDENT_CDF`).
+Asks for a group size m. The simulation's df is k(m − 1), so if that differs from the plot's df the program says so and rebuilds the plot for it. It then draws **2,000 replicates** of k groups of m values, all from the **same** normal population (H₀ true; `urandom`, Marsaglia's polar method), and for each replicate computes Tukey's q — and checks whether **any** of the k(k − 1)/2 pairwise t-tests would reject at α (t crit from `STUDENT_ICDF`, checked, or bisection on `STUDENT_CDF`).
 
-A page reports, for example: *Of 2,000 replicates, 5.1 % exceeded q crit = 3.773 (α = 5.0 %)* — and *Any pairwise t > t crit = 2.179: 11.6 % (3 separate t tests)*. Tukey's q holds the whole family at α; separate t tests do not. The plot then overlays the 2,000 q values as a **40-bin magenta histogram** on the theoretical density, with the two percentages in a panel at the top right.
+A page reports, for example: *Of 2,000 replicates, 5.1 % exceeded q crit = 3.773 (α = 5.0 %)* — and *Any pairwise t > t crit = 2.179: 11.6 % (3 separate t-tests)*. Tukey's q holds the whole family at α; separate t-tests do not. The plot then overlays the 2,000 q values as a **40-bin magenta histogram** on the theoretical density, with the two percentages in a panel at the top right.
 
 (Why the two numbers relate: a pair exceeds t crit exactly when the *largest* pair does, so "any t > t crit" is the same event as q > √2·t crit.)
 
 ## Why q and not t
 
-For two means (k = 2), **q = t·√2** exactly, so q crit = √2·t crit (two-sided) — the k = 2 curve on the plot is that case. With k means there are k(k − 1)/2 pairs; a t test on each at α finds *some* difference far more often than α — the family-wise error rate. q is the range, the largest pair, so P(q > q crit) = α for the whole family. The H₀ simulation shows both numbers side by side.
+For two means (k = 2), **q = t·√2** exactly, so q crit = √2·t crit (two-sided) — the k = 2 curve on the plot is that case. With k means there are k(k − 1)/2 pairs; a t-test on each at α finds *some* difference far more often than α — the family-wise error rate. q is the range, the largest pair, so P(q > q crit) = α for the whole family. The H₀ simulation shows both numbers side by side.
 
 ## Formulas
 

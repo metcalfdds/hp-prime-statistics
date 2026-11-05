@@ -1,0 +1,10 @@
+StudRange_beta15i.txt  StudRange(): 1000 runs, 120 events each, 2793 s
+  OK       804
+  FREEZE   76
+  HARNESS  120
+  HARNESS x103: < between a list and a number is not covered   e.g. --replay 1000007
+  FREEZE x76: no end after 20 s   e.g. --replay 1000014
+  HARNESS x7: <= between a list and a number is not covered   e.g. --replay 1000027
+  HARNESS x1: < between a number and a list is not covered   e.g. --replay 1000041
+  HARNESS x4: > between a list and a number is not covered   e.g. --replay 1000118
+  HARNESS x5: MAX over these argument types is not covered   e.g. --replay 1000231
