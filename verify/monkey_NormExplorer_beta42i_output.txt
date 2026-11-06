@@ -1,0 +1,2 @@
+NormExplorer_beta42i.txt  NormExp(): 1000 runs, 120 events each, 741 s
+  OK       1000

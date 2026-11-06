@@ -1,0 +1,2 @@
+TrendTest_beta3l.txt  TrendTest(): 1000 runs, 120 events each, 257 s
+  OK       1000

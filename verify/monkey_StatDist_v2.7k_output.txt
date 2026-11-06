@@ -1,0 +1,4 @@
+/usr/local/lib/python3.13/dist-packages/scipy/stats/_continuous_distns.py:8070: RuntimeWarning: overflow encountered in divide
+  - (df + 1)/2*np.log1p(x * x/df))
+StatDist_v2.7k.txt  StatDist(): 1000 runs, 120 events each, 892 s
+  OK       1000

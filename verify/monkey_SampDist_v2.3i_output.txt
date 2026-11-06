@@ -1,0 +1,2 @@
+SampDist_v2.3i.txt  SampDist(): 1000 runs, 120 events each, 528 s
+  OK       1000

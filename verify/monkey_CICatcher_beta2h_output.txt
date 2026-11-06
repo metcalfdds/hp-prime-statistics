@@ -1,0 +1,2 @@
+CICatcher_beta2h.txt  CICatcher(): 1000 runs, 120 events each, 188 s
+  OK       1000

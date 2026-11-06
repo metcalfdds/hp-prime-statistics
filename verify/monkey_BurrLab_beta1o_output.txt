@@ -1,0 +1,2 @@
+BurrLab_beta1o.txt  BurrLab(): 1000 runs, 120 events each, 1718 s
+  OK       1000

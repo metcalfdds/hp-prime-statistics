@@ -1,0 +1,2 @@
+FitCheck_beta1e.txt  FitCheck(): 1000 runs, 120 events each, 329 s
+  OK       1000

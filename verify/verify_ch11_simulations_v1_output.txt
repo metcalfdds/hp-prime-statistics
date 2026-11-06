@@ -1,0 +1,31 @@
+Chapter 11 simulations: 100,000 studies per setting, seed 20261105, alpha = 0.05
+
+A. Levene's test, normal data, n = 40 and 20, one SD 1.3 times the other (power: % of studies saying "different")
+   larger SD in the group of 40     means version  21.2%   medians version  19.1%
+   larger SD in the group of 20     means version  24.3%   medians version  20.6%
+
+B. Pooled and Welch t-tests, equal means, n = 40 and 20, SDs 10 and 20 (Type I error: should be 5%)
+   smaller group has the larger SD (40: 10, 20: 20)   pooled  11.2%   Welch   5.0%
+   larger group has the larger SD (40: 20, 20: 10)    pooled   1.8%   Welch   5.0%
+
+C and D. Equal spreads, skewed data (Type I error: should be 5%)
+   population             n1, n2    Levene, means  Levene, medians   F test
+   exponential            20, 20            14.6%             4.9%    26.9%
+   exponential            40, 20            14.2%             4.8%    27.7%
+   exponential            40, 40            14.0%             4.8%    28.9%
+   chi-square, 3 df       20, 20            11.9%             4.6%    20.6%
+   chi-square, 3 df       40, 20            11.6%             4.8%    21.3%
+   chi-square, 3 df       40, 40            11.5%             4.7%    22.7%
+   lognormal, sigma 0.5   20, 20            10.6%             4.5%    22.0%
+   lognormal, sigma 0.5   40, 20            10.3%             4.5%    23.0%
+   lognormal, sigma 0.5   40, 40            10.4%             4.7%    25.5%
+   lognormal, sigma 1     20, 20            19.0%             4.0%    48.4%
+   lognormal, sigma 1     40, 20            18.4%             4.1%    51.1%
+   lognormal, sigma 1     40, 40            18.4%             4.1%    54.6%
+
+   ranges over the 12 settings: Levene means 10.3% to 19.0%; Levene medians 4.0% to 4.9%; F test 20.6% to 54.6%
+
+   for comparison, normal data with equal spreads:
+   normal                 20, 20             5.5%             4.1%     5.0%
+   normal                 40, 20             5.5%             4.4%     5.1%
+   normal                 40, 40             5.3%             4.5%     5.1%

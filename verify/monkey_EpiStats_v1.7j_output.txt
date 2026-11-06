@@ -1,0 +1,2 @@
+EpiStats_v1.7j.txt  EpiStats(): 1000 runs, 120 events each, 588 s
+  OK       1000

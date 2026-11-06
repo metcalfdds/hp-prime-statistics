@@ -1,0 +1,2 @@
+ResampLab_beta1g.txt  ResampLab(): 1000 runs, 120 events each, 694 s
+  OK       1000
