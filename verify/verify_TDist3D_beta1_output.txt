@@ -1,0 +1,91 @@
+=== S. static
+PASS S1 header names beta 1
+PASS S2 PPL only: no #PYTHON block
+PASS S3 every RECT_P carries edge AND fill colours (a one-colour RECT_P fills)
+PASS S4 t crit is the mirrored ICDF
+PASS S5 P(|t| > 2) is a doubled lower tail
+PASS S6 every SIN and COS takes radians times tdAU
+PASS S7 TD_NU is the only EXPORT variable
+PASS S8 every routine is tagged td
+PASS S9 STUDENT(nu, t), the Prime order, everywhere
+PASS S10 nu typed with {name,[0]}: a real number only
+=== A. arithmetic against SciPy
+PASS A1 the fine grid: 275 heights match scipy.stats.t.pdf (max |diff| 0.00e+00)
+PASS A2 the coarse grid: 78 heights match (max |diff| 0.00e+00)
+PASS A3 the normal ghost row matches scipy.stats.norm.pdf (max |diff| 0.00e+00)
+PASS A4 the curves view: 11 x 136 columns match (max |diff| 0.00e+00)
+PASS A5 the curves view spans t = -5 to 5
+PASS A6 the ramp: 16 colours, blue first, red last
+PASS A7 the slice at nu = 3 starts the run
+PASS A8 the readouts at nu = 3: 3.182, 0.139, 0.368
+PASS A9 nu+ climbs the ladder from 3 to 1,000
+PASS A10 t crit, P(|t| > 2) and the peak agree with SciPy at every ladder value shown
+PASS A11 TD_NU holds the last nu (1,000) and the RETURN string names it
+PASS A12 the + key steps nu up (3 -> 5) and the RETURN string carries nu, t crit and P
+=== P. projection
+PASS P start, theta 35 phi 30: every grid point within 1 px of the Python projection (worst 0 px)
+PASS P start, theta 35 phi 30: the floor centre y = 142.5
+PASS P the surface stays on the screen at the start (x 51..265, y 30..190)
+PASS P theta and phi shown as whole degrees
+PASS P after 2 Right, 3 Up: theta 55 phi 60: every grid point within 1 px of the Python projection (worst 0 px)
+PASS P after 2 Right, 3 Up: theta 55 phi 60: the floor centre y = 117.0
+PASS P fits at theta 35, phi 10 (x 51..265, y 49..169)
+PASS P fits at theta 90, phi 10 (x 90..223, y 59..169)
+PASS P fits at theta 215, phi 10 (x 55..269, y 60..173)
+PASS P fits at theta 35, phi 30 (x 51..265, y 30..190)
+PASS P fits at theta 90, phi 30 (x 90..223, y 58..184)
+PASS P fits at theta 215, phi 30 (x 55..269, y 49..195)
+PASS P fits at theta 35, phi 50 (x 51..265, y 20..201)
+PASS P fits at theta 90, phi 50 (x 90..223, y 60..190)
+PASS P fits at theta 215, phi 50 (x 55..269, y 40..207)
+PASS P fits at theta 35, phi 70 (x 51..265, y 10..202)
+PASS P fits at theta 90, phi 70 (x 90..223, y 29..188)
+PASS P fits at theta 215, phi 70 (x 55..269, y 14..208)
+PASS P fits at theta 35, phi 80 (x 51..265, y 3..205)
+PASS P fits at theta 90, phi 80 (x 90..223, y 24..190)
+PASS P fits at theta 215, phi 80 (x 55..269, y 9..211)
+=== B. behaviour
+PASS B1 nu- walks down 3, 2.5, 2, 1.5, 1, 0.5 and stops (one decimal where one is enough)
+PASS B2 the stop is said on screen: "nu stops at 0.5 here"
+PASS B3 past 1,000 the + key says "nu stops at 1,000 here"
+PASS B4 Reset: theta 35, phi 30, nu 3, slice on
+PASS B5 Menu > Set nu: 7.126 becomes 7.13, and the readouts follow
+PASS B5a the form: one real-number field with its range in the help line
+PASS B6 a typed 0.3 is refused with a sentence and nu stays 3
+PASS B7 a typed 2,000 is refused and nu stays 3
+PASS B8 a typed 1,000 is taken; in 3-D the slice is said to be past the back edge
+PASS B9 Cancel on the form changes nothing
+PASS B10 Curves: the end-on view draws, with N(0,1) and +/-1.96
+PASS B10a the curves view carries the readouts and the bottom line
+PASS B11 in Curves, Up and Down move the slice along the ladder (3 -> 4 -> 5 -> 4)
+PASS B12 the view key toggles back to 3-D
+PASS B13 a tap at the lowest peak in Curves picks nu = 0.5
+PASS B14 a tap at the second-lowest peak in Curves picks nu = 1
+PASS B14a a tap on the highest curve in the tail (t = 3) picks nu = 0.5
+PASS B15 a tap outside the plot box changes nothing
+PASS B16 Slice off: the title replaces the readouts
+PASS B17 nu+ turns the slice back on
+PASS B18 four Lefts: theta 35 -> 355 (wrapped)
+PASS B19 Up stops at phi = 80
+PASS B20 Down stops at phi = 10
+PASS B21 a 60-px drag to the right turns theta by 36 degrees (0.6 a pixel): 35 -> 71
+PASS B22 a 50-px drag down raises phi by 30 degrees: 30 -> 60
+PASS B23 a long drag down stops at phi = 80
+PASS B24 a 5-px movement is a tap, not a drag: nothing turns
+PASS B25 the coarse grid is announced while dragging and gone after the lift
+PASS B26 Menu > Curves view
+PASS B27 Menu > Slice off
+PASS B28 Menu > Grid while dragging toggles the coarse grid off
+PASS B29 Menu > Frame timing reports three times in a box
+PASS B29a timing leaves the view and the angles as they were (theta back in range)
+PASS B30 Help: four pages, each with the fleet header
+PASS B31 every help line is 46 characters or fewer
+PASS B32 Esc on a help page returns to the surface (then Esc quits)
+PASS B33 Menu > Quit ends the run
+PASS B34 Cancel on the menu changes nothing
+PASS B35 Esc quits from the curves view too
+PASS B36 a tap leaves the welcome page
+PASS B37 the welcome page carries the title and the touch line
+PASS B38 no harness warnings beyond FILLPOLY/TRIANGLE notes
+
+85 PASS, 0 FAIL

@@ -1,4 +1,6 @@
-// test_loader_v1l.js (5 Nov 2026: v1k's checks, on the page built from starter pack v14, round 9)
+// test_loader_v1m.js (7 Nov 2026, night: v1l's checks, on the page built from starter pack v15, 31 programs: the
+// EVERYTHING card and the zip of everything count 31)
+// was: test_loader_v1l.js (5 Nov 2026: v1k's checks, on the page built from starter pack v14, round 9)
 // was: test_loader_v1k.js -- drives PrimeLoader_v1l.html in Chromium against a mock Virtual Calculator folder.
 // Roger Metcalf & Claude, 1 Nov 2026.
 //
@@ -7,7 +9,7 @@
 // Calculator: Calculators\Prime with HP's apps, settings, old programs and a matrix; Temp with the lock file.  Every file
 // the page writes is compared byte for byte with the starter pack it was built from.
 //
-//   node tests/test_loader_v1l.js PrimeLoader_v1l.html PACK.zip
+//   node tests/test_loader_v1m.js PrimeLoader_v1m.html PACK.zip
 // v1k (4 Nov 2026, night): v1j's checks, run on the page built from starter pack v13 (round 8); Chapter 11's card
 //   is found by its new title, "t-Tests: Two Samples".
 // v1j (4 Nov 2026): v1i's checks, unchanged, run on the page built from starter pack v12 (round 7).
@@ -126,7 +128,7 @@ function check(name, ok, detail) {
   const before = await readTree();
   await page.locator('#chapters .card', { hasText: 't-Tests: Two Samples' }).click();
   const sum = await page.textContent('#summary');
-  check('chapter 11 picks TTestLabG, DataLoad, ResampLab', /DataLoad, ResampLab, TTestLabG/.test(sum), sum);
+  check('chapter 11 picks TTestLabG, TDist3D, DataLoad, ResampLab', /DataLoad, ResampLab, TDist3D, TTestLabG/.test(sum), sum);
   await page.click('#load');
   await page.waitForSelector('#running:not([hidden])');
   check('running calculator: the warning shows, the done panel does not', await page.isVisible('#running') && !(await page.isVisible('#done')));
@@ -138,10 +140,10 @@ function check(name, ok, detail) {
   await page.waitForSelector('#done:not([hidden])');
   check('after loading, the running warning is gone', !(await page.isVisible('#running')) && await page.isVisible('#done'));
   let t = await readTree();
-  for (const p of ['TTestLabG.hpprgm', 'DataLoad.hpprgm', 'ResampLab.hpprgm'])
+  for (const p of ['TTestLabG.hpprgm', 'TDist3D.hpprgm', 'DataLoad.hpprgm', 'ResampLab.hpprgm'])
     check('loaded byte for byte: ' + p, same(t[C + p], packFile(p)));
   const progs = Object.keys(t).filter(k => k.startsWith(C) && k.endsWith('.hpprgm')).map(k => k.slice(C.length)).sort();
-  check('only the chapter\'s programs are on the calculator', JSON.stringify(progs) === JSON.stringify(['DataLoad.hpprgm', 'ResampLab.hpprgm', 'TTestLabG.hpprgm']), progs);
+  check('only the chapter\'s programs are on the calculator', JSON.stringify(progs) === JSON.stringify(['DataLoad.hpprgm', 'ResampLab.hpprgm', 'TDist3D.hpprgm', 'TTestLabG.hpprgm']), progs);
   check('the old app is gone from the calculator', !Object.keys(t).some(k => k.startsWith(C + 'CentralLimit.hpappdir/')));
   const bk = Object.keys(t).filter(k => k.startsWith('HP Prime/Loader backups/'));
   const stamp1 = bk.length ? bk[0].split('/')[2] : '';
@@ -155,7 +157,7 @@ function check(name, ok, detail) {
   check('nothing written outside Prime and the backup', Object.keys(t).every(k => k.startsWith(C) || k.startsWith('HP Prime/Loader backups/') || k.startsWith('HP Prime/Skins/')));
   const steps = await page.textContent('#nextsteps');
   const allChecked = await page.evaluate(() => CAT.all_checked);
-  check('next steps name the programs', /DataLoad, ResampLab, TTestLabG/.test(steps), steps);
+  check('next steps name the programs', /DataLoad, ResampLab, TDist3D, TTestLabG/.test(steps), steps);
   check(allChecked ? 'checked pack: tap and Run, Check only as a fallback' : 'unchecked pack: the Check step',
         allChecked ? (/Tap one, then tap Run at the bottom right\. That is all\./.test(steps) && /If one ever says Syntax Error/.test(steps) && !/The first time you run each one/.test(steps))
                    : /The first time you run each one/.test(steps), steps);
@@ -217,7 +219,7 @@ function check(name, ok, detail) {
 
   // ---- 7. everything, and the zip ----
   await page.reload();
-  await page.locator('#chapters .card', { hasText: 'All 30 programs' }).click();
+  await page.locator('#chapters .card', { hasText: 'All 31 programs' }).click();
   await page.locator('.help summary', { hasText: 'Connectivity Kit' }).click();
   check('Kit help: the Bonjour reminder shows first, with how to check it',
         await page.locator('.help details[open] .panel.warn', { hasText: 'make sure Bonjour is running' }).isVisible() &&
@@ -232,11 +234,11 @@ function check(name, ok, detail) {
     if (n.endsWith('.hpappdir')) { for (const f of fs.readdirSync(path.join(tmp, 'Copy these into Prime', n))) allSame = allSame && fs.readFileSync(path.join(out, n, f)).equals(packFile(n + '/' + f)); }
     else allSame = allSame && fs.readFileSync(path.join(out, n)).equals(packFile(n));
   }
-  check('zip of everything: all 30 programs and the app, byte for byte', allSame && fs.readdirSync(out).length === packed.length, fs.readdirSync(out).length);
+  check('zip of everything: all 31 programs and the app, byte for byte', allSame && fs.readdirSync(out).length === packed.length, fs.readdirSync(out).length);
   await page.click('#load');
   await page.waitForSelector('#done:not([hidden])');
   t = await readTree();
-  check('everything: 29 programs and the app on the calculator', Object.keys(t).filter(k => k.startsWith(C) && k.endsWith('.hpprgm')).length === 29 &&
+  check('everything: 30 programs and the app on the calculator', Object.keys(t).filter(k => k.startsWith(C) && k.endsWith('.hpprgm')).length === 30 &&
         Object.keys(t).filter(k => k.startsWith(C + 'CentralLimit.hpappdir/')).length === 3);
 
   // ---- 8. Firefox: no folder API, Firefox's user-agent ----

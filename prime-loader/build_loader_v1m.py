@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
-"""build_loader_v1l.py -- assembles PrimeLoader_v1l.html: the page template, the loader's core, the Data Loader's core
+"""build_loader_v1m.py -- assembles PrimeLoader_v1m.html: the page template, the loader's core, the Data Loader's core
 (for its zip writer), the chapter list, and every program file from a starter pack, embedded so the page works offline.
 
-    python3 build_loader_v1l.py PACK.zip [OUT.html] [--kit PATH]
+    python3 build_loader_v1m.py PACK.zip [OUT.html] [--kit PATH]
+
+v1m (7 Nov 2026, night): starter pack v15, with a 31st program, TDist3D beta 1 (Student's t as a surface turned
+with a finger: every t curve at once, a red slice with its critical value and tail chance, a Curves view; offered
+with Chapters 9 and 11), and BurrLab beta 1p (the Family map's border drawn as four lines, not a one-colour RECT_P
+that filled it dark gray on the G1; deeper tints; the tail shades opaque).  The catalog names those versions and the
+EVERYTHING card counts 31.  The page template is v1c's, unchanged.
 
 v1l (5 Nov 2026): starter pack v14, whose 30 programs carry round 9: one header on every help page, "<Name> help
 n/N: <Topic>", American spelling on screen, and "Roger D. Metcalf"; and round 10 of the same day: 19 of them
@@ -84,7 +90,7 @@ KIT = os.environ.get('HPKIT', '/tmp/kit/hp-prime-kit-HEAD')
 if '--kit' in argv:
     i = argv.index('--kit'); KIT = argv[i + 1]; del argv[i:i + 2]
 PACK = argv[0]
-OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v1l.html')
+OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v1m.html')
 SITE = 'https://metcalfdds.github.io/hp-prime-statistics/'
 sys.path.insert(0, KIT)
 from hpkit import program as kitprog            # hp-prime-kit (MIT, JordiRigau/hp-prime-kit)
@@ -95,7 +101,7 @@ PROGRAMS = {
   'AnovaLab':     ('AnovaLab.hpprgm', 'beta 1e', 'ANOVA: one-way and two-way, and tests for variances', 'AnovaLab'),
   'BayesTree':    ('BayesTree.hpprgm', 'beta 8i', 'Bayes as a tree of 1,000 people: slide the prevalence', 'BayesTree'),
   'BiNorm3D':     ('BiNorm3D.hpprgm', 'beta 1e', 'Correlation in 3-D: turn the bivariate normal with a finger', 'BiNorm3D'),
-  'BurrLab':      ('BurrLab.hpprgm', 'beta 1o', 'A model for long right tails (Burr XII)', 'BurrLab'),
+  'BurrLab':      ('BurrLab.hpprgm', 'beta 1p', 'A model for long right tails (Burr XII)', 'BurrLab'),
   'CICatcher':    ('CICatcher.hpprgm', 'beta 2h', 'Fifty confidence intervals: how many catch the truth?', 'CICatcher'),
   'CentralLimit': ('CentralLimit.hpappdir', 'beta 3f', 'The central limit theorem, one sample at a time (an app)', None),
   'ChiTable':     ('ChiTable.hpprgm', 'beta 3k', 'Chi-square for a two-way table: drag the bars', 'ChiTable'),
@@ -117,6 +123,7 @@ PROGRAMS = {
   'StatDist':     ('StatDist.hpprgm', 'v2.7k', '27 distributions, each a plot you can touch', 'StatDist'),
   'StudRange':    ('StudRange.hpprgm', 'beta 15l', "Tukey's q, the studentized range", 'StudRange'),
   'SurvLab':      ('SurvLab.hpprgm', 'beta 1e', 'Time to an event: survival curves', 'SurvLab'),
+  'TDist3D':      ('TDist3D.hpprgm', 'beta 1', "Student's t as a surface: every t curve at once, turned with a finger", 'TDist3D'),
   'TTestLab':     ('TTestLab.hpprgm', 'beta 1h', 't-tests in five steps (the advanced version)', 'TTESTLAB'),
   'TTestLabG':    ('TTestLabG.hpprgm', 'beta 1f', 't-tests in five steps', 'TTESTLABG'),
   'TestChooser':  ('TestChooser.hpprgm', 'beta 2f', 'Which test? A flowchart you tap', 'TestChooser'),
@@ -133,9 +140,9 @@ CHAPTERS = [
   (6,  'The Normal Distribution', ['NormExplorer', 'Norm3', 'StatDist', 'GaltonBoard'], None),
   (7,  'Sampling Distributions and the CLT', ['CentralLimit', 'SampDist', 'GaltonBoard'], None),
   (8,  'Confidence Intervals', ['CICatcher', 'ResampLab'], None),
-  (9,  'Hypothesis Testing: One Sample', ['PowerViz', 'FitCheck', 'AnovaLab'], 'one-sample t in TTestLabG'),
+  (9,  'Hypothesis Testing: One Sample', ['TDist3D', 'PowerViz', 'FitCheck', 'AnovaLab'], 'one-sample t in TTestLabG'),
   (10, 'Power and Sample Size', ['PowerViz'], None),
-  (11, 't-Tests: Two Samples', ['TTestLabG', 'DataLoad', 'ResampLab'], None),
+  (11, 't-Tests: Two Samples', ['TTestLabG', 'TDist3D', 'DataLoad', 'ResampLab'], None),
   (12, 'Chi-Square', ['ChiTable', 'FitCheck'], None),
   (13, 'Correlation and Regression', ['ScatterLab', 'BiNorm3D'], None),
   (14, 'ANOVA', ['AnovaLab', 'DataLoad'], None),
@@ -231,7 +238,7 @@ redirect = ('<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n
             '<link rel="canonical" href="' + SITE + 'prime-loader/' + page + '">\n'
             '<style>body{font:16px/1.5 system-ui,sans-serif;margin:2rem;color:#172033;background:#f6f8fb}'
             '@media (prefers-color-scheme:dark){body{color:#e8edf6;background:#0f1420}a{color:#7d9cff}}</style>\n'
-            '</head>\n<body>\n<!-- Written by build_loader_v1l.py: sends the browser on to the current Prime Loader, so the '
+            '</head>\n<body>\n<!-- Written by build_loader_v1m.py: sends the browser on to the current Prime Loader, so the '
             'address .../prime-loader/ never changes. -->\n'
             '<p>Opening the HP Prime Loader&hellip; If nothing happens, <a href="' + page + '">click here</a>.</p>\n'
             '</body>\n</html>\n')

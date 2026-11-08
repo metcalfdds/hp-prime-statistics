@@ -44,15 +44,16 @@ Hundreds of community PPL programs from several HP-related public forums were re
 | **Sampling, estimation and power** | CentralLimit (an app), SampDist, CICatcher, GaltonBoard, PowerViz |
 | **Tables and tests** | ChiTable, TrendTest, TTestLab (t-tests in five steps) and TTestLabG (its general version), TestChooser (a tappable flowchart), EpiStats |
 | **Correlation and regression** | ScatterLab, BiNorm3D |
+| **Student's t** (new, 7 November 2026) | TDist3D (the t family as a surface you turn) |
 | **Bayes and forensic science** | BayesTree, DNAMixLR, ErrorRate Lab |
 | **Criminal justice and forensic statistics** (new, October 2026) | RankLab, AnovaLab, ExhibitLab, SurvLab, FitCheck, ResampLab, AgreeLab, RiskLab |
 | **Getting your data in** (new, 31 October 2026) | DataLoad, with the [Data Loader](data-loader/README.md) web page |
 
-Together, these 30 programs currently run to more than **84,000 lines**: 57,900 of PPL code, 1,160 of MicroPython (in five of them), and 21,800 lines of comments, written so a student can follow what each part does. The largest is EpiStats at about 6,100 lines -- I wrote the original, elementary, unsophisticated version of this program for coursework I had in Harvard's STAT S-103 Intro to Epidemiology & Biostats and Claude took it to a whole other level, and I hope future students in that class or other similar classes will find it helpful; and then eight other late October programs average about 3,000 lines each. These were built with tremendous assistance from Anthropic Claude (mostly Opus 5.5 and Fable 5.1) over **many** months of intense, but fun, work.
+Together, these 31 programs currently run to more than **90,000 lines**: 60,700 of PPL code, 1,170 of MicroPython (in five of them), and 24,700 lines of comments, written so a student can follow what each part does. The largest is EpiStats at about 6,100 lines -- I wrote the original, elementary, unsophisticated version of this program for coursework I had in Harvard's STAT S-103 Intro to Epidemiology & Biostats and Claude took it to a whole other level, and I hope future students in that class or other similar classes will find it helpful; and then eight other late October programs average about 3,000 lines each. These were built with tremendous assistance from Anthropic Claude (mostly Opus 5.5 and Fable 5.1) over **many** months of intense, but fun, work.
 
 And around the programs:
 
-- **[The notes](docs/lessons-learned_v7zo.md)**: hard limits, commands that differ from the manual, touch and graphics idioms, the MicroPython bridge and how it fails silently, calling the CAS safely, numerical methods for 12-digit reals. Useful even if you never run a statistics program, and written so you can hand them to an AI assistant before it writes PPL for you.
+- **[The notes](docs/lessons-learned_v7zp.md)**: hard limits, commands that differ from the manual, touch and graphics idioms, the MicroPython bridge and how it fails silently, calling the CAS safely, numerical methods for 12-digit reals. Useful even if you never run a statistics program, and written so you can hand them to an AI assistant before it writes PPL for you.
 - **[Two shortcuts the manuals don't mention](docs/two-shortcuts.md)**: loading the Virtual Calculator by copying files into its folder, and a big data set as one matrix file, with who found what.
 - **[Tools](tools/)**: the checks every program passes before it is pasted (a lint gate, a fleet-wide name check, a check that no two lines of text overlap on screen, a PC harness that drives a program like a student), in plain Python 3.
 - **[Diagnostics](diagnostics/)**: small probe programs that test what your own calculator does.
@@ -90,7 +91,7 @@ Remember, too, these programs are **works-in-progress**--some parts, especially 
 
 Every program is a plain `.txt` file, on purpose.
 
-**On the Virtual Calculator, the [starter pack](starter-pack/README.md) is quicker:** all 30 programs as ready-made calculator files, CentralLimit already made into its app, copied into the calculator's folder while it is closed. Since v5 nothing needs checking: every file in the pack was checked on the Virtual Calculator before it was packed. The [Prime Loader](prime-loader/README.md) does the copying, chapter by chapter. The steps below are for a G1 or G2, or for one program at a time.
+**On the Virtual Calculator, the [starter pack](starter-pack/README.md) is quicker:** all 31 programs as ready-made calculator files, CentralLimit already made into its app, copied into the calculator's folder while it is closed. Since v5 nothing needs checking: every file in the pack was checked on the Virtual Calculator before it was packed. The [Prime Loader](prime-loader/README.md) does the copying, chapter by chapter. The steps below are for a G1 or G2, or for one program at a time.
 
 1. Open the **HP Connectivity Kit** and connect your calculator.
 2. Create a new program in the Program Catalog.
@@ -140,7 +141,7 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 
 **Norm3** (v2.4f; 5 November: one header on every help page, "Norm3 help: Touch and keys"; it takes arguments; the Program Catalog asks for them): drag x₀ and watch the area and the S-curve together. Tap the S-curve for the inverse.
 
-**BurrLab** (beta 1o; 5 November: reasonable limits on what you type, and one header on every help page, "BurrLab help n/N: Topic"; 4 November, night: 1,000 runs of the monkey test, all OK; replaces Burr3): the Burr XII as the model for a long right tail. Fit it to data by maximum likelihood, in PPL or MicroPython (or both, timed side by side), and see it ranked by AIC against the lognormal, Weibull, gamma, exponential and Lomax; drag C and K and watch it turn into the Pareto, the log-logistic or the Weibull; watch a running mean wander forever when the tail is too heavy for a mean to exist; ask how rare a value is. Data: BJS months served, Rossi weeks to re-arrest, Danish fire claims. **Why the Burr XII, and how the fit differs from fitting a normal:** [docs/burrlab-guide.md](docs/burrlab-guide.md).
+**BurrLab** (beta 1p; 7 November: its first run on a real G1 showed the Family map as a solid gray box — a one-colour `RECT_P` fills — and the tail shades too pale to see; the map's border is four lines now, the tints deeper, the shades solid; 5 November: reasonable limits on what you type, and one header on every help page, "BurrLab help n/N: Topic"; 4 November, night: 1,000 runs of the monkey test, all OK; replaces Burr3): the Burr XII as the model for a long right tail. Fit it to data by maximum likelihood, in PPL or MicroPython (or both, timed side by side), and see it ranked by AIC against the lognormal, Weibull, gamma, exponential and Lomax; drag C and K and watch it turn into the Pareto, the log-logistic or the Weibull; watch a running mean wander forever when the tail is too heavy for a mean to exist; ask how rare a value is. Data: BJS months served, Rossi weeks to re-arrest, Danish fire claims. **Why the Burr XII, and how the fit differs from fitting a normal:** [docs/burrlab-guide.md](docs/burrlab-guide.md).
 
 **StatDist** (v2.7k; 5 November: reasonable limits on what you type, and one header on every help page, "StatDist help n/N: Topic"): 27 distributions, each result a plot you can touch. Drag x or k, the shading follows, and the window snaps to round values. Overlays show the normal approximation, N(0, 1) behind t, and the CDF as an S-curve. A Gallery opens six examples with one tap.
 
@@ -207,6 +208,10 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 **ScatterLab** (beta 2i; 5 November: reasonable limits on what you type, and one header on every help page, "ScatterLab help n/N: Topic"): build a scatterplot with your finger. Add, drag or delete points, and the least-squares line, r, r², SSE and the residuals follow. Guess mode lets you fit a line by eye first, then shows that least squares really does have the smallest SSE.
 
 **BiNorm3D** (beta 1e; 5 November: one header on every help page, "BiNorm3D help n/N: Topic"; 4 November, night: 1,000 runs of the monkey test, all OK): the bivariate normal as a wireframe you turn with a finger. It adds a contour view, and a slice that shows regression to the mean.
+
+### Student's t (new, 7 November 2026)
+
+**TDist3D** (beta 1; 7 November, night: first version; 1,000 runs of the monkey test, all OK; run on the Virtual Calculator, not yet on a G1 or a G2): Student's t distribution as one surface you turn with a finger — every t curve at once, t across and the degrees of freedom ν away from you, from the heavy tails of ν = 0.5 at the front to the normal curve at the back. It is the calculator's version of the Maple surface in *Statisticles*. A red slice marks one ν and gives its peak, its critical value (the number that replaces 1.960), and the chance of a value beyond ±2 (0.295 at ν = 1, 0.046 for the normal); ν climbs a ladder from 0.5 to 1,000 or is typed. A Curves view shows the family end on, the way a textbook draws it. Pure PPL: the surface never changes, so everything is computed once and a frame is drawing only. **What ν does, and why t is wider than z:** [docs/tdist3d-guide.md](docs/tdist3d-guide.md).
 
 ### Bayes and forensic science
 
@@ -316,7 +321,7 @@ Short programs for finding out what your own calculator does.
 
 ## The notes
 
-[**docs/lessons-learned_v7zo.md**](docs/lessons-learned_v7zo.md) is the substantial document here: everything learned the expensive way across dozens and dozens of build iterations on G1 and G2 hardware. It covers:
+[**docs/lessons-learned_v7zp.md**](docs/lessons-learned_v7zp.md) is the substantial document here: everything learned the expensive way across dozens and dozens of build iterations on G1 and G2 hardware. It covers:
 - hard limits;
 - command behaviour that contradicts the manual;
 - graphics and input idioms;
@@ -360,7 +365,8 @@ A few things from it that are hard to find elsewhere:
 - the gate that runs them all;
 - a PC run harness that drives a program with scripted keys, taps and drags, with SciPy behind the statistics built-ins and desktop Giac behind `CAS(...)`, made to behave as the Prime's firmware does where the emulator showed a difference;
 - the starter-pack builder, which turns `programs/` into ready-made Virtual Calculator files and reads each one back against its source;
-- the monkey test, which throws random keys, taps and typed values at a program in the harness and reports every way it broke.
+- the monkey test, which throws random keys, taps and typed values at a program in the harness and reports every way it broke;
+- a painter (`page_render_v1.py`, 7 November 2026) that draws every screen the harness recorded as a PNG, following the calculator's own rules (a one-colour `RECT_P` fills), so a page can be looked at before the Virtual Calculator sees it.
 
 [data-loader/](data-loader/) has the Data Loader page, its number encoder and its tests (20,011 numbers against hp-prime-kit's encoder, and the page itself in Chromium).
 

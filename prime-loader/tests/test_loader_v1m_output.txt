@@ -5,11 +5,12 @@ PASS the Data Loader link is the Data Loader page on GitHub Pages
 PASS index.html beside the page sends the browser on to it
 PASS Edge/Chrome route shown, Firefox route hidden; running and done panels hidden
 PASS plain-language sections present: before you start, why for step 2, six help topics
-PASS chapter 11 picks TTestLabG, DataLoad, ResampLab
+PASS chapter 11 picks TTestLabG, TDist3D, DataLoad, ResampLab
 PASS running calculator: the warning shows, the done panel does not
 PASS running calculator: nothing written
 PASS after loading, the running warning is gone
 PASS loaded byte for byte: TTestLabG.hpprgm
+PASS loaded byte for byte: TDist3D.hpprgm
 PASS loaded byte for byte: DataLoad.hpprgm
 PASS loaded byte for byte: ResampLab.hpprgm
 PASS only the chapter's programs are on the calculator
@@ -42,8 +43,8 @@ PASS picking Documents finds HP Prime inside it
 PASS cancelling the picker says nothing was loaded
 PASS Kit help: the Bonjour reminder shows first, with how to check it
 PASS everything downloads as HP_Prime_programs.zip
-PASS zip of everything: all 30 programs and the app, byte for byte
-PASS everything: 29 programs and the app on the calculator
+PASS zip of everything: all 31 programs and the app, byte for byte
+PASS everything: 30 programs and the app on the calculator
 PASS Firefox: its own route shows, the Edge route is hidden
 PASS Firefox: named, with the reason in plain words
 PASS Firefox: Download is off until a chapter is picked
@@ -57,4 +58,4 @@ PASS Firefox: no errors in the page
 PASS opens as a local file without errors
 PASS no errors in the page
 
-58 PASS, 0 FAIL
+59 PASS, 0 FAIL

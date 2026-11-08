@@ -1,10 +1,10 @@
 # Starter pack for the Virtual Calculator
 
-*v14, 2026-11-05. Built by `tools/make_starter_pack_v4.py` from `programs/`; do not edit this page by hand.*
+*v15, 2026-11-07. Built by `tools/make_starter_pack_v4.py` from `programs/`; do not edit this page by hand.*
 
-All 30 programs in one zip, ready for the free **HP Prime Virtual Calculator** on a Windows PC: no Connectivity Kit, no copying and pasting. Download **[HP_Prime_Statistics_Starter_Pack_v14.zip](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v14.zip)** (one file).
+All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** on a Windows PC: no Connectivity Kit, no copying and pasting. Download **[HP_Prime_Statistics_Starter_Pack_v15.zip](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v15.zip)** (one file).
 
-*How this pack was tested on the Virtual Calculator: [docs/changes/StarterPack_v14_NOTES.md](../docs/changes/StarterPack_v14_NOTES.md).*
+*How this pack was tested on the Virtual Calculator: [docs/changes/StarterPack_v15_NOTES.md](../docs/changes/StarterPack_v15_NOTES.md).*
 
 ### What you need
 - A Windows PC with the HP Prime Virtual Calculator (64-bit). It is a free download from hpcalc.org, which lists Hewlett-Packard as its author. The pack was tested on the Virtual Calculator 2.4.2 (build 2026-09-09), 64-bit.
@@ -40,7 +40,7 @@ All 30 programs in one zip, ready for the free **HP Prime Virtual Calculator** o
 | AnovaLab | beta 1e | 3,859 | `AnovaLab` |  | `e213819ded6a` |
 | BayesTree | beta 8i | 3,438 | `BayesTree` |  | `8cbf7caaeb58` |
 | BiNorm3D | beta 1e | 1,279 | `BiNorm3D` |  | `7331fb308b55` |
-| BurrLab | beta 1o | 4,679 | `BurrLab` | MicroPython | `a67e824b7cdc` |
+| BurrLab | beta 1p | 4,701 | `BurrLab` | MicroPython | `3ecbd3f664db` |
 | CICatcher | beta 2h | 2,195 | `CICatcher` |  | `02902bfc2153` |
 | CentralLimit | beta 3f | 2,782 | (an app) | app on Statistics 1Var | `d4083c5414cf` |
 | ChiTable | beta 3k | 3,707 | `ChiTable` |  | `156aedad27bb` |
@@ -62,6 +62,7 @@ All 30 programs in one zip, ready for the free **HP Prime Virtual Calculator** o
 | StatDist | v2.7k | 5,089 | `StatDist` |  | `2d5ee4034d6d` |
 | StudRange | beta 15l | 2,735 | `StudRange` | MicroPython | `038e4d8f3654` |
 | SurvLab | beta 1e | 2,738 | `SurvLab` |  | `54b8f6a74c33` |
+| TDist3D | beta 1 | 1,163 | `TDist3D` |  | `c7890f5b211d` |
 | TTestLabG | beta 1f | 1,471 | `TTESTLABG` |  | `8c4496e259fd` |
 | TTestLab | beta 1h | 1,496 | `TTESTLAB` |  | `03da2aa66b91` |
 | TestChooser | beta 2f | 1,913 | `TestChooser` |  | `26a859337ebe` |

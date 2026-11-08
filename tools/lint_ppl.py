@@ -1,7 +1,15 @@
 """
-lint_ppl.py (version 3) — structural lint for an HP Prime PPL source file.
+lint_ppl.py (version 4) — structural lint for an HP Prime PPL source file.
 (A fixed-name tool, edited in place: the gate finds it by this name. Version 1 is archived as
-_superseded_2026-10-19/tools/lint_ppl_v1.py.)
+_superseded_2026-10-19/tools/lint_ppl_v1.py, version 3 as _superseded_2026-11-07/tools/lint_ppl_v3.py.)
+
+v4 (7 Nov 2026): check 13, a one-colour RECT_P that looks like an outline.  RECT_P(G, x1, y1, x2, y2,
+  colour) FILLS the rectangle with that colour (Lessons Learned s6); BurrLab's (C, K) map had its border
+  drawn that way, so the map was a solid dark gray box, which nobody saw until Roger ran it on his G1
+  (7 Nov 2026): the PC harness records shapes without painting them.  The check reports a one-colour
+  RECT_P whose corners are numbers, 40 px or more each way, in a colour that is not white -- the shape
+  of a frame.  Small dots, thin title bands and white clears (the fleet's 60 one-colour calls) pass.
+  Everything else is version 3's, line for line.
 
 v3 (1 Nov 2026): check 4 (INPUT) reads the call's own arguments: the variables, labels and help
   lines are its first, third and fourth, and each list is counted at its own top level, so a typed
@@ -479,6 +487,34 @@ for m in re.finditer(r"\bTEXTOUT_P\s*\(", codetext):
 print("12. no bare WAIT as a key hold")
 check(not re.search(r"\bWAIT\s*;", codetext),
       "bare 'WAIT;' found - use REPEAT kk := GETKEY; UNTIL kk > -1")
+
+# ---------------------------------------------------------------- 13 (v4)
+print("13. a one-colour RECT_P that looks like an outline (it fills)")
+for m in re.finditer(r"\bRECT_P\s*\(", codetext):
+    i, d, j = m.end(), 1, m.end()
+    while j < len(codetext) and d > 0:
+        if codetext[j] == "(":
+            d += 1
+        elif codetext[j] == ")":
+            d -= 1
+        j += 1
+    args = [a.strip() for a in _split_top(codetext[i:j - 1])]
+    if args and re.fullmatch(r"G[0-9]", args[0]):
+        args = args[1:]
+    if len(args) != 5:
+        continue                                  # two colours, a clear, or no colour
+    try:
+        x1, y1, x2, y2 = (float(a) for a in args[:4])
+    except ValueError:
+        continue                                  # corners held in variables: not judged
+    col = args[4].replace(" ", "").upper()
+    if col in ("#FFFFFFH", "#FFFFFF:24H", "RGB(255,255,255)") or "WHT" in col or "WHITE" in col:
+        continue
+    w, h = abs(x2 - x1) + 1, abs(y2 - y1) + 1
+    lineno = codetext[:m.start()].count("\n") + 1
+    check(not (w >= 40 and h >= 40),
+          f"line {lineno}: RECT_P with ONE colour fills its {w:g} x {h:g} px rectangle with {args[4]}; "
+          f"for an outline draw four LINE_P or give edge and fill colours (fine if a fill is meant)")
 
 # ----------------------------------------------------------------------
 print()

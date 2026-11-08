@@ -2,7 +2,7 @@
 
 | File | What it is |
 | --- | --- |
-| `lessons-learned_v7zo.md` | The main reference: PPL, CAS and MicroPython behaviour found on hardware, and the house rules that came out of it. Start here. |
+| `lessons-learned_v7zp.md` | The main reference: PPL, CAS and MicroPython behaviour found on hardware, and the house rules that came out of it. Start here. |
 | `test-status.md` | The dated record of what has been tested, on what, and what each round found (moved from the top of the README, 27 Oct 2026). |
 | `two-shortcuts.md` | Loading the Virtual Calculator by copying files into its folder, and a big data set as one matrix file: how each works, what we found, and who found what (1 Nov 2026). HP's manuals describe neither. |
 | `data/` | The sources of every preset in the October 2026 programs, and the checks made on them. |
@@ -16,6 +16,7 @@
 | `studrange-guide.md` | User's guide to StudRange (beta 15a, with the MicroPython engine). The program is now beta 15i. Since 15a: the Quit summary counts the plot and the first tap after a page closes is no longer skipped (15b); an exact 0 prints "p < 0.00001" (15c); a note appears when the PPL fallback answers at α < 0.005, and Home's X is left alone (15d); for 15e and 15f see `docs/changes/`; big numbers carry commas (15g); alpha from 0.001 to 0.2, k from 2 to 100, df from 1 to 100,000 or 0 for ∞, and Tukey HSD's m from 2 to 1,000, each refused with a sentence outside its range (15i). |
 | `scatterlab-guide.md` | User's guide to ScatterLab (beta 2a). The program is now beta 2g. Since 2a: the calculus page no longer stops the program and small values print as decimals (2b); 140000000000 prints whole (2c); the calculus page writes ² and √ (2d); the forms take numbers only, points the plot cannot hold are refused with a sentence, and an axis whose numbers are too long is labelled in units (×1ᴇ5) or from its lowest tick, never cut, and the side panel's numbers fit it; ŷ and ȳ are letters, not words (2f; the guide has a paragraph on it); big numbers carry commas (2g). |
 | `binorm3d-guide.md` | User's guide to BiNorm3D (beta 1). The program is now beta 1c: one help sentence and one menu line are corrected (1a); the conditional page writes χ² and √ (1b); big numbers carry commas (1c). |
+| `tdist3d-guide.md` | TDist3D: Student's t as a surface turned with a finger; what ν does; the slice's three numbers; keys and touch. |
 | `cicatcher-guide.md` | User's guide to CICatcher (beta 2a). The program is now beta 2f. Since 2a: the setup menu says "Exact (C-P)" for Clopper-Pearson (2b); two menu lines are shortened to fit (2c); the formula help writes ± and √ (2d); a μ, σ or n the window cannot hold is refused with a sentence (2e); big numbers carry commas (2f). |
 | `errorrate-guide.md` | User's guide to ErrorRate Lab (beta 1a). The program is now beta 1f. Since 1a: small rates print as decimals and the decimal fallback works if the CAS fails (1b); "1 profile searched" and no "= <" (1c); the CAS page keeps its last line and the opening page shows the disclaimer (1d); the help writes α (1e); big numbers carry commas (1f). |
 | `changes/` | One file per program version: what changed and why, with line numbers; the lint and verification output; and the device-test checklist, ordered from least to most risky. |

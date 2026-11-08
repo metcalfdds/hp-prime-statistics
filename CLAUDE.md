@@ -4,7 +4,7 @@ These notes, like the Lessons Learned, were written with and for Claude Code and
 
 ## What this is
 
-Thirty teaching programs for the HP Prime calculator in PPL (five carry MicroPython), each a plain `.txt` file in `programs/`, and the HP Prime Data Loader web page (`data-loader/`) that feeds one of them, DataLoad; with a four-tool gate, a PC harness, one verify script per program version, a change note and device checklist per version, and the Lessons Learned document on how the Prime actually behaves. Read `START_HERE.md`, then `docs/lessons-learned_v7zo.md` (or the newest letter) before writing any PPL. The author is Roger Metcalf; the HP programs are his, and every change goes through a pull request he merges.
+Thirty-one teaching programs for the HP Prime calculator in PPL (five carry MicroPython), each a plain `.txt` file in `programs/`, and the HP Prime Data Loader web page (`data-loader/`) that feeds one of them, DataLoad; with a four-tool gate, a PC harness, one verify script per program version, a change note and device checklist per version, and the Lessons Learned document on how the Prime actually behaves. Read `START_HERE.md`, then `docs/lessons-learned_v7zo.md` (or the newest letter) before writing any PPL. The author is Roger Metcalf; the HP programs are his, and every change goes through a pull request he merges.
 
 ## How to work here cheaply
 
@@ -26,11 +26,11 @@ git clone --depth 1 https://github.com/JordiRigau/hp-prime-kit /tmp/kit/hp-prime
 export HPKIT=/tmp/kit/hp-prime-kit-HEAD              # the harness finds the kit here
 ```
 
-The gate (`tools/ppl_gate_v1d.py`) finds the kit only as a zip, `Community_Library/github/JordiRigau__hp-prime-kit.zip`, beside `tools/` or one folder up. Do not put it inside this repository: copy `tools/` to a scratch folder, zip the kit beside that copy, and run the gate from there, pointing it at `programs/`.
+The gate (`tools/ppl_gate_v1e.py`) finds the kit only as a zip, `Community_Library/github/JordiRigau__hp-prime-kit.zip`, beside `tools/` or one folder up. Do not put it inside this repository: copy `tools/` to a scratch folder, zip the kit beside that copy, and run the gate from there, pointing it at `programs/`.
 
 ## The checks
 
-- **Gate, before any paste**: `python3 ppl_gate_v1d.py NEW.txt [ORIGINAL.txt]`; every program in `programs/` passes. "PARSE FAIL" on the √ character, `#RRGGBB:24h` colours or forward declarations is the kit's limit, not an error; the kit linter's "0 errors" is the line that matters.
+- **Gate, before any paste**: `python3 ppl_gate_v1e.py NEW.txt [ORIGINAL.txt]`; every program in `programs/` passes. "PARSE FAIL" on the √ character, `#RRGGBB:24h` colours or forward declarations is the kit's limit, not an error; the kit linter's "0 errors" is the line that matters.
 - **Text overlap** (since 28 Oct 2026): `python3 tools/text_overlap_v1.py --run verify/verify_<Name>.py` or `--walk programs/<Name>.txt`; no firm overlaps, straddles or overruns on any page.
 - **Fleet names**: `python3 tools/fleet_names_v2.py programs/*.txt` (all programs share one pool of routine names on the calculator).
 - **Verify scripts**: the newest ones run from `verify/` as they are and read older versions from git: round 6's, one for each of the 11 programs it changed (`verify_<Name>_<version>.py`, 2 Nov 2026, night; BurrLab's beta 1k, never committed, sits beside them as `verify/BurrLab_beta1k.txt`), round 5's, one for each program, and before them `verify_StudRange_beta15f.py` and `verify_TrendTest_beta3g.py`. A round-5 script checks what round 5 changed, the commas, against the version before (`tools/comma_check_v1.py`); the program's earlier script still holds its arithmetic and dialog checks. The 19 October scripts hard-code the author's folders (`/home/claude/work/...`) and need files that are not in the repository; `verify/README.md` and `docs/dev/independent-review-2026-10-22.md` say what they need and what happened when they were rerun.

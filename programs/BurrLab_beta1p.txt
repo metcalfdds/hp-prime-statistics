@@ -14,7 +14,15 @@
 // hardware testing are Roger D. Metcalf's; the code, drafting and
 // source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
 
-// BurrLab - beta 1o  (5 Nov 2026, afternoon) -- Round 10, reasonable limits.
+// BurrLab - beta 1p  (7 Nov 2026, evening) -- the Family map and the tail shades on the G1.
+// beta 1p (7 Nov 2026, evening): two things Roger saw on the G1 (the first run of BurrLab on the
+//   hardware) in 2. Family tree.  The (C, K) map was a solid dark gray box: its border was a
+//   ONE-colour RECT_P, and a one-colour RECT_P fills (Lessons Learned s6); it painted over the
+//   three regions after they were drawn.  Four LINE_P draw the border now, and the region tints
+//   are deeper (the pale ones vanish on the G1's screen).  The tail shades in 1. Explore and
+//   3. How rare were half-transparent washes of pale tints, white on the G1; they are opaque now,
+//   in the tints themselves, and the curve is redrawn over the shade so its line stays whole.
+//   Nothing in the arithmetic changed.
 // beta 1o (5 Nov 2026, afternoon): Round 10: reasonable limits on what a student types (Roger, 5 Nov 2026: "cap everything at
 //   reasonable values"). The seed: 0 to 9,999, refused outside it.  "How rare is this?": x above 0 and
 //   at most 10,000, refused outside it (a value of 0 or less was ignored without a word).  A value
@@ -161,7 +169,7 @@
 //     plot box, grid, tick labels), rebuilt only when the window changes;
 //     G4 = G3 + the curve, markers, labels and status rows B, C, rebuilt
 //     when C, K, S or the view change; G1 = G4 + the x0 layer (the tail
-//     as ONE translucent FILLPOLY_P, the x0 line and dot, the title
+//     as ONE opaque FILLPOLY_P (beta 1p), the x0 line and dot, the title
 //     pieces, row A, the footer).  Markers are solid LINE_P verticals
 //     (no PIXON_P dots).  The curve is a run-merged polyline (bu_Curve):
 //     the same pixels as a segment per column, a third of the calls.
@@ -454,7 +462,8 @@ BEGIN
   buBLUE := #003CC8h; buMAG := #C800C8h; buRED := #FF0000h;
   buGRN := #008C3Ch; buORNG := #FF4500h; buGRAY := #5A5A5Ah;
   buFOOT := #1E90FFh; buGRID := #E1E4EBh; buLBLU := #AACDFFh;
-  buLORN := #FFF0DCh; buLGRN := #E8F6EBh; buLRED := #FFEBEBh;
+  // beta 1p: deeper tints; #FFF0DC, #E8F6EB and #FFEBEB were white on the G1's screen
+  buLORN := #FFDFB4h; buLGRN := #C8EBD2h; buLRED := #FFC8C8h;
   buSHD := #EBF2FFh; buBLK := #000000h; buWHT := #FFFFFFh;
   buYEL := #FFE000h; buPUR := #7030A0h; buTEAL := #008B8Bh;
   buGEQ := CHAR(8805); buLEQ := CHAR(8804); buTIMES := CHAR(215);
@@ -2930,7 +2939,7 @@ END;
 //        curve (one LINE_P per cached column), the three marker lines,
 //        the y labels, the cap note, the short moment case, status rows
 //        B and C -- rebuilt when C, K, S or the view change (buRe);
-//   G1 = G4 + the x0 layer: the tail shade (ONE FILLPOLY_P, translucent,
+//   G1 = G4 + the x0 layer: the tail shade (ONE FILLPOLY_P, opaque since beta 1p,
 //        over the curve), the x0 line and dot, the title pieces, status
 //        row A, the footer, the timing readout.
 // buFrX is the window G3 was built for; buBase = 1 when G4 is current.
@@ -3044,7 +3053,15 @@ BEGIN
   END;
   shP := CONCAT({buPL + shK0, bu_RowAt(shK0)}, SUB(buPts, 2 * shLo - 1, 2 * buNPt));
   shP := CONCAT(shP, {buPL + buNC, buPB - 1, buPL + shK0, buPB - 1});
-  FILLPOLY_P(G1, shP, shC, 128);
+  // beta 1p: opaque.  At alpha 128 the tint was half white already, and on the G1's screen
+  // the shade could not be seen.  The curve (always blue where a shade is drawn: Explore's
+  // pdf view and How rare) is redrawn over the shade from the x0 column to the right edge,
+  // so the fill does not eat the inside half of its line.
+  FILLPOLY_P(G1, shP, shC);
+  LINE_P(G1, buPL + shK0, bu_RowAt(shK0), buPts(2 * shLo - 1), buPts(2 * shLo), buBLUE);
+  FOR shMid FROM shLo TO buNPt - 1 DO
+    LINE_P(G1, buPts(2 * shMid - 1), buPts(2 * shMid), buPts(2 * shMid + 1), buPts(2 * shMid + 2), buBLUE);
+  END;
   RETURN 1;
 END;
 
@@ -3297,7 +3314,12 @@ BEGIN
   // C = 1 (column of log2 C = 0) and K = 1 (row of log2 K = 0)
   LINE_P(G2, 31, 0, 31, 91, buORNG);
   LINE_P(G2, 0, 61, 91, 61, buMAG);
-  RECT_P(G2, 0, 0, 91, 91, buGRAY);
+  // beta 1p: the border as four lines.  RECT_P(G2, 0, 0, 91, 91, buGRAY), one colour, FILLED
+  // the map dark gray (Lessons Learned s6), which is what Roger saw on the G1.
+  LINE_P(G2, 0, 0, 91, 0, buGRAY);
+  LINE_P(G2, 91, 0, 91, 91, buGRAY);
+  LINE_P(G2, 91, 91, 0, 91, buGRAY);
+  LINE_P(G2, 0, 91, 0, 0, buGRAY);
   TEXTOUT_P("no mean", G2, 40, 78, 1, buRED, 50);
   TEXTOUT_P("mean,SD", G2, 36, 4, 1, buGRN, 56);
   TEXTOUT_P("Lomax", G2, 33, 24, 1, buORNG, 40);
@@ -4617,7 +4639,7 @@ END;
 bu_Opening()
 BEGIN
   LOCAL opY;
-  bu_Frame("BurrLab beta 1o: the long right tail");
+  bu_Frame("BurrLab beta 1p: the long right tail");
   opY := bu_Para("A teaching lab for Statistics for Criminal Justice: what a heavy tail is, the Burr XII fitted to real criminal-justice data (BJS months served, Rossi weeks to re-arrest) and to the textbook Danish fire losses, and how it compares with the usual rivals.", 26, buBLK);
   opY := bu_Para("Touch: drag, tap, soft keys. Keys: arrows, +/-, 0, Enter = menu, Esc = back.", opY + 2, buGRAY);
   opY := bu_Para("DISCLAIMER: a teaching and demonstration aid. Not validated for forensic, clinical or legal use; do not rely on its results for legal purposes.", opY + 4, buRED);
