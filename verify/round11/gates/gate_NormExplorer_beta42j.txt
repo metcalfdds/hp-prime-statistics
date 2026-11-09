@@ -1,0 +1,46 @@
+======================================================================
+GATE  NormExplorer_beta42j.txt
+======================================================================
+1. hp-prime-kit lint: 0 error(s) (on a copy, 87 #PYTHON lines blanked)
+2. ppl_check_v5 tally: 5 E5, 15 W3
+   original:          5 E5, 9 W3
+   hard errors (E2/E3/E6/E8/E10/E11/E12): none
+3. lint_ppl (v4): 1489 checks, 69 problems
+     PROBLEM line 1224: block depth went negative
+     PROBLEM unbalanced blocks: final depth -1 (want 0)
+     PROBLEM line 2103: INPUT return discarded (cancel proceeds silently)
+     PROBLEM line 2392: INPUT return discarded (cancel proceeds silently)
+     PROBLEM line 2425: INPUT return discarded (cancel proceeds silently)
+     PROBLEM line 2452: INPUT return discarded (cancel proceeds silently)
+     PROBLEM line 2476: INPUT return discarded (cancel proceeds silently)
+     PROBLEM line 1276: LINE_P targets '26', not a GROB
+     PROBLEM line 3144: LINE_P targets '20', not a GROB
+     PROBLEM line 1273: RECT_P targets '0', not a GROB
+     PROBLEM line 1274: RECT_P targets '14', not a GROB
+     PROBLEM line 3141: RECT_P targets '0', not a GROB
+     PROBLEM line 3142: RECT_P targets '10', not a GROB
+     PROBLEM line 1275: TEXTOUT_P 2nd arg is '26', not a GROB
+     PROBLEM line 1277: TEXTOUT_P 2nd arg is '30', not a GROB
+     PROBLEM line 1278: TEXTOUT_P 2nd arg is '30', not a GROB
+     PROBLEM line 1279: TEXTOUT_P 2nd arg is '30', not a GROB
+     PROBLEM line 1280: TEXTOUT_P 2nd arg is '30', not a GROB
+     PROBLEM line 1282: TEXTOUT_P 2nd arg is '30', not a GROB
+     PROBLEM line 1284: TEXTOUT_P 2nd arg is '30', not a GROB
+     PROBLEM line 3143: TEXTOUT_P 2nd arg is '20', not a GROB
+     PROBLEM line 3146: TEXTOUT_P 2nd arg is '20', not a GROB
+     PROBLEM line 3147: TEXTOUT_P 2nd arg is '20', not a GROB
+     PROBLEM line 3148: TEXTOUT_P 2nd arg is '20', not a GROB
+     PROBLEM line 3149: TEXTOUT_P 2nd arg is '20', not a GROB
+     PROBLEM line 3151: TEXTOUT_P 2nd arg is '20', not a GROB
+     PROBLEM line 3154: TEXTOUT_P 2nd arg is '20', not a GROB
+     PROBLEM line 3157: TEXTOUT_P 2nd arg is '20', not a GROB
+     PROBLEM line 3164: TEXTOUT_P 2nd arg is '20', not a GROB
+     PROBLEM line 3167: TEXTOUT_P 2nd arg is '20', not a GROB
+     PROBLEM line 3170: TEXTOUT_P 2nd arg is '20', not a GROB
+     PROBLEM line 3171: TEXTOUT_P 2nd arg is '20', not a GROB
+     PROBLEM line 3172: TEXTOUT_P 2nd arg is '20', not a GROB
+     PROBLEM line 3176: TEXTOUT_P 2nd arg is '20', not a GROB
+4. full parse: PARSE FAIL PPLError: line 1095: unexpected character '√'
+   original:   PARSE FAIL PPLError: line 1090: unexpected character '√'
+5. fleet_names_v2 over 31 files (newest of each program): 31 files, 2362 routine names, 0 collisions, 0 untagged, 0 mixed-tag files, 0 built-in matches
+RESULT: PASS

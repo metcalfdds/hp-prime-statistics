@@ -1,10 +1,10 @@
 # Starter pack for the Virtual Calculator
 
-*v15, 2026-11-07. Built by `tools/make_starter_pack_v4.py` from `programs/`; do not edit this page by hand.*
+*v16, 2026-11-09. Built by `tools/make_starter_pack_v4.py` from `programs/`; do not edit this page by hand.*
 
-All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** on a Windows PC: no Connectivity Kit, no copying and pasting. Download **[HP_Prime_Statistics_Starter_Pack_v15.zip](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v15.zip)** (one file).
+All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** on a Windows PC: no Connectivity Kit, no copying and pasting. Download **[HP_Prime_Statistics_Starter_Pack_v16.zip](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v16.zip)** (one file).
 
-*How this pack was tested on the Virtual Calculator: [docs/changes/StarterPack_v15_NOTES.md](../docs/changes/StarterPack_v15_NOTES.md).*
+*How this pack was tested on the Virtual Calculator: [docs/changes/StarterPack_v16_NOTES.md](../docs/changes/StarterPack_v16_NOTES.md).*
 
 ### What you need
 - A Windows PC with the HP Prime Virtual Calculator (64-bit). It is a free download from hpcalc.org, which lists Hewlett-Packard as its author. The pack was tested on the Virtual Calculator 2.4.2 (build 2026-09-09), 64-bit.
@@ -36,37 +36,37 @@ All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** o
 
 | Program | Version | Lines | In Home, type | Notes | Source checksum |
 |---|---|---|---|---|---|
-| AgreeLab | beta 1f | 3,058 | `AgreeLab` |  | `8535f0cf59e0` |
-| AnovaLab | beta 1e | 3,859 | `AnovaLab` |  | `e213819ded6a` |
-| BayesTree | beta 8i | 3,438 | `BayesTree` |  | `8cbf7caaeb58` |
-| BiNorm3D | beta 1e | 1,279 | `BiNorm3D` |  | `7331fb308b55` |
-| BurrLab | beta 1p | 4,701 | `BurrLab` | MicroPython | `3ecbd3f664db` |
-| CICatcher | beta 2h | 2,195 | `CICatcher` |  | `02902bfc2153` |
-| CentralLimit | beta 3f | 2,782 | (an app) | app on Statistics 1Var | `d4083c5414cf` |
-| ChiTable | beta 3k | 3,707 | `ChiTable` |  | `156aedad27bb` |
-| DNAMixLR | beta 3i | 3,470 | `DNAMixLR` |  | `2b5de17f1bc2` |
-| DataLoad | beta 1e | 1,084 | `DATALOAD` |  | `6025099152ad` |
-| EpiStats | v1.7j | 6,271 | `EpiStats` |  | `c695200ba3a9` |
-| ErrorRate | beta 1i | 2,860 | `ErrorRate` | MicroPython | `46bee1b228ed` |
-| ExhibitLab | beta 1f | 2,891 | `ExhibitLab` |  | `094b6b93a042` |
-| FitCheck | beta 1e | 3,343 | `FitCheck` |  | `360488bfb92d` |
-| GaltonBoard | beta 3h | 2,533 | `GaltonBoard` | MicroPython | `d59b84a38892` |
-| Norm3 | v2.4f | 1,120 | `Norm3` |  | `e186544cee9a` |
-| NormExplorer | beta 42i | 4,223 | `NormExp` | MicroPython | `10a3ccacc5b3` |
-| PowerViz | v2.5q | 4,161 | `POWERVIZ` |  | `5300739d2344` |
-| RankLab | beta 1f | 3,829 | `RankLab` |  | `8dde0d82d575` |
-| ResampLab | beta 1g | 3,039 | `ResampLab` |  | `ffe518dd5dc9` |
-| RiskLab | beta 1e | 3,166 | `RiskLab` |  | `4a55de6dde4a` |
-| SampDist | v2.3i | 1,931 | `SampDist` |  | `673e9ccff429` |
-| ScatterLab | beta 2i | 2,434 | `ScatterLab` |  | `a07eb77f874f` |
-| StatDist | v2.7k | 5,089 | `StatDist` |  | `2d5ee4034d6d` |
-| StudRange | beta 15l | 2,735 | `StudRange` | MicroPython | `038e4d8f3654` |
-| SurvLab | beta 1e | 2,738 | `SurvLab` |  | `54b8f6a74c33` |
-| TDist3D | beta 1 | 1,163 | `TDist3D` |  | `c7890f5b211d` |
-| TTestLabG | beta 1f | 1,471 | `TTESTLABG` |  | `8c4496e259fd` |
-| TTestLab | beta 1h | 1,496 | `TTESTLAB` |  | `03da2aa66b91` |
-| TestChooser | beta 2f | 1,913 | `TestChooser` |  | `26a859337ebe` |
-| TrendTest | beta 3l | 2,283 | `TrendTest` |  | `8d6be7847faf` |
+| AgreeLab | beta 1g | 3,062 | `AgreeLab` |  | `b6906cd2cfb1` |
+| AnovaLab | beta 1f | 3,869 | `AnovaLab` |  | `73636e53493d` |
+| BayesTree | beta 8j | 3,446 | `BayesTree` |  | `762c4a0de095` |
+| BiNorm3D | beta 1f | 1,282 | `BiNorm3D` |  | `e3da40166171` |
+| BurrLab | beta 1q | 4,712 | `BurrLab` | MicroPython | `efaa895d783a` |
+| CICatcher | beta 2i | 2,194 | `CICatcher` |  | `a4bc79d6056c` |
+| CentralLimit | beta 3g | 2,788 | (an app) | app on Statistics 1Var | `502640fe6456` |
+| ChiTable | beta 3l | 3,720 | `ChiTable` |  | `b86ebd200acb` |
+| DNAMixLR | beta 3j | 3,471 | `DNAMixLR` |  | `349a8cc1899c` |
+| DataLoad | beta 1f | 1,089 | `DATALOAD` |  | `61fd85695761` |
+| EpiStats | v1.7k | 6,275 | `EpiStats` |  | `373769909c5c` |
+| ErrorRate | beta 1j | 2,857 | `ErrorRate` | MicroPython | `cda5cb9c2b2d` |
+| ExhibitLab | beta 1g | 2,889 | `ExhibitLab` |  | `09dc494a2d16` |
+| FitCheck | beta 1f | 3,349 | `FitCheck` |  | `e43983ef6b49` |
+| GaltonBoard | beta 3i | 2,533 | `GaltonBoard` | MicroPython | `d9c1bb807fcc` |
+| Norm3 | v2.4g | 1,125 | `Norm3` |  | `e45ead59d4df` |
+| NormExplorer | beta 42j | 4,228 | `NormExp` | MicroPython | `86d9dfd7e9d1` |
+| PowerViz | v2.5r | 4,184 | `POWERVIZ` |  | `b0be46d986d1` |
+| RankLab | beta 1g | 3,825 | `RankLab` |  | `0862a46f0106` |
+| ResampLab | beta 1h | 3,045 | `ResampLab` |  | `3fab54ee41a1` |
+| RiskLab | beta 1f | 3,160 | `RiskLab` |  | `6128c64c8133` |
+| SampDist | v2.3j | 1,930 | `SampDist` |  | `38b2bb9b724e` |
+| ScatterLab | beta 2j | 2,436 | `ScatterLab` |  | `8d4144c5958d` |
+| StatDist | v2.7l | 5,089 | `StatDist` |  | `c34b446f83e4` |
+| StudRange | beta 15m | 2,750 | `StudRange` | MicroPython | `cb1b060d6f83` |
+| SurvLab | beta 1f | 2,741 | `SurvLab` |  | `9ed223b72643` |
+| TDist3D | beta 1a | 1,164 | `TDist3D` |  | `f370e341f4e6` |
+| TTestLabG | beta 1g | 1,478 | `TTESTLABG` |  | `ab792d637b46` |
+| TTestLab | beta 1i | 1,503 | `TTESTLAB` |  | `dd90c795f2e3` |
+| TestChooser | beta 2g | 1,914 | `TestChooser` |  | `e790d3eadf7d` |
+| TrendTest | beta 3m | 2,289 | `TrendTest` |  | `d14cbccef5d7` |
 
 *The checksum is the first 12 hex digits of SHA-256 over the program's source (line endings made LF, trailing blank lines dropped): the file in `programs/` it was built from. Every file in the zip was read back and matched its source before the zip was written.*
 

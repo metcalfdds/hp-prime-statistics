@@ -1,0 +1,15 @@
+======================================================================
+GATE  ScatterLab_beta2j.txt
+======================================================================
+1. hp-prime-kit lint: 0 error(s)
+2. ppl_check_v5 tally: 3 W3
+   original:          3 W3
+   hard errors (E2/E3/E6/E8/E10/E11/E12): none
+3. lint_ppl (v4): 1455 checks, 9 problems
+     PROBLEM line 1850: assignment to 'cxE' concatenates bare 'cxY' - formatting would follow the user's Home number setting
+     PROBLEM line 1850: assignment to 'cxE' concatenates bare 'cxX' - formatting would follow the user's Home number setting
+     PROBLEM line 1921: assignment to 'cfS' concatenates bare 'cfF' - formatting would follow the user's Home number setting
+4. full parse: PARSE FAIL PPLError: <ppl>:326: expected a name after EXPORT
+   original:   PARSE FAIL PPLError: <ppl>:321: expected a name after EXPORT
+5. fleet_names_v2 over 31 files (newest of each program): 31 files, 2362 routine names, 0 collisions, 0 untagged, 0 mixed-tag files, 0 built-in matches
+RESULT: PASS

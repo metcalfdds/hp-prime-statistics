@@ -1,0 +1,15 @@
+======================================================================
+GATE  StudRange_beta15m.txt
+======================================================================
+1. hp-prime-kit lint: 0 error(s) (on a copy, 405 #PYTHON lines blanked)
+2. ppl_check_v5 tally: clean
+   original:          clean
+   hard errors (E2/E3/E6/E8/E10/E11/E12): none
+3. lint_ppl (v4): 1168 checks, 18 problems
+     PROBLEM line 983: block depth went negative
+     PROBLEM unbalanced blocks: final depth -1 (want 0)
+     PROBLEM line 1218: LINE_P targets 'dvG', not a GROB
+4. full parse: PARSE FAIL PPLError: <ppl>:451: expected KW, found OP ';'
+   original:   PARSE FAIL PPLError: <ppl>:445: expected KW, found OP ';'
+5. fleet_names_v2 over 31 files (newest of each program): 31 files, 2362 routine names, 0 collisions, 0 untagged, 0 mixed-tag files, 0 built-in matches
+RESULT: PASS

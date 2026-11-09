@@ -1,0 +1,59 @@
+======================================================================
+GATE  TestChooser_beta2g.txt
+======================================================================
+1. hp-prime-kit lint: 0 error(s)
+2. ppl_check_v5 tally: 14 W3
+   original:          1 W3
+   hard errors (E2/E3/E6/E8/E10/E11/E12): none
+3. lint_ppl (v4): 1058 checks, 52 problems
+     PROBLEM line 852: LINE_P targets 'bxG', not a GROB
+     PROBLEM line 853: LINE_P targets 'bxG', not a GROB
+     PROBLEM line 854: LINE_P targets 'bxG', not a GROB
+     PROBLEM line 855: LINE_P targets 'bxG', not a GROB
+     PROBLEM line 903: LINE_P targets 'ptG', not a GROB
+     PROBLEM line 909: LINE_P targets 'ptG', not a GROB
+     PROBLEM line 910: LINE_P targets 'ptG', not a GROB
+     PROBLEM line 921: LINE_P targets 'ptG', not a GROB
+     PROBLEM line 922: LINE_P targets 'ptG', not a GROB
+     PROBLEM line 923: LINE_P targets 'ptG', not a GROB
+     PROBLEM line 924: LINE_P targets 'ptG', not a GROB
+     PROBLEM line 925: LINE_P targets 'ptG', not a GROB
+     PROBLEM line 926: LINE_P targets 'ptG', not a GROB
+     PROBLEM line 927: LINE_P targets 'ptG', not a GROB
+     PROBLEM line 939: LINE_P targets 'ptG', not a GROB
+     PROBLEM line 940: LINE_P targets 'ptG', not a GROB
+     PROBLEM line 941: LINE_P targets 'ptG', not a GROB
+     PROBLEM line 942: LINE_P targets 'ptG', not a GROB
+     PROBLEM line 943: LINE_P targets 'ptG', not a GROB
+     PROBLEM line 944: LINE_P targets 'ptG', not a GROB
+     PROBLEM line 888: RECT_P targets 'ptG', not a GROB
+     PROBLEM line 892: RECT_P targets 'ptG', not a GROB
+     PROBLEM line 893: RECT_P targets 'ptG', not a GROB
+     PROBLEM line 896: RECT_P targets 'ptG', not a GROB
+     PROBLEM line 897: RECT_P targets 'ptG', not a GROB
+     PROBLEM line 898: RECT_P targets 'ptG', not a GROB
+     PROBLEM line 901: RECT_P targets 'ptG', not a GROB
+     PROBLEM line 902: RECT_P targets 'ptG', not a GROB
+     PROBLEM line 906: RECT_P targets 'ptG', not a GROB
+     PROBLEM line 907: RECT_P targets 'ptG', not a GROB
+     PROBLEM line 908: RECT_P targets 'ptG', not a GROB
+     PROBLEM line 913: RECT_P targets 'ptG', not a GROB
+     PROBLEM line 914: RECT_P targets 'ptG', not a GROB
+     PROBLEM line 915: RECT_P targets 'ptG', not a GROB
+     PROBLEM line 916: RECT_P targets 'ptG', not a GROB
+     PROBLEM line 917: RECT_P targets 'ptG', not a GROB
+     PROBLEM line 918: RECT_P targets 'ptG', not a GROB
+     PROBLEM line 930: RECT_P targets 'ptG', not a GROB
+     PROBLEM line 931: RECT_P targets 'ptG', not a GROB
+     PROBLEM line 934: RECT_P targets 'ptG', not a GROB
+     PROBLEM line 935: RECT_P targets 'ptG', not a GROB
+     PROBLEM line 936: RECT_P targets 'ptG', not a GROB
+     PROBLEM line 1383: RECT_P targets 'cdG', not a GROB
+     PROBLEM line 871: PIXON_P targets 'htG', not a GROB
+     PROBLEM line 889: PIXON_P targets 'ptG', not a GROB
+     PROBLEM line 1388: TEXTOUT_P 2nd arg is 'cdG', not a GROB
+     PROBLEM line 1389: TEXTOUT_P 2nd arg is 'cdG', not a GROB
+4. full parse: PARSE FAIL PPLError: <ppl>:229: expected a name after EXPORT
+   original:   PARSE FAIL PPLError: <ppl>:224: expected a name after EXPORT
+5. fleet_names_v2 over 31 files (newest of each program): 31 files, 2362 routine names, 0 collisions, 0 untagged, 0 mixed-tag files, 0 built-in matches
+RESULT: PASS

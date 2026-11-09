@@ -1,0 +1,51 @@
+Virtual Calculator 2.4.2 (build 2026-09-09), cloud workspace (Wine), 9 Nov 2026.
+Program Catalog > Edit > Check; the editor's title and the message read from the screen by OCR (DNAMixLR's title OCR'd as "DNAMiIxLR").
+
+First pass, all 30 programs as built, in catalog order (ck10.sh):
+AgreeLab      No errors in the program
+EpiStats      No errors in the program
+BayesTree     No errors in the program
+Norm3         No errors in the program
+CICatcher     No errors in the program
+StatDist      No errors in the program
+NormExplorer  No errors in the program
+SampDist      No errors in the program
+ScatterLab    No errors in the program
+ChiTable      No errors in the program
+RiskLab       No errors in the program
+ErrorRate     No errors in the program
+DNAMixLR      No errors in the program
+SurvLab       No errors in the program
+GaltonBoard   No errors in the program
+ResampLab     No errors in the program
+FitCheck      No errors in the program
+TTestLab      No errors in the program
+TrendTest     No errors in the program
+TestChooser   No errors in the program
+StudRange     No errors in the program
+BiNorm3D      No errors in the program
+TTestLabG     No errors in the program
+PowerViz      No errors in the program
+RankLab       No errors in the program
+DataLoad      No errors in the program
+ExhibitLab    No errors in the program
+AnovaLab      No errors in the program
+TDist3D       No errors in the program
+BurrLab       No errors in the program
+
+RiskLab beta 1f and ResampLab beta 1h again, after their opening screens' dates were set to 9 Nov 2026:
+RiskLab       No errors in the program
+ResampLab     No errors in the program
+
+Fresh copies of the four programs whose help pages had been opened (so the checked files carry no run's values),
+BurrLab with its new page titles, and the app (Check on "CentralLimit (App)"):
+CentralLimit  No errors in the program
+BurrLab       No errors in the program
+ChiTable      No errors in the program
+BayesTree     No errors in the program
+StudRange     No errors in the program
+
+TTestLab beta 1i, TTestLabG beta 1g and StudRange beta 15m again, after "t crit" and "q crit" were kept whole on one line:
+TTestLabG     No errors in the program
+TTestLab      No errors in the program
+StudRange     No errors in the program

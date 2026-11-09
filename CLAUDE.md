@@ -4,7 +4,7 @@ These notes, like the Lessons Learned, were written with and for Claude Code and
 
 ## What this is
 
-Thirty-one teaching programs for the HP Prime calculator in PPL (five carry MicroPython), each a plain `.txt` file in `programs/`, and the HP Prime Data Loader web page (`data-loader/`) that feeds one of them, DataLoad; with a four-tool gate, a PC harness, one verify script per program version, a change note and device checklist per version, and the Lessons Learned document on how the Prime actually behaves. Read `START_HERE.md`, then `docs/lessons-learned_v7zo.md` (or the newest letter) before writing any PPL. The author is Roger Metcalf; the HP programs are his, and every change goes through a pull request he merges.
+Thirty-one teaching programs for the HP Prime calculator in PPL (five carry MicroPython), each a plain `.txt` file in `programs/`, and the HP Prime Data Loader web page (`data-loader/`) that feeds one of them, DataLoad; with a four-tool gate, a PC harness, one verify script per program version, a change note and device checklist per version, and the Lessons Learned document on how the Prime actually behaves. Read `START_HERE.md`, then `docs/lessons-learned_v7zq.md` (or the newest letter) before writing any PPL. The author is Roger Metcalf; the HP programs are his, and every change goes through a pull request he merges.
 
 ## How to work here cheaply
 

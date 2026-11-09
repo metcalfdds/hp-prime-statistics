@@ -1,0 +1,28 @@
+// GlyphProbe_v1 -- Round 11 (9 Nov 2026): TEXTOUT_P's own width of every character the help pages use,
+// fonts 1, 2 and 3, and six whole lines to check that a line is the sum of its characters.
+// Results: M9, one row per character (code, width in font 1, 2, 3), then one row per test line (0, widths).
+// Roger D. Metcalf & Claude.
+EXPORT GlyphProbe()
+BEGIN
+  LOCAL gc, gt, gn, gi, gf, gw, gm;
+  gc := {32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,176,177,178,183,215,233,375,563,945,946,952,955,956,957,961,963,966,967,8212,8320,8321,8322,8328,8592,8593,8594,8595,8645,8646,8722,8730,8734,8800,8804,8805,57344,57345};
+  gt := {"TTestLab help 1/2: Keys", "Left / Right = the step before / the next step", "Tap the chosen key again for the usual:", "q = ("+CHAR(57344)+"max - "+CHAR(57344)+"min)/"+CHAR(8730)+"(MSE/m)", "Hatched cells: tests the Prime does not run (use R or JMP).", "AgreeLab help 2/9: SE, CI and the test"};
+  gn := SIZE(gc);
+  gm := gn + SIZE(gt);
+  M9 := MAKEMAT(0, gm, 4);
+  DIMGROB_P(G1, 640, 40, #FFFFFFh);
+  FOR gi FROM 1 TO gn DO
+    M9(gi, 1) := gc(gi);
+    FOR gf FROM 1 TO 3 DO
+      gw := TEXTOUT_P(CHAR(gc(gi)), G1, 0, 0, gf, #000000h);
+      M9(gi, gf + 1) := gw;
+    END;
+  END;
+  FOR gi FROM 1 TO SIZE(gt) DO
+    FOR gf FROM 1 TO 3 DO
+      gw := TEXTOUT_P(gt(gi), G1, 0, 0, gf, #000000h);
+      M9(gn + gi, gf + 1) := gw;
+    END;
+  END;
+  RETURN gm;
+END;

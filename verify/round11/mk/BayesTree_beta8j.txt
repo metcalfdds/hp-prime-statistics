@@ -1,0 +1,2 @@
+BayesTree_beta8j.txt  BayesTree(): 1000 runs, 120 events each, 790 s
+  OK       1000

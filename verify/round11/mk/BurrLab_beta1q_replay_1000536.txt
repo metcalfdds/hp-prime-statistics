@@ -1,0 +1,84 @@
+{
+ "seed": 1000536,
+ "verdict": "OK",
+ "detail": "",
+ "lists": "unequal+M1 zeros",
+ "secs": 13.33,
+ "dialogs": 30,
+ "screens": 5000,
+ "result": "BurrLab: Danish fire losses: all 2,156 in 60 log bins: Burr XII C = 1.138, K = 1",
+ "trace": [
+  [
+   "choose",
+   "BurrLab: the Burr XII",
+   8,
+   6
+  ],
+  [
+   "choose",
+   "BurrLab: the Burr XII",
+   8,
+   4
+  ],
+  [
+   "choose",
+   "BurrLab: the Burr XII",
+   8,
+   4
+  ],
+  [
+   "choose",
+   "BurrLab: the Burr XII",
+   8,
+   4
+  ],
+  [
+   "choose",
+   "BurrLab: the Burr XII",
+   8,
+   6
+  ],
+  [
+   "choose",
+   "BurrLab: the Burr XII",
+   8,
+   3
+  ],
+  [
+   "choose",
+   "Fit the Burr XII to",
+   8,
+   8
+  ],
+  [
+   "choose",
+   "BurrLab: the Burr XII",
+   8,
+   7
+  ],
+  [
+   "choose",
+   "BurrLab: the Burr XII",
+   8,
+   1
+  ],
+  [
+   "choose",
+   "BurrLab: the Burr XII",
+   8,
+   6
+  ],
+  [
+   "choose",
+   "BurrLab: the Burr XII",
+   8,
+   1
+  ],
+  [
+   "choose",
+   "BurrLab: the Burr XII",
+   8,
+   8
+  ]
+ ]
+}

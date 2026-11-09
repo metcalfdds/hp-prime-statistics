@@ -1,0 +1,159 @@
+{
+ "StudRange": {
+  "screens": 5,
+  "problems": []
+ },
+ "TTestLab": {
+  "screens": 2,
+  "problems": []
+ },
+ "TTestLabG": {
+  "screens": 2,
+  "problems": []
+ },
+ "AgreeLab": {
+  "screens": 9,
+  "problems": [
+   "AgreeLab help 7/9: Bland-Altma: OVERLAP 'd' (y 59) / ', the mean difference; limits ' (y 59)"
+  ]
+ },
+ "AnovaLab": {
+  "screens": 9,
+  "problems": []
+ },
+ "TDist3D": {
+  "screens": 4,
+  "problems": []
+ },
+ "BiNorm3D": {
+  "screens": 5,
+  "problems": []
+ },
+ "CentralLimit": {
+  "screens": 3,
+  "problems": []
+ },
+ "ChiTable": {
+  "screens": 6,
+  "problems": []
+ },
+ "GaltonBoard": {
+  "screens": 3,
+  "problems": []
+ },
+ "TrendTest": {
+  "screens": 3,
+  "problems": []
+ },
+ "SampDist": {
+  "screens": 2,
+  "problems": []
+ },
+ "NormExplorer": {
+  "screens": 3,
+  "problems": []
+ },
+ "DNAMixLR": {
+  "screens": 4,
+  "problems": []
+ },
+ "ScatterLab": {
+  "screens": 6,
+  "problems": []
+ },
+ "DataLoad": {
+  "screens": 3,
+  "problems": []
+ },
+ "PowerViz": {
+  "screens": 7,
+  "problems": []
+ },
+ "TestChooser": {
+  "screens": 2,
+  "problems": []
+ },
+ "Norm3": {
+  "screens": 1,
+  "problems": [
+   "Norm3 help: Touch and keys: OVERLAP '-4' (y 194) / 'Blue = P(X ≤ x₀), light red = ' (y 190)",
+   "Norm3 help: Touch and keys: OVERLAP '-4' (y 194) / 'The pdf is a HEIGHT, not a pro' (y 202)",
+   "Norm3 help: Touch and keys: OVERLAP '-3' (y 194) / 'Blue = P(X ≤ x₀), light red = ' (y 190)",
+   "Norm3 help: Touch and keys: OVERLAP '-3' (y 194) / 'The pdf is a HEIGHT, not a pro' (y 202)",
+   "Norm3 help: Touch and keys: OVERLAP '-2' (y 194) / 'Blue = P(X ≤ x₀), light red = ' (y 190)",
+   "Norm3 help: Touch and keys: OVERLAP '-2' (y 194) / 'The pdf is a HEIGHT, not a pro' (y 202)",
+   "Norm3 help: Touch and keys: OVERLAP '-1' (y 194) / 'Blue = P(X ≤ x₀), light red = ' (y 190)",
+   "Norm3 help: Touch and keys: OVERLAP '-1' (y 194) / 'The pdf is a HEIGHT, not a pro' (y 202)",
+   "Norm3 help: Touch and keys: OVERLAP '0' (y 194) / 'Blue = P(X ≤ x₀), light red = ' (y 190)",
+   "Norm3 help: Touch and keys: OVERLAP '0' (y 194) / 'The pdf is a HEIGHT, not a pro' (y 202)",
+   "Norm3 help: Touch and keys: OVERLAP '0.1' (y 160) / 'Esc = quit' (y 162)",
+   "Norm3 help: Touch and keys: OVERLAP '0.2' (y 134) / 'KEYS' (y 126)",
+   "Norm3 help: Touch and keys: OVERLAP '0.2' (y 134) / 'Soft keys: μ− μ+ σ− σ+, View (' (y 138)",
+   "Norm3 help: Touch and keys: OVERLAP '0.3' (y 107) / 'Press on the green dotted μ li' (y 110)",
+   "Norm3 help: Touch and keys: OVERLAP '0.4' (y 81) / 'Press ON the magenta S-curve, ' (y 74)",
+   "Norm3 help: Touch and keys: OVERLAP '0.4' (y 81) / '  is that height, and x₀ is th' (y 86)",
+   "Norm3 help: Touch and keys: OVERLAP '0.5' (y 54) / '  the magenta point. When you ' (y 50)",
+   "Norm3 help: Touch and keys: OVERLAP '0.5' (y 54) / '  nearest round value.' (y 62)",
+   "Norm3 help: Touch and keys: OVERLAP 'x' (y 194) / 'Blue = P(X ≤ x₀), light red = ' (y 190)",
+   "Norm3 help: Touch and keys: OVERLAP 'x' (y 194) / 'The pdf is a HEIGHT, not a pro' (y 202)",
+   "Norm3 help: Touch and keys: OVERLAP 'z' (y 204) / 'The pdf is a HEIGHT, not a pro' (y 202)",
+   "Norm3 help: Touch and keys: OVERLAP '-3' (y 204) / 'The pdf is a HEIGHT, not a pro' (y 202)",
+   "Norm3 help: Touch and keys: OVERLAP '-2' (y 204) / 'The pdf is a HEIGHT, not a pro' (y 202)",
+   "Norm3 help: Touch and keys: OVERLAP '-1' (y 204) / 'The pdf is a HEIGHT, not a pro' (y 202)",
+   "Norm3 help: Touch and keys: OVERLAP '0' (y 204) / 'The pdf is a HEIGHT, not a pro' (y 202)",
+   "Norm3 help: Touch and keys: OVERLAP 'Normal  μ = 0.000, σ = 1.000' (y 1) / 'Norm3 help: Touch and keys' (y 6)",
+   "Norm3 help: Touch and keys: OVERLAP 'x₀ = 1.96, z = 1.96, pdf = 0.0' (y 11) / 'Norm3 help: Touch and keys' (y 6)",
+   "Norm3 help: Touch and keys: OVERLAP 'P(X ≤ x₀) = 0.9750' (y 24) / 'TOUCH (in the plot)' (y 26)"
+  ]
+ },
+ "RiskLab": {
+  "screens": 8,
+  "problems": []
+ },
+ "SurvLab": {
+  "screens": 5,
+  "problems": []
+ },
+ "CICatcher": {
+  "screens": 6,
+  "problems": []
+ },
+ "ErrorRate": {
+  "screens": 10,
+  "problems": []
+ },
+ "ExhibitLab": {
+  "screens": 8,
+  "problems": []
+ },
+ "EpiStats": {
+  "screens": 15,
+  "problems": []
+ },
+ "StatDist": {
+  "screens": 4,
+  "problems": [
+   "call st_ABHelp: st_ABHelp takes 1 arguments, got 0"
+  ]
+ },
+ "RankLab": {
+  "screens": 7,
+  "problems": []
+ },
+ "BayesTree": {
+  "screens": 5,
+  "problems": []
+ },
+ "BurrLab": {
+  "screens": 6,
+  "problems": []
+ },
+ "ResampLab": {
+  "screens": 5,
+  "problems": []
+ },
+ "FitCheck": {
+  "screens": 8,
+  "problems": []
+ }
+}

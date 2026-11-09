@@ -1,0 +1,6 @@
+BurrLab_beta1q.txt  BurrLab(): 1000 runs, 120 events each, 1212 s
+  OK       971
+  FREEZE   1
+  HARNESS  28
+  HARNESS x28: RANDSEED is on HP's list of names and is not covered   e.g. --replay 1000008
+  FREEZE x1: no end after 20 s   e.g. --replay 1000536

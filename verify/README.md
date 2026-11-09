@@ -11,6 +11,8 @@ One script per program version, named `verify_<Program>_<version>.py`. Each one 
 
 **The 19 October 2026 versions** (BayesTree beta 8e, BiNorm3D beta 1a, Burr3 v2.4b, CICatcher beta 2c, CentralLimit beta 3c, ChiTable beta 3d, DNAMixLR beta 3c, EpiStats v1.7d, ErrorRate beta 1d, Norm3 v2.4b, NormExplorer beta 42a, PowerViz v2.5d, SampDist v2.3b, ScatterLab beta 2c, StatDist v2.7e, StudRange beta 15d, TestChooser beta 2a, TrendTest beta 3d) import `ppl_run_v3e`. Each also runs, as a regression test, the independent check script written for that program by the fleet review of 19 October 2026: the checks that failed on the old version pass on the new one, and the script shows the old version failing them. Every one of these scripts was re-run in a separate folder after it was written, with the same result. GaltonBoard beta 3d changes only its header, so beta 3c's script stands.
 
+**`round11/`** (9 November 2026): round 11, the help pages of all 31 programs in plain words. A wording round has no new arithmetic to verify, so its checks are of the text itself: the old help with the approved changes applied against the new, word for word; every help screen laid out at the calculator's own glyph widths (measured on the Virtual Calculator by `round11/GlyphProbe_v1.txt`), with nothing cut and nothing overlapping; and the routines each version touches. The build, the checks, their results and the Virtual Calculator's screens are in the folder; its `README.md` says what each file is.
+
 Where a script's output was saved, it sits beside the script as `*_output.txt`. The same output is quoted in the program's file in `docs/changes/`.
 
 **These scripts ran in the development environment, and most of them name its folders at the top:**

@@ -1,0 +1,12 @@
+======================================================================
+GATE  DataLoad_beta1f.txt
+======================================================================
+1. hp-prime-kit lint: 0 error(s)
+2. ppl_check_v5 tally: 20 E1, 108 E7, 1 E9, 2 W3
+   original:          20 E1, 108 E7, 1 E9
+   hard errors (E2/E3/E6/E8/E10/E11/E12): none
+3. lint_ppl (v4): 559 checks, 4 problems
+4. full parse: PARSE FAIL PPLError: <ppl>:130: expected a name after EXPORT
+   original:   PARSE FAIL PPLError: <ppl>:125: expected a name after EXPORT
+5. fleet_names_v2 over 31 files (newest of each program): 31 files, 2362 routine names, 0 collisions, 0 untagged, 0 mixed-tag files, 0 built-in matches
+RESULT: PASS
