@@ -1,0 +1,130 @@
+T. The tables
+   Willems: cells where the PDF text layer differs from the page image:
+     Table 2 (girls), First bicuspid, stage A: image -0.95, text layer '\x020.95'
+     Table 2 (girls), First bicuspid, stage B: image -0.15, text layer '\x020.15'
+     Table 2 (girls), Second bicuspid, stage A: image -0.19, text layer '\x020.19'
+   Liversidge Table X: 38 rows in the text layer, 38 in the image transcription; 0 cells differ
+   Liversidge Table IX: 37 rows in the text layer, 37 in the image transcription; 0 cells differ
+   Willems column sums: all seven at G 11.74 / 11.74, at H 16.03 / 15.79 (boys / girls)
+   Table X girls-and-boys SE against SD/sqrt(ng + nb): 1 of 38 off by more than rounding: [('I1 E', 'c', 0.91, 725, 0.04, 0.0338)] (the text layer prints the same; the pooled SE is the paper's own, not used by FDAES)
+   Table IX sex-difference column against boys minus girls: 1 row(s) disagree: P1 G (printed 0.96, means differ by 0.69; the paper's own misprint, row not used)
+   Willems 2001 as transcribed (boys | girls), stages A-H; ... = no score:
+     Central incisor    ...   ...  1.68  1.49   1.5  1.86  2.07  2.19 |   ...   ...  1.83  2.19  2.34  2.82  3.19  3.14
+     Lateral incisor    ...   ...  0.55  0.63  0.74  1.08  1.32  1.64 |   ...   ...   ...  0.29  0.32  0.49  0.79   0.7
+     Canine             ...   ...   ...  0.04  0.31  0.47  1.09   1.9 |   ...   ...   0.6  0.54  0.62  1.08  1.72     2
+     First bicuspid    0.15  0.56  0.75  1.11  1.48  2.03  2.43  2.83 | -0.95 -0.15  0.16  0.41   0.6  1.27  1.58  2.19
+     Second bicuspid   0.08  0.05  0.12  0.27  0.33  0.45   0.4  1.15 | -0.19  0.01  0.27  0.17  0.35  0.35  0.55  1.51
+     First molar        ...   ...   ...  0.69  1.14   1.6  1.95  2.15 |   ...   ...   ...  0.62   0.9  1.56  1.82  2.21
+     Second molar      0.18  0.48  0.71   0.8  1.31     2  2.48  4.17 |  0.14  0.11  0.21  0.32  0.66  1.28  2.09  4.04
+N. The numbers: the program's routines against the independent implementation
+   1000 stagings x 3 sexes; with a Willems age: [490, 502, 514] (sex 0, 1, 2); with a Liversidge estimate: [993, 993, 993]
+U. The screens: full sessions in the harness
+   147 full sessions (60 random, 29 edge stagings x 3 sexes)
+E. The worked examples
+   by hand: (7.49 + 12.02 + 8.35)/3 = 9.2867; sqrt(0.95^2 + 1.33^2 + 1.05^2)/3 = 0.6476; (0.95 + 1.33 + 1.05)/3 = 1.1100
+P. The pool: labels and numbers
+   labels stored in the pool: ['Bang-Ramm', 'Johanson', 'Lamendin', 'Liversidge 2006', 'P-U 2002', 'Willems 2001']; labels the forest plot colours: ['Bang-Ramm', 'Johanson', 'Lamendin', 'Liversidge 2006', 'P-U 2002', 'Willems 2001']
+B. The verdict band (Roger's D1): cut-points 5% and 95%, printed in the band
+   the rule implemented: P(age >= 18) as printed (rounded to 0.1 %%): >= 95.0 green "probably >= 18", <= 5.0 red "probably < 18", otherwise orange "uncertain"; both ends inclusive, so exactly 0.95 is green and exactly 0.05 red; "< 0.1" counts as 0 and "> 99.9" as 100.
+     P = 0.949  v3.8a "likely >= 18  P(age >= 18) = 94.9%"  ->  v3.9 "uncertain | P(age >= 18) = 94.9%  (cut-points 5% and 95%)"
+     P = 0.95   v3.8a "likely >= 18  P(age >= 18) = 95.0%"  ->  v3.9 "probably >= 18 | P(age >= 18) = 95.0%  (cut-points 5% and 95%)"
+     P = 0.951  v3.8a "likely >= 18  P(age >= 18) = 95.1%"  ->  v3.9 "probably >= 18 | P(age >= 18) = 95.1%  (cut-points 5% and 95%)"
+     P = 0.049  v3.8a "likely < 18  P(age >= 18) = 4.9%"  ->  v3.9 "probably < 18 | P(age >= 18) = 4.9%  (cut-points 5% and 95%)"
+     P = 0.05   v3.8a "likely < 18  P(age >= 18) = 5.0%"  ->  v3.9 "probably < 18 | P(age >= 18) = 5.0%  (cut-points 5% and 95%)"
+     P = 0.051  v3.8a "likely < 18  P(age >= 18) = 5.1%"  ->  v3.9 "uncertain | P(age >= 18) = 5.1%  (cut-points 5% and 95%)"
+C. The Willems ceiling (C-F1, Roger's D7) and Liversidge's floor (C-F6)
+   (the v3.9 draft before the second review: /tmp/claude-0/-home-claude/6157958e-03ce-51f4-bf77-e038db8d37e9/scratchpad/f39/fix2/FDAES_v3.9_before_fix2.txt)
+F. The typed posterior threshold (C-F8, C-F9)
+   v3.8a for the record:
+     typed 1000000: returned [0.0, 1000000.0], 100409 LINE_P, panel ['P(age >= 1000000.0) < 0.1%'], 0 scientific displays
+     typed -5: returned [0.0, 0.0], 772 LINE_P, panel ['P(age >= 0.0) > 99.9%'], 0 scientific displays
+     typed 0.05: returned [0.0, 0.05], 772 LINE_P, panel ['P(age >= 5.0ᴇ-2) > 99.9%'], 2 scientific displays
+     typed 0.04: returned [0.0, 0.04], 772 LINE_P, panel ['P(age >= 4.0ᴇ-2) > 99.9%'], 2 scientific displays
+     typed 17.96: returned [0.0, 17.96], 808 LINE_P, panel ['P(age >= 18.0) > 99.9%'], 0 scientific displays
+     typed 17.94: returned [0.0, 17.94], 808 LINE_P, panel ['P(age >= 17.9) > 99.9%'], 0 scientific displays
+     typed 110.04: returned [0.0, 110.04], 703 LINE_P, panel ['P(age >= 110.0) < 0.1%'], 0 scientific displays
+     typed 21: returned [0.0, 21.0], 808 LINE_P, panel ['P(age >= 21.0) > 99.9%'], 0 scientific displays
+L. Lamendin 1992 / Prince-Ubelaker 2002 (D2, D4; C-F2, C-F3)
+   each Table's Prediction Profile: the Table's estimates, the printed equation, and Lamendin, at the same inputs
+     black males (Table 3, n = 100): RH 14.9142 P 26.8051 T 47.6749 -> Table 47.7600 (Mean of Response 47.76), printed equation 47.9276 (+0.17), Lamendin 50.38
+     white females (Table 4, n = 100): RH 13.4832 P 29.0085 T 54.7449 -> Table 56.9500 (Mean of Response 56.95), printed equation 56.9947 (+0.04), Lamendin 53.74
+     black females (Table 5, n = 100): RH 13.8549 P 27.7269 T 50.8838 -> Table 52.1000 (Mean of Response 52.1), printed equation 51.9066 (-0.19), Lamendin 51.89
+     white males (Table 6, n = 99): RH 14.2853 P 31.0476 T 50.9197 -> Table 54.1010 (Mean of Response 54.10101), printed equation 54.1753 (+0.07), Lamendin 52.50
+   84 result pages (12 Setups x 7 tooth measurements)
+R. Bang & Ramm 1970, their own method (D3; C-F4)
+   48 rows x 5 lengths: 0 differ.  Examples: Table VIII row 1 at X = 6: 54.74 yr (header: 54.74); Table X row 13 at X = 11: 72.48 yr (header: 72.48)
+   48 menu paths (12 teeth, their sides or roots, intact and section): 48 pages, 0 refused above 110 yr
+J. Johanson 1971 (C-F5, C-F9)
+   120 score sets: 119 pages, 1 refused (under 18)
+K. The Verify Calculations pages 1-4 against an independent computation
+   page 4 by hand: precisions 0.01090, 0.03756, 0.01173; total 0.06019; mean 49.4729; SD 4.0759 x 1.25 = 5.0949, floored to 5.16; weights 18.1%, 62.4%, 19.5%
+H. The help topics and the disclaimer (Roger, 19 Oct 2026, 12:45 and 12:48)
+RG. The fleet review's check_FDAES.py, run on v3.8a and on v3.9 (a copy with its SRC line pointed at each)
+   v3.8a: 133 passed, 0 failed, 27 notes; v3.9: 130 passed, 3 failed, 20 notes
+   the review's J1 (a typed threshold of 1E6): v3.8a drew 100409 LINE_P, v3.9 703
+   review NOTEs on v3.8a that v3.9 no longer earns: I3
+S. Every other module, v3.9 against v3.8a
+   55 sessions compared, each run on v3.9 and on v3.8a; 8 bands compared one by one; band verdicts, v3.8a -> v3.9: likely < 18 -> probably < 18: 8
+   v3.8a texts read through v3.9's rewrites: [('1 tooth   SE = +/- 8.00 yr', '1 tooth   6.0 (his Table 8)'), ('2+ teeth  SE = +/- 5.16 yr', '2+ teeth  5.16 (Johanson SD)'), ('FDAES: age 11.7 yr, SD 1.62 yr, 95% CI [8.5, 15.0], P(age>=18) < 0.1%', 'FDAES (teaching aid; not for legal use): age 11.7 yr, SD 1.62 yr, 95% CI [8.5, 15.0], P(age >= 18) < 0.1%'), ('FDAES: age 12.8 yr, SD 1.11 yr, 95% CI [10.5, 15.0], P(age>=18) < 0.1%', 'FDAES (teaching aid; not for legal use): age 12.8 yr, SD 1.11 yr, 95% CI [10.5, 15.0], P(age >= 18) < 0.1%'), ('FDAES: no estimate', 'FDAES (teaching aid; not for legal use): no estimate'), ('FOREST PLOT  estimate +/- 2 SE', 'FOREST PLOT  estimate +/- 2 SD'), ('SD floored at best single SE', 'FLOORLINE'), ('Tap a tooth, then tap its stage (A-H).', 'Tap a tooth, then its stage. Help: main menu.'), ('Unknown  [conservative SE]', 'Unknown'), ('copies without the erratum page.', 'on in copies lacking the erratum.'), ('et al., Table 12), and it lives on in', 'et al., Table 13.12, p 289); it lives'), ('inv-var SD x1.25 = 1.11 >= best single SE 0.90', 'inv-var SD x1.25 = 1.11 >= best single SD 0.90'), ('mean error +0.0 yr, s.d. 0.9 yr', 'mean diff. (signed) +0.0, s.d. 0.9 yr'), ('mean error +0.2 yr, s.d. 1.3 yr', 'mean diff. (signed) +0.2, s.d. 1.3 yr'), ('mu=12.8  sd=1.11', 'mu = 12.8  sd = 1.11')]
+G. v3.8a -> v3.9a: the routine diff (v3.9 -> v3.9a: Part V)
+   changed: <header>, FDAES, fdBand, fdForest, fdLPage, fdM3Hist, fdOdonto, fdPageV, fdPost, fdThrTable, fdWEst, fdWPage, fdWSum
+   added:   fdBRAge, fdBRCmb, fdBRTab, fdBRrm, fdHelp, fdHelpMn, fdJoh1SD, fdLamLbl, fdLamSD, fdPUAge, fdPUTab, fdPUg, fdPUnm, fdUpEnd, fdWCeil
+   removed: none
+   fdWPage: 48 lines added, 18 removed (the ceiling page, C-F1)
+   FDAES(): blocks identical: ch10, ch11; changed: ch1, ch12, ch13, ch14, ch2, ch3, ch4, ch5, ch6, ch7, ch8, ch9, exit, menu, pre
+SR. The second review's items (19 Oct 2026, evening): the checks not already in Parts C, L, R, J, K, H, P, S
+V. v3.9 -> v3.9a: the history pages from the papers (FDAES_source_facts_v1a.md section 9), run on v3.9a
+   45 new page lines, the longest 37 characters
+   lines that still say "not checked" / "unchecked" (all comments recording what v3.9 or v3.8a did):
+        61  //   names each copy).  Every line v3.9 marked "not checked against the
+       253  //     every unchecked statement on the About pages marked "not
+       255  //     marked "not checked"; P-U's RH with two decimals; refusals with
+       839  //   (v3.9 listed these without sources, marked "not checked"; it also
+      5066  // not checked against any source and is gone), and its first and
+   FDAES(): 53 code lines added, 48 removed
+   item 9: Johanson, one tooth, SD 8.00 -> 6.0 (Johanson 1971 Table 8; Lucy, Pollard & Roberts 1995)
+     T = 1 alone, one tooth: v3.9a 68%: [14.0, 26.0], 95%: [8.0, 32.0], P(age >= 18) = 0.6306 (SciPy, SD 6.0); v3.9 68%: [12.0, 28.0], P = 0.5987 (SD 8.00)
+     Johanson's worked example, one tooth: v3.9a 68%: [38.9, 50.9], 95%: [32.9, 56.9], P(age >= 18) = 1.0000 (SciPy, SD 6.0); v3.9 68%: [36.9, 52.9], P = 0.9996 (SD 8.00)
+   follow-up: Harris et al. 2010 (Table 13.12, p 289), "vol 38", the near-ceiling rule confirmed
+   Part V ran 0 harness sessions on v3.9a (counted in Parts W and X)
+V2. v3.9a -> v3.9b: the Gustafson page reworded from Lucy & Pollard 1995 and Aykroyd 1995
+Q. v3.8a's display fixes, kept in v3.9 (Q2, Q3, Q5, Q6, Q7; Q1, Q4 and Q8 give way to Parts B, L, R and G)
+   v3.9, 12-digit model: ['Mean:   10.84 yr', 'SD:     0.95 yr'] | ['P(age >= 16): < 0.1%', 'P(age >= 18): < 0.1%', 'P(age >= 21): < 0.1%'] | ['probably < 18 | P(age >= 18) < 0.1%  (cut-points 5% and 95%)'] | ['P(age >= 18.0) < 0.1%'] | 'FDAES (teaching aid; not for legal use): age 10.8 yr, SD 0.95 yr, 95% CI [8.9, 12.7], P(age >= 18) < 0.1%'
+   v3.9, doubles: ['Mean:   10.84 yr', 'SD:     0.95 yr'] | ['P(age >= 16): < 0.1%', 'P(age >= 18): < 0.1%', 'P(age >= 21): < 0.1%'] | ['probably < 18 | P(age >= 18) < 0.1%  (cut-points 5% and 95%)'] | ['P(age >= 18.0) < 0.1%'] | 'FDAES (teaching aid; not for legal use): age 10.8 yr, SD 0.95 yr, 95% CI [8.9, 12.7], P(age >= 18) < 0.1%'
+W. Widths
+X. Scientific fixed decimals seen by the harness (every v3.9a run)
+   577 v3.9a runs, 0 scientific displays
+I. INSTRING
+   INSTRING calls in v3.9a code: 0
+
+Harness rounding: 27 displayed line(s) held a number on an exact decimal tie, which the harness (binary floating point) rounded down where the Prime (BCD, half away from zero) rounds up -- accepted at a tie only, not a program difference:
+   "68%: [10.0, 12.7] yr" (the Prime: "68%: [10.1, 12.7] yr")
+   "68%: [55.1, 65.4]" (the Prime: "68%: [55.1, 65.5]")
+   "68%: [65.1, 88.7] (normal;" (the Prime: "68%: [65.2, 88.7] (normal;")
+   "95%: [45.8, 66.5]" (the Prime: "95%: [45.9, 66.5]")
+   "95%: [63.8, 84.4]" (the Prime: "95%: [63.8, 84.5]")
+   "95%: [66.4, 87.1]" (the Prime: "95%: [66.5, 87.1]")
+   "= 64.94 yr (P-U 2002)" (the Prime: "= 64.95 yr (P-U 2002)")
+   "= 66.22 yr" (the Prime: "= 66.23 yr")
+   "= Dental age 10.88 yr (their mean)" (the Prime: "= Dental age 10.89 yr (their mean)")
+   "= Mean of 2 teeth: 8.24 yr" (the Prime: "= Mean of 2 teeth: 8.25 yr")
+   "FDAES (teaching aid; not for legal use): age 11.7 yr, SD 1.63 yr, 95% CI [8.5, 15.0], P(age >= 18) < 0.1%" (v3.8a in the harness: "FDAES (teaching aid; not for legal use): age 11.7 yr, SD 1.62 yr, 95% CI [8.5, 15.0], P(age >= 18) < 0.1%")
+   "Liversidge 4.15 yr, SE 0.76 indep, 0.99 together" (the Prime: "Liversidge 4.15 yr, SE 0.76 indep, 1.00 together")
+   "Liversidge 5.45 yr, SE 0.43 indep, 1.03 together" (the Prime: "Liversidge 5.45 yr, SE 0.43 indep, 1.04 together")
+   "Liversidge 8.24 yr, SE 0.96 indep, 1.36 together" (the Prime: "Liversidge 8.25 yr, SE 0.96 indep, 1.36 together")
+   "Liversidge 9.71 yr, SE 0.61 indep, 1.21 together" (the Prime: "Liversidge 9.71 yr, SE 0.61 indep, 1.22 together")
+   "Liversidge 9.79 yr, SE 0.58 indep, 1.14 together" (the Prime: "Liversidge 9.79 yr, SE 0.58 indep, 1.15 together")
+   "P(age >= 18) from N(4.15, 0.99)." (the Prime: "P(age >= 18) from N(4.15, 1.00).")
+   "P(age >= 18) from N(5.45, 1.03)." (the Prime: "P(age >= 18) from N(5.45, 1.04).")
+   "P(age >= 18) from N(8.24, 1.36)." (the Prime: "P(age >= 18) from N(8.25, 1.36).")
+   "P(age >= 18) from N(9.71, 1.21)." (the Prime: "P(age >= 18) from N(9.71, 1.22).")
+   "P(age >= 18) from N(9.79, 1.14)." (the Prime: "P(age >= 18) from N(9.79, 1.15).")
+   "SD:     1.63 yr" (v3.8a in the harness: "SD:     1.62 yr")
+   "SE if they move together: 0.99 yr" (the Prime: "SE if they move together: 1.00 yr")
+   "SE if they move together: 1.03 yr" (the Prime: "SE if they move together: 1.04 yr")
+   "SE if they move together: 1.14 yr" (the Prime: "SE if they move together: 1.15 yr")
+   "SE if they move together: 1.21 yr" (the Prime: "SE if they move together: 1.22 yr")
+   "Willems 2001: 10.88 yr (boys 11.40, girls 10.37)" (the Prime: "Willems 2001: 10.89 yr (boys 11.40, girls 10.37)")
+checks by part: B 24, C 23, E 14, F 11, G 41, H 55, I 2, J 131, K 5, L 302, N 23, P 18, Q 1, Q2 4, Q3 5, Q5 6, Q6 4, Q7 1, R 146, RG 7, S 123, SR 15, T 25, U 2117, V 82, V2 16, W 10, X 1
+3212 checks, 0 failures
+exit 0
