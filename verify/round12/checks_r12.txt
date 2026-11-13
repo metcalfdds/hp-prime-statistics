@@ -1,0 +1,31 @@
+S AnovaLab   OK    warnings 0 (old 0)
+S BayesTree  OK    warnings 0 (old 0)
+S CICatcher  OK    warnings 0 (old 0)
+S DataLoad   OK    warnings 0 (old 0)  PPLError: undefined variable: M1
+S EpiStats   OK    warnings 0 (old 0)
+S FitCheck   OK    warnings 0 (old 0)
+S PowerViz   OK    warnings 0 (old 0)
+S RankLab    OK    warnings 0 (old 0)
+S RiskLab    OK    warnings 0 (old 0)
+S SampDist   OK    warnings 0 (old 0)
+S StatDist   OK    warnings 0 (old 0)
+S TTestLab   OK    warnings 0 (old 0)
+T AnovaLab   same report as the old version (the walks differ only in their timing): screens 37/1035 collisions 57 (firm 54) straddles 0 overruns 0 ghosts 0
+T BayesTree  same report as the old version (the walks differ only in their timing): screens 101/486 collisions 16 (firm 13) straddles 0 overruns 21 ghosts 0
+T CICatcher  same report as the old version (the walks differ only in their timing): screens 136/237 collisions 0 (firm 0) straddles 0 overruns 0 ghosts 0
+T DataLoad   same report as the old version
+T EpiStats   same report as the old version (the walks differ only in their timing): screens 18/912 collisions 0 (firm 0) straddles 0 overruns 0 ghosts 0
+T FitCheck   same report as the old version (the walks differ only in their timing): screens 97/352 collisions 0 (firm 0) straddles 0 overruns 0 ghosts 0
+T PowerViz   same report as the old version (the walks differ only in their timing): screens 125/165 collisions 21 (firm 18) straddles 0 overruns 9 ghosts 0
+T RankLab    same report as the old version (the walks differ only in their timing): screens 82/1200 collisions 0 (firm 0) straddles 0 overruns 0 ghosts 0
+T RiskLab    same report as the old version (the walks differ only in their timing): screens 39/1079 collisions 8 (firm 8) straddles 0 overruns 0 ghosts 0
+T SampDist   new: screens 348/2935 collisions 27 (firm 25) straddles 16 overruns 16 ghosts 0 | old: screens 348/2935 collisions 23 (firm 21) straddles 18 overruns 18 ghosts 0
+T StatDist   same report as the old version (the walks differ only in their timing): screens 23/228 collisions 11 (firm 11) straddles 0 overruns 0 ghosts 0
+T TTestLab   same report as the old version (the walks differ only in their timing): screens 34/384 collisions 0 (firm 0) straddles 0 overruns 9 ghosts 0
+F fleet_names_v2 over 31 programs: clean
+  31 files, 2362 routine names, 0 collisions, 0 untagged, 0 mixed-tag files, 0 built-in matches
+
+--- fleet_names_v2 output
+31 files, 2362 routine names, 0 collisions, 0 untagged, 0 mixed-tag files, 0 built-in matches
+C case_scan_v1 over the 31 newest files: clean (scanned 31 files, no findings)
+RankLab beta 1h was rebuilt with the fix for the monkey's finding (see README); its gate, smoke test and overlap walk were run again: the same results as above.

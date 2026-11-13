@@ -1,0 +1,76 @@
+T1   PASS  TTestLab: the build makes programs/TTestLab_beta1j.txt byte for byte
+T1   PASS  DataLoad: the build makes programs/DataLoad_beta1g.txt byte for byte
+T1   PASS  StatDist: the build makes programs/StatDist_v2.7m.txt byte for byte
+T1   PASS  SampDist: the build makes programs/SampDist_v2.3k.txt byte for byte
+T1   PASS  CICatcher: the build makes programs/CICatcher_beta2j.txt byte for byte
+T1   PASS  PowerViz: the build makes programs/PowerViz_v2.5s.txt byte for byte
+T1   PASS  FitCheck: the build makes programs/FitCheck_beta1g.txt byte for byte
+T1   PASS  RankLab: the build makes programs/RankLab_beta1h.txt byte for byte
+T1   PASS  AnovaLab: the build makes programs/AnovaLab_beta1g.txt byte for byte
+T1   PASS  EpiStats: the build makes programs/EpiStats_v1.7l.txt byte for byte
+T1   PASS  RiskLab: the build makes programs/RiskLab_beta1g.txt byte for byte
+T1   PASS  BayesTree: the build makes programs/BayesTree_beta8k.txt byte for byte
+T2   PASS  TTestLab: only the replacements, comments and version strings differ
+T2   PASS  DataLoad: only the replacements, comments and version strings differ
+T2   PASS  StatDist: only the replacements, comments and version strings differ
+T2   PASS  SampDist: only the replacements, comments and version strings differ
+T2   PASS  CICatcher: only the replacements, comments and version strings differ
+T2   PASS  PowerViz: only the replacements, comments and version strings differ
+T2   PASS  FitCheck: only the replacements, comments and version strings differ
+T2   PASS  RankLab: only the replacements, comments and version strings differ
+T2   PASS  AnovaLab: only the replacements, comments and version strings differ
+T2   PASS  EpiStats: only the replacements, comments and version strings differ
+T2   PASS  RiskLab: only the replacements, comments and version strings differ
+T2   PASS  BayesTree: only the replacements, comments and version strings differ
+T3   PASS  TTestLab: 2 help screens, as helppages_r12.json holds them
+T3   PASS  TTestLab: screens changed against the old version: none (not a help page)
+T3   PASS  DataLoad: 3 help screens, as helppages_r12.json holds them
+T3   PASS  DataLoad: screens changed against the old version: 2
+T3   PASS  StatDist: 5 help screens, as helppages_r12.json holds them
+T3   PASS  StatDist: screens changed against the old version: 1
+T3   PASS  SampDist: 2 help screens, as helppages_r12.json holds them
+T3   PASS  SampDist: screens changed against the old version: 1, 2
+T3   PASS  CICatcher: 6 help screens, as helppages_r12.json holds them
+T3   PASS  CICatcher: screens changed against the old version: 2
+T3   PASS  PowerViz: 7 help screens, as helppages_r12.json holds them
+T3   PASS  PowerViz: screens changed against the old version: 3
+T3   PASS  FitCheck: 8 help screens, as helppages_r12.json holds them
+T3   PASS  FitCheck: screens changed against the old version: 4
+T3   PASS  RankLab: 7 help screens, as helppages_r12.json holds them
+T3   PASS  RankLab: screens changed against the old version: 2, 5
+T3   PASS  AnovaLab: 9 help screens, as helppages_r12.json holds them
+T3   PASS  AnovaLab: screens changed against the old version: 4
+T3   PASS  EpiStats: 15 help screens, as helppages_r12.json holds them
+T3   PASS  EpiStats: screens changed against the old version: 1, 11
+T3   PASS  RiskLab: 8 help screens, as helppages_r12.json holds them
+T3   PASS  RiskLab: screens changed against the old version: 2
+T3   PASS  BayesTree: 5 help screens, as helppages_r12.json holds them
+T3   PASS  BayesTree: screens changed against the old version: 2
+T4   PASS  TTestLab: 2 screens laid out, no reports
+T4   PASS  DataLoad: 3 screens laid out, no reports
+T4   PASS  StatDist: 4 screens laid out, call st_ABHelp: st_ABHelp takes 1 arguments, got 0
+T4   PASS  SampDist: 2 screens laid out, no reports
+T4   PASS  CICatcher: 6 screens laid out, no reports
+T4   PASS  PowerViz: 7 screens laid out, no reports
+T4   PASS  FitCheck: 8 screens laid out, no reports
+T4   PASS  RankLab: 7 screens laid out, no reports
+T4   PASS  AnovaLab: 9 screens laid out, no reports
+T4   PASS  EpiStats: 15 screens laid out, no reports
+T4   PASS  RiskLab: 8 screens laid out, no reports
+T4   PASS  BayesTree: 5 screens laid out, no reports
+T5   PASS  TTestLab: the gate
+T5   PASS  DataLoad: the gate
+T5   PASS  StatDist: the gate
+T5   PASS  SampDist: the gate
+T5   PASS  CICatcher: the gate
+T5   PASS  PowerViz: the gate
+T5   PASS  FitCheck: the gate
+T5   PASS  RankLab: the gate
+T5   PASS  AnovaLab: the gate
+T5   PASS  EpiStats: the gate
+T5   PASS  RiskLab: the gate
+T5   PASS  BayesTree: the gate
+X1   PASS  RankLab beta 1g: the refused read leaves 3 groups and 1 name; Mann-Whitney: index 2 out of range in cgN (1..1)
+X1   PASS  RankLab beta 1h: the refused read changes nothing (3 groups, 3 names); Mann-Whitney picks two
+
+74 of 74 checks PASS

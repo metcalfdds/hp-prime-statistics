@@ -1,0 +1,26 @@
+======================================================================
+GATE  SampDist_v2.3k.txt
+======================================================================
+1. hp-prime-kit lint: 0 error(s)
+2. ppl_check_v5 tally: 2 E4, 3 E9, 10 W3
+   original:          2 E4, 3 E9, 11 W3
+   hard errors (E2/E3/E6/E8/E10/E11/E12): none
+3. lint_ppl (v4): 1335 checks, 18 problems
+     PROBLEM line 540: LINE_P targets 'poG', not a GROB
+     PROBLEM line 553: LINE_P targets 'fiG', not a GROB
+     PROBLEM line 570: LINE_P targets 'quG', not a GROB
+     PROBLEM line 595: LINE_P targets 'grG', not a GROB
+     PROBLEM line 617: LINE_P targets 'cuG', not a GROB
+     PROBLEM line 658: LINE_P targets 'axG', not a GROB
+     PROBLEM line 659: LINE_P targets 'axG', not a GROB
+     PROBLEM line 667: LINE_P targets 'axG', not a GROB
+     PROBLEM line 688: LINE_P targets 'axG', not a GROB
+     PROBLEM line 589: RECT_P targets 'grG', not a GROB
+     PROBLEM line 643: PIXON_P targets 'cuG', not a GROB
+     PROBLEM line 636: TEXTOUT_P 2nd arg is 'cuG', not a GROB
+     PROBLEM line 675: TEXTOUT_P 2nd arg is 'axG', not a GROB
+     PROBLEM line 704: TEXTOUT_P 2nd arg is 'axG', not a GROB
+4. full parse: PARSE OK (30 functions)
+   original:   PARSE OK (30 functions)
+5. fleet_names_v2 over 12 files (newest of each program): 12 files, 1081 routine names, 0 collisions, 0 untagged, 0 mixed-tag files, 0 built-in matches
+RESULT: PASS
