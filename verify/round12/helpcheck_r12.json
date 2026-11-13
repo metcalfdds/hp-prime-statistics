@@ -1,0 +1,52 @@
+{
+ "AnovaLab": {
+  "screens": 9,
+  "problems": []
+ },
+ "BayesTree": {
+  "screens": 5,
+  "problems": []
+ },
+ "CICatcher": {
+  "screens": 6,
+  "problems": []
+ },
+ "DataLoad": {
+  "screens": 3,
+  "problems": []
+ },
+ "EpiStats": {
+  "screens": 15,
+  "problems": []
+ },
+ "FitCheck": {
+  "screens": 8,
+  "problems": []
+ },
+ "PowerViz": {
+  "screens": 7,
+  "problems": []
+ },
+ "RankLab": {
+  "screens": 7,
+  "problems": []
+ },
+ "RiskLab": {
+  "screens": 8,
+  "problems": []
+ },
+ "SampDist": {
+  "screens": 2,
+  "problems": []
+ },
+ "StatDist": {
+  "screens": 4,
+  "problems": [
+   "call st_ABHelp: st_ABHelp takes 1 arguments, got 0"
+  ]
+ },
+ "TTestLab": {
+  "screens": 2,
+  "problems": []
+ }
+}

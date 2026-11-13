@@ -1,10 +1,10 @@
 # Starter pack for the Virtual Calculator
 
-*v16, 2026-11-09. Built by `tools/make_starter_pack_v4.py` from `programs/`; do not edit this page by hand.*
+*v17, 2026-11-13. Built by `tools/make_starter_pack_v4.py` from `programs/`; do not edit this page by hand.*
 
-All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** on a Windows PC: no Connectivity Kit, no copying and pasting. Download **[HP_Prime_Statistics_Starter_Pack_v16.zip](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v16.zip)** (one file).
+All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** on a Windows PC: no Connectivity Kit, no copying and pasting. Download **[HP_Prime_Statistics_Starter_Pack_v17.zip](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v17.zip)** (one file).
 
-*How this pack was tested on the Virtual Calculator: [docs/changes/StarterPack_v16_NOTES.md](../docs/changes/StarterPack_v16_NOTES.md).*
+*How this pack was tested on the Virtual Calculator: [docs/changes/StarterPack_v17_NOTES.md](../docs/changes/StarterPack_v17_NOTES.md).*
 
 ### What you need
 - A Windows PC with the HP Prime Virtual Calculator (64-bit). It is a free download from hpcalc.org, which lists Hewlett-Packard as its author. The pack was tested on the Virtual Calculator 2.4.2 (build 2026-09-09), 64-bit.
@@ -37,34 +37,34 @@ All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** o
 | Program | Version | Lines | In Home, type | Notes | Source checksum |
 |---|---|---|---|---|---|
 | AgreeLab | beta 1g | 3,062 | `AgreeLab` |  | `b6906cd2cfb1` |
-| AnovaLab | beta 1f | 3,869 | `AnovaLab` |  | `73636e53493d` |
-| BayesTree | beta 8j | 3,446 | `BayesTree` |  | `762c4a0de095` |
+| AnovaLab | beta 1g | 3,872 | `AnovaLab` |  | `fa32d66ee611` |
+| BayesTree | beta 8k | 3,451 | `BayesTree` |  | `707756c05296` |
 | BiNorm3D | beta 1f | 1,282 | `BiNorm3D` |  | `e3da40166171` |
 | BurrLab | beta 1q | 4,712 | `BurrLab` | MicroPython | `efaa895d783a` |
-| CICatcher | beta 2i | 2,194 | `CICatcher` |  | `a4bc79d6056c` |
+| CICatcher | beta 2j | 2,196 | `CICatcher` |  | `bd30b24ddfb2` |
 | CentralLimit | beta 3g | 2,788 | (an app) | app on Statistics 1Var | `502640fe6456` |
 | ChiTable | beta 3l | 3,720 | `ChiTable` |  | `b86ebd200acb` |
 | DNAMixLR | beta 3j | 3,471 | `DNAMixLR` |  | `349a8cc1899c` |
-| DataLoad | beta 1f | 1,089 | `DATALOAD` |  | `61fd85695761` |
-| EpiStats | v1.7k | 6,275 | `EpiStats` |  | `373769909c5c` |
+| DataLoad | beta 1g | 1,094 | `DATALOAD` |  | `e211874d3a5e` |
+| EpiStats | v1.7l | 6,279 | `EpiStats` |  | `fea1365d7b88` |
 | ErrorRate | beta 1j | 2,857 | `ErrorRate` | MicroPython | `cda5cb9c2b2d` |
 | ExhibitLab | beta 1g | 2,889 | `ExhibitLab` |  | `09dc494a2d16` |
-| FitCheck | beta 1f | 3,349 | `FitCheck` |  | `e43983ef6b49` |
+| FitCheck | beta 1g | 3,351 | `FitCheck` |  | `69b4fb5b3fd4` |
 | GaltonBoard | beta 3i | 2,533 | `GaltonBoard` | MicroPython | `d9c1bb807fcc` |
 | Norm3 | v2.4g | 1,125 | `Norm3` |  | `e45ead59d4df` |
 | NormExplorer | beta 42j | 4,228 | `NormExp` | MicroPython | `86d9dfd7e9d1` |
-| PowerViz | v2.5r | 4,184 | `POWERVIZ` |  | `b0be46d986d1` |
-| RankLab | beta 1g | 3,825 | `RankLab` |  | `0862a46f0106` |
+| PowerViz | v2.5s | 4,190 | `POWERVIZ` |  | `3ba37d06f2bc` |
+| RankLab | beta 1h | 3,837 | `RankLab` |  | `144785daadd3` |
 | ResampLab | beta 1h | 3,045 | `ResampLab` |  | `3fab54ee41a1` |
-| RiskLab | beta 1f | 3,160 | `RiskLab` |  | `6128c64c8133` |
-| SampDist | v2.3j | 1,930 | `SampDist` |  | `38b2bb9b724e` |
+| RiskLab | beta 1g | 3,162 | `RiskLab` |  | `542b0ee2887b` |
+| SampDist | v2.3k | 1,939 | `SampDist` |  | `2d44782aea01` |
 | ScatterLab | beta 2j | 2,436 | `ScatterLab` |  | `8d4144c5958d` |
-| StatDist | v2.7l | 5,089 | `StatDist` |  | `c34b446f83e4` |
+| StatDist | v2.7m | 5,091 | `StatDist` |  | `f8b2425d83c3` |
 | StudRange | beta 15m | 2,750 | `StudRange` | MicroPython | `cb1b060d6f83` |
 | SurvLab | beta 1f | 2,741 | `SurvLab` |  | `9ed223b72643` |
 | TDist3D | beta 1a | 1,164 | `TDist3D` |  | `f370e341f4e6` |
 | TTestLabG | beta 1g | 1,478 | `TTESTLABG` |  | `ab792d637b46` |
-| TTestLab | beta 1i | 1,503 | `TTESTLAB` |  | `dd90c795f2e3` |
+| TTestLab | beta 1j | 1,507 | `TTESTLAB` |  | `e39c918ee296` |
 | TestChooser | beta 2g | 1,914 | `TestChooser` |  | `e790d3eadf7d` |
 | TrendTest | beta 3m | 2,289 | `TrendTest` |  | `d14cbccef5d7` |
 

@@ -1,0 +1,17 @@
+Virtual Calculator 2.4.2 (build 2026-09-09) under Wine in the cloud workspace, 13 November 2026.
+Program Catalog > Edit > Check on each new version; the message was read from a screenshot (tesseract).
+AnovaLab and SampDist were Checked a second time, as fresh copies, after their help pages were opened (the pack carries those files).
+RankLab was Checked a second time at 12:43, after the fix of the fault the monkey found (the source of 12:40); the pack carries that file (screens/RankLab_check_after_fix_r12.png).
+
+AnovaLab   beta 1g   No errors in the program (twice)
+BayesTree  beta 8k   No errors in the program
+CICatcher  beta 2j   No errors in the program
+DataLoad   beta 1g   No errors in the program
+EpiStats   v1.7l     No errors in the program
+FitCheck   beta 1g   No errors in the program
+PowerViz   v2.5s     No errors in the program
+RankLab    beta 1h   No errors in the program (twice: before and after the fix)
+RiskLab    beta 1g   No errors in the program
+SampDist   v2.3k     No errors in the program (twice)
+StatDist   v2.7m     No errors in the program
+TTestLab   beta 1j   No errors in the program
