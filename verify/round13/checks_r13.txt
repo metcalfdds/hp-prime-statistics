@@ -1,0 +1,17 @@
+S ChiTable OK    warnings 0 (old 0)
+T ChiTable same as the old version  PROGRAM          screens   12/900   collisions   0 (firm   0) straddles   0 overruns   0 ghosts   0
+L ChiTable walk: 2 new lines     'any E below 5).  If not, use the exact test (page 6 for a 2x2,' at (12, 159), font 1, width 296, measured 338.5
+L ChiTable verify run: ../run_new.json: no number cut by its width argument
+F fleet_names_v2 over 31 programs: clean
+  31 files, 2364 routine names, 0 collisions, 0 untagged, 0 mixed-tag files, 0 built-in matches
+
+--- label_fit_v1, the walk of the new version
+ChiTable_beta3m.txt: 2 numbers cut
+   'Curve: drag the red dotted line to set α; near .001 .005 .01 .02' at (12, 30), font 1, width 296, measured 342
+   'any E below 5).  If not, use the exact test (page 6 for a 2x2,' at (12, 159), font 1, width 296, measured 338.5
+
+--- label_fit_v1, the verify script's run
+../run_new.json: no number cut by its width argument
+
+--- fleet_names_v2 output
+31 files, 2364 routine names, 0 collisions, 0 untagged, 0 mixed-tag files, 0 built-in matches

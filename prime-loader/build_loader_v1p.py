@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
-"""build_loader_v1o.py -- assembles PrimeLoader_v1o.html: the page template, the loader's core, the Data Loader's core
+"""build_loader_v1p.py -- assembles PrimeLoader_v1p.html: the page template, the loader's core, the Data Loader's core
 (for its zip writer), the chapter list, and every program file from a starter pack, embedded so the page works offline.
 
-    python3 build_loader_v1o.py PACK.zip [OUT.html] [--kit PATH]
+    python3 build_loader_v1p.py PACK.zip [OUT.html] [--kit PATH]
+v1p (13 Nov 2026): starter pack v18, whose ChiTable beta 3m (round 13) gives the exact test for its 2 x 3 and 3 x 2
+tables.  The catalog names that version.  The page template is v1c's, unchanged.
+
 v1o (13 Nov 2026): starter pack v17, whose twelve programs changed by round 12 (help-page fixes from the book's
 pre-submission read: AnovaLab, BayesTree, CICatcher, DataLoad, EpiStats, FitCheck, PowerViz, RankLab, RiskLab, SampDist,
 StatDist, TTestLab) carry their new versions.  The catalog names those versions.  The page template is v1c's, unchanged.
@@ -98,7 +101,7 @@ KIT = os.environ.get('HPKIT', '/tmp/kit/hp-prime-kit-HEAD')
 if '--kit' in argv:
     i = argv.index('--kit'); KIT = argv[i + 1]; del argv[i:i + 2]
 PACK = argv[0]
-OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v1o.html')
+OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v1p.html')
 SITE = 'https://metcalfdds.github.io/hp-prime-statistics/'
 sys.path.insert(0, KIT)
 from hpkit import program as kitprog            # hp-prime-kit (MIT, JordiRigau/hp-prime-kit)
@@ -112,7 +115,7 @@ PROGRAMS = {
   'BurrLab':      ('BurrLab.hpprgm', 'beta 1q', 'A model for long right tails (Burr XII)', 'BurrLab'),
   'CICatcher':    ('CICatcher.hpprgm', 'beta 2i', 'Fifty confidence intervals: how many catch the truth?', 'CICatcher'),
   'CentralLimit': ('CentralLimit.hpappdir', 'beta 3g', 'The central limit theorem, one sample at a time (an app)', None),
-  'ChiTable':     ('ChiTable.hpprgm', 'beta 3l', 'Chi-square for a two-way table: drag the bars', 'ChiTable'),
+  'ChiTable':     ('ChiTable.hpprgm', 'beta 3m', 'Chi-square for a two-way table: drag the bars', 'ChiTable'),
   'DNAMixLR':     ('DNAMixLR.hpprgm', 'beta 3j', 'Likelihood ratios for DNA mixtures', 'DNAMixLR'),
   'DataLoad':     ('DataLoad.hpprgm', 'beta 1f', 'Puts a data file into the Statistics lists, with box plots', 'DATALOAD'),
   'EpiStats':     ('EpiStats.hpprgm', 'v1.7k', 'Epidemiology: 2 x 2 tables, risk and odds', 'EpiStats'),
@@ -246,7 +249,7 @@ redirect = ('<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n
             '<link rel="canonical" href="' + SITE + 'prime-loader/' + page + '">\n'
             '<style>body{font:16px/1.5 system-ui,sans-serif;margin:2rem;color:#172033;background:#f6f8fb}'
             '@media (prefers-color-scheme:dark){body{color:#e8edf6;background:#0f1420}a{color:#7d9cff}}</style>\n'
-            '</head>\n<body>\n<!-- Written by build_loader_v1o.py: sends the browser on to the current Prime Loader, so the '
+            '</head>\n<body>\n<!-- Written by build_loader_v1p.py: sends the browser on to the current Prime Loader, so the '
             'address .../prime-loader/ never changes. -->\n'
             '<p>Opening the HP Prime Loader&hellip; If nothing happens, <a href="' + page + '">click here</a>.</p>\n'
             '</body>\n</html>\n')

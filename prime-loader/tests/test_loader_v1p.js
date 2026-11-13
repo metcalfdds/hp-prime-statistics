@@ -1,4 +1,6 @@
-// test_loader_v1o.js (13 Nov 2026: v1n's checks, unchanged, on the page built from starter pack v17, round 12: help-page
+// test_loader_v1p.js (13 Nov 2026: v1o's checks, unchanged, on the page built from starter pack v18, round 13:
+// ChiTable beta 3m's exact test for the 2 x 3 and 3 x 2 tables)
+// was: test_loader_v1o.js (13 Nov 2026: v1n's checks, unchanged, on the page built from starter pack v17, round 12: help-page
 // fixes in twelve programs)
 // was: test_loader_v1n.js (9 Nov 2026: v1m's checks, unchanged, on the page built from starter pack v16, round 11: the help
 // pages in plain words)
@@ -13,7 +15,7 @@
 // Calculator: Calculators\Prime with HP's apps, settings, old programs and a matrix; Temp with the lock file.  Every file
 // the page writes is compared byte for byte with the starter pack it was built from.
 //
-//   node tests/test_loader_v1o.js PrimeLoader_v1o.html PACK.zip
+//   node tests/test_loader_v1p.js PrimeLoader_v1p.html PACK.zip
 // v1k (4 Nov 2026, night): v1j's checks, run on the page built from starter pack v13 (round 8); Chapter 11's card
 //   is found by its new title, "t-Tests: Two Samples".
 // v1j (4 Nov 2026): v1i's checks, unchanged, run on the page built from starter pack v12 (round 7).

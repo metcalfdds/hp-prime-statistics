@@ -1,0 +1,19 @@
+T1  PASS  make_chitable_3m.py builds programs/ChiTable_beta3m.txt byte for byte
+T2  PASS  every changed line belongs to a replacement
+X1  PASS  669 tables: largest difference from the brute-force count 2.9e-15
+X1  PASS  651 tables with no empty row or column: largest difference from R's fisher.test 1.5e-12
+X2  PASS  a 2 x 3 table of 360 cases (10981 tables) returns -1
+X2  PASS  a 2 x 3 table of 240 cases (4921 tables) is counted
+X3  PASS  2x3 with E < 5: ['χ² is shaky; exact test (Freeman-Halton): p = 0.2727']
+X3  PASS  3x2 with E < 5: ['χ² is shaky; exact test (Freeman-Halton): p = 0.2121']
+X3  PASS  too big to count: ['χ² is shaky; too many tables to count: merge cells.']
+X3  PASS  2x2 with E < 5: ["χ² is shaky; see Fisher's exact test, page 6."]
+X3  PASS  every E at least 5: ['Association is not causation: check the design.']
+X4  PASS  help page 1 names both exact tests
+X4  PASS  the file is ASCII
+X4  PASS  no "!=" in the code
+X4  PASS  no LOCAL line holds more than 6 names
+X5  PASS  no association at all: 'O = 1,250, E = 1,250.00: just as expected' (beta 3l: 'O = 1,250, E = 1,250.00: MORE than expected')
+X5  PASS  194 random tables: 193 lines as in beta 3l, 1 "just as expected" where O = E
+
+17 of 17 checks PASS
