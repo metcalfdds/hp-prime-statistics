@@ -56,6 +56,7 @@ And around the programs:
 - **[The notes](docs/lessons-learned_v7zs.md)**: hard limits, commands that differ from the manual, touch and graphics idioms, the MicroPython bridge and how it fails silently, calling the CAS safely, numerical methods for 12-digit reals. Useful even if you never run a statistics program, and written so you can hand them to an AI assistant before it writes PPL for you.
 - **[Two shortcuts the manuals don't mention](docs/two-shortcuts.md)**: loading the Virtual Calculator by copying files into its folder, and a big data set as one matrix file, with who found what.
 - **[Tools](tools/)**: the checks every program passes before it is pasted (a lint gate, a fleet-wide name check, a check that no two lines of text overlap on screen, a PC harness that drives a program like a student), in plain Python 3.
+- **[Where to find a feature](#for-programmers-where-to-find-a-feature)**: which programs to open for 3-D plots you turn with a finger, animation, dragging, MicroPython, the CAS, and more.
 - **[Diagnostics](diagnostics/)**: small probe programs that test what your own calculator does.
 - **[How fast is the Prime?](#how-fast-is-the-prime-what-we-measured)**: what we timed on a G1 and a G2, and why a slow Prime may only need a reset.
 - **[A touch template](templates/TouchKit_template_v3.txt)** to start a program of your own.
@@ -262,6 +263,22 @@ Data sources for every preset are listed, with the checks made on them, in [docs
 Two things that go with the book but are not among its thirty-one programs are in [extras/](extras/): **FDAES**, the Forensic Dental Age Estimation Suite (v3.9d), an advanced program that runs seven published dental age methods and pools their answers, with its student guide, its last two change notes, and its Python check; and the **Maple worksheet** behind Figure 9.3, the *t* surface that TDist3D draws (moved from `maple/` to `extras/maple/`). Like everything here, FDAES is a teaching and demonstration aid, not validated casework software: read the disclaimer at the top of its guide first.
 
 ---
+
+## For programmers: where to find a feature
+
+If you write programs for the Prime and want to see how one kind of thing is done, start with these programs. Each one's own entry under [The programs](#the-programs) says what it does, and [the notes](#the-notes) say what we learned along the way.
+
+- **3-D plots you turn with a finger:** BiNorm3D (the bivariate normal surface, a wireframe drawn with `LINE_P` alone) and TDist3D (Student's t as one surface over t and the degrees of freedom, computed once so that every frame is drawing only). TDist3D is the calculator's version of the Maple surface in Figure 9.3 of *Statisticles*; the Maple worksheet, and a plain-text transcription of it, are in [extras/maple/](extras/maple/).
+- **Animation:** GaltonBoard (balls poured at a pace set by the clock) and ResampLab (permutation tests and the bootstrap you can watch). BurrLab shows a progress bar and a blinking hourglass during a long fit.
+- **Dragging:** ChiTable (an observed bar, with the expected bars following), CICatcher (the confidence level), PowerViz (the shaded regions), ScatterLab (points added, dragged, and deleted), ExhibitLab (an operating-characteristic curve), RiskLab (an ROC cut-off), AgreeLab, Norm3, SampDist, TrendTest, and BayesTree, whose tree and mosaic re-flow as you drag.
+- **Tapping:** TestChooser (a flowchart whose path draws itself to a test), AnovaLab (two groups to compare), EpiStats (a stratum dropped from the forest plot), RankLab (a rank strip), SurvLab (a cursor that reads S(t)), and Norm3 (the S-curve, for the inverse).
+- **Soft keys and menus:** ChiTable (soft keys in a `GETKEY`-and-`MOUSE` loop, checked on a G1 and a G2), NormExplorer ("More" pages of soft keys), and the [TouchKit template](templates/TouchKit_template_v3.txt).
+- **MicroPython:** StudRange (with a PPL fallback and a badge that says which one ran), BurrLab (the same fit in PPL and in MicroPython, timed side by side), NormExplorer (a sampler with a PPL fallback), ErrorRate (a simulation of 10,000 proficiency programs), and GaltonBoard (5,000 balls).
+- **The CAS:** ChiTable (Fisher's p as an exact fraction), PowerViz (solving for n), and ErrorRate (the rule of three as a limit).
+- **Keeping 12 digits:** DNAMixLR and TrendTest (sums of positive terms), StatDist (right tails, and its own incomplete gamma and beta functions), StudRange (a change of variable), ChiTable (an exact test counted in logarithms), NormExplorer (the sums of z sent across the bridge), and TTestLab (a cap on N).
+- **Statistics written in PPL:** FitCheck (Shapiro–Wilk, Anderson–Darling, and Lilliefors), AnovaLab (two-way ANOVA, Type III), RiskLab (logistic regression), SurvLab (Kaplan–Meier), RankLab (exact null distributions), and StatDist (27 distributions).
+- **Home, apps, and data:** CentralLimit (written as an app), EpiStats and Norm3 (called with arguments), ExhibitLab (results left in Home variables), and DataLoad (matrix files spread into lists).
+- **Text on the screen:** BayesTree (a line of mixed pieces placed with the x that `TEXTOUT_P` returns) and AgreeLab (a d̄ drawn as a d with a bar over it).
 
 ## How fast is the Prime? What we measured
 
