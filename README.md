@@ -334,7 +334,7 @@ Short programs for finding out what your own calculator does.
 - testing on the HP Prime Virtual Calculator;
 - a list of disproved theories, recorded as disproved.
 
-The lessons learned document can be uploaded to your favorite AI to assist with coding.
+The lessons learned document can be uploaded to your favorite AI to assist with coding. **For an AI assistant with a smaller context window** (a local model in LM Studio, say), [docs/ppl-rules-for-any-assistant.md](docs/ppl-rules-for-any-assistant.md) condenses it to about 4,000 words of flat rules and a short program that passes the gate: put the whole file in the assistant's system prompt, then ask for one small program at a time.
 
 A few things from it that are hard to find elsewhere:
 

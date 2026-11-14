@@ -1,0 +1,5 @@
+example in the document == TBL2X2.txt: True
+default table  returned -1.0 | warnings 0 | message boxes []
+Cancel         returned 0.0 | warnings 0 | message boxes []
+count 200000   returned 0.0 | warnings 0 | message boxes ['Each count must be from 0 to 100,000.']
+a row of 0     returned 0.0 | warnings 0 | message boxes ['A row or column total is 0: the chi-square is undefined.']

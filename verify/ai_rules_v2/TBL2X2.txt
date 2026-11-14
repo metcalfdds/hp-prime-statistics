@@ -1,0 +1,78 @@
+// ============================================================
+// TBL2X2 - version 2
+// Chi-square and odds ratio for a 2 x 2 table (a b / c d)
+// ============================================================
+// Author: Roger Metcalf, 2026. Written with AI assistance (Anthropic
+//   Claude). Free for educational and personal use; no warranty.
+// Checked by ppl_gate_v1e and run in the PC harness (ppl_run_v3e);
+//   not yet on a calculator.
+
+EXPORT TBL2X2()
+BEGIN
+  LOCAL tbA, tbB, tbC, tbD, tbOK, tbR1;
+  LOCAL tbR2, tbC1, tbC2, tbN, tbX2, tbYt;
+  tbA := 10; tbB := 20; tbC := 30; tbD := 15;
+  tbOK := INPUT({{tbA,[0]}, {tbB,[0]}, {tbC,[0]}, {tbD,[0]}}, "2 x 2 table",
+                {"a", "b", "c", "d"},
+                {"Row 1, column 1: 0 to 100,000", "Row 1, column 2: 0 to 100,000",
+                 "Row 2, column 1: 0 to 100,000", "Row 2, column 2: 0 to 100,000"},
+                {10, 20, 30, 15});
+  IF tbOK == 0 THEN RETURN; END;                       // Cancel
+  IF MIN(tbA, tbB, tbC, tbD) < 0 OR MAX(tbA, tbB, tbC, tbD) > 100000 THEN
+    MSGBOX("Each count must be from 0 to 100,000."); RETURN;     // refuse, and say the range
+  END;
+  tbR1 := tbA + tbB; tbR2 := tbC + tbD;
+  tbC1 := tbA + tbC; tbC2 := tbB + tbD;
+  tbN := tbR1 + tbR2;
+  IF MIN(tbR1, tbR2, tbC1, tbC2) == 0 THEN
+    MSGBOX("A row or column total is 0: the chi-square is undefined."); RETURN;
+  END;
+  // Pearson chi-square and Yates's correction, 1 df
+  tbX2 := tbN * (tbA * tbD - tbB * tbC)^2 / (tbR1 * tbR2 * tbC1 * tbC2);
+  tbYt := tbN * MAX(0, ABS(tbA * tbD - tbB * tbC) - tbN / 2)^2 / (tbR1 * tbR2 * tbC1 * tbC2);
+  tbShow(tbA, tbB, tbC, tbD, tbX2, tbYt);
+END;
+
+// the upper tail of chi-square with 1 df, as a lower normal tail:
+// it keeps its digits where 1 - CHISQUARE_CDF would be exactly 0
+tbPVal(pvX)
+BEGIN
+  RETURN 2 * NORMALD_CDF(0, 1, -(pvX^0.5));
+END;
+
+// p as text: four decimals, or "< 0.0001"
+tbPStr(psP)
+BEGIN
+  IF psP < 0.0001 THEN RETURN "p < 0.0001"; END;
+  RETURN "p = " + STRING(psP, 2, 4);
+END;
+
+tbShow(shA, shB, shC, shD, shX2, shYt)
+BEGIN
+  LOCAL shOR, shSE, shLo, shHi, shY, shK;
+  LOCAL shH;
+  // odds ratio with Woolf's interval; 0.5 added to every cell if one is 0
+  shH := 0;
+  IF MIN(shA, shB, shC, shD) == 0 THEN shH := 0.5; END;
+  shOR := (shA + shH) * (shD + shH) / ((shB + shH) * (shC + shH));
+  shSE := (1 / (shA + shH) + 1 / (shB + shH) + 1 / (shC + shH) + 1 / (shD + shH))^0.5;
+  shLo := shOR * EXP(-1.959964 * shSE);
+  shHi := shOR * EXP(1.959964 * shSE);
+  DIMGROB_P(G1, 320, 240, RGB(255, 255, 255));
+  TEXTOUT_P("2 x 2 table", G1, 10, 6, 3, RGB(0, 0, 160));
+  shY := 34;
+  TEXTOUT_P("a = " + STRING(shA, 2, 0) + "   b = " + STRING(shB, 2, 0), G1, 10, shY, 2, RGB(0, 0, 0)); shY := shY + 16;
+  TEXTOUT_P("c = " + STRING(shC, 2, 0) + "   d = " + STRING(shD, 2, 0), G1, 10, shY, 2, RGB(0, 0, 0)); shY := shY + 24;
+  TEXTOUT_P(CHAR(967) + CHAR(178) + " = " + STRING(shX2, 2, 3) + " (1 df),  " + tbPStr(tbPVal(shX2)), G1, 10, shY, 2, RGB(0, 0, 0)); shY := shY + 16;
+  TEXTOUT_P("Yates " + CHAR(967) + CHAR(178) + " = " + STRING(shYt, 2, 3) + ",  " + tbPStr(tbPVal(shYt)), G1, 10, shY, 2, RGB(0, 0, 0)); shY := shY + 24;
+  TEXTOUT_P("Odds ratio = " + STRING(shOR, 2, 3), G1, 10, shY, 2, RGB(0, 0, 0)); shY := shY + 16;
+  TEXTOUT_P("95% CI " + STRING(shLo, 2, 3) + " to " + STRING(shHi, 2, 3), G1, 10, shY, 2, RGB(0, 0, 0)); shY := shY + 16;
+  IF shH > 0 THEN
+    TEXTOUT_P("(0.5 added to every cell: a cell was 0)", G1, 10, shY, 1, RGB(120, 120, 120));
+  END;
+  TEXTOUT_P("Any key: quit", G1, 10, 222, 1, RGB(120, 120, 120));
+  BLIT_P(G0, 0, 0, G1);
+  REPEAT shK := GETKEY; UNTIL shK == -1;             // drain the key that closed INPUT
+  REPEAT shK := GETKEY; UNTIL shK > -1;              // wait
+  REPEAT shK := GETKEY; UNTIL shK == -1;             // drain it
+END;
