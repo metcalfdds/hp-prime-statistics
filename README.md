@@ -28,7 +28,7 @@ Hundreds of community PPL programs from several HP-related public forums were re
 
 **New here?** [START_HERE.md](START_HERE.md) is a one-page guide: what to read in five minutes, five programs to try first, and how to help.
 
-**No calculator? Try all 31 on HP's free Virtual Calculator.** Download the **[starter pack](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v17.zip)** (one 1.6 MB zip, for the Virtual Calculator on Windows). Unzip it, copy one folder's files into the Virtual Calculator's own folder, and start it: the programs are in its Program Catalog, CentralLimit already made into its app. No Connectivity Kit, and no copying and pasting of code. [The steps](starter-pack/README.md) fit on one page.
+**No calculator? Try all 31 on HP's free Virtual Calculator.** Download the **[starter pack](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v18.zip)** (one 1.6 MB zip, for the Virtual Calculator on Windows). Unzip it, copy one folder's files into the Virtual Calculator's own folder, and start it: the programs are in its Program Catalog, CentralLimit already made into its app. No Connectivity Kit, and no copying and pasting of code. [The steps](starter-pack/README.md) fit on one page.
 
 **Your own data, without typing it in.** The **[HP Prime Data Loader](data-loader/README.md)** is one web page that works offline: paste columns from Excel, SPSS or a CSV file, and it writes the calculator's own matrix file. On the calculator, **DataLoad** puts each column, or each group's scores, into the Statistics lists that the other programs read, and draws a box plot of each. The starter pack carries DataLoad and a sample data set (new, 31 October 2026).
 
@@ -53,7 +53,7 @@ Together, these 31 programs currently run to more than **90,000 lines**: 60,700 
 
 And around the programs:
 
-- **[The notes](docs/lessons-learned_v7zr.md)**: hard limits, commands that differ from the manual, touch and graphics idioms, the MicroPython bridge and how it fails silently, calling the CAS safely, numerical methods for 12-digit reals. Useful even if you never run a statistics program, and written so you can hand them to an AI assistant before it writes PPL for you.
+- **[The notes](docs/lessons-learned_v7zs.md)**: hard limits, commands that differ from the manual, touch and graphics idioms, the MicroPython bridge and how it fails silently, calling the CAS safely, numerical methods for 12-digit reals. Useful even if you never run a statistics program, and written so you can hand them to an AI assistant before it writes PPL for you.
 - **[Two shortcuts the manuals don't mention](docs/two-shortcuts.md)**: loading the Virtual Calculator by copying files into its folder, and a big data set as one matrix file, with who found what.
 - **[Tools](tools/)**: the checks every program passes before it is pasted (a lint gate, a fleet-wide name check, a check that no two lines of text overlap on screen, a PC harness that drives a program like a student), in plain Python 3.
 - **[Diagnostics](diagnostics/)**: small probe programs that test what your own calculator does.
@@ -173,8 +173,9 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 
 ### Tables and tests
 
-**ChiTable** (beta 3l; 9 November: the help pages in plain words; 5 November: reasonable limits on what you type, and one header on every help page, "ChiTable help n/N: Topic"): chi-square for a 2 × 2, 2 × 3 or 3 × 2 table.
+**ChiTable** (beta 3m; 13 November: the exact test for a 2 × 3 or 3 × 2 table; 9 November: the help pages in plain words; 5 November: reasonable limits on what you type, and one header on every help page, "ChiTable help n/N: Topic"): chi-square for a 2 × 2, 2 × 3 or 3 × 2 table.
 - The full statistics: expected counts, G², Cramér's V, adjusted residuals, and for a 2 × 2 Fisher, RR, OR and the risk difference with Newcombe's interval.
+- **An exact test for every shape** (13 November 2026). When an expected count is below 5, results page 5 gives the exact p for a 2 × 3 or 3 × 2 table (Freeman and Halton: Fisher's rule with more columns, the p R's `fisher.test` gives), counted on the calculator for up to 10,000 tables; a 2 × 2 table has Fisher's test on page 6.
 - **Drag an observed bar**, and every expected bar moves with χ² and p.
 - **Drag the critical line** on the χ² curve.
 - An independence morph, a Fisher bar plot, and the Florida death-penalty tables as a Simpson's-paradox page.
@@ -323,7 +324,7 @@ Short programs for finding out what your own calculator does.
 
 ## The notes
 
-[**docs/lessons-learned_v7zr.md**](docs/lessons-learned_v7zr.md) is the substantial document here: everything learned the expensive way across dozens and dozens of build iterations on G1 and G2 hardware. It covers:
+[**docs/lessons-learned_v7zs.md**](docs/lessons-learned_v7zs.md) is the substantial document here: everything learned the expensive way across dozens and dozens of build iterations on G1 and G2 hardware. It covers:
 - hard limits;
 - command behaviour that contradicts the manual;
 - graphics and input idioms;

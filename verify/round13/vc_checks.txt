@@ -1,0 +1,17 @@
+Virtual Calculator 2.4.2 (build 2026-09-09) under Wine in the cloud workspace, 13 November 2026.
+Program Catalog > Edit > Check; the message was read from a screenshot (tesseract) and looked at.
+
+17:11  ChiTable beta 3m (before the "just as expected" fix) | ChiTable:Main(PPL) | No errors in the program
+       Then run: help page 1 (screens/ChiTable_help1_r13.png); New table 2 x 3 = 3 1 4 / 1 5 2, results page 5:
+       "exact test (Freeman-Halton): p = 0.2308" (R's fisher.test: 0.2307692; screens/ChiTable_page5_2x3_r13.png);
+       New table 3 x 2 = 3 1 / 1 5 / 4 2 (the same table turned on its side), page 5: p = 0.2308
+       (screens/ChiTable_page5_3x2_r13.png); New table 2 x 3 = 1250 1250 2 / 1250 1250 2, page 5: "too many tables to
+       count: merge cells." and "O = 1,250, E = 1,250.00: MORE than expected" (screens/ChiTable_page5_flat_before_fix_r13.png,
+       the fault fixed before the pack was built); New table 2 x 2 = 3 1 / 1 3, page 5: "see Fisher's exact test, page 6.",
+       page 6: "p = 17/35 = 0.4857", exact (CAS) (screens/ChiTable_page5_2x2_r13.png, ChiTable_page6_2x2_r13.png).
+17:24  ChiTable beta 3m, final | ChiTable:Main(PPL) | No errors in the program
+       Then run: New table 2 x 3 = 1250 1250 2 / 1250 1250 2, page 5: "O = 1,250, E = 1,250.00: just as expected"
+       (screens/ChiTable_page5_flat_after_fix_r13.png).
+17:26  ChiTable beta 3m, final, a fresh copy copied in while the calculator was closed | ChiTable:Main(PPL) | No errors
+       in the program (screens/ChiTable_check_final_r13.png).  Nothing was run.  Calculator > Exit wrote the file back;
+       the pack carries that file.

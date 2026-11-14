@@ -1,10 +1,10 @@
 # Starter pack for the Virtual Calculator
 
-*v17, 2026-11-13. Built by `tools/make_starter_pack_v4.py` from `programs/`; do not edit this page by hand.*
+*v18, 2026-11-13. Built by `tools/make_starter_pack_v4.py` from `programs/`; do not edit this page by hand.*
 
-All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** on a Windows PC: no Connectivity Kit, no copying and pasting. Download **[HP_Prime_Statistics_Starter_Pack_v17.zip](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v17.zip)** (one file).
+All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** on a Windows PC: no Connectivity Kit, no copying and pasting. Download **[HP_Prime_Statistics_Starter_Pack_v18.zip](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v18.zip)** (one file).
 
-*How this pack was tested on the Virtual Calculator: [docs/changes/StarterPack_v17_NOTES.md](../docs/changes/StarterPack_v17_NOTES.md).*
+*How this pack was tested on the Virtual Calculator: [docs/changes/StarterPack_v18_NOTES.md](../docs/changes/StarterPack_v18_NOTES.md).*
 
 ### What you need
 - A Windows PC with the HP Prime Virtual Calculator (64-bit). It is a free download from hpcalc.org, which lists Hewlett-Packard as its author. The pack was tested on the Virtual Calculator 2.4.2 (build 2026-09-09), 64-bit.
@@ -43,7 +43,7 @@ All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** o
 | BurrLab | beta 1q | 4,712 | `BurrLab` | MicroPython | `efaa895d783a` |
 | CICatcher | beta 2j | 2,196 | `CICatcher` |  | `bd30b24ddfb2` |
 | CentralLimit | beta 3g | 2,788 | (an app) | app on Statistics 1Var | `502640fe6456` |
-| ChiTable | beta 3l | 3,720 | `ChiTable` |  | `b86ebd200acb` |
+| ChiTable | beta 3m | 3,863 | `ChiTable` |  | `46f1745b9ede` |
 | DNAMixLR | beta 3j | 3,471 | `DNAMixLR` |  | `349a8cc1899c` |
 | DataLoad | beta 1g | 1,094 | `DATALOAD` |  | `e211874d3a5e` |
 | EpiStats | v1.7l | 6,279 | `EpiStats` |  | `fea1365d7b88` |
