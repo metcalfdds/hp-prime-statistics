@@ -1,0 +1,1058 @@
+{
+ "tables": [
+  {
+   "name": "Expected values of normal order statistics",
+   "pages": [
+    75,
+    76
+   ],
+   "n": 399,
+   "last": 77,
+   "wrong": 0,
+   "kind": "last digit",
+   "note": "77 of 399 cells off by one in the fourth decimal; the example on p.75 quotes 1.1630 where the table prints 1.1629",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Variances and covariances of normal order statistics",
+   "pages": [
+    77
+   ],
+   "n": 125,
+   "last": 0,
+   "wrong": 0,
+   "kind": "label",
+   "note": "the numbers are right; the heading says E[X(i)X(j)] is shown, but the entries are the covariances",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Probability integral of the range",
+   "pages": [
+    79,
+    80,
+    81,
+    82,
+    83,
+    84,
+    85,
+    86
+   ],
+   "n": 2379,
+   "last": 1,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Studentized range, upper 1%, 5%, 10% points",
+   "pages": [
+    87,
+    88,
+    89
+   ],
+   "n": 1463,
+   "last": 198,
+   "wrong": 505,
+   "kind": "miscalculation",
+   "note": "half the cells at 1% and 5% differ from the true values; Kokoska and Nevison (1989) print the right values",
+   "bypage": {
+    "87": 231,
+    "88": 252,
+    "89": 22
+   },
+   "label_cells": 0
+  },
+  {
+   "name": "Cumulative binomial probabilities",
+   "pages": [
+    96,
+    97,
+    98,
+    99,
+    100
+   ],
+   "n": 1672,
+   "last": 35,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Geometric distribution, probability and cumulative",
+   "pages": [
+    102
+   ],
+   "n": 225,
+   "last": 0,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "the worked example above the table has 0.656 for 0.0656 in a sum",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Hypergeometric probability and distribution functions",
+   "pages": [
+    105,
+    106,
+    107,
+    108,
+    109
+   ],
+   "n": 1000,
+   "last": 23,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Negative binomial probabilities",
+   "pages": [
+    112
+   ],
+   "n": 126,
+   "last": 1,
+   "wrong": 5,
+   "kind": "misprint",
+   "note": "the last column carries a fifth digit, always 0, that is not a real digit: seven cells, five of them wrong as printed",
+   "bypage": {
+    "112": 5
+   },
+   "label_cells": 0
+  },
+  {
+   "name": "Cumulative Poisson probabilities",
+   "pages": [
+    114,
+    115,
+    116,
+    117,
+    118
+   ],
+   "n": 989,
+   "last": 44,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Chi-square critical values",
+   "pages": [
+    130,
+    131,
+    132,
+    133
+   ],
+   "n": 1304,
+   "last": 0,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Chi-square over degrees of freedom",
+   "pages": [
+    134
+   ],
+   "n": 264,
+   "last": 1,
+   "wrong": 2,
+   "kind": "unknown",
+   "note": "500 df: 0.810 for 0.805 and 1.111 for 1.106",
+   "bypage": {
+    "134": 2
+   },
+   "label_cells": 0
+  },
+  {
+   "name": "F critical values, six levels",
+   "pages": [
+    141,
+    142,
+    143,
+    144,
+    145,
+    146
+   ],
+   "n": 1586,
+   "last": 1,
+   "wrong": 1,
+   "kind": "misprint",
+   "note": "6336 for 6366 (1%, numerator infinity, denominator 1); still printed in the 31st (2003) and 33rd (2018) editions of the CRC Standard Mathematical Tables",
+   "bypage": {
+    "144": 1
+   },
+   "label_cells": 0
+  },
+  {
+   "name": "Student's t critical values",
+   "pages": [
+    166
+   ],
+   "n": 252,
+   "last": 0,
+   "wrong": 73,
+   "kind": "label + misprint",
+   "note": "the last two columns are headed 0.0025 and 0.001 but hold the values for 0.001 and 0.0005 (72 cells); 0.290 for 1.290 at 100 df; \"3.69o\" at 27 df",
+   "bypage": {
+    "166": 73
+   },
+   "label_cells": 72
+  },
+  {
+   "name": "Normal distribution: f(z), F(z), 1 - F(z)",
+   "pages": [
+    176,
+    177,
+    178,
+    179,
+    180,
+    181,
+    182,
+    183,
+    184
+   ],
+   "n": 2448,
+   "last": 132,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Table 7.1, critical values of the normal distribution",
+   "pages": [
+    184
+   ],
+   "n": 23,
+   "last": 0,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Tolerance factors for normal distributions",
+   "pages": [
+    186
+   ],
+   "n": 216,
+   "last": 1,
+   "wrong": 162,
+   "kind": "label + approximation",
+   "note": "the headings P and alpha are exchanged against the book's own definitions (162 of 216 cells wrong as headed; 1989 has them as gamma and 1 - alpha); the numbers are the Wald-Wolfowitz approximation (171 differ from the exact factors, by 3% at n = 2)",
+   "bypage": {
+    "186": 162
+   },
+   "label_cells": 216
+  },
+  {
+   "name": "Percentage points of the correlation coefficient",
+   "pages": [
+    193
+   ],
+   "n": 186,
+   "last": 0,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "the six cells of the first row, printed in a short form, were checked by hand",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Circular normal probabilities",
+   "pages": [
+    194
+   ],
+   "n": 198,
+   "last": 12,
+   "wrong": 183,
+   "kind": "label",
+   "note": "every row label is one row too low: the row marked 0.2 holds the values for 0.1, and so on; with the labels moved up one row all 198 cells are exact",
+   "bypage": {
+    "194": 183
+   },
+   "label_cells": 198
+  },
+  {
+   "name": "Circular error probabilities",
+   "pages": [
+    195
+   ],
+   "n": 150,
+   "last": 1,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Estimators of the mean and of sigma (variances, efficiencies)",
+   "pages": [
+    202
+   ],
+   "n": 87,
+   "last": 0,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "the best-linear-estimate part was not checked",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Table 9.1, common critical values",
+   "pages": [
+    206
+   ],
+   "n": 50,
+   "last": 4,
+   "wrong": 1,
+   "kind": "misprint",
+   "note": "the last row is printed with a fourth decimal that is a padding zero (1074.6790 for 1074.6794)",
+   "bypage": {
+    "206": 1
+   },
+   "label_cells": 0
+  },
+  {
+   "name": "Table of t over root n (p.209)",
+   "pages": [
+    209
+   ],
+   "n": 36,
+   "last": 1,
+   "wrong": 36,
+   "kind": "label",
+   "note": "the columns are headed z(alpha/2)/sqrt(n); the numbers are t(alpha/2, n-1)/sqrt(n) (8.99 at n = 2, where z gives 1.39)",
+   "bypage": {
+    "209": 36
+   },
+   "label_cells": 36
+  },
+  {
+   "name": "Table 9.6, k1 and k2 for the median interval",
+   "pages": [
+    211
+   ],
+   "n": 50,
+   "last": 0,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "checked against the formula the book gives",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Table 9.7, order statistics for the median interval",
+   "pages": [
+    212
+   ],
+   "n": 210,
+   "last": 0,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Confidence limits for a Poisson mean",
+   "pages": [
+    213
+   ],
+   "n": 204,
+   "last": 0,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Confidence limits of proportions, 95% and 99%",
+   "pages": [
+    215,
+    216,
+    217,
+    218,
+    219,
+    220,
+    221,
+    222,
+    223,
+    224,
+    225,
+    226,
+    227,
+    228,
+    229,
+    230
+   ],
+   "n": 4224,
+   "last": 146,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Bartlett's test critical values",
+   "pages": [
+    244,
+    245
+   ],
+   "n": 579,
+   "last": 6,
+   "wrong": 1,
+   "kind": "unknown",
+   "note": ".1672 for .1670 (1%, n = 3, k = 3)",
+   "bypage": {
+    "245": 1
+   },
+   "label_cells": 0
+  },
+  {
+   "name": "Cochran's test critical values",
+   "pages": [
+    247,
+    248
+   ],
+   "n": 504,
+   "last": 72,
+   "wrong": 254,
+   "kind": "label + inherited",
+   "note": "the second table is headed alpha = .05 but is the 1% table (headed rightly in 1989), so 221 of its 252 cells are wrong as headed; read at the right level, 71 cells of the two tables are off by 2 or 3 in the fourth decimal, as in the 1947 source",
+   "bypage": {
+    "247": 33,
+    "248": 221
+   },
+   "label_cells": 252
+  },
+  {
+   "name": "Values of R for the variance test",
+   "pages": [
+    249
+   ],
+   "n": 152,
+   "last": 0,
+   "wrong": 2,
+   "kind": "unknown",
+   "note": "150 df, beta = 0.5: 1.297 for 1.294 and 1.206 for 1.203",
+   "bypage": {
+    "249": 2
+   },
+   "label_cells": 0
+  },
+  {
+   "name": "Dixon's ratios r10, r11, r20",
+   "pages": [
+    251
+   ],
+   "n": 272,
+   "last": 94,
+   "wrong": 60,
+   "kind": "inherited + misprint",
+   "note": "Dixon's 1951 tables are known to hold errors (McBane 2006); .745 for .765 (r10, n = 4, 5%) is not among those and looks like a misprint",
+   "bypage": {
+    "251": 60
+   },
+   "label_cells": 0
+  },
+  {
+   "name": "2 x 2 contingency tables (critical b and its probability)",
+   "pages": [
+    254,
+    255,
+    256,
+    257,
+    258,
+    259,
+    260,
+    261,
+    262,
+    263,
+    264,
+    265,
+    266,
+    267
+   ],
+   "n": 6144,
+   "last": 807,
+   "wrong": 1191,
+   "kind": "miscalculation",
+   "note": "the probability printed is that of the single table, not the one-tail probability the text describes: 305 critical values are one too large, 886 probabilities are wrong by more than a unit in the third decimal and 807 by one unit; the example on p.253 quotes 1.035 where the table prints 1.034",
+   "bypage": {
+    "254": 16,
+    "255": 44,
+    "256": 55,
+    "257": 71,
+    "258": 83,
+    "259": 91,
+    "260": 90,
+    "261": 85,
+    "262": 122,
+    "263": 75,
+    "264": 141,
+    "265": 79,
+    "266": 161,
+    "267": 78
+   },
+   "label_cells": 0
+  },
+  {
+   "name": "Orthogonal polynomials",
+   "pages": [
+    286,
+    287,
+    288
+   ],
+   "n": 1052,
+   "last": 0,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "the blocks for 3, 4 and 5 points were not read",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Duncan's multiple range test",
+   "pages": [
+    294,
+    295,
+    296
+   ],
+   "n": 1713,
+   "last": 300,
+   "wrong": 0,
+   "kind": "last digit",
+   "note": "300 of 1,713 cells off by one in the last place",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Dunnett's two-sided critical values, 5% and 1%",
+   "pages": [
+    297,
+    298
+   ],
+   "n": 384,
+   "last": 7,
+   "wrong": 303,
+   "kind": "inherited",
+   "note": "the 1955 values, too large for three or more treatments (3.39 for 3.29 at 5 df, k = 3); Dunnett gave new two-sided tables in 1964",
+   "bypage": {
+    "297": 154,
+    "298": 149
+   },
+   "label_cells": 0
+  },
+  {
+   "name": "Dunnett's one-sided critical values, 5% and 1%",
+   "pages": [
+    298,
+    299
+   ],
+   "n": 396,
+   "last": 22,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Kendall's rank correlation, distribution of S",
+   "pages": [
+    352
+   ],
+   "n": 82,
+   "last": 0,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Kolmogorov-Smirnov one-sample critical values",
+   "pages": [
+    355,
+    356
+   ],
+   "n": 200,
+   "last": 0,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Kolmogorov-Smirnov two-sample critical values",
+   "pages": [
+    357
+   ],
+   "n": 150,
+   "last": 0,
+   "wrong": 8,
+   "kind": "unknown + misprint",
+   "note": "8 of 150 cells wrong (the two values for 12 and 12 stand in each other's places; 5 and 5 has asterisks where 25/25 belongs); 36/35 for 36/36",
+   "bypage": {
+    "357": 8
+   },
+   "label_cells": 0
+  },
+  {
+   "name": "Kruskal-Wallis exact probability levels",
+   "pages": [
+    359,
+    360
+   ],
+   "n": 108,
+   "last": 0,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Distribution of the total number of runs",
+   "pages": [
+    362,
+    363,
+    364,
+    365,
+    366,
+    367,
+    368,
+    369,
+    370,
+    371
+   ],
+   "n": 2178,
+   "last": 0,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Critical values for the sign test",
+   "pages": [
+    373
+   ],
+   "n": 200,
+   "last": 0,
+   "wrong": 22,
+   "kind": "misprint",
+   "note": "22 cells print 0 where no value satisfies the rule the page gives (n = 1 at every level, for instance)",
+   "bypage": {
+    "373": 22
+   },
+   "label_cells": 0
+  },
+  {
+   "name": "Spearman's rank correlation, critical values",
+   "pages": [
+    375
+   ],
+   "n": 56,
+   "last": 0,
+   "wrong": 2,
+   "kind": "unknown",
+   "note": "n = 12 and 13 at 0.001 are one step off the rule the other 42 exact cells follow; n = 20 agrees by simulation; two of the four cells for n = 30 are too close to call",
+   "bypage": {
+    "375": 2
+   },
+   "label_cells": 0
+  },
+  {
+   "name": "Spearman's rank correlation, exact tail probabilities",
+   "pages": [
+    376,
+    377
+   ],
+   "n": 380,
+   "last": 0,
+   "wrong": 18,
+   "kind": "misprint",
+   "note": "in the n = 6 column 0.5000 stands three times instead of twice and the rest of the column is one row low (18 cells), ending with a probability for S = 72, which cannot occur",
+   "bypage": {
+    "376": 18
+   },
+   "label_cells": 0
+  },
+  {
+   "name": "Wilcoxon signed-ranks critical values",
+   "pages": [
+    379
+   ],
+   "n": 114,
+   "last": 0,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Mann-Whitney U, probabilities",
+   "pages": [
+    380,
+    381,
+    382,
+    383,
+    384
+   ],
+   "n": 385,
+   "last": 0,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "12 cells on p.381, where two blocks stand side by side, were not read",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Mann-Whitney U, critical values at seven levels",
+   "pages": [
+    385,
+    386,
+    387,
+    388
+   ],
+   "n": 2251,
+   "last": 0,
+   "wrong": 0,
+   "kind": "label",
+   "note": "in the 0.10 table the row for 18 is labelled 8 (its 19 numbers are right)",
+   "bypage": {},
+   "label_cells": 19
+  },
+  {
+   "name": "Factors for control chart lines",
+   "pages": [
+    392
+   ],
+   "n": 182,
+   "last": 19,
+   "wrong": 5,
+   "kind": "inherited",
+   "note": "D1 and D2 at n = 12, 14, 15 are off by 2 to 4 in the third decimal (they follow from d3 kept to three places)",
+   "bypage": {
+    "392": 5
+   },
+   "label_cells": 0
+  },
+  {
+   "name": "Permutations",
+   "pages": [
+    506
+   ],
+   "n": 133,
+   "last": 0,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Combinations",
+   "pages": [
+    507,
+    508,
+    509
+   ],
+   "n": 764,
+   "last": 0,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Bessel functions J, Y, I, K",
+   "pages": [
+    513,
+    515
+   ],
+   "n": 204,
+   "last": 1,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Beta function",
+   "pages": [
+    517
+   ],
+   "n": 200,
+   "last": 0,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Factorials, double factorials and their logarithms",
+   "pages": [
+    521
+   ],
+   "n": 140,
+   "last": 0,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Gamma function",
+   "pages": [
+    524
+   ],
+   "n": 104,
+   "last": 0,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Partitions",
+   "pages": [
+    528
+   ],
+   "n": 38,
+   "last": 0,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Stirling numbers of the first kind",
+   "pages": [
+    529
+   ],
+   "n": 49,
+   "last": 0,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Stirling numbers of the second kind",
+   "pages": [
+    530
+   ],
+   "n": 84,
+   "last": 0,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  },
+  {
+   "name": "Sums of powers of integers",
+   "pages": [
+    531
+   ],
+   "n": 100,
+   "last": 0,
+   "wrong": 0,
+   "kind": "clean",
+   "note": "",
+   "bypage": {},
+   "label_cells": 0
+  }
+ ],
+ "totals": {
+  "tables": 57,
+  "cells": 39164,
+  "last": 2006,
+  "wrong": 2834,
+  "pages": 151
+ },
+ "bypage": {
+  "75": 0,
+  "76": 0,
+  "77": 0,
+  "79": 0,
+  "80": 0,
+  "81": 0,
+  "82": 0,
+  "83": 0,
+  "84": 0,
+  "85": 0,
+  "86": 0,
+  "87": 231,
+  "88": 252,
+  "89": 22,
+  "96": 0,
+  "97": 0,
+  "98": 0,
+  "99": 0,
+  "100": 0,
+  "102": 0,
+  "105": 0,
+  "106": 0,
+  "107": 0,
+  "108": 0,
+  "109": 0,
+  "112": 5,
+  "114": 0,
+  "115": 0,
+  "116": 0,
+  "117": 0,
+  "118": 0,
+  "130": 0,
+  "131": 0,
+  "132": 0,
+  "133": 0,
+  "134": 2,
+  "141": 0,
+  "142": 0,
+  "143": 0,
+  "144": 1,
+  "145": 0,
+  "146": 0,
+  "166": 73,
+  "176": 0,
+  "177": 0,
+  "178": 0,
+  "179": 0,
+  "180": 0,
+  "181": 0,
+  "182": 0,
+  "183": 0,
+  "184": 0,
+  "186": 162,
+  "193": 0,
+  "194": 183,
+  "195": 0,
+  "202": 0,
+  "206": 1,
+  "209": 36,
+  "211": 0,
+  "212": 0,
+  "213": 0,
+  "215": 0,
+  "216": 0,
+  "217": 0,
+  "218": 0,
+  "219": 0,
+  "220": 0,
+  "221": 0,
+  "222": 0,
+  "223": 0,
+  "224": 0,
+  "225": 0,
+  "226": 0,
+  "227": 0,
+  "228": 0,
+  "229": 0,
+  "230": 0,
+  "244": 0,
+  "245": 1,
+  "247": 33,
+  "248": 221,
+  "249": 2,
+  "251": 60,
+  "254": 16,
+  "255": 44,
+  "256": 55,
+  "257": 71,
+  "258": 83,
+  "259": 91,
+  "260": 90,
+  "261": 85,
+  "262": 122,
+  "263": 75,
+  "264": 141,
+  "265": 79,
+  "266": 161,
+  "267": 78,
+  "286": 0,
+  "287": 0,
+  "288": 0,
+  "294": 0,
+  "295": 0,
+  "296": 0,
+  "297": 154,
+  "298": 149,
+  "299": 0,
+  "352": 0,
+  "355": 0,
+  "356": 0,
+  "357": 8,
+  "359": 0,
+  "360": 0,
+  "362": 0,
+  "363": 0,
+  "364": 0,
+  "365": 0,
+  "366": 0,
+  "367": 0,
+  "368": 0,
+  "369": 0,
+  "370": 0,
+  "371": 0,
+  "373": 22,
+  "375": 2,
+  "376": 18,
+  "377": 0,
+  "379": 0,
+  "380": 0,
+  "381": 0,
+  "382": 0,
+  "383": 0,
+  "384": 0,
+  "385": 0,
+  "386": 0,
+  "387": 0,
+  "388": 0,
+  "392": 5,
+  "506": 0,
+  "507": 0,
+  "508": 0,
+  "509": 0,
+  "513": 0,
+  "515": 0,
+  "517": 0,
+  "521": 0,
+  "524": 0,
+  "528": 0,
+  "529": 0,
+  "530": 0,
+  "531": 0
+ }
+}
