@@ -16,11 +16,15 @@ New in beta 1i (Roger, 15 Nov 2026, of six additions proposed for the programs: 
     second low value does not mask, where the simple ratio r10 would see nothing).
   * A FAULT MENDED: a sample refused because every value is the same no longer replaces the loaded sample's sorted
     values first (until beta 1h "The last sample again" then met lists of two lengths: a run-time error).
+  * AXIS NUMBERS MENDED (found by this round's layout check, with data in the thousands and beyond): the last number of
+    the chi-square curve's and of the ECDF's axis could run past the screen's right edge; a data value wider than its
+    40 pixels was cut on the Q-Q plot's y axis and on the ECDF's x axis.  A number is kept on the screen now, and an
+    axis with a number too wide for its room is written in the Prime's scientific form, all of it.
   * Help: 12 pages (8 before): three on the test, and the Home variables on a page of their own.
   * Written from the formulas (Dixon 1950, 1951, 1953; McBane 2006 computes the same distribution by quadrature).  No
     other program was read for the arithmetic: the library in D:\\HP-Prime holds no program with Dixon's test
     (searched 15 Nov 2026; the TI STATCALC "Outlier test" is the 1.5 IQR fences).
-Every other screen is beta 1h's, the help pages' count and the opening page's list aside.
+Every other screen is beta 1h's, the help pages' count, the opening page's list and those axis numbers aside.
 Run from the repository's root:   python3 verify/round16/make_fitcheck_1i.py OUTDIR
 """
 import io, os, re, subprocess, sys, textwrap
@@ -46,6 +50,11 @@ gx, gw = np.polynomial.legendre.leggauss(20)
 def five(v): return ',\n    '.join(', '.join('%.12f' % t for t in v[k:k + 5]) for k in range(0, 20, 5))
 GX, GWT = five(gx), five(gw)
 
+# what the verify script found for fc_DxTail (kept in one place: the header note and the section heading both say it)
+ERRS = ('at every n from 3 to 30 its relative error is under 0.05 % for a p above 0.001 and under 0.2 % for a p above '
+        '0.0001 (verify_FitCheck_beta1i.py: against a fine-grid reference, the closed form at n = 3, simulation and '
+        'McBane\'s 2006 values)')
+
 # ---------------- header ----------------
 rep('// FITCHECK - beta 1h  (15 Nov 2026)\n', '// FITCHECK - beta 1i  (15 Nov 2026)\n')
 note = ('Round 16 (Roger, 15 Nov 2026, of six additions proposed for the programs: "Add all please").  DIXON\'S OUTLIER TEST '
@@ -53,12 +62,16 @@ note = ('Round 16 (Roger, 15 Nov 2026, of six additions proposed for the program
         'as a dot on a strip, the tested value in red, its gap and its range as brackets, the ratio (r10, r11, r21 or r22 '
         'by n: Dixon\'s 1953 scheme), its p at that end, the p for either end (twice it) and a sentence at alpha = 0.05.  '
         'The p is computed (fc_DxTail: a double integral over the anchor and the largest value, 20 x 20 Gauss-Legendre '
-        'points), not read from a table: @ERRS@.  A new preset, Darwin\'s 15 differences (n = 15 takes r22, which the second '
+        'points), not read from a table: ' + ERRS + '.  A new preset, Darwin\'s 15 differences (n = 15 takes r22, which the second '
         'low value does not mask).  A fault mended: a sample refused because every value is the same no longer replaces '
         'the loaded sample\'s values first (until beta 1h "The last sample again" then stopped with a run-time error).  '
+        'Axis numbers mended (found by this round\'s layout check): the last number of the chi-square curve\'s and the '
+        'ECDF\'s axis could run past the screen\'s right edge, and a data value wider than its 40 pixels was cut on the '
+        'Q-Q plot\'s y axis and the ECDF\'s x axis; a number is now kept on the screen, and an axis with a number too '
+        'wide is written in the Prime\'s scientific form (fc_AxLb, fc_AxWide).  '
         'Help has 12 pages (8 before): three on the test, and the Home variables on a page of their own; Home gets FC_R '
         'and FC_PR.  Written from the formulas; the library in D:\\HP-Prime holds no program with Dixon\'s test (searched '
-        '15 Nov 2026).  Every other screen is beta 1h\'s, the help pages\' count and the opening page\'s list aside.')
+        '15 Nov 2026).  Every other screen is beta 1h\'s, the help pages\' count, the opening page\'s list and those axis numbers aside.')
 before('// beta 1h (15 Nov 2026): Round 15', '// beta 1i (%s): ' % DATE + '\n//   '.join(textwrap.wrap(note, 100)) + '\n')
 after('''//   observed count and the p-value region, on a scale of SDs.
 ''', '''//   beta 1i: Dixon's outlier test for a small sample (the Outlier key of the
@@ -209,8 +222,11 @@ before('''// ============================================================
 //   with b from max(a, its lower end).  @ERRL@
 //   The test takes the end with the bigger ratio, so the p it reports is
 //   for EITHER end: twice the one-end p, the rule of the printed two-sided
-//   tables.  Twice is an upper bound (both ends cannot both count twice),
-//   and it is exact for r10 above 0.5, where the two ratios cannot both be.
+//   tables.  Twice is an upper limit: the two ends' ratios can be large
+//   together (when the middle values lie close).  It is exact for r10
+//   above 0.5, where the two ratios cannot both be; at the two-sided 5 %
+//   point the true chance of either end is 5.0 % for r10 and 4.6 to 4.9 %
+//   for the other three ratios (simulated: the verify script's A11).
 // ============================================================
 
 // The ratio at one end of the sorted sample: drE = 1 the lowest value, 2
@@ -228,6 +244,21 @@ BEGIN
   END;
   IF drG <= 0 OR drW <= 0 THEN RETURN 0; END;
   RETURN MIN(1, drG / drW);
+END;
+
+// A value of the sample as text, with as few decimals as it needs, up to
+// enough for the sample's own scale: a sample that spreads over 0.0000002
+// gets 10 decimals, where 4 would print every value as 0.0000.  "Needs"
+// is judged against the sample's range, not against the value.
+fc_DxFmt(dfV)
+BEGIN
+  LOCAL dfI, dfT, dfM;
+  dfT := fcX(fcNX) - fcX(1);
+  dfM := MIN(12, MAX(4, 3 - FLOOR(LOG(dfT))));
+  FOR dfI FROM 0 TO dfM DO
+    IF ABS(dfV - ROUND(dfV, dfI)) <= 0.0000001 * dfT THEN RETURN fc_Cm(fc_F(dfV, dfI)); END;
+  END;
+  RETURN fc_Cm(fc_F(dfV, dfM));
 END;
 
 // The ratio's name with its two small digits: r10, r11, r21 or r22.
@@ -378,14 +409,14 @@ BEGIN
   ddPo := fcDxPx(ddO); ddPg := fcDxPx(ddGp); ddPr := fcDxPx(ddRg);
   // the range, blue: its length, centered over a bracket (kept on the
   // screen: a character is at most about 5 pixels wide)
-  ddLb := "range " + fc_Num(ABS(fcX(ddO) - fcX(ddRg)), 4);
+  ddLb := "range " + fc_DxFmt(ABS(fcX(ddO) - fcX(ddRg)));
   ddX := MAX(6, MIN(312 - 5 * DIM(ddLb), IP((ddPo + ddPr) / 2 - 2.5 * DIM(ddLb))));
   TEXTOUT_P(ddLb, G1, ddX, 46, 1, fcBLUE, 314 - ddX);
   LINE_P(G1, MIN(ddPo, ddPr), 61, MAX(ddPo, ddPr), 61, fcBLUE);
   LINE_P(G1, ddPo, 58, ddPo, 64, fcBLUE);
   LINE_P(G1, ddPr, 58, ddPr, 64, fcBLUE);
   // the gap, red and two pixels thick
-  ddLb := "gap " + fc_Num(ABS(fcX(ddO) - fcX(ddGp)), 4);
+  ddLb := "gap " + fc_DxFmt(ABS(fcX(ddO) - fcX(ddGp)));
   ddX := MAX(6, MIN(312 - 5 * DIM(ddLb), IP((ddPo + ddPg) / 2 - 2.5 * DIM(ddLb))));
   TEXTOUT_P(ddLb, G1, ddX, 65, 1, fcRED, 314 - ddX);
   LINE_P(G1, MIN(ddPo, ddPg), 80, MAX(ddPo, ddPg), 80, fcRED);
@@ -434,7 +465,7 @@ BEGIN
   // line 2: the p at this end, and how the either-end p comes from it
   ddLb := "This end alone: " + fc_PStr(fcDxP);
   IF 2 * fcDxP <= 1 THEN
-    TEXTOUT_P(ddLb + ".  Either end: twice that.", G1, 6, 144, 1, #000000h, 308);
+    TEXTOUT_P(ddLb + ".  Either end: twice that, at most.", G1, 6, 144, 1, #000000h, 308);
   ELSE
     TEXTOUT_P(ddLb + ".  Either end: no more than 1.", G1, 6, 144, 1, #000000h, 308);
   END;
@@ -450,7 +481,7 @@ BEGIN
       TEXTOUT_P(ddLb + ", the same.", G1, 6, 157, 1, fcGRAY, 308);
   END;
   // line 4: the sentence at alpha = 0.05
-  ddLb := "x(" + fc_I(ddO) + ") = " + fc_Num(fcX(ddO), 4);
+  ddLb := "x(" + fc_I(ddO) + ") = " + fc_DxFmt(fcX(ddO));
   IF ddFl == 1 THEN
     TEXTOUT_P(ddLb + ": flagged as an outlier at " + fcAl + " = 0.05.", G1, 6, 170, 1, fcRED, 308);
   ELSE
@@ -470,6 +501,116 @@ BEGIN
   END;
 END;
 
+''')
+
+# ---------------- axis numbers that ran off the screen or were cut (found by this round's layout check) ----------------
+# beta 1h: the chi-square curve's and the ECDF's last number could run past the screen's right edge ("200" from x = 306,
+# "3,000" from x = 299), and a data value too wide for its 40 pixels was CUT by the width argument on the Q-Q plot's
+# y axis and on the ECDF's x axis ("1,234,570" needs 48).  Now: a number is kept on the screen; the ECDF leaves one out
+# that would touch the one before; and when any number of an axis is too wide, all of them are written in the Prime's
+# scientific form (Lessons Learned 6: StatDist, NormExplorer and SampDist do the same).  Decimals are held to 12.
+before('''// The Q-Q points: for raw data (z(i), x(i)); for a binned sample one point
+''', '''// beta 1i: a number of an axis as text.  alS = 0: fixed, alD decimals (12
+// at most: STRING takes no more), with commas.  alS = 1: the Prime's
+// scientific form with one decimal and without a ".0": "1.5E6", "2E6"
+// (the E is the calculator's small capital).  Lessons Learned 6: when any
+// number of an axis is too wide for its room, all are written one way.
+fc_AxLb(alV, alD, alS)
+BEGIN
+  LOCAL alT, alK;
+  IF alS == 0 THEN RETURN fc_Cm(STRING(ROUND(alV, MIN(12, alD)) + 0, 2, MIN(12, alD))); END;
+  IF alV == 0 THEN RETURN "0"; END;
+  alT := STRING(alV, 3, 1);
+  alK := INSTRING(alT, ".0" + CHAR(7431));
+  IF alK > 1 THEN alT := LEFT(alT, alK - 1) + MID(alT, alK + 2, DIM(alT)); END;
+  RETURN alT;
+END;
+
+// 1 when a number of the axis awA .. awB (a tick every awS, awD decimals)
+// is wider in fixed form than awR pixels: 6 pixels a character, 3 for a
+// point or a comma (the measured widths of font 1).  The ticks are counted
+// (a step can stall, Lessons Learned 3).
+fc_AxWide(awA, awB, awS, awD, awR)
+BEGIN
+  LOCAL awV, awT, awI, awW, awK;
+  awV := CEILING(awA / awS) * awS; awK := 0;
+  WHILE awV <= awB AND awK < 40 DO
+    awT := fc_AxLb(awV, awD, 0);
+    awW := 6 * DIM(awT);
+    FOR awI FROM 1 TO DIM(awT) DO
+      IF MID(awT, awI, 1) == "." OR MID(awT, awI, 1) == "," THEN awW := awW - 3; END;
+    END;
+    IF awW > awR THEN RETURN 1; END;
+    awV := awV + awS; awK := awK + 1;
+  END;
+  RETURN 0;
+END;
+
+''')
+# the Q-Q page: the z numbers kept on the screen; the value numbers in one form that fits
+rep('''  LOCAL qqX1, qqY1, qqX2, qqY2, qqZ, qqB;
+  qqN := fcQN;
+''', '''  LOCAL qqX1, qqY1, qqX2, qqY2, qqZ, qqB;
+  LOCAL qqSc, qqLb;
+  qqN := fcQN;
+''')
+rep('''    TEXTOUT_P(fc_Cm(STRING(ROUND(qqV, qqDc), 2, qqDc)), G1, qqP - 6, 161, 1, fcGRAY, 30);
+''', '''    // beta 1i: the last number is kept on the screen
+    qqLb := fc_Cm(STRING(ROUND(qqV, qqDc), 2, qqDc));
+    TEXTOUT_P(qqLb, G1, MIN(qqP - 6, 319 - 6 * DIM(qqLb)), 161, 1, fcGRAY, 30);
+''')
+rep('''  qqV := CEILING(qqVa / qqS) * qqS;
+  WHILE qqV <= qqVb DO
+    qqP := 158 - IP((qqV - qqVa) / (qqVb - qqVa) * 106 + 0.5);
+    LINE_P(G1, 44, qqP, 312, qqP, fcGRID);
+    TEXTOUT_P(fc_Cm(STRING(ROUND(qqV, qqDc), 2, qqDc)), G1, 2, qqP - 5, 1, fcGRAY, 40);
+''', '''  qqV := CEILING(qqVa / qqS) * qqS;
+  // beta 1i: a value too wide for the 40 pixels left of the axis was cut;
+  // now all the axis's numbers are written in scientific form then
+  qqSc := fc_AxWide(qqVa, qqVb, qqS, qqDc, 40);
+  WHILE qqV <= qqVb DO
+    qqP := 158 - IP((qqV - qqVa) / (qqVb - qqVa) * 106 + 0.5);
+    LINE_P(G1, 44, qqP, 312, qqP, fcGRID);
+    TEXTOUT_P(fc_AxLb(qqV, qqDc, qqSc), G1, 2, qqP - 5, 1, fcGRAY, 40);
+''')
+# the ECDF page
+rep('''  LOCAL ecDc, ecP, ecF, ecG, ecLast;
+''', '''  LOCAL ecDc, ecP, ecF, ecG, ecLast;
+  LOCAL ecSc, ecLr, ecLb, ecLx;
+''')
+rep('''  ecV := CEILING(fcEa / ecS) * ecS;
+  WHILE ecV <= fcEb DO
+    ecP := 44 + IP((ecV - fcEa) / (fcEb - fcEa) * 268 + 0.5);
+    LINE_P(G1, ecP, 52, ecP, 158, fcGRID);
+    TEXTOUT_P(fc_Cm(STRING(ROUND(ecV, ecDc), 2, ecDc)), G1, ecP - 8, 161, 1, fcGRAY, 40);
+    ecV := ecV + ecS;
+  END;
+''', '''  ecV := CEILING(fcEa / ecS) * ecS;
+  // beta 1i: a number is kept on the screen, is never cut, and is left
+  // out when it would touch the one before it; when any is wider than 40
+  // pixels all are written in scientific form
+  ecSc := fc_AxWide(fcEa, fcEb, ecS, ecDc, 40);
+  ecLr := -99;
+  WHILE ecV <= fcEb DO
+    ecP := 44 + IP((ecV - fcEa) / (fcEb - fcEa) * 268 + 0.5);
+    LINE_P(G1, ecP, 52, ecP, 158, fcGRID);
+    ecLb := fc_AxLb(ecV, ecDc, ecSc);
+    ecLx := MIN(ecP - 8, 319 - 6 * DIM(ecLb));
+    IF ecLx > ecLr + 3 THEN
+      TEXTOUT_P(ecLb, G1, ecLx, 161, 1, fcGRAY, 320 - ecLx);
+      ecLr := ecLx + 6 * DIM(ecLb);
+    END;
+    ecV := ecV + ecS;
+  END;
+''')
+# the chi-square curve page
+rep('''  LOCAL dcLx, dcLast, dcPy, dcDec, dcOff;
+  fc_Frame(fcX2S + " curve, df = " ''', '''  LOCAL dcLx, dcLast, dcPy, dcDec, dcOff, dcLb;
+  fc_Frame(fcX2S + " curve, df = " ''')
+rep('''    TEXTOUT_P(fc_Cm(STRING(ROUND(dcV, dcDec), 2, dcDec)), G1, dcPx - 6, fcPB + 5, 1, fcGRAY, 36);
+''', '''    // beta 1i: the last number is kept on the screen
+    dcLb := fc_Cm(STRING(ROUND(dcV, dcDec), 2, dcDec));
+    TEXTOUT_P(dcLb, G1, MIN(dcPx - 6, 319 - 6 * DIM(dcLb)), fcPB + 5, 1, fcGRAY, 36);
 ''')
 
 # ---------------- the normality screens: a fourth one, and its soft key ----------------
@@ -582,9 +723,10 @@ rep('''  fc_TLsec("Keys, presets, Home");
   fc_TL("Why: a second outlier, beside the first or at the far end, would hide the first.  The later ratios guard against that.", fcMAG);
   fc_TLsec("Outliers: the p and its limits");
   fc_TL("THE P is the chance, in a normal sample of this size, of a ratio this big or bigger at that end.  FitCheck computes it; a printed table of critical values can differ from it in the third " +
-      "decimal (McBane 2006).  The test takes the end with the bigger ratio, so the p it reports is for either end: twice the one-end p.", fcBLUE);
+      "decimal (McBane 2006).", fcBLUE);
+  fc_TL("The test takes the end with the bigger ratio, so the p it reports is for either end: twice the one-end p, as in the printed tables.  That is an upper limit.", #000000h);
   fc_TL("A small p is a reason to check the value: was it misread, mistyped, or from another population?  It is no license to delete it.", fcMAG);
-  fc_TL("The p assumes normal data (see the Q-Q plot).  Values tied by rounding can make the ratio 1 when no value is an outlier.", fcRED);
+  fc_TL("The p assumes normal data (see the Q-Q plot).  Values tied by rounding can make the ratio 1.", fcRED);
   fc_TLsec("Keys and presets");
   fc_TL("KEYS.  Soft keys move between the pages of a result (Bars, Table, Curve, Test; Q-Q, ECDF, Tests, Bins, Outlier; Plot, Why, " + fcX2S + ").  Tap a bar, a row or a point to read it; " + fcLR + " move " +
       "the choice; " + fcUD + " turn text pages.  Esc or Enter = menu.", #000000h);
@@ -599,6 +741,12 @@ rep('''  fc_TLsec("Keys, presets, Home");
   fc_TL("FC_BP: the exact binomial test's two-sided p.", fcGRAY);
   fc_TL("FC_R, FC_PR: Dixon's ratio and its either-end p.", fcGRAY);
 ''')
+
+# ---------------- two source lines of 336 and 311 characters, split (the header's own rule is 250; the text is unchanged) ----------------
+rep('''" on bins: df = k - 3.  Tests page: skewness g" + CHAR(8321) + ''', '''" on bins: df = k - 3.  " +
+          "Tests page: skewness g" + CHAR(8321) + ''')
+rep('''CVMTEST1, NMLPROB, BENFORD and others).  It was written new for the Prime, ''', '''CVMTEST1, NMLPROB, BENFORD and others).  " +
+      "It was written new for the Prime, ''')
 
 # ---------------- the title page ----------------
 rep('  fc_Frame("FitCheck - beta 1h");\n', '  fc_Frame("FitCheck - beta 1i");\n')
@@ -630,16 +778,11 @@ rep('''  IF fcHasT == 1 THEN mnS := mnS + " binomial " + fc_PStr(fcTp2) + ";"; E
 
 # ---------------- numbers that come from the arithmetic, not from memory ----------------
 rep('@GX@', GX); rep('@GW@', GWT)
-ERRS = sys.argv[2] if len(sys.argv) > 2 else ''
-if not ERRS:
-    ERRS = ('at every n from 3 to 30 its relative error is under 0.03 % for a p above 0.001 and under 0.13 % for a p above '
-            '0.0001 (verify_FitCheck_beta1i.py: against a fine-grid reference, simulation and McBane\'s 2006 values)')
-rep('@ERRS@', ERRS)
 rep('@ERRL@', '''At every n from 3 to 30 the
-//   relative error is under 0.03 % for a p above 0.001, and under 0.13 %
+//   relative error is under 0.05 % for a p above 0.001, and under 0.2 %
 //   for a p above 0.0001 (verify_FitCheck_beta1i.py: against a 360 x 600-
-//   point reference, 1,000,000 simulated samples a case, and McBane's
-//   2006 printed values).''')
+//   point reference, the closed form at n = 3, 1,000,000 simulated
+//   samples a case, and McBane's 2006 printed values).''')
 
 # ---------------- the file map: counted here ----------------
 def line_of(text, nth=1):

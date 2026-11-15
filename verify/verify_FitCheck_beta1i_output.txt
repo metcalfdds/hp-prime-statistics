@@ -1,0 +1,76 @@
+=== T. the build
+PASS T1 the build makes programs/FitCheck_beta1i.txt byte for byte
+=== A. the arithmetic
+PASS A1 fc_DxTail at every n from 3 to 30, 1,389 ratios: against the reference the worst error is 7.7e-05; relative, 0.026 % for a p above 0.001 (limit 0.05 %) and 0.14 % above 0.0001 (limit 0.2 %)
+PASS A2 at the edges: a ratio of 0 or less has p = 1, a ratio of 1 or more has p = 0, and no p is above 1
+PASS A3 the reference has converged: a grid twice as fine and wider gives the same 60 values to 2e-15 (relative)
+PASS A4 the closed form at n = 3, P(r10 > R) = 1 - (3/pi)(atan((2R - 1)/root 3) + pi/6): the reference to 10 digits, and fc_DxTail within 0.05 % (P(r10 > 0.5) = 0.5000)
+PASS A5 simulation: 1,000,000 normal samples at each of 10 sizes; the share of ratios above the reference's 25 %, 5 % and 1 % points is within 4 standard errors of each (30 cases)
+PASS A6 McBane's (2006) eight printed values of r11 at alpha = 0.1 (n = 4 to 30) are the reference's to 3 decimals, and fc_DxTail at those points is 0.1 within 0.05 %
+PASS A7 the printed two-sided Q table (n = 3 to 10) is the one-sided point at alpha/2 to within 0.0053; its two largest gaps are the two McBane names: n = 4 and 6 at 99 % (+0.0053 and -0.0027)
+PASS A8 168 random samples of 3 to 30 values: the ratio at each end and the ratio's kind are as NumPy has them (r10 to 7, r11 to 10, r21 to 13, r22 to 30), the bigger end is the one tested, its p is the reference's to 0.0001, FC_R and FC_PR hold the ratio and twice the p, and the strip runs from pixel 24 to 296
+PASS A9 Darwin's differences: the 15 values are RankLab's pairs, crossed minus self-fertilized, and times 8 they are Fisher's 49, -67, 8, 16, 6, 23, 28, 41, 14, 29, 56, 24, 75, 60, -48
+PASS A10 Darwin's differences, n = 15: r22 at the low end = 9.125/15.375 = 0.5935, one-end p 0.0161 (reference 0.01606), either end 0.0321; the high end 0.2754; the plain r10 would be 0.134 with a one-end p of 0.42: the second low value hides the first
+PASS A11 "either end = twice the one-end p" is an upper limit: at the two-sided 5 % point, 2,000,000 samples at each of 6 sizes (n = 5, 7, 9, 12, 15, 30), the share with EITHER end's ratio above it is 0.0500, 0.0500, 0.0466, 0.0488, 0.0470, 0.0484: 5 % for r10 (above 0.5 both ends never count at once), 4.6 to 4.9 % for the other ratios, never above 5 % (but for chance)
+PASS A12 the engine beside it is untouched: Shapiro-Wilk on Darwin's differences, W = 0.9008 and p = 0.0978 as SciPy has them (0.9008, 0.0978)
+=== P. the Outlier page
+PASS P1 Darwin's differences: the page reads, line for line, "Dixon's r₂₂ = 0.593,  p = 0.0321 (either end)" ... and its axis is numbered −5, 0, 5
+PASS P2 the picture: the range bracket (blue, y 61) runs from the tested value's pixel to x(13)'s, the gap bracket (red, y 80 and 81) to x(3)'s; the tested dot is red and drawn last
+PASS P3 a high-end case, n = 5 ({12.1, 11.8, 12.4, 12.0, 15.9}): "Dixon's r₁₀ = 0.854,  p = 0.0055 (either end)", 'High end: (x(5) - x(4)) / (x(5) - x(1)) = 0.854', 'x(5) = 15.9: flagged as an outlier at α = 0.05.'; red
+PASS P4 two of three values the same ({10.1, 10.1, 10.3}): the ratio is 1.000, p < 0.0001, and the last line says "A ratio of 1 here means tied values: p means little."
+PASS P5 the two ends equal ({1, 2, 3}): both ratios 0.500, the high end is shown, "Low end: ratio 0.500, the same.", p for either end p > 0.9999 (either end), green
+PASS P6 the other end smaller by less than the decimals show ({0, 1.0004, 2}): "High end: ratio 0.500, a little smaller (not tested)."
+PASS P7 the sentence follows the p AS SHOWN: a one-end p of 0.024996 shows "p = 0.0500" and "not flagged" (green); 0.02497 shows "p = 0.0499" and "flagged" (red); six cases
+PASS P8 the Rossi ages (n = 432): the Outlier key gives sentences ("Dixon's outlier test is for a small sample: 3 ... This sample has 432 values."), nothing is worked out, and the closing line has no Dixon in it
+PASS P9 the crimtab heights (in bins): "This sample is in bins (3,000 values in 22 bins), so it has no single values to test.", nothing is worked out
+PASS P10 the numbers keep the decimals the sample's scale needs: values near 0.0000002 read 'range 0.00000019' and 'x(5) = 0.00000031'; values near 1,234,570 read 'x(8) = 1,234,590.75' with commas, and the axis 1,234,570, 1,234,580, 1,234,590
+PASS P11 84 random samples, three at every n from 3 to 30 (rounded, heavily tied, one value far out, thousands): every page is the model's line for line, red where flagged (36) and green where not, its axis numbered, every text inside the screen
+=== V. every way in and out
+PASS V1 Darwin's differences, then Outlier from the Q-Q page, from the ECDF page and from the Tests page, and back by each of those keys; Menu leaves: the pages come in that order, and the test is worked out once
+PASS V2 the closing line then reads 'FitCheck: W = 0.9008, p = 0.0978; Dixon r22 = 0.593, p = 0.0321 (either end);'
+PASS V3 Esc and Enter leave the Outlier page for the menu like Menu does (the same closing line); without the Outlier key the line has no Dixon in it ('FitCheck: W = 0.9008, p = 0.0978;')
+PASS V4 on the Outlier page three taps on the picture and the text, the four arrows and + change nothing: the page is drawn again the same (9 times), and the closing line is the same
+PASS V5 Bins from the Outlier page opens the chi-square fit on bins as before, and both results are in the closing line ('FitCheck: χ²(1) = 6.013, p = 0.0142; W = 0.9008, p = 0.0978; Dixon r22 = 0.593, p = 0.0321 (either end);')
+PASS V6 a new sample clears the test: Darwin and its Outlier page, then My values in D1 (5 values) without the Outlier key: no Dixon in the closing line ('FitCheck: W = 0.6695, p = 0.0045;'); with the key, the new sample's ('FitCheck: W = 0.6695, p = 0.0045; Dixon r10 = 0.854, p = 0.0055 (either end);')
+PASS V7 "The last sample again" keeps the test: the Outlier page comes back without being worked out again (the "working" box is drawn once in the session)
+PASS V8 the Normality menu: 4 items before a sample is loaded, 5 after ("Preset: Darwin's differences" above "My values in D1"), none over 30 characters
+PASS V9 Load a preset: 9 items, the seventh "Darwin's differences: outlier"; it loads the same sample and the Outlier page gives the same line
+PASS V10 Esc at the Normality menu, at the preset menu and at the main menu: nothing loaded, "FitCheck: nothing computed"
+PASS V11 the mended fault: the Rossi ages loaded, then D1 = {5, 5, 5, 5} refused ("Every value is the same"), then The last sample again.  beta 1h stopped with 'PPLError: index 5 out of range in fcQV (1..4)'; beta 1i shows the Rossi ages again and ends 'FitCheck: W = 0.8499, p < 0.0001;'
+PASS V12 the same after the sample in bins: the refused D1 leaves the crimtab heights as they were ('FitCheck: binned sample, skewness +0.050, excess kurtosis +0.170;')
+PASS V13 My values in D1 at its new place (item 4 before a sample is loaded) with two values: refused with "need at least 3 values", nothing loaded
+PASS V14 Home: after Darwin's Outlier page FC_R = 0.593496 and FC_PR = 0.032111; a session that never opens the page leaves them as they were
+=== R. regression against beta 1h
+PASS R1 the monkey, 40 seeds, on beta 1h and on beta 1i with its three entrances shut and beta 1h's help text: the same verdict, boxes and closing line, and all 1,320 screens the same text for text (59 help pages among them) but the 40 opening pages ({'OK': 40}; 0 runs set aside where beta 1h went on after a refused sample: the mended fault)
+PASS R2 the menu items that moved, through the real menus, beta 1h's place against beta 1i's: the draft lottery and the illustrative binomial (presets 7, 8 -> 8, 9), My values in D1 (3 -> 4, 4 -> 5), and Rossi and crimtab where they were: the same screens and closing lines (9, 9, 6, 9, 12 screens)
+=== L. the axis numbers mended in passing
+PASS L1 values in the thousands: in beta 1h the ECDF's last axis number, "3,000", began at x = 299 and ran off the screen; in beta 1i it begins at x = 289 and ends on it; nothing else on the two pages moved
+PASS L2 seven-digit values: beta 1h cut 6 axis numbers by their 40 pixels ("1,234,570" needs 48); beta 1i cuts none, runs none off the screen, and writes both axes in scientific form (1.2ᴇ6)
+PASS L3 values in the millions read 2ᴇ6, 3ᴇ6, 4ᴇ6 along the ECDF and 2ᴇ6, 3ᴇ6, 4ᴇ6 up the Q-Q plot; nothing cut, nothing off the screen
+PASS L4 where every number fitted nothing moved: nine small values, the Rossi ages and the crimtab heights give the same Q-Q and ECDF pages in both versions, text for text and pixel for pixel
+PASS L5 the chi-square curve of a first-two-digits Benford fit (df = 89): its last axis number, "400", began at x = 306 in beta 1h (4 pixels past the edge) and begins at x = 301 now; the rest of the page did not move
+PASS L6 fc_AxLb: 1.5ᴇ6, 2ᴇ6, −3ᴇ6, 0, 1.5ᴇ−7, 1,234.5, 0.000, 0.500000000000
+PASS L7 fc_AxWide: numbers up to "250,000" (39 px) fit 40 pixels, "1,000,000" and "0.00000015" do not
+=== H. the help
+PASS H1 twelve help pages (eight before), titled n/12: Outliers: Dixon's test; Outliers: which ratio; Outliers: the p and its limits; Keys and presets; Home variables
+PASS H2 pages 2 to 6 are beta 1h's word for word and line for line, and page 12, Credits, is beta 1h's page 8
+PASS H3 page 1 is beta 1h's with one clause more ("... for one proportion, and Dixon's test for one outlier in a small sample.")
+PASS H4 page 10, Keys and presets, is the first two paragraphs of beta 1h's page 7 with "Outlier" among the soft keys
+PASS H5 page 11, Home variables, names every exported variable (14: FC_X2, FC_DF, FC_P, FC_O, FC_E, FC_W, FC_PW, FC_A2, FC_PA, FC_D, FC_PD, FC_BP, FC_R, FC_PR) and ends "FC_R, FC_PR: Dixon's ratio and its either-end p."
+PASS H6 pages 7, 8 and 9 read as written (Dixon's test; which ratio; the p and its limits)
+PASS H7 on page 8 each of the four ratios, and the "Why", begins a line of its own
+PASS H8 no help line is longer than 46 characters (longest 46) or wider than 296 px at the measured glyph widths (widest 260 px), and no page has more than 14 lines of text
+=== G. static
+PASS G1 no "!=" in the code, and the code outside strings and comments is ASCII
+PASS G2 every LOCAL line names at most 6 variables (158 lines)
+PASS G3 the header names beta 1i and its date; no source line is over 250 characters (beta 1h had two, of 336 and 311)
+PASS G4 the 20 nodes and 20 weights written in fc_Init are NumPy's 20-point Gauss-Legendre rule to 12 decimals (the weights add up to 2.000000000000)
+PASS G5 every item of every menu is at most 30 characters (61 items in the source; the longest is "Darwin's differences: outlier", 29)
+PASS G6 the file map in the header is true: each of its 17 sections begins where the map says (a bar of = signs, or the first EXPORT), and ends on the line before a blank one
+PASS G7 the nine new routines carry the program's tag, and beta 1h's routines are all still there (122 before, 131 now)
+PASS G8 commas: no number of four or more digits is drawn without them on any screen above (years in citations aside)
+=== D. layout over every beta 1i screen above
+PASS D1 no firm overlap and no text off the screen on any beta 1i screen above (text_overlap_v1 over 566 different screens; on beta 1h's screens of the same runs it finds "1,234,590" off the screen, "1.0" off the screen, "200" off the screen, "3,000" off the screen)
+PASS D2 no number cut short by its width argument (label_fit_v1 reports 0 texts at its estimate; none is wider than its width argument at the measured glyph widths)
+
+65 checks, 0 failed
