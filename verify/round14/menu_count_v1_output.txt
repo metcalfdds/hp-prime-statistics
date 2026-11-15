@@ -1,0 +1,39 @@
+CHOOSE calls: 158; with the list in a variable: 2; with more than eight items: 35, in 20 programs
+of those, Help, Quit or Back after the eighth item: 25, in 18 programs
+Help itself after the eighth: 16, in 15 programs
+  AgreeLab_beta1g         2008  11  Two raters                      Help=10 Back=11
+  AgreeLab_beta1g         3040   9  AgreeLab: agreement             Help=8 Quit=9
+  AnovaLab_beta1g         2660  11  One-way ANOVA                   Help=10 Back=11
+  AnovaLab_beta1g         3844   9  AnovaLab: analysis of variance  Help=8 Quit=9
+  BayesTree_beta8k        2837  16  BayesTree Options               Help=14
+  BurrLab_beta1q          3272   9  Explore                         Help=7
+  BurrLab_beta1q          3526  10  Family tree                     Help=9
+  BurrLab_beta1q          4125  10  Fit pages                       
+  CentralLimit_beta3g     1891  10  Sample size n                   
+  CentralLimit_beta3g     2510  12  Central Limit                   Help=11
+  ChiTable_beta3m         3820  14   for a two-way table            Help=13 Quit=14
+  DNAMixLR_beta3j         3431  12  (built)                         Help=11 Quit=12
+  EpiStats_v1.7l          5885  16  Help & Information              Back=16
+  ErrorRate_beta1j        2676  10  ErrorRate Lab                   Help=8 Quit=10
+  ExhibitLab_beta1g       2861  10  ExhibitLab (N =                 Help=9 Quit=10
+  FitCheck_beta1g         3313  11  FitCheck: goodness of fit       Help=10 Quit=11
+  GaltonBoard_beta3i      2292  16  Galton Board                    Help=15
+  NormExplorer_beta42j    1948   9  Plot Window & Display           
+  NormExplorer_beta42j    3350  11  NormExp — N(                    Help=10 Quit=11
+  PowerViz_v2.5s          3855  11  PowerViz Menu                   Help=10
+  RankLab_beta1h          2174   9  (built)                         
+  RankLab_beta1h          2175  10  (built)                         
+  RankLab_beta1h          2176  11  (built)                         
+  RankLab_beta1h          2177  12  (built)                         
+  RankLab_beta1h          3819  10  RankLab: rank-based tests       Help=9 Quit=10
+  ResampLab_beta1h        2539  11  Actions                         Help=10 Back=11
+  ResampLab_beta1h        2544  11  Actions                         Help=10 Back=11
+  ResampLab_beta1h        3019   9  ResampLab:                      Help=8 Quit=9
+  ScatterLab_beta2k       2417  12  ScatterLab                      Help=11 Quit=12
+  StatDist_v2.7m          4698   9  Plot options                    Help=8 Back=9
+  StatDist_v2.7m          4704   9  Plot options                    Help=8 Back=9
+  StatDist_v2.7m          5004   9  Common Continuous               Back=9
+  StatDist_v2.7m          5027  16  Advanced Continuous             Back=16
+  StudRange_beta15m       2406   9  Plot menu                       Help=8
+  SurvLab_beta1f          1438   9  Kaplan-Meier                    
+variable lists: [('AnovaLab_beta1g', 3432, 'pgL'), ('DataLoad_beta1g', 985, 'pl')]
