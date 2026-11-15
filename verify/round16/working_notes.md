@@ -21,7 +21,7 @@ RiskLab, AgreeLab) and consistently in the book.
 | BiNorm3D beta 1g (target view, CEP) | committed a0842d0; verify 42/42; gate PASS; monkey 1,000/1,000 |
 | StatDist v2.7n, AgreeLab 1h, RiskLab 1h, BurrLab 1r (credits) | committed a0842d0; wording verify 25/25 |
 | CICatcher beta 2l (tolerance interval, exact factor) | committed 7fc39d8, 05be49c; verify 34/34; gate PASS; monkey 1,000/1,000 |
-| FitCheck beta 1i (Dixon's outlier test) | build script written (`make_fitcheck_1i.py`); gate, harness, verify, monkey to do |
+| FitCheck beta 1i (Dixon's outlier test; the loader's refused sample; axis numbers) | committed 8194529; verify 65/65; gate PASS; monkey 1,000/1,000 |
 | RankLab beta 1j (Page's L, runs test) | to do |
 | AnovaLab beta 1i (Dunnett) | to do |
 | paperwork (change notes, READMEs, Lessons Learned v7zw), Virtual Calculator, starter pack, Prime Loader, pull request | to do |
