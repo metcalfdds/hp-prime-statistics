@@ -1,10 +1,10 @@
 # Starter pack for the Virtual Calculator
 
-*v19, 2026-11-14. Built by `tools/make_starter_pack_v4.py` from `programs/`; do not edit this page by hand.*
+*v20, 2026-11-14. Built by `tools/make_starter_pack_v4.py` from `programs/`; do not edit this page by hand.*
 
-All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** on a Windows PC: no Connectivity Kit, no copying and pasting. Download **[HP_Prime_Statistics_Starter_Pack_v19.zip](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v19.zip)** (one file).
+All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** on a Windows PC: no Connectivity Kit, no copying and pasting. Download **[HP_Prime_Statistics_Starter_Pack_v20.zip](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v20.zip)** (one file).
 
-*How this pack was tested on the Virtual Calculator: [docs/changes/StarterPack_v19_NOTES.md](../docs/changes/StarterPack_v19_NOTES.md).*
+*How this pack was tested on the Virtual Calculator: [docs/changes/StarterPack_v20_NOTES.md](../docs/changes/StarterPack_v20_NOTES.md).*
 
 ### What you need
 - A Windows PC with the HP Prime Virtual Calculator (64-bit). It is a free download from hpcalc.org, which lists Hewlett-Packard as its author. The pack was tested on the Virtual Calculator 2.4.2 (build 2026-09-09), 64-bit.
@@ -63,8 +63,8 @@ All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** o
 | StudRange | beta 15m | 2,750 | `StudRange` | MicroPython | `cb1b060d6f83` |
 | SurvLab | beta 1f | 2,741 | `SurvLab` |  | `9ed223b72643` |
 | TDist3D | beta 1a | 1,164 | `TDist3D` |  | `f370e341f4e6` |
-| TTestLabG | beta 1g | 1,478 | `TTESTLABG` |  | `ab792d637b46` |
-| TTestLab | beta 1j | 1,507 | `TTESTLAB` |  | `e39c918ee296` |
+| TTestLabG | beta 1h | 2,180 | `TTESTLABG` |  | `aad04bce3b9c` |
+| TTestLab | beta 1k | 2,214 | `TTESTLAB` |  | `6af07cb3edbe` |
 | TestChooser | beta 2g | 1,914 | `TestChooser` |  | `e790d3eadf7d` |
 | TrendTest | beta 3m | 2,289 | `TrendTest` |  | `d14cbccef5d7` |
 

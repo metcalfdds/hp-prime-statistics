@@ -24,3 +24,57 @@ Seen while driving it (xdotool), not faults of beta 2k:
     far-out point), not its eighth.  Two explanations fit and were not told apart: the Enter still held chose item 1 as
     the menu opened, or the Down keys were lost.  With a 0.12-s Enter and the item's digit key, every pick was right.  The
     menu code is beta 2j's; a held Enter is worth trying with a finger on a G1 and a G2.
+
+------------------------------------------------------------------------------------------------------------------------
+Round 14, part 2 (14 Nov 2026, night): TTestLab beta 1k and TTestLabG beta 1h, on the same Virtual Calculator 2.4.2
+(build 2026-09-09) under Wine in the cloud workspace.
+
+Check (Program Catalog > Edit > Check), each file built by the first pass of tools/make_starter_pack_v4.py v20 and copied
+into Documents > HP Prime > Calculators > Prime while the calculator was closed:
+  TTestLab  beta 1k | editor title "TTestLab:Main(PPL)"  | "No errors in the program"   (22:02)
+  TTestLabG beta 1h | editor title "TTestLabG:Main(PPL)" | "No errors in the program"   (22:02)
+The calculator was then left by Calculator > Exit and the two checked files collected, neither one run (209,289 and
+206,515 bytes; starter pack v20).
+
+Both were then run from the Program Catalog (22:05 to 22:09); screens/ holds what they showed, 320 x 240 enlarged three
+times:
+  TTestLab_start.png                the start menu: six items, all on the screen
+  TTestLab_more_examples.png        "Examples: one sample, z-tests": the list of the three new examples
+  TTestLab_onesample_step1..5.png   Student's sleep data: ten scores in two rows; df = 10 - 1 = 9; t crit +/-2.262;
+                                    t obt = 1.580/0.3890 = 4.06; "Report t(9) = 4.06, p = 0.003, two-tailed", d = 1.28
+  TTestLab_oneprop_step1..5.png     Castaneda v. Partida: soft keys "2 dist" and "4 z"; n p0 = 688.2, n(1 - p0) = 181.8,
+                                    "Yes: the normal curve fits."; z crit +/-1.960; z obt = -0.4013/0.01378 = -29.11;
+                                    step 5 with the magenta line at the plot's left edge
+  TTestLab_twoprop_step1..5.png     the Rossi experiment: a column for each sample; 48 and 168, 66 and 150; pooled p
+                                    0.2639, SE 0.04241, z obt = -1.96; "Report z = -1.96, p = 0.049, two-tailed"
+  TTestLab_menu.png, _examples.png  the menu, and its list of six examples
+  TTestLab_tails_twoprop.png        the Tails menu in the test's symbols: p1 and p2
+  TTestLab_no_such_choice.png       Pooled or separate? on a z-test: the box
+  TTestLab_which_test.png           Choose the test: "Which test?", four items
+  TTestLab_form_oneprop.png         the form for one proportion (x, n, p0) with its help line; Cancel left the Rossi test
+  TTestLab_help1..3.png             the three help pages; on page 3 the pi of "Z-Test: 1 pi" is drawn
+  TTestLab_end.png                  the result returned: "TTestLab: z = -1.96, p = 0.049, two-tailed"
+  TTestLabG_start.png               the start menu: seven items, Help in sight
+  TTestLabG_more_examples.png       its list of the three new examples
+  TTestLabG_onesample_step1..5.png  Student's sleep data; step 3 reads "t crit = +/-2.262   (exact, for df = 9)"
+  TTestLabG_help3.png, _end.png     help page 3; "TTestLabG: t(9) = 4.06, p = 0.003, two-tailed"
+The numbers are the harness's and SciPy's (verify_TTestLab_beta1k.py, C and E).
+
+Two earlier builds the same night, each Checked clean and run the same way:
+  - the first (Check 21:22 and 21:24; run 21:29 to 21:34).  Fourteen of its screens were read at full size.  TTestLabG's
+    start menu then had nine items, and the menu showed eight rows with the ninth, Help, cut off at the bottom of the
+    screen: the three new examples now sit in a list of their own in both programs (six and seven items).
+  - the second (Check 21:40; run 21:43 to 21:47).  Twelve of the fourteen screens read before were the same pixel for
+    pixel; the other two (the Tails menu and the box, with the Program Catalog behind them) differed in the catalog's rows.
+    Then the label monkey found a Cohen's d of eleven digits lying over the label beside it (beta 1j has the fault too):
+    a d past 999.99 in size now prints as "> 999.99".
+  In the last run, the program's own pages (25 of the 37 captures: every step and help page above) are the same pixel
+  for pixel as the second run's; the other 12 are menus, a form and boxes with the Program Catalog or its clock behind.
+
+Seen while driving it (xdotool), not faults of the programs:
+  - in each run a few of about 60 keys had to be pressed again (a Right, an Enter or an Esc that changed nothing).  The
+    script pressed again only when the screen's 320 x 240 picture was unchanged after 2.5 s, and no key was taken twice.
+  - an example chosen from the menu opens on the step that was on screen (step 5 after a walk through the steps), as the
+    code says: the step is kept when the numbers change.
+  - menus and boxes are drawn over the Program Catalog, the screen the program was started from, not over the step page.
+  - the catalog row's name read by OCR can carry a stray first character ("lTTestLabG"): the row finder allows one.

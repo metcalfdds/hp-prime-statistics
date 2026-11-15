@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// TTESTLABG - beta 1g   (the general version of TTestLab)
+// TTESTLABG - beta 1h   (the general version of TTestLab)
 // ============================================================
 // FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
 //   the file and credit the author if you pass it on.  Not for
@@ -17,6 +17,20 @@
 //   1 Nov 2026 its checked file ran there with no Check).  beta 1a
 //   has run in the PC harness only so far.
 //
+// beta 1h (14 Nov 2026): Round 14 (Roger, 14 Nov 2026: "go ahead and do the program work").  Built from TTestLab beta 1k by
+//   tools/make_tlg1_v3.py.  Three more tests, in the same five steps: the one-sample t-test (a sample's
+//   mean against mu0; from the mean, SD and N, or from scores in D1), the one-proportion z-test and the
+//   two-proportion z-test (from counts).  A z-test uses the standard normal curve: step 2 says so and
+//   checks that every count is at least 5, step 3 gives z critical, and the curve of steps 3 and 5 is
+//   the normal curve (tz_Dens).  "Choose the test" opens a short menu first, and two means go on to the
+//   flowchart (tz_Pick).  Examples 5 to 7, all from the book: Student's sleep data (one-sample t(9) =
+//   4.06), the grand juries of Castaneda v. Partida (one proportion, z = -29.1) and the Rossi experiment
+//   (two proportions, z = -1.965).  Help page 3 of 3.  The three older tests are as they were: their
+//   pages, forms and numbers are beta 1g's, but for one line of step 5: a Cohen's d past 999.99 in size
+//   prints as "> 999.99" (tz_DS).  New routines, TTestLab's renamed: tz_SL, tz_Dens, tz_ZCrit, tz_ZP,
+//   tz_HS, tz_DS, tz_One, tz_Whole, tz_CalcN, tz_VN, tz_Par, tz_Step1N, tz_Step2N, tz_Step3Z, tz_Step4N,
+//   tz_Step5N, tz_Fam, tz_Pick, tz_AskDataN.  Gate and PC harness when written; its CHANGES file says
+//   what ran on the Virtual Calculator.
 // beta 1g (9 Nov 2026): Round 11: the help pages in plain words (Roger, 8-9 Nov 2026: "write more straightforward and don't
 //   try to be too clever--a student being able to understand is the priority"; "adding pages is fine,
 //   the explanation is what matters").  Help pages 1 and 2 reworded: the soft keys named, the menu items
@@ -94,7 +108,13 @@
 //     draft lottery (separate variances; Selective Service), and two
 //     government-data examples from the advanced version: age at
 //     arrest (JDCC, pooled) and matched jails (Census of Jails,
-//     dependent).
+//     dependent).  Three more since beta 1h, each worked in the book:
+//     Student's sleep data (Cushny and Peebles 1905; Student 1908:
+//     one-sample t(9) = 4.06), the grand juries of Castaneda v.
+//     Partida, 430 U.S. 482 (1977) (339 of 870 against p0 = 0.791:
+//     z = -29.1) and the Rossi experiment (Rossi, Berk and Lenihan
+//     1980: re-arrested, 48 of 216 with aid against 66 of 216
+//     without: z = -1.965).
 //
 // WHAT IT DOES: the t-tests an intro course teaches, worked in five
 //   steps, with a picture.
@@ -108,6 +128,12 @@
 //     the two tests side by side and says when and why they differ.
 //   * Dependent samples (matched pairs, before and after) from the
 //     pairs in D1 and D2, or from the mean and SD of the differences.
+//   * (beta 1h) One sample and proportions, in the same five steps: the
+//     one-sample t-test (a sample's mean against mu0, the value H0
+//     claims; from the mean, SD and N, or from scores in D1), the
+//     one-proportion z-test and the two-proportion z-test (from counts).
+//     The z-tests use the normal curve; step 2 checks that every count
+//     is at least 5, the book's rule for the normal approximation.
 //   * Two-tailed, or one-tailed either way.
 //   * The five steps, a screen each: 1 the hypotheses (and the data),
 //     2 the distribution and df, 3 the critical value and the decision
@@ -132,6 +158,14 @@
 //      df, t); H1 mu1 > mu2: STUDENT_CDF(df, -t).  Lower tails only.
 //   Cohen's d: (mean1 - mean2)/sp (independent; SPSS's Cohen's d);
 //      mean(xD)/sD (dependent; SPSS's paired Cohen's d).
+//   one sample (beta 1h): SE = s/sqrt(N), t obtained = (mean - mu0)/SE,
+//      df = N - 1; Cohen's d = (mean - mu0)/s
+//   one proportion: p-hat = x/n, SE = sqrt(p0(1 - p0)/n) (from p0, not
+//      p-hat: the test assumes H0), z obtained = (p-hat - p0)/SE
+//   two proportions: pooled p = (x1 + x2)/(n1 + n2),
+//      SE = sqrt(p(1 - p)(1/n1 + 1/n2)), z obtained = (p-hat1 - p-hat2)/SE
+//   z critical = -NORMALD_ICDF(0, 1, alpha) one-tailed, alpha/2 two-
+//      tailed; p from NORMALD_CDF(0, 1, .), lower tails only, as for t
 //   Squares are taken after dividing by the larger SD (Lessons Learned
 //   s11, "scale before squaring"), so no SD over- or underflows.
 //
@@ -151,10 +185,11 @@
 
 // ---------------- shared state ----------------
 LOCAL tzTY:=2;           // the test: 1 pooled, 2 separate (the default), 3 dependent
+//   (beta 1h) 4 one-sample t, 5 one-proportion z, 6 two-proportion z
 LOCAL tzSRC:=1;          // the data: 1 summary numbers, 2 raw scores
 LOCAL tzTL:=0;           // tails: 0 two-tailed, -1 H1 mu1 < mu2, 1 mu1 > mu2
 LOCAL tzAL:=0.05;        // alpha
-LOCAL tzEX:=0;           // the example on screen: 0 none, 1-4 the examples
+LOCAL tzEX:=0;           // the example on screen: 0 none, 1-7 the examples
 LOCAL tzOK:=0;           // 1 = the numbers are usable
 // independent samples: each group's mean, SD and N
 LOCAL tzM1:=0, tzS1:=1, tzN1:=10, tzM2:=0, tzS2:=1, tzN2:=10;
@@ -162,6 +197,14 @@ LOCAL tzM1:=0, tzS1:=1, tzN1:=10, tzM2:=0, tzS2:=1, tzN2:=10;
 // and the pairs themselves when they came as raw scores
 LOCAL tzMD:=0, tzSDv:=1, tzNP:=5, tzSSq:=0;
 LOCAL tzX1:={0}, tzX2:={0}, tzXD:={0};
+// one sample (beta 1h): its mean, SD and N, the mean H0 claims (mu0), and
+// the scores themselves when they came from D1
+LOCAL tzMO:=0, tzSO:=1, tzNO:=10, tzMU:=0, tzXO:={0};
+// proportions (beta 1h): the successes and the size of sample 1 and of
+// sample 2 (a one-proportion test uses sample 1 only), and p0, the
+// proportion H0 claims; then the sample proportions and the pooled one
+LOCAL tzKA:=5, tzNA:=10, tzKB:=5, tzNB:=10, tzP0:=0.5;
+LOCAL tzPA:=0.5, tzPB:=0.5, tzPP:=0.5;
 // results
 LOCAL tzSE:=1, tzT:=0, tzDF:=1, tzTC:=1;
 LOCAL tzP:=1, tzD:=0, tzSP:=1, tzREJ:=0;
@@ -424,6 +467,69 @@ BEGIN
  RETURN STUDENT_CDF(pdf,-pt);
 END;
 
+// ---------------- z-tests and the tests' symbols (beta 1h) ----------------
+// TTestLabG's first three tests are t-tests for two means.  Since beta 1h
+// it also works a one-sample t-test (tzTY = 4) and two z-tests for
+// proportions (5: one proportion, 6: two).  A z-test uses the standard
+// normal curve, which has no df.
+
+// The statistic's letter for the test on screen: "z" for a proportion
+// test, "t" for the rest
+LOCAL tz_SL()
+BEGIN
+ IF tzTY >= 5 THEN RETURN "z"; END;
+ RETURN "t";
+END;
+
+// The height at dvx of the curve the test uses: the standard normal
+// curve for a z-test, Student's t on tzDF for a t-test
+LOCAL tz_Dens(dvx)
+BEGIN
+ IF tzTY >= 5 THEN RETURN NORMALD(0,1,dvx); END;
+ RETURN STUDENT(tzDF,dvx);
+END;
+
+// z critical (its size) at alpha for the tails on screen: the point of
+// the standard normal curve with a = alpha (one-tailed) or alpha/2
+// (two-tailed) beyond it.  A lower-tail quantile, mirrored, as tz_Crit's
+// (Lessons Learned s3: never ICDF(1 - a)).
+LOCAL tz_ZCrit()
+BEGIN
+ RETURN -NORMALD_ICDF(0,1,IFTE(tzTL == 0,tzAL/2,tzAL));
+END;
+
+// The p value for a z, for the tails on screen (lower tails only; the
+// two-tailed p is capped at 1, as tz_PVal's)
+LOCAL tz_ZP(zpv)
+BEGIN
+ IF tzTL == 0 THEN RETURN MIN(1,2*NORMALD_CDF(0,1,-ABS(zpv))); END;
+ IF tzTL < 0 THEN RETURN NORMALD_CDF(0,1,zpv); END;
+ RETURN NORMALD_CDF(0,1,-zpv);
+END;
+
+// The two sides of the hypotheses in symbols, for the test on screen:
+// mu1 and mu2 (two means), mu and mu0 (one mean), p and p0 (one
+// proportion), p1 and p2 (two proportions)
+LOCAL tz_HS()
+BEGIN
+ IF tzTY == 4 THEN RETURN {"μ","μ"+CHAR(8320)}; END;
+ IF tzTY == 5 THEN RETURN {"p","p"+CHAR(8320)}; END;
+ IF tzTY == 6 THEN RETURN {"p"+CHAR(8321),"p"+CHAR(8322)}; END;
+ RETURN {"μ"+CHAR(8321),"μ"+CHAR(8322)};
+END;
+
+// Cohen's d as the pages print it after "Cohen's d": " = 1.28", or, past
+// 999.99 in size, " > 999.99" or " < -999.99".  A d that large comes from
+// an SD typed far too small, and its digits would run into the label
+// beside it (the label monkey, 14 Nov 2026: "Cohen's d = -34,200,918,..."
+// over "magenta area = p", on the older tests' step 5 as well).
+LOCAL tz_DS()
+BEGIN
+ IF tzD >= 1000 THEN RETURN " > 999.99"; END;
+ IF tzD <= -1000 THEN RETURN " < "+CHAR(8722)+"999.99"; END;
+ RETURN " = "+tz_Cm(tz_Fmt(tzD,2));
+END;
+
 // Pooled (pk = 1) or separate (pk = 2) t for the independent samples on
 // screen: returns {SE, t, df, pooled SD}.  The SDs are divided by the
 // larger first (cm), so nothing squares out of range.
@@ -510,12 +616,110 @@ BEGIN
  RETURN "N can be at most 10,000. Choose Edit the numbers to change it.";
 END;
 
+// ---------------- one sample and proportions: the arithmetic (beta 1h) ----------------
+// Mean and SD (N - 1) of the one sample's scores in tzXO: two passes, the
+// mean first, then the squared distances from it (Lessons Learned s11:
+// never from the sum of squares, which loses its digits)
+LOCAL tz_One()
+BEGIN
+ LOCAL oj, oq;
+ tzNO := SIZE(tzXO);
+ oq := 0;
+ FOR oj FROM 1 TO tzNO DO oq := oq + tzXO(oj); END;
+ tzMO := oq/tzNO;
+ oq := 0;
+ FOR oj FROM 1 TO tzNO DO oq := oq + (tzXO(oj)-tzMO)^2; END;
+ tzSO := (oq/(tzNO-1))^.5;
+END;
+
+// Is wv a whole number from wlo to whi?  (a count, or a sample size)
+LOCAL tz_Whole(wv, wlo, whi)
+BEGIN
+ IF wv < wlo OR wv > whi THEN RETURN 0; END;
+ IF FP(wv) <> 0 THEN RETURN 0; END;
+ RETURN 1;
+END;
+
+// The one-sample t-test and the two z-tests: check the numbers on screen
+// and work out what the five steps show.  Returns 1, or 0 with tzOK = 0
+// and the reason in tzMSG when the numbers give no test.  The z-tests
+// are finished here; the one-sample t goes back to tz_Calc for its t
+// critical and p, as the other t-tests.
+LOCAL tz_CalcN()
+BEGIN
+ IF tzTY == 4 THEN
+  // ---- one sample: t = (mean - mu0)/(s/sqrt(N)) on N - 1 df ----
+  // mu0 is always typed.  Typed numbers keep to the fleet's ranges;
+  // scores from D1 were checked when the list was read.
+  IF tz_Big(tzMU) THEN
+   tzOK := 0; tzMSG := "A number you typed has more than 50 digits: too large to work with. Choose Edit the numbers to change it."; RETURN 0;
+  END;
+  IF tzSRC == 1 THEN
+   IF tz_Big(tzMO) OR tz_Big(tzSO) OR tz_Big(tzNO) THEN
+    tzOK := 0; tzMSG := "A number you typed has more than 50 digits: too large to work with. Choose Edit the numbers to change it."; RETURN 0;
+   END;
+   IF tzNO > 10000 THEN tzOK := 0; tzMSG := tz_NMsg(); RETURN 0; END;
+   IF MAX(ABS(tzMO), ABS(tzMU)) > 10000 OR tzSO > 1000 THEN tzOK := 0; tzMSG := "The mean and μ"+CHAR(8320)+" must be from -10,000 to 10,000 and the SD at most 1,000. Choose Edit the numbers to change it."; RETURN 0; END;
+  ELSE
+   tzNO := SIZE(tzXO);
+  END;
+  IF tzNO < 2 THEN tzOK := 0; tzMSG := "A one-sample t-test needs N of at least 2."; RETURN 0; END;
+  IF tzSRC == 2 THEN tz_One(); END;
+  IF tzSO < 0 THEN tzOK := 0; tzMSG := "An SD cannot be negative."; RETURN 0; END;
+  IF tzSO == 0 THEN tzOK := 0; tzMSG := "The SD is 0: every score is the same, so there is no t."; RETURN 0; END;
+  tzSE := tzSO/tzNO^.5;
+  tzDF := tzNO-1;
+  tzT := (tzMO-tzMU)/tzSE;
+  tzD := (tzMO-tzMU)/tzSO;
+  tzSP := tzSO;
+  RETURN 1;
+ END;
+ IF tzTY == 5 THEN
+  // ---- one proportion: z = (p-hat - p0)/sqrt(p0(1 - p0)/n) ----
+  // the SE is built from p0, not from p-hat: the test works out what
+  // would happen if H0 were true
+  IF tz_Whole(tzNA,1,1000000) == 0 THEN tzOK := 0; tzMSG := "n must be a whole number from 1 to 1,000,000. Choose Edit the numbers to change it."; RETURN 0; END;
+  IF tz_Whole(tzKA,0,tzNA) == 0 THEN tzOK := 0; tzMSG := "x, the number of successes, must be a whole number from 0 to n. Choose Edit the numbers to change it."; RETURN 0; END;
+  IF tzP0 < 0.00001 OR tzP0 > 0.99999 THEN tzOK := 0; tzMSG := "p"+CHAR(8320)+" must be from 0.00001 to 0.99999. Choose Edit the numbers to change it."; RETURN 0; END;
+  tzPA := tzKA/tzNA;
+  tzSE := (tzP0*(1-tzP0)/tzNA)^.5;
+  tzT := (tzPA-tzP0)/tzSE;
+  tzD := tzPA-tzP0;
+ ELSE
+  // ---- two proportions: z = (p-hat1 - p-hat2)/SE ----
+  // under H0 the two samples share one proportion, so the SE is built
+  // from the pooled p = (x1 + x2)/(n1 + n2)
+  IF tz_Whole(tzNA,1,1000000) == 0 OR tz_Whole(tzNB,1,1000000) == 0 THEN tzOK := 0; tzMSG := "Each n must be a whole number from 1 to 1,000,000. Choose Edit the numbers to change it."; RETURN 0; END;
+  IF tz_Whole(tzKA,0,tzNA) == 0 OR tz_Whole(tzKB,0,tzNB) == 0 THEN tzOK := 0; tzMSG := "Each x, a number of successes, must be a whole number from 0 to its n. Choose Edit the numbers to change it."; RETURN 0; END;
+  IF tzKA+tzKB == 0 OR tzKA+tzKB == tzNA+tzNB THEN tzOK := 0; tzMSG := "Every case is a success, or none is: the two samples cannot differ, so there is no z."; RETURN 0; END;
+  tzPA := tzKA/tzNA; tzPB := tzKB/tzNB;
+  tzPP := (tzKA+tzKB)/(tzNA+tzNB);
+  tzSE := (tzPP*(1-tzPP)*(1/tzNA+1/tzNB))^.5;
+  tzT := (tzPA-tzPB)/tzSE;
+  tzD := tzPA-tzPB;
+ END;
+ // a z-test: no df; z critical, p and the decision from the normal curve
+ tzDF := 0;
+ tzTC := tz_ZCrit();
+ tzP := tz_ZP(tzT);
+ tzREJ := tz_Beyond(tzT,tzTC);
+ RETURN 1;
+END;
+
 // Everything the five steps show, from the numbers on screen.  Sets
 // tzOK = 0 and tzMSG when the numbers cannot give a t.
 LOCAL tz_Calc()
 BEGIN
  LOCAL cr;
  tzOK := 1; tzMSG := "";
+ // beta 1h: the one-sample t-test and the z-tests check and work out
+ // their own numbers (tz_CalcN).  The z-tests are finished there; the
+ // one-sample t goes on to t critical and p below.
+ IF tzTY >= 4 THEN
+  IF tz_CalcN() == 0 THEN RETURN 0; END;
+  IF tzTY >= 5 THEN RETURN 1; END;
+ END;
+ IF tzTY <= 3 THEN
  // A typed number too large to work with (tz_Big).  Only typed ones:
  // numbers worked out from D1/D2 come from values already checked
  // when the lists were read, and an SD worked out from values below
@@ -557,6 +761,7 @@ BEGIN
   tzSE := cr(1); tzT := cr(2); tzDF := cr(3); tzSP := cr(4);
   tzD := (tzM1-tzM2)/tzSP;
  END;
+ END;
  // t critical for the exact df (a printed table is only a note on
  // step 3: the books' tables differ past df 30)
  tzTC := tz_Crit(tzDF);
@@ -570,6 +775,9 @@ LOCAL tz_TName()
 BEGIN
  IF tzTY == 1 THEN RETURN "Pooled-variances t-test"; END;
  IF tzTY == 2 THEN RETURN "Separate-variances t-test"; END;
+ IF tzTY == 4 THEN RETURN "One-sample t-test"; END;
+ IF tzTY == 5 THEN RETURN "One-proportion z-test"; END;
+ IF tzTY == 6 THEN RETURN "Two-proportion z-test"; END;
  RETURN "Dependent-samples t-test";
 END;
 
@@ -601,9 +809,10 @@ BEGIN
  RETURN tz_Cm(tz_Fmt(cv,3));
 END;
 
-// "t(73)" or "t(72.44)"
+// "t(73)" or "t(72.44)"; "z" for a z-test, which has no df (beta 1h)
 LOCAL tz_TDf()
 BEGIN
+ IF tzTY >= 5 THEN RETURN "z"; END;
  IF tzTY == 2 THEN RETURN "t("+tz_Cm(tz_Fmt(tzDF,2))+")"; END;
  RETURN "t("+tz_Cm(STRING(tzDF,1,0))+")";
 END;
@@ -622,13 +831,21 @@ END;
 LOCAL tz_ShowSteps()
 BEGIN
  BLIT_P(G0,0,0,G1);
- DRAWMENU({"1 H","2 df","3 crit","4 t","5 end","Menu"});
+ // a z-test has no df and no t: its second and fourth keys say so
+ // (beta 1h)
+ IF tzTY >= 5 THEN
+  DRAWMENU({"1 H","2 dist","3 crit","4 z","5 end","Menu"});
+ ELSE
+  DRAWMENU({"1 H","2 df","3 crit","4 t","5 end","Menu"});
+ END;
 END;
 
 // The t curve on df from y0 to y1: the rejection region red, the rest
 // pale blue; t critical dashed red; with shT, t obtained in magenta and
 // with shP the p value's area shaded magenta.  One pixel column at a
 // time (Lessons Learned s6: shade by columns, never by samples).
+// beta 1h: for a z-test the curve is the standard normal curve (tz_Dens)
+// and the labels say z (tz_SL).
 LOCAL tz_Curve(cy0, cy1, shT, shP)
 BEGIN
  LOCAL cxr, cpk, cH, cpx, cx, cf;
@@ -638,12 +855,12 @@ BEGIN
  cxr := MAX(4, tzTC + 0.8);
  IF shT THEN cxr := MAX(cxr, ABS(tzT) + 0.8); END;
  cxr := MIN(cxr, 12);
- cpk := STUDENT(tzDF,0);
+ cpk := tz_Dens(0);
  cH := cy1 - cy0 - 4;
  cyq := cy1;
  FOR cpx FROM tzPL TO tzPR DO
   cx := -cxr + (cpx-tzPL)/(tzPR-tzPL)*2*cxr;
-  cf := STUDENT(tzDF,cx);
+  cf := tz_Dens(cx);
   cyp := cy1 - IP(cf/cpk*cH);
   cin := tz_Beyond(cx,tzTC);
   // p value's area: beyond t obtained, in the direction(s) of H1
@@ -681,7 +898,7 @@ BEGIN
    ctx := tzPL + IP((MAX(-cxr,MIN(cxr,cs*tzTC))+cxr)/(2*cxr)*(tzPR-tzPL));
    FOR cpx FROM cy0 TO cy1 STEP 4 DO LINE_P(G1,ctx,cpx,ctx,MIN(cy1,cpx+1),tzRED); END;
    IF tzTC > cxr THEN
-    TEXTOUT_P("t crit",G1,IFTE(cs < 0,tzPL+3,tzPR-38),cy0+2,1,tzRED);
+    TEXTOUT_P(tz_SL()+" crit",G1,IFTE(cs < 0,tzPL+3,tzPR-38),cy0+2,1,tzRED);
    END;
   END;
  END;
@@ -690,7 +907,7 @@ BEGIN
   ctx := tzPL + IP((MAX(-cxr,MIN(cxr,tzT))+cxr)/(2*cxr)*(tzPR-tzPL));
   LINE_P(G1,ctx,cy0,ctx,cy1,tzMAG);
   LINE_P(G1,ctx+1,cy0,ctx+1,cy1,tzMAG);
-  cs := "t obt = "+tz_Cm(tz_Fmt(tzT,2));
+  cs := tz_SL()+" obt = "+tz_Cm(tz_Fmt(tzT,2));
   cdec := MIN(tzPR-IP(6.5*DIM(cs)), MAX(tzPL, ctx-IP(2.75*DIM(cs))));
   TEXTOUT_P(cs,G1,cdec,cy0-11,1,tzMAG);
  END;
@@ -913,7 +1130,309 @@ BEGIN
   TEXTOUT_P("(p = "+tz_Cm(tz_Sig(tzP))+": just "+tz_Cm(IFTE(tzP < tzAL,"below","above"))+" α = "+tz_Cm(tz_Fmt(tzAL,3))+".)",G1,8,84,1,tzGRAY);
  END;
  TEXTOUT_P("Report "+tz_TDf()+" = "+tz_Cm(tz_Fmt(tzT,2))+", p"+tz_Rel(tz_Cm(tz_FmtP(tzP,3)))+", "+tz_TailS(),G1,8,97,1,tzMAG);
- TEXTOUT_P("Cohen's d = "+tz_Cm(tz_Fmt(tzD,2))+tz_Cm(IFTE(tzTY == 3,"  ("+CHAR(57344)+"D / sD)","  (pooled s)")),G1,8,110,1,tzMAG);
+ TEXTOUT_P("Cohen's d"+tz_DS()+tz_Cm(IFTE(tzTY == 3,"  ("+CHAR(57344)+"D / sD)","  (pooled s)")),G1,8,110,1,tzMAG);
+ TEXTOUT_P("magenta area = p",G1,216,110,1,tzMAG);
+ tz_Curve(134,196,1,1);
+ tz_ShowSteps();
+END;
+
+// ---------------- one sample and proportions: the pages (beta 1h) ----------------
+// Steps 1, 2, 4 and 5 of the one-sample t-test and of the two z-tests,
+// and step 3 of the z-tests (the one-sample t shares tz_Step3 with the
+// other t-tests).  They are laid out like the two-sample pages above.
+
+// A mean or an SD for these pages: as it was typed, or to 4 significant
+// digits when the program worked it out from the scores in D1
+LOCAL tz_VN(vnv)
+BEGIN
+ IF tzSRC == 2 THEN RETURN tz_Cm(tz_Sig(vnv)); END;
+ RETURN tz_Cm(tz_Num(vnv));
+END;
+
+// A number's text in brackets when it is negative: "1.2 - (-3)".  On the
+// Prime a negative number's text begins with the true minus sign,
+// CHAR(8722) (Lessons Learned s3), not the hyphen of the keyboard.
+LOCAL tz_Par(prs)
+BEGIN
+ IF DIM(prs) > 0 THEN
+  IF LEFT(prs,1) == "-" OR LEFT(prs,1) == CHAR(8722) THEN RETURN "("+prs+")"; END;
+ END;
+ RETURN prs;
+END;
+
+// ---- step 1: the hypotheses and the data ----
+LOCAL tz_Step1N()
+BEGIN
+ LOCAL sh, sj, sn, sk, sw, sc;
+ LOCAL sx, sy, ss;
+ sh := tz_HS();
+ tz_Frame("Step 1. The hypotheses");
+ TEXTOUT_P(tz_TName()+", "+tz_TailS()+", "+tz_AlS(),G1,8,30,1,tzGRAY);
+ // H0: the value it claims (one sample), or equal proportions (two)
+ IF tzTY == 4 THEN
+  TEXTOUT_P("H"+CHAR(8320)+": μ = μ"+CHAR(8320)+" = "+tz_Cm(tz_Num(tzMU))+"   (the population mean is μ"+CHAR(8320)+")",G1,8,46,1,tzBLUE);
+ END;
+ IF tzTY == 5 THEN
+  TEXTOUT_P("H"+CHAR(8320)+": p = p"+CHAR(8320)+" = "+tz_Cm(tz_Num(tzP0))+"   (the population proportion is p"+CHAR(8320)+")",G1,8,46,1,tzBLUE);
+ END;
+ IF tzTY == 6 THEN
+  TEXTOUT_P("H"+CHAR(8320)+": p"+CHAR(8321)+" = p"+CHAR(8322)+"   (the population proportions are equal)",G1,8,46,1,tzBLUE);
+ END;
+ // H1: either way, or the direction chosen
+ ss := " ≠ ";
+ IF tzTL < 0 THEN ss := " < "; END;
+ IF tzTL > 0 THEN ss := " > "; END;
+ ss := "H"+CHAR(8321)+": "+sh(1)+ss+sh(2);
+ IF tzTL == 0 THEN
+  IF tzTY == 6 THEN
+   TEXTOUT_P(ss+"   (they differ, either way)",G1,8,60,1,tzMAG);
+  ELSE
+   TEXTOUT_P(ss+"   (it differs, either way)",G1,8,60,1,tzMAG);
+  END;
+ ELSE
+  TEXTOUT_P(ss+"   (a predicted direction)",G1,8,60,1,tzMAG);
+ END;
+ IF tzTY == 4 AND tzSRC == 1 THEN
+  // one sample, from its typed mean, SD and N
+  RECT_P(G1,4,76,315,134,tzORNG,tzLORN);
+  TEXTOUT_P("The sample:",G1,10,80,1,tzGRAY);
+  TEXTOUT_P(CHAR(57344)+" = "+tz_Cm(tz_Num(tzMO))+",   s = "+tz_Cm(tz_Num(tzSO))+",   N = "+tz_Cm(tz_Num(tzNO)),G1,10,95,1,tzBLK);
+  TEXTOUT_P("The mean H"+CHAR(8320)+" claims:   μ"+CHAR(8320)+" = "+tz_Cm(tz_Num(tzMU)),G1,10,114,1,tzBLK);
+  IF DIM(tzDV) > 0 THEN TEXTOUT_P("Outcome: "+tzDV,G1,8,144,1,tzGRAY); END;
+ END;
+ IF tzTY == 4 AND tzSRC == 2 THEN
+  // one sample, from the scores in D1: the first of them in two rows,
+  // as many to a row as their widest text allows
+  RECT_P(G1,4,74,315,176,tzORNG,tzLORN);
+  TEXTOUT_P("The sample ("+tzG1+"):  N = "+tz_Cm(STRING(tzNO,1,0))+" scores",G1,10,78,1,tzGRAY);
+  // the decimals the scores shown need, and their widest text
+  sk := 0;
+  FOR sj FROM 1 TO MIN(tzNO,10) DO sk := MAX(sk, tz_NDec(tzXO(sj))); END;
+  sw := 1;
+  FOR sj FROM 1 TO MIN(tzNO,10) DO sw := MAX(sw, DIM(tz_Cm(tz_FixD(tzXO(sj),sk)))); END;
+  sc := 5;
+  IF sw > 8 THEN sc := 4; END;
+  IF sw > 11 THEN sc := 3; END;
+  IF sw > 15 THEN sc := 2; END;
+  sn := MIN(tzNO,2*sc);
+  FOR sj FROM 1 TO sn DO
+   sx := 14 + IP(300/sc)*((sj-1) MOD sc);
+   sy := 93 + 13*IP((sj-1)/sc);
+   TEXTOUT_P(tz_Cm(tz_FixD(tzXO(sj),sk)),G1,sx,sy,1,tzBLK);
+  END;
+  IF tzNO > sn THEN TEXTOUT_P("... and "+tz_Cm(STRING(tzNO-sn,1,0))+" more",G1,14,119,1,tzGRAY); END;
+  TEXTOUT_P(CHAR(57344)+" = "+tz_Cm(tz_Sig(tzMO))+",   s = "+tz_Cm(tz_Sig(tzSO)),G1,10,135,1,tzBLK);
+  TEXTOUT_P("The mean H"+CHAR(8320)+" claims:   μ"+CHAR(8320)+" = "+tz_Cm(tz_Num(tzMU)),G1,10,148,1,tzBLK);
+  IF DIM(tzDV) > 0 THEN TEXTOUT_P("Outcome: "+tzDV,G1,10,162,1,tzGRAY); END;
+ END;
+ IF tzTY == 5 THEN
+  // one proportion: x successes in n cases
+  RECT_P(G1,4,76,315,146,tzORNG,tzLORN);
+  TEXTOUT_P("The sample:",G1,10,80,1,tzGRAY);
+  TEXTOUT_P("x = "+tz_Cm(tz_Num(tzKA))+" successes in n = "+tz_Cm(tz_Num(tzNA))+" cases",G1,10,95,1,tzBLK);
+  TEXTOUT_P(CHAR(57345)+" = x/n = "+tz_Cm(tz_Sig(tzPA)),G1,10,109,1,tzBLK);
+  TEXTOUT_P("The proportion H"+CHAR(8320)+" claims:   p"+CHAR(8320)+" = "+tz_Cm(tz_Num(tzP0)),G1,10,127,1,tzBLK);
+  IF DIM(tzDV) > 0 THEN TEXTOUT_P("Success: "+tzDV,G1,8,156,1,tzGRAY); END;
+ END;
+ IF tzTY == 6 THEN
+  // two proportions: a column per sample, as the two-means page
+  RECT_P(G1,4,76,315,152,tzORNG,tzLORN);
+  TEXTOUT_P("Sample 1",G1,10,80,1,tzBLK);
+  TEXTOUT_P("Sample 2",G1,165,80,1,tzBLK);
+  TEXTOUT_P(tzG1,G1,10,93,1,tzGRAY);
+  TEXTOUT_P(tzG2,G1,165,93,1,tzGRAY);
+  TEXTOUT_P("x"+CHAR(8321)+" = "+tz_Cm(tz_Num(tzKA)),G1,10,108,1,tzBLK);
+  TEXTOUT_P("x"+CHAR(8322)+" = "+tz_Cm(tz_Num(tzKB)),G1,165,108,1,tzBLK);
+  TEXTOUT_P("n"+CHAR(8321)+" = "+tz_Cm(tz_Num(tzNA)),G1,10,122,1,tzBLK);
+  TEXTOUT_P("n"+CHAR(8322)+" = "+tz_Cm(tz_Num(tzNB)),G1,165,122,1,tzBLK);
+  TEXTOUT_P(CHAR(57345)+CHAR(8321)+" = "+tz_Cm(tz_Sig(tzPA)),G1,10,136,1,tzBLK);
+  TEXTOUT_P(CHAR(57345)+CHAR(8322)+" = "+tz_Cm(tz_Sig(tzPB)),G1,165,136,1,tzBLK);
+  IF DIM(tzDV) > 0 THEN TEXTOUT_P("Success: "+tzDV,G1,8,160,1,tzGRAY); END;
+  TEXTOUT_P("x = the successes, n = the cases;  "+CHAR(57345)+" = x/n.",G1,8,176,1,tzGRAY);
+  TEXTOUT_P("Sample 1 minus sample 2, all the way through.",G1,8,189,1,tzGRAY);
+ END;
+ tz_ShowSteps();
+END;
+
+// ---- step 2: the distribution; df, or the check of the counts ----
+LOCAL tz_Step2N()
+BEGIN
+ LOCAL sa, sb, sok;
+ IF tzTY == 4 THEN
+  tz_Frame("Step 2. Distribution and df");
+  TEXTOUT_P("The distribution is t: its shape depends on df.",G1,8,32,1,tzBLK);
+  TEXTOUT_P("One sample:  df = N - 1",G1,8,54,1,tzBLUE);
+  TEXTOUT_P("   = "+tz_Cm(tz_Num(tzNO))+" - 1 = "+tz_Cm(STRING(tzDF,1,0)),G1,8,69,1,tzBLUE);
+  TEXTOUT_P("The sample mean uses up one df: the N distances",G1,8,90,1,tzGRAY);
+  TEXTOUT_P("from it always add to zero.",G1,8,103,1,tzGRAY);
+  TEXTOUT_P("The more df, the closer t comes to the normal",G1,8,160,1,tzGRAY);
+  TEXTOUT_P("curve; few df give a wider, flatter t.",G1,8,173,1,tzGRAY);
+ ELSE
+  tz_Frame("Step 2. The distribution");
+  TEXTOUT_P("The distribution is z, the standard normal curve.",G1,8,32,1,tzBLK);
+  TEXTOUT_P("A z-test has no df: the curve never changes.",G1,8,47,1,tzBLUE);
+  // the normal curve stands in for the binomial distribution, and fits
+  // it well only when the counts are large enough: the book's rule
+  TEXTOUT_P("The curve is an approximation.  It fits well when",G1,8,68,1,tzBLK);
+  IF tzTY == 5 THEN
+   sa := tzNA*tzP0; sb := tzNA*(1-tzP0);
+   TEXTOUT_P("n p"+CHAR(8320)+" and n(1 - p"+CHAR(8320)+") are both at least 5:",G1,8,81,1,tzBLK);
+   TEXTOUT_P("n p"+CHAR(8320)+" = "+tz_Cm(tz_Num(tzNA))+" × "+tz_Cm(tz_Num(tzP0))+" = "+tz_Cm(tz_Sig(sa)),G1,8,98,1,tzBLUE);
+   TEXTOUT_P("n(1 - p"+CHAR(8320)+") = "+tz_Cm(tz_Num(tzNA))+" × "+tz_Cm(tz_Num(1-tzP0))+" = "+tz_Cm(tz_Sig(sb)),G1,8,111,1,tzBLUE);
+   sok := 0;
+   IF sa >= 5 AND sb >= 5 THEN sok := 1; END;
+  ELSE
+   TEXTOUT_P("each sample has at least 5 successes and 5 failures:",G1,8,81,1,tzBLK);
+   TEXTOUT_P("sample 1:  "+tz_Cm(tz_Num(tzKA))+" and "+tz_Cm(tz_Num(tzNA-tzKA)),G1,8,98,1,tzBLUE);
+   TEXTOUT_P("sample 2:  "+tz_Cm(tz_Num(tzKB))+" and "+tz_Cm(tz_Num(tzNB-tzKB)),G1,8,111,1,tzBLUE);
+   sok := 0;
+   IF MIN(MIN(tzKA,tzNA-tzKA),MIN(tzKB,tzNB-tzKB)) >= 5 THEN sok := 1; END;
+  END;
+  IF sok THEN
+   TEXTOUT_P("Yes: the normal curve fits.",G1,8,130,1,tzGRN);
+  ELSE
+   TEXTOUT_P("No: the curve fits poorly, so p is only rough.",G1,8,130,1,tzRED);
+   IF tzTY == 5 THEN
+    TEXTOUT_P("Use an exact binomial test (FitCheck).",G1,8,143,1,tzRED);
+   ELSE
+    TEXTOUT_P("Use Fisher's exact test (ChiTable).",G1,8,143,1,tzRED);
+   END;
+  END;
+  TEXTOUT_P("z is what t becomes when df grows without end.",G1,8,173,1,tzGRAY);
+ END;
+ tz_ShowSteps();
+END;
+
+// ---- step 3 of a z-test: z critical and the rule ----
+LOCAL tz_Step3Z()
+BEGIN
+ tz_Frame("Step 3. Critical value, decision rule");
+ TEXTOUT_P(tz_AlS()+", "+tz_TailS()+";  the normal curve, so no df",G1,8,30,1,tzBLK);
+ TEXTOUT_P("z crit = "+tz_CritS(tzTC),G1,8,44,1,tzRED);
+ IF tzTL == 0 THEN
+  TEXTOUT_P("Rule: if z obt > "+tz_Cm(tz_Fmt(tzTC,3))+" or z obt < "+tz_Cm(tz_Fmt(-tzTC,3))+",",G1,8,60,1,tzBLK);
+ ELSE
+  IF tzTL < 0 THEN
+   TEXTOUT_P("Rule: if z obt < "+tz_Cm(tz_Fmt(-tzTC,3))+",",G1,8,60,1,tzBLK);
+  ELSE
+   TEXTOUT_P("Rule: if z obt > "+tz_Cm(tz_Fmt(tzTC,3))+",",G1,8,60,1,tzBLK);
+  END;
+ END;
+ TEXTOUT_P("  reject H"+CHAR(8320)+".  Red = the rejection region (α).",G1,8,73,1,tzBLK);
+ TEXTOUT_P("z crit is the same for every sample size.",G1,8,89,1,tzGRAY);
+ tz_Curve(114,196,0,0);
+ tz_ShowSteps();
+END;
+
+// ---- step 4: the standard error and t or z obtained ----
+LOCAL tz_Step4N()
+BEGIN
+ IF tzTY == 4 THEN
+  tz_Frame("Step 4. Standard error and t obtained");
+  // the mean and SD as typed, or to 4 digits when they came from D1
+  TEXTOUT_P(CHAR(57344)+" = "+tz_VN(tzMO)+",   s = "+tz_VN(tzSO)+",   N = "+tz_Cm(tz_Num(tzNO))+",   μ"+CHAR(8320)+" = "+tz_Cm(tz_Num(tzMU)),G1,8,34,1,tzBLK);
+  TEXTOUT_P("SE = s/√N = "+tz_VN(tzSO)+"/√"+tz_Cm(tz_Num(tzNO))+" = "+tz_Cm(tz_Sig(tzSE)),G1,8,58,1,tzBLUE);
+  TEXTOUT_P("t obt = ("+CHAR(57344)+" - μ"+CHAR(8320)+")/SE = ("+tz_VN(tzMO)+" - "+tz_Par(tz_Cm(tz_Num(tzMU)))+")/"+tz_Cm(tz_Sig(tzSE)),G1,8,82,1,tzMAG);
+  TEXTOUT_P("      = "+tz_Cm(tz_Sig(tzMO-tzMU))+"/"+tz_Cm(tz_Sig(tzSE))+" = "+tz_Cm(tz_Fmt(tzT,2)),G1,8,95,1,tzMAG);
+  TEXTOUT_P("t obt counts the standard errors between the",G1,8,120,1,tzGRAY);
+  TEXTOUT_P("sample mean and μ"+CHAR(8320)+".",G1,8,133,1,tzGRAY);
+ END;
+ IF tzTY == 5 THEN
+  tz_Frame("Step 4. Standard error and z obtained");
+  TEXTOUT_P(CHAR(57345)+" = x/n = "+tz_Cm(tz_Num(tzKA))+"/"+tz_Cm(tz_Num(tzNA))+" = "+tz_Cm(tz_Sig(tzPA)),G1,8,32,1,tzBLK);
+  TEXTOUT_P("SE = √(p"+CHAR(8320)+"(1 - p"+CHAR(8320)+")/n)",G1,8,50,1,tzBLUE);
+  TEXTOUT_P("   = √("+tz_Cm(tz_Num(tzP0))+" × "+tz_Cm(tz_Num(1-tzP0))+"/"+tz_Cm(tz_Num(tzNA))+") = "+tz_Cm(tz_Sig(tzSE)),G1,8,63,1,tzBLK);
+  TEXTOUT_P("z obt = ("+CHAR(57345)+" - p"+CHAR(8320)+")/SE = ("+tz_Cm(tz_Sig(tzPA))+" - "+tz_Cm(tz_Num(tzP0))+")/"+tz_Cm(tz_Sig(tzSE)),G1,8,84,1,tzMAG);
+  TEXTOUT_P("      = "+tz_Cm(tz_Sig(tzPA-tzP0))+"/"+tz_Cm(tz_Sig(tzSE))+" = "+tz_Cm(tz_Fmt(tzT,2)),G1,8,97,1,tzMAG);
+  TEXTOUT_P("SE is built from p"+CHAR(8320)+", not from "+CHAR(57345)+": the test works",G1,8,120,1,tzGRAY);
+  TEXTOUT_P("out what would happen if H"+CHAR(8320)+" were true.",G1,8,133,1,tzGRAY);
+ END;
+ IF tzTY == 6 THEN
+  tz_Frame("Step 4. Standard error and z obtained");
+  TEXTOUT_P(CHAR(57345)+CHAR(8321)+" = x"+CHAR(8321)+"/n"+CHAR(8321)+" = "+tz_Cm(tz_Num(tzKA))+"/"+tz_Cm(tz_Num(tzNA))+" = "+tz_Cm(tz_Sig(tzPA)),G1,8,30,1,tzBLK);
+  TEXTOUT_P(CHAR(57345)+CHAR(8322)+" = x"+CHAR(8322)+"/n"+CHAR(8322)+" = "+tz_Cm(tz_Num(tzKB))+"/"+tz_Cm(tz_Num(tzNB))+" = "+tz_Cm(tz_Sig(tzPB)),G1,8,43,1,tzBLK);
+  // under H0 the two samples share one proportion: pool them
+  TEXTOUT_P("Pooled, because H"+CHAR(8320)+" gives both samples one p:",G1,8,58,1,tzBLUE);
+  TEXTOUT_P("p = (x"+CHAR(8321)+" + x"+CHAR(8322)+")/(n"+CHAR(8321)+" + n"+CHAR(8322)+") = "+tz_Cm(tz_Num(tzKA+tzKB))+"/"+tz_Cm(tz_Num(tzNA+tzNB))+" = "+tz_Cm(tz_Sig(tzPP)),G1,8,71,1,tzBLUE);
+  TEXTOUT_P("SE = √(p(1 - p)(1/n"+CHAR(8321)+" + 1/n"+CHAR(8322)+"))",G1,8,86,1,tzBLUE);
+  TEXTOUT_P("   = √("+tz_Cm(tz_Sig(tzPP))+" × "+tz_Cm(tz_Sig(1-tzPP))+" × (1/"+tz_Cm(tz_Num(tzNA))+" + 1/"+tz_Cm(tz_Num(tzNB))+"))",G1,8,99,1,tzBLK);
+  TEXTOUT_P("   = "+tz_Cm(tz_Sig(tzSE)),G1,8,112,1,tzBLK);
+  TEXTOUT_P("z obt = ("+CHAR(57345)+CHAR(8321)+" - "+CHAR(57345)+CHAR(8322)+")/SE = ("+tz_Cm(tz_Sig(tzPA))+" - "+tz_Cm(tz_Sig(tzPB))+")/"+tz_Cm(tz_Sig(tzSE)),G1,8,129,1,tzMAG);
+  TEXTOUT_P("      = "+tz_Cm(tz_Sig(tzPA-tzPB))+"/"+tz_Cm(tz_Sig(tzSE))+" = "+tz_Cm(tz_Fmt(tzT,2)),G1,8,142,1,tzMAG);
+ END;
+ tz_ShowSteps();
+END;
+
+// ---- step 5: the decision ----
+LOCAL tz_Step5N()
+BEGIN
+ LOCAL sd;
+ tz_Frame("Step 5. Decision and conclusion");
+ IF tzREJ THEN
+  TEXTOUT_P(tz_SL()+" obt = "+tz_Cm(tz_Fmt(tzT,3))+" is beyond "+tz_SL()+" crit = "+tz_CritS(tzTC)+":",G1,8,30,1,tzRED);
+  TEXTOUT_P("REJECT H"+CHAR(8320)+".",G1,8,43,1,tzRED);
+  // which way: the sample's side of the value H0 claims, or sample 1's
+  // side of sample 2
+  sd := "higher";
+  IF tzT < 0 THEN sd := "lower"; END;
+  IF tzTY == 4 THEN
+   IF tzTL == 0 THEN
+    TEXTOUT_P("The population mean differs significantly from μ"+CHAR(8320)+":",G1,8,58,1,tzBLK);
+   ELSE
+    TEXTOUT_P("The mean differs from μ"+CHAR(8320)+" the way H"+CHAR(8321)+" predicted:",G1,8,58,1,tzBLK);
+   END;
+   TEXTOUT_P("the sample mean is "+sd+" than μ"+CHAR(8320)+" = "+tz_Cm(tz_Num(tzMU))+".",G1,8,71,1,tzBLK);
+  END;
+  IF tzTY == 5 THEN
+   IF tzTL == 0 THEN
+    TEXTOUT_P("The proportion differs significantly from p"+CHAR(8320)+":",G1,8,58,1,tzBLK);
+   ELSE
+    TEXTOUT_P("The proportion differs from p"+CHAR(8320)+" the way H"+CHAR(8321)+" predicted:",G1,8,58,1,tzBLK);
+   END;
+   TEXTOUT_P("the sample proportion is "+sd+" than p"+CHAR(8320)+" = "+tz_Cm(tz_Num(tzP0))+".",G1,8,71,1,tzBLK);
+  END;
+  IF tzTY == 6 THEN
+   IF tzTL == 0 THEN
+    TEXTOUT_P("The population proportions differ significantly:",G1,8,58,1,tzBLK);
+   ELSE
+    TEXTOUT_P("The proportions differ the way H"+CHAR(8321)+" predicted:",G1,8,58,1,tzBLK);
+   END;
+   TEXTOUT_P("sample 1 ("+tzG1+") has the "+sd+" proportion.",G1,8,71,1,tzBLK);
+  END;
+ ELSE
+  TEXTOUT_P(tz_SL()+" obt = "+tz_Cm(tz_Fmt(tzT,3))+" is not beyond "+tz_SL()+" crit = "+tz_CritS(tzTC)+":",G1,8,30,1,tzGRN);
+  TEXTOUT_P("RETAIN H"+CHAR(8320)+".",G1,8,43,1,tzGRN);
+  TEXTOUT_P("No significant difference: no support for H"+CHAR(8321)+".",G1,8,58,1,tzBLK);
+  // one-tailed, and the difference lies the opposite way to H1's
+  IF tzTL <> 0 AND tzT*tzTL < 0 THEN
+   IF tzTY == 6 THEN
+    TEXTOUT_P("The samples even differ the other way from H"+CHAR(8321)+".",G1,8,71,1,tzBLK);
+   ELSE
+    TEXTOUT_P("The sample even differs the other way from H"+CHAR(8321)+".",G1,8,71,1,tzBLK);
+   END;
+  END;
+ END;
+ // A p that rounds to alpha shows its 4 digits, so "p = 0.050" never
+ // stands beside a decision it seems to contradict.
+ IF tzAL >= 0.001 AND ROUND(tzP,3) == ROUND(tzAL,3) AND tzP <> tzAL THEN
+  IF tzP < tzAL THEN
+   TEXTOUT_P("(p = "+tz_Cm(tz_Sig(tzP))+": just below "+tz_AlS()+".)",G1,8,84,1,tzGRAY);
+  ELSE
+   TEXTOUT_P("(p = "+tz_Cm(tz_Sig(tzP))+": just above "+tz_AlS()+".)",G1,8,84,1,tzGRAY);
+  END;
+ END;
+ TEXTOUT_P("Report "+tz_TDf()+" = "+tz_Cm(tz_Fmt(tzT,2))+", p"+tz_Rel(tz_Cm(tz_FmtP(tzP,3)))+", "+tz_TailS(),G1,8,97,1,tzMAG);
+ // the size of the difference: Cohen's d for a mean, the difference
+ // itself for proportions
+ IF tzTY == 4 THEN
+  TEXTOUT_P("Cohen's d"+tz_DS()+"  (("+CHAR(57344)+" - μ"+CHAR(8320)+")/s)",G1,8,110,1,tzMAG);
+ END;
+ IF tzTY == 5 THEN
+  TEXTOUT_P("Difference: "+CHAR(57345)+" - p"+CHAR(8320)+" = "+tz_Cm(tz_Fmt(tzD,3)),G1,8,110,1,tzMAG);
+ END;
+ IF tzTY == 6 THEN
+  TEXTOUT_P("Difference: "+CHAR(57345)+CHAR(8321)+" - "+CHAR(57345)+CHAR(8322)+" = "+tz_Cm(tz_Fmt(tzD,3)),G1,8,110,1,tzMAG);
+ END;
  TEXTOUT_P("magenta area = p",G1,216,110,1,tzMAG);
  tz_Curve(134,196,1,1);
  tz_ShowSteps();
@@ -924,6 +1443,12 @@ LOCAL tz_Compare()
 BEGIN
  LOCAL cp, cs, cpp, csp, ccp, ccs;
  LOCAL cw, ctl;
+ // beta 1h: the one-sample t-test and the z-tests have no such choice
+ IF tzTY >= 4 THEN
+  MSGBOX("Pooled or separate variances is a question for a test of TWO independent means. The test on screen has no such choice.");
+  tz_Settle();
+  RETURN 0;
+ END;
  IF tzTY == 3 THEN
   MSGBOX("Pooled or separate variances is a question for INDEPENDENT samples. Dependent samples have one SD, of the differences.");
   tz_Settle();
@@ -1089,6 +1614,31 @@ BEGIN
  RETURN IFTE(fq2 == 1,1,2);
 END;
 
+// ---------------- which test? (beta 1h) ----------------
+// Which numbers a test uses: the two independent t-tests share theirs
+// (family 1); every other test has numbers of its own.  A change of
+// family asks for new numbers.
+LOCAL tz_Fam(fty)
+BEGIN
+ IF fty <= 2 THEN RETURN 1; END;
+ RETURN fty;
+END;
+
+// The test to run: a short menu first, and for two means the flowchart.
+// Returns 1-6 (1 pooled, 2 separate, 3 dependent, 4 one-sample t, 5 one-
+// proportion z, 6 two-proportion z), or 0 if the menu or the flowchart
+// was left with Esc.
+LOCAL tz_Pick()
+BEGIN
+ LOCAL pkc;
+ pkc := 0;
+ CHOOSE(pkc,"Which test?",{"Two means: t (flowchart)","One mean: one-sample t","One proportion: z","Two proportions: z"});
+ tz_Settle();
+ IF pkc == 0 THEN RETURN 0; END;
+ IF pkc == 1 THEN RETURN tz_Flow(); END;
+ RETURN pkc + 2;
+END;
+
 // ---------------- data in ----------------
 // A list from the Statistics 1Var app: D1 or D2, {} if it is not there
 // (the app never opened) or not a list.
@@ -1124,8 +1674,12 @@ END;
 LOCAL tz_AskTails()
 BEGIN
  LOCAL ak, aa, al, at;
+ LOCAL ah;
  ak := 0;
- CHOOSE(ak,"Tails",{"Two-tailed: μ₁ ≠ μ₂","One-tailed: μ₁ < μ₂","One-tailed: μ₁ > μ₂"});
+ // the two sides of the hypotheses, in the symbols of the test on
+ // screen (beta 1h): mu1 and mu2, mu and mu0, p and p0, or p1 and p2
+ ah := tz_HS();
+ CHOOSE(ak,"Tails",{"Two-tailed: "+ah(1)+" ≠ "+ah(2),"One-tailed: "+ah(1)+" < "+ah(2),"One-tailed: "+ah(1)+" > "+ah(2)});
  tz_Settle();
  IF ak == 0 THEN RETURN 0; END;
  // the new tails wait here until an alpha is chosen too: a cancelled
@@ -1145,12 +1699,86 @@ BEGIN
  RETURN 1;
 END;
 
+// The numbers for a one-sample t-test or a z-test (beta 1h).  Returns 1
+// when they are in, 0 if cancelled.  As in tz_AskData below, nothing
+// changes until a form is OK'd or a list is read: the forms fill local
+// variables first.  Every field is {name,[0]}, a real number only.
+LOCAL tz_AskDataN()
+BEGIN
+ LOCAL ds, dok, dl1, da, db, dc;
+ LOCAL dd;
+ IF tzTY == 4 THEN
+  ds := 0;
+  CHOOSE(ds,"The sample",{"Type the mean, SD, N","Raw scores in D1"});
+  tz_Settle();
+  IF ds == 0 THEN RETURN 0; END;
+  IF ds == 1 THEN
+   da := tzMO; db := tzSO; dc := tzNO; dd := tzMU;
+   dok := INPUT({{da,[0]},{db,[0]},{dc,[0]},{dd,[0]}},"One sample",{"Mean:","SD:","N:","μ₀:"},
+    {"The sample's mean, -10,000 to 10,000","SD (N - 1), at most 1,000","Size, 2 to 10,000","The mean H0 claims, -10,000 to 10,000"});
+   tz_Settle();
+   IF dok == 0 THEN RETURN 0; END;
+   // a whole N, as the other forms take it
+   tzMO := da; tzSO := db; tzNO := IP(dc); tzMU := dd;
+   tzSRC := 1;
+   tzG1 := "Group 1"; tzG2 := "Group 2";
+  ELSE
+   dl1 := tz_ReadD(1);
+   IF SIZE(dl1) < 2 THEN
+    MSGBOX("Put the sample in D1 of the Statistics 1Var app: at least 2 scores.");
+    tz_Settle();
+    RETURN 0;
+   END;
+   // a value too large to square is refused before any arithmetic
+   // (tz_Big), and nothing changes
+   IF tz_BigL(dl1) > 0 THEN
+    MSGBOX(tz_BigLMsg(dl1,{0}));
+    tz_Settle();
+    RETURN 0;
+   END;
+   // the scores are in D1; H0's mean is still to be typed
+   dd := tzMU;
+   dok := INPUT({{dd,[0]}},"One sample: scores in D1",{"μ₀:"},{"The mean H0 claims for the population"});
+   tz_Settle();
+   IF dok == 0 THEN RETURN 0; END;
+   tzXO := dl1; tzMU := dd;
+   tzSRC := 2;
+   tzG1 := "D1"; tzG2 := "Group 2";
+  END;
+ END;
+ IF tzTY == 5 THEN
+  da := tzKA; db := tzNA; dc := tzP0;
+  dok := INPUT({{da,[0]},{db,[0]},{dc,[0]}},"One proportion",{"x:","n:","p₀:"},
+   {"Successes: a whole number, 0 to n","Cases: a whole number, 1 to 1,000,000","The proportion H0 claims, 0.00001 to 0.99999"});
+  tz_Settle();
+  IF dok == 0 THEN RETURN 0; END;
+  tzKA := da; tzNA := db; tzP0 := dc;
+  tzSRC := 1;
+  tzG1 := "Group 1"; tzG2 := "Group 2";
+ END;
+ IF tzTY == 6 THEN
+  da := tzKA; db := tzNA; dc := tzKB; dd := tzNB;
+  dok := INPUT({{da,[0]},{db,[0]},{dc,[0]},{dd,[0]}},"Two proportions",{"x 1:","n 1:","x 2:","n 2:"},
+   {"Sample 1's successes, 0 to n 1","Sample 1's cases, 1 to 1,000,000","Sample 2's successes, 0 to n 2","Sample 2's cases, 1 to 1,000,000"});
+  tz_Settle();
+  IF dok == 0 THEN RETURN 0; END;
+  tzKA := da; tzNA := db; tzKB := dc; tzNB := dd;
+  tzSRC := 1;
+  tzG1 := "Group 1"; tzG2 := "Group 2";
+ END;
+ // new numbers: no longer one of the examples
+ tzEX := 0; tzDV := "";
+ RETURN 1;
+END;
+
 // The numbers for the test chosen.  Returns 1 when they are in and
 // usable, 0 if cancelled.
 LOCAL tz_AskData()
 BEGIN
  LOCAL ds, dok, dl1, dl2, dr1, dr2;
  LOCAL dm, dsd, dn;
+ // beta 1h: the one-sample t-test and the z-tests have forms of their own
+ IF tzTY >= 4 THEN RETURN tz_AskDataN(); END;
  ds := 0;
  IF tzTY <> 3 THEN
   CHOOSE(ds,"The data",{"Type each group's mean, SD, N","Raw scores in D1 and D2"});
@@ -1320,12 +1948,47 @@ BEGIN
   tzG1 := "Low % female"; tzG2 := "High % female";
   tzDV := "assault rate, Census of Jails";
  END;
+ IF ek == 5 THEN
+  // Student's sleep data (Cushny and Peebles 1905; Student 1908, the
+  // first worked example of the t-test; the book's Chapter 9): for each
+  // of 10 patients, the hours of sleep gained with the second drug minus
+  // the hours gained with the first.  One-sample t against 0, two-
+  // tailed, alpha .05: t(9) = 4.06, p = .003
+  tzTY := 4; tzSRC := 2; tzTL := 0; tzAL := 0.05;
+  tzXO := {1.2,2.4,1.3,1.3,0,1,1.8,0.8,4.6,1.4};
+  tzMU := 0;
+  tzG1 := "the differences"; tzG2 := "Group 2";
+  tzDV := "extra hours of sleep, Student 1908";
+ END;
+ IF ek == 6 THEN
+  // Castaneda v. Partida, 430 U.S. 482 (1977) (the book's Chapters 5
+  // and 12; FitCheck's preset): over 11 years, 339 of the 870 people
+  // summoned for grand jury duty in Hidalgo County, Texas were Mexican-
+  // American, in a county whose population was 79.1% Mexican-American.
+  // The Court counted the shortfall in standard deviations, about 29:
+  // that count is this z.  Two-tailed, alpha .05: z = -29.1
+  tzTY := 5; tzSRC := 1; tzTL := 0; tzAL := 0.05;
+  tzKA := 339; tzNA := 870; tzP0 := 0.791;
+  tzG1 := "Group 1"; tzG2 := "Group 2";
+  tzDV := "Mexican-American (Castaneda v. Partida)";
+ END;
+ IF ek == 7 THEN
+  // the Rossi experiment (Rossi, Berk and Lenihan 1980; the book's
+  // Chapter 11): 432 men released from Maryland state prisons, half of
+  // them given financial aid; re-arrested within 52 weeks: 48 of the 216
+  // given aid and 66 of the 216 given none.  Two-tailed, alpha .05:
+  // z = -1.965, p = .049
+  tzTY := 6; tzSRC := 1; tzTL := 0; tzAL := 0.05;
+  tzKA := 48; tzNA := 216; tzKB := 66; tzNB := 216;
+  tzG1 := "Financial aid"; tzG2 := "No aid";
+  tzDV := "re-arrested within 52 weeks (Rossi)";
+ END;
 END;
 
 // ---------------- help ----------------
 LOCAL tz_Help()
 BEGIN
- tz_Frame("TTestLabG help 1/2: Keys");
+ tz_Frame("TTestLabG help 1/3: Keys");
  TEXTOUT_P("SOFT KEYS: the five steps, 1 H (the hypotheses), 2 df, 3 crit",G1,8,30,1,tzBLUE);
  TEXTOUT_P("(t crit), 4 t (t obt), 5 end (the decision);  Menu = the menu",G1,8,43,1,tzBLUE);
  TEXTOUT_P("Left / Right = the step before / the next step",G1,8,59,1,tzBLK);
@@ -1341,7 +2004,7 @@ BEGIN
  TEXTOUT_P("any key or tap = next page",G1,8,222,1,tzFOOT);
  BLIT_P(G0,0,0,G1);
  tz_WaitAny();
- tz_Frame("TTestLabG help 2/2: The numbers");
+ tz_Frame("TTestLabG help 2/3: The numbers");
  // the Prime's own Inference app gives the same t (Tech Corner 24;
  // TestChooser points students there): a check on TTestLabG
  TEXTOUT_P("t crit: exact for your df; no table is needed.",G1,8,30,1,tzBLK);
@@ -1356,6 +2019,22 @@ BEGIN
  TEXTOUT_P("Check on the Prime: Inference app, Hyp. test, T-Test: μ₁-μ₂ (tick",G1,8,164,1,tzGRAY);
  TEXTOUT_P("Pooled for the pooled test).  Pairs:",G1,8,177,1,tzGRAY);
  TEXTOUT_P("T-Test: 1 μ on the differences, with μ₀ = 0.",G1,8,190,1,tzGRAY);
+ TEXTOUT_P("any key or tap = next page",G1,8,222,1,tzFOOT);
+ BLIT_P(G0,0,0,G1);
+ tz_WaitAny();
+ // page 3 (beta 1h): the one-sample t-test and the two z-tests
+ tz_Frame("TTestLabG help 3/3: One sample, proportions");
+ TEXTOUT_P("ONE-SAMPLE t: a sample's mean against μ₀, the mean H₀ claims",G1,8,30,1,tzBLUE);
+ TEXTOUT_P("t obt = ("+CHAR(57344)+" - μ₀)/(s/√N), df = N - 1.  Type the mean, SD and N,",G1,8,43,1,tzBLK);
+ TEXTOUT_P("or put the scores in D1 (Apps, Statistics 1Var).",G1,8,56,1,tzBLK);
+ TEXTOUT_P("ONE PROPORTION: x successes in n cases against p₀",G1,8,72,1,tzBLUE);
+ TEXTOUT_P("z obt = ("+CHAR(57345)+" - p₀)/√(p₀(1 - p₀)/n), where "+CHAR(57345)+" = x/n",G1,8,85,1,tzBLK);
+ TEXTOUT_P("TWO PROPORTIONS: x₁ of n₁ against x₂ of n₂",G1,8,101,1,tzBLUE);
+ TEXTOUT_P("z obt = ("+CHAR(57345)+"₁ - "+CHAR(57345)+"₂)/SE; SE pools the two samples",G1,8,114,1,tzBLK);
+ TEXTOUT_P("A z-test uses the normal curve, which has no df.  Step 2",G1,8,130,1,tzMAG);
+ TEXTOUT_P("checks that the counts are large enough for it (at least 5).",G1,8,143,1,tzMAG);
+ TEXTOUT_P("Check on the Prime: Inference app, Hyp. test, T-Test: 1 μ,",G1,8,164,1,tzGRAY);
+ TEXTOUT_P("Z-Test: 1 π and Z-Test: π₁ - π₂.",G1,8,177,1,tzGRAY);
  TEXTOUT_P("any key or tap = back",G1,8,222,1,tzFOOT);
  BLIT_P(G0,0,0,G1);
  tz_WaitAny();
@@ -1378,14 +2057,16 @@ BEGIN
  END;
  IF ms == 3 THEN tz_Compare(); END;
  IF ms == 4 THEN
-  mt := tz_Flow();
+  mt := tz_Pick();
   IF mt > 0 THEN
    // The independent numbers serve both independent tests, so pooled
    // <-> separate keeps them; a change to or from dependent samples
    // needs new numbers, and a cancelled form keeps the old test.
+   // beta 1h: so does a change to or from the one-sample t-test or a
+   // z-test, each with numbers of its own (tz_Fam).
    mo := tzTY;
    tzTY := mt;
-   IF (mt == 3) <> (mo == 3) THEN
+   IF tz_Fam(mt) <> tz_Fam(mo) THEN
     IF tz_AskData() == 0 THEN tzTY := mo; END;
    END;
    IF tzTY == mt THEN tz_AskTails(); END;
@@ -1394,7 +2075,7 @@ BEGIN
  END;
  IF ms == 5 THEN
   mt := 0;
-  CHOOSE(mt,"Examples",{"Darwin's plants (pairs)","Draft lottery (separate)","Age at arrest (pooled)","Matched jails (pairs)"});
+  CHOOSE(mt,"Examples",{"Darwin's plants (pairs)","Draft lottery (separate)","Age at arrest (pooled)","Matched jails (pairs)","Student's sleep (1 sample)","Grand juries (1 proportion)","Re-arrest (2 proportions)"});
   tz_Settle();
   IF mt > 0 THEN tz_Example(mt); tz_Calc(); END;
  END;
@@ -1406,6 +2087,18 @@ END;
 // ---------------- the steps ----------------
 LOCAL tz_Page(pst)
 BEGIN
+ // beta 1h: the one-sample t-test and the z-tests have pages of their
+ // own; the one-sample t shares step 3 with the other t-tests
+ IF tzTY >= 4 THEN
+  IF pst == 1 THEN tz_Step1N(); END;
+  IF pst == 2 THEN tz_Step2N(); END;
+  IF pst == 3 THEN
+   IF tzTY == 4 THEN tz_Step3(); ELSE tz_Step3Z(); END;
+  END;
+  IF pst == 4 THEN tz_Step4N(); END;
+  IF pst == 5 THEN tz_Step5N(); END;
+  RETURN 0;
+ END;
  IF pst == 1 THEN tz_Step1(); END;
  IF pst == 2 THEN tz_Step2(); END;
  IF pst == 3 THEN tz_Step3(); END;
@@ -1452,24 +2145,33 @@ END;
 // ---------------- main (zero-argument signature) ----------------
 EXPORT TTESTLABG()
 BEGIN
- LOCAL ms, mt;
+ LOCAL ms, mt, mx;
  tz_Init();
  // Help returns to this menu (it used to go on to example 1 unasked)
  REPEAT
   ms := 0;
-  CHOOSE(ms,"TTestLabG: t-tests in 5 steps",{"Choose the test (flowchart)","Example: Darwin's plants","Example: draft lottery","Example: age at arrest","Example: matched jails","Help"});
+  CHOOSE(ms,"TTestLabG: tests in 5 steps",{"Choose the test","Example: Darwin's plants","Example: draft lottery","Example: age at arrest","Example: matched jails","Examples: one sample, z-tests","Help"});
   tz_Settle();
-  IF ms == 6 THEN tz_Help(); END;
- UNTIL ms <> 6;
+  IF ms == 7 THEN tz_Help(); END;
+  // beta 1h: the three newer examples have a list of their own, so that
+  // every item of this menu stays on the screen (a ninth item would
+  // scroll out of sight); Esc there comes back to this menu
+  mx := 0;
+  IF ms == 6 THEN
+   CHOOSE(mx,"One sample and z-tests",{"Student's sleep (1 sample)","Grand juries (1 proportion)","Re-arrest (2 proportions)"});
+   tz_Settle();
+  END;
+ UNTIL ms <> 7 AND (ms <> 6 OR mx > 0);
  IF ms == 0 THEN RETURN "TTestLabG: cancelled"; END;
  IF ms == 1 THEN
-  mt := tz_Flow();
+  mt := tz_Pick();
   IF mt == 0 THEN RETURN "TTestLabG: cancelled"; END;
   tzTY := mt;
   IF tz_AskData() == 0 THEN RETURN "TTestLabG: cancelled"; END;
   IF tz_AskTails() == 0 THEN RETURN "TTestLabG: cancelled"; END;
  END;
  IF ms >= 2 AND ms <= 5 THEN tz_Example(ms-1); END;
+ IF ms == 6 THEN tz_Example(mx+4); END;
  tz_Calc();
  tz_Steps();
  IF tzOK == 0 THEN RETURN "TTestLabG"; END;

@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-"""build_loader_v1q.py -- assembles PrimeLoader_v1q.html: the page template, the loader's core, the Data Loader's core
+"""build_loader_v1r.py -- assembles PrimeLoader_v1r.html: the page template, the loader's core, the Data Loader's core
 (for its zip writer), the chapter list, and every program file from a starter pack, embedded so the page works offline.
 
-    python3 build_loader_v1q.py PACK.zip [OUT.html] [--kit PATH]
+    python3 build_loader_v1r.py PACK.zip [OUT.html] [--kit PATH]
+v1r (14 Nov 2026, night): starter pack v20, whose TTestLab beta 1k and TTestLabG beta 1h (round 14, part 2) add the
+one-sample t-test and the one- and two-proportion z-tests.  Chapter 9 now lists TTestLabG, and its "Coming: one-sample
+t in TTestLabG" is gone.  Each program's version is now read from the repository's programs/ folder when the page is
+built: v1q's table still named an older version for 14 of the 31 programs (in the page's data, not on the page).
 v1q (14 Nov 2026): starter pack v19, whose CICatcher beta 2k and ScatterLab beta 2k (round 14) carry the help-page
 wording fix and the slope's test, the two bands and Anscombe's quartet; nothing else differs from v1p.
 v1p (13 Nov 2026): starter pack v18, whose ChiTable beta 3m (round 13) gives the exact test for its 2 x 3 and 3 x 2
@@ -103,7 +107,7 @@ KIT = os.environ.get('HPKIT', '/tmp/kit/hp-prime-kit-HEAD')
 if '--kit' in argv:
     i = argv.index('--kit'); KIT = argv[i + 1]; del argv[i:i + 2]
 PACK = argv[0]
-OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v1q.html')
+OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v1r.html')
 SITE = 'https://metcalfdds.github.io/hp-prime-statistics/'
 sys.path.insert(0, KIT)
 from hpkit import program as kitprog            # hp-prime-kit (MIT, JordiRigau/hp-prime-kit)
@@ -137,11 +141,21 @@ PROGRAMS = {
   'StudRange':    ('StudRange.hpprgm', 'beta 15m', "Tukey's q, the studentized range", 'StudRange'),
   'SurvLab':      ('SurvLab.hpprgm', 'beta 1f', 'Time to an event: survival curves', 'SurvLab'),
   'TDist3D':      ('TDist3D.hpprgm', 'beta 1a', "Student's t as a surface: every t curve at once, turned with a finger", 'TDist3D'),
-  'TTestLab':     ('TTestLab.hpprgm', 'beta 1i', 't-tests in five steps (the advanced version)', 'TTESTLAB'),
-  'TTestLabG':    ('TTestLabG.hpprgm', 'beta 1g', 't-tests in five steps', 'TTESTLABG'),
+  'TTestLab':     ('TTestLab.hpprgm', 'beta 1i', 't-tests and z-tests in five steps (the advanced version)', 'TTESTLAB'),
+  'TTestLabG':    ('TTestLabG.hpprgm', 'beta 1g', 't-tests and z-tests in five steps', 'TTESTLABG'),
   'TestChooser':  ('TestChooser.hpprgm', 'beta 2g', 'Which test? A flowchart you tap', 'TestChooser'),
   'TrendTest':    ('TrendTest.hpprgm', 'beta 3m', 'Chi-square for a trend', 'TrendTest'),
 }
+
+# v1r: each program's version is read from the repository's programs/ folder (the file name after _beta or _v), so
+# the catalog cannot fall behind a program again.  A program with no file there, or with two, stops the build.
+import glob, re
+for _k in sorted(PROGRAMS):
+    _m = [re.match('^' + re.escape(_k) + r'_(beta|v)(.+)\.txt$', os.path.basename(_p))
+          for _p in glob.glob(os.path.join(os.path.dirname(HERE), 'programs', _k + '_*.txt'))]
+    _m = [_x for _x in _m if _x]
+    if len(_m) != 1: sys.exit('STOP: programs/ holds %d files for %s' % (len(_m), _k))
+    PROGRAMS[_k] = (PROGRAMS[_k][0], ('beta ' + _m[0].group(2)) if _m[0].group(1) == 'beta' else 'v' + _m[0].group(2)) + PROGRAMS[_k][2:]
 
 # The book's chapters (Chapter Plan, 31 Oct 2026): (number, title, programs now, still to come)
 CHAPTERS = [
@@ -153,7 +167,7 @@ CHAPTERS = [
   (6,  'The Normal Distribution', ['NormExplorer', 'Norm3', 'StatDist', 'GaltonBoard'], None),
   (7,  'Sampling Distributions and the CLT', ['CentralLimit', 'SampDist', 'GaltonBoard'], None),
   (8,  'Confidence Intervals', ['CICatcher', 'ResampLab'], None),
-  (9,  'Hypothesis Testing: One Sample', ['TDist3D', 'PowerViz', 'FitCheck', 'AnovaLab'], 'one-sample t in TTestLabG'),
+  (9,  'Hypothesis Testing: One Sample', ['TTestLabG', 'TDist3D', 'PowerViz', 'FitCheck', 'AnovaLab'], None),
   (10, 'Power and Sample Size', ['PowerViz'], None),
   (11, 't-Tests: Two Samples', ['TTestLabG', 'TDist3D', 'DataLoad', 'ResampLab'], None),
   (12, 'Chi-Square', ['ChiTable', 'FitCheck'], None),
@@ -251,7 +265,7 @@ redirect = ('<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n
             '<link rel="canonical" href="' + SITE + 'prime-loader/' + page + '">\n'
             '<style>body{font:16px/1.5 system-ui,sans-serif;margin:2rem;color:#172033;background:#f6f8fb}'
             '@media (prefers-color-scheme:dark){body{color:#e8edf6;background:#0f1420}a{color:#7d9cff}}</style>\n'
-            '</head>\n<body>\n<!-- Written by build_loader_v1q.py: sends the browser on to the current Prime Loader, so the '
+            '</head>\n<body>\n<!-- Written by build_loader_v1r.py: sends the browser on to the current Prime Loader, so the '
             'address .../prime-loader/ never changes. -->\n'
             '<p>Opening the HP Prime Loader&hellip; If nothing happens, <a href="' + page + '">click here</a>.</p>\n'
             '</body>\n</html>\n')
