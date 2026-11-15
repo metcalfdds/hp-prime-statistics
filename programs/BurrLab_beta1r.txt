@@ -14,7 +14,14 @@
 // hardware testing are Roger D. Metcalf's; the code, drafting and
 // source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
 
-// BurrLab - beta 1q  (9 Nov 2026) -- the Family map and the tail shades on the G1.
+// BurrLab - beta 1r  (15 Nov 2026) -- the credits in the words of what was done.
+// beta 1r (15 Nov 2026): Round 16: the credits in the words of what was done (Roger, 15 Nov 2026: "reword as the others---
+//   look, be consistent throughout the book").  The header's line "Replaces / reworks: Burr3 v2.4c
+//   (fleet).  No TI program is replaced." now reads "Takes the place of Burr3 v2.4c, the fleet's own
+//   earlier program, and reuses the parts of it named above ...  It follows no TI program."  The
+//   paragraph above it, which names the code carried over from Burr3, is unchanged: Burr3 is the
+//   author's own program, and the rule asks only that a credit say which code was carried over.  Only
+//   comments changed, and the version shown: no line of code.
 // beta 1q (9 Nov 2026): Round 11: the help pages in plain words (Roger, 8-9 Nov 2026: "write more straightforward and don't
 //   try to be too clever--a student being able to understand is the priority"; "adding pages is fine,
 //   the explanation is what matters").  The help is now 6 pages (was 4): pages 1 and 2 each became two.
@@ -323,7 +330,9 @@
 //     all 2,156 in 60 log-spaced bins fitted by a grouped likelihood.
 //     Cross-checked: exceedances above 3, 4, 5, 10, 20 million = 532, 362,
 //     254, 109, 36 and the largest loss 263 agree with McNeil's Table I.
-// Replaces / reworks: Burr3 v2.4c (fleet).  No TI program is replaced.
+// Takes the place of Burr3 v2.4c, the fleet's own earlier program, and
+//   reuses the parts of it named above (its header, its drag idiom, its
+//   log-domain pdf and CDF).  It follows no TI program.
 // File map (beta 1i, 4380 lines; line numbers of this file):
 //   1-322     header, Home exports, the bridge exports, file-level LOCALs
 //   323-569   kit: bu_Init, bu_Drain, bu_WaitAny, bu_Frame, bu_Show,
@@ -4650,7 +4659,7 @@ END;
 bu_Opening()
 BEGIN
   LOCAL opY;
-  bu_Frame("BurrLab beta 1q: the long right tail");
+  bu_Frame("BurrLab beta 1r: the long right tail");
   opY := bu_Para("A teaching lab for Statistics for Criminal Justice: what a heavy tail is, the Burr XII fitted to real criminal-justice data (BJS months served, Rossi weeks to re-arrest) and to the textbook Danish fire losses, and how it compares with the usual rivals.", 26, buBLK);
   opY := bu_Para("Touch: drag, tap, soft keys. Keys: arrows, +/-, 0, Enter = menu, Esc = back.", opY + 2, buGRAY);
   opY := bu_Para("DISCLAIMER: a teaching and demonstration aid. Not validated for forensic, clinical or legal use; do not rely on its results for legal purposes.", opY + 4, buRED);

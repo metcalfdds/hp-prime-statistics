@@ -14,7 +14,7 @@
 // hardware testing are Roger D. Metcalf's; the code, drafting and
 // source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
 
-// RISKLAB - beta 1g  (13 Nov 2026)
+// RISKLAB - beta 1h  (15 Nov 2026)
 // The statistics behind risk-assessment instruments in criminal justice
 //   (recidivism tools such as COMPAS, LSI-R and Static-99), for
 //   Statistics for Criminal Justice and research methods: logistic
@@ -42,6 +42,11 @@
 //   sensitivity, specificity, PPV}); -1 where not computed.
 // Written for the 2026-09-09 firmware (HP Prime G2 and G1).  beta 1 has
 //   NOT been run on hardware or the emulator, only in the PC harness.
+// beta 1h (15 Nov 2026): Round 16: the credits in the words of what was done (Roger, 15 Nov 2026: "reword as the others---
+//   look, be consistent throughout the book").  The header's note on the TI-83/84 program LOGIT begins
+//   "No Triola program does this.  The nearest TI-83/84 program, LOGIT ..." and ends "LOGIT was read to
+//   see what it computes; RiskLab was written new in PPL, and none of LOGIT's code is in it." (it began
+//   "Replaces / reworks:").  Only comments changed, and the version shown: no line of code.
 // beta 1g (13 Nov 2026): Round 12: help-page fixes from the book's pre-submission read (Roger, 13 Nov 2026: "Go ahead and fix
 //   the help files").  Help page 2/8: "penalized", in American spelling.  No other line changed.
 // beta 1f (9 Nov 2026): Round 11: the help pages in plain words (Roger, 8-9 Nov 2026: "write more straightforward and don't
@@ -145,12 +150,14 @@
 //     re-arrested within two years (two_year_recid).  Stored as counts
 //     by decile score 1-10 for the two largest groups in the file,
 //     labelled there "African-American" (3,175) and "Caucasian" (2,103).
-// Replaces / reworks: no Triola program does this.  The TI-83/84 LOGIT
-//   program (logit.zip, ref/triola_ti_programs/LOGIT__257.txt) fits a
+// No Triola program does this.  The nearest TI-83/84 program, LOGIT
+//   (logit.zip, ref/triola_ti_programs/LOGIT__257.txt), fits a
 //   one-predictor logistic model to grouped counts by weighted least
 //   squares; RiskLab fits any 1-4 predictors by full Newton-Raphson to
 //   convergence, gives SEs, tests and odds ratios, and detects
-//   separation, none of which LOGIT does.
+//   separation, none of which LOGIT does.  LOGIT was read to see what it
+//   computes; RiskLab was written new in PPL, and none of LOGIT's code
+//   is in it.
 // File map: header 1-124; state and exports 125-218; small helpers 219-476;
 //   Rossi data 477-585; the fit engine 586-887; levels, ROC, AUC
 //   888-1057; calibration and HL 1058-1200; view 1 table 1201-1412;
@@ -3067,7 +3074,7 @@ BEGIN
   TEXTOUT_P("Not validated for forensic, clinical or legal", G1, 10, 136, 1, rlORNG, 300);
   TEXTOUT_P("use; do not rely on its results for legal", G1, 10, 148, 1, rlORNG, 300);
   TEXTOUT_P("purposes.", G1, 10, 160, 1, rlORNG, 300);
-  TEXTOUT_P("beta 1g, 13 Nov 2026.  Help is in the menu.", G1, 6, 184, 1, rlGRAY, 310);
+  TEXTOUT_P("beta 1h, 15 Nov 2026.  Help is in the menu.", G1, 6, 184, 1, rlGRAY, 310);
   TEXTOUT_P("Any key or tap = menu", G1, 6, 205, 1, rlFOOT, 310);
   BLIT_P(G0, 0, 0, G1);
 END;

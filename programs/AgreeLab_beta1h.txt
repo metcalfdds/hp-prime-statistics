@@ -14,7 +14,7 @@
 // hardware testing are Roger D. Metcalf's; the code, drafting and
 // source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
 
-// AGREELAB - beta 1g  (9 Nov 2026)
+// AGREELAB - beta 1h  (15 Nov 2026)
 // Agreement and reliability between examiners or raters, for forensic
 //   science and research-methods classes: what each statistic MEANS, with
 //   pictures you can touch.  Launch AgreeLab() from the Program Catalog:
@@ -49,6 +49,11 @@
 // Written for the 2026-09-09 firmware (HP Prime G2 and G1).  beta 1b (and
 //   beta 1, 1a) have NOT been run on hardware or the emulator, only in the
 //   PC harness.
+// beta 1h (15 Nov 2026): Round 16: the credits in the words of what was done (Roger, 15 Nov 2026: "reword as the others---
+//   look, be consistent throughout the book").  The header's note on TI programs begins "Follows no
+//   TI-83/84 program" and says that AgreeLab was written new in PPL from the papers it lists (it said
+//   "Replaces / reworks: no TI program ... nothing is ported").  Only comments changed, and the version
+//   shown: no line of code.
 // beta 1g (9 Nov 2026): Round 11: the help pages in plain words (Roger, 8-9 Nov 2026: "write more straightforward and don't
 //   try to be too clever--a student being able to understand is the priority"; "adding pages is fine,
 //   the explanation is what matters").  Help pages 2, 6 and 7 reworded: "a low bar", "rater offsets
@@ -160,9 +165,10 @@
 //   Shrout & Fleiss (1979): 6 targets x 4 judges; = R psych ICC example and
 //     Howell's ICC page (UVM).
 //   Two 2 x 2 kappa-paradox tables: ILLUSTRATIVE NUMBERS (said on screen).
-// Replaces / reworks: no TI program.  ref/triola_ti_programs/ holds no
+// Follows no TI-83/84 program: ref/triola_ti_programs/ holds no
 //   agreement program (a search for kappa finds only Bayesian posterior
-//   programs), so nothing is ported and no TI bug applies.
+//   programs).  AgreeLab was written new in PPL from the papers listed
+//   above; no TI code is in it, and no TI bug applies.
 // File map (line numbers of this file):
 //    132- 173  file-level state and Home exports
 //    174- 477  1. SMALL HELPERS
@@ -3006,7 +3012,7 @@ END;
 
 ag_Hello()
 BEGIN
-  ag_Band("AgreeLab - beta 1g");
+  ag_Band("AgreeLab - beta 1h");
   ag_Tx("Do raters agree beyond chance? How well?", 10, 26, #000000h);
   ag_Tx("Two raters: Cohen's kappa on touch tiles,", 10, 40, agBLUE);
   ag_Tx("weighted kappa; many raters: Fleiss' kappa;", 10, 53, agBLUE);

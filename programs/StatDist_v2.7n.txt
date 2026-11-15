@@ -1,15 +1,22 @@
 #pragma mode(separator(.,;) integer(h32))
 
 // ============================================================
-// STATDIST - v2.7m
+// STATDIST - v2.7n
 // Probabilities, densities and moments for 27 distributions,
 // each drawn as a plot you can touch
 // ============================================================
-// Author: Roger D. Metcalf, UT Arlington, 2026 (framework after
-//   S. Micciche).  CRCJ 3340 - Statistics and Introduction to
-//   Research Methods.  Written with AI assistance (Anthropic
-//   Claude); concept, direction and all hardware testing by the
-//   author.
+// Author: Roger D. Metcalf, UT Arlington, 2026.  CRCJ 3340 -
+//   Statistics and Introduction to Research Methods.  Written with
+//   AI assistance (Anthropic Claude); concept, direction and all
+//   hardware testing by the author.
+// Does on the Prime, with menus and plots, what Salvo Micciche's
+//   "Statistic Distributions" (hpcalc.org, 2015) does with functions
+//   typed at Home: it adds distributions the Prime does not have
+//   built in.  Eleven of the 13 families StatDist adds are families
+//   his file has.  None of his code is in StatDist: on 15 Nov 2026 his
+//   494 lines were set beside this program and beside v2.5 and v2.2
+//   (29 Jul 2026, the oldest copy kept), and not one of his code
+//   lines, function names or messages is in any of them.
 //
 // FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
 //   the file and credit the author if you pass it on.  Not for
@@ -35,6 +42,12 @@
 //   Written for the 2026-09-09 firmware (2.4.2); none of its commands
 //   is new in 2.4.x, so older firmware should also work.
 //
+// v2.7n (15 Nov 2026): Round 16: the credits in the words of what was done (Roger, 15 Nov 2026: "reword as the others---
+//   look, be consistent throughout the book").  The header said "(framework after S. Micciche)".  It now
+//   says what StatDist shares with Salvo Micciche's "Statistic Distributions" (hpcalc.org, 2015), eleven
+//   of the 13 families it adds to the Prime's own, and that none of his code is in StatDist: his 494
+//   lines were set beside v2.7m, v2.5 and v2.2 (the oldest copy kept) on 15 Nov 2026.  Only comments
+//   changed, and the version shown: no line of code.
 // v2.7m (13 Nov 2026): Round 12: help-page fixes from the book's pre-submission read (Roger, 13 Nov 2026: "Go ahead and fix
 //   the help files").  Help page 1/4: "then", not "Then", after a comma.  No other line changed.
 // v2.7l (9 Nov 2026): Round 11: the help pages in plain words (Roger, 8-9 Nov 2026: "write more straightforward and don't
