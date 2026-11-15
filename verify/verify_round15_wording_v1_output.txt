@@ -1,0 +1,42 @@
+T1   PASS  RankLab: the build makes programs/RankLab_beta1i.txt byte for byte
+T1   PASS  AnovaLab: the build makes programs/AnovaLab_beta1h.txt byte for byte
+T1   PASS  ResampLab: the build makes programs/ResampLab_beta1i.txt byte for byte
+T1   PASS  ExhibitLab: the build makes programs/ExhibitLab_beta1h.txt byte for byte
+T1   PASS  SurvLab: the build makes programs/SurvLab_beta1g.txt byte for byte
+T2   PASS  RankLab: only the replacements, comments and version strings differ (5 lines that are not comments)
+T2   PASS  AnovaLab: only the replacements, comments and version strings differ (14 lines that are not comments)
+T2   PASS  ResampLab: only the replacements, comments and version strings differ (2 lines that are not comments)
+T2   PASS  ExhibitLab: only the replacements, comments and version strings differ (0 lines that are not comments)
+T2   PASS  SurvLab: only the replacements, comments and version strings differ (0 lines that are not comments)
+T3   PASS  RankLab: 7 help screens, as helppages_r15.json holds them
+T3   PASS  RankLab: screens changed against the old version: 7
+T3   PASS  AnovaLab: 9 help screens, as helppages_r15.json holds them
+T3   PASS  AnovaLab: screens changed against the old version: 9
+T3   PASS  ResampLab: 5 help screens, as helppages_r15.json holds them
+T3   PASS  ResampLab: screens changed against the old version: 5
+T3   PASS  ExhibitLab: 8 help screens, as helppages_r15.json holds them
+T3   PASS  ExhibitLab: screens changed against the old version: none
+T3   PASS  SurvLab: 5 help screens, as helppages_r15.json holds them
+T3   PASS  SurvLab: screens changed against the old version: none
+T4   PASS  RankLab: 7 screens laid out, no reports
+T4   PASS  AnovaLab: 9 screens laid out, no reports
+T4   PASS  ResampLab: 5 screens laid out, no reports
+T4   PASS  ExhibitLab: 8 screens laid out, no reports
+T4   PASS  SurvLab: 5 screens laid out, no reports
+T5   PASS  RankLab: the gate
+T5   PASS  AnovaLab: the gate
+T5   PASS  ResampLab: the gate
+T5   PASS  ExhibitLab: the gate
+T5   PASS  SurvLab: the gate
+T6   PASS  the old verb is in none of the six programs: RankLab_beta1i.txt 0, AnovaLab_beta1h.txt 0, ResampLab_beta1i.txt 0, ExhibitLab_beta1h.txt 0, SurvLab_beta1g.txt 0, FitCheck_beta1h.txt 0
+T6   PASS  RankLab: its credits page says "none of their code"
+T6   PASS  AnovaLab: its credits page says "none of their code"
+T6   PASS  ResampLab: its credits page says "none of their code"
+T7   PASS  RankLab: 30 seeds, 3016 screens the same text for text but the 34 showings of the credits page (OK 30)
+T7   PASS  AnovaLab: 30 seeds, 1802 screens the same text for text but the 25 showings of the credits page (OK 30)
+T7   PASS  ResampLab: 30 seeds, 428 screens the same text for text but the 19 showings of the credits page (OK 30)
+T7   PASS  ExhibitLab: 30 seeds, 2119 screens the same text for text (OK 30)
+T7   PASS  SurvLab: 30 seeds, 1223 screens the same text for text (OK 30)
+
+39 of 39 checks PASS
+exit 0

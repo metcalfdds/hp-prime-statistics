@@ -1,0 +1,30 @@
+{
+ "ScatterLab": {
+  "screens": 7,
+  "problems": []
+ },
+ "FitCheck": {
+  "screens": 8,
+  "problems": []
+ },
+ "RankLab": {
+  "screens": 7,
+  "problems": []
+ },
+ "AnovaLab": {
+  "screens": 9,
+  "problems": []
+ },
+ "ResampLab": {
+  "screens": 5,
+  "problems": []
+ },
+ "ExhibitLab": {
+  "screens": 8,
+  "problems": []
+ },
+ "SurvLab": {
+  "screens": 5,
+  "problems": []
+ }
+}

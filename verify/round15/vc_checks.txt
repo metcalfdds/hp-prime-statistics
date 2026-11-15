@@ -1,0 +1,80 @@
+Round 15 on the HP Prime Virtual Calculator 2.4.2 (build 2026-09-09), run under Wine in the cloud workspace, 15 Nov 2026
+(times are U.S. Central).
+
+Check (Program Catalog > Edit > Check), each file built by the first pass of tools/make_starter_pack_v4.py v21 and copied
+into Documents > HP Prime > Calculators > Prime while the calculator was closed:
+  ScatterLab beta 2l | editor title "ScatterLab:Main(PPL)" | "No errors in the program"   (01:27)
+  RankLab    beta 1i | editor title "RankLab:Main(PPL)"    | "No errors in the program"   (01:29)
+  AnovaLab   beta 1h | editor title "AnovaLab:Main(PPL)"   | "No errors in the program"   (01:30)
+  ExhibitLab beta 1h | editor title "ExhibitLab:Main(PPL)" | "No errors in the program"   (01:32)
+  SurvLab    beta 1g | editor title "SurvLab:Main(PPL)"    | "No errors in the program"   (01:33)
+  ResampLab  beta 1i | editor title "ResampLab:Main(PPL)"  | "No errors in the program"   (01:36)
+  FitCheck   beta 1h | editor title "FitCheck:Main(PPL)"   | "No errors in the program"   (02:07, the file as filed)
+The calculator was left by Calculator > Exit after the Checks and the checked files collected, none of them run:
+  ScatterLab 250,032 bytes; FitCheck 329,180; RankLab 350,022; AnovaLab 354,124; ResampLab 275,770; ExhibitLab 255,416;
+  SurvLab 249,450 (starter pack v21).
+
+FitCheck was checked twice.  Its first build of beta 1h was checked at 01:28 and run from 01:51 to 01:53; that run showed
+the closing summary "FitCheck: nothing computed" after the crimtab sample's Tests page (see below), the program was
+changed, and the file as filed was built, checked in a new session (02:07), collected without a run, and then run in a
+third session (02:10 to 02:13).  Every FitCheck screen in screens/ is from that last run.
+
+The programs were then run from the Program Catalog; screens/ holds what they showed, 320 x 240 enlarged three times.
+
+ScatterLab beta 2l (01:48 to 01:50)
+  ScatterLab_example.png          Data > Poverty vs crime (SYNTHETIC)
+  ScatterLab_inference.png        Menu > Inference for the slope.  The page ends "r = 0.751.  The test of rho = 0 gives
+                                  the same t and p." and, new, "95% interval for rho: 0.407 to 0.909 (Fisher's z)", then
+                                  "any key or tap = back to the plot", all inside the frame
+  ScatterLab_anscombe1.png        Data > Anscombe's quartet, set 1
+  ScatterLab_inference_ans1.png   its Inference page: r = 0.816, "95% interval for rho: 0.424 to 0.951 (Fisher's z)"
+  ScatterLab_help1.png            help page 1/7 with its new line, "Menu > Inference: a 95% interval for the
+                                  population's r (rho)."
+  Both intervals are the harness's and SciPy's (verify_ScatterLab_beta2l.py, A8 and A9).  Leaving with Esc, the program
+  returned "ScatterLab: n = 11, y-hat = 3.000 + 0.5001 x, r = 0.8164, SSE = 13.76".
+
+FitCheck beta 1h (02:10 to 02:13)
+  FitCheck_title.png              the opening page: "FitCheck - beta 1h"
+  FitCheck_rossi_tests1.png ... 3 Normality > Preset: Rossi ages > the Tests key, its three pages.  Page 2: "Skewness g1 =
+                                  +1.388  (SE 0.117)", "Excess kurtosis g2 = +1.344  (SE 0.232)", "SE: the standard error
+                                  in normal samples."
+  FitCheck_crimtab_tests1.png, 2  Normality > Preset: crimtab heights > Tests.  Page 1: "Skewness g1 = +0.050  (SE 0.045)",
+                                  "Excess kurtosis g2 = +0.170  (SE 0.089)", "SE: the standard error in normal samples."
+  FitCheck_help5.png              help page 5/8, ending "Tests page: skewness g1 and excess kurtosis g2, each with its SE
+                                  if the data are normal."
+  FitCheck_help8.png              help page 8/8, Credits: "FitCheck does on the Prime what Triola's TI-83/84
+                                  goodness-of-fit and normality programs do (...).  It was written new for the Prime, with
+                                  none of their code and without their bugs: the header lists them."
+  FitCheck_end.png                Quit after the crimtab sample: the box reads FitCheck "FitCheck: binned sample,
+                                  skewness +0.050, excess kurtosis +0.170;"
+  The numbers on the two Tests pages are the harness's (verify_FitCheck_beta1h.py, P2 and P3; A5 and A6 compare them
+  with SciPy and with the two formulas); the closing summary is M8's.
+
+RankLab beta 1i (01:58 to 01:59), AnovaLab beta 1h (01:59 to 02:01), ResampLab beta 1i (02:01 to 02:02)
+  Each was started, its opening page passed with a key, Help chosen from the main menu, and every help page turned (7, 9
+  and 5 pages).  The page whose words changed is kept:
+  RankLab_help7.png               7/7: "Does what Michael Lloyd's TI-83/84 programs for Triola do (SRTEST, RSTEST, KWTEST,
+                                  SRCORR, ZZRANK), without their tie, zero, rs errors.  Written new for the Prime: none of
+                                  their code."
+  AnovaLab_help9.png              9/9: "Does what Triola's TI-83/84 programs ANOVA, ANOVA2FD, ANOVA2RB, RANOVA, TUKEY,
+                                  SCHEFFE2, BONFRNI, SDHYP, SDINT, STDTEST, STDEVCI and FINTRVAL do.  Written new: none of
+                                  their code."  The nine lines under it are all there, the last one above the footer.
+  ResampLab_help5.png             5/5: "... Hesterberg 2015.  Does what Triola's TI bootstrap project and the TI BOOT
+                                  program do; written new, with none of their code."
+  Every line of the three pages is inside its frame, as verify/round15/helpcheck_r15.json says of the layout at the
+  calculator's glyph widths.
+
+ExhibitLab beta 1h and SurvLab beta 1g were checked and not run: only comments at the top of their files changed.
+
+Found by this run, and fixed in the file as filed: FitCheck's closing summary after a sample in bins.  A binned sample
+(the crimtab preset) has no Shapiro-Wilk W, and the line the program returns to Home was "FitCheck: nothing computed"
+although its Tests page had just shown a skewness and a kurtosis.  It is beta 1g's code, not something this round broke.
+The summary now reads "FitCheck: binned sample, skewness +0.050, excess kurtosis +0.170;" (FitCheck_end.png).
+
+Seen while driving it (xdotool), not faults of the programs:
+  - the row "ResampLab" of the Program Catalog is read by the script's OCR as "/Resam pLab 243", so the first Check run
+    did not find it; the row is now matched on its letters and digits run together;
+  - FitCheck's main menu opens with its first item highlighted, so Help (item 10) is nine Downs and not ten; the first
+    tour chose Quit, and its remaining keys went to the Program Catalog and then to Home.  When the script stopped,
+    Home's history ended with AgreeLab's "AgreeLab: no analysis run"; whether those stray keys ran it was not
+    established.  Nothing of this reached the pack: the checked files had been collected before any program was run.

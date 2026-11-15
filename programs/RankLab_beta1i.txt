@@ -14,7 +14,7 @@
 // hardware testing are Roger D. Metcalf's; the code, drafting and
 // source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
 
-// RANKLAB - beta 1h  (13 Nov 2026)
+// RANKLAB - beta 1i  (15 Nov 2026)
 // The rank-based (nonparametric) tests in one program, with pictures.
 //   Run RankLab() from the Program Catalog: it takes no arguments and
 //   opens on a welcome page (with the disclaimer), then the main menu:
@@ -56,6 +56,12 @@
 // Written for the 2026-09-09 firmware (HP Prime G2 and G1).  beta 1b
 //   has NOT been run on hardware or the emulator, only in the PC harness.
 //
+// beta 1i (15 Nov 2026): Round 15: the credits say exactly what was done with the TI-83/84 programs this one follows (Roger,
+//   14-15 Nov 2026).  They were read to see what each one computes, and this program was then written
+//   new in PPL: none of their code is in it.  Help page 7/7 ends "Does what Michael Lloyd's TI-83/84
+//   programs for Triola do (...), without their tie, zero, rs errors.  Written new for the Prime: none
+//   of their code." (four lines; it was three).  The header's note on those programs begins the same
+//   way.  Only words changed: no line of code but the help text.
 // beta 1h (13 Nov 2026): Round 12: help-page fixes from the book's pre-submission read (Roger, 13 Nov 2026: "Go ahead and fix
 //   the help files").  Help page 2/7: one key per line again (Round 11's re-wrap had run "Up / Down"
 //   into "Left / Right", "turn pages" into "+", and "upper" into "0").  Help page 5/7: the halo preset
@@ -200,7 +206,9 @@
 //   MockJury: Years of sentence by the defendant's attractiveness
 //     (Beautiful 39, Average 38, Unattractive 37) - Plaster (1989)
 //     M.A. thesis, East Carolina Univ.; data via R heplots (Friendly).
-// Replaces / reworks: the rank-test programs of Mario Triola's
+// Does on the Prime what these TI-83/84 programs do.  They were read to
+//   see what each one computes; RankLab was then written new in PPL, and
+//   none of their code is in it.  They are the rank-test programs of Mario Triola's
 //   "Elementary Statistics Using the TI-83/84 Plus" CD, by Michael
 //   Lloyd: SRTEST, RSTEST, KWTEST, SRCORR and their ZZRANK midrank
 //   routine; and SRPVALUE / SRCV (exact signed-rank recursion),
@@ -3746,9 +3754,10 @@ BEGIN
         "correlation D1, D2; Friedman: rows = blocks.",
         "*Home: RK_STAT, RK_P (exact when there is",
         "*one), RK_PN, RK_EFF, RK_HL, RK_RANKS.",
-        "Reworks Michael Lloyd's TI-83/84 programs",
-        "for Triola (SRTEST, RSTEST, KWTEST, SRCORR,",
-        "ZZRANK) without their tie, zero, rs errors."};
+        "Does what Michael Lloyd's TI-83/84 programs",
+        "for Triola do (SRTEST, RSTEST, KWTEST, SRCORR,",
+        "ZZRANK), without their tie, zero, rs errors.",
+        "Written new for the Prime: none of their code."};
     END;
     hlK := rk_HPage(hlT, hlL, hlP);
     IF hlK == 4 THEN hlP := 0; ELSE
@@ -3762,7 +3771,7 @@ rk_Welcome()
 BEGIN
   DIMGROB_P(G1, 320, 240, #FFFFFFh);
   RECT_P(G1, 0, 0, 319, 24, rkORNG, rkORNG);
-  TEXTOUT_P("RankLab - rank tests, beta 1h", G1, 8, 4, 3, #FFFFFFh, 304);
+  TEXTOUT_P("RankLab - rank tests, beta 1i", G1, 8, 4, 3, #FFFFFFh, 304);
   TEXTOUT_P("Sign, Wilcoxon signed-rank, Mann-Whitney,", G1, 10, 32, 1, rkBLUE, 300);
   TEXTOUT_P("Kruskal-Wallis, Dunn, Friedman, Kendall's W,", G1, 10, 45, 1, rkBLUE, 300);
   TEXTOUT_P("Spearman and Kendall rank correlation.", G1, 10, 58, 1, rkBLUE, 300);

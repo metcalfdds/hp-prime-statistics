@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
-"""build_loader_v1r.py -- assembles PrimeLoader_v1r.html: the page template, the loader's core, the Data Loader's core
+"""build_loader_v1s.py -- assembles PrimeLoader_v1s.html: the page template, the loader's core, the Data Loader's core
 (for its zip writer), the chapter list, and every program file from a starter pack, embedded so the page works offline.
 
-    python3 build_loader_v1r.py PACK.zip [OUT.html] [--kit PATH]
+    python3 build_loader_v1s.py PACK.zip [OUT.html] [--kit PATH]
+v1s (15 Nov 2026): starter pack v21, whose seven programs changed by round 15 carry their new versions: ScatterLab
+beta 2l (a 95% interval for the population's correlation on the Inference page), FitCheck beta 1h (a standard error
+beside the skewness and the kurtosis), and RankLab beta 1i, AnovaLab beta 1h, ResampLab beta 1i, ExhibitLab beta 1h and
+SurvLab beta 1g, whose credits say what was done with the TI-83/84 programs they follow.  The script is v1r's but for
+these lines and its own name; the page template is v1c's, unchanged.
 v1r (14 Nov 2026, night): starter pack v20, whose TTestLab beta 1k and TTestLabG beta 1h (round 14, part 2) add the
 one-sample t-test and the one- and two-proportion z-tests.  Chapter 9 now lists TTestLabG, and its "Coming: one-sample
 t in TTestLabG" is gone.  Each program's version is now read from the repository's programs/ folder when the page is
@@ -107,7 +112,7 @@ KIT = os.environ.get('HPKIT', '/tmp/kit/hp-prime-kit-HEAD')
 if '--kit' in argv:
     i = argv.index('--kit'); KIT = argv[i + 1]; del argv[i:i + 2]
 PACK = argv[0]
-OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v1r.html')
+OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v1s.html')
 SITE = 'https://metcalfdds.github.io/hp-prime-statistics/'
 sys.path.insert(0, KIT)
 from hpkit import program as kitprog            # hp-prime-kit (MIT, JordiRigau/hp-prime-kit)
@@ -265,7 +270,7 @@ redirect = ('<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n
             '<link rel="canonical" href="' + SITE + 'prime-loader/' + page + '">\n'
             '<style>body{font:16px/1.5 system-ui,sans-serif;margin:2rem;color:#172033;background:#f6f8fb}'
             '@media (prefers-color-scheme:dark){body{color:#e8edf6;background:#0f1420}a{color:#7d9cff}}</style>\n'
-            '</head>\n<body>\n<!-- Written by build_loader_v1r.py: sends the browser on to the current Prime Loader, so the '
+            '</head>\n<body>\n<!-- Written by build_loader_v1s.py: sends the browser on to the current Prime Loader, so the '
             'address .../prime-loader/ never changes. -->\n'
             '<p>Opening the HP Prime Loader&hellip; If nothing happens, <a href="' + page + '">click here</a>.</p>\n'
             '</body>\n</html>\n')

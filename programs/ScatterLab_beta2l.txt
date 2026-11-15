@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// SCATTERLAB - beta 2k
+// SCATTERLAB - beta 2l
 // A scatterplot you build with your finger: the least-squares
 // line, r, r-squared and the residuals follow every point
 // ============================================================
@@ -30,6 +30,13 @@
 //
 // Run ScatterLab() from the Program Catalog.
 //
+// beta 2l (15 Nov 2026): Round 15 (Roger, 15 Nov 2026: "1 and 2 would be great").  New: the page Menu > Inference for the
+//   slope ends with a 95% confidence interval for rho, the population's correlation, by Fisher's z: z =
+//   0.5 ln((1 + r)/(1 - r)) is close to normal with standard error 1/root(n - 3), so z -/+
+//   1.959964/root(n - 3) is carried back to r through tanh (slInf: slRok, slRlo, slRhi).  It needs 4
+//   points; with 3, or when r is 1 or -1 in 12 digits, the page says so instead.  The line above it now
+//   shows r.  Help page 1 ends with a line that says where the interval is.  The page's last three lines
+//   sit at y 175, 188 and 204 (they were two, at 181 and 194).  Nothing else is changed.
 // beta 2k (14 Nov 2026): Round 14 (Roger, 14 Nov 2026: "go ahead and do the program work").  New: Menu > Inference for the
 //   slope, a page with s = root(SSE/(n - 2)), SE(b1) = s/root(Sxx), t = b1/SE(b1) on n - 2 df, the two-
 //   tailed p, the 95% interval for the slope and the decision at alpha = 0.05 (slInf, slInfPage); Menu >
@@ -294,6 +301,8 @@
 //            Sxy = sum (x - x-bar)(y - y-bar)
 //   b1 = Sxy / Sxx,  b0 = y-bar - b1 x-bar
 //   r = Sxy / sqrt(Sxx Syy),  r-squared = r^2
+//   95% interval for rho (beta 2l; slInf):  z = 0.5 ln((1 + r)/(1 - r)),
+//            z -/+ 1.959964 / sqrt(n - 3),  back through tanh
 //   pass 3:  SSE = sum (y - b0 - b1 x)^2, the squared residuals
 //   leverage of point i:  h = 1/n + (x_i - x-bar)^2 / Sxx
 //   Centring before squaring (rather than sum x^2 - n x-bar^2)
@@ -358,6 +367,7 @@ LOCAL slSSE, slXb, slYb, slSxx, slSyy, slSxy;
 // ---- beta 2k: inference for the slope, and the two bands (set in slInf) ----
 LOCAL slBand, slIok, slSe, slSeB, slTv, slPv;
 LOCAL slTc, slTcD, slCiL, slCiH;
+LOCAL slRok, slRlo, slRhi;
 //  slBand 1 = the two 95% bands are drawn;  slIok 1 when the slope has a
 //  test (a line, and at least one point off it);  slSe the residuals'
 //  standard deviation, root(SSE / (n - 2));  slSeB the slope's standard
@@ -365,6 +375,8 @@ LOCAL slTc, slTcD, slCiL, slCiH;
 //  for 95% on slTcD df (kept from fit to fit: a drag refits every frame,
 //  and the df changes only when a point is added or deleted);  slCiL,
 //  slCiH the slope's 95% interval
+//  beta 2l: slRok 1 when rho has an interval (a test, 4 points or more,
+//  |r| below 1 in 12 digits);  slRlo, slRhi its 95% limits (Fisher's z)
 
 // ---- Guess mode: two handles, the student's line ----
 LOCAL slH1X, slH1Y, slH2X, slH2Y, slGH, slShow;
@@ -928,9 +940,10 @@ END;
 // (s = 0: t would divide by zero).  Called at the end of every slFit.
 slInf()
 BEGIN
-  LOCAL ifD;
+  LOCAL ifD, ifZ, ifH, ifE;
   slIok := 0; slSe := 0; slSeB := 0; slTv := 0; slPv := 1;
   slCiL := 0; slCiH := 0;
+  slRok := 0; slRlo := 0; slRhi := 0;
   IF slOK == 1 AND slN >= 3 THEN
     ifD := slN - 2;
     slSe := (MAX(0, slSSE) / ifD)^0.5;
@@ -946,6 +959,21 @@ BEGIN
       slCiL := slB1 - slTc * slSeB;
       slCiH := slB1 + slTc * slSeB;
     END;
+  END;
+  // beta 2l: the 95% interval for rho by Fisher's z.  z = 0.5 ln((1 + r)/(1 - r))
+  // is close to normal with standard error 1/root(n - 3), so the limits are
+  // z -/+ 1.959964/root(n - 3), carried back to r by tanh(z) = (e^2z - 1)/(e^2z + 1).
+  // It needs a test (slIok: the points are not all on the line), 4 points
+  // (n - 3 is under the root) and |r| below 1 in the Prime's 12 digits
+  // (1 - r is divided by).  |z| is then at most about 16, so e^2z is safe.
+  IF slIok == 1 AND slRdef == 1 AND slN >= 4 AND ABS(slR) < 1 THEN
+    ifZ := 0.5 * LN((1 + slR) / (1 - slR));
+    ifH := 1.95996398454 / (slN - 3)^0.5;
+    ifE := EXP(2 * (ifZ - ifH));
+    slRlo := (ifE - 1) / (ifE + 1);
+    ifE := EXP(2 * (ifZ + ifH));
+    slRhi := (ifE - 1) / (ifE + 1);
+    slRok := 1;
   END;
   SL_SEB := slSeB; SL_T := slTv; SL_P := slPv;
 END;
@@ -2262,8 +2290,20 @@ BEGIN
         slHT("(p = " + slFx(slPv, 5) + ": just above " + CHAR(945) + " = 0.050.)", 162, slGRAY);
       END;
     END;
-    slHT("s is the typical miss of a point from the line.", 181, slGRAY);
-    slHT("The test of " + CHAR(961) + " = 0 gives the same t and p.", 194, slGRAY);
+    slHT("s is the typical miss of a point from the line.", 175, slGRAY);
+    ipS := "The test of " + CHAR(961) + " = 0 gives the same t and p.";
+    slHT(slIL("r = " + slFx(slR, 3) + ".  " + ipS, ipS), 188, slGRAY);
+    // beta 2l: the 95% interval for rho (slInf), or the reason there is none
+    IF slRok == 1 THEN
+      ipS := "95% interval for " + CHAR(961) + ": " + slFx(slRlo, 3) + " to " + slFx(slRhi, 3);
+      slHT(slIL(ipS + " (Fisher's z)", ipS), 204, #000000h);
+    ELSE
+      IF slN < 4 THEN
+        slHT("An interval for " + CHAR(961) + " needs at least 4 points.", 204, slGRAY);
+      ELSE
+        slHT("r is 1 or -1 to 12 digits, so " + CHAR(961) + " has no interval.", 204, slGRAY);
+      END;
+    END;
   END;
   TEXTOUT_P("any key or tap = back to the plot", G1, 12, 218, 1, slFOOT, 296);
   BLIT_P(G0, 0, 0, G1);
@@ -2292,6 +2332,7 @@ BEGIN
     slHT(slCm(("r = Sxy / " + CHAR(8730) + "(Sxx Syy), where")), 156, slGRAY);
     slHT("Sxx = sum (x - " + slXBAR + ")" + slSQ + ", Syy = sum (y - " + slYBAR + ")" + slSQ + ",", 169, slGRAY);
     slHT("Sxy = sum (x - " + slXBAR + ")(y - " + slYBAR + ").", 182, slGRAY);
+    slHT("Menu > Inference: a 95% interval for the population's r (" + CHAR(961) + ").", 198, slBLUE);
   END;
   IF hgP == 2 THEN
     TEXTOUT_P("ScatterLab help 2/7: " + "r" + slSQ + ", the share explained", G1, 12, 8, 2, slBLUE, 296);

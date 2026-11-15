@@ -1,0 +1,54 @@
+=== T. the build
+PASS T1 the build makes programs/ScatterLab_beta2l.txt byte for byte
+=== A. the arithmetic against SciPy
+PASS A1 the example: s, SE(b1), t, p, t crit and the interval equal linregress and t.ppf (t = 4.2584, p = 0.000795)
+PASS A2 Home: SL_SEB, SL_T, SL_P hold the same numbers
+PASS A3 Anscombe's four sets hold the values of R's anscombe
+PASS A4 on each of them the slope test equals SciPy's
+PASS A5 all four give 3.00 + 0.500x and r = 0.82; to three decimals r is 0.816, 0.816, 0.816 and 0.817
+PASS A6 all four share one window, x 2 to 20 and y 2 to 14
+PASS A7 300 random sets of 3 to 40 points: every number equals SciPy's to 9 digits
+PASS A8 the example: the 95% interval for rho, 0.4071 to 0.9086, equals SciPy's (Fisher's z) to 9 digits
+PASS A9 Anscombe's four sets: the same (each about 0.42 to 0.95)
+PASS A10 300 random sets of 4 to 40 points: both limits equal SciPy's to 9 digits, and lo <= r <= hi inside -1 to 1
+PASS A11 r from about 0.9 up to 1 - 1E-9: the limits still equal SciPy's and stay at or below 1
+=== E. the edges
+PASS E1 every point on the line: no test (slIok 0), and the page says the slope has no t-test
+PASS E2 two points: the page is refused with a sentence, no page drawn
+PASS E3 every x the same: the page is refused the same way
+PASS E4 the example's p (0.0008) prints "p < 0.001", never 0.000
+PASS E5 a p of 0.04978: the decision line carries "(p = 0.04978: just below α = 0.050.)"
+PASS E6 three points: the slope has its test, rho has no interval (n - 3 = 0), and the page says "needs at least 4 points"
+PASS E7 r equal to 1 in the machine's digits with points off the line: a sentence, no interval, and nothing divides by zero
+PASS E8 the example's page ends: s (y 175), "r = 0.751.  The test of ρ = 0 ..." (y 188), "95% interval for ρ: 0.407 to 0.909 (Fisher's z)" (y 204)
+=== P. the page at the calculator's glyph widths
+PASS P1 the example: every line of the page within 296 px
+PASS P2 Anscombe's four sets: the same
+PASS P3 42 sets with values near 1E8 and 1E-8: no line past 296 px (widest 274 px: 'SE(b₁) = s/√(Sxx) = 2,405,387/√(1.865ᴇ−1')
+PASS P4 slIL hands back the short form when the long one is past 294 px (never needed on those pages: 0)
+=== B. the bands
+PASS B1 off at the start: no band pixel drawn
+PASS B2 on: 494 band pixels, every one inside the plot box
+PASS B3 at x-bar the inner band stands t crit s root(1/n) = 2.946 above and below the line, to the pixel
+PASS B4 the outer band (one new case) lies outside the inner one (the mean of y) in every column that shows both
+PASS B5 the outer band is dotted: two columns in every four
+=== M. the menus
+PASS M1 the menu has 12 items and the Data menu 8, each at most 30 characters
+PASS M2 a tour of every menu item ends with the Quit summary and no error
+PASS M3 it showed the inference page twice, the bands' two notes, the calculus page and help 7/7
+PASS M4 Esc at the menu and at the Data menu changes nothing: the example's 16 points and line at Quit
+PASS M5 with no points, Bands and Inference are refused with their sentences and nothing is drawn
+PASS M6 Data items 6, 7, 8 are still Load from C1/C2, Save and Clear (5 points loaded, then none)
+=== R. regression against beta 2k
+PASS R1 a tour that never opens the Inference page or the help: the same 41 screens, text for text, and the same Quit summary
+PASS R2 the Inference page against beta 2k: one line reworded (r shown) and one line new (the interval); every other line the same
+=== H. the help
+PASS H1 seven help pages, titled n/7
+PASS H2 pages 2 to 7 are beta 2k's word for word; page 1 is beta 2k's with one line more, above the footer
+PASS H3 every help line within its width at the glyph widths
+=== D. layout over every beta 2l screen above
+PASS D1 no firm overlap and no text off the screen (text_overlap_v1)
+PASS D2 no number cut short by its width argument (label_fit_v1)
+
+42 checks, 0 failed
+exit 0

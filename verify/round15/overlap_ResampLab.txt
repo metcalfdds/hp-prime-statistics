@@ -1,0 +1,7 @@
+NEW
+PROGRAM         screens    6/120   collisions   0 (firm   0) straddles   0 overruns   0 ghosts   0
+walk: {'runs': 80, 'stalls': 0, 'errors': {}, 'budget_s': 60, 'entry': 'ResampLab()'}
+
+OLD
+PROGRAM         screens    6/120   collisions   0 (firm   0) straddles   0 overruns   0 ghosts   0
+walk: {'runs': 80, 'stalls': 0, 'errors': {}, 'budget_s': 60, 'entry': 'ResampLab()'}

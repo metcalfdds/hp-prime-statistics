@@ -14,7 +14,7 @@
 // hardware testing are Roger D. Metcalf's; the code, drafting and
 // source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
 
-// SURVLAB - beta 1f  (9 Nov 2026)
+// SURVLAB - beta 1g  (15 Nov 2026)
 // Time-to-event (survival) analysis for a criminal-justice class: the
 //   time from release from prison to the first re-arrest.  Kaplan-Meier
 //   curves with Greenwood's standard error and 95% confidence intervals
@@ -40,6 +40,11 @@
 //   -1 = not reached).
 // Written for the 2026-09-09 firmware (HP Prime G2 and G1).  beta 1b has
 //   NOT been run on hardware or the emulator, only in the PC harness.
+// beta 1g (15 Nov 2026): Round 15: the credits say exactly what was done with the TI-83/84 programs this one follows (Roger,
+//   14-15 Nov 2026).  They were read to see what each one computes, and this program was then written
+//   new in PPL: none of their code is in it.  The header's note on the TI-83/84 program KAPMEIT1 begins
+//   "Does on the Prime what ... does" and says that SurvLab was written new, with none of KAPMEIT1's
+//   code.  Nothing on screen changes.  Only words changed: no line of code but the help text.
 // beta 1f (9 Nov 2026): Round 11: the help pages in plain words (Roger, 8-9 Nov 2026: "write more straightforward and don't
 //   try to be too clever--a student being able to understand is the priority"; "adding pages is fine,
 //   the explanation is what matters").  Help page 2 reworded: "n.r. = open" in plain words.  Every
@@ -151,8 +156,10 @@
 //   216/216 (data/DATASETS.md).  Two extra splits are SurvLab's own and
 //   are labelled so on screen: prior convictions 0-2 vs 3 or more (the
 //   median is 2) and age under 23 vs 23 and over (the median age is 23).
-// Replaces / reworks: the TI-83/84 program KAPMEIT1 (kaplanmeiertest1.zip,
-//   Triola program library; decoded in ref/triola_ti_programs), which
+// Does on the Prime what the TI-83/84 program KAPMEIT1 does (kaplanmeiertest1.zip,
+//   Triola program library).  KAPMEIT1 was decoded (ref/triola_ti_programs) and
+//   read to see what it computes; SurvLab was then written new in PPL, and none
+//   of KAPMEIT1's code is in it.  KAPMEIT1
 //   takes grouped data (days, number failed, number censored), lists the
 //   product-limit S and Greenwood's variance and draws the step plot by
 //   doubling points.  Its bugs, not repeated here: (1) Greenwood's term

@@ -1,0 +1,7 @@
+NEW
+PROGRAM        screens   86/1242  collisions   0 (firm   0) straddles   0 overruns   0 ghosts   0
+walk: {'runs': 80, 'stalls': 0, 'errors': {"HarnessScriptError: CHOOSE 'Hypergeometric page' has 4 items; answer 5": 1, "HarnessScriptError: CHOOSE 'Hypergeometric page' has 4 items; answer 6": 1, "HarnessScriptError: CHOOSE 'Hypergeometric page' has 4 items; answer 7": 1, "HarnessScriptError: CHOOSE 'Hypergeometric page' has 4 items; answer 8": 1, "HarnessScriptError: CHOOSE 'Hypergeometric page' has 4 items; answer 9": 1}, 'budget_s': 60, 'entry': 'ExhibitLab()'}
+
+OLD
+PROGRAM        screens   86/1242  collisions   0 (firm   0) straddles   0 overruns   0 ghosts   0
+walk: {'runs': 80, 'stalls': 0, 'errors': {"HarnessScriptError: CHOOSE 'Hypergeometric page' has 4 items; answer 5": 1, "HarnessScriptError: CHOOSE 'Hypergeometric page' has 4 items; answer 6": 1, "HarnessScriptError: CHOOSE 'Hypergeometric page' has 4 items; answer 7": 1, "HarnessScriptError: CHOOSE 'Hypergeometric page' has 4 items; answer 8": 1, "HarnessScriptError: CHOOSE 'Hypergeometric page' has 4 items; answer 9": 1}, 'budget_s': 60, 'entry': 'ExhibitLab()'}

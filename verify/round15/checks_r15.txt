@@ -1,0 +1,19 @@
+S ScatterLab OK    warnings 0 (old 0)
+S FitCheck   OK    warnings 0 (old 0)
+S RankLab    OK    warnings 0 (old 0)
+S AnovaLab   OK    warnings 0 (old 0)
+S ResampLab  OK    warnings 0 (old 0)
+S ExhibitLab OK    warnings 0 (old 0)
+S SurvLab    OK    warnings 0 (old 0)
+T ScatterLab same report as the old version  PROGRAM screens 12/36 collisions 1 (firm 0) straddles 0 overruns 0 ghosts 0
+T FitCheck   same report as the old version  PROGRAM screens 97/352 collisions 0 (firm 0) straddles 0 overruns 0 ghosts 0
+T RankLab    same report as the old version  PROGRAM screens 82/1200 collisions 0 (firm 0) straddles 0 overruns 0 ghosts 0
+T AnovaLab   same report as the old version  PROGRAM screens 37/1035 collisions 57 (firm 54) straddles 0 overruns 0 ghosts 0
+T ResampLab  same report as the old version  PROGRAM screens 6/120 collisions 0 (firm 0) straddles 0 overruns 0 ghosts 0
+T ExhibitLab same report as the old version  PROGRAM screens 86/1242 collisions 0 (firm 0) straddles 0 overruns 0 ghosts 0
+T SurvLab    same report as the old version  PROGRAM screens 42/1066 collisions 14 (firm 13) straddles 0 overruns 0 ghosts 0
+F fleet_names_v2 over 31 programs: clean
+  31 files, 2411 routine names, 0 collisions, 0 untagged, 0 mixed-tag files, 0 built-in matches
+
+--- fleet_names_v2 output
+31 files, 2411 routine names, 0 collisions, 0 untagged, 0 mixed-tag files, 0 built-in matches

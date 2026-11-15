@@ -14,7 +14,7 @@
 // hardware testing are Roger D. Metcalf's; the code, drafting and
 // source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
 
-// ANOVALAB - beta 1g  (13 Nov 2026)
+// ANOVALAB - beta 1h  (15 Nov 2026)
 // Analysis of variance for teaching, with pictures you can touch.
 //   Launch AnovaLab() from the Program Catalog: it takes no arguments,
 //   shows an opening page (with the disclaimer), then its main menu:
@@ -48,6 +48,13 @@
 // Written for the 2026-09-09 firmware (HP Prime G2 and G1).  beta 1a (and
 //   beta 1) have NOT been run on hardware or the emulator, only in the PC
 //   harness.
+// beta 1h (15 Nov 2026): Round 15: the credits say exactly what was done with the TI-83/84 programs this one follows (Roger,
+//   14-15 Nov 2026).  They were read to see what each one computes, and this program was then written
+//   new in PPL: none of their code is in it.  Help page 9/9 begins "Does what Triola's TI-83/84 programs
+//   ANOVA, ... and FINTRVAL do.  Written new: none of their code." (four lines; it was three), and the
+//   nine lines under it each sit 13 px lower (the last at y 198).  The header's note on those programs
+//   begins the same way, and two section comments say "what Triola's S2TEST / S2INT do".  Only words
+//   changed: no line of code but the help text.
 // beta 1g (13 Nov 2026): Round 12: help-page fixes from the book's pre-submission read (Roger, 13 Nov 2026: "Go ahead and fix
 //   the help files").  Help page 4/9: Scheffé with its accent (CHAR(233); GlyphProbe_v1 measured it,
 //   Round 11).  The menus keep "Scheffe".  No other line changed.
@@ -148,8 +155,10 @@
 //     datasets USJudgeRatings).  The block design uses all 43 judges as
 //     blocks and three criteria as treatments: INTG (integrity), DMNR
 //     (demeanor) and DILG (diligence).
-// Replaces / reworks (Triola's TI-83/84 CD and related TI programs,
-//   decoded in ref/triola_ti_programs/; credited with thanks):
+// Does on the Prime what these TI-83/84 programs do.  They were decoded and
+//   read (ref/triola_ti_programs/) to see what each one computes; AnovaLab
+//   was then written new in PPL, and none of their code is in it.  From
+//   Triola's TI-83/84 CD and related TI programs, credited with thanks:
 //   ANOVA (one-way), ANOVA2FD (two-way factorial), ANOVA2RB and RANOVA
 //   (randomized blocks / repeated measures), LATINSQ, TUKEY, SCHEFFE2,
 //   BONFRNI, COMPERR (the per-comparison rate idea), ANCOVA1 (read, not
@@ -1828,7 +1837,7 @@ BEGIN
   RETURN av_FQ(vhP, avVDf1, avVDf2);
 END;
 
-// The variance test and interval (Triola's S2TEST / S2INT reworked).
+// The variance test and interval (what Triola's S2TEST / S2INT do).
 //   One sigma: chi^2 = (n-1) s^2 / sigma0^2 on n-1 df;
 //     CI for sigma^2: ((n-1)s^2/chi^2_upper, (n-1)s^2/chi^2_lower)
 //   Two sigmas: F = s1^2/s2^2 on (n1-1, n2-1) df;
@@ -2531,18 +2540,19 @@ BEGIN
   END;
   IF hpN == 9 THEN
     TEXTOUT_P("AnovaLab help 9/9: Credits", G1, 10, 7, 2, avBLUE, 300);
-    av_Tx("Reworks Triola's TI-83/84 ANOVA, ANOVA2FD,", 10, 30, #000000h);
-    av_Tx("ANOVA2RB, RANOVA, TUKEY, SCHEFFE2, BONFRNI,", 10, 43, #000000h);
-    av_Tx("SDHYP, SDINT, STDTEST, STDEVCI and FINTRVAL.", 10, 56, #000000h);
-    av_Tx("Not repeated: 0 and negatives as missing,", 10, 72, avRED);
-    av_Tx("the wrong n in Tukey's SE, swapped F bounds,", 10, 85, avRED);
-    av_Tx("a solver that fails for n > 75, equal-n only.", 10, 98, avRED);
-    av_Tx("Tukey's q: StudRange's PPL engine (Dunlap,", 10, 114, avBLUE);
-    av_Tx("Powell & Konnerth 1977, with a u" + avSq + " step).", 10, 127, avBLUE);
-    av_Tx("Data: Plaster 1989; Fienberg 1971; Beall 1942;", 10, 143, avGRAY);
-    av_Tx("New Haven Register 1977 (R datasets).", 10, 156, avGRAY);
-    av_Tx("A teaching aid: not validated for forensic,", 10, 172, avRED);
-    av_Tx("clinical or legal use.", 10, 185, avRED);
+    av_Tx("Does what Triola's TI-83/84 programs ANOVA,", 10, 30, #000000h);
+    av_Tx("ANOVA2FD, ANOVA2RB, RANOVA, TUKEY, SCHEFFE2,", 10, 43, #000000h);
+    av_Tx("BONFRNI, SDHYP, SDINT, STDTEST, STDEVCI and", 10, 56, #000000h);
+    av_Tx("FINTRVAL do.  Written new: none of their code.", 10, 69, #000000h);
+    av_Tx("Not repeated: 0 and negatives as missing,", 10, 85, avRED);
+    av_Tx("the wrong n in Tukey's SE, swapped F bounds,", 10, 98, avRED);
+    av_Tx("a solver that fails for n > 75, equal-n only.", 10, 111, avRED);
+    av_Tx("Tukey's q: StudRange's PPL engine (Dunlap,", 10, 127, avBLUE);
+    av_Tx("Powell & Konnerth 1977, with a u" + avSq + " step).", 10, 140, avBLUE);
+    av_Tx("Data: Plaster 1989; Fienberg 1971; Beall 1942;", 10, 156, avGRAY);
+    av_Tx("New Haven Register 1977 (R datasets).", 10, 169, avGRAY);
+    av_Tx("A teaching aid: not validated for forensic,", 10, 185, avRED);
+    av_Tx("clinical or legal use.", 10, 198, avRED);
   END;
   TEXTOUT_P("Any key or tap = next, " + CHAR(8592) + " = back, Esc = leave", G1, 10, 220, 1, avFOOT, 300);
   BLIT_P(G0, 0, 0, G1);
@@ -3301,7 +3311,7 @@ END;
 
 
 // ============================================================
-// 12. VARIANCES (Triola's S2TEST / S2INT reworked)
+// 12. VARIANCES (what Triola's S2TEST / S2INT do)
 //     1 Result   2 Curve
 // ============================================================
 
@@ -3810,7 +3820,7 @@ END;
 
 av_Hello()
 BEGIN
-  av_Band("AnovaLab - beta 1g");
+  av_Band("AnovaLab - beta 1h");
   av_Tx("Analysis of variance, with pictures to touch:", 10, 26, #000000h);
   av_Tx("one-way ANOVA (Welch, checks, post hoc pairs),", 10, 40, avBLUE);
   av_Tx("two-way ANOVA (Type III, interaction plot),", 10, 53, avBLUE);
