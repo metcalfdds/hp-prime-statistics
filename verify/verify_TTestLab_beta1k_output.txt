@@ -1,0 +1,73 @@
+=== A. static
+PASS A1 the header names beta 1k
+PASS A2 of the 54 routines of the version before, only the 14 meant to change did
+PASS A3 the 19 new routines are the ones the header names
+PASS A3b the header lists each new routine
+PASS A4 no "!=" in the code, and the code is ASCII outside its strings and comments
+PASS A5 every field of the 6 forms is {name,[0]}
+PASS A6 no written menu item over 30 characters (50 items)
+=== B. the three older tests against TTestLab_beta1j.txt
+PASS B1 12 sessions of the older tests: the same screens, forms, boxes and results as TTestLab_beta1j.txt
+=== C. arithmetic against SciPy and statsmodels (through tt_Calc)
+PASS C1 one-sample t from the mean, SD and N: 2160 cases (t, df, SE, p, t critical, d, the decision)
+PASS C2 one-sample t from scores (scipy.stats.ttest_1samp): 360 cases
+PASS C3 one-proportion z (statsmodels proportions_ztest, SE from p0): 2160 cases
+PASS C4 two-proportion z (statsmodels, pooled): 2160 cases
+PASS C5 a sample exactly on H0 (5 of 10 against 0.5): z = 0 and the two-tailed p is 1, not above it
+PASS C6 back on a t-test, the curve is Student's again (the height at 0 on 73 df)
+PASS C7 on a z-test, the curve is the standard normal curve
+=== E. the new examples show the book's numbers
+PASS E1 Student's sleep data (Chapter 9): t(9) = 4.06, p = 0.003; SE 0.3890; t critical 2.262; d = 1.28
+PASS E2 Castaneda v. Partida (Chapters 5 and 12): z = -29.11; n p0 = 688.2 and n(1 - p0) = 181.8; SE 0.01378
+PASS E3 the Rossi experiment (Chapter 11): z = -1.965, p = 0.049; pooled p 0.2639; SE 0.04241
+PASS E4 the examples' sources are on step 1
+PASS E5 Chapter 9, problem 2 (16 bags, mean 27.5, SD 2.0, against 28, one-tailed): t(15) = -1.00, t critical -1.753, retain
+PASS E6 Chapter 9, problem 3 (220 of 400 voters against one half, one-tailed): z = 2.00, p = 0.023, z critical 1.645, reject
+PASS E7 the sleep data typed into D1 give the example's steps 2 to 5, and step 1 names D1
+PASS E8 the Rossi counts typed give the example's steps 2 to 5 (with "Group 1" for the example's name)
+=== F. every cancel and refusal path of the new code
+PASS F1 15 ways out before the first page: each returns "TTestLab: cancelled", draws no page, and shows a box only where one is due
+PASS F2 Menu > Edit the numbers, Cancel: the numbers, the example's names and the pages stay
+PASS F3 Menu > Choose the test > one proportion, Cancel on its form: the two-proportion test stays
+PASS F4 Menu > Choose the test, Esc at Which test?: nothing changes
+PASS F5 ... a new test with its numbers in, Esc at Tails: the new test runs with the tails and alpha that were on screen
+PASS F6 pooled > Choose the test > two means > separate: no form (the two independent tests share their numbers)
+PASS F7 pooled > Choose the test > two proportions: its form, then the Rossi result
+PASS F8 Pooled or separate? on the one-sample t example: a box that says the test has no such choice, and the pages stay
+PASS F8 Pooled or separate? on the one proportion example: a box that says the test has no such choice, and the pages stay
+PASS F8 Pooled or separate? on the two proportions example: a box that says the test has no such choice, and the pages stay
+PASS F9 25 refused numbers: each its sentence in a box, once, then the menu; no page is drawn
+PASS F10 after a refusal, Edit the numbers puts the test right
+PASS F11 scores in D1 and a mu0 of 50 digits: refused
+PASS F12 a typed N of 9.9 is taken as 9 (as the other forms take it)
+PASS F13 the four new forms: plain labels, a help line for every field
+=== P. the pages' notes
+PASS P1 one proportion with n p0 = 4: step 2 says the curve fits poorly and names the exact binomial test
+PASS P2 ... with n p0 = n(1 - p0) = 5 exactly: the curve fits
+PASS P3 two proportions with 4 successes in sample 1: step 2 says so and names Fisher's exact test
+PASS P4 a p that rounds to alpha (531 of 1,000: p = 0.04992): step 5 gives its 4 digits, "just below", beside REJECT
+PASS P5 ... and from the other side (1,355 of 2,610: p = 0.05030): "just above", beside RETAIN
+PASS P6 one-sample t = 1.996 on 73 df (exact t critical 1.993): REJECT, and the note that the table's row 60 decides the other way
+PASS P7 one-tailed, and the sample lies the other way: RETAIN, and the page says so
+PASS P7a an SD typed far too small (d = 200,000,000): step 5 prints "Cohen's d > 999.99", clear of the label beside it
+PASS P7b ... and so does the older tests' step 5 ("Cohen's d > 999.99  (pooled s)")
+PASS P8 a negative mu0 is bracketed in the arithmetic: "(3 - (-4))"
+PASS P9 the soft keys: "2 dist" and "4 z" for a z-test, "2 df" and "4 t" for the one-sample t
+PASS P10 the tails menu speaks each test's symbols
+PASS P11 no menu item as shown is over 30 characters (the longest: 29)
+PASS P11a Menu > Examples lists the older examples and the three new ones, and its last item runs the Rossi example
+PASS P11b no menu has more than eight items, so none is cut off at the bottom of the screen (the most: 7, in "TTestLab")
+PASS P12 37 scores in D1: step 1 shows the first ten and says "... and 27 more"
+=== H. help
+PASS H1 three help pages with the one header, and Help returns to the start menu
+PASS H2 pages 1 and 2 are the version before's but for the page count and page 2's footer
+PASS H3 every help line ends inside the screen at the calculator's glyph widths
+PASS H4 page 3 gives the three tests' formulas and the Inference app's names for them
+=== D. layout over every beta 1k screen drawn above, and with the largest numbers the forms allow
+PASS D0 12 sessions with the largest numbers the forms allow, and wide scores in D1, run to step 5
+PASS D1 no firm overlap of two texts (text_overlap_v1, 329 distinct screens)
+PASS D2 no number cut short by its width argument (label_fit_v1)
+PASS D3 every text ends inside the screen at the calculator's glyph widths (the widest ends at x = 314)
+PASS D4 every number of 1,000 or more drawn has its commas (years apart)
+
+63 checks, 0 failed
