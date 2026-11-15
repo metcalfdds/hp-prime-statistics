@@ -89,7 +89,7 @@ A printed number can be off for several different reasons. This book has all of 
 
 2,006 values (5.1%) are off by one unit in the last place. The share is highest in tables copied from old sources: 35% in Dixon's, 19% in the order statistics, 18% in Duncan's.
 
-### Slips in the text, seen in passing and not counted
+### Errors in the text, seen in passing and not counted
 
 - p. 102: a worked sum has 0.656 for 0.0656 (its total is right).
 - p. 250: formula (10.11) for r20 has x(2) in the denominator where x(1) belongs.
@@ -181,16 +181,16 @@ Table makers have always known this. The preface of the 1945 Dover edition of Ja
 
 Two counts were made for each of the 151 pages:
 
-- **separate slips**: one cell, one label or one heading set wrong. There are 28, on 17 pages: the misprints, wrong labels and single wrong values listed above, leaving out the sign test's zeros and the faults that run through a whole table;
+- **separate misfigures** (the author's word; a misfigure is an incorrect number or figure, and `model.json` and the scripts call them slips): one cell, one label or one heading set wrong. There are 28, on 17 pages: the misprints, wrong labels and single wrong values listed above, leaving out the sign test's zeros and the faults that run through a whole table;
 - **wrong numbers**: every value wrong as printed (2,834).
 
-| Pages with | 0 slips | 1 | 2 | 3 or more |
+| Pages with | 0 misfigures | 1 | 2 | 3 or more |
 | --- | ---: | ---: | ---: | ---: |
 | Counted | 134 | 12 | 3 | 2 |
 | Poisson expects | 125.4 | 23.3 | 2.2 | 0.1 |
 | Negative binomial expects | 134.1 | 10.8 | 3.5 | 2.6 |
 
-The variance of the slips is 2.76 times their mean (Poisson says 1; the test gives p below 10⁻²⁵). There are too many clean pages and too many bad ones: **errors come in clumps**, because a table is made in one sitting, from one source or one program. The negative binomial, which allows clumps, fits closely. For the wrong numbers the clumping is far stronger (variance 124 times the mean) and the negative binomial again fits: it expects 112.7, 5.5, 2.9 and 29.8 pages with 0, 1, 2 and 3 or more, against 114, 3, 3 and 31 counted.
+The variance of the misfigures is 2.76 times their mean (Poisson says 1; the test gives p below 10⁻²⁵). There are too many clean pages and too many bad ones: **errors come in clumps**, because a table is made in one sitting, from one source or one program. The negative binomial, which allows clumps, fits closely. For the wrong numbers the clumping is far stronger (variance 124 times the mean) and the negative binomial again fits: it expects 112.7, 5.5, 2.9 and 29.8 pages with 0, 1, 2 and 3 or more, against 114, 3, 3 and 31 counted.
 
 **How much can a table be trusted?** For this book:
 
@@ -198,12 +198,12 @@ The variance of the slips is 2.76 times their mean (Poisson says 1; the test giv
 | --- | --- | --- |
 | Share of tables with a wrong number or label | 22 of 57 = 39% | 27% to 52% |
 | Share of pages with a wrong number | 37 of 151 = 25% | 18% to 32% |
-| Separate slips per page | 0.19 (one in five pages) | 0.11 to 0.34 |
+| Separate misfigures per page | 0.19 (one in five pages) | 0.11 to 0.34 |
 | Wrong numbers per page | 18.8 | 9.8 to 43 |
 | Share of all printed values that are wrong | 7.2% | 2.2% to 12.8% |
 | The same, outside the six worst tables | 0.8% | |
 
-The intervals for the two per-page means are from the negative binomial (profile likelihood); the Poisson interval for slips, 0.12 to 0.27, is too narrow because it ignores the clumping. The interval for the share of wrong values resamples whole tables. The two shares of tables and pages use Wilson's interval.
+The intervals for the two per-page means are from the negative binomial (profile likelihood); the Poisson interval for misfigures, 0.12 to 0.27, is too narrow because it ignores the clumping. The interval for the share of wrong values resamples whole tables. The two shares of tables and pages use Wilson's interval.
 
 These are figures for one book, as found by the checks made here. Another book would give others.
 
@@ -225,7 +225,7 @@ The harness is a PC model of the calculator. Nothing here was run on a calculato
 - Tables that cannot be recomputed: block designs (pp. 334–345), sampling plans (p. 395), random digits and normal deviates (pp. 504–505).
 - Spearman's critical values above n = 15, except by simulation at 20 (all four agree) and 30 (two agree; two are too close to call with two billion permutations).
 - Small parts of tables: best linear estimates (p. 202); the orthogonal-polynomial blocks for 3 to 5 points; 12 Mann–Whitney probabilities on p. 381; Duncan's cells past p = 12 in the rows for 40 df and up; the first column of twelve rows of Dunnett's two-sided 5% table.
-- The worked examples and formulas in the text, apart from the four slips listed.
+- The worked examples and formulas in the text, apart from the four errors listed.
 - Kokoska and Nevison (1989) and the 1964 edition beyond the cells named above.
 - `hpstats.studentized_range_crit` on the book's grid: it takes over a minute a value on this machine, so the PPL routine was run instead.
 
