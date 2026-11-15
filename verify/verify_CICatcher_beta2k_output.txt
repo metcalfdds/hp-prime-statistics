@@ -1,0 +1,8 @@
+PASS T1 the build makes programs/CICatcher_beta2k.txt byte for byte
+PASS T2 only the three replaced literals and comment lines differ from beta 2j (7 comment lines)
+PASS T3 six help pages in both; they differ in three lines, on pages 2 and 6
+PASS T4 no help page of beta 2k says "catch rate"
+PASS T5 every help line within its width at the glyph widths
+PASS S1 CICatcher() with Esc as the idle key ends with no error
+
+6 checks, 0 failed

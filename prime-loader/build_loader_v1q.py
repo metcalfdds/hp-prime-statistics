@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""build_loader_v1p.py -- assembles PrimeLoader_v1p.html: the page template, the loader's core, the Data Loader's core
+"""build_loader_v1q.py -- assembles PrimeLoader_v1q.html: the page template, the loader's core, the Data Loader's core
 (for its zip writer), the chapter list, and every program file from a starter pack, embedded so the page works offline.
 
-    python3 build_loader_v1p.py PACK.zip [OUT.html] [--kit PATH]
+    python3 build_loader_v1q.py PACK.zip [OUT.html] [--kit PATH]
+v1q (14 Nov 2026): starter pack v19, whose CICatcher beta 2k and ScatterLab beta 2k (round 14) carry the help-page
+wording fix and the slope's test, the two bands and Anscombe's quartet; nothing else differs from v1p.
 v1p (13 Nov 2026): starter pack v18, whose ChiTable beta 3m (round 13) gives the exact test for its 2 x 3 and 3 x 2
 tables.  The catalog names that version.  The page template is v1c's, unchanged.
 
@@ -101,7 +103,7 @@ KIT = os.environ.get('HPKIT', '/tmp/kit/hp-prime-kit-HEAD')
 if '--kit' in argv:
     i = argv.index('--kit'); KIT = argv[i + 1]; del argv[i:i + 2]
 PACK = argv[0]
-OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v1p.html')
+OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v1q.html')
 SITE = 'https://metcalfdds.github.io/hp-prime-statistics/'
 sys.path.insert(0, KIT)
 from hpkit import program as kitprog            # hp-prime-kit (MIT, JordiRigau/hp-prime-kit)
@@ -249,7 +251,7 @@ redirect = ('<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n
             '<link rel="canonical" href="' + SITE + 'prime-loader/' + page + '">\n'
             '<style>body{font:16px/1.5 system-ui,sans-serif;margin:2rem;color:#172033;background:#f6f8fb}'
             '@media (prefers-color-scheme:dark){body{color:#e8edf6;background:#0f1420}a{color:#7d9cff}}</style>\n'
-            '</head>\n<body>\n<!-- Written by build_loader_v1p.py: sends the browser on to the current Prime Loader, so the '
+            '</head>\n<body>\n<!-- Written by build_loader_v1q.py: sends the browser on to the current Prime Loader, so the '
             'address .../prime-loader/ never changes. -->\n'
             '<p>Opening the HP Prime Loader&hellip; If nothing happens, <a href="' + page + '">click here</a>.</p>\n'
             '</body>\n</html>\n')

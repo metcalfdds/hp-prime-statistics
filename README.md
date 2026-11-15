@@ -28,7 +28,7 @@ Hundreds of community PPL programs from several HP-related public forums were re
 
 **New here?** [START_HERE.md](START_HERE.md) is a one-page guide: what to read in five minutes, five programs to try first, and how to help.
 
-**No calculator? Try all 31 on HP's free Virtual Calculator.** Download the **[starter pack](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v18.zip)** (one 1.6 MB zip, for the Virtual Calculator on Windows). Unzip it, copy one folder's files into the Virtual Calculator's own folder, and start it: the programs are in its Program Catalog, CentralLimit already made into its app. No Connectivity Kit, and no copying and pasting of code. [The steps](starter-pack/README.md) fit on one page.
+**No calculator? Try all 31 on HP's free Virtual Calculator.** Download the **[starter pack](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v19.zip)** (one 1.6 MB zip, for the Virtual Calculator on Windows). Unzip it, copy one folder's files into the Virtual Calculator's own folder, and start it: the programs are in its Program Catalog, CentralLimit already made into its app. No Connectivity Kit, and no copying and pasting of code. [The steps](starter-pack/README.md) fit on one page.
 
 **Your own data, without typing it in.** The **[HP Prime Data Loader](data-loader/README.md)** is one web page that works offline: paste columns from Excel, SPSS or a CSV file, and it writes the calculator's own matrix file. On the calculator, **DataLoad** puts each column, or each group's scores, into the Statistics lists that the other programs read, and draws a box plot of each. The starter pack carries DataLoad and a sample data set (new, 31 October 2026).
 
@@ -53,7 +53,7 @@ Together, these 31 programs currently run to more than **90,000 lines**: 60,700 
 
 And around the programs:
 
-- **[The notes](docs/lessons-learned_v7zs.md)**: hard limits, commands that differ from the manual, touch and graphics idioms, the MicroPython bridge and how it fails silently, calling the CAS safely, numerical methods for 12-digit reals. Useful even if you never run a statistics program, and written so you can hand them to an AI assistant before it writes PPL for you.
+- **[The notes](docs/lessons-learned_v7zt.md)**: hard limits, commands that differ from the manual, touch and graphics idioms, the MicroPython bridge and how it fails silently, calling the CAS safely, numerical methods for 12-digit reals. Useful even if you never run a statistics program, and written so you can hand them to an AI assistant before it writes PPL for you.
 - **[Two shortcuts the manuals don't mention](docs/two-shortcuts.md)**: loading the Virtual Calculator by copying files into its folder, and a big data set as one matrix file, with who found what.
 - **[Tools](tools/)**: the checks every program passes before it is pasted (a lint gate, a fleet-wide name check, a check that no two lines of text overlap on screen, a PC harness that drives a program like a student), in plain Python 3.
 - **[Where to find a feature](#for-programmers-where-to-find-a-feature)**: which programs to open for 3-D plots you turn with a finger, animation, dragging, MicroPython, the CAS, and more.
@@ -162,7 +162,7 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 - The nearer bound follows your finger.
 - "Watch sample means" drops forty of them onto the axis.
 
-**CICatcher** (beta 2j; 13 November: help-page fixes from the book's read; 9 November: the help pages in plain words; 5 November: reasonable limits on what you type, and one header on every help page, "CICatcher help n/N: Topic"): fifty confidence intervals stack up, blue if it catches the truth (the green line) and red if it misses. **Drag the confidence level**: every interval stretches or shrinks, and the catch count updates exactly without new samples. Covers z, t, Wald, Wilson and the exact Clopper–Pearson interval.
+**CICatcher** (beta 2k; 14 November: help pages 2 and 6 say "the share caught" and "the 'all' rate"; 13 November: help-page fixes from the book's read; 9 November: the help pages in plain words; 5 November: reasonable limits on what you type, and one header on every help page, "CICatcher help n/N: Topic"): fifty confidence intervals stack up, blue if it catches the truth (the green line) and red if it misses. **Drag the confidence level**: every interval stretches or shrinks, and the catch count updates exactly without new samples. Covers z, t, Wald, Wilson and the exact Clopper–Pearson interval.
 
 **GaltonBoard** (beta 3i; 9 November: the help pages in plain words; 5 November: one header on every help page, "GaltonBoard help n/N: Topic"): Galton's quincunx. The board holds 5,000 balls; then it shows the results.
 - **Pour mode:** hold a finger on the funnel and a stream of balls cascades through the pegs.
@@ -207,7 +207,7 @@ Almost every program now responds to a finger: drag a bound, a bar, a curve or a
 
 ### Correlation and regression
 
-**ScatterLab** (beta 2j; 9 November: the help pages in plain words; 5 November: reasonable limits on what you type, and one header on every help page, "ScatterLab help n/N: Topic"): build a scatterplot with your finger. Add, drag or delete points, and the least-squares line, r, r², SSE and the residuals follow. Guess mode lets you fit a line by eye first, then shows that least squares really does have the smallest SSE.
+**ScatterLab** (beta 2k; 14 November: a page that tests the slope, two 95% bands, and Anscombe's quartet; 9 November: the help pages in plain words; 5 November: reasonable limits on what you type, and one header on every help page, "ScatterLab help n/N: Topic"): build a scatterplot with your finger. Add, drag or delete points, and the least-squares line, r, r², SSE and the residuals follow. Guess mode lets you fit a line by eye first, then shows that least squares really does have the smallest SSE. **New in beta 2k:** Menu > Inference for the slope shows s, SE(b₁), t on n − 2 df, the two-tailed p and the 95% interval for the slope, each with its arithmetic, and the decision at α = 0.05; Menu > Bands draws the 95% band for the mean of y (solid) and the wider one for one new case (dotted); Data offers Anscombe's four data sets, all in one window, so that four nearly equal r's and lines can be seen to hide four different pictures.
 
 **BiNorm3D** (beta 1f; 9 November: the help pages in plain words; 5 November: one header on every help page, "BiNorm3D help n/N: Topic"; 4 November, night: 1,000 runs of the monkey test, all OK): the bivariate normal as a wireframe you turn with a finger. It adds a contour view, and a slice that shows regression to the mean.
 
@@ -341,7 +341,7 @@ Short programs for finding out what your own calculator does.
 
 ## The notes
 
-[**docs/lessons-learned_v7zs.md**](docs/lessons-learned_v7zs.md) is the substantial document here: everything learned the expensive way across dozens and dozens of build iterations on G1 and G2 hardware. It covers:
+[**docs/lessons-learned_v7zt.md**](docs/lessons-learned_v7zt.md) is the substantial document here: everything learned the expensive way across dozens and dozens of build iterations on G1 and G2 hardware. It covers:
 - hard limits;
 - command behaviour that contradicts the manual;
 - graphics and input idioms;
