@@ -1,0 +1,27 @@
+T1   PASS  AgreeLab: the build makes programs/AgreeLab_beta1h.txt byte for byte
+T1   PASS  RiskLab: the build makes programs/RiskLab_beta1h.txt byte for byte
+T1   PASS  BurrLab: the build makes programs/BurrLab_beta1r.txt byte for byte
+T1   PASS  StatDist: the build makes programs/StatDist_v2.7n.txt byte for byte
+T2   PASS  AgreeLab: 2515 lines that are not comments, the same in both versions but for 1 with the version string: ag_Band("AgreeLab - beta 1h");
+T2   PASS  RiskLab: 2644 lines that are not comments, the same in both versions but for 1 with the version string: TEXTOUT_P("beta 1h, 15 Nov 2026.  Help is in the menu.", G1,
+T2   PASS  BurrLab: 3781 lines that are not comments, the same in both versions but for 1 with the version string: bu_Frame("BurrLab beta 1r: the long right tail");
+T2   PASS  StatDist: 3636 lines that are not comments, the same in both versions but for 0 with the version string
+T3   PASS  AgreeLab: 9 help screens, the same as the old version's
+T3   PASS  RiskLab: 8 help screens, the same as the old version's
+T3   PASS  BurrLab: 6 help screens, the same as the old version's
+T3   PASS  StatDist: 5 help screens, the same as the old version's
+T5   PASS  AgreeLab: the gate
+T5   PASS  RiskLab: the gate
+T5   PASS  BurrLab: the gate
+T5   PASS  StatDist: the gate
+T6   PASS  no line of the 31 programs begins "// Replaces / reworks" and no author line says "(framework after"
+T6   PASS  AgreeLab: its header says "Follows no TI-83/84 program: ..." and "... AgreeLab was written new in PPL from the papers listed"
+T6   PASS  RiskLab: its header says "No Triola program does this.  The nearest TI-83/84 program, LOGIT ..." and "... RiskLab was written new in PPL, and none of LOGIT's code"
+T6   PASS  BurrLab: its header says "Takes the place of Burr3 v2.4c, the fleet's own earlier program, and ..." and "... It follows no TI program."
+T6   PASS  StatDist: its header says "Does on the Prime, with menus and plots, what Salvo Micciche's ..." and "... None of his code is in StatDist"
+T7   PASS  AgreeLab: 30 seeds, 2187 screens the same text for text (OK 30)
+T7   PASS  RiskLab: 30 seeds, 1486 screens the same text for text (OK 30)
+T7   PASS  BurrLab: 30 seeds, 9889 screens the same text for text (OK 30)
+T7   PASS  StatDist: 30 seeds, 1719 screens the same text for text (OK 30)
+
+25 of 25 checks PASS

@@ -1,0 +1,44 @@
+=== T. the build
+PASS T1 the build makes programs/CICatcher_beta2l.txt byte for byte
+=== A. the arithmetic
+PASS A0 the reference itself: the 400-node integral equals SciPy's adaptive quadrature (with Brent's rho) to 1E-10 at four (n, p, k)
+PASS A1 cqTolRho: Phi(d + r) - Phi(d - r) = p, against Brent's method to 1E-10 at 9 values of d from 0 to 8 for p = 0.90, 0.95, 0.99
+PASS A2 cqTolK, the exact factor, against the reference at 198 cases (n = 2 to 100; p = 0.90, 0.95, 0.99; confidence 0.5 to 0.999): worst relative error 1.0e-06
+PASS A3 cqTolG, the confidence of a factor, at the reference factor of each case: worst error 4.4e-07
+PASS A4 a second reference, the definition simulated: of 400,000 samples, the share whose interval xbar +/- k s holds at least p of the population is the confidence (4 cases, within 4 standard errors)
+PASS A5 at n = 10, 90 % of the population, 95 % confidence: the exact k is 2.8563 (the help page prints 2.856) and Howe's approximation, which the header quotes as 2.838, is 2.8382
+PASS A6 the catch level of 600 samples (5 runs): each is the reference integral at the sample's own k*, rounded up to thousandths, and at 6 levels a sample is counted caught exactly when the interval drawn at that level holds at least p of the population (0 ties within 1E-6 of a level set aside)
+PASS A7 cqTolHold: the share of N(100, 15) between two values, in percent
+PASS A8 the window of a tolerance run is the mean +/- 1.625 k sigma with k the factor at 95 % (100 +/- 69.62); the panel keeps the t run's decimals (1); the band is 100 +/- 1.645 x 15
+PASS A9 the critical value kept for a tolerance run is k root n, so the t interval's half-width cqCV s / root n is k s
+PASS A10 s = 0 (an interval of no width) is never counted caught: catch level 1000
+=== S. a tolerance run through the program's own sampler
+PASS S1 1,000 samples of 10 at 95 %: 962 intervals held at least 90 % of the population (96.2 %: within 4 standard errors of 95 %)
+PASS S2 moving the level moves the tally exactly (the count of samples whose catch level is at or below it), and the rate follows the level: 80 %: 815, 90 %: 915, 99 %: 996, 99.9 %: 1000, 50 %: 508, 95 %: 962
+=== V. the setup, the keys and every way out
+PASS V1 Esc at "Which interval?" at the start: the run ends with "CICatcher: no interval chosen"
+PASS V2 item 6 is "Tolerance:  ± k s" (6 items, none over 30 characters); Esc at "Tolerance: hold how much?" ends the setup with nothing chosen
+PASS V3 Cancel on the form after choosing 95 %: nothing chosen
+PASS V4 the form refuses sigma = 0, n = 1, a level of 0.3 and a mean of 20,000, each with its sentence, and comes back; then takes good values
+PASS V5 a whole tolerance session (+1, +10, +50, Conf and its Esc, Up and Down, the slider, a picked line and its neighbours, n cancelled, refused and changed, Menu and its Esc, Reset, seven help pages) runs to its end; n = 1 is refused with its sentence; after n = 20 the factor is the reference's for n = 20
+PASS V6 a picked line's panel reads " = ..., s = ...: lo to hi, holds nn.n %" (10 screens; e.g. '\ue000 = 101.3, s = 19.0: 47.0 to 155.5, holds 100.0 %')
+PASS V7 the closing line of a tolerance run says what was counted: 'CICatcher: 10 of 10 tolerance intervals held at least 90 % of the population (100.0 %) at 98.3 %, tol. 90 %, μ = 100, σ = 15, n = 20; see CQ_COVER'
+PASS V8 a red line that holds 89.996 % of the population says so with enough decimals to read below 90 ('\ue000 = 100.0, s = 8.6: 75.3 to 124.7, holds 89.996 %'), never "holds 90.0 %"
+PASS V9 from a tolerance run, Menu > New > t gives a t run again (its green truth line, "t, ..." in the header, "caught" or "missed by" in the panel); Esc at the tolerance menu and Cancel on its form keep that t run
+=== R. regression against beta 2k
+PASS R1 a session of each of the five old intervals (setup, +1, +10, +50, Conf, the arrows, the slider, picked lines, a new n, Reset, Quit) shows the same 290 screens, texts and shapes, and returns the same line, in beta 2k and beta 2l
+=== H. the help
+PASS H1 seven help pages, titled "CICatcher help n/7: ..."
+PASS H2 beta 2k's six pages are pages 1 to 4, 6 and 7 word for word (the count in the header aside)
+PASS H3 page 5, Tolerance intervals, reads as written
+PASS H4 every help line fits its 296 px at the measured glyph widths (widest 295 px); no page has more than 14 lines of text
+=== G. static
+PASS G1 no "!=" in the code, and the code outside strings and comments is ASCII
+PASS G2 every LOCAL line names at most 6 variables (87 lines)
+PASS G3 the header names beta 2l and its date
+PASS G4 the six nodes and weights written in cqTolSet are NumPy's 12-point Gauss-Legendre rule to 12 digits
+=== D. layout over every beta 2l screen above
+PASS D1 no firm overlap and no text off the screen (text_overlap_v1)
+PASS D2 no number cut short by its width argument (label_fit_v1 reports 6 texts at its estimate; none is wider than its width argument at the measured glyph widths)
+
+34 checks, 0 failed
