@@ -14,7 +14,7 @@
 // hardware testing are Roger D. Metcalf's; the code, drafting and
 // source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
 
-// EXHIBITLAB - beta 1g  (9 Nov 2026)
+// EXHIBITLAB - beta 1h  (15 Nov 2026)
 // Representative sampling of a drug seizure, for a forensic-science or
 //   criminal-justice class.  A laboratory receives N similar units
 //   (packets, tablets) and cannot test them all.  How many must it test
@@ -47,6 +47,12 @@
 // Written for the 2026-09-09 firmware (HP Prime G2 and G1).  beta 1b (and
 //   beta 1, 1a) have NOT been run on hardware or the emulator, only in the
 //   PC harness.
+// beta 1h (15 Nov 2026): Round 15: the credits say exactly what was done with the TI-83/84 programs this one follows (Roger,
+//   14-15 Nov 2026).  They were read to see what each one computes, and this program was then written
+//   new in PPL: none of their code is in it.  The header's note on the Triola TI-83/84 programs OCBIN,
+//   OCHYPER and OCPOISSN begins "Does on the Prime what ... do" and says that ExhibitLab was written
+//   new, with none of their code.  Nothing on screen changes.  Only words changed: no line of code but
+//   the help text.
 // beta 1g (9 Nov 2026): Round 11: the help pages in plain words (Roger, 8-9 Nov 2026: "write more straightforward and don't
 //   try to be too clever--a student being able to understand is the priority"; "adding pages is fine,
 //   the explanation is what matters").  Help pages 1, 2, 3 and 7 reworded: what the claim means, the two
@@ -140,8 +146,10 @@
 // Data: no data set from data/DATASETS.md fits (none is a drug seizure).
 //   The weight page's example is labelled on screen "illustrative
 //   numbers"; the student's own weights come from list D1 or a form.
-// Replaces / reworks: the Triola TI-83/84 programs OCBIN, OCHYPER and
-//   OCPOISSN (operating-characteristic curves; credited).  Their bugs are
+// Does on the Prime what the Triola TI-83/84 programs OCBIN, OCHYPER and
+//   OCPOISSN do (operating-characteristic curves; credited).  They were read
+//   to see what each one computes; ExhibitLab was then written new in PPL,
+//   and none of their code is in it.  Their bugs are
 //   not repeated: OCBIN, OCHYPER and OCPOISSN draw the PMF (binompdf,
 //   one hypergeometric term, poissonpdf) where an OC curve needs the CDF
 //   (here the probability of acceptance sums every outcome with at most

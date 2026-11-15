@@ -1,0 +1,41 @@
+=== T. the build
+PASS T1 the build makes programs/FitCheck_beta1h.txt byte for byte
+=== A. the arithmetic
+PASS A1 fc_ShapeSE at n = 3 to 5,000: root(6(n-2)/((n+1)(n+3))) and root(24n(n-2)(n-3)/((n+1)^2(n+3)(n+5))) to 10 digits
+PASS A2 a second reference: the SDs of g1 and g2 over 200,000 simulated normal samples at n = 4, 10, 30, 100 (worst gap 0.31%)
+PASS A3 at n = 3 the kurtosis has no spread at all: SE(g2) is exactly 0 and SE(g1) is 0.5
+PASS A4 60 random samples of 3 to 300 values: g1 and g2 equal SciPy's, and the two SEs are taken at the sample's own n
+PASS A5 the Rossi ages preset: n = 432, g1 = 1.388 and g2 = 1.344 as SciPy has them, SE(g1) = 0.117, SE(g2) = 0.232
+PASS A6 the binned crimtab preset (n = 3,000): the SEs are taken at n too (0.0447 and 0.0892)
+=== P. the Tests page, line for line
+PASS P1 a random sample of 40 and 3 values: every other line of the page is beta 1g's, and the shape lines are the three expected
+PASS P2 on screen, the Rossi ages: "Skewness g₁ = +1.388  (SE 0.117)", "Excess kurtosis g₂ = +1.344  (SE 0.232)" and the line that says what SE is
+PASS P3 on screen, the binned crimtab heights: "Skewness g₁ = +0.050  (SE 0.045)" and "Excess kurtosis g₂ = +0.170  (SE 0.089)"
+PASS P4 no line of the Tests page is longer than 46 characters (longest 46)
+=== E. the edges
+PASS E1 three values: loaded, g2 = -1.5 with "(SE 0.000)" beside it, g1 with "(SE 0.500)"
+PASS E2 two values, every value the same, and 5,001 values: each refused with its sentence, and the SEs are not touched
+=== M. the menus and their ways out
+PASS M1 Normality > Rossi ages > Tests, a key and a tap turn the page, Esc, Quit: no error, and the Quit summary has W
+PASS M2 the Tests page showed its pages in turn (page 1 of 3, page 2 of 3, page 3 of 3)
+PASS M3 Esc at the main menu: "FitCheck: nothing computed", no error
+PASS M4 Esc at the Normality menu: back to the main menu with no sample loaded
+PASS M5 the soft keys ECDF, Tests, Q-Q and Menu each do their job (10 screens)
+PASS M6 My values in D1 with two values: refused with "need at least 3 values", nothing loaded
+PASS M7 Help paged to its end and left with Esc: 8 pages seen, no error
+PASS M8 crimtab, Tests, Esc, Quit: the summary names the sample's skewness and kurtosis ('FitCheck: binned sample, skewness +0.050, excess kurtosis +0.170;'); beta 1g said 'FitCheck: nothing computed'
+PASS M9 crimtab, the Bins key, Esc, Quit: beta 1g's summary ('FitCheck: χ²(13) = 9.769, p = 0.7127;') with the binned sample's two numbers after it
+PASS M10 crimtab and then the Rossi ages: the summary is the raw sample's W alone, as in beta 1g ('FitCheck: W = 0.8499, p < 0.0001;')
+=== R. regression against beta 1g: the monkey, 30 seeds on both versions
+PASS R1 30 seeds: the same verdict, boxes and Quit summary (but for the binned sample's two numbers, in 7 runs), and all 988 screens the same text for text but the 48 Tests and help-5/8 pages ({'OK': 30})
+=== H. the help
+PASS H1 eight help pages, titled n/8
+PASS H2 pages 1 to 4, 6 and 7 are beta 1g's word for word; page 5 is beta 1g's with two lines more: ['Tests page: skewness g₁ and excess kurtosis', 'g₂, each with its SE if the data are normal.']
+PASS H3 page 8: "FitCheck does on the Prime what Triola's TI-83/84 ... programs do ... written new for the Prime, with none of their code"; the disclaimer as before
+PASS H4 the word "rework" is nowhere in the program (beta 1g had it 2 times)
+PASS H5 no help line is longer than its 46 characters (longest 46), and every page has at most 14 lines of text
+=== D. layout over every beta 1h screen above
+PASS D1 no firm overlap and no text off the screen (text_overlap_v1)
+PASS D2 no number cut short by its width argument (label_fit_v1)
+
+31 checks, 0 failed

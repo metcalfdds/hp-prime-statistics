@@ -1,0 +1,7 @@
+NEW
+PROGRAM        screens   12/36    collisions   1 (firm   0) straddles   0 overruns   0 ghosts   0
+walk: {'runs': 2, 'stalls': 0, 'errors': {}, 'budget_s': 60, 'entry': 'ScatterLab()'}
+
+OLD
+PROGRAM        screens   12/36    collisions   1 (firm   0) straddles   0 overruns   0 ghosts   0
+walk: {'runs': 2, 'stalls': 0, 'errors': {}, 'budget_s': 60, 'entry': 'ScatterLab()'}

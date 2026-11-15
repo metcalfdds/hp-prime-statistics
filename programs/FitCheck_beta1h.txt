@@ -14,7 +14,18 @@
 // hardware testing are Roger D. Metcalf's; the code, drafting and
 // source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
 
-// FITCHECK - beta 1g  (13 Nov 2026)
+// FITCHECK - beta 1h  (15 Nov 2026)
+// beta 1h (15 Nov 2026): Round 15 (Roger, 15 Nov 2026: "1 and 2 would be great").  The Tests page gives a standard error
+//   beside the skewness g1 and beside the excess kurtosis g2: their exact standard errors in samples of
+//   n from a normal population, root(6(n - 2)/((n + 1)(n + 3))) and root(24 n (n - 2)(n - 3)/((n + 1)^2
+//   (n + 3)(n + 5))), the ones SciPy's skewtest and kurtosistest use (D'Agostino, Belanger & D'Agostino
+//   1990; Anscombe & Glynn 1983, Eq. 1), checked against 400,000 simulated normal samples at each of
+//   seven sizes (fc_ShapeSE; fcSeS, fcSeK).  The shape line is two lines now and a third says what SE
+//   is; help page 5 ends with a sentence on them.  The credits (help page 8 and the header) say what was
+//   done with the TI programs: they were read to see what each one computes, and FitCheck was written
+//   new, with none of their code (Roger, 14-15 Nov 2026).  The closing summary after a sample in bins
+//   (crimtab) names its skewness and excess kurtosis: a binned sample has no W, and the summary said
+//   "nothing computed" after the Tests page had shown both (seen on the Virtual Calculator).
 // beta 1g (13 Nov 2026): Round 12: help-page fixes from the book's pre-submission read (Roger, 13 Nov 2026: "Go ahead and fix
 //   the help files").  Help page 4/8: a comma after "In the two-digit test".  No other line changed.
 // beta 1f (9 Nov 2026): Round 11: the help pages in plain words (Roger, 8-9 Nov 2026: "write more straightforward and don't
@@ -146,8 +157,10 @@
 //     2 x 2 table (Jan-Jun / Jul-Dec x numbers 1-183 / 184-366): Pearson
 //     chi-square and Fisher's exact test (hypergeometric, without replacement).
 //   Binomial fit example: illustrative numbers (made up), labelled so.
-// Replaces / reworks (decoded in ref/triola_ti_programs/; credit to their
-//   authors -- Triola's TI-83/84 CD and the TI program libraries):
+// Does on the Prime what these TI-83/84 programs do.  They were decoded and
+//   read (ref/triola_ti_programs/) to see what each one computes; FitCheck was
+//   then written new in PPL, and none of their code is in it.  Credit to their
+//   authors -- Triola's TI-83/84 CD and the TI program libraries:
 //   X2GOF, ZSTCHISQ, GOFARB, GOFBIN, GOFPOISS, GOFUNIFM, GOFNORML,
 //   X2NORM2, ZSTCHINO, CHITESTS, KOLSMIR, CVMTEST1, NMLPROB, NRMLPRPL,
 //   ZSTNORMP, BENFORD, and Erdeky's CHISQ.  Bugs NOT repeated here:
@@ -232,8 +245,10 @@ LOCAL fcX, fcNX, fcXb, fcSd, fcZq, fcHasN;
 //  normal scores; fcHasN 1 once a sample is loaded.
 LOCAL fcW, fcPW, fcA2, fcA2s, fcPA, fcLD;
 LOCAL fcPD, fcLDi, fcSkw, fcKur, fcBin, fcBM;
+LOCAL fcSeS, fcSeK;
 //  W and p; A^2, A*^2, p; Lilliefors D, p (-1 = above 0.10), and the
 //  sorted index where D occurs; skewness g1 and excess kurtosis g2;
+//  (beta 1h) fcSeS and fcSeK their standard errors in normal samples;
 //  fcBin 1 = binned data (crimtab): fcBM midpoints, fcBF counts, fcBW
 //  bin width.
 LOCAL fcBF, fcBW, fcNTtl, fcNSrc, fcNSel, fcNPre;
@@ -1329,6 +1344,22 @@ BEGIN
   END;
 END;
 
+// beta 1h: the standard errors of the skewness g1 = m3/m2^1.5 and the excess
+// kurtosis g2 = m4/m2^2 - 3 in samples of seN values from a NORMAL population.
+// Both are exact (not large-sample approximations):
+//   SE(g1) = root( 6 (n - 2) / ((n + 1)(n + 3)) )
+//   SE(g2) = root( 24 n (n - 2)(n - 3) / ((n + 1)^2 (n + 3)(n + 5)) )
+// (D'Agostino, Belanger & D'Agostino 1990; Anscombe & Glynn 1983, Eq. 1: the
+// ones SciPy's skewtest and kurtosistest use).  For n = 3, g2 is -1.5 whatever
+// the data, and its SE is 0.  In a normal sample g1 averages 0 and g2 averages
+// -6/(n + 1), a little below 0.  n is at least 3 here (fc_NormSet refuses
+// fewer), so nothing is divided by 0 and nothing under a root is negative.
+fc_ShapeSE(seN)
+BEGIN
+  fcSeS := (6 * (seN - 2) / ((seN + 1) * (seN + 3)))^0.5;
+  fcSeK := (24 * seN * (seN - 2) * (seN - 3) / ((seN + 1)^2 * (seN + 3) * (seN + 5)))^0.5;
+END;
+
 // Load a sample for the normality tests: sorts it, mean, SD (n - 1,
 // two passes), skewness g1 and excess kurtosis g2 (moment forms), the
 // Blom scores (half computed, half mirrored: z(n+1-i) = -z(i), and the
@@ -1360,6 +1391,7 @@ BEGIN
   fcSd := fcSc * (nsM2 / (nsN - 1))^0.5;
   fcSkw := (nsM3 / nsN) / (nsM2 / nsN)^1.5;
   fcKur := (nsM4 / nsN) / (nsM2 / nsN)^2 - 3;
+  fc_ShapeSE(nsN);
   fcAbort := 0;
   IF nsN > 200 THEN fc_Busy("W, A" + fcSq + " and D for n = " + fc_Cm(fc_I(nsN))); END;
   fcZq := MAKELIST(0, nsI, 1, nsN, 1);
@@ -1410,6 +1442,7 @@ BEGIN
   fcSd := fcSc * (sbM2 / (sbN - 1))^0.5;
   fcSkw := (sbM3 / sbN) / (sbM2 / sbN)^1.5;
   fcKur := (sbM4 / sbN) / (sbM2 / sbN)^2 - 3;
+  fc_ShapeSE(sbN);
   fcBin := 1; fcBM := sbM; fcBF := sbF; fcBW := sbW; fcNX := sbN;
   fcX := {}; fcZq := {};
   fcW := -1; fcPW := -1; fcA2 := -1; fcA2s := -1; fcPA := -1; fcLD := -1; fcPD := -1;
@@ -2339,7 +2372,9 @@ BEGIN
         "them.  Test with the " + fcX2S + " fit on the bins (Bins key) and look at the Q-Q plot.", fcRED);
   END;
   // the shape, from the moments
-  fc_TL("Skewness g" + CHAR(8321) + " = " + fc_Cm(fc_Sgn(fcSkw, 3)) + ",  excess kurtosis g" + CHAR(8322) + " = " + fc_Cm(fc_Sgn(fcKur, 3)), #000000h);
+  fc_TL("Skewness g" + CHAR(8321) + " = " + fc_Cm(fc_Sgn(fcSkw, 3)) + "  (SE " + fc_Cm(fc_F(fcSeS, 3)) + ")", #000000h);
+  fc_TL("Excess kurtosis g" + CHAR(8322) + " = " + fc_Cm(fc_Sgn(fcKur, 3)) + "  (SE " + fc_Cm(fc_F(fcSeK, 3)) + ")", #000000h);
+  fc_TL("SE: the standard error in normal samples.", fcGRAY);
   ntS := "No strong skew or tail weight: the Q-Q points should hug the line.";
   IF fcKur > 1 THEN ntS := "Heavy tails: on the Q-Q plot the points fall below the line at the left end and rise above it at the right."; END;
   IF fcKur < -1 THEN ntS := "Light tails: on the Q-Q plot the points sit above the line at the left end and below it at the right."; END;
@@ -3135,7 +3170,7 @@ BEGIN
   fc_TLsec("Normality");
   fc_TL("NORMALITY.  Q-Q plot: each value against its normal score z (Blom: the N(0,1) quantile at (i - 3/8)/(n + 1/4)); a normal sample lies close to the line " + fcXbar + " + s z.  Shapiro-Wilk W (Royston " +
       "1995): close to 1 for normal data.  Anderson-Darling A" + fcSq + " with the correction for estimated " + fcMu + " and " + fcSg + " (D'Agostino & Stephens 1986): gives extra weight to the tails.  Lilliefors " +
-          "D: the largest gap between the ECDF and the fitted normal CDF (ECDF page), p by Dallal & Wilkinson (1986), given for n " + fcGe + " 5 and only below 0.10.  " + fcX2S + " on bins: df = k - 3.", fcBLUE);
+          "D: the largest gap between the ECDF and the fitted normal CDF (ECDF page), p by Dallal & Wilkinson (1986), given for n " + fcGe + " 5 and only below 0.10.  " + fcX2S + " on bins: df = k - 3.  Tests page: skewness g" + CHAR(8321) + " and excess kurtosis g" + CHAR(8322) + ", each with its SE if the data are normal.", fcBLUE);
   fc_TLsec("Reading p; the exact test");
   fc_TL("A small p is evidence against normality; a large p is NOT proof of it.  With a big n, tiny departures give tiny p: the Q-Q plot shows how big the departure is.", fcRED);
   fc_TLb();
@@ -3148,7 +3183,7 @@ BEGIN
   fc_TLb();
   fc_TL("HOME, after a run: FC_X2, FC_DF, FC_P, FC_O, FC_E (the last " + fcX2S + " fit, as shown), FC_W, FC_PW, FC_A2, FC_PA, FC_D, FC_PD (-1 = p > 0.10, -2 = n < 5), FC_BP (the exact test's two-sided p).", fcGRAY);
   fc_TLsec("Credits");
-  fc_TL("FitCheck reworks Triola's TI-83/84 goodness-of-fit and normality programs (X2GOF, GOFPOISS, GOFBIN, GOFNORML, X2NORM2, KOLSMIR, CVMTEST1, NMLPROB, BENFORD and others) without their bugs: the header lists them.", fcGRAY);
+  fc_TL("FitCheck does on the Prime what Triola's TI-83/84 goodness-of-fit and normality programs do (X2GOF, GOFPOISS, GOFBIN, GOFNORML, X2NORM2, KOLSMIR, CVMTEST1, NMLPROB, BENFORD and others).  It was written new for the Prime, with none of their code and without their bugs: the header lists them.", fcGRAY);
   fc_TLb();
   fc_TL("DISCLAIMER: a teaching and demonstration aid. Not validated for forensic, clinical or legal use; do not rely on its results for legal purposes.", fcRED);
   fc_ShowPages("FitCheck help");
@@ -3158,7 +3193,7 @@ END;
 fc_Opening()
 BEGIN
   LOCAL opK;
-  fc_Frame("FitCheck - beta 1g");
+  fc_Frame("FitCheck - beta 1h");
   TEXTOUT_P("Goodness of fit and normality,", G1, 12, 28, 2, fcBLUE, 300);
   TEXTOUT_P("with courtroom and crime data", G1, 12, 46, 2, fcBLUE, 300);
   TEXTOUT_P(fcX2S + " goodness of fit, Benford's law, Poisson and", G1, 12, 72, 1, #000000h, 300);
@@ -3345,6 +3380,11 @@ BEGIN
   END;
   IF fcHasN == 1 AND fcBin == 0 THEN mnS := mnS + " W = " + fc_Cm(fc_F(fcW, 4)) + ", " + fc_PStr(fcPW) + ";"; END;
   IF fcHasT == 1 THEN mnS := mnS + " binomial " + fc_PStr(fcTp2) + ";"; END;
+  // beta 1h: a sample in bins (crimtab) has no W.  Its Tests page shows a skewness
+  // and an excess kurtosis, so the summary names them instead of ending as
+  // "nothing computed" (which is still what a session with no fit, no sample
+  // and no test returns).
+  IF fcHasN == 1 AND fcBin == 1 THEN mnS := mnS + " binned sample, skewness " + fc_Cm(fc_Sgn(fcSkw, 3)) + ", excess kurtosis " + fc_Cm(fc_Sgn(fcKur, 3)) + ";"; END;
   IF mnS == "FitCheck:" THEN mnS := "FitCheck: nothing computed"; END;
   RETURN mnS;
 END;

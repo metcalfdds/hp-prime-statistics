@@ -147,6 +147,8 @@ The rest of this guide describes beta 2a. Beta 2k adds three things, all from th
 
 Home also gets `SL_SEB`, `SL_T` and `SL_P`. Help page 7 of 7 covers all of this.
 
+**A 95% interval for ρ (new in beta 2l, 15 November 2026).** The Inference page now ends with a confidence interval for ρ, the correlation in the population the points were sampled from, and the line above it shows r. For the example: "r = 0.751.  The test of ρ = 0 gives the same t and p." and "95% interval for ρ: 0.407 to 0.909 (Fisher's z)". The interval comes from Fisher's z-transformation: z = ½ ln((1 + r)/(1 − r)) is close to normal with standard error 1/√(n − 3), so the ends z ∓ 1.96/√(n − 3) are carried back to the scale of r. It assumes a random sample of pairs from a bivariate normal population. It is not symmetric about r: it reaches farther toward 0 than toward ±1. It needs at least 4 points; with 3, or when r is 1 or −1, the page says why there is none. A point for class: this interval and the slope's interval answer the same question (is there a straight-line relation at all?), and one leaves out 0 exactly when the test rejects, the other very nearly so.
+
 ## Ideas for class
 
 - **Build r by hand.** Start empty; place points in a rising band and watch r climb towards 1; spread them out and watch it fall; arrange a U shape and see r near 0 with an obvious pattern — "r measures *straight-line* association".

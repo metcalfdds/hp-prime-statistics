@@ -14,7 +14,7 @@
 // hardware testing are Roger D. Metcalf's; the code, drafting and
 // source-checking were done with Claude Opus 5.5 (Anthropic), October 2026.
 
-// RESAMPLAB - beta 1h  (9 Nov 2026)
+// RESAMPLAB - beta 1i  (15 Nov 2026)
 // The permutation test and the bootstrap, shown working so a student can
 //   SEE them: "discover it yourself" simulation for an intro or criminal
 //   justice statistics class.  Launch ResampLab from the Program Catalog
@@ -44,6 +44,12 @@
 // Written for the 2026-09-09 firmware (HP Prime G2 and G1).  None of beta
 //   1, 1a, 1b, 1c has been run on hardware or the emulator, only in the PC
 //   harness.
+// beta 1i (15 Nov 2026): Round 15: the credits say exactly what was done with the TI-83/84 programs this one follows (Roger,
+//   14-15 Nov 2026).  They were read to see what each one computes, and this program was then written
+//   new in PPL: none of their code is in it.  Help page 5/5: "Does what Triola's TI bootstrap project
+//   and the TI BOOT program do; written new, with none of their code."  The header's note begins the
+//   same way, and says that ResampLab uses the same published method as BOOT's BCa arithmetic (Efron's),
+//   where it said the arithmetic "is kept".  Only words changed: no line of code but the help text.
 // beta 1h (9 Nov 2026): Round 11: the help pages in plain words (Roger, 8-9 Nov 2026: "write more straightforward and don't
 //   try to be too clever--a student being able to understand is the priority"; "adding pages is fine,
 //   the explanation is what matters").  Help pages 1 and 3 reworded: the shuffle, "exchangeable", the
@@ -152,12 +158,15 @@
 //     (1995), via R crimedatasets.  Months served by 41 prisoners
 //     convicted of a homicide offence.
 //   5 v 5: ILLUSTRATIVE NUMBERS made up for the exact demo, not data.
-// Replaces / reworks:
+// Does on the Prime what these do.  They were read to see what each one
+//   computes; ResampLab was then written new in PPL, and none of their code
+//   is in it:
 //   Triola, Elementary Statistics Using the TI-83/84 Plus, 2nd ed., the
 //     bootstrap confidence-interval project (about p. 393, unchecked).
 //   BOOT (TI-83 library, boot.zip): percentile and BCa bootstrap.  Its BCa
-//     arithmetic is sound and is kept (Efron's jackknife acceleration and
-//     the adjusted percentiles).  Not repeated here: (1) its z0 counts
+//     arithmetic is sound, and ResampLab uses the same published method
+//     (Efron's jackknife acceleration and the adjusted percentiles).  Not
+//     repeated here: (1) its z0 counts
 //     boot values <= the estimate, which biases z0 when values tie the
 //     estimate (a median); here ties count half, as SciPy does; (2) its
 //     While loop reads past the end of the list when every boot value is
@@ -2484,7 +2493,7 @@ BEGIN
 
   rs_PgTop("ResampLab help 5/5: Home, sources, disclaimer");
   hpY := rs_Para("Home: RS_P (plus-one p), RS_PX (exact p or -1), RS_NB (B), RS_OBS (observed), RS_PCT and RS_BCA (interval ends), RS_STAR (the bootstrap values).", 28, #000000h);
-  hpY := rs_Para("Fisher 1935; Pitman 1937; Ernst 2004; Phipson & Smyth 2010; Efron 1979, 1987; Efron & Tibshirani 1993; Davison & Hinkley 1997; Hesterberg 2015.  Reworks Triola's TI bootstrap project and the TI BOOT program.", hpY + 4, rsBLUE);
+  hpY := rs_Para("Fisher 1935; Pitman 1937; Ernst 2004; Phipson & Smyth 2010; Efron 1979, 1987; Efron & Tibshirani 1993; Davison & Hinkley 1997; Hesterberg 2015.  Does what Triola's TI bootstrap project and the TI BOOT program do; written new, with none of their code.", hpY + 4, rsBLUE);
   hpY := rs_Para("DISCLAIMER: a teaching and demonstration aid. Not validated for forensic, clinical or legal use; do not rely on its results for legal purposes.", hpY + 4, rsRED);
   rs_PgEnd("Any key = back");
 END;
@@ -2962,7 +2971,7 @@ BEGIN
   spY := rs_Para("See a permutation test and a bootstrap work: tap Once to deal the data again and watch where its statistic lands; x1000 builds the whole picture.  p and the intervals update as you go.", 28, #000000h);
   spY := rs_Para("Presets: mock jury sentences (Plaster 1989), Rossi's re-arrests, Darwin's maize (Fisher 1935), BJS months served, and a 5 v 5 exact demo.  Your own data: lists D1 and D2 (Statistics 1Var).", spY + 4, rsBLUE);
   spY := rs_Para("DISCLAIMER: a teaching and demonstration aid. Not validated for forensic, clinical or legal use; do not rely on its results for legal purposes.", spY + 4, rsRED);
-  rs_Ln("(C) 2026 Roger D. Metcalf; beta 1h 9 Nov 2026", 205, rsGRAY);
+  rs_Ln("(C) 2026 Roger D. Metcalf; beta 1i 15 Nov 2026", 205, rsGRAY);
   rs_PgEnd("Any key = menu");
 END;
 

@@ -1,4 +1,6 @@
-// test_loader_v1r.js (14 Nov 2026, night: v1q's checks on the page built from starter pack v20, round 14 part 2:
+// test_loader_v1s.js (15 Nov 2026: v1r's checks, unchanged, on the page built from starter pack v21, round 15:
+// seven programs with new versions)
+// was: test_loader_v1r.js (14 Nov 2026, night: v1q's checks on the page built from starter pack v20, round 14 part 2:
 // TTestLab beta 1k and TTestLabG beta 1h; Chapter 9 lists TTestLabG)
 // was: test_loader_v1q.js (14 Nov 2026: v1p's checks, unchanged, on the page built from starter pack v19, round 14;
 // before that, 13 Nov 2026: v1o's checks, unchanged, on the page built from starter pack v18, round 13:
@@ -18,7 +20,7 @@
 // Calculator: Calculators\Prime with HP's apps, settings, old programs and a matrix; Temp with the lock file.  Every file
 // the page writes is compared byte for byte with the starter pack it was built from.
 //
-//   node tests/test_loader_v1r.js PrimeLoader_v1r.html PACK.zip
+//   node tests/test_loader_v1s.js PrimeLoader_v1s.html PACK.zip
 // v1k (4 Nov 2026, night): v1j's checks, run on the page built from starter pack v13 (round 8); Chapter 11's card
 //   is found by its new title, "t-Tests: Two Samples".
 // v1j (4 Nov 2026): v1i's checks, unchanged, run on the page built from starter pack v12 (round 7).
