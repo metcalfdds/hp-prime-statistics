@@ -1,0 +1,26 @@
+Round 14 on the HP Prime Virtual Calculator 2.4.2 (build 2026-09-09), run under Wine in the cloud workspace, 14 Nov 2026.
+
+Check (Program Catalog > Edit > Check), each file built by the first pass of tools/make_starter_pack_v4.py v19 and copied
+into Documents > HP Prime > Calculators > Prime while the calculator was closed:
+  ScatterLab beta 2k | editor title "ScatterLab:Main(PPL)" | "No errors in the program"   (20:11)
+  CICatcher  beta 2k | editor title "CICatcher:Main(PPL)"  | "No errors in the program"   (20:12)
+The calculator was then left by Calculator > Exit and the two checked files collected, neither one run (starter pack v19).
+
+ScatterLab beta 2k was then run from the Program Catalog (20:25 to 20:33); screens/ holds what it showed, 320 x 240
+enlarged three times:
+  ScatterLab_example.png          Data > Poverty vs crime (SYNTHETIC)
+  ScatterLab_inference.png        Menu > Inference for the slope: t = 4.258, p < 0.001, 95% interval 0.5061 to 1.533
+  ScatterLab_bands.png            Menu > Bands: the inner solid blue band, the outer dotted orange one, the two notes
+  ScatterLab_bands_resid.png      the bands with the residuals switched on
+  ScatterLab_anscombe1.png ... 4  Data > Anscombe's quartet, sets 1 to 4, all in the window x 2 to 20, y 2 to 14
+  ScatterLab_inference_ans4.png   the slope's test for set 4: t = 4.243, p = 0.002, 95% interval 0.2334 to 0.7664
+  ScatterLab_anscombe4_bands.png  set 4 with the bands
+  ScatterLab_help7.png            help page 7/7, every line inside the page, every glyph drawn
+Every number on the two inference pages is the harness's and SciPy's (verify_ScatterLab_beta2k.py, A1 and A4).
+
+Seen while driving it (xdotool), not faults of beta 2k:
+  - a short click (0.12 s) on the Menu soft key was missed once by the GETKEY + MOUSE loop (Lessons Learned s16);
+  - with Enter pressed for 0.4 s on the plot, then seven Down keys 0.35 s apart and Enter, the menu's FIRST item ran (the
+    far-out point), not its eighth.  Two explanations fit and were not told apart: the Enter still held chose item 1 as
+    the menu opened, or the Down keys were lost.  With a 0.12-s Enter and the item's digit key, every pick was right.  The
+    menu code is beta 2j's; a held Enter is worth trying with a finger on a G1 and a G2.

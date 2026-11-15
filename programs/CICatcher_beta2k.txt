@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// CICATCHER - beta 2j
+// CICATCHER - beta 2k
 // Confidence intervals: "95 % of WHAT?"
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
@@ -43,6 +43,11 @@
 //   "New: interval, population, n"; nothing else a user sees
 //   changed, apart from help page 4's last line).
 //
+// beta 2k (14 Nov 2026): Round 14: one leftover of the book's read (Roger, 14 Nov 2026: "go ahead and do the program work").
+//   Help page 2/6 says "the share caught rises" where it said "the catch rate rises", and help page 6/6
+//   says "the 'all' rate" where it said "the 'all' catch rate": page 1 explains the share of intervals
+//   the method catches and "the 'all' rate at the top of the screen", and no page explained a "catch
+//   rate".  No other line changed.
 // beta 2j (13 Nov 2026): Round 12: help-page fixes from the book's pre-submission read (Roger, 13 Nov 2026: "Go ahead and fix
 //   the help files").  Help page 2/6: two sentences where one had "so ... so".  No other line changed.
 // beta 2i (9 Nov 2026): Round 11: the help pages in plain words (Roger, 8-9 Nov 2026: "write more straightforward and don't
@@ -1936,8 +1941,8 @@ BEGIN
   IF hpK == 4 THEN RETURN; END;
 
   hpK := cqPage("CICatcher help 2/6: Level and width; z and t", {"Drag the right edge (or " + cqUD + "): a higher level uses a bigger critical",
-    "value, so EVERY line grows, red lines turn blue and the catch rate",
-    "rises. 99 % catches more, but its longer lines give a less",
+    "value, so EVERY line grows, red lines turn blue and the share",
+    "caught rises. 99 % catches more, but its longer lines give a less",
     "precise answer.",
     "",
     "z: " + cqXb + " " + CHAR(177) + " z " + cqTms + " " + cqSgS + "/" + CHAR(8730) + "(n) uses the TRUE " + cqSgS + ", so every z line has the",
@@ -2018,7 +2023,7 @@ BEGIN
     "Menu = new setup, reset counts, help, quit",
     "Ent = menu, Esc = quit",
     "Home after quitting: CQ_TOTAL, CQ_HITS and",
-    "CQ_COVER (the 'all' catch rate)."},
+    "CQ_COVER (the 'all' rate)."},
     {hpN, hpN, hpN, hpN, hpM, hpM, hpB, hpB, hpB, hpN, hpN, hpN, hpG, hpG},
     "any key or tap = back");
 END;

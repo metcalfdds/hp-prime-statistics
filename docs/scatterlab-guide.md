@@ -135,6 +135,18 @@ Centring before squaring keeps every digit when the numbers are large (crime cou
 
 `SL_N` (points), `SL_B0` (intercept), `SL_B1` (slope), `SL_R` (r), `SL_R2` (r²), `SL_SSE` — kept up to date while you work, and left in Home after Quit. When there is no line, all but `SL_N` are 0; when r is undefined (every y equal), `SL_R` and `SL_R2` are 0. Quit also returns a summary line, e.g. "ScatterLab: n = 16, y-hat = 16.64 + 1.020 x, r = 0.7512, SSE = 422.7".
 
+## Testing the slope, the two bands, Anscombe's quartet (new in beta 2k, 14 November 2026)
+
+The rest of this guide describes beta 2a. Beta 2k adds three things, all from the menu (Enter, or the Menu soft key).
+
+**Inference for the slope.** The points are a sample; would another sample give a slope this far from 0? The page shows, with its arithmetic, s = √(SSE/(n − 2)) (the typical miss of a point from the line), SE(b₁) = s/√(Sxx), t = b₁/SE(b₁) on n − 2 degrees of freedom, the two-tailed p, the 95% interval b₁ ± t crit × SE(b₁), and the decision at α = 0.05. For the example: t = 4.258, p < 0.001, and the interval 0.5061 to 1.533. The test of ρ = 0 gives the same t and p. Any key or tap returns to the plot.
+
+**Bands: mean and new case.** Two 95% bands around the line. The inner, solid one is where the *mean* of y lies at each x; the outer, dotted one is where *one new case* would fall. Both are narrowest at x̄. Choose the item again to switch them off.
+
+**Data > Anscombe's quartet, sets 1 to 4.** Anscombe's (1973) four data sets, each of 11 points, with nearly the same r (0.82) and line (3.00 + 0.50 x), all drawn in one window. Set 1 is an ordinary scatter, set 2 a curve, set 3 a line with one point off it, and set 4 a column of points with one far to the right. Open Inference for the slope on each: the four tests agree, and only the plots tell the sets apart.
+
+Home also gets `SL_SEB`, `SL_T` and `SL_P`. Help page 7 of 7 covers all of this.
+
 ## Ideas for class
 
 - **Build r by hand.** Start empty; place points in a rising band and watch r climb towards 1; spread them out and watch it fall; arrange a U shape and see r near 0 with an obvious pattern — "r measures *straight-line* association".
