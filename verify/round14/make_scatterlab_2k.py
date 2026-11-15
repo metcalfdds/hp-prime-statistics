@@ -136,9 +136,9 @@ after('''  IF slOK == 1 AND (slMode <> 3 OR slShow == 1) THEN
 
 # ---- data: Anscombe's quartet ----
 before('// The Data chooser (soft key Data, or Enter > Data).\n', '''// beta 2k: Anscombe's quartet (Anscombe 1973, The American Statistician
-// 27, 17-21): four sets of 11 points with the same means, the same r
-// (0.816) and the same least-squares line (y-hat = 3.00 + 0.500 x), and
-// four different pictures.  All four are drawn in ONE window, x 2 to 20
+// 27, 17-21): four sets of 11 points with the same means, nearly the same
+// r (0.816, 0.816, 0.816 and 0.817) and nearly the same least-squares line
+// (y-hat = 3.00 + 0.500 x at those decimals), and four different pictures.  All four are drawn in ONE window, x 2 to 20
 // and y 2 to 14, so the plots can be compared.  The values are those of
 // R's data set anscombe.
 slAnsc(anK)
@@ -164,7 +164,7 @@ BEGIN
   slXs := 2; slYs := 2;
   slSetRes();
   slFit();
-  slMsg1 := "All four sets have the same r and the same line.";
+  slMsg1 := "All four sets: r = 0.82 and the line 3.00 + 0.50 x.";
   slMsg2 := "Look at the plot: what does this set show?";
   slMc1 := slORNG; slMc2 := slORNG;
 END;
@@ -312,7 +312,7 @@ rep('''    slHT("Home after Quit: SL_N, SL_B0, SL_B1,", 169, slGRAY);
     slHT("  inner, solid: where the MEAN of y lies at each x", 143, slORNG);
     slHT("  outer, dotted: where ONE new case would fall", 156, slORNG);
     slHT("Data > Anscombe's quartet: four sets of points", 172, slGRN);
-    slHT("with the same r and the same line, and four very", 185, slGRN);
+    slHT("with nearly the same r and line, and four very", 185, slGRN);
     slHT("different plots.  Always look at the plot.", 198, slGRN);
   END;
 ''')
