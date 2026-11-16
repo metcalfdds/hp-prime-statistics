@@ -16,6 +16,10 @@ New in beta 2l (Roger, 15 Nov 2026, of six additions proposed for the programs: 
   * Written from the formulas (Wald & Wolfowitz 1946; Howe 1969 for the start).  No other program was read for it: the
     library in D:\\HP-Prime holds no program that computes a tolerance factor (searched 15 Nov 2026).
   * Help: seven pages (page 5, Tolerance intervals, is new).  The closing line of a tolerance run says what was counted.
+    It is short enough for the five-line box in which the Program Catalog shows what a program returns ("CICatcher: 107 of
+    111 held at least 95 % of the population (96.4 %) at 95 %, n = 10"): the first wording, with "tolerance intervals",
+    "tol. 95 %,", the population's mu and sigma and "see CQ_COVER" in it, lost its end there (Virtual Calculator, 15 Nov
+    2026).
 Every screen of the other five intervals is beta 2k's; the help pages' count aside ("n/7" for "n/6").
 Run from the repository's root:   python3 verify/round16/make_cicatcher_2l.py OUTDIR
 """
@@ -428,9 +432,16 @@ rep('''  cqType := 1;
 
 # ---------------- the closing line ----------------
 rep('''  RETURN "CICatcher: " + cqCm(STRING(cqHit, 2, 0)) + " of " + cqCm(STRING(cqTot, 2, 0)) + " caught the truth (" + cqCm(cqPct(cqHit, cqTot)) + " %) at " + cqCm(cqLvS(cqL)) + " %, " + cqDesc() + "; see CQ_COVER";
-''', '''  // beta 2l: a tolerance run says what its intervals were counted for
+''', '''  // beta 2l: a tolerance run says what its intervals were counted for.
+  // The line is kept short: run from the Program Catalog, the calculator
+  // shows what a program returns in a box of five lines of about 26
+  // characters, and a longer sentence lost its end there (Virtual
+  // Calculator, 15 Nov 2026).  So it gives n and leaves out mu and sigma,
+  // which a tolerance interval's catch rate does not depend on, and the
+  // pointer to CQ_COVER (help page 7 names the Home variables): with them
+  // a run of 1,000 intervals or more still lost its last words.
   IF cqTol == 1 THEN
-    RETURN "CICatcher: " + cqCm(STRING(cqHit, 2, 0)) + " of " + cqCm(STRING(cqTot, 2, 0)) + " tolerance intervals held at least " + cqCm(STRING(100 * cqTP, 2, 0)) + " % of the population (" + cqCm(cqPct(cqHit, cqTot)) + " %) at " + cqCm(cqLvS(cqL)) + " %, " + cqDesc() + "; see CQ_COVER";
+    RETURN "CICatcher: " + cqCm(STRING(cqHit, 2, 0)) + " of " + cqCm(STRING(cqTot, 2, 0)) + " held at least " + cqCm(STRING(100 * cqTP, 2, 0)) + " % of the population (" + cqCm(cqPct(cqHit, cqTot)) + " %) at " + cqCm(cqLvS(cqL)) + " %, n = " + cqCm(STRING(cqN, 2, 0));
   END;
   RETURN "CICatcher: " + cqCm(STRING(cqHit, 2, 0)) + " of " + cqCm(STRING(cqTot, 2, 0)) + " caught the truth (" + cqCm(cqPct(cqHit, cqTot)) + " %) at " + cqCm(cqLvS(cqL)) + " %, " + cqDesc() + "; see CQ_COVER";
 ''')

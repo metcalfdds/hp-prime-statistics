@@ -82,7 +82,12 @@
 //   left edge right by what the widest y number needs (av_AxSet, av_AxLb); and av_Gn writes 5 digits
 //   from 1E12 up (it wrote one: 1.5E12 read "2E12").  A number that fitted is written as before, so with
 //   such numbers every other screen is beta 1h's (verify_AnovaLab_beta1i.py runs the two side by side).
-//   Harness only so far.
+//   THE ASK BOXES' TITLES (found on the Virtual Calculator, 15 Nov 2026): a CHOOSE title shows 31
+//   characters and no more, so "Dunnett d crit: about 14-41 s on a G1" stood as "Dunnett d crit: about
+//   14-41 s o", and beta 1h's "Tukey q crit: about 14-41 s on a G1" was cut the same way.  The four
+//   boxes that ask before a long computation now give the time without "about" ("Tukey q crit: 14-41 s
+//   on a G1", "Dunnett: 37-112 s on a G1"); the longest is 31 characters, and the Working page still
+//   says "Estimate: about ...".  Not yet on a G1 or a G2.
 // beta 1h (15 Nov 2026): Round 15: the credits say exactly what was done with the TI-83/84 programs this one follows (Roger,
 //   14-15 Nov 2026).  They were read to see what each one computes, and this program was then written
 //   new in PPL: none of their code is in it.  Help page 9/9 begins "Does what Triola's TI-83/84 programs
@@ -230,22 +235,22 @@
 //   table (no probability is computed there).  None of its code is in
 //   this program.
 // File map (line numbers of this file; counted by the build script):
-//    251-318   file-level state
-//    319-850   1. small helpers: palette, drains, waits, formats, fit, frame, busy
-//    851-1038  2. special functions: log-gamma, incomplete beta and gamma, tails, quantiles
-//   1039-1282  3. studentized range: StudRange PPL engine, P_k tabulated per k
-//   1283-1591  3b. Dunnett's test: the table of G, the tail, d crit, the run
-//   1592-1732  4. presets (mock jury, draft 1970, insect sprays, judges)
-//   1733-2421  5. arithmetic: one-way, post hoc, Tukey, inverse, two-way Type III, blocks, variances
-//   2422-2562  6. curve page: F / chi-square cache and drawing
-//   2563-3229  7. one-way pages: Table, Checks, Pairs, Dots, F; Dunnett's table and plot
-//   3230-3421  8. help (10 pages), set alpha
-//   3422-3644  9. one-way view loop
-//   3645-4035  10. two-way pages and view
-//   4036-4192  11. randomized block pages and view
-//   4193-4449  12. variances pages and view
-//   4450-4643  13. your own data (D1-D9)
-//   4644-end   14. presets menu, opening page, main menu (AnovaLab)
+//    256-323   file-level state
+//    324-855   1. small helpers: palette, drains, waits, formats, fit, frame, busy
+//    856-1043  2. special functions: log-gamma, incomplete beta and gamma, tails, quantiles
+//   1044-1287  3. studentized range: StudRange PPL engine, P_k tabulated per k
+//   1288-1600  3b. Dunnett's test: the table of G, the tail, d crit, the run
+//   1601-1741  4. presets (mock jury, draft 1970, insect sprays, judges)
+//   1742-2434  5. arithmetic: one-way, post hoc, Tukey, inverse, two-way Type III, blocks, variances
+//   2435-2575  6. curve page: F / chi-square cache and drawing
+//   2576-3242  7. one-way pages: Table, Checks, Pairs, Dots, F; Dunnett's table and plot
+//   3243-3434  8. help (10 pages), set alpha
+//   3435-3657  9. one-way view loop
+//   3658-4048  10. two-way pages and view
+//   4049-4205  11. randomized block pages and view
+//   4206-4462  12. variances pages and view
+//   4463-4656  13. your own data (D1-D9)
+//   4657-end   14. presets menu, opening page, main menu (AnovaLab)
 // ============================================================
 
 // ---- palette (set in av_Init) ----
@@ -1526,11 +1531,15 @@ END;
 
 // Before any Dunnett computation: a one-line warning with the estimate,
 // as a CHOOSE (av_TukeyAsk's way).  Returns 1 = go ahead, 0 = not now.
+// A CHOOSE title shows 31 characters and no more (Virtual Calculator,
+// 15 Nov 2026), so the estimate goes in without its "about ": MID(.., 7).
+// The longest title, "Dunnett d crit: 14-41 s on a G1", is 31; a full
+// run's is "Dunnett: " and at most 17 more ("13-40 min on a G1").
 av_DnAsk(uqT, uqC, uqEv)
 BEGIN
   LOCAL uqI;
   uqI := 0;
-  CHOOSE(uqI, uqT + ": " + av_DnEst(uqC, uqEv), {"Compute it now", "Not now"});
+  CHOOSE(uqI, uqT + ": " + MID(av_DnEst(uqC, uqEv), 7), {"Compute it now", "Not now"});
   IF uqI == 1 THEN RETURN 1; END;
   RETURN 0;
 END;
@@ -1993,11 +2002,15 @@ END;
 // Before any Tukey computation: a one-line warning with the estimate,
 // as a CHOOSE.  Returns 1 = go ahead, 0 = not now.  teEv: how many
 // outer evaluations the job needs (q crit about 14; one per pair).
+// beta 1i: the title carries the estimate without its "about " (a
+// CHOOSE title shows 31 characters and no more: "Tukey q crit: about
+// 14-41 s on a G1" was cut).  The longest now is "Tukey q crit: 43-129
+// s on a G1", 30 characters.
 av_TukeyAsk(taT, taEv)
 BEGIN
   LOCAL taI;
   taI := 0;
-  CHOOSE(taI, taT + ": " + av_TEst(taEv), {"Compute it now", "Not now"});
+  CHOOSE(taI, taT + ": " + MID(av_TEst(taEv), 7), {"Compute it now", "Not now"});
   IF taI == 1 THEN RETURN 1; END;
   RETURN 0;
 END;

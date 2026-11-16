@@ -1,0 +1,5 @@
+AnovaLab_beta1i.txt  runs 0..299  verdicts {'OK': 300}  reached: table in 3 runs (8 screens); plot in 0 runs (0 screens); working in 3 runs (3 screens)   (138 s)
+RankLab_beta1j.txt  runs 0..299  verdicts {'OK': 300}  reached: Page in 300 runs (3834 screens); Page picture in 61 runs (1018 screens); runs in 81 runs (2772 screens); runs picture in 56 runs (876 screens)   (314 s)
+FitCheck_beta1i.txt  runs 0..299  verdicts {'OK': 300}  reached: Outlier page in 0 runs (0 screens); Outlier verdict in 19 runs (212 screens)   (67 s)
+CICatcher_beta2l.txt  runs 0..299  verdicts {'OK': 300}  reached: tolerance in 0 runs (0 screens)   (56 s)
+BiNorm3D_beta1g.txt  runs 0..299  verdicts {'OK': 300}  reached: target in 69 runs (1426 screens)   (106 s)

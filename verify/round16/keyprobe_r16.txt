@@ -1,0 +1,58 @@
+KeyProbe beta 1 on the HP Prime Virtual Calculator 2.4.2 (build 2026-09-09), run under Wine 11.21 in the cloud
+workspace, 15 Nov 2026 (times are U.S. Central).  The program is diagnostics/KeyProbe_beta1.txt; it was Checked there
+at 22:26 ("No errors in the program").
+
+WHY.  While the round's programs were driven with xdotool, a key press now and then did nothing: Esc on a help page,
+Down on Dunnett's plot, Enter on a help page.  The presses were clicks on the skin's keys, held 0.35 s, sent seconds
+apart on pages that had long finished drawing.  On AnovaLab's Dunnett plot the Down key was pressed 30 times from a
+tapped first row, 5 times at each of six lengths from 0.05 s to 0.8 s: 26 presses moved the pick one row, 4 moved
+nothing (one each at 0.05, 0.1, 0.2 and 0.35 s), and none moved it two rows.
+
+AT HOME, nothing is lost: the 1 key pressed 30 times (held 0.25 s, 0.4 s apart) put 30 digits on the entry line (22:19).
+So the emulator and xdotool deliver every press, and the loss is inside a running program.
+
+THE PROBE.  One of six ways to wait, then the Down key pressed n times by a click on the skin, 0.45 s between presses,
+and the count the program shows ("keys seen") read from the screen.
+
+    way to wait                                     first pass     second pass    third pass
+                                                    40 presses     60 presses     60 presses
+                                                    held 0.2 s     held 0.1 s     held 0.2 s
+                                                    22:28-22:32    22:38-22:42    22:44-22:48
+                                                    (other jobs    (other jobs    (nothing else
+                                                    running)       running)       running)
+    1  GETKEY alone                                     24             38             41
+    2  GETKEY, then MOUSE  (the fleet's loop)           33             48             52
+    3  MOUSE, then GETKEY                               31              -              -
+    4  WAIT(-1)                                         40             60             60
+    5  drain, GETKEY and MOUSE, drain (the idiom)       37             52             50
+    6  GETKEY, MOUSE, GETKEY again                      34              -              -
+
+    Also in the second pass: GETKEY alone with the key held 0.35 s saw 34 of 60.  (That pass was stopped there.)
+
+    All passes together:  GETKEY alone 137 of 220 (62 %);  GETKEY then MOUSE 133 of 160 (83 %);  the fleet's idiom 139
+    of 160 (87 %);  WAIT(-1) 160 of 160.
+
+WHAT IT SHOWS
+  - A loop that polls GETKEY loses key presses on this calculator: about four in ten when it does nothing else, about
+    one in seven when each pass also reads MOUSE.  The order of the two calls makes no difference that 40 presses can
+    show, and a second GETKEY after MOUSE does not help.
+  - WAIT(-1) lost none of 160.
+  - The length of the press does not matter between 0.05 s and 0.35 s.  What the machine is doing besides does not
+    matter either (the third pass ran alone).
+  - The drains are not the cause: the bare loop loses more than the idiom with its drains.
+
+WHAT IT DOES NOT SHOW
+  - Whether a G1 or a G2 loses presses.  The Virtual Calculator runs the calculators' firmware built for a PC, and the
+    loss may belong to that build's keyboard.  Roger's G1 notes of 20 Oct 2026 say a light tap on a soft key registers
+    and a tap followed by a key works; nobody has counted presses there.  The count takes two minutes: run KeyProbe,
+    choose 2, press Down 40 times at an even pace, read "keys seen", press Esc; then the same with 1 and with 4.
+  - Why.  One reading that fits: GETKEY looks at a one-key slot that the system's own event handling empties too, so a
+    tight loop sometimes loses the race, and a loop that spends time in MOUSE loses it less often; WAIT(-1) takes the
+    event from the queue itself.  That is a guess from the counts, not something read in HP's documents.
+
+WHAT FOLLOWS FOR THE FLEET
+  Nothing was changed in this round.  If the calculators lose presses too, the cure is a wait built on WAIT(-1) in
+  place of the GETKEY + MOUSE loop, with the three things already known about it (Lessons Learned s7): a touch
+  arrives as a list whose size must be tested, a tap on the soft keys arrives only as type 3, and WAIT(-1) gives up
+  after about a minute and must be called again.  All 31 programs wait in the same loop, so it would be a round of
+  its own, tried first on one program on a G1.

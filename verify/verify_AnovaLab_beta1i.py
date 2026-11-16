@@ -613,7 +613,7 @@ dn = dpages(hn); Dj = EXP['jury']; nmj, shj = DAT['jury'][3], DAT['jury'][4]
 T5, S5, i5 = page7(Dj, nmj, shj, sel=Dj['rows'][0]['j'], d_ok=False, alpha=0.01)
 check('P5 Set %s = 0.01 on page 6 and "Not now" at the question ("%s"): the table keeps its p-values, says "%s" in red and "--" for each CI under "99%% CI (family)", and stars by p < 0.01; the plot has the marks and no bars, "%s", and "%s" for the picked row'
       % (AL, titles(hn)[-2] if len(titles(hn)) > 1 else '', dn[2][0][2] if len(dn) > 2 else '', T5[1][0], T5[-2][0]),
-      en is None and len(dn) == 4 and dn[2][0] == page6(Dj, nmj, shj, d_ok=False, alpha=0.01) and got7(dn[3][2]) == (T5, norm7(S5)) and titles(hn)[-2].startswith('Dunnett d crit: about ') and hn.chooses[-2].items == ['Compute it now', 'Not now']
+      en is None and len(dn) == 4 and dn[2][0] == page6(Dj, nmj, shj, d_ok=False, alpha=0.01) and got7(dn[3][2]) == (T5, norm7(S5)) and titles(hn)[-2] == 'Dunnett d crit: 14-41 s on a G1' and hn.chooses[-2].items == ['Compute it now', 'Not now']
       and int(dn[2][2].texts[2].color) == RED and G(hn, 'avDnD') == -2 and G(hn, 'avAlpha') == 0.01, (len(dn), dn[2][0][:4] if len(dn) > 2 else None))
 
 print('=== V. every way in and out')
@@ -622,6 +622,7 @@ MENU = ['Table: F, p, effect sizes', 'Checks: equal spreads?', 'Pairs: post hoc 
         'Tukey p for every pair', 'Tukey p for this pair', 'Set %s (now 0.05)' % AL, 'Help', 'Back to the main menu']
 def firsts(h): return [v[0][0] for v in views(h)]
 def dts(h): return [t for t in titles(h) if t not in ('AnovaLab: analysis of variance', 'Load a preset', 'Use my data (Statistics 1Var)')]
+def noab(ts): return [t.replace(': about ', ': ') for t in ts]      # beta 1h's ask titles as beta 1i writes them (a CHOOSE title shows 31 characters)
 def state(h): return (G(h, 'avDnC'), G(h, 'avDnD'), G(h, 'avDnKey'), list(G(h, 'avDnP')), G(h, 'avDnSel'))
 INS = lambda h: (h.choose(5), h.choose(4))
 
@@ -635,12 +636,12 @@ for old in range(0, 12):
         if old == 9: h.answer({'saV': 0.1})
         h.press('Right')
     ho, ro, eo = run(lambda h: sc(h, old), path=OLD); hn_, rn_, en_ = run(lambda h: sc(h, new))
-    same = (eo is None and en_ is None and ro == rn_ and boxes(ho) == boxes(hn_) and [t for t in titles(ho)] == [t for t in titles(hn_)]
+    same = (eo is None and en_ is None and ro == rn_ and boxes(ho) == boxes(hn_) and noab(titles(ho)) == titles(hn_)
             and [(v[0], v[1]) for v in views(ho)] == [(v[0], v[1]) for v in views(hn_)] and len(ho.inputs) == len(hn_.inputs))
     pairs.append((old, new, same, len(views(hn_))))
 hm, rm, em = run(lambda h: (INS(h), h.press('Enter'), h.choose(0), h.tap(*K6), h.tap(*K4), h.choose(12)))
 mi = [c.items for c in hm.chooses if c.title == 'One-way ANOVA']
-check('V1 the one-way menu (Enter, or More then Menu) has 12 items, "Dunnett: all vs a control" the sixth, so that items 1 to 6 are the six kinds of page; none is over 30 characters; every item of beta 1h does in beta 1i what it did, at its new number (Esc and the 11 old items, each on the Pairs page of the insect sprays: the same pages, boxes, forms and closing line); item 12 leaves for the main menu',
+check('V1 the one-way menu (Enter, or More then Menu) has 12 items, "Dunnett: all vs a control" the sixth, so that items 1 to 6 are the six kinds of page; none is over 30 characters; every item of beta 1h does in beta 1i what it did, at its new number (Esc and the 11 old items, each on the Pairs page of the insect sprays; the Tukey asks\' titles as beta 1i writes them, without "about": the same pages, boxes, forms and closing line); item 12 leaves for the main menu',
       all(p_[2] for p_ in pairs) and len(pairs) == 12 and em is None and len(mi) == 2 and mi[0] == MENU == mi[1] and max(len(x) for x in MENU) <= 30 and firsts(hm)[-1].startswith('One-way ANOVA'), ([p_ for p_ in pairs if not p_[2]], mi[:1]))
 
 # V2: Esc at the group menu; "Not now" and Esc at the estimate: nothing is computed and the page stays
@@ -651,7 +652,7 @@ for nm, picks in (('Esc at the group menu', [6, 0]), ('"Not now"', [6, 1, 2]), (
     out.append((nm, e_ is None and state(h) == (0, -1, '', [], 0) and not boxes(h) and len(f_) == 3 and f_[0].startswith('One-way ANOVA') and f_[1].startswith('Checks') and f_[2].startswith('Pairs') and r_ == RUNS['ins'][1], f_, dts(h)))
 check('V2 Esc at the menu of groups ("%s": %s ...), "Not now" at the estimate ("%s"), or Esc there: nothing is computed, no box, the page is the one it was, and Right then goes on as before (no Dunnett page in the round)'
       % (out[0][3][-1], ', '.join(RUNS['ins'][0].chooses[3].items[:2]), out[1][3][-1]),
-      all(o[1] for o in out) and out[0][3] == ['One-way ANOVA', 'Dunnett: which is the control?'] and out[1][3] == out[2][3] == ['One-way ANOVA', 'Dunnett: which is the control?', 'Dunnett: about 37-112 s on a G1']
+      all(o[1] for o in out) and out[0][3] == ['One-way ANOVA', 'Dunnett: which is the control?'] and out[1][3] == out[2][3] == ['One-way ANOVA', 'Dunnett: which is the control?', 'Dunnett: 37-112 s on a G1']
       and RUNS['ins'][0].chooses[3].items[0] == 'Spray A (n 12, s 4.719)' and max(len(x) for x in RUNS['ins'][0].chooses[3].items) <= 30, out)
 
 # V3: Esc while it computes: during the table, during the p-values, during d crit
@@ -675,7 +676,7 @@ h4, r4, e4 = run(lambda h: (INS(h), h.press('Enter'), h.choose(6), h.choose(1), 
                             h.press('Enter'), h.choose(6), h.choose(1), h.choose(1)))
 d4 = dpages(h4)
 check('V4 after that Esc, Menu > Dunnett with the same control asks "%s" (d crit alone: the table and the p-values are kept), and "Compute it now" completes the page: d crit = %s as the reference' % (dts(h4)[-1], fx(D1['d'], 3)),
-      e4 is None and dts(h4)[-3:] == ['One-way ANOVA', 'Dunnett: which is the control?', 'Dunnett d crit: about 14-41 s on a G1'] and len(d4) == 2 and d4[0][0] == page6(D1, DAT['ins'][3], DAT['ins'][4], d_ok=False)
+      e4 is None and dts(h4)[-3:] == ['One-way ANOVA', 'Dunnett: which is the control?', 'Dunnett d crit: 14-41 s on a G1'] and len(d4) == 2 and d4[0][0] == page6(D1, DAT['ins'][3], DAT['ins'][4], d_ok=False)
       and d4[1][0] == page6(D1, DAT['ins'][3], DAT['ins'][4]) and abs(G(h4, 'avDnD') - D1['d']) < 1e-9, (dts(h4), [p_[0][2] for p_ in d4]))
 
 # V5: the two refusals
@@ -690,15 +691,15 @@ check('V5 what the engine cannot do is refused with a sentence and nothing chang
       e51 is None and e52 is None and e53 is None and e54 is None
       and boxes(h51) == ["Dunnett's test needs df within %s 3 here (the PPL engine): N - k is 2." % GE] and dts(h51) == ['One-way ANOVA'] and state(h51) == (0, -1, '', [], 0) and firsts(h51)[-1].startswith('Checks')
       and boxes(h52) == ["Dunnett's test here needs a control group with at least 1/100 of all the values: D1 has 2 of 312."] and state(h52) == (0, -1, '', [], 0) and firsts(h52)[-1].startswith('Checks')
-      and not any('about' in t for t in titles(h52)) and not boxes(h53) and len(dpages(h53)) == 1 and dpages(h53)[0][0][1].startswith('Control: D2  (n = 250')
-      and not boxes(h54) and dts(h54)[-1].startswith('Dunnett: about ') and G(h54, 'avDnNz') == 100, (boxes(h51), boxes(h52), dts(h54)))
+      and not any('on a G1' in t for t in titles(h52)) and not boxes(h53) and len(dpages(h53)) == 1 and dpages(h53)[0][0][1].startswith('Control: D2  (n = 250')
+      and not boxes(h54) and dts(h54)[-1].startswith('Dunnett: ') and dts(h54)[-1].endswith(' on a G1') and 'about' not in dts(h54)[-1] and G(h54, 'avDnNz') == 100, (boxes(h51), boxes(h52), dts(h54)))
 
 # V6: the same control again (no question); another control (a question, and the table kept when the sizes are the same)
 h6, r6, e6 = run(lambda h: (INS(h), h.press('Enter'), h.choose(6), h.choose(1), h.choose(1), h.press('Left'), h.press('Enter'), h.choose(6), h.choose(1), h.press('Left'), h.press('Enter'), h.choose(6), h.choose(6), h.choose(1)))
 t6 = dts(h6); D6 = dunnett(*DAT['ins'][:3], 6, 0.05); d6_ = dpages(h6); f6 = [x[:9] for x in firsts(h6)]
 check('V6 Menu > Dunnett again with the same control: no question, the table page at once.  With another control (Spray F): the question again, "%s" (less than the first, "%s": the groups are all of 12, so the table already there is the one needed), and the page is the reference\'s for Spray F (%s | %s)'
       % (t6[-1], t6[2], d6_[-1][0][1], ' '.join(d6_[-1][0][9:15])),
-      e6 is None and t6 == ['One-way ANOVA', 'Dunnett: which is the control?', 'Dunnett: about 37-112 s on a G1', 'One-way ANOVA', 'Dunnett: which is the control?', 'One-way ANOVA', 'Dunnett: which is the control?', 'Dunnett: about 19-56 s on a G1']
+      e6 is None and t6 == ['One-way ANOVA', 'Dunnett: which is the control?', 'Dunnett: 37-112 s on a G1', 'One-way ANOVA', 'Dunnett: which is the control?', 'One-way ANOVA', 'Dunnett: which is the control?', 'Dunnett: 19-56 s on a G1']
       and f6 == ['One-way A', 'Dunnett: ', 'F(5, 66):', 'Dunnett: ', 'F(5, 66):', 'Dunnett: '] and len(d6_) == 2 and d6_[0][0] == page6(EXP['ins'], DAT['ins'][3], DAT['ins'][4]) and d6_[1][0] == page6(D6, DAT['ins'][3], DAT['ins'][4]), (t6, f6, len(d6_)))
 
 # V7: Set alpha, computed again: on page 6 from the menu; from the main menu, where the question waits for page 6
@@ -709,9 +710,9 @@ d71 = dpages(h71); d72 = dpages(h72); t72 = titles(h72)
 check('V7 Set %s = 0.01 with Dunnett\'s results there.  On page 6, from the menu: the question "%s", then d crit = %s (the reference\'s %s), "99%% CI (family)" and stars by p < 0.01, the p-values as they were; the plot follows.  From the main menu: nothing is asked there; the question comes when page 6 is reached (Left from the Table page to the plot, Left again), and both pages are the reference\'s'
       % (AL, dts(h71)[-1], d71[1][0][2][9:14] if len(d71) > 1 else '', fx(D01['d'], 3)),
       e71 is None and e72 is None and len(d71) == 3 and d71[0][0] == page6(EXP['ins'], DAT['ins'][3], DAT['ins'][4]) and d71[1][0] == page6(D01, DAT['ins'][3], DAT['ins'][4])
-      and d71[2][3] == (page7(D01, DAT['ins'][3], DAT['ins'][4])[0], norm7(page7(D01, DAT['ins'][3], DAT['ins'][4])[1])) and dts(h71)[-1] == 'Dunnett d crit: about 14-41 s on a G1'
+      and d71[2][3] == (page7(D01, DAT['ins'][3], DAT['ins'][4])[0], norm7(page7(D01, DAT['ins'][3], DAT['ins'][4])[1])) and dts(h71)[-1] == 'Dunnett d crit: 14-41 s on a G1'
       and [round(a, 12) for a in G(h71, 'avDnP')[1:]] == [round(r['p'], 12) for r in EXP['ins']['rows']]
-      and t72[5] == 'AnovaLab: analysis of variance' and t72[6] == 'AnovaLab: analysis of variance' and t72[7] == 'Dunnett d crit: about 14-41 s on a G1'
+      and t72[5] == 'AnovaLab: analysis of variance' and t72[6] == 'AnovaLab: analysis of variance' and t72[7] == 'Dunnett d crit: 14-41 s on a G1'
       and [p[0][0] for p in d72] == ['Dunnett: each group vs a control', 'Dunnett plot: group minus control', 'Dunnett: each group vs a control'] and d72[2][0] == page6(D01, DAT['ins'][3], DAT['ins'][4])
       and d72[1][3] == (page7(D01, DAT['ins'][3], DAT['ins'][4])[0], norm7(page7(D01, DAT['ins'][3], DAT['ins'][4])[1])), (t72, [p[0][0] for p in d72], len(d71)))
 
@@ -724,7 +725,7 @@ check('V8 the arrows.  Without Dunnett\'s results, as in beta 1h: Left from Tabl
       % (' '.join(short(h81)), ' '.join(short(h82)), dts(h83)[-1]),
       e81 is None and e82 is None and e83 is None and short(h81) == list('TFTCPDDFD')
       and short(h82) == ['T', 'U', 'Up', 'T', 'Up', 'U', 'F', 'U', 'F', 'D']
-      and short(h83) == ['T', 'U', 'T', 'F', 'T'] and state(h83)[0] == 0 and state(h83)[2] == '12|12,12,12,12,12,' and dts(h83)[-1] == 'Dunnett: about 19-56 s on a G1', (short(h81), short(h82), short(h83)))
+      and short(h83) == ['T', 'U', 'T', 'F', 'T'] and state(h83)[0] == 0 and state(h83)[2] == '12|12,12,12,12,12,' and dts(h83)[-1] == 'Dunnett: 19-56 s on a G1', (short(h81), short(h82), short(h83)))
 
 # V9: Help, + and -, and the soft keys on Dunnett's pages
 h9, r9, e9 = run(lambda h: (INS(h), h.press('Enter'), h.choose(6), h.choose(1), h.choose(1), h.tap(*K6), h.tap(*K3), h.press('Esc'), h.press('Right'), h.press('Enter'), h.choose(11), h.press('Esc'),
@@ -751,6 +752,21 @@ kinds10 = collections.Counter('min' if ' min ' in a else 's' for a, b in e10)
 check('V10 the estimate shown before a computation, for the 18 sets of sizes with and without the p-values and once with the table already built: units = 195 a tail + 70 x (intervals + 1) x distinct sizes x 2 for a table, at 5 to 15 ms each, in seconds below two minutes (%d of them, as "%s") and in minutes from there (%d, as "%s"); the same wording as Tukey\'s'
       % (kinds10['s'], [a for a, b in e10 if ' s ' in a][0], kinds10['min'], [a for a, b in e10 if ' min ' in a][0]),
       all(a == b for a, b in e10) and len(e10) == 37 and kinds10['s'] > 5 and kinds10['min'] > 5, [x for x in e10 if x[0] != x[1]][:3])
+
+# V13: the titles of the four boxes that ask before a long computation.  A CHOOSE title shows 31 characters and no
+# more (tools/prime_facts_v1.py, fact 4: beta 1i's first "Dunnett d crit: about 14-41 s on a G1" stood on the Virtual
+# Calculator as "Dunnett d crit: about 14-41 s o").  The titles carry the estimate without its "about ".
+t13 = ['Dunnett: ' + a[6:] for a, b in e10] + ['Dunnett d crit: ' + call(he, 'av_DnEst(1, 14)')[6:]]     # he: the table is built
+ht = fresh(); tk13 = []
+for k_ in range(2, 13):
+    setg(ht, 'avOK', float(k_)); setg(ht, 'avTbK', 0.0)
+    tk13.append('Tukey q crit: ' + call(ht, 'av_TEst(14)')[6:]); tk13.append('Tukey p: ' + call(ht, 'av_TEst(%d)' % (k_ * (k_ - 1) // 2))[6:])
+old13 = ['Dunnett d crit: about 14-41 s on a G1', 'Tukey q crit: ' + call(ht, 'av_TEst(14)')]
+long13 = max(t13 + tk13, key=len)
+check('V13 the four asks\' titles fit the 31 characters a CHOOSE title shows: Dunnett\'s for the 37 estimates of V10 (the longest "%s", %d), "Dunnett d crit: 14-41 s on a G1" (%d), and '
+      'Tukey\'s for 2 to 12 groups with the table still to build (the longest "%s", %d); beta 1h\'s "%s" was %d characters and the first beta 1i\'s "%s" %d'
+      % (max(t13[:-1], key=len), len(max(t13[:-1], key=len)), len(t13[-1]), max(tk13, key=len), len(max(tk13, key=len)), old13[1], len(old13[1]), old13[0], len(old13[0])),
+      len(long13) <= 31 and len(t13[-1]) == 31 and all(a.startswith('about ') for a, b in e10) and len(old13[0]) > 31 and len(old13[1]) > 31, (long13, len(long13)))
 
 # V11: numbers too wide or too small for their places; one comparison only
 rngv = random.Random(11); bigd = {}
@@ -945,7 +961,7 @@ def one(path, seed):
     except Exception as e: verdict = 'END ' + type(e).__name__
     finally: signal.alarm(0)
     scr = [tuple((t.text, t.x, t.y) for t in s.texts) for s in hh_.screens]
-    return verdict, scr, [' '.join(m_.lines) for m_ in hh_.msgboxes], str(hh_.result), [c.title for c in hh_.chooses]
+    return verdict, scr, [' '.join(m_.lines) for m_ in hh_.msgboxes], str(hh_.result), noab([c.title for c in hh_.chooses])
 diffs = []; nscr = 0; verd = {}; kinds = collections.Counter()
 for sd in range(1800, 1840):
     a = one(OLD, sd); b = one(SHUTP, sd)
@@ -955,7 +971,7 @@ for sd in range(1800, 1840):
     if a != b:
         k_ = next((i for i, (x, y) in enumerate(zip(a[1], b[1])) if x != y), None)
         diffs.append((sd, a[0], b[0], a[3] == b[3], len(a[1]), len(b[1]), k_))
-check('R1 the monkey, 40 seeds, on beta 1h and on beta 1i with its new entrance shut (beta 1h\'s one-way menu, help and opening page): the same verdict (%s), boxes, menus and closing line, and all %s screens the same, every text at its place (%s ...)'
+check('R1 the monkey, 40 seeds, on beta 1h and on beta 1i with its new entrance shut (beta 1h\'s one-way menu, help and opening page): the same verdict (%s), boxes, menus (the Tukey asks\' titles read without their "about") and closing line, and all %s screens the same, every text at its place (%s ...)'
       % (verd, format(nscr, ','), ', '.join('%s %d' % kv for kv in kinds.most_common(7))), not diffs and nscr > 400, diffs[:3])
 
 # R2: every other way in, through beta 1i's own menus, against beta 1h (no menu of the one-way pages and no Help: V1 and H have those)
@@ -1049,10 +1065,11 @@ NEWR = {'av_DnSetup', 'av_DnBuild', 'av_DnGI', 'av_DnTail', 'av_DnCrit', 'av_DnE
         'av_AxW', 'av_FitN', 'av_FitS', 'av_FitG', 'av_FitGS', 'av_FitC', 'av_FitCI', 'av_FitT', 'av_AxLb', 'av_AxSet'}
 CHG_D = {'av_Init', 'av_OCrit', 'av_PostHoc', 'av_ODraw', 'av_HelpPage', 'av_Help', 'av_OArrow', 'av_OTap', 'av_OMenu', 'av_OView', 'av_TView', 'av_BView', 'av_VView', 'av_Hello'}      # for Dunnett's test and the help
 CHG_N = {'av_Gn', 'av_ODrawTable', 'av_ODrawChecks', 'av_ODrawPairs', 'av_ODrawDots', 'av_TDrawTable', 'av_TDrawPlot', 'av_BDrawTable', 'av_BDrawPlot', 'av_VDrawRes'}                 # for the numbers kept whole
-CHG = CHG_D | CHG_N
+CHG_T = {'av_TukeyAsk'}                                                                                                                                                                              # the ask's title, cut by the calculator at 31 characters
+CHG = CHG_D | CHG_N | CHG_T
 chg = set(n_ for n_ in rn_old if n_ != 'AnovaLab' and routine(OSRC, n_ + '(') != routine(SRC, n_ + '('))
 main_same = OSRC[OSRC.index('EXPORT AnovaLab()'):] == SRC[SRC.index('EXPORT AnovaLab()'):]
-check('G6 the %d new routines carry the program\'s tag (17 for Dunnett\'s test, 10 that fit numbers to their places), and beta 1h\'s %d routines are all still there; %d of them are untouched, character for character (the Tukey engine, every analysis\'s arithmetic, the group picker that moved up, and the main routine among them); the %d that changed are the ones meant: for Dunnett\'s test and the help %s; for the numbers %s'
+check('G6 the %d new routines carry the program\'s tag (17 for Dunnett\'s test, 10 that fit numbers to their places), and beta 1h\'s %d routines are all still there; %d of them are untouched, character for character (the Tukey engine, every analysis\'s arithmetic, the group picker that moved up, and the main routine among them); the %d that changed are the ones meant: for Dunnett\'s test and the help %s; for the title of Tukey\'s ask av_TukeyAsk; for the numbers %s'
       % (len(NEWR), len(rn_old), len(rn_old) - len(chg), len(chg), ', '.join(sorted(chg & CHG_D)), ', '.join(sorted(chg & CHG_N))), rn_old <= rn_new and rn_new - rn_old == NEWR and chg == CHG and main_same
       and all(n_ not in chg for n_ in ('av_BuildZ', 'av_RngCDF', 'av_BuildT', 'av_PkI', 'av_SRCDF', 'av_SRCrit', 'av_TEst', 'av_OCompute', 'av_TukeyCrit', 'av_TukeyP', 'av_TukeyP1', 'av_PickG', 'av_PickG2', 'av_TCompute', 'av_BCompute', 'av_VCompute', 'av_Fx', 'av_Cm', 'av_Sgn', 'av_Cmp')),
       (sorted(rn_new - rn_old - NEWR), sorted(NEWR - rn_new), sorted(chg ^ CHG)))
@@ -1088,5 +1105,11 @@ check('D1 no firm overlap and no text off the screen on any beta 1i screen above
       % (format(nsc, ','), ndun, ', '.join('"%s" on "%s"' % (str(x[0])[:24], str(x[1])[:24]) for x in sorted(set(firm) & set(firm_old))[:4]) or 'nothing'), not newfirm and nsc > 250 and ndun > 40, newfirm[:6])
 check('D2 no number cut short by its width argument (label_fit_v1 reports %d texts at its estimate; none is wider than its width argument at the measured glyph widths)' % len(rep_), not cut, cut[:4])
 
+# D3: a CHOOSE title shows 31 characters on the calculator (tools/prime_facts_v1.py, fact 4); the harness keeps every
+# title a program showed in any run above, and each one longer than that.
+_new = os.path.basename(PROG); _cut = sorted(set(t for t, sh_, fn_, f_ in Harness.cut_titles if f_ == _new))
+_cut_old = sorted(set(t for t, sh_, fn_, f_ in Harness.cut_titles if f_ != _new))
+check('D3 no menu title of beta 1i is longer than the 31 characters a CHOOSE box shows (%d different titles in the runs above; beta 1h showed %d longer one(s): %s)'
+      % (len(Harness.shown_titles.get(_new, ())), len(_cut_old), _cut_old[:1]), not _cut and len(Harness.shown_titles.get(_new, ())) >= 10, _cut[:4])
 print('\n%d checks, %d failed   (%.0f s)' % (NPASS[0] + len(FAIL), len(FAIL), time.time() - T00))
 sys.exit(1 if FAIL else 0)

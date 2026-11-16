@@ -1,0 +1,223 @@
+Round 16 on the HP Prime Virtual Calculator 2.4.2 (build 2026-09-09), run under Wine 11.21 in the cloud workspace,
+15 Nov 2026 (times are U.S. Central).  screens/ holds 160 captures, each 320 x 240 as the calculator drew it (the
+book's copies are these enlarged three times).
+
+The cloud calculator was built again that evening: the workspace had been replaced at 17:05 and nothing of the earlier
+one was left.  tools/vc_cloud_v1/ now holds the whole recipe (README.md there).  HP's licence dialog was answered
+Accept at the first start, and the first-run pages were left at their settings (English, Standard, 123,456.789).
+
+------------------------------------------------------------------------------------------------------------------------
+1. THE CHECKS
+
+Each file was built by the first pass of tools/make_starter_pack_v4.py v22 (hp-prime-kit's `hpprime write`) and copied
+into Documents > HP Prime > Calculators > Prime while the calculator was closed.  Program Catalog > Edit > Check:
+
+  AgreeLab  beta 1h  | editor title "AgreeLab:Main(PPL)"  | "No errors in the program"   (21:35)
+  AnovaLab  beta 1i  | editor title "AnovaLab:Main(PPL)"  | "No errors in the program"   (21:37, the first build)
+  BiNorm3D  beta 1g  | editor title "BiNorm3D:Main(PPL)"  | "No errors in the program"   (21:38)
+  BurrLab   beta 1r  | editor title "BurrLab:Main(PPL)"   | "No errors in the program"   (21:38)
+  CICatcher beta 2l  | editor title "CICatcher:Main(PPL)" | "No errors in the program"   (21:38, the first build)
+  FitCheck  beta 1i  | editor title "FitCheck:Main(PPL)"  | "No errors in the program"   (21:39)
+  RankLab   beta 1j  | editor title "RankLab:Main(PPL)"   | "No errors in the program"   (21:39)
+  RiskLab   beta 1h  | editor title "RiskLab:Main(PPL)"   | "No errors in the program"   (21:39)
+  StatDist  v2.7n    | editor title "StatDist:Main(PPL)"  | "No errors in the program"   (21:39)
+
+The calculator was then left by Calculator > Exit and the nine checked files collected (21:40), none of them run.
+
+The runs of section 2 found two faults, in AnovaLab and in CICatcher (section 3).  Both programs were changed, and
+their new files went the same way again, with the probe written for the third finding:
+
+  KeyProbe  beta 1   | editor title "KeyProbe:Main(PPL)"  | "No errors in the program"   (22:26)
+  AnovaLab  beta 1i  | editor title "AnovaLab:Main(PPL)"  | "No errors in the program"   (22:27, the file as filed)
+  CICatcher beta 2l  | editor title "CICatcher:Main(PPL)" | "No errors in the program"   (22:27, the file as filed)
+
+Calculator > Exit, and the two checked files collected (22:27) before either was run.  The pack's nine checked files:
+  AgreeLab 285,014 bytes; AnovaLab 434,672; BiNorm3D 157,652; BurrLab 467,948; CICatcher 216,370; FitCheck 386,642;
+  RankLab 474,038; RiskLab 286,504; StatDist 471,872 (starter pack v22).
+
+------------------------------------------------------------------------------------------------------------------------
+2. THE RUNS
+
+Every program was started from the Program Catalog (the highlight on its row, Run).  Every number below was read from
+the screen and is the number the PC harness gives (the verify script named with each program compares the harness
+with SciPy or with exact arithmetic).
+
+AnovaLab beta 1i (the first build 21:42 to 22:01; the file as filed 22:34 to 22:36, 22:49 to 22:52 and 23:03 to 23:05;
+every AnovaLab_ capture but the one marked FIRST_BUILD is from the file as filed)
+  AnovaLab_open, _mainmenu          "AnovaLab - beta 1i", "one-way ANOVA (Welch, checks, post hoc, Dunnett)"; nine items,
+                                    eight in sight (Help is the eighth, Quit below it, as in beta 1h)
+  AnovaLab_insects_table            the insect sprays' table, as beta 1h's
+  AnovaLab_oneway_menu              Enter's menu: items 1 to 8 in sight, "6 Dunnett: all vs a control" among them
+  AnovaLab_dunnett_control          "Dunnett: which is the control?" with the six sprays (n and s of each)
+  AnovaLab_dunnett_ask              "Dunnett: 37-112 s on a G1": Compute it now / Not now
+  AnovaLab_dunnett_table            Control: Spray A (n = 12, mean 14.50); d crit = 2.576 (5 comparisons, df = 66,
+                                    alpha = 0.05); B +0.8333 0.520 (-3.291, 4.958) 0.9795; C -12.42 -7.755 (-16.54,
+                                    -8.292) < 0.0001 *; D -9.583 -5.985 (-13.71, -5.459) < 0.0001 *; E -11.00 -6.870
+                                    (-15.12, -6.876) < 0.0001 *; F +2.167 1.353 (-1.958, 6.291) 0.5260
+  AnovaLab_dunnett_plot, _plot_C    the five intervals drawn, red where they miss 0; a tap on row C: "C - A = -12.42;
+                                    t = -7.755; p < 0.0001", "95% family CI: -16.54 to -8.292; SE 1.601"
+  AnovaLab_dunnett_table_C          back on the table, row C still picked
+  AnovaLab_help5_from_page          Help on Dunnett's page opens help page 5/10
+  AnovaLab_jury_ask, _jury_dunnett_table, _jury_dunnett_plot
+                                    the mock jury against Average: "Dunnett: 1-2 min on a G1"; d crit = 2.241
+                                    (2 comparisons, df = 111); Beaut +0.3596 0.441 (-1.468, 2.187) 0.8688; Unatt +1.837
+                                    2.223 (-0.0146, 3.689) 0.0522
+  AnovaLab_draft_control, _draft_ask, _draft_dunnett_table, _draft_dunnett_plot, _draft_dunnett_plot_Mar
+                                    the 1970 lottery against December (the twelfth item of the menu): "Dunnett: 2-5 min
+                                    on a G1"; d crit = 2.759 (11 comparisons, df = 354); eleven rows, January to June
+                                    red (March +104.26, t 3.964, p 0.0009), July to November not; a tap on March:
+                                    "95% family CI: 31.69 to 176.83; SE 26.30"
+  AnovaLab_alpha_form, _ask_dcrit, _dunnett_table_no_dcrit, _dunnett_plot_no_bars, _dunnett_plot_no_bars_E
+                                    Menu > Set alpha, 0.01 typed, Enter: "Dunnett d crit: 14-41 s on a G1" (31 characters,
+                                    whole); Not now: "d crit not computed for alpha = 0.01 (not asked for, or Esc)." in
+                                    red, "--" for each interval, the p-values and stars kept; the plot with its marks
+                                    and no bars, "SE 1.601; no CI without d crit (Menu > Dunnett)"
+  AnovaLab_ask_tukey_q, _ask_tukey_p  the two older boxes with their new titles: "Tukey q crit: 43-129 s on a G1",
+                                    "Tukey p: 58-173 s on a G1"
+  AnovaLab_help01 ... help10        the ten help pages, every line inside its frame; 4/10 ends "One group is the
+                                    control?  Dunnett's test: the next page."; 5/10 is "Dunnett's test"
+  AnovaLab_end                      Quit: AnovaLab "AnovaLab: one-way F(11, 354) = 2.463, p = 0.0056 (1970 draft number
+                                    by birth month)"
+  With the first build, at alpha = 0.01 and computed (not kept as captures of the filed file): insect sprays d crit =
+  3.178, the lottery d crit = 3.298 (11 comparisons, df = 354).
+  The "Working: Dunnett's test" page with its two bars could not be captured: on a PC the computation is over within
+  0.15 s.
+  Numbers: verify_AnovaLab_beta1i.py, P1 to P5 (the three presets, line for line) and A2 to A7.
+
+CICatcher beta 2l (the first build 22:03 to 22:06; the file as filed 22:36 to 22:38 and 22:52 to 22:54; every
+CICatcher_ capture but the one marked FIRST_BUILD is from the file as filed)
+  CICatcher_open, _which, _tol_hold, _tol_form
+                                    "Which interval?" with "6 Tolerance: x-bar +/- k s"; "Tolerance: hold how much?"
+                                    (90, 95, 99 % of the population); the form (mu 100, sigma 15, n 10, Level 0.95)
+  CICatcher_tol_empty               "no intervals yet", "tol. 95 %, mu = 100, sigma = 15, n = 10", the green band
+  CICatcher_tol_1, _tol_11, _tol_111  +1: its sample in the panel, "x-bar = 98.7, s = 18.1: 37.4 to 160.1, holds
+                                    100.0 %"; +10; +50 twice: "caught 47 of 50 (94.0 %), all 111: 94.6 %", red lines
+                                    where an interval holds less than 95 %
+  CICatcher_tol_line                a tapped line: "x-bar = 98.1, s = 18.8: 34.4 to 161.9, holds 100.0 %"
+  CICatcher_menu                    New / Reset the counts / Help / Quit
+  CICatcher_help01 ... help07       the seven help pages; 5/7 is "Tolerance intervals" ("at n = 10 and 95 %, k = 2.856")
+  CICatcher_end, _end_1011          the closing line, whole in its box: CICatcher "CICatcher: 105 of 111 held at least
+                                    95 % of the population (94.6 %) at 95 %, n = 10"; after 1,011 intervals "957 of
+                                    1,011 held at least 95 % of the population (94.7 %) at 95 %, n = 10"
+  With the first build: 99 % of the population at 95 % (47 of 50) and at 99 % confidence (50 of 50, all 100: 99.0 %);
+  n changed to 20 through its form ("Whole number, 2 to 100; starts a fresh run").
+  Numbers: verify_CICatcher_beta2l.py (the factor k against the integral, S1 for the long run).
+
+FitCheck beta 1i (22:07 to 22:09, and 22:48 to 22:49 for the closing line)
+  FitCheck_open, _mainmenu, _normality_menu
+                                    "FitCheck - beta 1i", "... Dixon's outlier test; the exact binomial test"
+  FitCheck_darwin_note, _darwin_qq  Normality > Preset: Darwin's differences: "Two differences are negative, far below
+                                    the rest.  The Outlier key tests the lowest of them (Dixon's ratio)."; the Q-Q
+                                    page, n = 15, W = 0.9008, p = 0.0978; soft keys Q-Q, ECDF, Tests, Bins, Outlier, Menu
+  FitCheck_darwin_outlier           "Outlier? Darwin's differences": "Dixon's r22 = 0.593, p = 0.0321 (either end)";
+                                    gap 9.125 over range 15.375; "Low end: (x(3) - x(1)) / (x(13) - x(1)) = 0.593";
+                                    "This end alone: p = 0.0161.  Either end: twice that, at most."; "High end: ratio
+                                    0.275, the smaller (not tested)."; "x(1) = -8.375: flagged as an outlier at alpha =
+                                    0.05."; "A flagged value is one to check, not to delete."
+  FitCheck_darwin_tests             the Tests page, as beta 1h's
+  FitCheck_rossi_qq, _rossi_outlier_refused
+                                    432 values: "Dixon's outlier test is for a small sample: 3 to 30 values.  This sample
+                                    has 432 values."
+  FitCheck_crimtab_qq, _crimtab_outlier_refused
+                                    a sample in bins: "... (3,000 values in 22 bins), so it has no single values to test."
+  FitCheck_mydata_empty             My values in D1 with nothing there: "List D1 is empty (or the Statistics 1Var app has
+                                    never been opened).  Put your data in D1 first."
+  FitCheck_help01 ... help12        the twelve help pages; 7/12 to 9/12 are the outlier test's
+  FitCheck_end_darwin               Quit after the outlier test: FitCheck "FitCheck: W = 0.9008, p = 0.0978; Dixon r22 =
+                                    0.593, p = 0.0321 (either end);"
+  FitCheck_end_crimtab              after the binned sample: "FitCheck: binned sample, skewness +0.050, excess kurtosis
+                                    +0.170;"
+  Numbers: verify_FitCheck_beta1i.py (the ratio and both p for Darwin's differences against the double integral).
+
+RankLab beta 1j (22:09 to 22:14)
+  RankLab_open, _mainmenu, _mainmenu_end
+                                    "RankLab - rank tests, beta 1j"; twelve items: 9 "Page's L (ordered trend)",
+                                    A "Runs test (randomness)", B Help, C Quit
+  RankLab_page_ozone_loaded, _page_ozone_result
+                                    item 9 with nothing loaded: "No blocks yet: the ozone data loaded."; b = 4 blocks,
+                                    k = 3 treatments; L = 48 (mean 48, SD 2.74; ties in 1 block); Exact p = 0.5185
+                                    (rising); Normal: z = +0.000, p = 0.5000 (no cont. corr.); mean ranks 2.4, 1.3, 2.4
+  RankLab_page_ozone_picture, _picture_pick, _null, _null_falling, _null_normal, RankLab_page_more_keys
+                                    the mean ranks in order (a pick: "0.6 ppm: rank sum 5, mean rank 1.25 (H0 2)",
+                                    "place 2 in the order: adds 2 x 5 = 10 to L"); the exact null's bars, rising and
+                                    falling; the normal curve
+  RankLab_presets, _presets_end     eleven presets: 8 Ozone, 9 "Draft 1970: months in order", A "Roulette: red and
+                                    black", B "Draft 1970: runs by day"
+  RankLab_page_months_result, _picture, _picture_Aug, _null
+                                    b = 28 blocks, k = 12; L = 13,440 (mean 14,196, SD 228.15); "Exact p: none for more
+                                    than 9 treatments (normal)"; z = -3.314, p = 0.0005; a tap on August: "rank sum 176,
+                                    mean rank 6.29 (H0 6.5)", "adds 8 x 176 = 1,408 to L"
+  RankLab_runs_roulette_loaded, _result, _squares, _squares_pick, _null
+                                    item A with nothing loaded: "No sequence yet: the roulette example loaded."; n = 25:
+                                    14 of R, 11 of B; runs = 9 (mean 13.32, SD 2.41 under H0); Exact p = 0.1101
+                                    (two-sided); Normal: z = -1.792, p = 0.0731; longest run 5 of B, places 9 to 13; the
+                                    squares with the run lengths 4 1 3 5 2 3 2 2 3 under them; the exact null of all
+                                    C(25, 11) orders
+  RankLab_runs_days_result, _chart, _chart_pick, _squares, _null
+                                    n = 366: 183 above, 183 below; runs = 172 (mean 184.00, SD 9.55); Exact p = 0.2286
+                                    (two-sided); z = -1.256, p = 0.2090; longest run 12 of below, places 355 to 366; the
+                                    run chart ("Place 147 of 366: 357, above", "run 69 of 172: places 146 to 150, 5
+                                    long"); the 366 squares; "Exact null of the runs: all C(366, 183) orders"
+  RankLab_help01 ... help10         the ten help pages; 6/10 "Page's L, an ordered trend", 7/10 "The runs test", 10/10
+                                    the credits with the HP-65 and HP-67/97 Run Test
+  RankLab_end                       RankLab "RankLab: Runs test, n = 366, runs = 172, exact p = 0.2286 (two-sided)"
+  Numbers: verify_RankLab_beta1j.py, P1 to P12.
+
+BiNorm3D beta 1g (22:14 to 22:16)
+  BiNorm3D_open, _3d, _contour      the opening page with its two lines on the target; soft key 3 reads Cont, then CEP
+  BiNorm3D_target, _target_50, _target_200, _target_250
+                                    "Target: CEP, rho = 0.60", "R = 1.101"; Shots: "Shots: 50, inside: 24 (48 %)"; 200:
+                                    "inside: 101 (51 %)"; a tap on the plot, 250: "inside: 132 (53 %)"
+  BiNorm3D_target_rho09, _target_rho_stops, _target_rho09_50
+                                    rho+ three times: rho = 0.90, R = 0.988, "Pattern 4.36 times as long as wide"; a
+                                    fourth press: "rho stops at 0.9 here"; 50 shots there, 25 inside (50 %)
+  BiNorm3D_menu                     eight items, "Set rho exactly (now 0.90)" first, Help seventh, Quit eighth
+  BiNorm3D_help01 ... help06        the six help pages; 5/6 "The target and the CEP", 6/6 "Keys and touch"
+  BiNorm3D_end                      BiNorm3D "BiNorm3D: rho = 0.90, E[Y | X = x] = 0.90 x, CEP = 0.988; rho in BN_RHO, the
+                                    CEP in BN_CEP"
+  Numbers: verify_BiNorm3D_beta1g.py, A1 to A5 (R = 1.101 at 0.6 and 0.988 at 0.9).
+
+AgreeLab beta 1h, RiskLab beta 1h, BurrLab beta 1r, StatDist v2.7n (22:16 to 22:18): only comments changed in these
+four, and the version each shows.  Each was started, its first page and its menu seen, and left.
+  AgreeLab_open, _menu, _end        "AgreeLab - beta 1h"; "AgreeLab: no analysis run"
+  RiskLab_open, _menu, _end         "beta 1h, 15 Nov 2026.  Help is in the menu."; "RiskLab: COMPAS, AUC = 0.711, >= 5:
+                                    sens 0.645, spec 0.670"
+  BurrLab_open, _menu, _end         "BurrLab beta 1r: the long right tail"; "BurrLab: no fit; explorer at C = 2.00,
+                                    K = 1.50, S = 10.00"
+  StatDist_menu, _help1 ... _help4, _end
+                                    its menu, its four help pages, "StatDist: no plot drawn yet"
+
+------------------------------------------------------------------------------------------------------------------------
+3. WHAT THE RUNS FOUND
+
+a. A CHOOSE title shows 31 characters and no more.  AnovaLab's box that asks before d crit is computed again was
+   titled "Dunnett d crit: about 14-41 s on a G1", 37 characters, and stood as "Dunnett d crit: about 14-41 s o"
+   (AnovaLab_FIRST_BUILD_title_cut).  "Dunnett: about 37-112 s on a G1", 31 characters, stood whole, and the box of
+   the cut title was the narrower of the two (243 pixels against 256): the limit is a count of characters, not a
+   width.  Beta 1h's "Tukey q crit: about 14-41 s on a G1" is 35 characters and must have been cut the same way since
+   it was written.  MENDED: the four boxes give the time without "about"; the longest title is 31 characters, and all
+   four were seen whole on the file as filed (AnovaLab_dunnett_ask, _ask_dcrit, _ask_tukey_q, _ask_tukey_p).  The fact
+   is in tools/prime_facts_v1.py (fact 4), and the five verify scripts of this round check every title they see (D3).
+   No literal title in the 31 programs is longer than 31 characters (161 CHOOSE calls read; 32 titles are built at
+   run time and were not all exercised).
+
+b. What a program returns is shown, after a run from the Program Catalog, in a box of five lines of about 26
+   characters; the rest is not shown.  CICatcher's first closing line for a tolerance run, "CICatcher: 107 of 111
+   tolerance intervals held at least 95 % of the population (96.4 %) at 95 %, tol. 95 %, mu = 100, sigma = 15, n = 10;
+   see CQ_COVER", ended in the box at "sigma =" (CICatcher_FIRST_BUILD_closing_cut).  MENDED: "CICatcher: 105 of 111
+   held at least 95 % of the population (94.6 %) at 95 %, n = 10", four lines, seen whole for 111 and for 1,011
+   intervals.  The other closing lines seen this evening fit their boxes.
+
+c. Key presses that do nothing.  About one press in eight was lost on the programs' pages; KeyProbe counted it
+   (keyprobe_r16.txt beside this file).  A loop that polls GETKEY loses presses on this calculator and WAIT(-1) loses
+   none.  Nothing was changed for it in this round: whether a G1 or a G2 loses presses is not known.
+
+Seen while driving it (xdotool), not faults of the programs:
+  - The Program Catalog lists the program touched last first, and its list scrolls by pixels, so rows cannot be found
+    on a fixed grid.  A first tour pressed Down and Edit and opened AgreeLab's editor a second time (closed with Esc,
+    nothing typed).
+  - After a step that failed (the row not found), a tour's next keys went to the Program Catalog: Enter opened
+    AnovaLab's editor and the digits 6 and 2 were typed at the top of its text.  They were deleted at once (the first
+    line read "#pragma mode( separator(.,;) integer(h..." again) and the editor left with Esc.  That copy of AnovaLab
+    was the first build's and was replaced by the file as filed before the second Check; no collected file was
+    touched.  Tours now stop at the first step that fails.

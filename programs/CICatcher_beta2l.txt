@@ -2467,9 +2467,16 @@ BEGIN
   IF cqTot == 0 THEN
     RETURN "CICatcher: no intervals drawn (" + cqDesc() + ")";
   END;
-  // beta 2l: a tolerance run says what its intervals were counted for
+  // beta 2l: a tolerance run says what its intervals were counted for.
+  // The line is kept short: run from the Program Catalog, the calculator
+  // shows what a program returns in a box of five lines of about 26
+  // characters, and a longer sentence lost its end there (Virtual
+  // Calculator, 15 Nov 2026).  So it gives n and leaves out mu and sigma,
+  // which a tolerance interval's catch rate does not depend on, and the
+  // pointer to CQ_COVER (help page 7 names the Home variables): with them
+  // a run of 1,000 intervals or more still lost its last words.
   IF cqTol == 1 THEN
-    RETURN "CICatcher: " + cqCm(STRING(cqHit, 2, 0)) + " of " + cqCm(STRING(cqTot, 2, 0)) + " tolerance intervals held at least " + cqCm(STRING(100 * cqTP, 2, 0)) + " % of the population (" + cqCm(cqPct(cqHit, cqTot)) + " %) at " + cqCm(cqLvS(cqL)) + " %, " + cqDesc() + "; see CQ_COVER";
+    RETURN "CICatcher: " + cqCm(STRING(cqHit, 2, 0)) + " of " + cqCm(STRING(cqTot, 2, 0)) + " held at least " + cqCm(STRING(100 * cqTP, 2, 0)) + " % of the population (" + cqCm(cqPct(cqHit, cqTot)) + " %) at " + cqCm(cqLvS(cqL)) + " %, n = " + cqCm(STRING(cqN, 2, 0));
   END;
   RETURN "CICatcher: " + cqCm(STRING(cqHit, 2, 0)) + " of " + cqCm(STRING(cqTot, 2, 0)) + " caught the truth (" + cqCm(cqPct(cqHit, cqTot)) + " %) at " + cqCm(cqLvS(cqL)) + " %, " + cqDesc() + "; see CQ_COVER";
 END;

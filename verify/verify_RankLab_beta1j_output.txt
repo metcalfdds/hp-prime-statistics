@@ -62,5 +62,6 @@ PASS G8 the credits say what was done: no "reworks" or "replaces" in the file, a
 === D. layout over every beta 1j screen above
 PASS D1 no firm overlap and no text off the screen on any beta 1j screen above (text_overlap_v1 over 911 different screens; on beta 1i's screens of the same runs it finds "250,000" off the screen)
 PASS D2 no number cut short by its width argument (label_fit_v1 reports 3 texts at its estimate; none is wider than its width argument at the measured glyph widths)
+PASS D3 no menu title of this version is longer than the 31 characters a CHOOSE box shows (5 different titles in the runs above)
 
-56 checks, 0 failed
+57 checks, 0 failed

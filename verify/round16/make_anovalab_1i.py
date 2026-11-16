@@ -30,6 +30,11 @@ New in beta 1i (Roger, 15 Nov 2026, of six additions proposed for the programs: 
     Prime's scientific form with up to 5 digits (av_FitN and its kin); the three plots move their left edge right by
     what the widest y number needs (av_AxSet); av_Gn writes 5 digits from 1E12 up (it wrote one: 1.5E12 read "2E12").
     A number that fitted is written as before.
+  * THE ASK BOXES' TITLES (found on the Virtual Calculator, 15 Nov 2026).  A CHOOSE title shows 31 characters and no
+    more: "Dunnett d crit: about 14-41 s on a G1" stood as "Dunnett d crit: about 14-41 s o", and beta 1h's "Tukey q
+    crit: about 14-41 s on a G1" must have been cut the same way.  The four asks now give the time without "about"
+    ("Tukey q crit: 14-41 s on a G1"; the Working page that follows still says "Estimate: about ..."), and the longest
+    of them, "Dunnett d crit: 14-41 s on a G1", is 31 characters.
 With numbers that fitted, every other screen is beta 1h's, the help pages' numbers, the one-way menu's new item and the
 opening page's list aside.
 Run from the repository's root:   python3 verify/round16/make_anovalab_1i.py OUTDIR
@@ -119,8 +124,13 @@ note = ('Round 16 (Roger, 15 Nov 2026, of six additions proposed for the program
         'scientific form with up to 5 digits (av_FitN, av_FitG, av_FitGS, av_FitC, av_FitCI, av_FitT); the three plots '
         'move their left edge right by what the widest y number needs (av_AxSet, av_AxLb); and av_Gn writes 5 digits '
         'from 1E12 up (it wrote one: 1.5E12 read "2E12").  A number that fitted is written as before, so with such '
-        'numbers every other screen is beta 1h\'s (verify_AnovaLab_beta1i.py runs the two side by side).  Harness '
-        'only so far.')
+        'numbers every other screen is beta 1h\'s (verify_AnovaLab_beta1i.py runs the two side by side).  THE ASK '
+        'BOXES\' TITLES (found on the Virtual Calculator, 15 Nov 2026): a CHOOSE title shows 31 characters and no '
+        'more, so "Dunnett d crit: about 14-41 s on a G1" stood as "Dunnett d crit: about 14-41 s o", and beta 1h\'s '
+        '"Tukey q crit: about 14-41 s on a G1" was cut the same way.  The four boxes that ask before a long '
+        'computation now give the time without "about" ("Tukey q crit: 14-41 s on a G1", "Dunnett: 37-112 s on a '
+        'G1"); the longest is 31 characters, and the Working page still says "Estimate: about ...".  Not yet on a G1 '
+        'or a G2.')
 before('// beta 1h (15 Nov 2026): Round 15', '// beta 1i (%s): ' % DATE + '\n//   '.join(textwrap.wrap(note, 100)) + '\n')
 after('//   Scheffe: Scheffe (1953) Biometrika 40:87-104.\n',
       '''//   Dunnett's test: Dunnett (1955) JASA 50:1096-1121 (the test);
@@ -576,11 +586,15 @@ END;
 
 // Before any Dunnett computation: a one-line warning with the estimate,
 // as a CHOOSE (av_TukeyAsk's way).  Returns 1 = go ahead, 0 = not now.
+// A CHOOSE title shows 31 characters and no more (Virtual Calculator,
+// 15 Nov 2026), so the estimate goes in without its "about ": MID(.., 7).
+// The longest title, "Dunnett d crit: 14-41 s on a G1", is 31; a full
+// run's is "Dunnett: " and at most 17 more ("13-40 min on a G1").
 av_DnAsk(uqT, uqC, uqEv)
 BEGIN
   LOCAL uqI;
   uqI := 0;
-  CHOOSE(uqI, uqT + ": " + av_DnEst(uqC, uqEv), {"Compute it now", "Not now"});
+  CHOOSE(uqI, uqT + ": " + MID(av_DnEst(uqC, uqEv), 7), {"Compute it now", "Not now"});
   IF uqI == 1 THEN RETURN 1; END;
   RETURN 0;
 END;
@@ -1216,6 +1230,29 @@ rep('''// "More" key: slot 6 on every page).  Actions: 1-5 the pages, 7 next
 // method, 8 Tukey p, 9 help, 10 menu, 11 back, 12 previous method,
 // 13 set alpha, 14 Tukey p for the selected pair; beta 1i: 15 Dunnett's
 // test (the menu's item), 16 and 17 its two pages (the arrows).
+''')
+# The Tukey ask's title: beta 1h's "Tukey q crit: about 14-41 s on a G1" is 35 characters, and a CHOOSE title shows 31
+# (seen on the Virtual Calculator, 15 Nov 2026, on Dunnett's ask of the same form).
+rep('''// Before any Tukey computation: a one-line warning with the estimate,
+// as a CHOOSE.  Returns 1 = go ahead, 0 = not now.  teEv: how many
+// outer evaluations the job needs (q crit about 14; one per pair).
+av_TukeyAsk(taT, taEv)
+BEGIN
+  LOCAL taI;
+  taI := 0;
+  CHOOSE(taI, taT + ": " + av_TEst(taEv), {"Compute it now", "Not now"});
+''', '''// Before any Tukey computation: a one-line warning with the estimate,
+// as a CHOOSE.  Returns 1 = go ahead, 0 = not now.  teEv: how many
+// outer evaluations the job needs (q crit about 14; one per pair).
+// beta 1i: the title carries the estimate without its "about " (a
+// CHOOSE title shows 31 characters and no more: "Tukey q crit: about
+// 14-41 s on a G1" was cut).  The longest now is "Tukey q crit: 43-129
+// s on a G1", 30 characters.
+av_TukeyAsk(taT, taEv)
+BEGIN
+  LOCAL taI;
+  taI := 0;
+  CHOOSE(taI, taT + ": " + MID(av_TEst(taEv), 7), {"Compute it now", "Not now"});
 ''')
 rep('''        IF av_TukeyAsk("Tukey q crit", 14) == 1 THEN av_TukeyCrit(); ELSE avQc := -2; END;
       END;

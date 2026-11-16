@@ -682,5 +682,10 @@ check('D1 no firm overlap and no text off the screen on any beta 1i screen above
       % (format(nsc, ','), ', '.join('"%s" %s' % x for x in sorted(set(firm_old))) or 'nothing'), not firm and len(NEWTAGS) == 2 and nsc > 250, firm[:4])
 check('D2 no number cut short by its width argument (label_fit_v1 reports %d texts at its estimate; none is wider than its width argument at the measured glyph widths)' % len(rep_), not cut, cut[:4])
 
+# D3: a CHOOSE title shows 31 characters on the calculator (tools/prime_facts_v1.py, fact 4); the harness keeps every
+# title a program showed in any run above, and each one longer than that.
+_new = os.path.basename(PROG); _cut = sorted(set(t for t, sh_, fn_, f_ in Harness.cut_titles if f_ == _new))
+check('D3 no menu title of this version is longer than the 31 characters a CHOOSE box shows (%d different titles in the runs above)'
+      % len(Harness.shown_titles.get(_new, ())), not _cut and len(Harness.shown_titles.get(_new, ())) >= 1, _cut[:4])
 print('\n%d checks, %d failed' % (NPASS[0] + len(FAIL), len(FAIL)))
 sys.exit(1 if FAIL else 0)

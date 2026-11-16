@@ -48,5 +48,6 @@ PASS G4 every text of the target view fits its width argument and the screen at 
 === D. layout over every beta 1g screen above
 PASS D1 no firm overlap and no text off the screen (text_overlap_v1)
 PASS D2 no number cut short by its width argument (label_fit_v1 reports 1 texts at its estimate; none is wider than its width argument at the measured glyph widths)
+PASS D3 no menu title of this version is longer than the 31 characters a CHOOSE box shows (1 different titles in the runs above)
 
-42 checks, 0 failed
+43 checks, 0 failed

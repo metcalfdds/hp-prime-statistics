@@ -1,0 +1,100 @@
+#pragma mode( separator(.,;) integer(h32) )
+// ============================================================================
+//  KeyProbe beta 1  --  does a wait loop that polls GETKEY and MOUSE together
+//  lose key presses?
+//  Roger Metcalf, 2026.  Written with AI assistance (Anthropic Claude).
+//  Free for educational and personal use; keep the header; not for sale.
+//
+//  WHY.  On the Virtual Calculator (15 Nov 2026) about one key press in eight
+//  did nothing on the pages of AnovaLab, RankLab and FitCheck, however long the
+//  key was held, while thirty presses typed at Home all arrived.  Every one of
+//  those pages waits in the fleet's loop,
+//        REPEAT k := GETKEY; m := MOUSE; ... UNTIL k > -1 OR a touch;
+//  so the question is whether that loop drops a key that arrives between its
+//  GETKEY and its MOUSE.
+//
+//  WHAT IT DOES.  Choose one of six ways to wait, then press a key (not Esc)
+//  a known number of times, say 40, and read "keys seen".  Esc ends; the count
+//  stays in KP_COUNT and in the line the program returns.
+//    1  GETKEY alone
+//    2  GETKEY, then MOUSE              (the fleet's loop)
+//    3  MOUSE, then GETKEY
+//    4  WAIT(-1)
+//    5  drain keys, GETKEY and MOUSE, drain keys   (the fleet's whole idiom)
+//    6  GETKEY, MOUSE, GETKEY again     (a second look after MOUSE)
+//  A tap ends a pass of ways 2, 3, 5 and 6 without a key and is not counted.
+// ============================================================================
+EXPORT KP_COUNT := 0;
+
+// the count, drawn over the old one
+kpShow(kpT)
+BEGIN
+  TEXTOUT_P(kpT + "            ", G0, 10, 100, 3, #0000FFh, 300, #FFFFFFh);
+END;
+
+EXPORT KeyProbe()
+BEGIN
+  LOCAL kpMode, kpK, kpM, kpM1, kpN, kpEnd;
+  LOCAL kpS;
+  kpMode := 0;
+  CHOOSE(kpMode, "KeyProbe: which wait?", {"GETKEY alone", "GETKEY, then MOUSE", "MOUSE, then GETKEY", "WAIT(-1)", "Drain, GETKEY+MOUSE, drain", "GETKEY, MOUSE, GETKEY"});
+  IF kpMode == 0 THEN RETURN "KeyProbe: no wait chosen"; END;
+  RECT_P(G0, 0, 0, 319, 239, #FFFFFFh);
+  TEXTOUT_P("KeyProbe beta 1, wait " + STRING(kpMode, 2, 0), G0, 10, 20, 3, #000000h);
+  TEXTOUT_P("Press a key (not Esc) n times.  Esc ends.", G0, 10, 50, 2, #000000h);
+  kpN := 0;
+  kpEnd := 0;
+  kpShow("keys seen: 0");
+  REPEAT kpK := GETKEY; UNTIL kpK == -1;
+  REPEAT
+    kpK := -1;
+    kpM1 := {};
+    IF kpMode == 1 THEN
+      REPEAT kpK := GETKEY; UNTIL kpK > -1;
+    END;
+    IF kpMode == 2 THEN
+      REPEAT
+        kpK := GETKEY;
+        kpM := MOUSE;
+        kpM1 := kpM(1);
+      UNTIL kpK > -1 OR SIZE(kpM1) > 0;
+    END;
+    IF kpMode == 3 THEN
+      REPEAT
+        kpM := MOUSE;
+        kpM1 := kpM(1);
+        kpK := GETKEY;
+      UNTIL kpK > -1 OR SIZE(kpM1) > 0;
+    END;
+    IF kpMode == 4 THEN
+      kpS := WAIT(-1);
+      IF TYPE(kpS) <> 6 THEN kpK := kpS; END;    // a list is a touch
+    END;
+    IF kpMode == 5 THEN
+      REPEAT kpK := GETKEY; UNTIL kpK == -1;
+      REPEAT
+        kpK := GETKEY;
+        kpM := MOUSE;
+        kpM1 := kpM(1);
+      UNTIL kpK > -1 OR SIZE(kpM1) > 0;
+      kpS := kpK;
+      REPEAT kpK := GETKEY; UNTIL kpK == -1;
+      kpK := kpS;
+    END;
+    IF kpMode == 6 THEN
+      REPEAT
+        kpK := GETKEY;
+        IF kpK == -1 THEN
+          kpM := MOUSE;
+          kpM1 := kpM(1);
+          kpK := GETKEY;
+        END;
+      UNTIL kpK > -1 OR SIZE(kpM1) > 0;
+    END;
+    IF kpK == 4 THEN kpEnd := 1; END;
+    IF kpK > -1 AND kpK <> 4 THEN kpN := kpN + 1; END;
+    kpShow("keys seen: " + STRING(kpN, 2, 0));
+  UNTIL kpEnd == 1;
+  KP_COUNT := kpN;
+  RETURN "KeyProbe: wait " + STRING(kpMode, 2, 0) + ", keys seen " + STRING(kpN, 2, 0);
+END;

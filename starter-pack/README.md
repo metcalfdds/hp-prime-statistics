@@ -1,10 +1,10 @@
 # Starter pack for the Virtual Calculator
 
-*v21, 2026-11-15. Built by `tools/make_starter_pack_v4.py` from `programs/`; do not edit this page by hand.*
+*v22, 2026-11-15. Built by `tools/make_starter_pack_v4.py` from `programs/`; do not edit this page by hand.*
 
-All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** on a Windows PC: no Connectivity Kit, no copying and pasting. Download **[HP_Prime_Statistics_Starter_Pack_v21.zip](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v21.zip)** (one file).
+All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** on a Windows PC: no Connectivity Kit, no copying and pasting. Download **[HP_Prime_Statistics_Starter_Pack_v22.zip](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v22.zip)** (one file).
 
-*How this pack was tested on the Virtual Calculator: [docs/changes/StarterPack_v21_NOTES.md](../docs/changes/StarterPack_v21_NOTES.md).*
+*How this pack was tested on the Virtual Calculator: [docs/changes/StarterPack_v22_NOTES.md](../docs/changes/StarterPack_v22_NOTES.md).*
 
 ### What you need
 - A Windows PC with the HP Prime Virtual Calculator (64-bit). It is a free download from hpcalc.org, which lists Hewlett-Packard as its author. The pack was tested on the Virtual Calculator 2.4.2 (build 2026-09-09), 64-bit.
@@ -36,12 +36,12 @@ All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** o
 
 | Program | Version | Lines | In Home, type | Notes | Source checksum |
 |---|---|---|---|---|---|
-| AgreeLab | beta 1g | 3,062 | `AgreeLab` |  | `b6906cd2cfb1` |
-| AnovaLab | beta 1h | 3,882 | `AnovaLab` |  | `375517702d97` |
+| AgreeLab | beta 1h | 3,068 | `AgreeLab` |  | `3f5ededa4720` |
+| AnovaLab | beta 1i | 4,739 | `AnovaLab` |  | `6881d0e8e770` |
 | BayesTree | beta 8k | 3,451 | `BayesTree` |  | `707756c05296` |
-| BiNorm3D | beta 1f | 1,282 | `BiNorm3D` |  | `e3da40166171` |
-| BurrLab | beta 1q | 4,712 | `BurrLab` | MicroPython | `efaa895d783a` |
-| CICatcher | beta 2k | 2,201 | `CICatcher` |  | `708de61ed470` |
+| BiNorm3D | beta 1g | 1,611 | `BiNorm3D` |  | `41ea7de53568` |
+| BurrLab | beta 1r | 4,721 | `BurrLab` | MicroPython | `0b23152be32c` |
+| CICatcher | beta 2l | 2,483 | `CICatcher` |  | `f2302e5c3b88` |
 | CentralLimit | beta 3g | 2,788 | (an app) | app on Statistics 1Var | `502640fe6456` |
 | ChiTable | beta 3m | 3,863 | `ChiTable` |  | `46f1745b9ede` |
 | DNAMixLR | beta 3j | 3,471 | `DNAMixLR` |  | `349a8cc1899c` |
@@ -49,17 +49,17 @@ All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** o
 | EpiStats | v1.7l | 6,279 | `EpiStats` |  | `fea1365d7b88` |
 | ErrorRate | beta 1j | 2,857 | `ErrorRate` | MicroPython | `cda5cb9c2b2d` |
 | ExhibitLab | beta 1h | 2,897 | `ExhibitLab` |  | `e306733b690a` |
-| FitCheck | beta 1h | 3,391 | `FitCheck` |  | `7ab138468342` |
+| FitCheck | beta 1i | 3,893 | `FitCheck` |  | `e2fbefaf283e` |
 | GaltonBoard | beta 3i | 2,533 | `GaltonBoard` | MicroPython | `d9c1bb807fcc` |
 | Norm3 | v2.4g | 1,125 | `Norm3` |  | `e45ead59d4df` |
 | NormExplorer | beta 42j | 4,228 | `NormExp` | MicroPython | `86d9dfd7e9d1` |
 | PowerViz | v2.5s | 4,190 | `POWERVIZ` |  | `3ba37d06f2bc` |
-| RankLab | beta 1i | 3,846 | `RankLab` |  | `f8b175e9c598` |
+| RankLab | beta 1j | 5,094 | `RankLab` |  | `6d40b84917de` |
 | ResampLab | beta 1i | 3,054 | `ResampLab` |  | `ab78fd31efc8` |
-| RiskLab | beta 1g | 3,162 | `RiskLab` |  | `542b0ee2887b` |
+| RiskLab | beta 1h | 3,169 | `RiskLab` |  | `f9a89623c5a8` |
 | SampDist | v2.3k | 1,939 | `SampDist` |  | `2d44782aea01` |
 | ScatterLab | beta 2l | 2,730 | `ScatterLab` |  | `ee308bfc809b` |
-| StatDist | v2.7m | 5,091 | `StatDist` |  | `f8b2425d83c3` |
+| StatDist | v2.7n | 5,104 | `StatDist` |  | `20cbff4e1145` |
 | StudRange | beta 15m | 2,750 | `StudRange` | MicroPython | `cb1b060d6f83` |
 | SurvLab | beta 1g | 2,748 | `SurvLab` |  | `2d3c24497ee9` |
 | TDist3D | beta 1a | 1,164 | `TDist3D` |  | `f370e341f4e6` |

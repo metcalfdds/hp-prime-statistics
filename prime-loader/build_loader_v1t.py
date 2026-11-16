@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
-"""build_loader_v1s.py -- assembles PrimeLoader_v1s.html: the page template, the loader's core, the Data Loader's core
+"""build_loader_v1t.py -- assembles PrimeLoader_v1t.html: the page template, the loader's core, the Data Loader's core
 (for its zip writer), the chapter list, and every program file from a starter pack, embedded so the page works offline.
 
-    python3 build_loader_v1s.py PACK.zip [OUT.html] [--kit PATH]
+    python3 build_loader_v1t.py PACK.zip [OUT.html] [--kit PATH]
+v1t (15 Nov 2026, night): starter pack v22, whose nine programs changed by round 16 carry their new versions: AnovaLab
+beta 1i (Dunnett's test of every group against a control), RankLab beta 1j (Page's L for an ordered trend, and the runs
+test), FitCheck beta 1i (Dixon's outlier test), CICatcher beta 2l (tolerance intervals), BiNorm3D beta 1g (a target view
+with the circular error probable), and StatDist v2.7n, AgreeLab beta 1h, RiskLab beta 1h and BurrLab beta 1r, whose
+headers say what was done with the programs they stand beside.  The script is v1s's but for these lines and its own
+name; the page template is v1c's, unchanged.
 v1s (15 Nov 2026): starter pack v21, whose seven programs changed by round 15 carry their new versions: ScatterLab
 beta 2l (a 95% interval for the population's correlation on the Inference page), FitCheck beta 1h (a standard error
 beside the skewness and the kurtosis), and RankLab beta 1i, AnovaLab beta 1h, ResampLab beta 1i, ExhibitLab beta 1h and
@@ -112,7 +118,7 @@ KIT = os.environ.get('HPKIT', '/tmp/kit/hp-prime-kit-HEAD')
 if '--kit' in argv:
     i = argv.index('--kit'); KIT = argv[i + 1]; del argv[i:i + 2]
 PACK = argv[0]
-OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v1s.html')
+OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v1t.html')
 SITE = 'https://metcalfdds.github.io/hp-prime-statistics/'
 sys.path.insert(0, KIT)
 from hpkit import program as kitprog            # hp-prime-kit (MIT, JordiRigau/hp-prime-kit)
@@ -270,7 +276,7 @@ redirect = ('<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n
             '<link rel="canonical" href="' + SITE + 'prime-loader/' + page + '">\n'
             '<style>body{font:16px/1.5 system-ui,sans-serif;margin:2rem;color:#172033;background:#f6f8fb}'
             '@media (prefers-color-scheme:dark){body{color:#e8edf6;background:#0f1420}a{color:#7d9cff}}</style>\n'
-            '</head>\n<body>\n<!-- Written by build_loader_v1s.py: sends the browser on to the current Prime Loader, so the '
+            '</head>\n<body>\n<!-- Written by build_loader_v1t.py: sends the browser on to the current Prime Loader, so the '
             'address .../prime-loader/ never changes. -->\n'
             '<p>Opening the HP Prime Loader&hellip; If nothing happens, <a href="' + page + '">click here</a>.</p>\n'
             '</body>\n</html>\n')

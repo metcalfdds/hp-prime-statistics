@@ -72,5 +72,6 @@ PASS G8 commas: no number of four or more digits is drawn without them on any sc
 === D. layout over every beta 1i screen above
 PASS D1 no firm overlap and no text off the screen on any beta 1i screen above (text_overlap_v1 over 566 different screens; on beta 1h's screens of the same runs it finds "1,234,590" off the screen, "1.0" off the screen, "200" off the screen, "3,000" off the screen)
 PASS D2 no number cut short by its width argument (label_fit_v1 reports 0 texts at its estimate; none is wider than its width argument at the measured glyph widths)
+PASS D3 no menu title of this version is longer than the 31 characters a CHOOSE box shows (4 different titles in the runs above)
 
-65 checks, 0 failed
+66 checks, 0 failed

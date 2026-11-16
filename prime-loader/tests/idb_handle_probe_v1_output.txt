@@ -1,0 +1,3 @@
+OK   a string put and read : hello  (153.0.8010.12)
+OK   a folder handle put : put  (153.0.8010.12)
+STOP a folder handle put and read back : Error: page.evaluate: Target page, context or browser has been closed

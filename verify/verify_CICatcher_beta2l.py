@@ -258,9 +258,34 @@ check('V5 a whole tolerance session (+1, +10, +50, Conf and its Esc, Up and Down
       and abs(G(h, 'cqCV') / math.sqrt(20) / k20 - 1) < 1e-5 and len([s for s in h.screens if s.func == 'cqPage']) == 7, (err, mb, G(h, 'cqN'), G(h, 'cqTot')))
 check('V6 a picked line\'s panel reads "%s = ..., s = ...: lo to hi, holds nn.n %%" (%d screens; e.g. %r)' % (XB, len(picked), picked[0] if picked else ''),
       len(picked) >= 3 and all(re.match(XB + r' = [\d.,−-]+, s = [\d.,]+: [\d.,−-]+ to [\d.,−-]+, holds \d+\.\d+ %$', l) for l in picked), picked[:2])
-want = 'CICatcher: %d of 10 tolerance intervals held at least 90 %% of the population (%s %%) at %s %%, tol. 90 %%, %s = 100, %s = 15, n = 20; see CQ_COVER' % (
-    G(h, 'cqHit'), ('%.1f' % (100 * G(h, 'cqHit') / 10)), ('%g' % (G(h, 'cqL') / 10)), MU, SG)
+want = 'CICatcher: %d of 10 held at least 90 %% of the population (%s %%) at %s %%, n = 20' % (
+    G(h, 'cqHit'), ('%.1f' % (100 * G(h, 'cqHit') / 10)), ('%g' % (G(h, 'cqL') / 10)))
 check('V7 the closing line of a tolerance run says what was counted: %r' % res, res == want and G(h, 'CQ_TOTAL') == 10 and abs(G(h, 'CQ_COVER') - G(h, 'cqHit') / 10) < 1e-12, (res, want))
+
+
+def box_lines(name, res, width=26):
+    """what a program returns, as the Program Catalog's box shows it after a run: the name, the line in quotes, wrapped
+    by words.  Width 26 reproduces the five lines seen on the Virtual Calculator on 15 Nov 2026 for the first wording
+    ('CICatcher "CICatcher: 107' / 'of 111 tolerance intervals' / 'held at least 95 % of the' / 'population (96.4 %) at
+    95' / '%, tol. 95 %, mu = 100, sigma ='), where the box ended and the rest was lost."""
+    out, cur = [], ''
+    for w in ('%s "%s"' % (name, res)).split(' '):
+        if cur and len(cur) + 1 + len(w) > width: out.append(cur); cur = w
+        else: cur = (cur + ' ' + w) if cur else w
+    return out + [cur]
+
+
+first = 'CICatcher: 107 of 111 tolerance intervals held at least 95 %% of the population (96.4 %%) at 95 %%, tol. 95 %%, %s = 100, %s = 15, n = 10; see CQ_COVER' % (MU, SG)
+bl = box_lines('CICatcher', first)
+runs_ = [(107, 111, '96.4', 10), (1000, 1000, '100.0', 10), (9612, 10000, '96.1', 100), (3, 3, '100.0', 2)]
+lens = []
+for hit, tot, pc, n_ in runs_:
+    line_ = 'CICatcher: %s of %s held at least 95 %% of the population (%s %%) at 99.9 %%, n = %d' % (format(hit, ','), format(tot, ','), pc, n_)
+    lens.append(len(box_lines('CICatcher', line_)))
+check('V7b the closing line in the Program Catalog\'s box (five lines, words wrapped at 26 characters, as seen on the Virtual Calculator): the first '
+      'wording took %d lines, and its fifth ended "%s", as the calculator showed; the line as filed takes %s lines for runs of 111, 1,000, 10,000 and 3 '
+      'intervals (the widest level, 99.9 %%)' % (len(bl), bl[4][-12:], lens),
+      len(bl) == 6 and bl[4].endswith(SG + ' =') and bl[1] == 'of 111 tolerance intervals' and max(lens) <= 5, (bl, lens))
 # a red line's share reads below the share it was to hold: a sample made to hold a little under 90 %
 h = tol(10, 0.9); h.execute('cqAdd1()')
 k = G(h, 'cqCV') / math.sqrt(10)
@@ -374,5 +399,10 @@ cut = [(t, px(t, int(f)), w) for t, f, w in rep_ if px(t, int(f)) > w]
 check('D1 no firm overlap and no text off the screen (text_overlap_v1)', not firm, firm[:4])
 check('D2 no number cut short by its width argument (label_fit_v1 reports %d texts at its estimate; none is wider than its width argument at the measured glyph widths)' % len(rep_), not cut, cut[:4])
 
+# D3: a CHOOSE title shows 31 characters on the calculator (tools/prime_facts_v1.py, fact 4); the harness keeps every
+# title a program showed in any run above, and each one longer than that.
+_new = os.path.basename(PROG); _cut = sorted(set(t for t, sh_, fn_, f_ in Harness.cut_titles if f_ == _new))
+check('D3 no menu title of this version is longer than the 31 characters a CHOOSE box shows (%d different titles in the runs above)'
+      % len(Harness.shown_titles.get(_new, ())), not _cut and len(Harness.shown_titles.get(_new, ())) >= 1, _cut[:4])
 print('\n%d checks, %d failed' % (NPASS[0] + len(FAIL), len(FAIL)))
 sys.exit(1 if FAIL else 0)

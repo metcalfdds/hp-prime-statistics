@@ -5,7 +5,7 @@ A monkey test says "1,000 of 1,000 runs OK".  That is worth little for a new pag
 runs the very same sessions again (seed = BASE x 1000003 + k, monkey_v1b's rule; the same lists and matrix) and counts the
 runs in which at least one screen carried a text that matches each pattern.
 
-    python3 verify/round16/monkey_reach_v1.py PROG CALL BASE K0 K1 [--writes D] [--skip REGEX] NAME=REGEX [NAME=REGEX ...]
+    python3 tools/monkey_reach_v1.py PROG CALL BASE K0 K1 [--writes D] [--skip REGEX] NAME=REGEX [NAME=REGEX ...]
 
 A screen that matches --skip (a help page, say) is left out of the count.
 
@@ -22,7 +22,7 @@ import warnings
 
 warnings.filterwarnings('ignore')
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(HERE, '..', '..', 'tools'))
+sys.path.insert(0, HERE)
 a = sys.argv[1:]
 sys.argv = ['monkey_v1b.py']
 import monkey_v1b as M  # noqa: E402

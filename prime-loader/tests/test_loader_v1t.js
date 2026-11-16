@@ -1,4 +1,6 @@
-// test_loader_v1s.js (15 Nov 2026: v1r's checks, unchanged, on the page built from starter pack v21, round 15:
+// test_loader_v1t.js (15 Nov 2026, night: v1s's checks, unchanged, on the page built from starter pack v22, round 16:
+// nine programs with new versions)
+// was: test_loader_v1s.js (15 Nov 2026: v1r's checks, unchanged, on the page built from starter pack v21, round 15:
 // seven programs with new versions)
 // was: test_loader_v1r.js (14 Nov 2026, night: v1q's checks on the page built from starter pack v20, round 14 part 2:
 // TTestLab beta 1k and TTestLabG beta 1h; Chapter 9 lists TTestLabG)
@@ -20,7 +22,7 @@
 // Calculator: Calculators\Prime with HP's apps, settings, old programs and a matrix; Temp with the lock file.  Every file
 // the page writes is compared byte for byte with the starter pack it was built from.
 //
-//   node tests/test_loader_v1s.js PrimeLoader_v1s.html PACK.zip
+//   node tests/test_loader_v1t.js PrimeLoader_v1t.html PACK.zip
 // v1k (4 Nov 2026, night): v1j's checks, run on the page built from starter pack v13 (round 8); Chapter 11's card
 //   is found by its new title, "t-Tests: Two Samples".
 // v1j (4 Nov 2026): v1i's checks, unchanged, run on the page built from starter pack v12 (round 7).
@@ -67,6 +69,31 @@ function check(name, ok, detail) {
   const errors = [];
   page.on('pageerror', e => errors.push(String(e)));
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+  // v1t: the Chromium on this machine (Chrome for Testing 153.0.8010.12, Playwright 1.63) stops with SIGTRAP when a
+  // folder handle is READ BACK from IndexedDB; tests/idb_handle_probe_v1.js shows it with a page that holds nothing of
+  // ours.  The page remembers its folder that way, so here the handle's NAME goes into IndexedDB in its place and the
+  // folder is opened again by that name when it is read: the page's remembering still goes through IndexedDB and still
+  // has to outlast a reload.  (The mock's HP Prime folder lies at the top of the browser's private file system.)
+  await page.addInitScript(() => {
+    const oput = IDBObjectStore.prototype.put, oget = IDBObjectStore.prototype.get;
+    IDBObjectStore.prototype.put = function (v, k) {
+      if (typeof FileSystemHandle !== 'undefined' && v instanceof FileSystemHandle) return oput.call(this, { __handleName: v.name }, k);
+      return oput.call(this, v, k);
+    };
+    IDBObjectStore.prototype.get = function (k) {
+      const real = oget.call(this, k), fake = { onsuccess: null, onerror: null, result: undefined };
+      real.onsuccess = async () => {
+        let r = real.result;
+        if (r && r.__handleName) {
+          try { r = await (await navigator.storage.getDirectory()).getDirectoryHandle(r.__handleName); } catch (e) { r = undefined; }
+        }
+        fake.result = r;
+        if (fake.onsuccess) fake.onsuccess();
+      };
+      real.onerror = () => { if (fake.onerror) fake.onerror(); };
+      return fake;
+    };
+  });
   await page.addInitScript(() => {
     window.__picks = 0;
     window.__pickPath = ['HP Prime'];

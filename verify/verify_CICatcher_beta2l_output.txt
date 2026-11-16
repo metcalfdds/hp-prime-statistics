@@ -22,7 +22,8 @@ PASS V3 Cancel on the form after choosing 95 %: nothing chosen
 PASS V4 the form refuses sigma = 0, n = 1, a level of 0.3 and a mean of 20,000, each with its sentence, and comes back; then takes good values
 PASS V5 a whole tolerance session (+1, +10, +50, Conf and its Esc, Up and Down, the slider, a picked line and its neighbours, n cancelled, refused and changed, Menu and its Esc, Reset, seven help pages) runs to its end; n = 1 is refused with its sentence; after n = 20 the factor is the reference's for n = 20
 PASS V6 a picked line's panel reads " = ..., s = ...: lo to hi, holds nn.n %" (10 screens; e.g. '\ue000 = 101.3, s = 19.0: 47.0 to 155.5, holds 100.0 %')
-PASS V7 the closing line of a tolerance run says what was counted: 'CICatcher: 10 of 10 tolerance intervals held at least 90 % of the population (100.0 %) at 98.3 %, tol. 90 %, μ = 100, σ = 15, n = 20; see CQ_COVER'
+PASS V7 the closing line of a tolerance run says what was counted: 'CICatcher: 10 of 10 held at least 90 % of the population (100.0 %) at 98.3 %, n = 20'
+PASS V7b the closing line in the Program Catalog's box (five lines, words wrapped at 26 characters, as seen on the Virtual Calculator): the first wording took 6 lines, and its fifth ended "μ = 100, σ =", as the calculator showed; the line as filed takes [4, 5, 5, 4] lines for runs of 111, 1,000, 10,000 and 3 intervals (the widest level, 99.9 %)
 PASS V8 a red line that holds 89.996 % of the population says so with enough decimals to read below 90 ('\ue000 = 100.0, s = 8.6: 75.3 to 124.7, holds 89.996 %'), never "holds 90.0 %"
 PASS V9 from a tolerance run, Menu > New > t gives a t run again (its green truth line, "t, ..." in the header, "caught" or "missed by" in the panel); Esc at the tolerance menu and Cancel on its form keep that t run
 === R. regression against beta 2k
@@ -40,5 +41,6 @@ PASS G4 the six nodes and weights written in cqTolSet are NumPy's 12-point Gauss
 === D. layout over every beta 2l screen above
 PASS D1 no firm overlap and no text off the screen (text_overlap_v1)
 PASS D2 no number cut short by its width argument (label_fit_v1 reports 6 texts at its estimate; none is wider than its width argument at the measured glyph widths)
+PASS D3 no menu title of this version is longer than the 31 characters a CHOOSE box shows (4 different titles in the runs above)
 
-34 checks, 0 failed
+36 checks, 0 failed

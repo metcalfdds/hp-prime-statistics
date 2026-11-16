@@ -26,13 +26,26 @@ THE FACTS (Virtual Calculator 2.4.2, build 2026-09-09, Rogers-HP, typed in Home,
      Modelled as seeding the harness's own generator; it returns 0.  (This file keeps its name, v1: the verify
      scripts and the monkey import it by name, Lessons Learned s14 rule 7.)
 
+  4. A CHOOSE title shows 31 characters and no more (Virtual Calculator 2.4.2, build 2026-09-09, under Wine in the
+     cloud workspace, 15 Nov 2026).  AnovaLab beta 1i's "Dunnett d crit: about 14-41 s on a G1", 37 characters, stood
+     in the box's title bar as "Dunnett d crit: about 14-41 s o"; "Dunnett: about 37-112 s on a G1", 31 characters,
+     stood whole; and the box of the cut title was the narrower of the two, so the limit is a count of characters and
+     not a width.  The harness keeps every title whole.  Modelled as a record, not an error: every title longer than
+     31 characters that a program shows goes into the list Harness.cut_titles as (title, the 31 characters shown, the
+     routine, the program's file name), and every title shown into the dictionary Harness.shown_titles (file name ->
+     set of titles), for a verify script or the monkey to read.  (Items are a separate matter: a menu item is cut at
+     the box's width, about 30 characters; CLAUDE.md.)
+
 USE.  import prime_facts_v1; prime_facts_v1.apply()      -- once, before the first Harness is made.
       It returns the harness module.  Applying it twice does nothing more.
 """
 
 FACTS = ['STRING(x, 2, d): "Invalid input" for d >= 13 (Virtual Calculator, 1 Nov 2026)',
          'STRING(x, 3, d): the small capital E, "4.0\u1d078" (Virtual Calculator, 1 Nov 2026)',
-         'RANDSEED(value) seeds the random numbers (User Guide 2018; added 4 Nov 2026)']
+         'RANDSEED(value) seeds the random numbers (User Guide 2018; added 4 Nov 2026)',
+         'CHOOSE: a title shows 31 characters; longer ones are listed in Harness.cut_titles (Virtual Calculator, '
+         '15 Nov 2026)']
+TITLE_MAX = 31
 
 
 def apply():
@@ -73,6 +86,24 @@ def apply():
         t['RANDSEED'] = lambda a, site: (self.rng.seed(a[0] if a else 0), 0.0)[1]
         return t
     R.Harness._build_table = _build_table
+    # fact 4: a CHOOSE title of more than 31 characters is cut; keep a record of each one shown
+    oc = R.Harness._choose
+    R.Harness.cut_titles = []
+    R.Harness.shown_titles = {}
+
+    def _choose(self, nodes, frame):
+        import os
+        n0 = len(self.dialogs)
+        try:
+            return oc(self, nodes, frame)
+        finally:
+            fn = os.path.basename(str(self.files[0])) if getattr(self, 'files', None) else ''
+            for c in self.dialogs[n0:]:
+                if isinstance(c, R.Choose):
+                    R.Harness.shown_titles.setdefault(fn, set()).add(c.title)
+                    if len(c.title) > TITLE_MAX:
+                        R.Harness.cut_titles.append((c.title, c.title[:TITLE_MAX], c.func, fn))
+    R.Harness._choose = _choose
     R.Harness._prime_facts_v1 = True
     return R
 
