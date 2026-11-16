@@ -282,7 +282,7 @@
    "last": 12,
    "wrong": 183,
    "kind": "label",
-   "note": "every row label is one row too low: the row marked 0.2 holds the values for 0.1, and so on; with the labels moved up one row all 198 cells are exact",
+   "note": "every row label is one row too high: the row marked 0.2 holds the values for 0.1, and so on; with the labels moved down one row all 198 cells are exact",
    "bypage": {
     "194": 183
    },

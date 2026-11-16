@@ -1,0 +1,148 @@
+RankLab help 1/10: What it does
+Rank tests replace each value by its rank, so an outlier counts no
+more than the next value, and no normal population is assumed.
+Tied values share the average of the ranks they span: the
+MIDRANK.  Every test here uses midranks and the
+tie-corrected variance.
+Each test opens on its Result page.  ⇅ turn the pages: Result, a
+picture, the null distribution (and Dunn pairs for Kruskal-
+Wallis).  Soft keys: Result, Plot, Null, the 4th key (Exact/Normal,
+or what that page switches), Tails, More (Help, Dunn or
+Data, Menu).
+Page 1/10: key = next, ← = back, Esc = leave
+
+RankLab help 2/10: Keys and touch
+Up / Down = the previous / next page
+Left / Right = pick the next dot, group, cell, point or pair
+  (on the Null page: the read-out line; on Result: turn pages)
++ = the 4th soft key (Exact/Normal, ranks/values, rs/tau-b)
+- = Tails: two-sided, lower, upper (Page's L: rising, falling)
+0 = this help;  Enter = a menu of every action
+Esc = back to the main menu (Quit is there)
+Tap a dot, group, cell, point, bar or pair:
+the panel says what it is, its value, group and midrank, and for a
+tie which ranks were averaged.  The 4th soft key's label shows
+which choice is on now.
+Page 2/10: key = next, ← = back, Esc = leave
+
+RankLab help 3/10: Sign test, signed-rank
+Both test H₀: the median of d is 0.  Zeros
+are dropped: n counts the nonzero d only.
+SIGN: S+ = number of d > 0, Binomial(n, 1/2)
+under H₀; exact p from BINOMIAL_CDF; two-
+sided = 2 × the smaller tail (at most 1).
+SIGNED-RANK: rank |d| (midranks); T+ = the
+sum of the ranks of d > 0.  Under H₀ each
+sign is + or - with chance 1/2, 2^n patterns;
+RankLab counts them all (ties too), n ≤ 50.
+Effect r = (T+ - T-)/(n(n+1)/2).  Estimate:
+Hodges-Lehmann = the median of all Walsh
+averages (d_i + d_j)/2, i ≤ j (n ≤ 100).
+Page 3/10: key = next, ← = back, Esc = leave
+
+RankLab help 4/10: Mann-Whitney, Kruskal-Wallis
+MANN-WHITNEY: rank both groups together;
+U₁ = R₁ - n₁(n₁ + 1)/2 = the (X, Y) pairs with
+X > Y (ties count 1/2).  Exact: every split
+of the N ranks is equally likely; RankLab
+counts them (no ties, n₁ n₂ ≤ 400).  Ties:
+normal, tie-corrected, continuity corrected.
+P(X > Y) + ties/2 = U₁/(n₁ n₂); rank-biserial
+r = (U₁ - U₂)/(n₁ n₂).  Hodges-Lehmann shift.
+KRUSKAL-WALLIS: H compares the k mean ranks;
+p from χ²(k - 1); epsilon² = H/(N - 1).
+DUNN: z for each pair of mean ranks, Holm-
+adjusted over the k(k - 1)/2 pairs.
+Page 4/10: key = next, ← = back, Esc = leave
+
+RankLab help 5/10: Friedman, W, correlation
+FRIEDMAN: rank within each block (row); Q compares the
+treatments' rank sums, p from χ²(k - 1).  Kendall's
+W = Q/(b(k - 1)): 0 = the blocks disagree, 1 = every block ranks
+the treatments the same.
+Judges: 43 judges (blocks) x 3 criteria. Halo preset: the first 8
+of those judges on 11 criteria; W only, no p (the same lawyers
+rated every criterion).
+SPEARMAN rs = Pearson's r of the midranks;
+exact p over all n! orders for n ≤ 7, else t.
+KENDALL tau-b = (concordant - discordant)
+pairs / √((n₀ - n₁)(n₀ - n₂)); exact p without ties (n ≤ 30), else z
+(tie-corrected).
+Lower (one-sided) tests for a negative association.
+Page 5/10: key = next, ← = back, Esc = leave
+
+RankLab help 6/10: Page's L, an ordered trend
+Friedman asks whether the treatments differ at all.  PAGE'S L
+asks more: do they rise in the ORDER LISTED (column 1, 2, 3 ...)?
+Rank within each block (row), as Friedman does.  Then
+L = 1 × R₁ + 2 × R₂ + ... + k × Rk     (R = a column's rank sum)
+A block whose ranks follow the order adds the most to L.
+The 5th soft key (or -) switches Rising and Falling.  Choose the
+order and the direction BEFORE you see the data.
+EXACT p: under H₀ every order of a block's ranks is equally
+likely.  RankLab counts them all for a small table (3 columns:
+up to 77 blocks; 5: 17; 9: 3; fewer with ties), ties as they are.
+NORMAL: z = (L - mean)/SD, with no continuity correction.
+Plot: each column's mean rank, in order.  Friedman opens the
+same data (menu item 5) and shows the ranks in each block.
+Page 6/10: key = next, ← = back, Esc = leave
+
+RankLab help 7/10: The runs test
+THE RUNS TEST asks whether the ORDER of a sequence is
+random.  It is not a rank test: it only counts.  A RUN is a
+stretch of the same kind:  R R R R B R R R  has 3 runs.
+Two kinds (red or black, pass or fail) are used as they are.
+Numbers are cut at their median into above and below; a value
+equal to the median is dropped.
+TOO FEW runs: like values cluster (a drift, a trend, streaks).
+TOO MANY runs: the two kinds alternate more than chance does.
+Tails: lower = too few, upper = too many, two-sided = either.
+EXACT p: every order of the two kinds is equally likely under
+H₀; RankLab counts the orders (n ≤ 2,000).
+NORMAL: z = (runs - mean)/SD, mean = 2 n₁ n₂/n + 1.
+Plot: a square for each value; numbers also as a chart (More).
+Page 7/10: key = next, ← = back, Esc = leave
+
+RankLab help 8/10: Exact or normal; the p-value
+EXACT: p from the statistic's whole null distribution, counted.
+NORMAL: z with the continuity correction (0.5 toward the mean)
+and, with ties, the tie-corrected variance.
+(Page's L and the runs test: z without that correction.)
+They agree better as n grows: compare them.
+A p-value is P(a statistic this extreme | H₀), not the chance that
+H₀ is true.  p ≥ 0.05 means no evidence of a difference; it is not
+proof that there is none.
+Two-sided: twice the smaller tail (max 1).
+Lower / upper: one tail, chosen BEFORE the data.  Kruskal-Wallis,
+Friedman: upper only.  Page's L: rising or falling.
+Page 8/10: key = next, ← = back, Esc = leave
+
+RankLab help 9/10: Data and Home
+Presets (source on every page): Rossi
+recidivism, the 1970 draft lottery, Darwin's
+Zea mays, judges' ratings, a mock jury (KW
+uses attractiveness only; Crime is ignored),
+ozone and airway resistance, a roulette wheel.
+Your data: Statistics 1Var D1..D9; groups =
+columns; paired D1 - D2; one sample D1 vs m₀;
+correlation D1, D2; Friedman and Page's L:
+rows = blocks; runs: D1 in the order it happened.
+Home: RK_STAT, RK_P (exact when there is
+one), RK_PN, RK_EFF, RK_HL, RK_RANKS.
+Page 9/10: key = next, ← = back, Esc = leave
+
+RankLab help 10/10: Credits
+Does what Michael Lloyd's TI-83/84 programs
+for Triola do (SRTEST, RSTEST, KWTEST, SRCORR,
+ZZRANK), without their tie, zero, rs errors.
+Written new for the Prime: none of their code.
+The runs test does what Hewlett-Packard's Run Test
+for Randomness did on the HP-65 (Stat Pac 2, 1975)
+and the HP-67/97.  Those took the two counts and the
+number of runs, keyed in, and gave the mean, the SD
+and z.  RankLab counts the runs itself and adds the
+exact p.  The roulette example is theirs.  Written
+new: none of their code.
+Page's L is written from its formulas (Page 1963).
+Page 10/10: key = next, ← = back, Esc = leave
+

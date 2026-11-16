@@ -1,0 +1,7 @@
+NEW
+PROGRAM          screens   19/32    collisions   0 (firm   0) straddles   0 overruns   0 ghosts   0
+walk: {'runs': 2, 'stalls': 0, 'errors': {}, 'budget_s': 60, 'entry': 'BiNorm3D()'}
+
+OLD
+PROGRAM          screens   19/32    collisions   0 (firm   0) straddles   0 overruns   0 ghosts   0
+walk: {'runs': 2, 'stalls': 0, 'errors': {}, 'budget_s': 60, 'entry': 'BiNorm3D()'}

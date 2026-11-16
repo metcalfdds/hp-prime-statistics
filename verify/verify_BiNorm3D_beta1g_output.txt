@@ -1,0 +1,54 @@
+=== T. the build
+PASS T1 the build makes programs/BiNorm3D_beta1g.txt byte for byte
+=== A. the arithmetic
+PASS A1 bnCepC equals the reference (an integral over Z1 with the normal CDF, Brent's method) to 1E-9 at 17 values of ρ from −0.9 to 0.9; Newton took 1 to 5 steps; BN_CEP holds it
+PASS A1b what the comment above bnCepC says, counted at the 181 values of ρ from −0.90 to 0.90: Newton takes 1 to 5 steps in the PC harness (1 at 0, 5 from 0.84 on), the smallest R^2 g at any step is 0.166 (the comment: 0.16 or more), and the 16 midpoints give P within 1e-13 of 4,096 midpoints (the comment: 10 digits or better)
+PASS A2 at ρ = 0 the CEP is root(2 ln 2) = 1.17741002252 to 12 digits
+PASS A3 a second reference, a simulation: of 2,000,000 pairs at ρ = 0.6, −0.9 and 0, half land inside the circle (within 4 standard errors)
+PASS A4 the ellipse that holds half: its 61 points are the pixels of Q = 2 ln 2 (1 - exp(-Q/2) = 1/2) at four values of ρ
+PASS A5 help page 5 prints the CEP at ρ = 0.6 and 0.9 as the reference gives them to 3 decimals (1.101, 0.988)
+PASS A6 a fresh run: BN_CEP is 0, no CEP worked out yet (bnCpD = 1), no shots
+=== S. the shots
+PASS S1 ten volleys of 50 make 500 shots; an eleventh fires none and says "500 shots is the most: Clear starts again"
+PASS S2 the count inside the circle is the number of shots flagged inside (244 of 500, near half), and every shot drawn is a 2 x 2 dot inside the frame (495 drawn)
+PASS S3 the 500 shots have the correlation they were fired with (ρ = 0.60; the pixels give r = 0.622, within 4 standard errors)
+PASS S4 a shot is flagged inside exactly when it lies inside the circle (checked on its pixel, to a pixel)
+PASS S5 a new ρ marks the CEP stale; the next drawing of the target works it out again (R = 1.1597) and removes the shots fired at the old ρ
+=== V. the views, the keys and every way out
+PASS V1 soft key 3 goes 3-D, Cont, CEP, 3-D, and names the next view each time ("Cont", "CEP", "3-D", "Cont"); in the target view keys 4 and 5 read Shots and Clear
+PASS V2 the menu has 8 items of at most 30 characters; its item 2 names the next view ("Contour view (from above)", "Target view (CEP circle)", "3-D view") and goes there; Esc at the menu changes nothing
+PASS V3 in the target view the four arrows change nothing: five target screens, each with the same shapes and texts, and the slice stays off
+PASS V3b in the contour view Left still switches the slice on and moves it (x0 1.50 to 1.25), as in beta 1f
+PASS V4 keys 4 and 5: Slice and Reset in the 3-D view (the slice comes on; ρ back to 0.60); Shots and Clear in the target view (0, 50, 100, 0, 50 shots; ρ and the angles untouched)
+PASS V4b the count line reads "inside: n (p %)" with p = 100 n / 50 rounded (['inside: 19 (38 %)'])
+PASS V5 a tap on the plot fires 50 shots; a tap on the words beside it or under it fires none
+PASS V6 ρ−, ρ+ and the − and + keys in the target view: a new ρ, a new R (R = 1.069, R = 1.031, R = 0.988, R = 0.988, R = 1.031) and the shots gone; at 0.9 the page says "ρ stops at 0.9 here"
+PASS V7 Menu > Set ρ in the target view: Cancel changes nothing; 0.95 is refused with its sentence and changes nothing; −0.45 is taken (R = 1.136)
+PASS V8a Esc in the 3-D view ends the run with beta 1f's line, and BN_CEP is 0: the target view was never opened
+PASS V8b Esc in the contour view: the same line
+PASS V8c Esc in the target view: the line also names the CEP ("BiNorm3D: ρ = 0.60, E[Y | X = x] = 0.60 x, CEP = 1.101; ρ in BN_RHO, the CEP in BN_CEP"), and BN_CEP holds it
+PASS V8d the target view opened, then ρ changed in the 3-D view: the line and BN_CEP give the CEP for the LAST ρ (0.80: 1.031), worked out at the end
+PASS V8e Menu > Quit from the target view ends the run with the same line as Esc there
+PASS V9 Menu > Frame timing from the target view shows its box and comes back to the target view with its shots
+PASS V10 Menu > Reset the view from the target view leaves ρ at 0.60 and the target on the screen
+=== R. regression against beta 1f
+PASS R1 the 3-D view and the contour view draw exactly beta 1f's shapes and texts in 120 states (5 values of ρ, 3 pairs of angles, the slice off and at 3 places); only soft key 3 of the contour view differs ("CEP" for "3-D")
+PASS R2 a session of the old features (rho keys, arrows, slice by key, tap and menu, Reset, the grid item, Set ρ, both views) shows the same 37 screens in both versions once the target view's are taken out; beta 1g returns beta 1f's line with the CEP added
+=== H. the help
+PASS H1 six help pages, titled "BiNorm3D help n/6: ..."
+PASS H2 pages 1 to 4 are beta 1f's word for word, with 6 for 5 in the header and the footer
+PASS H3 page 6 is beta 1f's page 5 with four lines changed (the header, the views, BN_CEP, the footer) and one more (the target's keys): ['BiNorm3D help 6/6: Keys and touch', 'Cont: the view from above; CEP: the target; 3-D: the surface.', 'Target: Shots (or a tap) fires 50 shots; Clear removes them.', 'Home after a run: BN_RHO holds ρ; BN_CEP the CEP if shown.', '6/6, tap or key = back to the surface']
+PASS H4 page 5, The target and the CEP, reads as written (14 lines)
+PASS H5 every help line fits its 296 px at the measured glyph widths (widest 294 px), and no line of text sits below y = 201
+PASS H6 the opening page: beta 1f's lines, with two more on the target view and "six pages of help"
+=== G. static
+PASS G1 no "!=" in the code, and the code outside strings and comments is ASCII
+PASS G2 every LOCAL line names at most 6 variables (55 lines)
+PASS G3 the header names beta 1g and its date
+PASS G4 every text of the target view fits its width argument and the screen at the measured glyph widths
+=== D. layout over every beta 1g screen above
+PASS D1 no firm overlap and no text off the screen (text_overlap_v1)
+PASS D2 no number cut short by its width argument (label_fit_v1 reports 1 texts at its estimate; none is wider than its width argument at the measured glyph widths)
+PASS D3 no menu title of this version is longer than the 31 characters a CHOOSE box shows (1 different titles in the runs above)
+
+44 checks, 0 failed

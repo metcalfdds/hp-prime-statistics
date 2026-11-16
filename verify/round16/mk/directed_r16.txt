@@ -1,0 +1,14 @@
+AnovaLab_dunnett_insects_table   200 runs: {'OK': 200}; on the page in 200
+AnovaLab_dunnett_draft_plot      200 runs: {'OK': 200}; on the page in 200
+AnovaLab_dunnett_jury_table      200 runs: {'OK': 200}; on the page in 200
+AnovaLab_dunnett_mydata          200 runs: {'OK': 200}; on the page in 84  (--missed-ok)
+FitCheck_outlier_darwin          200 runs: {'OK': 200}; on the page in 200
+FitCheck_outlier_mydata          200 runs: {'OK': 200}; on the page in 82  (--missed-ok)
+CICatcher_tolerance_95           200 runs: {'OK': 200}; on the page in 200
+CICatcher_tolerance_99_form      200 runs: {'OK': 200}; on the page in 68  (--missed-ok)
+RankLab_page_ozone               200 runs: {'OK': 200}; on the page in 200
+RankLab_page_months              200 runs: {'OK': 200}; on the page in 200
+RankLab_runs_roulette            200 runs: {'OK': 200}; on the page in 200
+RankLab_runs_days                200 runs: {'OK': 200}; on the page in 200
+RankLab_runs_mydata              200 runs: {'OK': 200}; on the page in 111  (--missed-ok)
+BiNorm3D_target                  200 runs: {'OK': 200}; on the page in 200

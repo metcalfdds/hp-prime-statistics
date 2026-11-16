@@ -4,6 +4,8 @@
 
 **Why:** Roger, 15 November 2026: "let's please use that book as another arbitrary reference to compare our calculations against--and note if there's an error in a table we're looking at", and later "please check all the tables in the 2000 CRC book that you can", "it would be interesting to see how many miscalculations/misprints are in the book", and "let's develop a distribution to model errors in stats and math books ... what's the 95% CI for number of errors per page?"
 
+**Corrected on 16 November 2026.** This report said that the row labels of the table of circular normal probabilities (p. 194) are one row too *low*, and that moving them *up* a row sets the table right. The direction was written the wrong way round. The page was read again: it prints the labels 0.2, 0.3, …, 1.0, 1.2, …, 5.8 on 33 rows whose numbers are those of 0.1, 0.2, …, 0.9, 1.0, 1.2, …, 5.6, so each label stands one row *above* its own numbers, one row too *high*, and moving the labels *down* a row sets the table right. The fact the report gave beside the direction ("the row marked 0.2 holds the values for 0.1") and the count (183 of 198 values wrong as labelled) were right and stand. Two lines below are changed, and nothing else.
+
 ## The short answer
 
 - **57 tables on 151 pages were checked: 39,164 printed values.**
@@ -50,7 +52,7 @@ A printed number can be off for several different reasons. This book has all of 
 
 | Page | Table | The fault | Cells wrong as labelled |
 | --- | --- | --- | --- |
-| 194 | Circular normal probabilities | every row label is one row too low: the row marked d/σ = 0.2 holds the values for 0.1. With the labels moved up one row all 198 cells are exact | 183 of 198 |
+| 194 | Circular normal probabilities | every row label is one row too high: the row marked d/σ = 0.2 holds the values for 0.1, so each label stands one row above its own numbers. With the labels moved down one row all 198 cells are exact | 183 of 198 |
 | 186 | Tolerance factors | the book defines α by the confidence and P as the share of the population, but the table's "P = .90" is the confidence and its "α = .10, .05, .01, .001" are the shares left out (n = 2: printed 18.800 under α = .05, where the value for 95% confidence is about 32). The 1989 book labels the same numbers γ and 1 − α | 162 of 216 |
 | 248 | Cochran's test, second table | headed α = .05; it is the 1% table (headed rightly in 1989) | 221 of 252 |
 | 166 | Student's t | the last two columns are headed 0.0025 and 0.001 and hold the values for 0.001 and 0.0005 | 72 of 72 |
@@ -117,7 +119,7 @@ A printed number can be off for several different reasons. This book has all of 
 | Table 7.1, critical values of the normal distribution | 184 | 23 | 0 | 0 | Nothing |
 | Tolerance factors for normal distributions | 186 | 216 | 1 | 162 | The headings P and alpha are exchanged against the book's own definitions (162 of 216 cells wrong as headed; 1989 has them as gamma and 1 - alpha); the numbers are the Wald-Wolfowitz approximation (171 differ from the exact factors, by 3% at n = 2) |
 | Percentage points of the correlation coefficient | 193 | 186 | 0 | 0 | The six cells of the first row, printed in a short form, were checked by hand |
-| Circular normal probabilities | 194 | 198 | 12 | 183 | Every row label is one row too low: the row marked 0.2 holds the values for 0.1, and so on; with the labels moved up one row all 198 cells are exact |
+| Circular normal probabilities | 194 | 198 | 12 | 183 | Every row label is one row too high: the row marked 0.2 holds the values for 0.1, and so on; with the labels moved down one row all 198 cells are exact |
 | Circular error probabilities | 195 | 150 | 1 | 0 | Nothing |
 | Estimators of the mean and of sigma (variances, efficiencies) | 202 | 87 | 0 | 0 | The best-linear-estimate part was not checked |
 | Table 9.1, common critical values | 206 | 50 | 4 | 1 | The last row is printed with a fourth decimal that is a padding zero (1074.6790 for 1074.6794) |
@@ -242,4 +244,4 @@ Suggestions only; nothing was built.
 
 ## Files
 
-Scripts (in `verify/crc2000/tools/`; they read the PDF's text and hold none of it): `crc_lib.py`, `crc_check_v1.py` to `v8.py`, `crc_bartlett_v1.py`, `crc_dunnett2_v1.py`, `crc_finney_v1.py`, `crc_orthpoly_v1.py`, `crc_spearman_v1.py`, `crc_spearman_mc.py`, `crc_ours_v2.py`, `crc_studrange_ours.py`, `crc_summary_v1.py`, `crc_model_v1.py`. To rerun: `pdftotext -layout BOOK.pdf work/all.txt`, then the scripts in that order.
+Scripts (in `verify/crc2000/tools/`; they read the PDF's text and hold none of it): `crc_lib.py`, `crc_check_v1.py` to `v8.py`, `crc_bartlett_v1.py`, `crc_dunnett2_v1.py`, `crc_finney_v1.py`, `crc_orthpoly_v1.py`, `crc_spearman_v1.py`, `crc_spearman_mc.py`, `crc_ours_v2.py`, `crc_studrange_ours.py`, `crc_summary_v2.py`, `crc_model_v1.py`. To rerun: `pdftotext -layout BOOK.pdf work/all.txt`, then the scripts in that order.
