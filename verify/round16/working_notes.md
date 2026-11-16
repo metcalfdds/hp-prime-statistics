@@ -22,8 +22,8 @@ RiskLab, AgreeLab) and consistently in the book.
 | StatDist v2.7n, AgreeLab 1h, RiskLab 1h, BurrLab 1r (credits) | committed a0842d0; wording verify 25/25 |
 | CICatcher beta 2l (tolerance interval, exact factor) | committed 7fc39d8, 05be49c; verify 34/34; gate PASS; monkey 1,000/1,000 |
 | FitCheck beta 1i (Dixon's outlier test; the loader's refused sample; axis numbers) | committed 8194529; verify 65/65; gate PASS; monkey 1,000/1,000 |
-| RankLab beta 1j (Page's L, runs test) | design settled (points 2 and 3 below); build script next |
-| AnovaLab beta 1i (Dunnett) | to do |
+| RankLab beta 1j (Page's L, runs test) | committed 83a0cb2, c85f0da; verify 56/56; gate PASS; monkey 1,000/1,000 |
+| AnovaLab beta 1i (Dunnett's test; numbers no longer cut by their places) | verify 49/49 (438 s); gate PASS; monkey 1,000/1,000 |
 | paperwork (change notes, READMEs, Lessons Learned v7zw), Virtual Calculator, starter pack, Prime Loader, pull request | to do |
 | Draft 37 of the book | after the round; its working folder must be restored from the source package on the PC |
 

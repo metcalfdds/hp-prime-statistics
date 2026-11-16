@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """verify_AnovaLab_beta1i.py -- checks AnovaLab beta 1i (Round 16, 15 Nov 2026): Dunnett's test of every group against
-one control (its engine, its two pages, every way in and out), ten help pages, and everything else as beta 1h had it.
+one control (its engine, its two pages, every way in and out), ten help pages, numbers no longer cut by their places,
+and everything else as beta 1h had it.
 Runs from the repository alone (Lessons Learned s14 rule 18): tools/, programs/ and verify/ by relative path, beta 1h
 from git (main at 4e8ff66).  Needs hp-prime-kit (HPKIT), SciPy, NumPy.  About seven minutes.
 
@@ -16,6 +17,9 @@ from git (main at 4e8ff66).  Needs hp-prime-kit (HPKIT), SciPy, NumPy.  About se
       p-values and during d crit, the two refusals with their sentences and nothing changed, the same control again,
       another control, Set alpha (computed again or not), new data, the Left/Right round, Help from the new pages,
       the estimate's wording, numbers too wide or too small for their places.
+  N   numbers kept whole: the routines that fit a number to its place against references written here; av_Gn from
+      1E12 up; the axes' numbers and the plots' left edge; every page of the three analyses with data of 11 sizes,
+      where beta 1i cuts nothing and beta 1h is counted cutting.
   R   regression against beta 1h: the monkey, 40 seeds, on beta 1h and on beta 1i with its new entrance shut and beta
       1h's help and opening page; every old one-way page through beta 1i's own menu.
   H   the help: 10 pages; the old pages word for word but their numbers and page 4's new line; every line within its
@@ -81,17 +85,7 @@ def fx(v, d):
     return '{:,f}'.format(q).replace('-', MINUS)
 
 
-def gn(v):
-    """av_Gn: about 5 digits"""
-    a = abs(v); d = 4
-    if a >= 1: d = 3
-    if a >= 10: d = 2
-    if a >= 1000: d = 1
-    if a >= 100000: d = 0
-    return fx(v, d)
-
-
-def axw(t): return 6 * len(t) - 3 * sum(1 for ch in t if ch in '.,')
+def axw(t): return 6 * len(t) - 3 * sum(1 for ch in t if ch in '.,') - sum(1 for ch in t if ch == MINUS)       # av_AxW
 
 
 def sci(v, d):
@@ -114,16 +108,52 @@ def fitn(v, w):
         if a >= 100000: d = 0
         t = fx(v, d)
         if axw(t) <= w: return t
-        while a >= 10 and d > 0:
+        while (a >= 10 or a == 0) and d > 0:
             d -= 1; t = fx(v, d)
             if axw(t) <= w: return t
-    for d in (2, 1, 0):
+        if a == 0: return '0'
+    for d in (4, 3, 2, 1, 0):
         t = sci(v, d)
         if axw(t) <= w: return t
     return t
 
 
 def fits(v, w): return '+' + fitn(v, w - 6) if v > 0 else fitn(v, w)
+
+
+def gn(v):
+    """av_Gn: about 5 digits; from 1E12 up the scientific form with 4 decimals"""
+    a = abs(v); d = 4
+    if a >= 1: d = 3
+    if a >= 10: d = 2
+    if a >= 1000: d = 1
+    if a >= 100000: d = 0
+    if a >= 1e12: return sci(v, 4)
+    return fx(v, d)
+
+
+def sgn(v): return '+' + gn(v) if v >= 0.00005 else gn(v)      # av_Sgn: a + when the number, rounded to 4 decimals, is above 0
+def fitg(v, w): return gn(v) if axw(gn(v)) <= w else fitn(v, w)
+def fitgs(v, w): return sgn(v) if axw(sgn(v)) <= w else fits(v, w)
+def fitci(a, b, w): return '(%s, %s)' % (gn(a), gn(b)) if axw(gn(a)) + axw(gn(b)) + 12 <= w else '(%s, %s)' % (fitn(a, (w - 12) // 2), fitn(b, (w - 12) // 2))
+
+
+def ax_set(lo, hi, st, d):
+    """av_AxSet: -> (the plot's left edge, sci?, decimals)"""
+    m = max(abs(lo), abs(hi)) or st; w = 999; f = 0; dd = d
+    if d <= 6 and m < 1e12: w = max(axw(fx(lo, d)), axw(fx(hi, d)))
+    if w > 80:
+        f = 1; dd = max(0, min(8, math.floor(math.log10(m)) - math.floor(math.log10(st))))
+        w = 0; v = lo; i = 0
+        while v <= hi + st / 1000 and i < 60: w = max(w, axw(ax_lb(v, st, f, dd))); v += st; i += 1
+    return max(36, w + 4), f, dd
+
+
+def ax_lb(v, st, f, d):
+    """av_AxLb"""
+    if f == 0: return fx(v, d)
+    if abs(v) < st / 1000: return '0'
+    return sci(v, d)
 
 
 def ts(v):
@@ -451,12 +481,6 @@ def nice(v):
     return 10 ** e if f <= 1 else (2 * 10 ** e if f <= 2 else (5 * 10 ** e if f <= 5 else 10 ** (e + 1)))
 
 
-def tk(v, d, st):
-    if abs(v) < st / 1000: return '0'
-    if d <= 6 and abs(v) < 10000000: return fx(v, d)
-    return sci(v, 1).replace('.0' + SCI, SCI)
-
-
 def page7(D, names, sh, sel=None, d_ok=True, alpha=None):
     """-> (the texts in the order they are drawn, as (text, x, y); the shapes in order, as (cmd, args))"""
     a = D['alpha'] if alpha is None else alpha; c = D['c']; rows = D['rows']; mm = len(rows)
@@ -481,9 +505,10 @@ def page7(D, names, sh, sel=None, d_ok=True, alpha=None):
     S += [('PIXON_P', [X(0), yy, GRAY]) for yy in range(34, ya + 1, 3)]
     S.append(('LINE_P', [52, ya, 308, ya, 0]))
     st = nice((hi - lo) / 8); d = max(0, -math.floor(math.log10(st))); v0 = math.ceil(lo / st) * st; lx = -100; i = 0; ticks = []
+    mg_, sf_, sd_ = ax_set(v0, math.floor(hi / st) * st, st, d)
     while v0 + i * st <= hi and i < 12:
         x1 = X(v0 + i * st); S.append(('LINE_P', [x1, ya, x1, ya + 2, 0]))
-        t = tk(v0 + i * st, d, st); wt = axw(t); x2 = max(2, min(317 - wt, x1 - wt // 2))
+        t = ax_lb(v0 + i * st, st, sf_, sd_); wt = axw(t); x2 = max(2, min(317 - wt, x1 - wt // 2))
         if x2 > lx + 4: T.append((t, x2, ya + 3)); lx = x2 + wt; ticks.append((t, x2, wt))
         i += 1
     T.append((('red = the CI misses 0 (differs at %s = %s);  dotted line = 0' % (AL, al_s(a))) if d_ok else 'red = p < %s = %s (differs);  dotted line = 0' % (AL, al_s(a)), 4, 173))
@@ -752,6 +777,147 @@ homes = ['AV_F', 'AV_P', 'AV_DF', 'AV_MSE', 'AV_ETA2', 'AV_TAB']
 check('V12 Dunnett\'s test changes nothing else: the closing line ("%s") and Home\'s AV_F, AV_P, AV_DF, AV_MSE, AV_ETA2 and AV_TAB are the same with and without it' % ra,
       ra == rb_ and all(str(G(ha, v)) == str(G(hb, v)) for v in homes) and ra.startswith('AnovaLab: one-way F(5, 66) = 34.702, p < 0.0001'), (ra, rb_))
 
+print('=== N. numbers kept whole')
+def parse_num(t):
+    """a number as the pages write it -> (its value, half a unit of its last digit)"""
+    s_ = t.strip().replace(MINUS, '-').replace(',', '').replace('+', '')
+    k = 1
+    if s_.endswith('k'): s_ = s_[:-1]; k = 1000
+    if SCI in s_:
+        m_, e_ = s_.split(SCI); dec = len(m_.split('.')[1]) if '.' in m_ else 0
+        return float(m_) * 10.0 ** int(e_), 0.5 * 10.0 ** (int(e_) - dec)
+    dec = len(s_.split('.')[1]) if '.' in s_ else 0
+    return float(s_) * k, 0.5 * 10.0 ** (-dec) * k
+def shows(t, v): p_, u_ = parse_num(t); return abs(p_ - v) <= u_ * (1 + 1e-6) + abs(v) * 1e-11
+def pxn(t): return sum((GW.get(str(ord(ch))) or [6, 7, 8])[0] for ch in t)          # font 1; the small capital E counts as a digit
+def cmp_(v, n):
+    for d in (3, 2, 1, 0):
+        t = fx(v, d)
+        if len(t) <= n: return t
+    return fx(v / 1000, 0) + 'k'
+def lit(v): return repr(float(v)).replace('e+', 'E').replace('e', 'E')
+hN = fresh(); hO = fresh(OLD)
+rngn = random.Random(16)
+VALS = [0.0, -0.0, 0.001, -0.001, 0.00099, 12.3456, -9876.54321, 123456.7, -123456.7, 99999.4, 1e12, -1e12, 9.9e11, 1.5e12, 2467448033.0, 308431004.0, 1000027.0, -4637948.0, 3.2e-7, -5e-9, 1e40, -2.6e40, 7.25e-13]
+VALS += [rngn.choice((-1, 1)) * (1 + 9 * rngn.random()) * 10.0 ** rngn.uniform(-14, 46) for _ in range(700)]
+VALS += [rngn.choice((-1, 1)) * round((1 + 9 * rngn.random()) * 10.0 ** rngn.randint(-4, 11), rngn.randint(0, 3)) for _ in range(500)]
+WID = [32, 40, 44, 46, 49, 52, 56, 58, 60, 62]
+bad = []; nfit = 0; nsci = 0; nwide = 0
+for i, v in enumerate(VALS):
+    w = WID[i % len(WID)]
+    a = call(hN, 'av_FitN(%s, %d)' % (lit(v), w)); b = fitn(v, w); nfit += 1
+    if SCI in a: nsci += 1
+    fitsw = pxn(a) <= w
+    if not fitsw:
+        nwide += 1
+        if axw(sci(v, 0)) <= w: bad.append(('too wide', v, w, a))
+    if a != b or not shows(a, v): bad.append(('FitN', v, w, a, b))
+    s1 = call(hN, 'av_FitS(%s, %d)' % (lit(v), w))
+    if s1 != fits(v, w) or (v > 0) != s1.startswith('+') or not shows(s1, v): bad.append(('FitS', v, w, s1, fits(v, w)))
+    g1 = call(hN, 'av_FitG(%s, %d)' % (lit(v), w)); g0 = call(hN, 'av_Gn(%s)' % lit(v))
+    if g1 != fitg(v, w) or g0 != gn(v) or (pxn(g0) <= w and g1 != g0) or (abs(v) >= 0.00005 and not shows(g1, v)): bad.append(('FitG', v, w, g1, g0, fitg(v, w)))
+    gs = call(hN, 'av_FitGS(%s, %d)' % (lit(v), w)); s0 = call(hN, 'av_Sgn(%s)' % lit(v))
+    if gs != fitgs(v, w) or s0 != sgn(v) or (pxn(s0) <= w and gs != s0): bad.append(('FitGS', v, w, gs, s0, fitgs(v, w)))
+    if abs(v) < 1e12:
+        c1 = call(hN, 'av_FitC(%s, 6, %d)' % (lit(v), w)); c0 = call(hN, 'av_Cmp(%s, 6)' % lit(v))
+        if c0 != cmp_(v, 6) or c1 != (c0 if axw(c0) <= w else fitn(v, w)): bad.append(('FitC', v, w, c1, c0))
+    v2 = VALS[(i * 7 + 3) % len(VALS)]; w2 = (106, 110, 94)[i % 3]
+    ci = call(hN, 'av_FitCI(%s, %s, %d)' % (lit(v), lit(v2), w2))
+    if ci != fitci(v, v2, w2) or (pxn(ci) > w2 and axw(sci(v, 0)) + axw(sci(v2, 0)) + 12 <= w2): bad.append(('FitCI', v, v2, w2, ci, fitci(v, v2, w2)))
+    for txt in (a, g0, s1):
+        if SCI not in txt and call(hN, 'av_AxW("%s")' % txt) != px(txt): bad.append(('AxW', txt, call(hN, 'av_AxW("%s")' % txt), px(txt)))
+ft = [call(hN, 'av_FitT("24.200", 24.2, 53)'), call(hN, 'av_FitT("347,015,388,899", 347015388899, 53)')]
+check('N1 the routines that fit a number to its place, %s values from 5E-15 to 1E46, each for a place of 32 to 62 pixels: av_FitN, av_FitS, av_FitG, av_FitGS, av_FitC, av_FitCI and av_FitT write what the reference here writes; the text is within its pixels (%d times nothing fits, not even one digit in scientific form); it reads back as the number, within half a unit of its last digit; a number that fitted keeps the text beta 1h gave it; %d of the texts are in scientific form; av_AxW is the measured width of every text of digits, points, commas and signs; av_FitT: %s'
+      % (comma(nfit), nwide, nsci, ft), not bad and nfit > 1200 and nsci > 300 and ft == ['24.200', '3.4702' + SCI + '11'], bad[:4])
+
+# N2: av_Gn from 1E12 up, and as before below it
+g12 = [(call(hN, 'av_Gn(%s)' % lit(v)), call(hO, 'av_Gn(%s)' % lit(v))) for v in (1.5e12, -2.467448e13, 1e12, 9.4e45)]
+same_below = all(call(hN, 'av_Gn(%s)' % lit(v)) == call(hO, 'av_Gn(%s)' % lit(v)) for v in VALS if abs(v) < 1e12)
+check('N2 av_Gn writes five digits from 1E12 up (%s; beta 1h wrote one: %s) and, below 1E12, exactly what beta 1h writes (%d values)'
+      % (', '.join(a for a, b in g12), ', '.join(b for a, b in g12), sum(1 for v in VALS if abs(v) < 1e12)),
+      same_below and [a for a, b in g12] == ['1.5000' + SCI + '12', MINUS + '2.4674' + SCI + '13', '1.0000' + SCI + '12', '9.4000' + SCI + '45'] and g12[0][1] == '2' + SCI + '12', g12)
+
+# N3: the axes: how the numbers are written and where the plot's left edge goes
+badx = []; nax = 0; kinds = collections.Counter(); wid = collections.Counter()
+for i in range(400):
+    sc_ = 10.0 ** rngn.uniform(-12, 15); off = rngn.choice((0, 0, 0, 1e3, 1e6, -1e5)) * sc_ * rngn.random()
+    lo = off + sc_ * rngn.uniform(-30, 20); hi = lo + sc_ * rngn.uniform(1, 60)
+    st = nice((hi - lo) / 5); lo2 = math.floor(lo / st) * st; hi2 = math.ceil(hi / st) * st; d = max(0, -math.floor(math.log10(st)))
+    mg = call(hN, 'av_AxSet(%s, %s, %s, %d)' % (lit(lo2), lit(hi2), lit(st), d)); f_ = int(G(hN, 'avAxF')); dd = int(G(hN, 'avAxD'))
+    ticks = []; v = lo2
+    while v <= hi2 + st / 1000: ticks.append(v); v += st
+    labs = [call(hN, 'av_AxLb(%s)' % lit(v)) for v in ticks]; nax += 1
+    need = max(0, math.floor(math.log10(max(abs(lo2), abs(hi2)) or st)) - math.floor(math.log10(st)))
+    kinds['scientific' if f_ else 'fixed'] += 1; wid[int(mg)] += 1
+    # (more than 8 decimals needed: the ticks cannot all be told apart in 9 digits, and a tick can sit exactly between two of them)
+    tie = f_ == 1 and any(abs((abs(v) / 10.0 ** math.floor(math.log10(abs(v))) * 10 ** dd) % 1 - 0.5) < 1e-6 for v in ticks if abs(v) >= st / 1000)
+    ok = ((mg, f_, dd) == ax_set(lo2, hi2, st, d) and all(pxn(l) <= mg - 4 for l in labs) and mg >= 36 and (f_ == 1 or labs == [fx(v, d) for v in ticks])
+          and (need > 8 or tie or (labs == [ax_lb(v, st, f_, dd) for v in ticks] and len(set(labs)) == len(labs) and all(shows(l, v) or abs(v) < st / 1000 for l, v in zip(labs, ticks)))))
+    if need > 8: kinds['more than 9 digits needed'] += 1
+    if not ok: badx.append((lo2, hi2, st, d, mg, f_, dd, labs[:3]))
+check('N3 av_AxSet and av_AxLb over %d axes built as the plots build theirs (steps from 1E-12 to 1E15, some far from zero): the numbers are beta 1h\'s own whenever each fits 80 pixels with at most 6 decimals (%d axes), else all in scientific form with the decimals that tell the ticks apart, 8 at the most (%d); every number fits left of the plot, whose left edge is 36 as before when the widest number has 32 pixels or fewer (%d axes) and the widest number + 4 otherwise (up to %d); the numbers are all different and read back as their ticks (%d axes whose ticks differ only past the ninth digit aside)'
+      % (nax, kinds['fixed'], kinds['scientific'], wid[36], max(wid), kinds['more than 9 digits needed']), not badx and kinds['fixed'] > 100 and kinds['scientific'] > 60 and wid[36] > 60 and max(wid) <= 90, badx[:3])
+
+# N4: every old page with data of many sizes: nothing cut in beta 1i; what beta 1h cut
+def gwf(ch, font=1): return (GW.get(str(ord(ch))) or [6, 7, 8])[int(font) - 1]
+def cut_tail(t):
+    run_ = 0.0
+    for i, ch in enumerate(t.text):
+        run_ += gwf(ch, t.font)
+        if run_ > t.width + 0.5: return t.text[i:]
+    return ''
+def sized(scale, shift=0.0):
+    r_ = random.Random(3)
+    one = {'D%d' % (g + 1): [float(round(shift + scale * (25 + 4 * (g % 4) + r_.gauss(0, 6)), 12)) for _ in range([8, 5, 12, 7, 20, 6, 9, 15, 4][g])] for g in range(9)}
+    few = {'D%d' % (g + 1): [float(round(shift + scale * (25 + 4 * (g % 4) + r_.gauss(0, 6)), 12)) for _ in range([8, 5, 12][g])] for g in range(3)}
+    two = {'D1': [float(round(shift + scale * (25 + r_.gauss(0, 6)), 12)) for _ in range(24)], 'D2': [float(1 + i % 2) for i in range(24)], 'D3': [float(1 + i % 3) for i in range(24)]}
+    blk = {'D%d' % (g + 1): [float(round(shift + scale * (25 + 3 * g + r_.gauss(0, 6)), 12)) for _ in range(8)] for g in range(4)}
+    return (('one-way, 9 groups', one, [6, 1]), ('one-way, 3 groups', few, [6, 1]), ('two-way', two, [6, 2]), ('blocks', blk, [6, 3]), ('variances of groups', few, [6, 1]))
+def tour(nm, pick, dun):
+    def sc(h):
+        for p_ in pick: h.choose(p_)
+        if nm.startswith('one-way'): h.choose(2)                # "Not now" when + reaches Tukey on the Pairs page
+        if nm.startswith('variances'):
+            h.press('Esc'); h.choose(4); h.choose(2); h.choose(2); h.choose(1); h.tap(*K2); h.tap(*K4); h.choose(2); h.choose(1); h.choose(3); h.choose(1); h.tap(*K2); return
+        for kk in (K1, K2, K3, K4, K5): h.tap(*kk); h.press('Down'); h.press('Right')
+        h.tap(150, 100); h.tap(250, 100); h.press('Plus'); h.tap(*K3); h.press('Plus'); h.press('Plus'); h.tap(*K4); h.tap(100, 90); h.tap(200, 90)
+        if dun and nm.startswith('one-way'): h.press('Enter'); h.choose(6); h.choose(2); h.choose(1); h.press('Down'); h.press('Right'); h.press('Down')
+    return sc
+SCALES = [(1, 0, 'units'), (1000, 0, 'thousands'), (1e5, 0, 'hundred thousands'), (1e6, 0, 'millions'), (1e9, 0, 'billions'), (1e13, 0, '1E13'), (1e-3, 0, 'thousandths'), (1e-6, 0, 'millionths'),
+          (1e-11, 0, '1E-11'), (1, 1e6, 'units from 1,000,000 up'), (-1e4, 0, 'minus ten thousands')]
+cutn = {}; cuto = {}; nsn = 0; errs = []; where = collections.Counter(); tabs_ok = []; edges = {}
+for scale, shift, lab in SCALES:
+    cn = set(); co = set()
+    for nm, dd_, pick in sized(scale, shift):
+        hn_, rn_, en_ = run(tour(nm, pick, True), d=dd_); ho_, ro_, eo_ = run(tour(nm, pick, False), path=OLD, d=dd_)
+        if en_ or eo_: errs.append((lab, nm, en_, eo_))
+        for hh_, dst in ((hn_, cn), (ho_, co)):
+            for s in hh_.screens:
+                if not s.menu or not s.texts: continue
+                if hh_ is hn_: nsn += 1
+                for t in s.texts:
+                    tl = cut_tail(t)
+                    if tl and any(c.isdigit() for c in tl):
+                        dst.add((s.texts[0].text.split(':')[0][:20], t.text[:40]))
+                        if hh_ is ho_: where[s.texts[0].text.split(':')[0].split(',')[0][:20]] += 1
+        # the one-way table's cells are the numbers themselves, and the plots' left edges are where av_AxSet puts them
+        if nm == 'one-way, 3 groups':
+            tb = [v for v in views(hn_) if v[0][0].startswith('One-way ANOVA')][0][2]
+            cell = lambda x, y: [t.text for t in tb.texts if int(t.x) == x and int(t.y) == y][0]
+            tabs_ok.append(all(shows(cell(x, y), G(hn_, g_)) for x, y, g_ in ((66, 62, 'avSSB'), (66, 74, 'avSSW'), (66, 86, 'avSST'), (166, 62, 'avMSB'), (166, 74, 'avMSW'), (224, 62, 'avFF')))
+                           and all(pxn(cell(x, y)) <= w for x, y, w in ((66, 62, 62), (66, 74, 62), (66, 86, 62), (166, 62, 56), (166, 74, 56), (224, 62, 40))))
+            dots = [v for v in views(hn_) if v[0][0].startswith('Dots')][0][2]
+            ax = [q.args for q in dots.shapes if q.cmd == 'LINE_P' and q.args[0] == q.args[2] and int(q.args[1]) == 24 and int(q.args[3]) == 158 and int(q.args[4]) == 0]
+            ylab = [t for t in dots.texts if int(t.x) == 2 and int(t.y) < 165]
+            edges[lab] = (int(ax[0][0]) if ax else None, max(pxn(t.text) for t in ylab), int(ylab[0].width), ylab[0].text)
+    cutn[lab] = cn; cuto[lab] = co
+okedge = all(e[0] == max(36, e[1] + 4) and e[2] == e[0] - 4 for e in edges.values())
+check('N4 every page of the three analyses and the variances of two groups, with data of 11 sizes (%s), each walked through its pages, picks and methods (beta 1i: %s screens, Dunnett\'s pages among them): beta 1i cuts no number anywhere; on the same walks beta 1h cuts %s (none with data in units or thousandths; with data in the thousands %d texts, such as the table\'s "%s"; counted on every screen, by page: %s).  The cells of the one-way table read back as SS, MS and F at every size, each within its pixels; the dot plot\'s left edge is 36 for the widest y number of 32 pixels or fewer and that number + 4 otherwise (%s)'
+      % (', '.join(l for s_, sh_, l in SCALES), comma(nsn), ', '.join('%d' % len(cuto[l]) for s_, sh_, l in SCALES), len(cuto['thousands']), ([t_ for pg_, t_ in sorted(cuto['thousands']) if pg_.startswith('One-way')] + [''])[0],
+         ', '.join('%s %d' % kv for kv in where.most_common(6)), ', '.join('%s: %s' % (k_[:10], e[0]) for k_, e in edges.items())),
+      not errs and all(not cutn[l] for l in cutn) and not cuto['units'] and not cuto['thousandths'] and len(cuto['thousands']) >= 5 and len(cuto['millions']) >= 20 and all(tabs_ok) and len(tabs_ok) == 11 and okedge
+      and edges['units'][0] == 36 and edges['millions'][0] > 50, (errs[:2], {l: sorted(c)[:3] for l, c in cutn.items() if c}, tabs_ok, edges))
+
 print('=== R. regression against beta 1h')
 def routine(src, head):
     a = src.index('\n' + head) + 1
@@ -807,7 +973,7 @@ for nm, pick, dd_, k5 in ways:
     ho_, ro_, eo_ = run(sc, path=OLD, d=dd_); hn_, rn_, en_ = run(sc, d=dd_)
     pairs.append((nm, eo_ is None and en_ is None and ro_ == rn_ and texts(ho_)[1:] == texts(hn_)[1:] and boxes(ho_) == boxes(hn_) and titles(ho_) == titles(hn_) and len(texts(hn_)) >= 6, len(texts(hn_)), ro_ == rn_))
 check('R2 every other way in, through beta 1i\'s own main menu against beta 1h\'s: the five presets, three kinds of Your data, the variances, and the three analyses of the data loaded at the start, each walked with the arrows, taps, + and - and the soft keys (%d ways, %s screens): the same screens, every text at its place, the same boxes, menus and closing lines (the opening page, which names the version, aside)'
-      % (len(pairs), format(sum(p_[1] for p_ in pairs), ',')), all(p_[1] for p_ in pairs) and len(pairs) == 12, [p_ for p_ in pairs if not p_[1]][:3])
+      % (len(pairs), format(sum(p_[2] for p_ in pairs), ',')), all(p_[1] for p_ in pairs) and len(pairs) == 12, [p_ for p_ in pairs if not p_[1]][:3])
 
 print('=== H. the help')
 def help_pages(path, n):
@@ -879,14 +1045,16 @@ ends_ok = all(b == len(L_) - 1 or L_[b].startswith('// ====') or L_[b].startswit
 check('G5 the file map in the header is true: each of its %d parts begins where the map says (a bar of = signs; the state at its first comment) and ends on the line before the next, the last on the file\'s last line (%d); section 3b, Dunnett\'s engine, is lines %d to %d'
       % (len(mp), mp[-1][1] if mp else 0, mp[4][0] if len(mp) > 4 else 0, mp[4][1] if len(mp) > 4 else 0), len(mp) == 16 and first_ok and ends_ok and mp[-1][1] == len(L_) - 1 and L_[mp[4][0]].startswith("// 3b. DUNNETT'S TEST"), mp)
 rn_old = set(re.findall(r'(?m)^(?:EXPORT )?(av_\w+|AnovaLab)\(', OSRC)); rn_new = set(re.findall(r'(?m)^(?:EXPORT )?(av_\w+|AnovaLab)\(', SRC))
-NEWR = {'av_DnSetup', 'av_DnBuild', 'av_DnGI', 'av_DnTail', 'av_DnCrit', 'av_DnEst', 'av_DnPage', 'av_DnAsk', 'av_DnAll', 'av_DnCritRun', 'av_AxW', 'av_FitN', 'av_FitS', 'av_DnRowG', 'av_DnPitch', 'av_DnTS', 'av_DnMove', 'av_DnRun',
-        'av_ODrawDunn', 'av_DnTk', 'av_ODrawDnPl'}
-CHG = {'av_Init', 'av_OCrit', 'av_PostHoc', 'av_ODraw', 'av_HelpPage', 'av_Help', 'av_OArrow', 'av_OTap', 'av_OMenu', 'av_OView', 'av_TView', 'av_BView', 'av_VView', 'av_Hello'}
+NEWR = {'av_DnSetup', 'av_DnBuild', 'av_DnGI', 'av_DnTail', 'av_DnCrit', 'av_DnEst', 'av_DnPage', 'av_DnAsk', 'av_DnAll', 'av_DnCritRun', 'av_DnRowG', 'av_DnPitch', 'av_DnTS', 'av_DnMove', 'av_DnRun', 'av_ODrawDunn', 'av_ODrawDnPl',
+        'av_AxW', 'av_FitN', 'av_FitS', 'av_FitG', 'av_FitGS', 'av_FitC', 'av_FitCI', 'av_FitT', 'av_AxLb', 'av_AxSet'}
+CHG_D = {'av_Init', 'av_OCrit', 'av_PostHoc', 'av_ODraw', 'av_HelpPage', 'av_Help', 'av_OArrow', 'av_OTap', 'av_OMenu', 'av_OView', 'av_TView', 'av_BView', 'av_VView', 'av_Hello'}      # for Dunnett's test and the help
+CHG_N = {'av_Gn', 'av_ODrawTable', 'av_ODrawChecks', 'av_ODrawPairs', 'av_ODrawDots', 'av_TDrawTable', 'av_TDrawPlot', 'av_BDrawTable', 'av_BDrawPlot', 'av_VDrawRes'}                 # for the numbers kept whole
+CHG = CHG_D | CHG_N
 chg = set(n_ for n_ in rn_old if n_ != 'AnovaLab' and routine(OSRC, n_ + '(') != routine(SRC, n_ + '('))
 main_same = OSRC[OSRC.index('EXPORT AnovaLab()'):] == SRC[SRC.index('EXPORT AnovaLab()'):]
-check('G6 the %d new routines carry the program\'s tag, and beta 1h\'s %d routines are all still there; %d of them are untouched, character for character (the Tukey engine, every analysis and every other page among them, the group picker that moved up, and the main routine); the %d that changed are the ones meant: %s'
-      % (len(NEWR), len(rn_old), len(rn_old) - len(chg), len(chg), ', '.join(sorted(chg))), rn_old <= rn_new and rn_new - rn_old == NEWR and chg == CHG and main_same
-      and all(n_ not in chg for n_ in ('av_BuildZ', 'av_RngCDF', 'av_BuildT', 'av_PkI', 'av_SRCDF', 'av_SRCrit', 'av_TEst', 'av_OCompute', 'av_TukeyCrit', 'av_TukeyP', 'av_TukeyP1', 'av_PickG', 'av_PickG2', 'av_ODrawPairs', 'av_ODrawDots', 'av_TCompute', 'av_BCompute', 'av_VCompute')),
+check('G6 the %d new routines carry the program\'s tag (17 for Dunnett\'s test, 10 that fit numbers to their places), and beta 1h\'s %d routines are all still there; %d of them are untouched, character for character (the Tukey engine, every analysis\'s arithmetic, the group picker that moved up, and the main routine among them); the %d that changed are the ones meant: for Dunnett\'s test and the help %s; for the numbers %s'
+      % (len(NEWR), len(rn_old), len(rn_old) - len(chg), len(chg), ', '.join(sorted(chg & CHG_D)), ', '.join(sorted(chg & CHG_N))), rn_old <= rn_new and rn_new - rn_old == NEWR and chg == CHG and main_same
+      and all(n_ not in chg for n_ in ('av_BuildZ', 'av_RngCDF', 'av_BuildT', 'av_PkI', 'av_SRCDF', 'av_SRCrit', 'av_TEst', 'av_OCompute', 'av_TukeyCrit', 'av_TukeyP', 'av_TukeyP1', 'av_PickG', 'av_PickG2', 'av_TCompute', 'av_BCompute', 'av_VCompute', 'av_Fx', 'av_Cm', 'av_Sgn', 'av_Cmp')),
       (sorted(rn_new - rn_old - NEWR), sorted(NEWR - rn_new), sorted(chg ^ CHG)))
 big_un = sorted(set((m_.group(0), it['text'][:40]) for rec in OV.RECORDS.values() for e in rec['screens'].values() for it in e[2]['items'] if 'text' in it
                     for m_ in re.finditer(r'(?<![\d.,])\d{4,}(?![\d,])', it['text']) if not re.fullmatch(r'(18|19|20)\d\d', m_.group(0))))

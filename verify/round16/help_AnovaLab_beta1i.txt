@@ -1,0 +1,142 @@
+AnovaLab help 1/10: What one-way ANOVA asks
+H₀: every group has the same population mean μ.
+ANOVA splits the total spread (SS) in two:
+  between: n × (group mean - grand mean)²
+  within: (value - its own group mean)²
+MS = SS / df;  F = MS between / MS within.
+If H₀ is true, F is near 1 and follows the
+F(k - 1, N - k) curve; p = P(F this big | H₀).
+A small p is evidence that SOME mean differs:
+not which (Pairs page), not how much (eta²).
+eta² = SS between / SS total; omega² (Hays)
+subtracts the part chance alone would give.
+Every value counts: 0 and negatives are data.
+Any key or tap = next, ← = back, Esc = leave
+
+AnovaLab help 2/10: Welch and the checks
+The F test assumes equal spreads (and roughly normal groups).
+Welch's F (1951) drops equal spreads: each group is weighted
+by n / s².
+Levene's test (Brown-Forsythe form) runs the one-way F on
+|value - group median|; non-normal data affect it little.
+Bartlett's χ² compares the s² directly: it is misled by
+non-normal data.
+In the insect-spray preset, s runs from 1.7 to 6.2 and Levene's
+test flags it; compare the ordinary F with Welch's.
+A check that is not significant is not proof of equal spreads: with
+small groups the checks often miss real differences.
+Dots page: look at the spreads yourself.
+Any key or tap = next, ← = back, Esc = leave
+
+AnovaLab help 3/10: Which pairs differ?
+Many t-tests raise the chance of at least one false alarm; these
+keep that chance at α for the whole set (the family):
+Tukey-Kramer: q = |diff|/√(MSW/2 (1/n₁+1/n₂)) on the
+  studentized range (it asks before it runs, since it is slow).
+Bonferroni: raw t p × m pairs (simple, safe).
+Holm: Bonferroni done in steps; never less power than
+Bonferroni.
+Any key or tap = next, ← = back, Esc = leave
+
+AnovaLab help 4/10: Which pairs differ? (continued)
+Scheffé: covers every contrast, widest CIs.
+CIs are simultaneous (family 95%).
+Pairs page: +/- or a tab = method; tap a pair.
+Dots page: tap two groups, or ←→ for the next pair.
+More > Tukey p: every pair's Tukey p.
+Tukey vs SciPy: q crit within 0.03 %, pair p within 0.00001 (k
+2-12, df 3-1,000, α .1-.001).
+One group is the control?  Dunnett's test: the next page.
+Any key or tap = next, ← = back, Esc = leave
+
+AnovaLab help 5/10: Dunnett's test
+Dunnett's test compares every group with ONE control
+group (a placebo, the usual method): k - 1 comparisons,
+not all the pairs.  With fewer comparisons, it finds a
+real difference more often than Tukey's test does.
+t = (group mean - control mean)/SE, SE from MS within
+and both n.  A group differs when |t| > d crit, and d crit
+keeps the chance of ANY false alarm in the family at α.
+Adjusted p: the chance that the LARGEST |t| of the
+family is this big when no group differs from the control.
+Enter > Dunnett: pick the control.  It asks before it runs
+(slow on a G1).  Two pages: the table, then the CIs drawn.
+Two-sided; unequal n allowed.  Choose the control before
+you see the data.  Dunnett (1955); p within 0.05 %.
+Any key or tap = next, ← = back, Esc = leave
+
+AnovaLab help 6/10: Two-way ANOVA
+Two factors A and B, every A × B cell filled.
+Main effects: do A's (or B's) levels differ?
+Interaction: does A's effect depend on B?
+Unequal cells (unbalanced): Type III SS, by regression, effect
+coding: each effect is tested after all the others.  They need not
+add up to the total.  Balanced: classical SS.
+Plot: one line per level of the other factor.
+Parallel lines = no interaction.  Tap a point for its cell mean and
+n; Swap exchanges the two factors in the plot.
+Mock-jury preset: unattractive swindlers got 7.0 years on
+average, the other cells 3.5 to 4.8; striking, yet the interaction's p
+is 0.13 (17 to 21 jurors a cell).
+Any key or tap = next, ← = back, Esc = leave
+
+AnovaLab help 7/10: Randomized blocks
+Each block (a judge, a person) gets every
+treatment once: repeated measures.
+Blocks differ a lot, and that spread is taken
+OUT of the error: SSE = SST - SSTr - SSBlocks.
+F (treatments) = MS treatments / MS error.
+partial eta² = SSTr / (SSTr + SSE).
+The Table page also shows the one-way F that
+ignores the blocks: judges' ratings give
+p = 0.048 that way, far smaller with blocks.
+Assumes no block × treatment interaction
+(and, for repeated measures, sphericity).
+Plot: one gray line per block.
+Any key or tap = next, ← = back, Esc = leave
+
+AnovaLab help 8/10: One and two variances
+One σ: χ² = (n - 1) s² / σ₀², df n - 1.
+CI for σ²: ((n-1)s²/χ² upper, (n-1)s²/χ² lower)
+Two σ: F = s₁² / s₂², df n₁ - 1 and n₂ - 1.
+CI for σ₁²/σ₂²: (F/F upper, F/F lower).
+Two-sided p = 2 × the smaller tail.  The curve
+shades that tail and the other tail of EQUAL
+area (blue), and both critical regions (red).
+These tests trust normal data much more than
+tests of means do; skewed data mislead them.
+For several groups, Levene (Checks) is safer.
+Data: type s and n, or pick one-way groups.
+Any key or tap = next, ← = back, Esc = leave
+
+AnovaLab help 9/10: Your data, and Home
+Statistics 1Var app, lists D1-D9:
+One-way: each non-empty list is a group.
+Two-way: D1 = y, D2 = A codes, D3 = B codes (any numbers;
+  2 to 6 levels each).
+Blocks: each list a treatment, one row per block (all lists the
+  same length).
+Home: AV_F, AV_P, AV_DF, AV_MSE, AV_ETA2 of the last run (A×B;
+blocks: treatments); AV_TAB.
+Soft keys: More shows the next set of soft keys (one-way).
+Enter = a menu of every action; Esc = back.
+Every tap has a key: ←→ ⇅ +/- Enter Esc.
+p = P(data this extreme | H₀), not P(H₀).
+Any key or tap = next, ← = back, Esc = leave
+
+AnovaLab help 10/10: Credits
+Does what Triola's TI-83/84 programs ANOVA,
+ANOVA2FD, ANOVA2RB, RANOVA, TUKEY, SCHEFFE2,
+BONFRNI, SDHYP, SDINT, STDTEST, STDEVCI and
+FINTRVAL do.  Written new: none of their code.
+Not repeated: 0 and negatives as missing,
+the wrong n in Tukey's SE, swapped F bounds,
+a solver that fails for n > 75, equal-n only.
+Tukey's q: StudRange's PPL engine (Dunlap,
+Powell & Konnerth 1977, with a u² step).
+Data: Plaster 1989; Fienberg 1971; Beall 1942;
+New Haven Register 1977 (R datasets).
+A teaching aid: not validated for forensic,
+clinical or legal use.
+Any key or tap = next, ← = back, Esc = leave
+

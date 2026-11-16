@@ -17,12 +17,21 @@ New in beta 1i (Roger, 15 Nov 2026, of six additions proposed for the programs: 
     u = sqrt(s) over s in 1 -/+ 8/sqrt(2 v), the density written relative to its top (no log-gamma).
   * Two-sided only; df 3 and up, as Tukey; a control with under 1/100 of all the values is refused with a sentence.
   * Set alpha keeps the p-values and asks before it computes d crit again.
-  * Pages 6 and 7 join the Left/Right round of the one-way pages once the test has been computed.
+  * Once the test has been computed, pages 6 and 7 stand between the F page and the Table page for Left and Right.
   * Help: 10 pages (9 before).  Page 5 is new, page 4 gets a line that points to it, pages 5 to 9 are now 6 to 10.
   * Written from the formulas (Dunnett 1955, 1964).  The HP-41C Users' Library Solutions book "Applied Statistics I",
     program STAT.08, was read (it gives each group's t against the control and leaves the comparison with Dunnett's
     printed table to the user): none of its code.
-Every other screen is beta 1h's, the help pages' numbers, the one-way menu's new item and the opening page's list aside.
+  * NUMBERS KEPT WHOLE (found by this version's layout check, with data in the thousands and beyond).  TEXTOUT_P draws
+    as much of a text as its width holds, so beta 1h cut a number wider than its place: an SS of 2,467,448,033 in the
+    ANOVA table's 62 pixels (data in the thousands are enough), a mean in the millions on the Checks page, a difference
+    and its interval on the Pairs page, the y numbers of the three plots from 100,000 up, two lines of the variances
+    page.  Every such number is measured now (av_AxW) and written shorter when it must be: fewer decimals, then the
+    Prime's scientific form with up to 5 digits (av_FitN and its kin); the three plots move their left edge right by
+    what the widest y number needs (av_AxSet); av_Gn writes 5 digits from 1E12 up (it wrote one: 1.5E12 read "2E12").
+    A number that fitted is written as before.
+With numbers that fitted, every other screen is beta 1h's, the help pages' numbers, the one-way menu's new item and the
+opening page's list aside.
 Run from the repository's root:   python3 verify/round16/make_anovalab_1i.py OUTDIR
 """
 import io, json, os, re, subprocess, sys, textwrap
@@ -95,14 +104,23 @@ note = ('Round 16 (Roger, 15 Nov 2026, of six additions proposed for the program
         'd crit are computed for the data\'s own group sizes, equal or not (section 3b: a table of the inner integral '
         'for those sizes, then Simpson\'s rule over s, the upper tail summed as it stands): ' + ERRS + '.  Two-sided only; '
         'df 3 and up, as Tukey; a control with under 1/100 of all the values is refused with a sentence.  Set alpha '
-        'keeps the p-values and asks before it computes d crit again.  Pages 6 and 7 join the Left/Right round of the '
-        'one-way pages once the test has been computed.  Help has 10 pages (9 before): page 5 is new, page 4 gets a '
+        'keeps the p-values and asks before it computes d crit again.  Once the test has been computed, pages 6 and 7 '
+        'stand between the F page and the Table page for the Left and Right keys.  Help has 10 pages (9 before): page 5 is new, page 4 gets a '
         'line that points to it, and pages 5 to 9 are now 6 to 10.  The one-way menu has 12 items (Dunnett is the '
         'sixth, so items 1 to 6 are the six kinds of page), and the opening page names the test.  The group picker '
         '(av_PickG, with its fallback) moved up from section 12 to section 7, unchanged, because Dunnett\'s test picks '
         'its control with it.  Written from the formulas (Dunnett 1955, 1964); the HP-41C Users\' Library program '
-        'STAT.08 was read, and none of its code is here.  Every other screen is beta 1h\'s '
-        '(verify_AnovaLab_beta1i.py runs the two side by side).  Harness only so far.')
+        'STAT.08 was read, and none of its code is here.  NUMBERS KEPT WHOLE (found by this version\'s layout '
+        'check, with data in the thousands and beyond): TEXTOUT_P draws as much of a text as its width holds, so beta '
+        '1h cut a number wider than its place: an SS of 2,467,448,033 in the ANOVA table\'s 62 pixels (data in the '
+        'thousands are enough), a mean in the millions on the Checks page, a difference and its interval on the Pairs '
+        'page, the y numbers of the three plots from 100,000 up, and two lines of the variances page.  Every such '
+        'number is measured now (av_AxW) and written shorter when it must be: fewer decimals, then the Prime\'s '
+        'scientific form with up to 5 digits (av_FitN, av_FitG, av_FitGS, av_FitC, av_FitCI, av_FitT); the three plots '
+        'move their left edge right by what the widest y number needs (av_AxSet, av_AxLb); and av_Gn writes 5 digits '
+        'from 1E12 up (it wrote one: 1.5E12 read "2E12").  A number that fitted is written as before, so with such '
+        'numbers every other screen is beta 1h\'s (verify_AnovaLab_beta1i.py runs the two side by side).  Harness '
+        'only so far.')
 before('// beta 1h (15 Nov 2026): Round 15', '// beta 1i (%s): ' % DATE + '\n//   '.join(textwrap.wrap(note, 100)) + '\n')
 after('//   Scheffe: Scheffe (1953) Biometrika 40:87-104.\n',
       '''//   Dunnett's test: Dunnett (1955) JASA 50:1096-1121 (the test);
@@ -147,11 +165,175 @@ after('LOCAL avSRE;\n', '''// ---- Dunnett's test (beta 1i): the setup for a con
 LOCAL avDnB, avDnA, avDnM, avDnNz, avDnT, avDnKey;
 LOCAL avDnC, avDnD, avDnP, avDnDf, avDnSE, avDnTs;
 LOCAL avDnSel;
+// ---- beta 1i: how an axis writes its numbers (av_AxSet), and the left
+//      edge of the one-way dot plot (kept while its picture is cached) ----
+LOCAL avAxF, avAxD, avAxS, avODL;
 ''')
 after('  avSRE := 0;\n', '''  avDnB := {}; avDnA := {}; avDnM := {}; avDnNz := 0; avDnT := {}; avDnKey := "";
   avDnC := 0; avDnD := -1; avDnP := {}; avDnDf := {}; avDnSE := {}; avDnTs := {};
   avDnSel := 0;
+  avAxF := 0; avAxD := 0; avAxS := 1; avODL := 36;
 ''')
+
+# ---------------- section 1: numbers kept whole ----------------
+HELPERS = r'''// ---- beta 1i: numbers kept whole.  TEXTOUT_P draws as much of a text
+// as its width holds and drops the rest, so a number wider than its
+// place lost its last digits (an SS of 2,467,448,033 in the table's 62
+// pixels).  From beta 1i a number is measured first and written shorter
+// when it must be: fewer decimals, then the Prime's scientific form.
+
+// About how wide a number is in font 1: 6 pixels a character, 3 for a
+// point or a comma, 5 for the Prime's minus sign (the calculator's own
+// widths: GlyphProbe, 9 Nov 2026).
+av_AxW(xwT)
+BEGIN
+  LOCAL xwW, xwI, xwC;
+  xwW := 6*DIM(xwT);
+  FOR xwI FROM 1 TO DIM(xwT) DO
+    xwC := MID(xwT, xwI, 1);
+    IF xwC == "." OR xwC == "," THEN xwW := xwW - 3; END;
+    IF xwC == CHAR(8722) THEN xwW := xwW - 1; END;
+  END;
+  RETURN xwW;
+END;
+
+// A number for a place fnW pixels wide.  As av_Gn writes it (about 5
+// digits) when that fits; a number of 10 or more, and a zero, then
+// lose decimals one by one ("82,430.8" -> "82,431"; "0.0000" -> "0");
+// what still does not fit, any
+// number under 0.001 that is not 0 (av_Gn would print it as 0.0000)
+// and any of 1E12 or more (STRING's fixed form is scientific there,
+// with as many digits as decimals asked: 1 at the most here) go in
+// the Prime's scientific form with 4 decimals, or as many fewer as
+// the place needs ("9.7500E-8", "1.07E6", "1E6").
+av_FitN(fnV, fnW)
+BEGIN
+  LOCAL fnS, fnD, fnA;
+  fnA := ABS(fnV);
+  IF (fnA >= 0.001 AND fnA < 1E12) OR fnA == 0 THEN
+    fnD := 4;
+    IF fnA >= 1 THEN fnD := 3; END;
+    IF fnA >= 10 THEN fnD := 2; END;
+    IF fnA >= 1000 THEN fnD := 1; END;
+    IF fnA >= 100000 THEN fnD := 0; END;
+    fnS := av_Cm(av_Fx(fnV, fnD));
+    IF av_AxW(fnS) <= fnW THEN RETURN fnS; END;
+    WHILE (fnA >= 10 OR fnA == 0) AND fnD > 0 DO
+      fnD := fnD - 1;
+      fnS := av_Cm(av_Fx(fnV, fnD));
+      IF av_AxW(fnS) <= fnW THEN RETURN fnS; END;
+    END;
+    IF fnA == 0 THEN RETURN "0"; END;
+  END;
+  fnD := 4;
+  WHILE fnD >= 0 DO
+    fnS := STRING(fnV, 3, fnD);
+    IF av_AxW(fnS) <= fnW THEN RETURN fnS; END;
+    fnD := fnD - 1;
+  END;
+  RETURN fnS;
+END;
+
+// The same with its sign: "+2.13", "-0.567" (a 0 has none).
+av_FitS(fsV, fsW)
+BEGIN
+  IF fsV > 0 THEN RETURN "+" + av_FitN(fsV, fsW - 6); END;
+  RETURN av_FitN(fsV, fsW);
+END;
+
+// A number in a place of a page beta 1h already had: as av_Gn writes
+// it whenever that fits, so the page reads as it did; else as av_FitN.
+av_FitG(fgV, fgW)
+BEGIN
+  LOCAL fgS;
+  fgS := av_Gn(fgV);
+  IF av_AxW(fgS) <= fgW THEN RETURN fgS; END;
+  RETURN av_FitN(fgV, fgW);
+END;
+
+// A number whose text is already made (ftS, for the value ftV): that
+// text when it fits ftW pixels, else as av_FitN writes the value.
+av_FitT(ftS, ftV, ftW)
+BEGIN
+  IF av_AxW(ftS) <= ftW THEN RETURN ftS; END;
+  RETURN av_FitN(ftV, ftW);
+END;
+
+// The same for av_Sgn's signed form.
+av_FitGS(fhV, fhW)
+BEGIN
+  LOCAL fhS;
+  fhS := av_Sgn(fhV);
+  IF av_AxW(fhS) <= fhW THEN RETURN fhS; END;
+  RETURN av_FitS(fhV, fhW);
+END;
+
+// The same for av_Cmp's form (an F statistic in fcN characters).
+av_FitC(fcV, fcN, fcW)
+BEGIN
+  LOCAL fcS;
+  fcS := av_Cmp(fcV, fcN);
+  IF av_AxW(fcS) <= fcW THEN RETURN fcS; END;
+  RETURN av_FitN(fcV, fcW);
+END;
+
+// An interval "(lo, hi)" for a place fiW pixels wide: as av_Gn writes
+// its two ends when that fits, else each end fitted to half the room.
+av_FitCI(fiA, fiB, fiW)
+BEGIN
+  LOCAL fiS, fiT, fiH;
+  fiS := av_Gn(fiA); fiT := av_Gn(fiB);
+  IF av_AxW(fiS) + av_AxW(fiT) + 12 <= fiW THEN RETURN "(" + fiS + ", " + fiT + ")"; END;
+  fiH := IP((fiW - 12)/2);
+  RETURN "(" + av_FitN(fiA, fiH) + ", " + av_FitN(fiB, fiH) + ")";
+END;
+
+// A number of the axis av_AxSet prepared: with avAxD decimals and
+// commas, or (avAxF = 1) in the Prime's scientific form with avAxD
+// decimals, a tick at zero as "0".
+av_AxLb(alV)
+BEGIN
+  IF avAxF == 0 THEN RETURN av_Cm(av_Fx(alV, avAxD)); END;
+  IF ABS(alV) < avAxS/1000 THEN RETURN "0"; END;
+  RETURN STRING(alV, 3, avAxD);
+END;
+
+// An axis whose numbers stand left of the plot (or under it).  It
+// decides how they are written: with the asD decimals their step needs
+// and commas, as before (avAxF = 0), unless such a number would need
+// more than 80 pixels or more than 6 decimals, or is 1E12 or more:
+// then all of them in scientific form (avAxF = 1) with the decimals
+// that tell one tick from the next (8 at the most).  Returns the x for
+// the plot's left edge: 36, as before, when every number fits the 32
+// pixels left of it, and as much more as the widest number needs (in
+// scientific form any tick can be the widest, so each is measured).
+// asLo, asHi: the first and the last tick; asS: the step.
+av_AxSet(asLo, asHi, asS, asD)
+BEGIN
+  LOCAL asW, asM, asV, asI;
+  avAxS := asS; avAxF := 0; avAxD := asD;
+  asM := MAX(ABS(asLo), ABS(asHi));
+  IF asM <= 0 THEN asM := asS; END;
+  asW := 999;
+  IF asD <= 6 AND asM < 1E12 THEN
+    asW := MAX(av_AxW(av_Cm(av_Fx(asLo, asD))), av_AxW(av_Cm(av_Fx(asHi, asD))));
+  END;
+  IF asW > 80 THEN
+    avAxF := 1;
+    avAxD := MAX(0, MIN(8, FLOOR(LOG(asM)) - FLOOR(LOG(asS))));
+    asW := 0; asV := asLo; asI := 0;
+    WHILE asV <= asHi + asS/1000 AND asI < 60 DO
+      asW := MAX(asW, av_AxW(av_AxLb(asV)));
+      asV := asV + asS; asI := asI + 1;
+    END;
+  END;
+  RETURN MAX(36, asW + 4);
+END;
+
+'''
+before('''// A p-value's digits: "< 0.0001" below what 4 decimals can show.
+av_PT(ptP)
+''', HELPERS)
 
 # ---------------- section 3b: the engine ----------------
 ENGINE = r'''// ============================================================
@@ -513,62 +695,7 @@ PAGES = r'''// ---- beta 1i: Dunnett's test, every group against one control ---
 
 // The group picker, moved up from section 12 in beta 1i, unchanged:
 // Dunnett's test picks its control with it.
-@PICK@// About how wide a number is in font 1: 6 pixels a character, 3 for a
-// point or a comma (the calculator's own widths of the digits, the
-// minus sign, the point and the comma: GlyphProbe, 9 Nov 2026).
-av_AxW(xwT)
-BEGIN
-  LOCAL xwW, xwI;
-  xwW := 6*DIM(xwT);
-  FOR xwI FROM 1 TO DIM(xwT) DO
-    IF MID(xwT, xwI, 1) == "." OR MID(xwT, xwI, 1) == "," THEN xwW := xwW - 3; END;
-  END;
-  RETURN xwW;
-END;
-
-// A number for a place fnW pixels wide.  As av_Gn writes it (about 5
-// digits) when that fits; a number of 10 or more then loses decimals
-// one by one ("82,430.8" -> "82,431"); what still does not fit, any
-// number under 0.001 that is not 0 (av_Gn would print it as 0.0000)
-// and any of 1E12 or more (STRING's fixed form is scientific there,
-// with as many digits as decimals asked: 1 at the most here) go in
-// the Prime's scientific form with 2 decimals, then 1, then none
-// ("9.75E-8", "1.1E6", "1E6").
-av_FitN(fnV, fnW)
-BEGIN
-  LOCAL fnS, fnD, fnA;
-  fnA := ABS(fnV);
-  IF (fnA >= 0.001 AND fnA < 1E12) OR fnA == 0 THEN
-    fnD := 4;
-    IF fnA >= 1 THEN fnD := 3; END;
-    IF fnA >= 10 THEN fnD := 2; END;
-    IF fnA >= 1000 THEN fnD := 1; END;
-    IF fnA >= 100000 THEN fnD := 0; END;
-    fnS := av_Cm(av_Fx(fnV, fnD));
-    IF av_AxW(fnS) <= fnW THEN RETURN fnS; END;
-    WHILE fnA >= 10 AND fnD > 0 DO
-      fnD := fnD - 1;
-      fnS := av_Cm(av_Fx(fnV, fnD));
-      IF av_AxW(fnS) <= fnW THEN RETURN fnS; END;
-    END;
-  END;
-  fnD := 2;
-  WHILE fnD >= 0 DO
-    fnS := STRING(fnV, 3, fnD);
-    IF av_AxW(fnS) <= fnW THEN RETURN fnS; END;
-    fnD := fnD - 1;
-  END;
-  RETURN fnS;
-END;
-
-// The same with its sign: "+2.13", "-0.567" (a 0 has none).
-av_FitS(fsV, fsW)
-BEGIN
-  IF fsV > 0 THEN RETURN "+" + av_FitN(fsV, fsW - 6); END;
-  RETURN av_FitN(fsV, fsW);
-END;
-
-// The group in row uwR (0 = the first row) of Dunnett's pages: the
+@PICK@// The group in row uwR (0 = the first row) of Dunnett's pages: the
 // groups in their order, the control left out.  0 when there is none.
 av_DnRowG(uwR)
 BEGIN
@@ -693,20 +820,6 @@ BEGIN
   av_Foot(@FOOT6@);
 END;
 
-// A tick's number on the plot's axis: fixed decimals for the step,
-// with commas; in the Prime's scientific form when the step is under a
-// millionth or the number is ten million or more ("2E7", "-1.5E-8").
-av_DnTk(xtV, xtD, xtS)
-BEGIN
-  LOCAL xtT, xtK;
-  IF ABS(xtV) < xtS/1000 THEN RETURN "0"; END;
-  IF xtD <= 6 AND ABS(xtV) < 10000000 THEN RETURN av_Cm(av_Fx(xtV, xtD)); END;
-  xtT := STRING(xtV, 3, 1);
-  xtK := INSTRING(xtT, ".0" + CHAR(7431));
-  IF xtK > 1 THEN xtT := LEFT(xtT, xtK - 1) + MID(xtT, xtK + 2, DIM(xtT) - xtK - 1); END;
-  RETURN xtT;
-END;
-
 // Page 7: Dunnett's intervals drawn.  A row for every group but the
 // control: a black mark at its difference from the control, a bar for
 // its family CI (red when the bar misses 0, blue otherwise), on one
@@ -762,17 +875,21 @@ BEGIN
   END;
   // the line of no difference, dotted, down the rows
   av_DotV(ulX0, 34, ulYa, avGRAY);
-  // the axis: ticks at nice steps (Heckbert); a number that would touch
-  // the one before it is left out, and none runs off the screen
+  // the axis: ticks at nice steps (Heckbert), their numbers as av_AxSet
+  // decides; a number that would touch the one before it is left out,
+  // and none runs off the screen
   LINE_P(G1, 52, ulYa, 308, ulYa, #000000h);
   ulSt := av_Nice((ulHi - ulLo)/8);
   ulD := MAX(0, -FLOOR(LOG(ulSt)));
   ulV := CEILING(ulLo/ulSt)*ulSt;
+  // how the numbers are written (the margin av_AxSet returns is for a
+  // y axis: not used here)
+  ulW := av_AxSet(ulV, FLOOR(ulHi/ulSt)*ulSt, ulSt, ulD);
   ulLx := -100; ulI := 0;
   WHILE ulV + ulI*ulSt <= ulHi AND ulI < 12 DO
     ulX1 := 52 + ROUND((ulV + ulI*ulSt - ulLo)*ulSc, 0);
     LINE_P(G1, ulX1, ulYa, ulX1, ulYa + 2, #000000h);
-    ulS := av_DnTk(ulV + ulI*ulSt, ulD, ulSt);
+    ulS := av_AxLb(ulV + ulI*ulSt);
     ulW := av_AxW(ulS);
     ulX2 := MAX(2, MIN(317 - ulW, ulX1 - IP(ulW/2)));
     IF ulX2 > ulLx + 4 THEN
@@ -809,6 +926,114 @@ END;
   IF avScr == 6 THEN av_ODrawDunn(); END;
   IF avScr == 7 THEN av_ODrawDnPl(); END;
 END;
+''')
+
+# ---------------- the old pages: numbers kept whole ----------------
+# av_Gn from 1E12 up: STRING's fixed form is scientific there and keeps as many digits as decimals were asked, none
+rep('''  IF gnA >= 100000 THEN gnD := 0; END;
+  RETURN av_Cm(av_Fx(gnV, gnD));
+END;
+''', '''  IF gnA >= 100000 THEN gnD := 0; END;
+  // beta 1i: from 1E12 up STRING's fixed form is scientific and keeps
+  // one digit when no decimals are asked (1.5E12 read "2E12"): 5 digits
+  IF gnA >= 1E12 THEN RETURN STRING(gnV, 3, 4); END;
+  RETURN av_Cm(av_Fx(gnV, gnD));
+END;
+''')
+# the two lines of the variances page that work the statistic out: three numbers share what the words leave
+W1 = (312 - px(chr(967) + chr(178) + ' = (n - 1)s' + chr(178) + '/' + chr(963) + chr(8320) + chr(178) + ' =  ' + chr(215) + '  /  = ') - 30) // 3
+W2 = (312 - px('F = s' + chr(8321) + chr(178) + '/s' + chr(8322) + chr(178) + ' =  /  = , df , ') - 60) // 3
+if not (50 <= W1 <= 70 and 40 <= W2 <= 60): sys.exit('BUILD STOPPED: the variance lines leave %d and %d pixels a number' % (W1, W2))
+rep('''" " + avTm + " " + av_Gn(avVS1^2) + " / " + av_Gn(avVSg0^2) + " = " + av_Cm(av_Fx(avVStat, 3)), 4, 63, avBLUE);''',
+    '''" " + avTm + " " + av_FitG(avVS1^2, %d) + " / " + av_FitG(avVSg0^2, %d) + " = " + av_FitT(av_Cm(av_Fx(avVStat, 3)), avVStat, %d), 4, 63, avBLUE);''' % (W1, W1, W1))
+rep('''" = " + av_Gn(avVS1^2) + " / " + av_Gn(avVS2^2) + " = " + av_Cm(av_Fx(avVStat, 4)) + ", df "''',
+    '''" = " + av_FitG(avVS1^2, %d) + " / " + av_FitG(avVS2^2, %d) + " = " + av_FitT(av_Cm(av_Fx(avVStat, 4)), avVStat, %d) + ", df "''' % (W2, W2, W2))
+# the three ANOVA tables: SS in 62 pixels, MS in 56, F in 40
+def row(m):
+    line = m.group(0)
+    if '"Source"' in line: return line
+    k = [0]
+    def gn(mm):
+        k[0] += 1
+        return 'av_FitG(%s, %d)' % (mm.group(1), 62 if k[0] == 1 else 56)
+    line2 = re.sub(r'av_Gn\(((?:[^()]|\([^()]*\))*)\)', gn, line)
+    line2 = re.sub(r'av_Cmp\(((?:[^()]|\([^()]*\))*), 6\)', r'av_FitC(\1, 6, 40)', line2)
+    if k[0] not in (1, 2): sys.exit('BUILD STOPPED: a table row with %d numbers: %r' % (k[0], line))
+    return line2
+n_rows = len(re.findall(r'(?m)^ .*av_Row\([^\n]*$', s))
+s = re.sub(r'(?m)^ .*av_Row\([^\n]*$', row, s)
+# 13 rows (3 of them headings); 17 SS and MS cells, 4 F cells, the two routines' own headings and the 4 av_FitG of the variance lines
+if n_rows != 13 or s.count('av_FitG(') != 17 + 1 + 4 or s.count('av_FitC(') != 4 + 1: sys.exit('BUILD STOPPED: the table rows (%d rows, %d av_FitG, %d av_FitC)' % (n_rows, s.count('av_FitG('), s.count('av_FitC(')))
+# the Checks page: the mean, s and median of each group
+rep('''      av_Tx(av_Gn(avRm(ocG)), 140, ocY, #000000h);
+      av_Tx(av_Gn(SQRT(avRv(ocG))), 200, ocY, #000000h);
+      av_Tx(av_Gn(avRmd(ocG)), 256, ocY, #000000h);
+''', '''      // beta 1i: each number in the room up to the next column
+      av_Tx(av_FitG(avRm(ocG), 56), 140, ocY, #000000h);
+      av_Tx(av_FitG(SQRT(avRv(ocG)), 52), 200, ocY, #000000h);
+      av_Tx(av_FitG(avRmd(ocG), 60), 256, ocY, #000000h);
+''')
+rep('''      TEXTOUT_P(av_Gn(avRm(ocG)), G1, ocX + 64, ocY, 1, #000000h, 44);
+      TEXTOUT_P(av_Gn(SQRT(avRv(ocG))), G1, ocX + 110, ocY, 1, #000000h, 44);
+''', '''      TEXTOUT_P(av_FitG(avRm(ocG), 44), G1, ocX + 64, ocY, 1, #000000h, 44);
+      TEXTOUT_P(av_FitG(SQRT(avRv(ocG)), 44), G1, ocX + 110, ocY, 1, #000000h, 44);
+''')
+# the Pairs page: the difference and its interval
+rep('''    TEXTOUT_P(av_Sgn(avPD(dpR)), G1, 84, dpY, 1, dpC, 46);
+''', '''    TEXTOUT_P(av_FitGS(avPD(dpR), 46), G1, 84, dpY, 1, dpC, 46);
+''')
+rep('''      TEXTOUT_P("(" + av_Gn(avPD(dpR) - dpHw) + ", " + av_Gn(avPD(dpR) + dpHw) + ")", G1, 132, dpY, 1, dpC, 106);
+''', '''      TEXTOUT_P(av_FitCI(avPD(dpR) - dpHw, avPD(dpR) + dpHw, 106), G1, 132, dpY, 1, dpC, 106);
+''')
+# the Dots page: its left edge moves right when a y number needs more than 32 pixels; the pair's line
+rep('''  LOCAL ddM, ddH, ddT, ddR, ddX2, ddPr;
+  ddW := (avDR - avDL)/avOK;
+''', '''  LOCAL ddM, ddH, ddT, ddR, ddX2, ddPr;
+  // beta 1i: the left edge is this plot's own (avODL), found when the
+  // picture is drawn and kept with it
+  avDL := avODL;
+  ddW := (avDR - avDL)/avOK;
+''')
+rep('''    ddDc := MAX(0, -FLOOR(LOG(ddS)));
+    // ---- grid and y ticks ----
+''', '''    ddDc := MAX(0, -FLOOR(LOG(ddS)));
+    // beta 1i: how the y numbers are written, and the room they need
+    avODL := av_AxSet(ddLo, ddHi, ddS, ddDc);
+    avDL := avODL;
+    ddW := (avDR - avDL)/avOK;
+    // ---- grid and y ticks ----
+''')
+rep('''      TEXTOUT_P(av_Cm(av_Fx(ddV, ddDc)), G1, 2, ddY - 5, 1, avGRAY, 32);
+''', '''      TEXTOUT_P(av_AxLb(ddV), G1, 2, ddY - 5, 1, avGRAY, avDL - 4);
+''')
+rep('''      av_Tx(avOSh(avPI(ddPr)) + " - " + avOSh(avPJ(ddPr)) + ": diff " + av_Sgn(avPD(ddPr)) + ", CI (" + av_Gn(avPD(ddPr) - ddH) + ", " + av_Gn(avPD(ddPr) + ddH) + ")", 4, 184, ddC);
+    ELSE
+      av_Tx(avOSh(avPI(ddPr)) + " - " + avOSh(avPJ(ddPr)) + ": diff " + av_Sgn(avPD(ddPr)) + " (no CI yet)", 4, 184, ddC);
+''', '''      // beta 1i: 58 pixels a number, which the line holds beside two names
+      av_Tx(avOSh(avPI(ddPr)) + " - " + avOSh(avPJ(ddPr)) + ": diff " + av_FitGS(avPD(ddPr), 58) + ", CI (" + av_FitG(avPD(ddPr) - ddH, 58) + ", " + av_FitG(avPD(ddPr) + ddH, 58) + ")", 4, 184, ddC);
+    ELSE
+      av_Tx(avOSh(avPI(ddPr)) + " - " + avOSh(avPJ(ddPr)) + ": diff " + av_FitGS(avPD(ddPr), 58) + " (no CI yet)", 4, 184, ddC);
+''')
+# the interaction plot and the profile plot: the same for their y numbers
+rep('''  tpDc := MAX(0, -FLOOR(LOG(tpR(3))));
+  tpV := tpR(1);
+''', '''  tpDc := MAX(0, -FLOOR(LOG(tpR(3))));
+  // beta 1i: how the y numbers are written, and the room they need
+  avDL := av_AxSet(tpR(1), tpR(2), tpR(3), tpDc);
+  tpV := tpR(1);
+''')
+rep('''    TEXTOUT_P(av_Cm(av_Fx(tpV, tpDc)), G1, 2, tpY - 5, 1, avGRAY, 32);
+''', '''    TEXTOUT_P(av_AxLb(tpV), G1, 2, tpY - 5, 1, avGRAY, avDL - 4);
+''')
+rep('''  bpDc := MAX(0, -FLOOR(LOG(bpS)));
+  bpW := (avDR - avDL)/avBKt;
+''', '''  bpDc := MAX(0, -FLOOR(LOG(bpS)));
+  // beta 1i: how the y numbers are written, and the room they need
+  avDL := av_AxSet(bpLo, bpHi, bpS, bpDc);
+  bpW := (avDR - avDL)/avBKt;
+''')
+rep('''    TEXTOUT_P(av_Cm(av_Fx(bpV, bpDc)), G1, 2, bpY - 5, 1, avGRAY, 32);
+''', '''    TEXTOUT_P(av_AxLb(bpV), G1, 2, bpY - 5, 1, avGRAY, avDL - 4);
 ''')
 
 # ---------------- help: 10 pages ----------------
