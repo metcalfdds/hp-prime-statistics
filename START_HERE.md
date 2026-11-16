@@ -2,7 +2,7 @@
 
 *HP Prime statistics: a one-page guide for first-time visitors. Version 2, 27 October 2026. Prepared for HHC 2026: welcome!*
 
-This repository holds **30 teaching programs** for the HP Prime, written in PPL with MicroPython where it helps. It also holds **a set of notes on how the Prime actually behaves**, found by testing and not by reading the manual. The programs were written for university statistics and forensic science courses. The notes are useful to anyone who writes PPL.
+This repository holds **31 teaching programs** for the HP Prime, written in PPL with MicroPython where it helps. It also holds **a set of notes on how the Prime actually behaves**, found by testing and not by reading the manual. The programs were written for university statistics and forensic science courses. The notes are useful to anyone who writes PPL.
 
 Everything here is free for educational and personal use ([LICENSE](LICENSE.txt)).
 
@@ -20,7 +20,7 @@ The notes are written so they can also be given to an AI coding assistant as bac
 
 ## If you have a calculator: try these first
 
-No calculator? The [starter pack](starter-pack/README.md) puts all 30 on HP's free Virtual Calculator for Windows in one copy, with no Connectivity Kit. Your own data goes in through the [Data Loader](data-loader/README.md) page and DataLoad, not by typing. Neither shortcut is in HP's manuals: [docs/two-shortcuts.md](docs/two-shortcuts.md) says how they work and who found them. Newest: the [Prime Loader](https://metcalfdds.github.io/hp-prime-statistics/prime-loader/) page ([how it works](prime-loader/README.md)) puts one chapter's programs on the Virtual Calculator: one click in Edge or Chrome, a few in Firefox, and nothing to check afterwards.
+No calculator? The [starter pack](starter-pack/README.md) puts all 31 on HP's free Virtual Calculator for Windows in one copy, with no Connectivity Kit. Your own data goes in through the [Data Loader](data-loader/README.md) page and DataLoad, not by typing. Neither shortcut is in HP's manuals: [docs/two-shortcuts.md](docs/two-shortcuts.md) says how they work and who found them. Newest: the [Prime Loader](https://metcalfdds.github.io/hp-prime-statistics/prime-loader/) page ([how it works](prime-loader/README.md)) puts one chapter's programs on the Virtual Calculator: one click in Edge or Chrome, a few in Firefox, and nothing to check afterwards.
 
 Install by pasting the `.txt` file into a new program in the HP Connectivity Kit ([full steps](README.md#installing)). Do not rename a `.txt` to `.hpprgm`. Each of these shows off the touch screen:
 
