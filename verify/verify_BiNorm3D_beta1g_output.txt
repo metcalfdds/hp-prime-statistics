@@ -2,6 +2,7 @@
 PASS T1 the build makes programs/BiNorm3D_beta1g.txt byte for byte
 === A. the arithmetic
 PASS A1 bnCepC equals the reference (an integral over Z1 with the normal CDF, Brent's method) to 1E-9 at 17 values of ρ from −0.9 to 0.9; Newton took 1 to 5 steps; BN_CEP holds it
+PASS A1b what the comment above bnCepC says, counted at the 181 values of ρ from −0.90 to 0.90: Newton takes 1 to 5 steps in the PC harness (1 at 0, 5 from 0.84 on), the smallest R^2 g at any step is 0.166 (the comment: 0.16 or more), and the 16 midpoints give P within 1e-13 of 4,096 midpoints (the comment: 10 digits or better)
 PASS A2 at ρ = 0 the CEP is root(2 ln 2) = 1.17741002252 to 12 digits
 PASS A3 a second reference, a simulation: of 2,000,000 pairs at ρ = 0.6, −0.9 and 0, half land inside the circle (within 4 standard errors)
 PASS A4 the ellipse that holds half: its 61 points are the pixels of Q = 2 ln 2 (1 - exp(-Q/2) = 1/2) at four values of ρ
@@ -50,4 +51,4 @@ PASS D1 no firm overlap and no text off the screen (text_overlap_v1)
 PASS D2 no number cut short by its width argument (label_fit_v1 reports 1 texts at its estimate; none is wider than its width argument at the measured glyph widths)
 PASS D3 no menu title of this version is longer than the 31 characters a CHOOSE box shows (1 different titles in the runs above)
 
-43 checks, 0 failed
+44 checks, 0 failed

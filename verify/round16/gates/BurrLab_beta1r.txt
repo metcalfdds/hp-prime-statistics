@@ -17,5 +17,5 @@ GATE  BurrLab_beta1r.txt
      PROBLEM line 4568: assignment to 'mlTx' concatenates bare 'mlC' - formatting would follow the user's Home number setting
 4. full parse: PARSE FAIL PPLError: <ppl>:379: expected a name after EXPORT
    original:   PARSE FAIL PPLError: <ppl>:370: expected a name after EXPORT
-5. fleet_names_v2 over 31 files (newest of each program): 31 files, 2417 routine names, 0 collisions, 0 untagged, 0 mixed-tag files, 0 built-in matches
+5. fleet_names_v2 over 31 files (newest of each program): 31 files, 2480 routine names, 0 collisions, 0 untagged, 0 mixed-tag files, 0 built-in matches
 RESULT: PASS

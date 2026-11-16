@@ -5,6 +5,7 @@ PASS A0 the reference itself: the 400-node integral equals SciPy's adaptive quad
 PASS A1 cqTolRho: Phi(d + r) - Phi(d - r) = p, against Brent's method to 1E-10 at 9 values of d from 0 to 8 for p = 0.90, 0.95, 0.99
 PASS A2 cqTolK, the exact factor, against the reference at 198 cases (n = 2 to 100; p = 0.90, 0.95, 0.99; confidence 0.5 to 0.999): worst relative error 1.0e-06
 PASS A3 cqTolG, the confidence of a factor, at the reference factor of each case: worst error 4.4e-07
+PASS A3b what the comments above cqTolRho and cqTolK say, counted in the PC harness for n = 2 to 30, 40, 50, 75, 100 and p = 0.90, 0.95, 0.99: Newton's rule for rho takes 1 to 6 steps (8 at most; at each run's 12 nodes and 9 other centres, 2,079 calls) and the secant rule for k takes 3 to 6 steps after its two starting points (40 at most; 10 confidences from 0.5 to 0.999, 990 calls); the copy with the counters gives the reference factors too
 PASS A4 a second reference, the definition simulated: of 400,000 samples, the share whose interval xbar +/- k s holds at least p of the population is the confidence (4 cases, within 4 standard errors)
 PASS A5 at n = 10, 90 % of the population, 95 % confidence: the exact k is 2.8563 (the help page prints 2.856) and Howe's approximation, which the header quotes as 2.838, is 2.8382
 PASS A6 the catch level of 600 samples (5 runs): each is the reference integral at the sample's own k*, rounded up to thousandths, and at 6 levels a sample is counted caught exactly when the interval drawn at that level holds at least p of the population (0 ties within 1E-6 of a level set aside)
@@ -43,4 +44,4 @@ PASS D1 no firm overlap and no text off the screen (text_overlap_v1)
 PASS D2 no number cut short by its width argument (label_fit_v1 reports 6 texts at its estimate; none is wider than its width argument at the measured glyph widths)
 PASS D3 no menu title of this version is longer than the 31 characters a CHOOSE box shows (4 different titles in the runs above)
 
-36 checks, 0 failed
+37 checks, 0 failed

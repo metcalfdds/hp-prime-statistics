@@ -114,6 +114,46 @@ for r in rhos:
     if abs(G(h, 'bnCpR') - REF[r]) > 1e-9 or G(h, 'bnCpD') != 0 or abs(G(h, 'BN_CEP') - G(h, 'bnCpR')) > 0: bad.append((r, G(h, 'bnCpR'), REF[r]))
 check('A1 bnCepC equals the reference (an integral over Z1 with the normal CDF, Brent\'s method) to 1E-9 at %d values of %s from %s0.9 to 0.9; Newton took %d to %d steps; BN_CEP holds it'
       % (len(rhos), RHO, MINUS, min(steps), max(steps)), not bad and max(steps) <= 8, bad[:3])
+# A1b: what the comment above bnCepC says of the iteration, counted.  A replica of the routine (the same start, the same 16
+# midpoints, the same stopping rule) gives R, the number of steps and the smallest R^2 g it met; it is held to the PPL's R
+# and step count at every rho the keys and the form can give, and the 16-point rule is held to a 4,096-point one.
+def cep_replica(rho):
+    A, B = 1 + abs(rho), 1 - abs(rho); C = 1 / (16 * (A * B) ** 0.5); R = (2 * math.log(2)) ** 0.5 * (A * B) ** 0.25
+    ts = [(i - 0.5) * (math.pi / 2) / 16 for i in range(1, 17)]; n = 0; small = 9.0
+    while True:
+        P = D = 0.0
+        for t in ts:
+            g = math.cos(t) ** 2 / (2 * A) + math.sin(t) ** 2 / (2 * B); small = min(small, R * R * g)
+            e = math.exp(-R * R * g); P += (1 - e) / (2 * g); D += e
+        st = (C * P - 0.5) / (C * R * D)
+        if st >= R: st = R / 2
+        R -= st; n += 1
+        if abs(st) < 1e-10 or n >= 30: return R, n, small
+
+
+def p_mid(R, rho, N):
+    A, B = 1 + abs(rho), 1 - abs(rho); tot = 0.0
+    for i in range(1, N + 1):
+        t = (i - 0.5) * (math.pi / 2) / N; g = math.cos(t) ** 2 / (2 * A) + math.sin(t) ** 2 / (2 * B)
+        tot += (1 - math.exp(-R * R * g)) / (2 * g)
+    return tot * (math.pi / 2) / N * 2 / (math.pi * (A * B) ** 0.5)
+
+
+bad = []; st_all = []; small = 9.0; perr = 0.0
+for i in range(-90, 91):
+    r = i / 100.0
+    h.execute('bnSetRho(%r)' % r); h.execute('bnCepC()')
+    R_, n_, sm_ = cep_replica(r); st_all.append(int(G(h, 'bnCpK'))); small = min(small, sm_)
+    if abs(G(h, 'bnCpR') - R_) > 1e-12 or int(G(h, 'bnCpK')) != n_: bad.append((r, G(h, 'bnCpR'), R_, G(h, 'bnCpK'), n_))
+    for R0 in (0.5, 0.8, 1.0, 1.1774, 1.5, 2.5): perr = max(perr, abs(p_mid(R0, r, 16) - p_mid(R0, r, 4096)))
+says = ('30 at most; the PC' in SRC and '//   harness takes %d to %d).' % (min(st_all), max(st_all)) in SRC
+        and 'is 0.16 or more at every step' in SRC and 'gives P to 10 digits or better' in SRC)
+check('A1b what the comment above bnCepC says, counted at the 181 values of %s from %s0.90 to 0.90: Newton takes %d to %d steps in the '
+      'PC harness (1 at 0, %d from %.2f on), the smallest R^2 g at any step is %.3f (the comment: 0.16 or more), and the 16 '
+      'midpoints give P within %.0e of 4,096 midpoints (the comment: 10 digits or better)'
+      % (RHO, MINUS, min(st_all), max(st_all), max(st_all), min(abs(i / 100.0) for i, v in zip(range(-90, 91), st_all) if v == max(st_all)),
+         small, perr),
+      not bad and says and (min(st_all), max(st_all)) == (1, 5) and small >= 0.16 and perr < 1e-10, (bad[:2], says, small, perr))
 h.execute('bnSetRho(0)'); h.execute('bnCepC()')
 check('A2 at %s = 0 the CEP is root(2 ln 2) = 1.17741002252 to 12 digits' % RHO, abs(G(h, 'bnCpR') - math.sqrt(2 * math.log(2))) < 1e-12, G(h, 'bnCpR'))
 rng = np.random.default_rng(20261115); bad = []

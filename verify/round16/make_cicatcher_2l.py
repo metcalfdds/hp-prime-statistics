@@ -133,7 +133,7 @@ before('''// ------------------------------------------------------------
 // off the mean.  The root lies between d + z(p) and d + z((1 + p)/2).
 // Newton's rule from the upper end, every step kept inside those
 // bounds; the slope phi(d + r) + phi(d - r) is at least phi(z((1 +
-// p)/2)) there, never near 0.  8 steps at most (it takes 3 to 5).
+// p)/2)) there, never near 0.  8 steps at most (PC harness: 1 to 6).
 cqTolRho(trD)
 BEGIN
   LOCAL trLo, trHi, trR, trF, trS, trI;
@@ -195,7 +195,7 @@ END;
 //     k0 = z root( (n - 1)(1 + 1/n) / chi-square quantile(1 - g; n - 1) ),
 // which is within 8 % of the answer everywhere here, and a second
 // point 3 % off on the root's side; then the secant rule.  The steps
-// are counted: 40 at most (it takes 5 to 8).
+// are counted: 40 at most (the PC harness takes 3 to 6).
 cqTolK(tkG)
 BEGIN
   LOCAL tkA, tkB, tkFa, tkFb, tkC, tkI;

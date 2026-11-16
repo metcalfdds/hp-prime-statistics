@@ -113,7 +113,7 @@ note = ('Round 16 (Roger, 15 Nov 2026, of six additions proposed for the program
         'for Spearman\'s t of a perfect order only, and Left / Right now starts at the statistic there too.  The Null '
         'page\'s last axis number is kept on the screen (it ran off it for a statistic in the hundred thousands).  Your data: a table '
         'of more than 10,000 values is refused with a sentence (one list holds it).  Help has 10 pages (7 before).  Every old menu item keeps its '
-        'number.  PC harness only so far.' % ', '.join(str(LIM[k]) for k in range(3, 10)))
+        'number.  Checked and run on the Virtual Calculator (15 Nov 2026); not yet on a G1 or a G2.' % ', '.join(str(LIM[k]) for k in range(3, 10)))
 before('// beta 1i (15 Nov 2026): Round 15', '// beta 1j (%s): ' % DATE + '\n//   '.join(textwrap.wrap(note, 100)) + '\n')
 before('''//   Chi-square upper tails for whole df as sums of positive terms
 ''', '''//   Page's L (beta 1j): Page (1963) JASA 58:216, "Ordered hypotheses for

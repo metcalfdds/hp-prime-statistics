@@ -1,0 +1,23 @@
+S BiNorm3D   OK    warnings 0 (old 0)
+S CICatcher  OK    warnings 0 (old 0)
+S FitCheck   OK    warnings 0 (old 0)
+S RankLab    OK    warnings 0 (old 0)
+S AnovaLab   OK    warnings 0 (old 0)
+S StatDist   OK    warnings 0 (old 0)
+S AgreeLab   OK    warnings 0 (old 0)
+S RiskLab    OK    warnings 0 (old 0)
+S BurrLab    OK    warnings 0 (old 0)
+T BiNorm3D   same report as the old version  PROGRAM screens 19/32 collisions 0 (firm 0) straddles 0 overruns 0 ghosts 0
+T CICatcher  not the old version's report (see overlap_CICatcher.txt)  PROGRAM screens 217/380 collisions 0 (firm 0) straddles 0 overruns 0 ghosts 0   OLD: PROGRAM screens 136/237 collisions 0 (firm 0) straddles 0 overruns 0 ghosts 0
+T FitCheck   not the old version's report (see overlap_FitCheck.txt)  PROGRAM screens 94/350 collisions 0 (firm 0) straddles 0 overruns 0 ghosts 0   OLD: PROGRAM screens 97/352 collisions 0 (firm 0) straddles 0 overruns 0 ghosts 0
+T RankLab    not the old version's report (see overlap_RankLab.txt)  PROGRAM screens 102/1198 collisions 0 (firm 0) straddles 0 overruns 0 ghosts 0   OLD: PROGRAM screens 82/1200 collisions 0 (firm 0) straddles 0 overruns 0 ghosts 0
+T AnovaLab   not the old version's report (see overlap_AnovaLab.txt)  PROGRAM screens 38/1035 collisions 57 (firm 54) straddles 0 overruns 0 ghosts 0   OLD: PROGRAM screens 37/1035 collisions 57 (firm 54) straddles 0 overruns 0 ghosts 0
+T StatDist   same report as the old version  PROGRAM screens 23/228 collisions 11 (firm 11) straddles 0 overruns 0 ghosts 0
+T AgreeLab   same report as the old version  PROGRAM screens 83/1192 collisions 25 (firm 19) straddles 0 overruns 0 ghosts 0
+T RiskLab    same report as the old version  PROGRAM screens 39/1079 collisions 8 (firm 8) straddles 0 overruns 0 ghosts 0
+T BurrLab    same report as the old version  PROGRAM screens 1166/7100 collisions 0 (firm 0) straddles 6 overruns 0 ghosts 0
+F fleet_names_v2 over 31 programs: clean
+  31 files, 2480 routine names, 0 collisions, 0 untagged, 0 mixed-tag files, 0 built-in matches
+
+--- fleet_names_v2 output
+31 files, 2480 routine names, 0 collisions, 0 untagged, 0 mixed-tag files, 0 built-in matches

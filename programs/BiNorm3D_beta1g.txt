@@ -843,13 +843,13 @@ END;
 //     g(t) = cos^2 t / (2 A) + sin^2 t / (2 B).
 //   The integrand is smooth and periodic, so the midpoint rule at 16
 //   angles gives P to 10 digits or better for every rho from -0.9
-//   to 0.9 (verify_BiNorm3D_beta1g.py).  Every term is positive, and
-//   R^2 g is at least 0.2, so 1 - exp(...) loses no digits.
+//   to 0.9 (verify_BiNorm3D_beta1g.py).  Every term is positive, and R^2 g
+//   is 0.16 or more at every step, so 1 - exp(...) loses no digits.
 //   R solves P(R) = 1/2 by Newton's rule, with
 //     P'(R) = (2 R / (pi (A B)^0.5)) INT_0^(pi/2) exp(-R^2 g(t)) dt,
 //   from R = (2 ln 2)^0.5 (A B)^0.25: its value for a round pattern
-//   of the same area.  The steps are counted (30 at most; it takes
-//   3 to 6).  At rho = 0, R = (2 ln 2)^0.5 = 1.1774.
+//   of the same area.  The steps are counted (30 at most; the PC
+//   harness takes 1 to 5).  At rho = 0, R = (2 ln 2)^0.5 = 1.1774.
 // It also sets the ellipse Q = 2 ln 2, which holds half as well
 // (1 - exp(-Q / 2) = 1/2), drawn as bnCache draws its two, and it
 // removes the shots: they were fired at the old rho.

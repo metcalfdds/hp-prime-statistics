@@ -29,11 +29,33 @@ their new files went the same way again, with the probe written for the third fi
 
   KeyProbe  beta 1   | editor title "KeyProbe:Main(PPL)"  | "No errors in the program"   (22:26)
   AnovaLab  beta 1i  | editor title "AnovaLab:Main(PPL)"  | "No errors in the program"   (22:27, the file as filed)
-  CICatcher beta 2l  | editor title "CICatcher:Main(PPL)" | "No errors in the program"   (22:27, the file as filed)
+  CICatcher beta 2l  | editor title "CICatcher:Main(PPL)" | "No errors in the program"   (22:27, the second build)
 
-Calculator > Exit, and the two checked files collected (22:27) before either was run.  The pack's nine checked files:
-  AgreeLab 285,014 bytes; AnovaLab 434,672; BiNorm3D 157,652; BurrLab 467,948; CICatcher 216,370; FitCheck 386,642;
-  RankLab 474,038; RiskLab 286,504; StatDist 471,872 (starter pack v22).
+Calculator > Exit, and the two checked files collected (22:27) before either was run.
+
+A third round, for comments only.  While the change notes were written, five sentences in the comments of three
+programs were corrected: the step counts given above three iterations (BiNorm3D's bnCepC, CICatcher's cqTolRho and
+cqTolK), which were the prototype's and not the ones the PC harness counts, the lower bound of R^2 g in bnCepC's
+comment, and the last sentence of RankLab's version note ("Checked and run on the Virtual Calculator (15 Nov 2026);
+not yet on a G1 or a G2." for "PC harness only so far.").  Not one line the calculator runs differs: the lines that
+are not whole-line comments are the same as in the files run in section 2 (1,022, 1,522 and 3,815 lines, compared).
+A checked file holds its source, comments included, so the three were Checked again:
+
+  BiNorm3D  beta 1g  | editor title "BiNorm3D:Main(PPL)"  | "No errors in the program"   (23:26, the file as filed)
+  CICatcher beta 2l  | editor title "CICatcher:Main(PPL)" | "No errors in the program"   (23:26, the file as filed)
+  RankLab   beta 1j  | editor title "RankLab:Main(PPL)"   | "No errors in the program"   (23:26, the file as filed)
+
+Calculator > Exit, and the three checked files collected (23:27), none of them run.  The runs and captures of
+section 2 are of the files before this round of comments; they were not made again.
+
+The pack's nine checked files (starter pack v22):
+  AgreeLab 285,014 bytes; AnovaLab 434,672; BiNorm3D 157,704; BurrLab 467,948; CICatcher 216,400; FitCheck 386,642;
+  RankLab 474,154; RiskLab 286,504; StatDist 471,872.
+
+The display behind the calculator (Xvfb, a tracked background job) reached that job's two-hour limit at about 23:20
+and was stopped, and the calculator, which had been left open on the Program Catalog since 23:05, went with it.  It
+left its lock (Documents > HP Prime > Temp > HPEmuInstance.lock); the lock was removed before the third round's
+start, and that start showed one calculator, "Prime", with the catalog as the last Exit had left it.
 
 ------------------------------------------------------------------------------------------------------------------------
 2. THE RUNS
@@ -41,6 +63,9 @@ Calculator > Exit, and the two checked files collected (22:27) before either was
 Every program was started from the Program Catalog (the highlight on its row, Run).  Every number below was read from
 the screen and is the number the PC harness gives (the verify script named with each program compares the harness
 with SciPy or with exact arithmetic).
+
+"The file as filed" below means the file whose code is the filed one's.  For BiNorm3D, CICatcher and RankLab the
+filed file differs from the one run here in comment lines only (section 1, the third round).
 
 AnovaLab beta 1i (the first build 21:42 to 22:01; the file as filed 22:34 to 22:36, 22:49 to 22:52 and 23:03 to 23:05;
 every AnovaLab_ capture but the one marked FIRST_BUILD is from the file as filed)

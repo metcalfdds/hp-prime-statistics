@@ -39,9 +39,9 @@ All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** o
 | AgreeLab | beta 1h | 3,068 | `AgreeLab` |  | `3f5ededa4720` |
 | AnovaLab | beta 1i | 4,739 | `AnovaLab` |  | `6881d0e8e770` |
 | BayesTree | beta 8k | 3,451 | `BayesTree` |  | `707756c05296` |
-| BiNorm3D | beta 1g | 1,611 | `BiNorm3D` |  | `41ea7de53568` |
+| BiNorm3D | beta 1g | 1,611 | `BiNorm3D` |  | `480bd7ed7177` |
 | BurrLab | beta 1r | 4,721 | `BurrLab` | MicroPython | `0b23152be32c` |
-| CICatcher | beta 2l | 2,483 | `CICatcher` |  | `f2302e5c3b88` |
+| CICatcher | beta 2l | 2,483 | `CICatcher` |  | `4558c78578f3` |
 | CentralLimit | beta 3g | 2,788 | (an app) | app on Statistics 1Var | `502640fe6456` |
 | ChiTable | beta 3m | 3,863 | `ChiTable` |  | `46f1745b9ede` |
 | DNAMixLR | beta 3j | 3,471 | `DNAMixLR` |  | `349a8cc1899c` |
@@ -54,7 +54,7 @@ All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** o
 | Norm3 | v2.4g | 1,125 | `Norm3` |  | `e45ead59d4df` |
 | NormExplorer | beta 42j | 4,228 | `NormExp` | MicroPython | `86d9dfd7e9d1` |
 | PowerViz | v2.5s | 4,190 | `POWERVIZ` |  | `3ba37d06f2bc` |
-| RankLab | beta 1j | 5,094 | `RankLab` |  | `6d40b84917de` |
+| RankLab | beta 1j | 5,094 | `RankLab` |  | `1f75623286b4` |
 | ResampLab | beta 1i | 3,054 | `ResampLab` |  | `ab78fd31efc8` |
 | RiskLab | beta 1h | 3,169 | `RiskLab` |  | `f9a89623c5a8` |
 | SampDist | v2.3k | 1,939 | `SampDist` |  | `2d44782aea01` |

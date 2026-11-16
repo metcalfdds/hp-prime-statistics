@@ -6,7 +6,7 @@ GATE  AnovaLab_beta1i.txt
    original:          2 W3
    hard errors (E2/E3/E6/E8/E10/E11/E12): none
 3. lint_ppl (v4): 3131 checks, 5 problems
-4. full parse: PARSE FAIL PPLError: <ppl>:252: expected a name after EXPORT
+4. full parse: PARSE FAIL PPLError: <ppl>:257: expected a name after EXPORT
    original:   PARSE FAIL PPLError: <ppl>:205: expected a name after EXPORT
 5. fleet_names_v2 over 31 files (newest of each program): 31 files, 2480 routine names, 0 collisions, 0 untagged, 0 mixed-tag files, 0 built-in matches
 RESULT: PASS

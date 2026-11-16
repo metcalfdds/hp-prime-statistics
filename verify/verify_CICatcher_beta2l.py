@@ -148,6 +148,39 @@ for n in NS:
 check('A2 cqTolK, the exact factor, against the reference at %d cases (n = 2 to 100; p = 0.90, 0.95, 0.99; confidence 0.5 to 0.999): worst relative error %.1e'
       % (len(KREF), worst[0]), worst[0] < 1e-5, worst)
 check('A3 cqTolG, the confidence of a factor, at the reference factor of each case: worst error %.1e' % worstg[0], worstg[0] < 5e-6, worstg)
+# A3b: what the comments above cqTolRho and cqTolK say of their iterations, counted.  The loop counters are locals, so
+# the count is made on a copy of the program with three lines added (a counter kept at each RETURN); nothing else differs.
+def with_counters():
+    t = SRC
+    for x, y in (('LOCAL cqTR;\n', 'LOCAL cqTR;\nLOCAL cqDbgR, cqDbgK;\n'),
+                 ('    IF ABS(trS) < 1E-11 THEN BREAK; END;\n  END;\n  RETURN trR;',
+                  '    IF ABS(trS) < 1E-11 THEN BREAK; END;\n  END;\n  cqDbgR := trI;\n  RETURN trR;'),
+                 ('    IF ABS(tkB - tkA) < 1E-9 * tkB THEN BREAK; END;\n  END;\n  RETURN tkB;',
+                  '    IF ABS(tkB - tkA) < 1E-9 * tkB THEN BREAK; END;\n  END;\n  cqDbgK := tkI;\n  RETURN tkB;')):
+        assert t.count(x) == 1, x
+        t = t.replace(x, y)
+    q = os.path.join(tmp, 'CICatcher_counted.txt'); io.open(q, 'w', encoding='utf-8', newline='').write(t)
+    return q
+
+
+CNT = with_counters(); cr, ck = set(), set(); kbad = []
+for n in list(range(2, 31)) + [40, 50, 75, 100]:
+    for p in PS:
+        h = tol(n, p, path=CNT)
+        for d in [float(t) / math.sqrt(n) for t in G(h, 'cqTN')] + [0, 0.01, 0.1, 0.5, 1, 2, 3, 5, 8]:
+            S(h, 'cqDbgR', 0.0); h.execute('cqTolRho(%r)' % d); cr.add(int(G(h, 'cqDbgR')))
+        for g in (0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.975, 0.99, 0.995, 0.999):
+            S(h, 'cqDbgK', 0.0); k = h.execute('cqTolK(%r)' % g); ck.add(int(G(h, 'cqDbgK')))
+            if (n, p, g) in KREF and abs(k / KREF[(n, p, g)] - 1) > 1e-5: kbad.append((n, p, g, k))
+says = ('8 steps at most (PC harness: %d to %d).' % (min(cr), max(cr)) in SRC
+        and 'are counted: 40 at most (the PC harness takes %d to %d).' % (min(ck), max(ck)) in SRC)
+check('A3b what the comments above cqTolRho and cqTolK say, counted in the PC harness for n = 2 to 30, 40, 50, 75, 100 and '
+      'p = 0.90, 0.95, 0.99: Newton\'s rule for rho takes %d to %d steps (8 at most; at each run\'s 12 nodes and 9 other '
+      'centres, %s calls) and the secant rule for k takes %d to %d steps after its two starting points (40 at most; 10 '
+      'confidences from 0.5 to 0.999, %s calls); the copy with the counters gives the reference factors too'
+      % (min(cr), max(cr), format(33 * 3 * 21, ','), min(ck), max(ck), format(33 * 3 * 10, ',')),
+      says and max(cr) <= 8 and max(ck) <= 40 and (min(cr), max(cr)) == (1, 6) and (min(ck), max(ck)) == (3, 6) and not kbad,
+      (sorted(cr), sorted(ck), says, kbad[:2]))
 rng = np.random.default_rng(20261115); bad = []
 for (n, p, g) in ((10, 0.90, 0.95), (5, 0.99, 0.95), (30, 0.95, 0.99), (2, 0.90, 0.80)):
     h = tol(n, p); k = h.execute('cqTolK(%r)' % g)

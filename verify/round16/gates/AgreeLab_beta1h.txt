@@ -9,5 +9,5 @@ GATE  AgreeLab_beta1h.txt
      PROBLEM line 1543: TEXTOUT_P concatenates bare 'agK' - formatting would follow the user's Home number setting
 4. full parse: PARSE FAIL PPLError: <ppl>:188: expected a name after EXPORT
    original:   PARSE FAIL PPLError: <ppl>:182: expected a name after EXPORT
-5. fleet_names_v2 over 31 files (newest of each program): 31 files, 2417 routine names, 0 collisions, 0 untagged, 0 mixed-tag files, 0 built-in matches
+5. fleet_names_v2 over 31 files (newest of each program): 31 files, 2480 routine names, 0 collisions, 0 untagged, 0 mixed-tag files, 0 built-in matches
 RESULT: PASS

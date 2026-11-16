@@ -27,7 +27,7 @@ HP's installer and the patched program are HP's. They are fetched for the sessio
 1. Get the installer into the workspace (stage it from `D:\HP-Prime`).
 2. `bash tools/vc_cloud_v1/setup.sh /path/to/the/installer.exe /tmp/vc`
 3. Start `/tmp/vc/xvfb.sh` as a tracked background job. Then `. /tmp/vc/env.sh && wineboot -i`.
-4. Start `/tmp/vc/start.sh` as a tracked background job. A job started with `&` inside another command is stopped when that command's reply ends, and a calculator that is stopped that way leaves a lock behind (step 6).
+4. Start `/tmp/vc/start.sh` as a tracked background job. A job started with `&` inside another command is stopped when that command's reply ends, and a calculator that is stopped that way leaves a lock behind (step 6). **A tracked background job lives two hours at the most.** Give both jobs that limit when they are started, and leave the calculator by its Exit before the display's two hours are up: on 15 November 2026 the display was stopped at its limit with the calculator still open, and the calculator went with it, lock left behind. Nothing was lost, because the checked files had been collected, but an Exit that never happened writes nothing back.
 5. **The first start** asks four things, each answered with one click (`vcdrive.click(x, y)` on the X display):
    - HP's licence dialog: Accept, at (746, 654). It is the licence of the program the author has installed on his own computer.
    - "Slide to unlock": press at (482, 459), move right to (630, 459) in ten steps, release.
