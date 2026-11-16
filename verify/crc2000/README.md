@@ -18,7 +18,7 @@ python3 crc_check_v4.py ../work/all.txt ../work/part4.json     # Mann-Whitney pr
 python3 crc_check_v5.py; python3 crc_check_v6.py; python3 crc_check_v7.py; python3 crc_check_v8.py
 python3 crc_bartlett_v1.py table; python3 crc_dunnett2_v1.py; python3 crc_finney_v1.py
 python3 crc_orthpoly_v1.py; python3 crc_spearman_v1.py
-python3 crc_summary_v1.py          # work/summary.json and the list of tables
+python3 crc_summary_v2.py          # work/summary.json and the list of tables (v2, 16 Nov 2026: one note's direction corrected)
 python3 crc_model_v1.py            # work/model.json: Poisson and negative binomial fits, the intervals
 ```
 

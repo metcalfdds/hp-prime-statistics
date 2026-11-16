@@ -90,3 +90,11 @@ The T lines give `text_overlap_v1.py`'s one-line summary. For a program with new
 ## Not done
 
 Nothing in this round has run on a G1 or a G2.
+
+## After the round closed (16 November 2026): two notes from the book's captures
+
+The book's Draft 37 needed more captures than the round's 161, and they were taken on the cloud Virtual Calculator with the round's programs.
+
+- **A negative number in an input form takes the change-sign key.** With the cursor at the start of a field (BiNorm3D's form for ρ), the minus key typed `Ans−`, and the line read "Ans−0.6". The change-sign key, marked +/−, gave −0.6. The book's Chapter 13 tells the reader so. On the cloud calculator's skin that key is at (399, 816), the x² key at (345, 816), and the comma at (510, 816); `tools/vc_cloud_v1/vcdrive.py` does not name them yet. For the Lessons Learned (§4) at its next letter.
+- **RankLab's runs test, the roulette example, tail by tail.** The fifth soft key goes from two-sided to the lower tail, the upper tail, and back. Lower tail: "Exact p = 0.0551 (lower tail)", "Normal: z = −1.792, p = 0.0366", and the verdict line follows the exact p ("p ≥ 0.05: no evidence against H₀"). Upper tail: 0.9777 and 0.9634. These are the numbers `verify_RankLab_beta1j.py` expects (P9), now seen on the Virtual Calculator. The HP-65 manual ends this example "(His suspicion is not entirely unjustified.)", which fits the normal curve's lower tail and not the exact count (409/7,429).
+- **A correction to the table-check report** (`docs/dev/crc-table-check-2026-11-15.md`, which this round's six additions came from): the row labels of the table of circular normal probabilities stand one row too high, not too low. The report has a dated note at its head; `verify/crc2000/tools/crc_summary_v2.py` and `work/summary.json` carry the corrected note.

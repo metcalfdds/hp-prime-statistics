@@ -1,3 +1,6 @@
+# crc_summary_v2.py (16 Nov 2026): v1 with ONE note corrected.  The note on the table of circular normal probabilities said the row labels
+# are one row too LOW and belong one row UP; the page shows them one row too HIGH (the row marked 0.2 holds the values of 0.1), so they
+# belong one row DOWN.  The counts are as they were (183 of 198 wrong as labelled).  v1 is in the repository's history.
 # crc_summary_v1.py : gather every check of Zwillinger & Kokoska (2000) into one list of tables, with the pages each
 # stands on, the cells read, the cells off by one unit in the last place and the cells wrong by more; then count wrong cells
 # page by page for the error model.  Writes work/summary.json and prints the list.
@@ -55,7 +58,7 @@ c, pg, fl = res('tolerance_headed_WaldWolf')
 add('Tolerance factors for normal distributions', [186], 216, c['last'], c['DIFF'], 'label + approximation', 'the headings P and alpha are exchanged against the book\'s own definitions (162 of 216 cells wrong as headed; 1989 has them as gamma and 1 - alpha); the numbers are the Wald-Wolfowitz approximation (171 differ from the exact factors, by 3% at n = 2)', flags=fl, label_cells=216)
 c, pg, fl = res('correlation_r'); add('Percentage points of the correlation coefficient', [193], 186, 0, 0, 'clean', 'the six cells of the first row, printed in a short form, were checked by hand')
 c, pg, fl = res('circular_normal')
-add('Circular normal probabilities', [194], 198, c['last'], c['DIFF'], 'label', 'every row label is one row too low: the row marked 0.2 holds the values for 0.1, and so on; with the labels moved up one row all 198 cells are exact', flags=fl, label_cells=198)
+add('Circular normal probabilities', [194], 198, c['last'], c['DIFF'], 'label', 'every row label is one row too high: the row marked 0.2 holds the values for 0.1, and so on; with the labels moved down one row all 198 cells are exact', flags=fl, label_cells=198)
 R('circular_error', 'Circular error probabilities')
 # ---- Chapters 8, 9 ----
 c1 = res('estimators_mean')[0]; c2 = res('estimators_range')[0]
