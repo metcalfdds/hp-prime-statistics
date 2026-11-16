@@ -22,7 +22,7 @@ RiskLab, AgreeLab) and consistently in the book.
 | StatDist v2.7n, AgreeLab 1h, RiskLab 1h, BurrLab 1r (credits) | committed a0842d0; wording verify 25/25 |
 | CICatcher beta 2l (tolerance interval, exact factor) | committed 7fc39d8, 05be49c; verify 34/34; gate PASS; monkey 1,000/1,000 |
 | FitCheck beta 1i (Dixon's outlier test; the loader's refused sample; axis numbers) | committed 8194529; verify 65/65; gate PASS; monkey 1,000/1,000 |
-| RankLab beta 1j (Page's L, runs test) | to do |
+| RankLab beta 1j (Page's L, runs test) | design settled (points 2 and 3 below); build script next |
 | AnovaLab beta 1i (Dunnett) | to do |
 | paperwork (change notes, READMEs, Lessons Learned v7zw), Virtual Calculator, starter pack, Prime Loader, pull request | to do |
 | Draft 37 of the book | after the round; its working folder must be restored from the source package on the PC |
@@ -57,19 +57,46 @@ keys has `func` = the main routine (the wait), a blitted screen has the drawing 
    up to 60.  Reference: m = 1 equals the t test to 12 digits; two-sided 5 % d for m = 2, 3 at df 20: 2.379, 2.540.
    UI: One-way Menu item "Dunnett: all vs a control" -> pick the control (CHOOSE) -> estimate + "Compute it now / Not now" ->
    page 6 (difference, family CI, adjusted p).  Own routines av_Dn*; old pages untouched; arrows on page 6 guarded.
-2. PAGE'S L (RankLab 1i -> 1j): L = sum_j j R_j over treatments in the order listed; mean n k (k+1)^2/4, variance
-   n k^2 (k+1)^2 (k-1)/144 (ties: per block k (k+1) (k (k^2-1) - T_i)/144).  Exact null by convolving the one-block
-   distribution (k = 3: {10:1, 11:2, 13:2, 14:1}; support sizes k = 3..9: 5, 11, 21, 36, 57, 85, 121) when no ties and
-   n (W_k - 1) <= about 1,200, else normal.  Checks: k = 3: n = 4 critical 54/55/56, n = 5: 66/68/70; equals
-   `scipy.stats.page_trend_test(method='exact')`.  Roger's 2021 homework (4 subjects x 3 ozone levels, airway resistance;
-   matrix columns (-0.08, 0.21, 0.50, 0.14), (0.01, 0.17, -0.11, 0.07), (0.06, 0.19, 0.34, 0.14)): L = 48, exact
-   P = 83/144 = 0.5764, one tie in block 4.  Its original source is still to be identified (Hollander & Wolfe?).
-3. RUNS TEST (RankLab): R runs of n1, n2 symbols; exact pmf; mean 2 n1 n2/n + 1, variance 2 n1 n2 (2 n1 n2 - n)/(n^2 (n-1));
-   two-sided exact = min(1, 2 x the smaller tail) (RankLab's rule, rk_Pick).  Preset: the HP-65/HP-67 roulette example
-   (14 R, 11 B, 9 runs: mu 13.32, sigma 2.41, z -1.792; exact P(R <= 9) = 0.0551, two-sided 0.110; normal two-sided 0.0731,
-   0.113 with the continuity correction).  Plan: both as tests of their own (rkTest 7 = Page's L, 8 = runs) in the shared
-   view.  THE BOOK NAMES MENU ITEMS BY NUMBER ("7 Load a preset", "4 Darwin: Zea mays pairs"): new menu items go where the
-   old numbers stay, or the book's sentences change with them.
+2. PAGE'S L (RankLab 1i -> 1j, rkTest 7), settled 15 Nov evening.  On the Friedman data (rkFM, b blocks x k treatments,
+   within-block midranks rkFR): L = sum_j j R_j over treatments in the order listed; mean b k (k+1)^2/4; variance = sum over
+   blocks of k (k+1) (k (k^2-1) - T_i)/144 (T_i = sum (t^3 - t) of the block's ties; no ties: b k^2 (k+1)^2 (k-1)/144);
+   z WITHOUT a continuity correction (Page 1963, SciPy, R).  Slot 5 toggles "Rising" / "Falling" (rkTail 2 <-> 1; falling =
+   the lower tail of L); slot 4 Exact / Normal.  Exact null by convolving the blocks' own distributions as probabilities
+   (rkNDen = 1): an untied block from the stored one-block counts for k = 3..9 (written by the build from Python; support
+   sizes 5, 11, 21, 36, 57, 85, 121), a tied block (k <= 5) by walking all k! orders of its midranks on a doubled scale
+   (step 0.5); a step budget of about 60,000 decides exact or normal, with the progress bar and "Esc = stop (the normal
+   approximation stays)".  RankLab's exact p is CONDITIONAL ON THE TIES; R's PageTest and SciPy's method='exact' use the
+   untied null whatever the data (SciPy's notes say its exact p is not adjusted for ties).  The halo preset (rkFNoP = 1) is
+   refused with a sentence.  Page 2 = a trend picture (mean rank of each treatment in order, the H0 level (k+1)/2 dotted,
+   tap a treatment).  Checks: k = 3: n = 4 critical 54/55/56, n = 5: 66/68/70; equals `scipy.stats.page_trend_test(
+   method='exact')` when nothing is tied.
+   PRESETS' REFERENCE NUMBERS (Python, exact arithmetic):
+   - Ozone (4 subjects x 3 levels; rows -.08 .01 .06 / .21 .17 .19 / .50 -.11 .34 / .14 .07 .14): L = 48, mean 48,
+     variance 15/2 with the tie (8 untied), z = 0; exact conditional on the tie P(L >= 48) = 14/27 = 0.5185; the untied
+     null gives 83/144 = 0.5764 (R, SciPy exact); SciPy asymptotic 0.5.
+   - Draft 1970, days 1-28 as blocks, the 12 months in calendar order: L = 13,440, mean 14,196, SD 228.149, z = -3.3136,
+     lower-tail ("falling") p = 0.00046; mean ranks by month 6.86 7.04 8.0 7.07 7.21 6.64 6.07 6.29 5.57 6.86 5.36 5.04.
+3. RUNS TEST (RankLab, rkTest 8), settled 15 Nov evening.  The statistic is called "runs" on the screen (R is red in the
+   example).  n1, n2 symbols; exact pmf from E_k = 2 C(n1-1, k-1) C(n2-1, k-1) (runs = 2k) and O_k = E_k (n - 2k)/(2k)
+   (runs = 2k + 1), E_(k+1)/E_k = (n1-k)(n2-k)/k^2, denominator C(n, n1), in logs; mean 2 n1 n2/n + 1, variance
+   2 n1 n2 (2 n1 n2 - n)/(n^2 (n-1)); z WITHOUT a continuity correction, as the HP-65 program and the texts print it;
+   two-sided exact = min(1, 2 x the smaller tail) (RankLab's rule, rk_Pick); the null is not symmetric, so on the bars a
+   two-sided test colors the smaller tail only.  Page 2 = the sequence as rows of colored squares (tap one: its place,
+   kind, run number and length).  D1 with two distinct values = the two symbols; otherwise above / below the median, values
+   equal to it dropped.
+   PRESETS' REFERENCE NUMBERS:
+   - Roulette (HP-65 Stat Pac 2, 1975): n = 25, 14 R, 11 B, 9 runs, mean 13.32, SD 2.4106, z = -1.7921; exact lower
+     409/7429 = 0.055055, upper 0.977669, two-sided 0.110109; normal lower 0.0366, two-sided 0.0731 (0.113 with the
+     continuity correction).
+   - Draft 1970, runs by day (median 183.5, n1 = n2 = 183): 172 runs, mean 184.00, SD 9.552, z = -1.2562; exact lower
+     0.1143, two-sided 0.2286; normal two-sided 0.2090.
+   A TEACHING FINDING for the book: on the 1970 lottery the runs test by day sees nothing (p = 0.23) while Page's L by
+   month (p = 0.0005) and the rank correlation do.
+   MENUS.  THE BOOK NAMES MENU ITEMS BY NUMBER ("7 Load a preset", "3 Draft 1970: day vs number", "4 Darwin: Zea mays
+   pairs"), so every old item keeps its number.  Main menu: 1-8 as they are, 9 "Page's L (ordered trend)", 10 (shown as A)
+   "Runs test (randomness)", 11 Help, 12 Quit.  Presets: old 1-7 keep their places; 8 "Ozone: airway resistance" (Page,
+   rising), 9 "Draft 1970: months in order" (Page, falling), 10 "Roulette: red and black" (runs), 11 "Draft 1970: runs by
+   day" (runs).  Use my data: "Page's L: rows = blocks" (loads as Friedman does) and "Runs: D1 in order".
 4. DIXON (FitCheck 1h -> 1i): the normality view's empty fifth soft key -> the Outlier page.  P(r > R) = n!/((j-1)! m!)
    INT INT_{a<b} F(a)^(j-1) f(a) f(b) [G^m + (i-1) m G^(m-1) (H - G)] da db, m = n-j-1, G = F(b - R (b-a)) - F(a),
    H = F(b) - F(a); (i, j) = (1,1) r10 n 3-7; (1,2) r11 n 8-10; (2,2) r21 n 11-13; (2,3) r22 n 14-30.  Calculator rule:
@@ -103,6 +130,19 @@ keys has `func` = the main routine (the wait), a blitted screen has the drawing 
   mu 13.32, sigma 2.41, z -1.79 (checked by hand).  Its closing remark, 7 words: "(His suspicion is not entirely unjustified.)"
   The same HP-67 book also has the mean-square successive difference test, Kruskal-Wallis, Fisher's exact test,
   Behrens-Fisher, the intraclass correlation.
+- THE HP-65 EXAMPLE'S PAGE: Stat Pac 2, program Stat 2-22A "The Run Test for Randomness", its example on p. 86; the
+  HP-67/HP-97 book's example on p. 29 ("This program is a translation of the HP-65 Stat Pac 2 program"; its printing shows
+  the z as "1.79").  No TI program in the library does a runs test or Page's L (searched by name and by text).
+- PAGE'S L, sources (verified on the web 15 Nov 2026): Page, E. B. (1963) Ordered hypotheses for multiple treatments: a
+  significance test for linear ranks. J. Am. Stat. Assoc. 58(301):216-230.  Odeh, R. E. (1977) The exact distribution of
+  Page's L-statistic in the two-way layout. Commun. Stat. Simul. Comput. 6(1):49-61.  SciPy `page_trend_test` notes:
+  E0 = m n (n+1)^2/4, V0 = m n^2 (n+1)(n^2-1)/144; its "exact" p is not adjusted for ties.
+- ROGER'S 2021 OZONE HOMEWORK, its source found on his PC (`D:\Books and Papers\Nonparametric Statistical Methods.pdf`
+  = Hollander, Wolfe & Chicken, 3rd ed., 2014): Chapter 7 Problem 1, Table 7.2 "Effect of Experimental Ozone Exposures on
+  Airway Resistance (cm H2O/l/s)", p. 301, a subset of Goldsmith, J. R., and J. A. Nadel (1969), "Experimental exposure of
+  human subjects to ozone", Journal of the Air Pollution Control Association 19, 329-330.  Columns: after .1, .6, 1.0 ppm.
+  Subject 1: -.08, .01, .06; 2: .21, .17, .19; 3: .50, -.11, .34; 4: .14, .07, .14.  Problem 31 applies Page's procedure
+  (7.25) to it.
 - DUNNETT: HP-41C Users' Library Solutions "Applied Statistics I", program STAT.08 (`.../cd27/sw/41asul1.pdf`): after an
   ANOVA it computes LSD and, for the comparison of all the means to one control, t = |Y0 - Yi| / sqrt(s2 (1/n0 + 1/ni)), which
   the user compares with Dunnett's table (cites C. W. Dunnett, Biometrics 1964; 20; p. 488).  No probability is computed.
