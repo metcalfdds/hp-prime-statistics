@@ -270,3 +270,16 @@ HOW A FEATURE IS ADDED
   tools/prime_facts_v1.py.
 - Virtual Calculator driving: never "open" it while it runs; run by EXPORT name from Home without brackets; the Check box
   closes at the next press; keys can be lost while a page draws (wait 3-6 s); collect checked files before any run.
+
+## Draft 37: where the six new tests go (Roger, 15 Nov 2026, 19:42: "Are you going to put the new tests in our Advanced Appendix?")
+
+Answered yes, and told him the layout; Roger, 19:47: "Great!" (approved; show him the wording when written):
+- Appendix A ("Beyond the introductory course: our advanced programs"; Draft 36 has "Where it came from" boxes, then
+  "Our advanced programs, one by one": AgreeLab, SurvLab, ExhibitLab, DNAMixLR, EpiStats, ErrorRate, RiskLab, BurrLab,
+  TrendTest) gets a NEW SECTION after "one by one", one entry a test: Dunnett (AnovaLab), Page's L and the runs test
+  (RankLab), Dixon (FitCheck), tolerance intervals (CICatcher), CEP (BiNorm3D): what it is for, one worked example with
+  screens, and a "Where it came from" box with the appendix's others (the HP-65/67 run test there).  The filling-line
+  tolerance interval and the production-line runs test (survey additions he approved) go with their tests.
+- Chapters 8, 12, 13, 14, 15 stay introductory: a sentence or two naming the new test and pointing to Appendix A; the
+  help pages printed there (CICatcher 6 -> 7, FitCheck 8 -> 12, BiNorm3D 5 -> 6, AnovaLab 9 -> 10 or 11, RankLab 7 -> 10)
+  are replaced word for word.
