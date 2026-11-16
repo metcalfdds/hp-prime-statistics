@@ -976,15 +976,19 @@ before('''// ============================================================
 // ============================================================
 
 // rk_LOrd: the order the treatments are tested in, as one line:
-// "Order: 0.1 ppm -> 0.6 ppm -> 1.0 ppm" (the first two and the last
-// when the whole list is too long for the line).
+// "Order: 0.1 ppm -> 0.6 ppm -> 1.0 ppm".  The names whole when the
+// line holds them (50 characters), else cut to 10 letters each, else
+// the first two and the last.
 rk_LOrd()
 BEGIN
-  LOCAL lqS, lqJ, lqA;
+  LOCAL lqS, lqJ, lqA, lqN;
   lqA := " " + CHAR(8594) + " ";
-  lqS := "Order: " + rk_Trunc(rkFTn(1), 10);
-  FOR lqJ FROM 2 TO rkFK DO lqS := lqS + lqA + rk_Trunc(rkFTn(lqJ), 10); END;
-  IF DIM(lqS) <= 44 THEN RETURN lqS; END;
+  FOR lqN FROM 0 TO 1 DO
+    // lqN = 0: the names whole (at most 16 letters); 1: cut to 10
+    lqS := "Order: " + rk_Trunc(rkFTn(1), 16 - 6 * lqN);
+    FOR lqJ FROM 2 TO rkFK DO lqS := lqS + lqA + rk_Trunc(rkFTn(lqJ), 16 - 6 * lqN); END;
+    IF DIM(lqS) <= 50 THEN RETURN lqS; END;
+  END;
   RETURN "Order: " + rk_Trunc(rkFTn(1), 10) + lqA + rk_Trunc(rkFTn(2), 10) + lqA + "..." + lqA + rk_Trunc(rkFTn(rkFK), 10);
 END;
 
@@ -1416,10 +1420,11 @@ rep('''  nlS := rk_NNm() + " = " + IFTE(ABS(nlO) >= 1E5, "infinite", rk_Cm(rk_Nu
   nlS := rk_NNm() + " = " + IFTE(rkTest == 6 AND ABS(nlO) >= 1E5, "infinite", rk_Cm(rk_Num(ROUND(nlO, 3))));
 ''')
 rep('''  TEXTOUT_P(nlS, G1, MAX(rkPL + 2, MIN(rkPR - 7 * DIM(nlS) - 2, nlPx + 3)), rkPT + 2, 1, rkRED, 120);
-''', '''  IF rkTest >= 7 AND nlO < IFTE(nlBars == 1, rkNMu, rkMu) THEN
+''', '''  IF rkTest >= 7 AND nlO < IFTE(nlBars == 1, rkNMu, rkMu) AND nlPx - 3 - 6 * DIM(nlS) >= rkPL + 2 THEN
     // beta 1j (tests 7 and 8): a statistic below the mean is named on the
-    // left of its line, away from the hump of the distribution
-    TEXTOUT_P(nlS, G1, MAX(rkPL + 2, nlPx - 3 - 6 * DIM(nlS)), rkPT + 2, 1, rkRED, 6 * DIM(nlS) + 12);
+    // left of its line, away from the hump of the distribution, when
+    // there is room for the name there
+    TEXTOUT_P(nlS, G1, nlPx - 3 - 6 * DIM(nlS), rkPT + 2, 1, rkRED, 6 * DIM(nlS) + 12);
   ELSE
     TEXTOUT_P(nlS, G1, MAX(rkPL + 2, MIN(rkPR - 7 * DIM(nlS) - 2, nlPx + 3)), rkPT + 2, 1, rkRED, 120);
   END;

@@ -465,8 +465,8 @@ def page_lines(table, names, lab, src, tail, exact_why=None):
     sd = float(ref['var']) ** 0.5; z = float(ref['L'] - ref['mean']) / sd
     pn = stats.norm.sf(z) if tail == 2 else stats.norm.cdf(z); pe = float(ref['up'] if tail == 2 else ref['lo']) if exact_why is None else None
     word = 'rising' if tail == 2 else 'falling'
-    full = 'Order: ' + (' ' + ARROW + ' ').join(n_[:10] for n_ in names)
-    order = full if len(full) <= 44 else 'Order: ' + (' ' + ARROW + ' ').join([names[0][:10], names[1][:10], '...', names[-1][:10]])
+    full = 'Order: ' + (' ' + ARROW + ' ').join(n_[:16] for n_ in names); cut10 = 'Order: ' + (' ' + ARROW + ' ').join(n_[:10] for n_ in names)
+    order = full if len(full) <= 50 else (cut10 if len(cut10) <= 50 else 'Order: ' + (' ' + ARROW + ' ').join([names[0][:10], names[1][:10], '...', names[-1][:10]]))
     means = [float(sum(midranks(row)[j] for row in table)) / b for j in range(k)]
     L = ['Page\'s L: results', src, lab, 'b = %d blocks, k = %d treatments in the order listed' % (b, k), order,
          'L = %s  (mean %s, SD %s%s)' % (num(ref['L']), num(ref['mean']), fx(sd, 2), ('; ties in %d block%s' % (ref['nt'], '' if ref['nt'] == 1 else 's')) if ref['nt'] else ''),
@@ -773,6 +773,17 @@ check('V14 Your data with 3 columns of 3,400 rows (10,200 values): Friedman and 
       and not views(hc5) and not views(hc6) and ec7 is None and views(hc7)[0][0][5].startswith('L = %s  (mean %s, SD %s' % (num(ref33['L']), num(ref33['mean']), fx(float(ref33['var']) ** 0.5, 2)))
       and views(hc7)[0][0][6] == 'Exact p: none for a table this large (normal)' and rc7 == 'RankLab: Page\'s L, b = 3,333, k = 3, L = %s, normal %s (rising)' % (num(ref33['L']), pt(stats.norm.sf(z33))),
       (boxes(hc5), rc5, ec7, rc7))
+# V15: the Order line, and Page's L on a table loaded for Friedman
+h15, r15, e15 = run(lambda h: (h.choose(7), h.choose(5), h.press('Esc'), h.choose(9), h.press('Minus'), h.press('Down'), h.press('Down'), h.press('Esc'), h.choose(12)))
+JUD = [float(v) for v in re.findall(r'-?\d+\.?\d*', re.search(r'rk_LdJudges\(\)\nBEGIN\n  rkFM := \{(.*?)\};', SRC, re.S).group(1))]
+tj = [JUD[i * 3:i * 3 + 3] for i in range(43)]
+wantj, refj, xj = page_lines(tj, ['Integrity', 'Oral rulings', 'Written rulings'], 'Blocks: 43 judges; values = mean ratings', 'New Haven Register 14 Jan 1977 (R datasets)', 1, exact_why='none for a table this large (normal)')
+v15 = views(h15)
+check('V15 the judges\' preset (43 x 3, loaded for Friedman) then main menu item 9: Page\'s L opens on the same table, Rising; - turns it to Falling, and the page reads line for line as the reference: %s | %s | %s; the names are written whole on the Order line; a statistic near the left edge is named on the right of its line'
+      % (wantj[4], wantj[5], wantj[7]),
+      e15 is None and len(JUD) == 129 and v15[0][0][0] == 'Friedman and Kendall\'s W: results' and v15[1][0][0] == 'Page\'s L: results' and v15[1][1][4] == 'Rising' and v15[2][0] == wantj
+      and wantj[4] == 'Order: Integrity ' + ARROW + ' Oral rulings ' + ARROW + ' Written rulings' and not boxes(h15)
+      and r15 == 'RankLab: Page\'s L, b = 43, k = 3, L = %s, normal %s (falling)' % (num(refj['L']), pt(xj['pn'])), (e15, [(a, b) for a, b in zip(v15[2][0], wantj) if a != b][:3], r15))
 
 print('=== R. regression against beta 1i')
 # beta 1j with its new entrances shut: the main routine, the preset menu, Your data and the help are beta 1i's
@@ -887,7 +898,7 @@ loc = [l for l in SRC.split('\n') if re.match(r'\s*LOCAL\s', l)]
 check('G2 every LOCAL line names at most 6 variables (%d lines)' % len(loc), all(len(l.split('//')[0].replace('LOCAL', '').split(',')) <= 6 for l in loc))
 check('G3 the header names beta 1j and its date, the note of beta 1j is there, and the welcome page shows the version',
       '// RANKLAB - beta 1j  (15 Nov 2026)' in SRC and '// beta 1j (15 Nov 2026): Round 16' in SRC and 'TEXTOUT_P("RankLab - rank tests, beta 1j"' in SRC and SRC.count('beta 1i"') == 0)
-ALLH = [hz, hm, hr, hd, h1, h2, h3, h4a, h4c, h5, h5n, h7, h7r, h7s, h8, h9, h10, h10n, hn12, hn13, hc7, hhn, hk]
+ALLH = [hz, hm, hr, hd, h1, h2, h3, h4a, h4c, h5, h5n, h7, h7r, h7s, h8, h9, h10, h10n, hn12, hn13, hc7, h15, hhn, hk]
 items = sorted(set(i for hh_ in ALLH for c in hh_.chooses for i in c.items)); lit = re.findall(r'"([^"\n]*)"', '\n'.join(m_.group(0) for m_ in re.finditer(r'CHOOSE\(.*?\}\);', SRC, re.S)))
 check('G4 every item of every menu is at most 30 characters: the %d different items the runs above were shown (the longest is %r, %d) and the %d quoted pieces of the menus in the source'
       % (len(items), max(items, key=len), max(len(i) for i in items), len(lit)), len(items) >= 40 and max(len(i) for i in items) <= 30 and max(len(i) for i in lit) <= 30, sorted(items, key=len)[-3:])
