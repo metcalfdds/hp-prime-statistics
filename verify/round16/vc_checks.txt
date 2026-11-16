@@ -1,5 +1,5 @@
 Round 16 on the HP Prime Virtual Calculator 2.4.2 (build 2026-09-09), run under Wine 11.21 in the cloud workspace,
-15 Nov 2026 (times are U.S. Central).  screens/ holds 160 captures, each 320 x 240 as the calculator drew it (the
+15 Nov 2026 (times are U.S. Central).  screens/ holds 161 captures, each 320 x 240 as the calculator drew it (the
 book's copies are these enlarged three times).
 
 The cloud calculator was built again that evening: the workspace had been replaced at 17:05 and nothing of the earlier
@@ -128,7 +128,7 @@ CICatcher_ capture but the one marked FIRST_BUILD is from the file as filed)
   n changed to 20 through its form ("Whole number, 2 to 100; starts a fresh run").
   Numbers: verify_CICatcher_beta2l.py (the factor k against the integral, S1 for the long run).
 
-FitCheck beta 1i (22:07 to 22:09, and 22:48 to 22:49 for the closing line)
+FitCheck beta 1i (22:07 to 22:09, 22:48 to 22:49 for the closing line, and 23:54 to 23:56 for the longest one)
   FitCheck_open, _mainmenu, _normality_menu
                                     "FitCheck - beta 1i", "... Dixon's outlier test; the exact binomial test"
   FitCheck_darwin_note, _darwin_qq  Normality > Preset: Darwin's differences: "Two differences are negative, far below
@@ -152,6 +152,11 @@ FitCheck beta 1i (22:07 to 22:09, and 22:48 to 22:49 for the closing line)
                                     0.593, p = 0.0321 (either end);"
   FitCheck_end_crimtab              after the binned sample: "FitCheck: binned sample, skewness +0.050, excess kurtosis
                                     +0.170;"
+  FitCheck_end_three_parts          (23:54 to 23:56) the longest closing line the program can give, after the Outlier
+                                    page and then Bins on the same sample: FitCheck "FitCheck: chi-square(1) = 6.013,
+                                    p = 0.0142; W = 0.9008, p = 0.0978; Dixon r22 = 0.593, p = 0.0321 (either end);",
+                                    whole in its box, in five lines (the first of them 27 characters long: the box
+                                    wraps by width, and 26 characters a line is a model of it)
   Numbers: verify_FitCheck_beta1i.py (the ratio and both p for Darwin's differences against the double integral).
 
 RankLab beta 1j (22:09 to 22:14)
@@ -223,8 +228,8 @@ a. A CHOOSE title shows 31 characters and no more.  AnovaLab's box that asks bef
    it was written.  MENDED: the four boxes give the time without "about"; the longest title is 31 characters, and all
    four were seen whole on the file as filed (AnovaLab_dunnett_ask, _ask_dcrit, _ask_tukey_q, _ask_tukey_p).  The fact
    is in tools/prime_facts_v1.py (fact 4), and the five verify scripts of this round check every title they see (D3).
-   No literal title in the 31 programs is longer than 31 characters (161 CHOOSE calls read; 32 titles are built at
-   run time and were not all exercised).
+   No literal title in the 31 programs is longer than 31 characters (160 CHOOSE calls read: 128 literal titles, the
+   longest 30 characters; 32 titles are built at run time or held in a variable, and were not all exercised).
 
 b. What a program returns is shown, after a run from the Program Catalog, in a box of five lines of about 26
    characters; the rest is not shown.  CICatcher's first closing line for a tolerance run, "CICatcher: 107 of 111

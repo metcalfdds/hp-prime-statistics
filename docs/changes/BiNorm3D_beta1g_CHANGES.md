@@ -4,7 +4,7 @@ Round 16. Built from beta 1f by exact replacements (`verify/round16/make_binorm3
 
 ## Why
 
-Roger, 15 November 2026, had a book of tables checked against fresh calculations (Zwillinger & Kokoska, 2000; the report is `claude/CRC_table_check_2026-11-15.md` in the Project). Two of its tables are about a shot aimed at a target, the circular normal probabilities and the circular error probabilities (pp. 194 and 195), and the report's sixth suggestion for our programs was "Circular error probability in BiNorm3D: the chance a shot lands inside a circle." Of the six suggestions Roger said: "Add all please."
+Roger, 15 November 2026, had a book of tables checked against fresh calculations (Zwillinger & Kokoska, 2000; the report is `docs/dev/crc-table-check-2026-11-15.md`). Two of its tables are about a shot aimed at a target, the circular normal probabilities and the circular error probabilities (pp. 194 and 195), and the report's sixth suggestion for our programs was "Circular error probability in BiNorm3D: the chance a shot lands inside a circle." Of the six suggestions Roger said: "Add all please."
 
 BiNorm3D already drew the bivariate normal as a surface and from above. The CEP is the same picture read as a target: how big is the circle that half of all (x, y) pairs fall in, and what does a correlation do to it?
 

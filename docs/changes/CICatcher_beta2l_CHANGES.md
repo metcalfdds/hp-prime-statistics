@@ -4,7 +4,7 @@ Round 16. Built from beta 2k by exact replacements (`verify/round16/make_cicatch
 
 ## Why
 
-Roger, 15 November 2026, had a book of tables checked against fresh calculations (Zwillinger & Kokoska, 2000; the report is `claude/CRC_table_check_2026-11-15.md` in the Project). Its table of tolerance factors (p. 186) has its two headings exchanged against the book's own definitions, and its numbers are an approximation: 171 of the 216 differ from the exact factor, by 3 % at n = 2. The report's fifth suggestion for our programs was "Tolerance intervals with exact factors, in CICatcher", and of the six suggestions Roger said: "Add all please."
+Roger, 15 November 2026, had a book of tables checked against fresh calculations (Zwillinger & Kokoska, 2000; the report is `docs/dev/crc-table-check-2026-11-15.md`). Its table of tolerance factors (p. 186) has its two headings exchanged against the book's own definitions, and its numbers are an approximation: 171 of the 216 differ from the exact factor, by 3 % at n = 2. The report's fifth suggestion for our programs was "Tolerance intervals with exact factors, in CICatcher", and of the six suggestions Roger said: "Add all please."
 
 CICatcher answers "95 % of what?" for five confidence intervals by drawing many of them and counting those that catch the truth. A tolerance interval gets the same question and the same answer, so it fits the program as a sixth interval: x̄ ± k s is made to hold at least 90 % (or 95 %, or 99 %) of the whole population, and the level is the share of samples whose interval does.
 
