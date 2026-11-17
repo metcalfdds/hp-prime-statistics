@@ -4,7 +4,7 @@
 
 *A note from Roger: I am very sorry I cannot be with you at HHC 2026 in person this year, and I send my regrets and my best wishes for a wonderful conference. I hope you enjoy exploring what is here, and I would love to hear from you through [GitHub issues](https://github.com/metcalfdds/hp-prime-statistics/issues).*
 
-Thank you for stopping by. Here is a set of **30 teaching programs for the HP Prime**, written for university statistics, research methods, criminal justice, and forensic science courses, plus **a long set of notes on how we believe the Prime really behaves**: what we found the hard way on a G1, a G2, and the Virtual Calculator--things all the manuals do not tell us.
+Thank you for stopping by. Here is a set of **31 teaching programs for the HP Prime**, written for university statistics, research methods, criminal justice, and forensic science courses, plus **a long set of notes on how we believe the Prime really behaves**: what we found the hard way on a G1, a G2, and the Virtual Calculator--things all the manuals do not tell us.
 
 Most of the programs are built around the touch screen. You drag a bound on a statistical distribution curve and the shading follows, pour balls through a Galton board with a finger, rotate a 3-D bivariate normal distribution wireframe plot, slide a cut-off along an ROC curve and watch who gets flagged "high risk". The aim is to let students *see* the statistics move.
 
@@ -49,7 +49,7 @@ Hundreds of community PPL programs from several HP-related public forums were re
 | **Criminal justice and forensic statistics** (new, October 2026) | RankLab, AnovaLab, ExhibitLab, SurvLab, FitCheck, ResampLab, AgreeLab, RiskLab |
 | **Getting your data in** (new, 31 October 2026) | DataLoad, with the [Data Loader](data-loader/README.md) web page |
 
-Together, these 31 programs currently run to more than **90,000 lines**: 60,700 of PPL code, 1,170 of MicroPython (in five of them), and 24,700 lines of comments, written so a student can follow what each part does. The largest is EpiStats at about 6,100 lines -- I wrote the original, elementary, unsophisticated version of this program for coursework I had in Harvard's STAT S-103 Intro to Epidemiology & Biostats and Claude took it to a whole other level, and I hope future students in that class or other similar classes will find it helpful; and then eight other late October programs average about 3,000 lines each. These were built with tremendous assistance from Anthropic Claude (mostly Opus 5.5 and Fable 5.1) over **many** months of intense, but fun, work.
+Together, these 31 programs currently run to more than **95,000 lines**: 64,200 of PPL code, 1,160 of MicroPython (in five of them), and 26,400 lines of comments, written so a student can follow what each part does. The largest is EpiStats at about 6,300 lines -- I wrote the original, elementary, unsophisticated version of this program for coursework I had in Harvard's STAT S-103 Intro to Epidemiology & Biostats and Claude took it to a whole other level, and I hope future students in that class or other similar classes will find it helpful; and then eight other late October programs average about 3,000 lines each. These were built with tremendous assistance from Anthropic Claude (mostly Opus 5.5 and Fable 5.1) over **many** months of intense, but fun, work.
 
 And around the programs:
 
