@@ -1,0 +1,69 @@
+Round 17 on the Virtual Calculator (HP Prime Virtual Calculator 2.4.2, build 2026-09-09; the cloud workspace, Wine 11.21;
+tools/vc_cloud_v1/), 17 November 2026.
+
+1. THE CHECKS.  The sixteen new files, built by the first pass of tools/make_starter_pack_v4.py (hp-prime-kit's
+   `hpprime write`), were copied into Documents\HP Prime\Calculators\Prime while the calculator was closed.  Program
+   Catalog > Edit > Check on each (tools/vc_cloud_v1/check_all.py), from 12:33 to 12:45: "No errors in the program"
+   sixteen times.  NOTHING WAS RUN.  The calculator was left by Calculator > Exit, it wrote its files back, and the
+   sixteen checked files were collected for the pack's second pass (every one read back as the source in programs/).
+   One line a program, as check_all.py logged it (the editor's title as tesseract read it; the box; the time; the
+   seconds the box took):
+
+   AgreeLab   | editor title 'AgreeLab:Main(PPL)' | box '@ No errors in the program' | 12:33 | 3 s
+   AnovaLab   | editor title 'AnovaLab:Main(PPL)' | box '@ No errors in the program' | 12:33 | 3 s
+   CICatcher  | editor title 'CIiCatcher:Main(PPL)' | box '@ No errors in the program' | 12:33 | 3 s
+   EpiStats   | editor title 'EpiStats:Main(PPL)' | box '@ No errors in the program' | 12:34 | 3 s
+   ExhibitLab | editor title 'ExhibitLab:Main(PPL)' | box '@ No errors in the program' | 12:35 | 3 s
+   FitCheck   | editor title 'FitCheck:Main(PPL)' | box '@ No errors in the program' | 12:35 | 3 s
+   PowerViz   | editor title 'PowerViz:Main(PPL)' | box '@ No errors in the program' | 12:36 | 3 s
+   RankLab    | editor title 'RankLab:Main(PPL)' | box '@ No errors in the program' | 12:36 | 3 s
+   ResampLab  | editor title 'ResampLab:Main(PPL)' | box '@ No errors in the program' | 12:37 | 3 s
+   ScatterLab | editor title 'ScatterLab:Main(PPL)' | box '@ No errors in the program' | 12:37 | 3 s
+   StudRange  | editor title 'StudRange:Main(PPL)' | box '@ No errors in the program' | 12:38 | 3 s
+   TDist3D    | editor title 'TDist3D:Main(PPL)' | box '@ No errors in the program' | 12:39 | 3 s
+   TTestLab   | editor title 'TTestLab:Main(PPL)' | box '@ No errors in the program' | 12:45 | 3 s
+   TTestLabG  | editor title 'TTestLabG:Main(PPL)' | box '@ No errors in the program' | 12:44 | 3 s
+   TestChooser | editor title 'TestChooser:Main(PPL)' | box '@ No errors in the program' | 12:42 | 3 s
+   TrendTest  | editor title 'TrendTest:Main(PPL)' | box '@ No errors in the program' | 12:43 | 3 s
+
+2. WHAT THE DRIVING SHOWED.  check_all.py stopped three times with "row not found": the Program Catalog puts the
+   program touched last at the top, so after a Check the wanted row can lie below the last row in sight, and
+   vcdrive.run_program's Down presses (held 0.2 s) did not scroll the list while two other jobs had the processors.
+   Held 0.35 s, with a second between presses, every press scrolled one row.  A name that is the front of another
+   (TTestLab, TTestLabG) is found by its exact text, not by likeness.  The calculator's own work was never in doubt:
+   each Check was read from its own box.
+
+3. THE RUNS, 13:18 to 13:28, after the checked files had been collected (a run leaves its values in a program's file).
+   Four programs were run, for the book's two pictures and for the three changed lines with the least room.  Each
+   capture is in verify/round17/screens/, 320 x 240 as the calculator drew it.  "Model" is the line's right edge at the
+   glyph widths GlyphProbe_v1 read on this calculator on 9 November (verify/round11/glyph_widths_vc.json), which is
+   what the verify script's T4 and T6 measure with; "ink" is the last dark pixel of the line in the capture.
+
+   TTestLab   Example: age at arrest.  Step 2: "Pooled variances:  df = (N₁ + N₂ - 2)", then "= 44 + 31 - 2 = 73"
+              (TTestLab_df.png; model 172, ink 171).  Step 3: "α = 0.050, two-tailed, df = 73", "t-table, row df =
+              60:  t crit = ±2.000", "exact, df = 73:  t crit = ±1.993" (TTestLab_crit.png; model 173, ink 171): the
+              numbers of the book's Figure 11.3.  Left by Esc; the box showed 'TTestLab: t(73) = -2.20, p = 0.031,
+              two-tailed'.
+   ScatterLab Data > Poverty vs crime (SYNTHETIC); Menu > 6 Inference for the slope.  "ŷ = 16.64 + 1.020 x,  n = 16,
+              df = (n - 2) = 14"; s = 5.495; SE(b₁) = 0.2394; t = 4.258; p < 0.001; 95% interval for β₁ 0.5061 to
+              1.533; t crit = 2.145; r = 0.751; 95% interval for ρ 0.407 to 0.909 (ScatterLab_inference.png): every
+              number as in the capture of beta 2l, the book's Figure 13.4.  Left by Esc; the box showed 'ScatterLab:
+              n = 16, ŷ = 16.64 + 1.020 x, r = 0.7512, SSE = 422.7'.
+   PowerViz   One-Sample Mean (z) with the form's own values; Menu > 10 Help; page 5 of 7, the round's tightest
+              changed line: "  exactly (CAS), then the program puts in the z-values (PPL), giving" stands whole
+              (PowerViz_help5.png; model 313, ink 312, of 320).
+   TDist3D    The opening page: "Every t-curve at once: t runs across, the degrees" (TDist3D_welcome.png; model 235,
+              ink 233).  Menu > 7 Help, page 1 of 4: "Student's t has one parameter: degrees of freedom, ν = (n − 1)."
+              stands whole in its box of 296 px from x = 12 (TDist3D_help1.png; model 297, ink 295, of 308).
+
+   One press was sent twice (an Enter on PowerViz's last help page; vcdrive.act saw no change and sent it again).
+   The calculator was left by Calculator > Exit.  The files it wrote back after these runs are not in the pack: the
+   pack's sixteen were collected before the first run.
+
+4. NOT LOOKED AT THERE.  The other changed pages of the sixteen: AgreeLab's ICC lines; AnovaLab's help, its three
+   menu items, the page shown while q is integrated and the band of the two-variance test; CICatcher's refusal;
+   EpiStats's help; ExhibitLab's form and help; FitCheck's Curve and Test pages, notes and help; PowerViz's other
+   three lines; RankLab's Null page; ResampLab's preset note; ScatterLab's help; StudRange's first menu item and its
+   p-value pages; TestChooser's leaves; TrendTest's page 3 and help; TTestLab's one-sample lines and help 3; and
+   TTestLabG.  Their words were measured at the same glyph widths; in the five lines above the model was 1 to 2 px
+   beyond the ink.

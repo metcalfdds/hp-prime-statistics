@@ -1,0 +1,163 @@
+T1   PASS  AgreeLab: the build makes programs/AgreeLab_beta1i.txt byte for byte
+T1   PASS  AnovaLab: the build makes programs/AnovaLab_beta1j.txt byte for byte
+T1   PASS  CICatcher: the build makes programs/CICatcher_beta2m.txt byte for byte
+T1   PASS  EpiStats: the build makes programs/EpiStats_v1.7m.txt byte for byte
+T1   PASS  ExhibitLab: the build makes programs/ExhibitLab_beta1i.txt byte for byte
+T1   PASS  FitCheck: the build makes programs/FitCheck_beta1j.txt byte for byte
+T1   PASS  PowerViz: the build makes programs/PowerViz_v2.5t.txt byte for byte
+T1   PASS  RankLab: the build makes programs/RankLab_beta1k.txt byte for byte
+T1   PASS  ResampLab: the build makes programs/ResampLab_beta1j.txt byte for byte
+T1   PASS  ScatterLab: the build makes programs/ScatterLab_beta2m.txt byte for byte
+T1   PASS  StudRange: the build makes programs/StudRange_beta15n.txt byte for byte
+T1   PASS  TDist3D: the build makes programs/TDist3D_beta1b.txt byte for byte
+T1   PASS  TTestLab: the build makes programs/TTestLab_beta1l.txt byte for byte
+T1   PASS  TestChooser: the build makes programs/TestChooser_beta2h.txt byte for byte
+T1   PASS  TrendTest: the build makes programs/TrendTest_beta3n.txt byte for byte
+T1   PASS  TTestLabG: the build makes programs/TTestLabG_beta1i.txt byte for byte
+T2   PASS  AgreeLab: 2515 lines of code; 6 differ, each only inside quotation marks; the comments at the ends of lines are the same
+T2   PASS  AnovaLab: 3845 lines of code; 12 differ, each only inside quotation marks; the comments at the ends of lines are the same
+T2   PASS  CICatcher: 1639 lines of code; 1 differ, each only inside quotation marks; the comments at the ends of lines are the same
+T2   PASS  EpiStats: 4668 lines of code; 4 differ, each only inside quotation marks; the comments at the ends of lines are the same
+T2   PASS  ExhibitLab: 2248 lines of code; 2 differ, each only inside quotation marks; the comments at the ends of lines are the same
+T2   PASS  FitCheck: 3029 lines of code; 15 differ, each only inside quotation marks; the comments at the ends of lines are the same
+T2   PASS  PowerViz: 2739 lines of code; 4 differ, each only inside quotation marks; the comments at the ends of lines are the same
+T2   PASS  RankLab: 3987 lines of code; 3 differ, each only inside quotation marks; the comments at the ends of lines are the same
+T2   PASS  ResampLab: 2451 lines of code; 2 differ, each only inside quotation marks; the comments at the ends of lines are the same
+T2   PASS  ScatterLab: 1901 lines of code; 2 differ, each only inside quotation marks; the comments at the ends of lines are the same
+T2   PASS  StudRange: 1888 lines of code; 3 differ, each only inside quotation marks; the comments at the ends of lines are the same
+T2   PASS  TDist3D: 797 lines of code; 2 differ, each only inside quotation marks; the comments at the ends of lines are the same
+T2   PASS  TTestLab: 1640 lines of code; 4 differ, each only inside quotation marks; the comments at the ends of lines are the same
+T2   PASS  TestChooser: 1448 lines of code; 5 differ, each only inside quotation marks; the comments at the ends of lines are the same
+T2   PASS  TrendTest: 1433 lines of code; 3 differ, each only inside quotation marks; the comments at the ends of lines are the same
+T2   PASS  TTestLabG: 1638 lines of code; 4 differ, each only inside quotation marks; the comments at the ends of lines are the same
+T3   PASS  tools/screen_text_v1.py: 31 programs, 17596 strings read; places against the rules: 0 in 0 programs; left alone: 1
+T3   PASS  AgreeLab: 2 old wordings gone from the code, each new one there the number of times named
+T3   PASS  AnovaLab: 11 old wordings gone from the code, each new one there the number of times named
+T3   PASS  CICatcher: 1 old wordings gone from the code, each new one there the number of times named
+T3   PASS  EpiStats: 2 old wordings gone from the code, each new one there the number of times named
+T3   PASS  ExhibitLab: 2 old wordings gone from the code, each new one there the number of times named
+T3   PASS  FitCheck: 12 old wordings gone from the code, each new one there the number of times named
+T3   PASS  PowerViz: 4 old wordings gone from the code, each new one there the number of times named
+T3   PASS  RankLab: 1 old wordings gone from the code, each new one there the number of times named
+T3   PASS  ResampLab: 1 old wordings gone from the code, each new one there the number of times named
+T3   PASS  ScatterLab: 2 old wordings gone from the code, each new one there the number of times named
+T3   PASS  StudRange: 2 old wordings gone from the code, each new one there the number of times named
+T3   PASS  TDist3D: 2 old wordings gone from the code, each new one there the number of times named
+T3   PASS  TTestLab: 4 old wordings gone from the code, each new one there the number of times named
+T3   PASS  TestChooser: 5 old wordings gone from the code, each new one there the number of times named
+T3   PASS  TrendTest: 3 old wordings gone from the code, each new one there the number of times named
+T3   PASS  TTestLabG: built from TTestLab beta 1l (T1)
+T4   PASS  AgreeLab: 9 help screens; none changed; with the round's replacements the old pages read as the new ones; nothing cut, nothing overlapping that the old version did not have (1 reports in both)
+T4   PASS  AnovaLab: 10 help screens; changed: 1, 2, 5, 8; with the round's replacements the old pages read as the new ones; nothing cut, nothing overlapping
+T4   PASS  CICatcher: 7 help screens; none changed; with the round's replacements the old pages read as the new ones; nothing cut, nothing overlapping
+T4   PASS  EpiStats: 15 help screens; changed: 1, 6; with the round's replacements the old pages read as the new ones; nothing cut, nothing overlapping
+T4   PASS  ExhibitLab: 8 help screens; changed: 5; with the round's replacements the old pages read as the new ones; nothing cut, nothing overlapping
+T4   PASS  FitCheck: 12 help screens; changed: 2, 4, 5; with the round's replacements the old pages read as the new ones; nothing cut, nothing overlapping
+T4   PASS  PowerViz: 7 help screens; changed: 5, 6; with the round's replacements the old pages read as the new ones; nothing cut, nothing overlapping
+T4   PASS  RankLab: 10 help screens; none changed; with the round's replacements the old pages read as the new ones; nothing cut, nothing overlapping
+T4   PASS  ResampLab: 5 help screens; none changed; with the round's replacements the old pages read as the new ones; nothing cut, nothing overlapping
+T4   PASS  ScatterLab: 7 help screens; changed: 7; with the round's replacements the old pages read as the new ones; nothing cut, nothing overlapping
+T4   PASS  StudRange: 5 help screens; none changed; with the round's replacements the old pages read as the new ones; nothing cut, nothing overlapping
+T4   PASS  TDist3D: 4 help screens; changed: 1; with the round's replacements the old pages read as the new ones; nothing cut, nothing overlapping
+T4   PASS  TTestLab: 3 help screens; changed: 3; with the round's replacements the old pages read as the new ones; nothing cut, nothing overlapping
+T4   PASS  TestChooser: 2 help screens; none changed; with the round's replacements the old pages read as the new ones; nothing cut, nothing overlapping
+T4   PASS  TrendTest: 3 help screens; changed: 1; with the round's replacements the old pages read as the new ones; nothing cut, nothing overlapping
+T4   PASS  TTestLabG: 3 help screens; changed: 3; with the round's replacements the old pages read as the new ones; nothing cut, nothing overlapping
+T5   PASS  AgreeLab: the gate
+T5   PASS  AnovaLab: the gate
+T5   PASS  CICatcher: the gate
+T5   PASS  EpiStats: the gate
+T5   PASS  ExhibitLab: the gate
+T5   PASS  FitCheck: the gate
+T5   PASS  PowerViz: the gate
+T5   PASS  RankLab: the gate
+T5   PASS  ResampLab: the gate
+T5   PASS  ScatterLab: the gate
+T5   PASS  StudRange: the gate
+T5   PASS  TDist3D: the gate
+T5   PASS  TTestLab: the gate
+T5   PASS  TestChooser: the gate
+T5   PASS  TrendTest: the gate
+T5   PASS  TTestLabG: the gate
+T7   PASS  AgreeLab: 30 seeds, 2293 screens and 343 boxes, menus and forms the same text for text (OK 30)
+T7   PASS  AnovaLab: 30 seeds, 1296 screens and 216 boxes, menus and forms the same text for text (OK 30)
+T7   PASS  CICatcher: 30 seeds, 506 screens and 258 boxes, menus and forms the same text for text (OK 30)
+T7   PASS  EpiStats: 30 seeds, 1009 screens and 360 boxes, menus and forms the same text for text (OK 30)
+T7   PASS  ExhibitLab: 30 seeds, 2710 screens and 286 boxes, menus and forms the same text for text (OK 30)
+T7   PASS  FitCheck: 30 seeds, 900 screens and 243 boxes, menus and forms the same text for text (76 of the screens as running text: a line that flows broke at another word) (OK 30)
+T7   PASS  PowerViz: 30 seeds, 859 screens and 230 boxes, menus and forms the same text for text (OK 30)
+T7   PASS  RankLab: 30 seeds, 2905 screens and 278 boxes, menus and forms the same text for text (OK 30)
+T7   PASS  ResampLab: 30 seeds, 624 screens and 160 boxes, menus and forms the same text for text (OK 30)
+T7   PASS  ScatterLab: 30 seeds, 1694 screens and 104 boxes, menus and forms the same text for text (OK 30)
+T7   PASS  StudRange: 10 seeds, 137 screens and 54 boxes, menus and forms the same text for text (OK 10)
+T7   PASS  TDist3D: 30 seeds, 1247 screens and 43 boxes, menus and forms the same text for text (OK 30)
+T7   PASS  TTestLab: 30 seeds, 805 screens and 117 boxes, menus and forms the same text for text (OK 30)
+T7   PASS  TestChooser: 30 seeds, 847 screens and 52 boxes, menus and forms the same text for text (OK 30)
+T7   PASS  TrendTest: 30 seeds, 526 screens and 223 boxes, menus and forms the same text for text (OK 30)
+T7   PASS  TTestLabG: 30 seeds, 839 screens and 110 boxes, menus and forms the same text for text (OK 30)
+T6   PASS  AgreeLab: "ICC intervals (F-quantiles)" shown 9 times (text 9); the tightest: 119 px of 304, 185 to spare
+T6   PASS  AgreeLab: "no F-interval" shown 18 times (text 18); the tightest: 132 px of 204, 72 to spare
+T6   PASS  AgreeLab: of 64130 texts shown, none ends inside an expression in parentheses that the old version did not end there too
+T6   PASS  AnovaLab: "The q-distribution is" shown 2 times (text 2); the tightest: 199 px of 304, 105 to spare
+T6   PASS  AnovaLab: " is true, F is near 1 and follows the F-curv" shown 15 times (text 15); the tightest: 218 px of 306, 88 to spare
+T6   PASS  AnovaLab: "with (k - 1) and (N - k) df; p = P(F this bi" shown 15 times (text 15); the tightest: 220 px of 306, 86 to spare
+T6   PASS  AnovaLab: "The F-test assumes" shown 15 times (text 15); the tightest: 294 px of 306, 12 to spare
+T6   PASS  AnovaLab: "usual method): (k - 1) comparisons" shown 12 times (text 12); the tightest: 267 px of 306, 39 to spare
+T6   PASS  AnovaLab: ", df = (n - 1)." shown 29 times (text 29); the tightest: 177 px of 306, 129 to spare
+T6   PASS  AnovaLab: ", df = (n₁ - 1) and (n₂ - 1)." shown 29 times (text 29); the tightest: 201 px of 306, 105 to spare
+T6   PASS  AnovaLab: "F-curve and p" shown 11 times (menu item 11)
+T6   PASS  AnovaLab: "F-curve of an effect" shown 10 times (menu item 10)
+T6   PASS  AnovaLab: "F-curve (treatments)" shown 8 times (menu item 8)
+T6   PASS  AnovaLab: ": the F-test and interval" shown 1 times (text 1); the tightest: 156 px of 312, 156 to spare
+T6   PASS  AnovaLab: of 30074 texts shown, none ends inside an expression in parentheses that the old version did not end there too (1 old ones:  %, pair p within 0.00001 (k)
+T6   PASS  CICatcher: "(a t-interval needs" shown 22 times (msgbox 22)
+T6   PASS  CICatcher: of 9673 texts shown, none ends inside an expression in parentheses that the old version did not end there too
+T6   PASS  EpiStats: "M-H χ², 1 df: is the common OR 1?" shown 4 times (text 4); the tightest: 161 px of 306, 145 to spare
+T6   PASS  EpiStats: "Breslow-Day, (k-1) df:" shown 4 times (text 4); the tightest: 271 px of 306, 35 to spare
+T6   PASS  EpiStats: of 24396 texts shown, none ends inside an expression in parentheses that the old version did not end there too
+T6   PASS  ExhibitLab: "SD, divisor (n - 1), grams" shown 8 times (form help 8)
+T6   PASS  ExhibitLab: "t SE, t on (n - 1)" shown 11 times (text 11); the tightest: 200 px of 296, 96 to spare
+T6   PASS  ExhibitLab: of 64051 texts shown, none ends inside an expression in parentheses that the old version did not end there too
+T6   PASS  FitCheck: "(k-3) and χ²(k-1) (Chernoff" shown 2 times (text 2); the tightest: 183 px of 306, 123 to spare
+T6   PASS  FitCheck: "df = (k-1-m)" shown 160 times (text 160); the tightest: 218 px of 306, 88 to spare
+T6   PASS  FitCheck: "p estimated, df = (k-2); typed, df = (k-1)." shown 5 times (over two lines of a text that flows, 5)
+T6   PASS  FitCheck: "df = (k-2)" shown 13 times (text 13); the tightest: 195 px of 306, 111 to spare
+T6   PASS  FitCheck: "df = (k-1)." shown 5 times (text 5); the tightest: 178 px of 306, 128 to spare
+T6   PASS  FitCheck: "df = (k-3)" shown 27 times (text 27); the tightest: 188 px of 306, 118 to spare
+T6   PASS  FitCheck: of 17694 texts shown, none ends inside an expression in parentheses that the old version did not end there too (1 old ones: ly right.  χ² = sum of (O - )
+T6   PASS  PowerViz: "F-test of s₁²/s₂²" shown 2 times (text 2); the tightest: 192 px of 310, 118 to spare
+T6   PASS  PowerViz: "puts in the z-values (PPL)" shown 4 times (text 4); the tightest: 301 px of 306, 5 to spare
+T6   PASS  PowerViz: "z-test: σ₁, σ₂ taken" shown 4 times (text 4); the tightest: 295 px of 306, 11 to spare
+T6   PASS  PowerViz: of 26675 texts shown, none ends inside an expression in parentheses that the old version did not end there too
+T6   PASS  RankLab: "the p-tail(s)" shown 406 times (text 406); the tightest: 212 px of 308, 96 to spare
+T6   PASS  RankLab: of 47600 texts shown, none ends inside an expression in parentheses that the old version did not end there too
+T6   PASS  ResampLab: "BCa and t-intervals." shown 1 times (text 1); the tightest: 203 px of 296, 93 to spare
+T6   PASS  ResampLab: of 13103 texts shown, none ends inside an expression in parentheses that the old version did not end there too (1 old ones: ng it gives (count + 1)/(B +)
+T6   PASS  ScatterLab: "df = (n - 2)" shown 8 times (text 8); the tightest: 214 px of 296, 82 to spare
+T6   PASS  ScatterLab: of 53174 texts shown, none ends inside an expression in parentheses that the old version did not end there too
+T6   PASS  StudRange: "p-value from q" shown 41 times (form title 6, menu item 35)
+T6   PASS  StudRange: "p-value: Studentized Range" shown 3 times (text 3); the tightest: 175 px of 310, 135 to spare
+T6   PASS  StudRange: of 59638 texts shown, none ends inside an expression in parentheses that the old version did not end there too
+T6   PASS  TDist3D: "has one parameter: degrees of freedom, ν = (" shown 4 times (text 4); the tightest: 285 px of 296, 11 to spare
+T6   PASS  TDist3D: "Every t-curve at once" shown 30 times (text 30); the tightest: 221 px of 292, 71 to spare
+T6   PASS  TDist3D: of 14747 texts shown, none ends inside an expression in parentheses that the old version did not end there too
+T6   PASS  TTestLab: "df = (N₁ + N₂ - 2)" shown 2 times (text 2); the tightest: 164 px of 310, 146 to spare
+T6   PASS  TTestLab: "t-table, row df" shown 100 times (text 100); the tightest: 171 px of 310, 139 to spare
+T6   PASS  TTestLab: "df = (N - 1)" shown 9 times (text 9); the tightest: 286 px of 310, 24 to spare
+T6   PASS  TTestLab: of 12718 texts shown, none ends inside an expression in parentheses that the old version did not end there too (1 old ones: the printed table's value (a)
+T6   PASS  TestChooser: "Cochran's Q-test" shown 9 times (text 9); the tightest: 91 px of 254, 163 to spare
+T6   PASS  TestChooser: ", (k - 1) df" shown 6 times (text 6); the tightest: 164 px of 296, 132 to spare
+T6   PASS  TestChooser: "ANOVA; (k - 1) df." shown 2 times (text 2); the tightest: 199 px of 296, 97 to spare
+T6   PASS  TestChooser: of 27023 texts shown, none ends inside an expression in parentheses that the old version did not end there too
+T6   PASS  TrendTest: "trend, (k-2) df" shown 26 times (text 26); the tightest: 171 px of 308, 137 to spare
+T6   PASS  TrendTest: ", (k-1) df, asks only" shown 20 times (text 20); the tightest: 296 px of 306, 10 to spare
+T6   PASS  TrendTest: ", (k-2) df, measures" shown 20 times (text 20); the tightest: 288 px of 306, 18 to spare
+T6   PASS  TrendTest: of 12893 texts shown, none ends inside an expression in parentheses that the old version did not end there too
+T6   PASS  TTestLabG: "df = (N₁ + N₂ - 2)" shown 38 times (text 38); the tightest: 164 px of 310, 146 to spare
+T6   PASS  TTestLabG: "the smaller of (N₁-1), (N₂-1)" shown 10 times (text 10); the tightest: 225 px of 310, 85 to spare
+T6   PASS  TTestLabG: "df = (N - 1)" shown 12 times (text 12); the tightest: 286 px of 310, 24 to spare
+T6   PASS  TTestLabG: of 13380 texts shown, none ends inside an expression in parentheses that the old version did not end there too
+T6   of the 46 changed wordings, 21 were shown by the help pages; 16 more only by the monkey's sessions; 9 more only by a directed lead
+T8   PASS  tools/fleet_names_v2.py over 31 programs: clean
+
+160 of 160 checks PASS

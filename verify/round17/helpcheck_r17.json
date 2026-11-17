@@ -1,0 +1,68 @@
+{
+ "AgreeLab": {
+  "screens": 9,
+  "problems": [
+   "AgreeLab help 7/9: Bland-Altma: OVERLAP 'd' (y 59) / ', the mean difference; limits ' (y 59)"
+  ]
+ },
+ "AnovaLab": {
+  "screens": 10,
+  "problems": []
+ },
+ "CICatcher": {
+  "screens": 7,
+  "problems": []
+ },
+ "EpiStats": {
+  "screens": 15,
+  "problems": []
+ },
+ "ExhibitLab": {
+  "screens": 8,
+  "problems": []
+ },
+ "FitCheck": {
+  "screens": 12,
+  "problems": []
+ },
+ "PowerViz": {
+  "screens": 7,
+  "problems": []
+ },
+ "RankLab": {
+  "screens": 10,
+  "problems": []
+ },
+ "ResampLab": {
+  "screens": 5,
+  "problems": []
+ },
+ "ScatterLab": {
+  "screens": 7,
+  "problems": []
+ },
+ "StudRange": {
+  "screens": 5,
+  "problems": []
+ },
+ "TDist3D": {
+  "screens": 4,
+  "problems": []
+ },
+ "TTestLab": {
+  "screens": 3,
+  "problems": []
+ },
+ "TTestLabG": {
+  "screens": 3,
+  "problems": []
+ },
+ "TestChooser": {
+  "screens": 2,
+  "problems": []
+ },
+ "TrendTest": {
+  "screens": 3,
+  "problems": []
+ }
+}

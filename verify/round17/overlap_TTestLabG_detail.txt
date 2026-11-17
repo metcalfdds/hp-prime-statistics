@@ -1,0 +1,14 @@
+TTestLabG: the overruns of the two generic walks, text for text (verify/round17/walk_detail_r17.py)
+
+collisions new 0, old 0
+straddles  new 0, old 0
+ghosts     new 0, old 0
+overruns   new 19 (firm 7), old 18 (firm 7)
+
+only in the new version's walk: 1
+   "By hand: df = the smaller of (N₁-1), (N₂-1) = 181,"
+   at x = 8, y = 131, font 1; 50 characters; the walk's estimate of its right edge: 333 (marginal: not there at 5.5 px a character); at the calculator's glyph widths it is 225 px wide and ends at x = 233, 87 px inside the screen's 320
+only in the old version's walk: 0
+
+The line grew by the four parentheses of "(N₁-1), (N₂-1)", from 46 characters to 50, and 50 characters at the walk's 6.5 px
+pass 320.  The same line with the largest count the forms allow (N is at most 1,000,000), "... = 999,999,", is 246 px wide and ends at x = 254.

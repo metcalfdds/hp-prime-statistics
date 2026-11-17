@@ -1,0 +1,39 @@
+S AgreeLab   OK    warnings 0 (old 0)
+S AnovaLab   OK    warnings 0 (old 0)
+S CICatcher  OK    warnings 0 (old 0)
+S EpiStats   OK    warnings 0 (old 0)
+S ExhibitLab OK    warnings 0 (old 0)
+S FitCheck   OK    warnings 0 (old 0)
+S PowerViz   OK    warnings 0 (old 0)
+S RankLab    OK    warnings 0 (old 0)
+S ResampLab  OK    warnings 0 (old 0)
+S ScatterLab OK    warnings 0 (old 0)
+S StudRange  OK    warnings 0 (old 0)
+S TDist3D    OK    warnings 0 (old 0)
+S TTestLab   OK    warnings 0 (old 0)
+S TTestLabG  OK    warnings 0 (old 0)
+S TestChooser OK    warnings 0 (old 0)
+S TrendTest  OK    warnings 0 (old 0)
+T AgreeLab   same report as the old version  PROGRAM screens 83/1192 collisions 25 (firm 19) straddles 0 overruns 0 ghosts 0
+T AnovaLab   same report as the old version  PROGRAM screens 38/1035 collisions 57 (firm 54) straddles 0 overruns 0 ghosts 0
+T CICatcher  same report as the old version  PROGRAM screens 217/380 collisions 0 (firm 0) straddles 0 overruns 0 ghosts 0
+T EpiStats   same report as the old version  PROGRAM screens 18/912 collisions 0 (firm 0) straddles 0 overruns 0 ghosts 0
+T ExhibitLab same report as the old version  PROGRAM screens 86/1242 collisions 0 (firm 0) straddles 0 overruns 0 ghosts 0
+T FitCheck   same report as the old version  PROGRAM screens 94/350 collisions 0 (firm 0) straddles 0 overruns 0 ghosts 0
+T PowerViz   same report as the old version  PROGRAM screens 125/165 collisions 21 (firm 18) straddles 0 overruns 9 ghosts 0
+T RankLab    same report as the old version  PROGRAM screens 102/1198 collisions 0 (firm 0) straddles 0 overruns 0 ghosts 0
+T ResampLab  same report as the old version  PROGRAM screens 6/120 collisions 0 (firm 0) straddles 0 overruns 0 ghosts 0
+T ScatterLab same report as the old version  PROGRAM screens 12/36 collisions 1 (firm 0) straddles 0 overruns 0 ghosts 0
+T StudRange  not the old version's report (see overlap_StudRange.txt)  PROGRAM screens 74/465 collisions 5 (firm 2) straddles 2 overruns 19 ghosts 0   OLD: PROGRAM screens 74/484 collisions 5 (firm 2) straddles 2 overruns 19 ghosts 0
+T TDist3D    same report as the old version  PROGRAM screens 19/32 collisions 0 (firm 0) straddles 0 overruns 0 ghosts 0
+T TTestLab   same report as the old version  PROGRAM screens 63/572 collisions 0 (firm 0) straddles 0 overruns 19 ghosts 0
+T TTestLabG  not the old version's report (see overlap_TTestLabG.txt)  PROGRAM screens 73/600 collisions 0 (firm 0) straddles 0 overruns 19 ghosts 0   OLD: PROGRAM screens 73/600 collisions 0 (firm 0) straddles 0 overruns 18 ghosts 0
+T TestChooser same report as the old version  PROGRAM screens 28/1172 collisions 11 (firm 11) straddles 14 overruns 14 ghosts 0
+T TrendTest  same report as the old version  PROGRAM screens 143/222 collisions 9 (firm 3) straddles 32 overruns 32 ghosts 0
+W screen_text_v1 with the walks: exit 0; 31 programs, 17596 strings read, 22990 drawn texts; places against the rules: 0 in 0 programs; left alone: 1
+  Norm3_v2.4g              495 (b) | s your finger, with the blue area, both P values and   [left alone: two probabilities, each written P(...) on the page: values of P, not a p-value]
+F fleet_names_v2 over 31 programs: clean
+  31 files, 2480 routine names, 0 collisions, 0 untagged, 0 mixed-tag files, 0 built-in matches
+
+--- fleet_names_v2 output
+31 files, 2480 routine names, 0 collisions, 0 untagged, 0 mixed-tag files, 0 built-in matches

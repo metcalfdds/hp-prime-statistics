@@ -1,0 +1,413 @@
+# tlg1_v4_blocks.txt -- the blocks tools/make_tlg1_v4.py applies to TTestLab beta 1l (already renamed tt -> tz) to make
+# TTestLabG beta 1i.  A block starts at "@@"; then each line is one line of code after a one-character mark:
+#   "-" a line of the advanced version that goes, "+" a line of the general version that comes, " " a line that
+#   stays (just enough of them for the block to be found exactly once).  A "#" line before the first block is a note.
+# Blocks 1 to 46 were made by a line diff of TTestLab beta 1j against TTestLabG beta 1g (they turn the one into the
+# other exactly); 4 of them carry beta 1k's wording; the last 7 are for beta 1k's new code.
+# v4 (Round 17, 17 Nov 2026) is v3 with two lines in this round's words: block 16's "By hand" line of the general
+# version ("the smaller of (N1-1), (N2-1)") and block 18's line of the advanced version ("t-table, row df").
+@@ 1
+-LOCAL tzTY:=1;           // the test: 1 pooled, 2 separate, 3 dependent
++LOCAL tzTY:=2;           // the test: 1 pooled, 2 separate (the default), 3 dependent
+@@ 2
+-LOCAL tzEX:=0;           // the example on screen: 0 none, 1-6 the examples
++LOCAL tzEX:=0;           // the example on screen: 0 none, 1-7 the examples
+@@ 3
+-LOCAL tzSE:=1, tzT:=0, tzDF:=1, tzTC:=1, tzTB:=1, tzDFT:=1;
+-LOCAL tzP:=1, tzD:=0, tzSP:=1, tzREJ:=0, tzREJB:=0;
++LOCAL tzSE:=1, tzT:=0, tzDF:=1, tzTC:=1;
++LOCAL tzP:=1, tzD:=0, tzSP:=1, tzREJ:=0;
+@@ 4
+-// needs, so the pairs print as the lecture's Table 11.3 does, 1.30 and
+-// 1.00 beside 1.25 (review 11)
++// needs, so a column prints alike: 1.30 and 1.00 beside 1.25
+@@ 5
+-// ---------------- the arithmetic ----------------
+-// The row of the printed t table the lecture would read.  The table's
+-// rows are 1-30, 40, 60 and 120 (the lecture's appendix 1; no
+-// infinity row).  The rule is the lecture's, "the value that is
+-// closest to it" (df 73 -> row 60).  A tie goes to the smaller row,
+-// which is the safer one (its t critical is larger): 35 -> 30, 4.5 -> 4.
+-// Past 120, row 120.
+-LOCAL tz_TabDF(tdf)
++// A mean or SD on the data screens: as it was typed (tz_Num) when it
++// was typed; to 4 significant digits (tz_Sig) when the program worked
++// it out from raw scores (D1/D2 or an example's data), so a draft
++// lottery mean shows as 206.3, not 206.32418.
++LOCAL tz_Val(vv)
+@@ 6
+- LOCAL tdr;
+- IF tdf <= 30 THEN RETURN MAX(1,CEILING(tdf-0.5)); END;
+- IF tdf >= 120 THEN RETURN 120; END;
+- tdr := 30;
+- IF tdf - 30 > 5 THEN tdr := 40; END;      // nearer 40 than 30
+- IF tdf - 40 > 10 THEN tdr := 60; END;     // nearer 60 than 40
+- IF tdf - 60 > 30 THEN tdr := 120; END;    // nearer 120 than 60
+- RETURN tdr;
++ IF tzSRC == 2 THEN RETURN tz_Cm(tz_Sig(vv)); END;
++ RETURN tz_Cm(tz_Num(vv));
+@@ 7
+ 
++// ---------------- the arithmetic ----------------
+ // t critical (its size) for df, at alpha, for the tails on screen: the
+@@ 8
+-// The lecture's printed t table (its appendix 1) differs from the exact
+-// values, rounded to 3 decimals, in five cells, all in the last column
+-// (one-tailed .0005, two-tailed .001): rows 2, 3, 5, 7 and 23 print
+-// 31.598, 12.941, 6.859, 5.405 and 3.767 where the exact values are
+-// 31.599, 12.924, 6.869, 5.408 and 3.768 (SciPy; every other cell
+-// agrees, verify A6).  Returns the printed value when the row and
+-// column on screen are one of those five, else 0.  TTestLabG shows the
+-// printed value as the table's (a student reads it there) and step 3
+-// gives the exact one beside it.
+-LOCAL tz_BookCell()
+-BEGIN
+- LOCAL bk, bkr, bkv;
+- IF tzAL <> IFTE(tzTL == 0,0.001,0.0005) THEN RETURN 0; END;
+- bkr := {2,3,5,7,23};
+- bkv := {31.598,12.941,6.859,5.405,3.767};
+- FOR bk FROM 1 TO 5 DO
+-  IF tzDFT == bkr(bk) THEN RETURN bkv(bk); END;
+- END;
+- RETURN 0;
+-END;
+-
+@@ 9
+- LOCAL cr, cbk;
++ LOCAL cr;
+@@ 10
+- tzTC := tz_Crit(tzDF);
+- tzDFT := tz_TabDF(tzDF);
+- // the printed table's value, as a student would read it: the exact
+- // value to 3 decimals, or the lecture's own figure in its five odd
+- // cells (tz_BookCell)
+- cbk := tz_BookCell();
+- tzTB := IFTE(cbk > 0,cbk,ROUND(tz_Crit(tzDFT),3));
++ // t critical for the exact df (a printed table is only a note on
++ // step 3: the books' tables differ past df 30)
++ tzTC := tz_Crit(tzDF);
+@@ 11
+- tzREJB := tz_Beyond(tzT,tzTB);
+@@ 12
+-  // the data, as the lecture's Table 11.1 lays them out: a column per
+-  // sample, its name under the heading
++  // the data: a column per sample, its name under the heading
+@@ 13
+-  TEXTOUT_P(CHAR(57344)+CHAR(8321)+" = "+tz_Cm(tz_Num(tzM1)),G1,10,108,1,tzBLK);
+-  TEXTOUT_P(CHAR(57344)+CHAR(8322)+" = "+tz_Cm(tz_Num(tzM2)),G1,165,108,1,tzBLK);
+-  TEXTOUT_P("s"+CHAR(8321)+" = "+tz_Cm(tz_Num(tzS1)),G1,10,122,1,tzBLK);
+-  TEXTOUT_P("s"+CHAR(8322)+" = "+tz_Cm(tz_Num(tzS2)),G1,165,122,1,tzBLK);
++  TEXTOUT_P(CHAR(57344)+CHAR(8321)+" = "+tz_Val(tzM1),G1,10,108,1,tzBLK);
++  TEXTOUT_P(CHAR(57344)+CHAR(8322)+" = "+tz_Val(tzM2),G1,165,108,1,tzBLK);
++  TEXTOUT_P("s"+CHAR(8321)+" = "+tz_Val(tzS1),G1,10,122,1,tzBLK);
++  TEXTOUT_P("s"+CHAR(8322)+" = "+tz_Val(tzS2),G1,165,122,1,tzBLK);
+@@ 14
+-   // the pairs, as the lecture's Table 11.3
++   // the pairs, a row each (the first 7)
+@@ 15
+- LOCAL sa, sb, sden;
++ LOCAL sa, sb, sden, sdh;
+@@ 16
+-  TEXTOUT_P("A fraction is fine: SPSS prints this df in its",G1,8,118,1,tzGRAY);
+-  TEXTOUT_P(CHAR(34)+"Equal variances not assumed"+CHAR(34)+" row.",G1,8,131,1,tzGRAY);
++  // the hand shortcut many books give for separate variances: the
++  // smaller N - 1, which gives a larger t crit than Welch's df, so it
++  // errs on the safe side (the companion guide's Conventions)
++  sdh := MIN(tzN1,tzN2) - 1;
++  TEXTOUT_P("A fraction is fine: SPSS and R print this df.",G1,8,116,1,tzGRAY);
++  TEXTOUT_P("By hand: df = the smaller of (N"+CHAR(8321)+"-1), (N"+CHAR(8322)+"-1) = "+tz_Cm(STRING(sdh,1,0))+",",G1,8,131,1,tzGRAY);
++  TEXTOUT_P("t crit = "+tz_CritS(tz_Crit(sdh))+": larger, so a safer test.",G1,8,144,1,tzGRAY);
+@@ 17
+- LOCAL sbk;
++ LOCAL sdf;
+@@ 18
+- TEXTOUT_P(tz_AlS()+", "+tz_TailS()+", df = "+IFTE(tzTY == 2,tz_Cm(tz_Fmt(tzDF,2)),tz_Cm(STRING(tzDF,1,0))),G1,8,30,1,tzBLK);
+- TEXTOUT_P("t-table, row df = "+tz_Cm(STRING(tzDFT,1,0))+":  t crit = "+tz_CritS(tzTB),G1,8,44,1,tzGRAY);
+- TEXTOUT_P("exact, df = "+IFTE(tzTY == 2,tz_Cm(tz_Fmt(tzDF,2)),tz_Cm(STRING(tzDF,1,0)))+":  t crit = "+tz_CritS(tzTC),G1,8,58,1,tzRED);
++ sdf := IFTE(tzTY == 2,tz_Cm(tz_Fmt(tzDF,2)),tz_Cm(STRING(tzDF,1,0)));
++ TEXTOUT_P(tz_AlS()+", "+tz_TailS()+", df = "+sdf,G1,8,30,1,tzBLK);
++ // exact, for this df: the calculator needs no printed table
++ TEXTOUT_P("t crit = "+tz_CritS(tzTC)+"   (exact, for df = "+sdf+")",G1,8,44,1,tzRED);
+@@ 19
+-  TEXTOUT_P("Rule: if t obt > "+tz_Cm(tz_Fmt(tzTC,3))+" or t obt < "+tz_Cm(tz_Fmt(-tzTC,3))+",",G1,8,74,1,tzBLK);
++  TEXTOUT_P("Rule: if t obt > "+tz_Cm(tz_Fmt(tzTC,3))+" or t obt < "+tz_Cm(tz_Fmt(-tzTC,3))+",",G1,8,60,1,tzBLK);
+@@ 20
+-   TEXTOUT_P("Rule: if t obt < "+tz_Cm(tz_Fmt(-tzTC,3))+",",G1,8,74,1,tzBLK);
++   TEXTOUT_P("Rule: if t obt < "+tz_Cm(tz_Fmt(-tzTC,3))+",",G1,8,60,1,tzBLK);
+@@ 21
+-   TEXTOUT_P("Rule: if t obt > "+tz_Cm(tz_Fmt(tzTC,3))+",",G1,8,74,1,tzBLK);
++   TEXTOUT_P("Rule: if t obt > "+tz_Cm(tz_Fmt(tzTC,3))+",",G1,8,60,1,tzBLK);
+@@ 22
+-  TEXTOUT_P("  reject H"+CHAR(8320)+".  (t crit lies beyond the plot.)",G1,8,87,1,tzBLK);
++  TEXTOUT_P("  reject H"+CHAR(8320)+".  (t crit lies beyond the plot.)",G1,8,73,1,tzBLK);
+@@ 23
+-  TEXTOUT_P("  reject H"+CHAR(8320)+".  Red = the rejection region (α).",G1,8,87,1,tzBLK);
++  TEXTOUT_P("  reject H"+CHAR(8320)+".  Red = the rejection region (α).",G1,8,73,1,tzBLK);
+@@ 24
+- sbk := tz_BookCell();
+- IF sbk > 0 THEN
+-  TEXTOUT_P("(Row "+tz_Cm(STRING(tzDFT,1,0))+" exact: "+tz_Cm(tz_Fmt(tz_Crit(tzDFT),3))+"; lecture's table: "+tz_Cm(tz_Fmt(sbk,3))+".)",G1,8,99,1,tzGRAY);
++ // A printed t table lists only some df, and the books' tables differ
++ // past 30.  The companion guide's rule: a df the table lacks takes the
++ // next SMALLER row it lists, whose t crit is larger, so the test never
++ // claims more than the data show; a fractional df is rounded down
++ // first.  Up to df 30 every table has the row: no note.
++ IF tzTY == 2 THEN
++  TEXTOUT_P("Printed table?  Round df down to "+tz_Cm(STRING(IP(tzDF),1,0))+"; if the",G1,8,87,1,tzGRAY);
++  TEXTOUT_P("table lacks that row, take the next smaller.",G1,8,100,1,tzGRAY);
++ ELSE
++  IF tzDF > 30 THEN
++   TEXTOUT_P("Printed table without row "+tz_Cm(STRING(tzDF,1,0))+"?  Take the next",G1,8,87,1,tzGRAY);
++   TEXTOUT_P("smaller row it lists (its t crit is larger).",G1,8,100,1,tzGRAY);
++  END;
+@@ 25
+- tz_Curve(110,196,0,0);
++ tz_Curve(114,196,0,0);
+@@ 26
+-// What the source printed, for the three examples, while the example's
+-// numbers and test are still the ones on screen.  The lecture rounds
+-// along the way (Roger, 31 Oct 2026: "this instructor is sort of
+-// liberal with rounding"), so its t obtained differs from the exact
+-// one; the decision at alpha .05 is the same.
+-LOCAL tz_BookNote(bny)
+-BEGIN
+- IF tzEX == 1 AND tzTY == 1 THEN
+-  // lecture: sqrt(1.74) x sqrt(.05) = .29; -.68/.29 = -2.34
+-  TEXTOUT_P("The lecture rounds √0.05499 to √.05, SE to .29,",G1,8,bny,1,tzGRAY);
+-  TEXTOUT_P("so its t obt is -.68/.29 = -2.34.  Exact: "+tz_Cm(tz_Fmt(tzT,2))+".",G1,8,bny+13,1,tzGRAY);
+- END;
+- IF tzEX == 2 AND tzTY == 3 THEN
+-  // lecture: mean .182 -> .18; sqrt(.38/4) = sqrt(.10) = .32;
+-  // .32/2.24 = .14; .18/.14 = 1.29
+-  TEXTOUT_P("The lecture rounds "+CHAR(57344)+"D to .18 and .38/4 to .10,",G1,8,bny,1,tzGRAY);
+-  TEXTOUT_P("so SE = .14 and t obt = 1.29.  Exact: "+tz_Cm(tz_Fmt(tzT,2))+".",G1,8,bny+13,1,tzGRAY);
+- END;
+- IF tzEX == 3 AND tzTY == 2 THEN
+-  TEXTOUT_P("SPSS, "+CHAR(34)+"Equal variances not assumed"+CHAR(34)+": t = -4.351,",G1,8,bny,1,tzGRAY);
+-  TEXTOUT_P("df = 265.924, Std. Error Difference = .36918.",G1,8,bny+13,1,tzGRAY);
+- END;
+- IF tzEX == 3 AND tzTY == 1 THEN
+-  TEXTOUT_P("This is SPSS's "+CHAR(34)+"Equal variances assumed"+CHAR(34)+" row;",G1,8,bny,1,tzGRAY);
+-  TEXTOUT_P("its Levene p = .009 points to the other row.",G1,8,bny+13,1,tzGRAY);
+- END;
+-END;
+-
+@@ 27
+-  TEXTOUT_P("   = √[("+tz_Cm(tz_Num(tzN1-1))+" × "+tz_Cm(tz_Num(tzS1))+"² + "+tz_Cm(tz_Num(tzN2-1))+" × "+tz_Cm(tz_Num(tzS2))+"²)/"+tz_Cm(STRING(tzDF,1,0))+"]",G1,8,58,1,tzBLK);
++  TEXTOUT_P("   = √[("+tz_Cm(tz_Num(tzN1-1))+" × "+tz_Val(tzS1)+"² + "+tz_Cm(tz_Num(tzN2-1))+" × "+tz_Val(tzS2)+"²)/"+tz_Cm(STRING(tzDF,1,0))+"]",G1,8,58,1,tzBLK);
+@@ 28
+-  TEXTOUT_P("   = √("+tz_Cm(tz_Num(tzS1))+"²/"+tz_Cm(tz_Num(tzN1))+" + "+tz_Cm(tz_Num(tzS2))+"²/"+tz_Cm(tz_Num(tzN2))+")",G1,8,45,1,tzBLK);
++  TEXTOUT_P("   = √("+tz_Val(tzS1)+"²/"+tz_Cm(tz_Num(tzN1))+" + "+tz_Val(tzS2)+"²/"+tz_Cm(tz_Num(tzN2))+")",G1,8,45,1,tzBLK);
+@@ 29
+-  TEXTOUT_P("t obt = ("+CHAR(57344)+CHAR(8321)+" - "+CHAR(57344)+CHAR(8322)+")/SE = ("+tz_Cm(tz_Num(tzM1))+" - "+tz_Cm(tz_Num(tzM2))+")/"+tz_Cm(tz_Sig(tzSE)),G1,8,116,1,tzMAG);
++  TEXTOUT_P("t obt = ("+CHAR(57344)+CHAR(8321)+" - "+CHAR(57344)+CHAR(8322)+")/SE = ("+tz_Val(tzM1)+" - "+tz_Val(tzM2)+")/"+tz_Cm(tz_Sig(tzSE)),G1,8,116,1,tzMAG);
+@@ 30
+-   // the lecture's Table 11.4: each difference, its deviation, squared
++   // each difference, its deviation from the mean, and that squared
+@@ 31
+-   // the column's sum (the lecture's sigma sign is not on the verified
+-   // glyph list, Lessons Learned s5, so the word)
++   // the column's sum (the sigma sign is not on the verified glyph
++   // list, Lessons Learned s5, so the word)
+@@ 32
+- tz_BookNote(176);
+@@ 33
+- // the printed table's row can decide differently from the exact df
+- IF tzREJ <> tzREJB THEN
+-  TEXTOUT_P("(Table row "+tz_Cm(STRING(tzDFT,1,0))+", "+tz_CritS(tzTB)+", decides the other way.)",G1,8,84,1,tzGRAY);
++ // A p that rounds to alpha at 3 decimals ("p = 0.050" beside a
++ // rejection at alpha .05 reads as a contradiction) also gets its 4
++ // significant digits (Darwin's plants: p = 0.04970).
++ IF tzAL >= 0.001 AND ROUND(tzP,3) == ROUND(tzAL,3) AND tzP <> tzAL THEN
++  TEXTOUT_P("(p = "+tz_Cm(tz_Sig(tzP))+": just "+tz_Cm(IFTE(tzP < tzAL,"below","above"))+" α = "+tz_Cm(tz_Fmt(tzAL,3))+".)",G1,8,84,1,tzGRAY);
+@@ 34
+- TEXTOUT_P("The lecture: pooled if the population variances",G1,8,160,1,tzGRAY);
+- TEXTOUT_P("are equal, separate if not.  Many",G1,8,173,1,tzGRAY);
+- TEXTOUT_P("now use separate always (Delacre et al. 2017).",G1,8,186,1,tzGRAY);
++ // why separate is the default (Delacre, Lakens & Leys 2017)
++ TEXTOUT_P("Pooled needs equal population variances;",G1,8,160,1,tzGRAY);
++ TEXTOUT_P("separate does not, and loses little when they",G1,8,173,1,tzGRAY);
++ TEXTOUT_P("are equal, so it is the default (Delacre 2017).",G1,8,186,1,tzGRAY);
+@@ 35
+-// ---------------- the flowchart (Figure 11.2) ----------------
++// ---------------- the flowchart (two questions) ----------------
+@@ 36
+- // the hint for question 2
+- TEXTOUT_P("Equal variances?  The problem says so, or",G1,8,182,1,tzGRAY);
+- TEXTOUT_P("Levene's test (SPSS) on the raw scores.",G1,8,195,1,tzGRAY);
++ // the hint for question 2: separate is the default
++ TEXTOUT_P("Not sure the variances are equal?  Answer No:",G1,8,182,1,tzGRAY);
++ TEXTOUT_P("the separate t needs no such assumption.",G1,8,195,1,tzGRAY);
+@@ 37
+-LOCAL tz_Example(ek)
+-BEGIN
++// The 1970 draft lottery (Selective Service System, drawn 1 Dec 1969):
++// the number drawn for each birth date, in date order, Jan 1 to Dec 31
++// (366 dates, Feb 29 included); 1 means called first.  Group 1 = born
++// Jan-Jun (182 dates), group 2 = born Jul-Dec (184).  PowerViz's list
++// (pv_Draft; AnovaLab's, after Fienberg 1971, Science 171:255), checked
++// number for number by verify_PowerViz_v2.5h and again by this
++// program's verify script.
++LOCAL tz_Draft(tdg)
++BEGIN
++ IF tdg==1 THEN
++  RETURN {
++   305, 159, 251, 215, 101, 224, 306, 199, 194, 325, 329, 221, 318, 238, 17, 121, 235, 140, 58, 280,
++   186, 337, 118, 59, 52, 92, 355, 77, 349, 164, 211, 86, 144, 297, 210, 214, 347, 91, 181, 338,
++   216, 150, 68, 152, 4, 89, 212, 189, 292, 25, 302, 363, 290, 57, 236, 179, 365, 205, 299, 285,
++   108, 29, 267, 275, 293, 139, 122, 213, 317, 323, 136, 300, 259, 354, 169, 166, 33, 332, 200, 239,
++   334, 265, 256, 258, 343, 170, 268, 223, 362, 217, 30, 32, 271, 83, 81, 269, 253, 147, 312, 219,
++   218, 14, 346, 124, 231, 273, 148, 260, 90, 336, 345, 62, 316, 252, 2, 351, 340, 74, 262, 191,
++   208, 330, 298, 40, 276, 364, 155, 35, 321, 197, 65, 37, 133, 295, 178, 130, 55, 112, 278, 75,
++   183, 250, 326, 319, 31, 361, 357, 296, 308, 226, 103, 313, 249, 228, 301, 20, 28, 110, 85, 366,
++   335, 206, 134, 272, 69, 356, 180, 274, 73, 341, 104, 360, 60, 247, 109, 358, 137, 22, 64, 222,
++   353, 209};
++ END;
++ RETURN {
++   93, 350, 115, 279, 188, 327, 50, 13, 277, 284, 248, 15, 42, 331, 322, 120, 98, 190, 227, 187,
++   27, 153, 172, 23, 67, 303, 289, 88, 270, 287, 193, 111, 45, 261, 145, 54, 114, 168, 48, 106,
++   21, 324, 142, 307, 198, 102, 44, 154, 141, 311, 344, 291, 339, 116, 36, 286, 245, 352, 167, 61,
++   333, 11, 225, 161, 49, 232, 82, 6, 8, 184, 263, 71, 158, 242, 175, 1, 113, 207, 255, 246,
++   177, 63, 204, 160, 119, 195, 149, 18, 233, 257, 151, 315, 359, 125, 244, 202, 24, 87, 234, 283,
++   342, 220, 237, 72, 138, 294, 171, 254, 288, 5, 241, 192, 243, 117, 201, 196, 176, 7, 264, 94,
++   229, 38, 79, 19, 34, 348, 266, 310, 76, 51, 97, 80, 282, 46, 66, 126, 127, 131, 107, 143,
++   146, 203, 185, 156, 9, 182, 230, 132, 309, 47, 281, 99, 174, 129, 328, 157, 165, 56, 10, 12,
++   105, 43, 41, 39, 314, 163, 26, 320, 96, 304, 128, 240, 135, 70, 53, 162, 95, 84, 173, 78,
++   123, 16, 3, 100};
++END;
++
++LOCAL tz_Example(ek)
++BEGIN
++ LOCAL er1, er2;
+@@ 38
+-  // the lecture: transferred female juveniles' mean age at arrest
+-  // (JDCC data), Hispanic (sample 1) and non-Hispanic white (2);
+-  // pooled variances, two-tailed, alpha .05
++  // Darwin (1876), The Effects of Cross and Self Fertilisation in the
++  // Vegetable Kingdom: 15 pairs of Zea mays, one plant of each pair
++  // crossed and one self-fertilised, grown in the same pots; heights
++  // in inches (RankLab's copy, rk_LdDarwin; 8 x the differences are
++  // Fisher's 1935 figures 49, -67, 8, 16, 6, 23, 28, 41, 14, 29, 56,
++  // 24, 75, 60, -48).  Dependent samples, two-tailed, alpha .05:
++  // t(14) = 2.148, p = 0.0497 (SciPy).
++  tzTY := 3; tzSRC := 2; tzTL := 0; tzAL := 0.05;
++  tzX1 := {23.5,12,21,22,19.125,21.5,22.125,20.375,18.25,21.625,23.25,21,22.125,23,12};
++  tzX2 := {17.375,20.375,20,20,18.375,18.625,18.625,15.25,16.5,18,16.25,18,12.75,15.5,18};
++  tzG1 := "Crossed"; tzG2 := "Self";
++  tzDV := "plant height (inches), Darwin 1876";
++ END;
++ IF ek == 2 THEN
++  // The 1970 draft lottery (tz_Draft): were the numbers drawn at
++  // random?  Births Jan-Jun against Jul-Dec; separate variances, two-
++  // tailed, alpha .05: t(362.56) = 4.196 (SciPy).  The capsules for
++  // the later months were put in last and not mixed well enough
++  // (Fienberg 1971).
++  tzTY := 2; tzSRC := 2; tzTL := 0; tzAL := 0.05;
++  er1 := tz_MSN(tz_Draft(1)); er2 := tz_MSN(tz_Draft(2));
++  tzM1 := er1(1); tzS1 := er1(2); tzN1 := er1(3);
++  tzM2 := er2(1); tzS2 := er2(2); tzN2 := er2(3);
++  tzG1 := "Born Jan-Jun"; tzG2 := "Born Jul-Dec";
++  tzDV := "draft number (Selective Service, 1970)";
++ END;
++ IF ek == 3 THEN
++  // transferred female juveniles' mean age at arrest (JDCC data, from
++  // Roger's lecture note), Hispanic (sample 1) and non-Hispanic white
++  // (2); pooled variances, two-tailed, alpha .05
+@@ 39
+- IF ek == 2 THEN
+-  // the lecture: inmate-on-staff assault rates in five matched pairs of
+-  // jails (Census of Jails), low (x1) and high (x2) percentage female
+-  // security staff; dependent samples, one-tailed H1 mu1 < mu2, .05
++ IF ek == 4 THEN
++  // inmate-on-staff assault rates in five matched pairs of jails
++  // (Census of Jails, from Roger's lecture note), low (x1) and high (x2)
++  // percentage female security staff; dependent samples, one-tailed
++  // H1 mu1 < mu2, alpha .05
+@@ 40
+- END;
+- IF ek == 3 THEN
+-  // Roger's SPSS output, 31 Oct 2026: amount of drug use experience by
+-  // sex; Levene's test significant (p = .009), so separate variances;
+-  // SPSS: t = -4.351, df = 265.924 ("equal variances not assumed")
+-  tzTY := 2; tzSRC := 1; tzTL := 0; tzAL := 0.05;
+-  tzM1 := 4.8185; tzS1 := 3.28798; tzN1 := 270;
+-  tzM2 := 6.4247; tzS2 := 3.74872; tzN2 := 146;
+-  tzG1 := "Male"; tzG2 := "Female";
+-  tzDV := "amount of drug use experience (SPSS)";
+@@ 41
+- TEXTOUT_P("Teaching aid; not for clinical or legal use.",G1,8,179,1,tzRED);
++ TEXTOUT_P("A long data set: DataLoad fills D1 and D2.",G1,8,172,1,tzBLK);
++ TEXTOUT_P("Teaching aid; not for clinical or legal use.",G1,8,190,1,tzRED);
+@@ 42
+- TEXTOUT_P("t crit: the exact value for your df, and the printed table's value (a",G1,8,30,1,tzBLK);
+- TEXTOUT_P("df the table lacks uses the next smaller row: df 73 uses row 60)",G1,8,43,1,tzBLK);
+- TEXTOUT_P("Step 4 keeps 4 significant digits at each step; rounding sooner",G1,8,59,1,tzBLK);
+- TEXTOUT_P("can change t obt (see example 1)",G1,8,72,1,tzBLK);
+- TEXTOUT_P("Separate variances: SE = √(s₁²/N₁ + s₂²/N₂), Welch-Satterthwaite",G1,8,88,1,tzBLUE);
+- TEXTOUT_P("df, as SPSS prints them",G1,8,101,1,tzBLUE);
+- TEXTOUT_P("The difference is group 1 minus group 2, as in SPSS",G1,8,117,1,tzBLK);
++ TEXTOUT_P("t crit: exact for your df; no table is needed.",G1,8,30,1,tzBLK);
++ TEXTOUT_P("With a printed table, a df it lacks uses the next smaller row, and",G1,8,43,1,tzBLK);
++ TEXTOUT_P("a fractional df is rounded down first.",G1,8,56,1,tzBLK);
++ TEXTOUT_P("Step 4 keeps 4 significant digits at each step.",G1,8,72,1,tzBLK);
++ TEXTOUT_P("Separate variances (the default): Welch's SE and df, as SPSS and",G1,8,88,1,tzBLUE);
++ TEXTOUT_P("R print them",G1,8,101,1,tzBLUE);
++ TEXTOUT_P("The difference is group 1 minus group 2, as in SPSS and R",G1,8,117,1,tzBLK);
+@@ 43
+-  CHOOSE(mt,"Examples",{"Age at arrest (pooled)","Matched jails (dependent)","Drug use by sex (separate)","Student's sleep (1 sample)","Grand juries (1 proportion)","Re-arrest (2 proportions)"});
++  CHOOSE(mt,"Examples",{"Darwin's plants (pairs)","Draft lottery (separate)","Age at arrest (pooled)","Matched jails (pairs)","Student's sleep (1 sample)","Grand juries (1 proportion)","Re-arrest (2 proportions)"});
+@@ 44
+-  CHOOSE(ms,"TTestLabG: tests in 5 steps",{"Choose the test","Example: age at arrest","Example: matched jails","Example: drug use by sex","Examples: one sample, z-tests","Help"});
++  CHOOSE(ms,"TTestLabG: tests in 5 steps",{"Choose the test","Example: Darwin's plants","Example: draft lottery","Example: age at arrest","Example: matched jails","Examples: one sample, z-tests","Help"});
+@@ 45
+-  IF ms == 6 THEN tz_Help(); END;
++  IF ms == 7 THEN tz_Help(); END;
+@@ 46
+- IF ms >= 2 AND ms <= 4 THEN tz_Example(ms-1); END;
++ IF ms >= 2 AND ms <= 5 THEN tz_Example(ms-1); END;
+@@ 47
+- IF ek == 4 THEN
++ IF ek == 5 THEN
+   // Student's sleep data (Cushny and Peebles 1905; Student 1908, the
+@@ 48
+- IF ek == 5 THEN
++ IF ek == 6 THEN
+   // Castaneda v. Partida, 430 U.S. 482 (1977) (the book's Chapters 5
+@@ 49
+- IF ek == 6 THEN
++ IF ek == 7 THEN
+   // the Rossi experiment (Rossi, Berk and Lenihan 1980; the book's
+@@ 50
+   mx := 0;
+-  IF ms == 5 THEN
++  IF ms == 6 THEN
+@@ 51
+- UNTIL ms <> 6 AND (ms <> 5 OR mx > 0);
++ UNTIL ms <> 7 AND (ms <> 6 OR mx > 0);
+@@ 52
+- IF ms == 5 THEN tz_Example(mx+3); END;
++ IF ms == 6 THEN tz_Example(mx+4); END;
+@@ 53
+- // The one-sample t: the printed table's row can decide differently from
+- // the exact df.  Otherwise a p that rounds to alpha shows its 4 digits,
+- // so "p = 0.050" never stands beside a decision it seems to contradict.
+- IF tzTY == 4 AND tzREJ <> tzREJB THEN
+-  TEXTOUT_P("(Table row "+tz_Cm(STRING(tzDFT,1,0))+", "+tz_CritS(tzTB)+", decides the other way.)",G1,8,84,1,tzGRAY);
+- ELSE
+-  IF tzAL >= 0.001 AND ROUND(tzP,3) == ROUND(tzAL,3) AND tzP <> tzAL THEN
+-   IF tzP < tzAL THEN
+-    TEXTOUT_P("(p = "+tz_Cm(tz_Sig(tzP))+": just below "+tz_AlS()+".)",G1,8,84,1,tzGRAY);
+-   ELSE
+-    TEXTOUT_P("(p = "+tz_Cm(tz_Sig(tzP))+": just above "+tz_AlS()+".)",G1,8,84,1,tzGRAY);
+-   END;
+-  END;
+- END;
++ // A p that rounds to alpha shows its 4 digits, so "p = 0.050" never
++ // stands beside a decision it seems to contradict.
++ IF tzAL >= 0.001 AND ROUND(tzP,3) == ROUND(tzAL,3) AND tzP <> tzAL THEN
++  IF tzP < tzAL THEN
++   TEXTOUT_P("(p = "+tz_Cm(tz_Sig(tzP))+": just below "+tz_AlS()+".)",G1,8,84,1,tzGRAY);
++  ELSE
++   TEXTOUT_P("(p = "+tz_Cm(tz_Sig(tzP))+": just above "+tz_AlS()+".)",G1,8,84,1,tzGRAY);
++  END;
++ END;
