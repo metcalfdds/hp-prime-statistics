@@ -4,7 +4,8 @@
 // Loader v2d, took 15 (2,104,376 characters), then acknowledged every report of NormExplorer and, asked for it back,
 // sent it EMPTY: 36 bytes, its head and its name, not compressed.  Its Program Catalog showed NormExplorer at 0 KB
 // and 4.35 MB of programs (Roger: "I think we're out of memory").  [log] usb/logs/PrimeLoader_v2d_G1_Chrome_2026-11-18_1541.txt
-// And one wait longer: the time given the calculator to begin giving a program back (patienceFor, below), after the
+// A send that stands for a minute is "stuck", not "gone" (res.stuck): the G2 of 16:11 the same day, still on its cable,
+// took one report of the 14th program and then nothing for 60 s.  And one wait longer: the time given the calculator to begin giving a program back (patienceFor, below), after the
 // G2's log of 15:49 the same day, in which that time grew as the load went on and EpiStats outlasted it.  Nothing
 // else changed: the route and the pacing are v3's.
 //
@@ -776,7 +777,7 @@ const PrimeUSB = (function () {
   //         'differs' what came back is not what was sent
   async function load(link, programs, ui, opts) {
     ui = ui || {}; opts = opts || {};
-    const t0 = Date.now(), res = { ok: false, done: [], failed: null, stopped: false, gone: false, info: null, told: false, reports: 0, ms: 0 };
+    const t0 = Date.now(), res = { ok: false, done: [], failed: null, stopped: false, gone: false, stuck: false, info: null, told: false, reports: 0, ms: 0 };
     const tracer = ui.trace ? new Tracer(ui.trace, { budget: opts.budget, keep: opts.keep }) : null;
     const log = function (text) { if (tracer) tracer.mark(); if (ui.log) ui.log(text); };
     const item = function (k, state) { if (ui.item) ui.item(k, state); };
@@ -836,7 +837,8 @@ const PrimeUSB = (function () {
     } catch (e) {
       if (!isGone(e)) throw e;
       res.gone = true;
-      log('THE CALCULATOR WENT OFF THE CABLE: ' + said(e) + '.');
+      res.stuck = /did not take a report within/.test(said(e));      // [log] G2, 18 Nov, 16:11: it was still on the cable
+      log((res.stuck ? 'THE CALCULATOR STOPPED RESPONDING: ' : 'THE CALCULATOR WENT OFF THE CABLE: ') + said(e) + '.');
       return res;
     } finally {
       res.ms = Date.now() - t0;

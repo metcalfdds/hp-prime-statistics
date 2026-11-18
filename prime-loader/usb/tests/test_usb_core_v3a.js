@@ -457,6 +457,15 @@ const G1 = 0x1541;
     check('E6b a calculator that begins its answer only after 20 s, saying where it stands every 0.6 s meanwhile (the G2 of 18 Nov, 15:49, took 8.0 s for DNAMixLR and more than 14.6 s for EpiStats): with the default wait the program is read back and found the same',
           res.ok && res.done.join() === 'AAA', JSON.stringify(res.failed) + log.join('\n').slice(-400));
   }
+  {
+    const mock = new MockPrime({ tickMs: 0 }), port = mock.port(), send = port.send.bind(port), log = [];
+    let n = 0;
+    port.send = async f => { if (++n > 40) throw new P.Gone('the calculator did not take a report within 60 s'); return send(f); };
+    const link = quick(new P.Link(port)), res = await P.load(link, three, { log: t => log.push(t) }, { settle: 10 });
+    mock.stop();
+    check('E6c a calculator still on its cable that takes nothing for a minute (the G2 of 18 Nov, 16:11, at its 14th program): "stuck", and the log says it stopped responding, not that it went off the cable',
+          !res.ok && res.gone && res.stuck && /THE CALCULATOR STOPPED RESPONDING: the calculator did not take a report within 60 s\./.test(log.join('\n')) && !/WENT OFF THE CABLE/.test(log.join('\n')), JSON.stringify(res) + log.slice(-3).join('|'));
+  }
   L = await run({ fdOld: null }, three);
   check('E7 a calculator that still says version 01 after the "FD": "version"; no program is sent and the newer framing is not asked for',
         L.res.failed.why === 'version' && L.res.failed.name === null && L.res.done.length === 0 && L.mock.arrived.length === 0 && !L.mock.v2open && L.items.length === 0 && /IT DOES NOT SPEAK VERSION 03/.test(L.text), JSON.stringify(L.res));

@@ -22,6 +22,9 @@
    'verifying download'", and two minutes later: "belay that last note--if the G2 can take them all at once, fine. but
    we need a note for the G1".  So "All the programs" stays; for a real HP Prime it carries a note that a G1 cannot
    hold them all at one time (and the cable's first step says the same); and the cable's words say "verifying".
+   And at 16:11 the G2, sent all 30, slowed to a stop after 13 (each verify took longer: FitCheck 22 s), so the
+   first idea stands after all: no "All the programs" for a real HP Prime, a note in step 2 instead, and a page that
+   says "The calculator stopped responding" when a send has stood for a minute (not "went off the cable").
    PrimeLoader v2e (18 Nov 2026, 12:30).  A student's slip of the kind the review of 17 November looked for: a real HP
    Prime, and a browser that cannot reach a USB device (Firefox, Safari).  Until now the page said nothing about the
    cable there and showed the Kit alone, so the student never learned that Chrome or Edge could do it in one click.
@@ -335,8 +338,7 @@ ol.steps li > p { margin: 2px 0 0; }
       <p class="note" id="cabletested">Tried on the author's HP Prime G2 (in Chrome) and G1 (in Edge) on 18 November 2026: every download of Chapter 12 verified, and ChiTable ran at once, with no Check.</p>
       <ol class="steps">
         <li><b>Plug the calculator into this computer with its USB cable, and switch it on.</b> Leave it at its Home screen.
-          <p class="why">The Home screen is the one you calculate on. If the calculator shows anything else, press the <kbd>Home</kbd> key (the little house).</p>
-          <p class="why" id="g1room"><b>On an HP Prime G1, load three or four programs at a time</b> (step 2, <b>One chapter</b>): a G1 cannot hold all the book's programs at one time.</p></li>
+          <p class="why">The Home screen is the one you calculate on. If the calculator shows anything else, press the <kbd>Home</kbd> key (the little house).</p></li>
         <li><b>If HP's Connectivity Kit is open, close it.</b>
           <p class="why">Only one program at a time can talk to the calculator. You do not need the Kit for this way at all.</p></li>
         <li><b>Click this button:</b>
@@ -564,6 +566,12 @@ function zipName() {
 }
 
 function refresh() {
+  // A real HP Prime cannot hold all the book's programs at once: on 18 Nov 2026 the author's G1 was full after 15 of
+  // the 30, and his G2 slowed to a stop after 13 (usb/logs/).  So for it there is no "All the programs" (Roger:
+  // "Let's forget the 'load all at once'"); the Virtual Calculator keeps it.
+  const realNow = state.target === 'real';
+  $('w_all').closest('.choice').hidden = realNow;
+  if (realNow && state.what === 'all') { state.what = 'chapter'; $('w_chapter').checked = true; }
   const sel = selection(), base = chosen(), data = dataChosen(), auto = dataNeedsProg(), c = chapter(), real = state.target === 'real';
   // step 2's own parts
   $('proglist').hidden = state.what !== 'pick' || (fromDataLoader && state.picked.size === 0 && !listAsked);
@@ -592,11 +600,10 @@ function refresh() {
   // what it will do to what is already there
   let e = '';
   if (sel.length || data.length) {
-    if (real || !canWrite) e = 'Programs already on your calculator stay there.';
+    if (real) e = 'Programs already on your calculator stay there. All the book\'s programs do not fit in a calculator\'s memory at one time: load three or four at a time (one chapter, or a few you tick).';
+    else if (!canWrite) e = 'Programs already on your calculator stay there.';
     else if (movesBookOff()) e = 'The calculator will list this chapter\'s programs. The book\'s other programs are moved off into a backup folder; programs of your own stay.';
     else e = 'They are added: programs already on the calculator stay.';
-    // 18 Nov 2026: the author's G1 was full after 15 of the 30 programs (Roger: "we need a note for the G1").
-    if (real && state.what === 'all') e += ' An HP Prime G1 cannot hold all the book\'s programs at one time: on a G1, load three or four at a time (one chapter).';
   }
   $('effect').textContent = e;
   // the route
@@ -878,13 +885,17 @@ async function usbSend() {
     lis.forEach(li => { if (li.className === 'send' || li.className === 'check') { li.className = 'bad'; li.querySelector('.mark').textContent = USB_MARK.bad; li.querySelector('.say').textContent = ' ' + USB_WORD.bad; } });
     usbLine('');
     usbLine('RESULT: ' + (res.ok ? 'all ' + plural(done, 'program') + ' on the calculator, each read back the same' : plural(done, 'program') + ' of ' + programs.length + ' on the calculator and read back the same' +
-            (res.gone ? '; the calculator went off the cable' : res.stopped ? '; stopped by the Stop button' : f ? '; ' + (f.name ? f.name + ': ' : '') + f.why + ' (' + f.text + ')' : '')) +
+            (res.gone ? (res.stuck ? '; the calculator stopped responding' : '; the calculator went off the cable') : res.stopped ? '; stopped by the Stop button' : f ? '; ' + (f.name ? f.name + ': ' : '') + f.why + ' (' + f.text + ')' : '')) +
             '. ' + PrimeUSB.num(res.reports) + ' reports carried the programs there and back; ' + (res.ms / 1000).toFixed(1) + ' s in all.');
     const marked = done ? 'The ' + (done === 1 ? 'program' : plural(done, 'program')) + ' marked ✓ ' + (done === 1 ? 'is' : 'are') + ' on the calculator, whole. ' : '';
     if (res.ok) {
       bar(1);
       usbSay(plural(done, 'program') + ' on the calculator, each download verified.', 'ok');
       usbDone(names, rest, res);
+    } else if (res.gone && res.stuck) {
+      usbFail('The calculator stopped responding', 'It took nothing from the page for a minute, which a nearly full calculator does. ' + marked + (first ? esc(first) + ' and the programs after it are not.' : ''),
+              ['Unplug the cable. If the calculator does not respond to its keys, switch it off and on again.',
+               'Load three or four programs at a time: in step 2 choose <b>One chapter</b>. All the book\'s programs do not fit in a calculator\'s memory at one time.'], false);
     } else if (res.gone) {
       usbFail('The calculator went off the cable', marked + (first ? esc(first) + ' and the programs after it are not.' : ''),
               ['Was the cable pulled out, or did the calculator switch itself off? Plug it in again and switch it on.', 'Click <b>Send to the calculator</b> again. It sends them all again, which does no harm.'], false);
@@ -899,7 +910,7 @@ async function usbSend() {
     } else if (f.why === 'full') {
       usbFail('The calculator is full', 'It took ' + esc(f.name) + ' in and kept only its name, which is what a calculator with no room left does. ' + marked + esc(f.name) + ' and the programs after it are not.',
               ['On the calculator, press <kbd>Shift</kbd>, then <kbd>Program</kbd>. Tap <b>' + esc(f.name) + '</b> (it shows 0 KB), tap <b>More</b>, then <b>Delete</b>.',
-               'Load three or four programs at a time: in step 2 choose <b>One chapter</b>. An HP Prime G1 cannot hold all the book\'s programs at one time.',
+               'Load three or four programs at a time: in step 2 choose <b>One chapter</b>. All the book\'s programs do not fit in a calculator\'s memory at one time.',
                'To make room for a new chapter, take off the programs of a chapter you have finished, the same way.'], false);
     } else if (f.why === 'unsent') {
       usbFail(esc(f.name) + ' did not go through', marked + esc(f.name) + ' and the programs after it are not.',
