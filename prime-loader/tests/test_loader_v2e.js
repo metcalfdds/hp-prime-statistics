@@ -1,6 +1,11 @@
-// test_loader_v2d.js -- drives PrimeLoader_v2d.html in Chromium against a mock Virtual Calculator folder, and its
+// test_loader_v2e.js -- drives PrimeLoader_v2e.html in Chromium against a mock Virtual Calculator folder, and its
 // cable route (shown only at ?usb=1) against a pretend calculator that does what two real ones did on 17 Nov 2026.
-// Roger Metcalf & Claude, 18 Nov 2026.   node tests/test_loader_v2d.js PrimeLoader_v2d.html PACK.zip
+// Roger Metcalf & Claude, 18 Nov 2026.   node tests/test_loader_v2e.js PrimeLoader_v2e.html PACK.zip
+//
+// v2e is v2d with one sentence more, for a student's slip: a real HP Prime in a browser that cannot reach it on its
+// cable (Firefox, Safari) is told that Chrome or Edge can send the programs down the cable.  Five checks for it,
+// at the end: shown there, by the browser's own name; not shown where the cable works, nor where the cable is not
+// offered, nor for the Virtual Calculator.
 //
 // v2d is v2c with the two ways named as Roger named them next, "1) The Statisticles way" and "2) The official HP
 // way: the Connectivity Kit", and his sentence under the step's title ("We believe our method should work. ... But just
@@ -434,8 +439,8 @@ function check(name, ok, detail) {
   await ipg.goto('file://' + path.join(path.dirname(PAGE), 'index.html') + '?data=1');
   await ipg.waitForFunction(() => !!document.getElementById('fromdl'), null, { timeout: 15000 }).catch(() => {});
   check('index.html carries ?data=1 on to the page, so the Data Loader\'s link to the folder\'s address opens it ready for the file',
-        /PrimeLoader_v2d\.html\?data=1$/.test(ipg.url()) && await ipg.isVisible('#fromdl'), ipg.url());
-  check('... and a browser with scripts off is still sent on, by the line in noscript', /<noscript><meta http-equiv="refresh" content="0; url=PrimeLoader_v2d\.html"><\/noscript>/.test(idx));
+        /PrimeLoader_v2e\.html\?data=1$/.test(ipg.url()) && await ipg.isVisible('#fromdl'), ipg.url());
+  check('... and a browser with scripts off is still sent on, by the line in noscript', /<noscript><meta http-equiv="refresh" content="0; url=PrimeLoader_v2e\.html"><\/noscript>/.test(idx));
 
   // ---- 10. Firefox: no folder API, Firefox's user-agent ----
   const fctx = await browser.newContext({ acceptDownloads: true,
@@ -596,7 +601,7 @@ function check(name, ok, detail) {
         /went down the cable/.test(st.report[0]) && /read back from the calculator and found the same, character for character/.test(st.report[0]) && /left where they are/.test(st.report[1]) && /^It took \d+(\.\d)? seconds\.$/.test(st.report[2]),
         JSON.stringify([st.next, st.report]));
   check('... the details name the page, the browser, the calculator and the choice; say who answered and what each program did; end in a RESULT line; and hold neither the serial number nor more than twelve bytes of any message',
-        /^HP Prime Loader, v2d, straight down the cable\. /.test(st.log) && /\nBrowser: Mozilla/.test(st.log) && /\nDevice: HP Prime G2 \(USB 03F0:2441\), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator\.\n/.test(st.log) &&
+        /^HP Prime Loader, v2e, straight down the cable\. /.test(st.log) && /\nBrowser: Mozilla/.test(st.log) && /\nDevice: HP Prime G2 \(USB 03F0:2441\), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator\.\n/.test(st.log) &&
         new RegExp('\\nChosen: Chapter 12; ' + ch12.length + ' programs, [\\d,]+ characters: ' + ch12.join(', ') + '\\.\\n').test(st.log) && /It answered: firmware build 15751, "V2\.060\.650", version 01\./.test(st.log) &&
         ch12.every(n => new RegExp('\\n +\\d+\\.\\d\\d  ' + n + ': [\\d,]+ characters\\.\\n').test(st.log)) && (st.log.match(/Read back the same: /g) || []).length === ch12.length &&
         new RegExp('RESULT: all ' + ch12.length + ' programs on the calculator, each read back the same\\. [\\d,]+ reports carried the programs there and back; \\d+\\.\\d s in all\\.').test(st.log) && !/SECRET|SERIAL/.test(st.log) &&
@@ -758,6 +763,31 @@ function check(name, ok, detail) {
   check('at the test address in a browser that cannot reach a USB device (Firefox, Safari): no cable, no dead button, no "two ways"; the Kit\'s steps are the main line as before, and no error',
         !(await u.p.isVisible('#cable')) && await u.p.evaluate(() => !PrimeUSB.supported() && usbAsked && !usbOn) && await u.p.isVisible('#download3') && !(await u.p.isVisible('#kitsum')) && !(await u.p.isVisible('#twoways')) &&
         (await u.p.textContent('#s3rtitle')) === 'Put them on your HP Prime with HP\'s Connectivity Kit' && u.errs.length === 0, u.errs);
+
+  const NOCABLE = ' cannot reach a calculator on its USB cable, so this page shows the official HP way, the Connectivity Kit, below. In Google Chrome or Microsoft Edge it can also send the programs straight down the cable, the Statisticles way.';
+  check('a student\'s slip, a real HP Prime in a browser that cannot reach it on its cable: one sentence says so and names Chrome and Edge, above the Kit\'s steps, which are whole and work',
+        await u.p.isVisible('#nocable') && (await u.p.textContent('#nocable')) === 'This browser' + NOCABLE && (await u.p.textContent('#nocable i')) === 'Statisticles' &&
+        await u.p.evaluate(() => { const a = document.getElementById('nocable').getBoundingClientRect().top, b = document.getElementById('download3').getBoundingClientRect().top; return a < b; }) &&
+        await u.p.isVisible('#download3') && u.errs.length === 0, u.errs);
+  await u.p.check('#t_vc');
+  check('... and it is not shown for the Virtual Calculator, which needs no cable', !(await u.p.isVisible('#nocable')));
+  {
+    const c = await browser.newContext({ userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0', acceptDownloads: true });
+    const fp = await c.newPage(), ferrs = [];
+    fp.on('pageerror', e => ferrs.push(String(e)));
+    await fp.addInitScript(() => { delete window.showDirectoryPicker; Object.defineProperty(navigator, 'hid', { value: undefined, configurable: true }); });
+    await fp.goto('http://localhost:8766/?usb=1');
+    await fp.check('#t_real');
+    check('... in Firefox the sentence names Firefox', await fp.isVisible('#nocable') && (await fp.textContent('#nocable')) === 'Firefox' + NOCABLE && ferrs.length === 0, ferrs);
+    await c.close();
+  }
+  u = await usbPage({}, '?usb=1');
+  await u.p.check('#t_real');
+  check('... and it is not shown where the cable works (Chrome or Edge at the test address): there the two ways show', !(await u.p.isVisible('#nocable')) && await u.p.isVisible('#cable') && await u.p.isVisible('#twoways'));
+  u = await usbPage({}, '', false);
+  await u.p.check('#t_real');
+  check('... nor where the cable is not offered (without the test address), in a browser that cannot reach a USB device either: the page is v2d\'s',
+        !(await u.p.isVisible('#nocable')) && !(await u.p.isVisible('#cable')) && await u.p.isVisible('#download3') && u.errs.length === 0, u.errs);
 
   check('no errors in the page', errors.length === 0, errors);
   console.log(`\n${pass} PASS, ${fail} FAIL`);
