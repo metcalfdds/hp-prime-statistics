@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""build_loader_v2d.py -- assembles PrimeLoader_v2d.html: the page template, the loader's core, the Data Loader's core
+"""build_loader_v2e.py -- assembles PrimeLoader_v2e.html: the page template, the loader's core, the Data Loader's core
 (for its zip writer), the USB core, the chapter list, and every program file from a starter pack, embedded so the
 page works offline.
 
-    python3 build_loader_v2d.py PACK.zip [OUT.html] [--kit PATH]
+    python3 build_loader_v2e.py PACK.zip [OUT.html] [--kit PATH]
+v2e (18 Nov 2026, 12:30): the template's v2e, which tells a student in Firefox or Safari with a real HP Prime
+that Chrome or Edge can send the programs down the cable.  The same pack and cable code.
 v2d (18 Nov 2026, 04:20 to 04:35): the page template's v2d, in which the two ways are "1) The Statisticles way" and
 "2) The official HP way: the Connectivity Kit" and the sentence under the step's title is Roger's, without its "and we
 have tested it" until that is so (Roger: "the testing claim is not valid yet").  The same pack and cable code.
@@ -157,7 +159,7 @@ KIT = os.environ.get('HPKIT', '/tmp/kit/hp-prime-kit-HEAD')
 if '--kit' in argv:
     i = argv.index('--kit'); KIT = argv[i + 1]; del argv[i:i + 2]
 PACK = argv[0]
-OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v2d.html')
+OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v2e.html')
 SITE = 'https://metcalfdds.github.io/hp-prime-statistics/'
 sys.path.insert(0, KIT)
 from hpkit import program as kitprog            # hp-prime-kit (MIT, JordiRigau/hp-prime-kit)
@@ -301,11 +303,11 @@ catalog = {
   'always': ALWAYS_OFFERED,
   'data': {k: {'file': v[1], 'what': v[2], 'bytes': len(packed[v[1]])} for k, v in DATA.items()},
   'pack': os.path.basename(PACK),
-  'loader': 'v2d',
+  'loader': 'v2e',
   'pack_sha256': hashlib.sha256(open(PACK, 'rb').read()).hexdigest()[:12],
 }
 
-t = open(os.path.join(HERE, 'loader_template_v2d.html'), encoding='utf-8').read()
+t = open(os.path.join(HERE, 'loader_template_v2e.html'), encoding='utf-8').read()
 import glob as _glob
 _dl = sorted(_glob.glob(os.path.join(HERE, '..', 'data-loader', 'DataLoader_v*.html')),
              key=lambda p: [int(x) if x.isdigit() else x for x in __import__('re').split(r'(\d+)', os.path.basename(p))])
@@ -339,7 +341,7 @@ redirect = ('<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n
             '<link rel="canonical" href="' + SITE + 'prime-loader/' + page + '">\n'
             '<style>body{font:16px/1.5 system-ui,sans-serif;margin:2rem;color:#172033;background:#f6f8fb}'
             '@media (prefers-color-scheme:dark){body{color:#e8edf6;background:#0f1420}a{color:#7d9cff}}</style>\n'
-            '</head>\n<body>\n<!-- Written by build_loader_v2d.py: sends the browser on to the current Prime Loader, so the '
+            '</head>\n<body>\n<!-- Written by build_loader_v2e.py: sends the browser on to the current Prime Loader, so the '
             'address .../prime-loader/ never changes. -->\n'
             '<p>Opening the HP Prime Loader&hellip; If nothing happens, <a href="' + page + '">click here</a>.</p>\n'
             '</body>\n</html>\n')

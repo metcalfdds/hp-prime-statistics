@@ -8,7 +8,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* PrimeLoader v2d (18 Nov 2026, 04:20 to 04:35).  Roger, of the two ways: "How about: '1) The Statisticles way....' And
+/* PrimeLoader v2e (18 Nov 2026, 12:30).  A student's slip of the kind the review of 17 November looked for: a real HP
+   Prime, and a browser that cannot reach a USB device (Firefox, Safari).  Until now the page said nothing about the
+   cable there and showed the Kit alone, so the student never learned that Chrome or Edge could do it in one click.
+   Now, wherever the cable is offered (today the test address only: cableWanted) and the browser cannot carry it, one
+   sentence above the Kit's steps says so.  Nothing else changed.
+   PrimeLoader v2d (18 Nov 2026, 04:20 to 04:35).  Roger, of the two ways: "How about: '1) The Statisticles way....' And
    2) The official HP Connectivity Kit....'   We believe our method should work, and we have tested it--it is easier
    than the Connetivity Kit and avoids the mDNS issue--but just in case you have issues with the Statisticles way,
    here's 2) the official HP way....something along those lines", and ten minutes later, of that sentence: "Oh,
@@ -310,6 +315,7 @@ ol.steps li > p { margin: 2px 0 0; }
 
     <p class="do" id="twoways" hidden>We believe our method should work. It is easier than the Connectivity Kit, and it avoids the Kit's mDNS (Bonjour) issue. But just in case you have trouble with the <i>Statisticles</i> way, here is 2), the official HP way. CentralLimit and data files go only by 2).</p>
 
+    <p class="do" id="nocable" hidden><span class="brname2">This browser</span> cannot reach a calculator on its USB cable, so this page shows the official HP way, the Connectivity Kit, below. In Google Chrome or Microsoft Edge it can also send the programs straight down the cable, the <i>Statisticles</i> way.</p>
     <div id="cable" hidden>
       <h3 class="way" id="way1">1) The <i>Statisticles</i> way: straight down the USB cable</h3>
       <div class="panel warn" id="cabletested">
@@ -450,7 +456,10 @@ const browserName = /Firefox\//.test(navigator.userAgent) ? 'Firefox'
 // USB device (Chrome and Edge can; Firefox and Safari cannot).  usb/README.md says what has been proved on a
 // calculator, and what must be before the test address is no longer needed.
 const usbAsked = /[?&]usb=1(&|$)/.test(location.search);
-const usbOn = usbAsked && typeof PrimeUSB !== 'undefined' && PrimeUSB.supported();
+// Where the page offers the cable at all.  Today the test address only; when the cable is shown to every student,
+// this line is the one that changes.
+const cableWanted = usbAsked;
+const usbOn = cableWanted && typeof PrimeUSB !== 'undefined' && PrimeUSB.supported();
 // The Data Loader's last step links here with ?data=1: the page then opens ready for a data file, with no program
 // chosen, so that the student's data and DataLoad are all that Load adds.
 const fromDataLoader = /[?&]data=1(&|$)/.test(location.search);
@@ -955,6 +964,9 @@ $('packline').textContent = 'Program files from ' + CAT.pack + ' (' + CAT.pack_s
 $('brname').textContent = browserName === 'this browser' ? 'a browser that cannot write to folders' : browserName;
 document.querySelectorAll('.brname2').forEach(e => { e.textContent = browserName === 'this browser' ? 'This browser' : browserName; });
 $('cable').hidden = !usbOn;
+// A student's slip: a real calculator in a browser that cannot reach it on its cable.  Say where the cable can be had.
+// (On a phone the warning at the top already says the page needs a computer.)
+$('nocable').hidden = !(cableWanted && !usbOn && !mobile);
 if (usbOn) { $('kitfold').open = false; $('kitfold').classList.add('second'); $('kitsum').hidden = false; $('twoways').hidden = false; }
 // The test address is for the cable, so it opens on a real HP Prime.
 if (usbAsked) $('t_real').checked = true;

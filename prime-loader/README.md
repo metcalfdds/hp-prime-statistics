@@ -2,11 +2,11 @@
 
 **For students: say which calculator and which programs, and click one button.** Then start the calculator, tap a program, tap Run. Nothing needs checking or compiling first.
 
-**Open it here: <https://metcalfdds.github.io/hp-prime-statistics/prime-loader/>.** That address never changes: it always opens the newest version (this folder's `index.html` sends the browser on to it). The page is one file, `PrimeLoader_v2d.html`, and also works offline: download it (on GitHub: open the file, then "Download raw file") and open it in any browser.
+**Open it here: <https://metcalfdds.github.io/hp-prime-statistics/prime-loader/>.** That address never changes: it always opens the newest version (this folder's `index.html` sends the browser on to it). The page is one file, `PrimeLoader_v2e.html`, and also works offline: download it (on GitHub: open the file, then "Download raw file") and open it in any browser.
 
-## What it does (v2d, 18 November 2026)
+## What it does (v2e, 18 November 2026)
 
-*v2d is v2a for the Virtual Calculator and for the Connectivity Kit, word for word. What is new since v2a is the cable, below, which shows only at the test address (v2b, 17 November), the name of the step that offers it (v2c, 18 November) and the names of its two ways, with Roger's sentence under the title (v2d, 18 November).*
+*v2e is v2a for the Virtual Calculator and for the Connectivity Kit, word for word. What is new since v2a is the cable, below, which shows only at the test address (v2b, 17 November), the name of the step that offers it (v2c, 18 November) and the names of its two ways, with Roger's sentence under the title (v2d, 18 November), and one sentence for a student with a real HP Prime in a browser that cannot reach it on its cable (v2e, 18 November): "Firefox cannot reach a calculator on its USB cable, so this page shows the official HP way, the Connectivity Kit, below. In Google Chrome or Microsoft Edge it can also send the programs straight down the cable, the *Statisticles* way." It shows wherever the cable is offered (today the test address only) and the browser cannot carry it, with the browser's own name (Firefox, Safari, or "This browser").*
 
 Roger, after the review of that evening: "i'm thinking we need to make this process as simple as is possible", then "How about let the student choose?--1) put all the programs on the Virtual Calculator at once or 2) I'll choose which Chapter to load, one at a time", then "we do need to make some sort of very simple loader ... to get the programs on a physical calcuator".
 
@@ -49,9 +49,9 @@ and the two are **"1) The *Statisticles* way: straight down the USB cable"** and
 
 **The cable has not yet put one of the book's programs on a calculator.** When it has loaded a chapter on a G2 and on a G1, and a program of it has run, the next version shows it without the test address.
 
-### What v2d was tested with
+### What v2e was tested with
 
-`tests/test_loader_v2d.js`: **148 PASS, 0 FAIL** in Chromium against a mock of `Documents\HP Prime` and a pretend calculator, with starter pack v23 (`tests/test_loader_v2d_output.txt`; about a minute). Five of them are about the step that offers both ways: its title, with *Statisticles* in italics; the sentence under it, word for word; the two ways' names, in that order down the page; that nothing the page shows says "we have tested it", while the note under 1) says that this way is still being tested and that the book's own programs have not yet gone to a calculator this way; and that nothing the page shows still says "the other way", "the first way" or "the second way". Where one way shows (no test address, or a browser without WebHID) the step keeps the Kit's own title and nothing says "two ways". The mock folder holds HP's apps and settings, an old book program, an old copy of the app, a matrix, and a program of the student's own, and every file the page writes is compared with the pack byte for byte:
+`tests/test_loader_v2e.js`: **153 PASS, 0 FAIL** in Chromium against a mock of `Documents\HP Prime` and a pretend calculator, with starter pack v23 (`tests/test_loader_v2e_output.txt`; about a minute). Five of them are about the step that offers both ways: its title, with *Statisticles* in italics; the sentence under it, word for word; the two ways' names, in that order down the page; that nothing the page shows says "we have tested it", while the note under 1) says that this way is still being tested and that the book's own programs have not yet gone to a calculator this way; and that nothing the page shows still says "the other way", "the first way" or "the second way". Where one way shows (no test address, or a browser without WebHID) the step keeps the Kit's own title and nothing says "two ways". Five checks are v2e's own: the sentence for a browser without WebHID shows at the test address for a real HP Prime, names Firefox in Firefox, stands above the Kit's steps, and does not show for the Virtual Calculator, where the cable works, or without the test address. The mock folder holds HP's apps and settings, an old book program, an old copy of the app, a matrix, and a program of the student's own, and every file the page writes is compared with the pack byte for byte:
 
 - a running calculator is refused, with nothing written;
 - all the programs: 30 program files and the app's three, byte for byte; the student's own program and the matrix untouched; the backup holds exactly the two things replaced;
@@ -71,7 +71,7 @@ and the two are **"1) The *Statisticles* way: straight down the USB cable"** and
 
 ## The review of 17 November 2026 (v1v)
 
-*v1v's files are in the repository's history: v2a replaced them the same night, v2b replaced v2a's a few hours later, and v2c and then v2d replaced those the next morning.*
+*v1v's files are in the repository's history: v2a replaced them the same night, v2b replaced v2a's a few hours later, and v2c, v2d and v2e replaced those the next day.*
 
 Roger asked for the students' helpers to be reviewed: "they must be bullet proof and as simple as possible". The tests passed, 59 of 59, but every one of them did what a careful student does. Tried with the slips a student makes, v1u did these things, and v1v does not:
 
@@ -194,12 +194,12 @@ The page was also looked at in light and dark, at desktop and phone widths: noth
 
 | File | What it is |
 |---|---|
-| `PrimeLoader_v2d.html` | The page, built: open this one. About 2.4 MB, all 31 programs inside, checked. |
+| `PrimeLoader_v2e.html` | The page, built: open this one. About 2.4 MB, all 31 programs inside, checked. |
 | `index.html` | Written by the build: sends a browser at `.../prime-loader/` on to the current page, with whatever follows the address (`?data=1`, `?usb=1`), so the book's link never changes. |
-| `loader_template_v2d.html` | The page's source, with slots for the three cores, the catalog, the files and the Data Loader's web address. |
+| `loader_template_v2e.html` | The page's source, with slots for the three cores, the catalog, the files and the Data Loader's web address. |
 | `loader_core_v3.js` | The file work: find the folder, check the lock, plan what to move (`planAdd`: only what is replaced; `planBook`: the book's programs, for one chapter), back up, write, read back; the check of a data file; and the zip reader for the embedded files (every CRC checked). No DOM: the page and the tests share it. |
-| `build_loader_v2d.py` | `python3 build_loader_v2d.py ../starter-pack/HP_Prime_Statistics_Starter_Pack_v23.zip --kit PATH_TO_hp-prime-kit`. Holds the chapter list (from the companion guide's Chapter Plan), each program's one line, and the name to type in Home. Stops if the catalog and the pack disagree, or if the source inside a program's file is not the one in `programs/`, and says how many files are checked. Uses `../data-loader/dl_core_v2.js` for the zip it offers and `usb/prime_usb_v3.js` for the cable. |
-| `tests/test_loader_v2d.js` | The Chromium test: `node tests/test_loader_v2d.js PrimeLoader_v2d.html ../starter-pack/HP_Prime_Statistics_Starter_Pack_v23.zip` (Playwright; about a minute). |
+| `build_loader_v2e.py` | `python3 build_loader_v2e.py ../starter-pack/HP_Prime_Statistics_Starter_Pack_v23.zip --kit PATH_TO_hp-prime-kit`. Holds the chapter list (from the companion guide's Chapter Plan), each program's one line, and the name to type in Home. Stops if the catalog and the pack disagree, or if the source inside a program's file is not the one in `programs/`, and says how many files are checked. Uses `../data-loader/dl_core_v2.js` for the zip it offers and `usb/prime_usb_v3.js` for the cable. |
+| `tests/test_loader_v2e.js` | The Chromium test: `node tests/test_loader_v2e.js PrimeLoader_v2e.html ../starter-pack/HP_Prime_Statistics_Starter_Pack_v23.zip` (Playwright; about a minute). |
 | `usb/` | A real HP Prime on its USB cable, from a web page: the code, a pretend calculator to test it with, and the logs of two real ones. [usb/README.md](usb/README.md). |
 | `tests/idb_handle_probe_v1.js` | Shows the browser fault the test steps round: a folder handle read back from IndexedDB ends Chrome for Testing 153 (see above). |
 

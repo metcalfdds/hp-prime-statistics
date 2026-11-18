@@ -121,7 +121,7 @@ PASS ... Save the details gives a text file named with the date, holding those l
 PASS cable: choosing another chapter afterwards takes away what the page said of the finished load ("Done", the ticks, the bar), which was about other programs; the details stay
 PASS cable: a second load without unplugging (Chapter 5: GaltonBoard, StatDist, TestChooser): the browser's small window is not shown again, the calculator is not told "FD" again, the list starts afresh, the programs are ADDED to the first load's
 PASS cable: no errors in the page
-PASS cable, all the programs to a G1 (15 s against the mock): the 30 that are programs arrive, each the pack's source character for character, in 127,913 reports of 64 bytes, none sent twice; the mock, which stands at 240 reports' worth of an answer, never stood long
+PASS cable, all the programs to a G1 (16 s against the mock): the 30 that are programs arrive, each the pack's source character for character, in 127,913 reports of 64 bytes, none sent twice; the mock, which stands at 240 reports' worth of an answer, never stood long
 PASS ... counted, because the page's notes say it: the 30 programs that travel by cable are 4,028,362 characters, 127,913 reports of a G1 and 7,892 of a G2; none has a CR in it
 PASS ... CentralLimit is said not to have been sent this way, and the Kit's steps are opened for it
 PASS ... and the details stay readable: the page shows at most 1,500 lines of them
@@ -132,7 +132,7 @@ PASS slip: a calculator that does not answer (switched off at the wrong moment, 
 PASS slip, not the student's: a calculator that still says version 01 after the "FD" (other software than the two it was proved on): nothing is sent, nothing about the calculator is changed, and the page points to the Kit and asks for the details
 PASS a program the calculator acknowledges and does not keep (FitCheck): the load stops there; the one before it is ticked, this one crossed, the ones after never sent; the page does not say Done; it says to delete it if it is in the list and to use the Kit for it and the rest
 PASS a program damaged on the way: "What came back is not what was sent", nothing ticked, and the details say where the two part
-PASS slip: the cable pulled out in the middle of the second program, and the browser's write to it never comes back: the page says so within seconds (1.1 s here), counts the first program and no other, and is ready to send again
+PASS slip: the cable pulled out in the middle of the second program, and the browser's write to it never comes back: the page says so within seconds (1.2 s here), counts the first program and no other, and is ready to send again
 PASS ... no errors in the page
 PASS slip: the cable pulled out and the browser says so at once: the same words
 PASS while a load runs: Send is off and Stop is there; leaving the page would be asked about, because the calculator is in the middle of a program
@@ -145,6 +145,11 @@ PASS cable: at a phone's width nothing runs off the side
 PASS without the test address the page opens on the Virtual Calculator, as always
 PASS without the test address the cable is hidden, whatever the browser can do: one way shows, the Kit's, under the Kit's own title, and nothing says "two ways"
 PASS at the test address in a browser that cannot reach a USB device (Firefox, Safari): no cable, no dead button, no "two ways"; the Kit's steps are the main line as before, and no error
+PASS a student's slip, a real HP Prime in a browser that cannot reach it on its cable: one sentence says so and names Chrome and Edge, above the Kit's steps, which are whole and work
+PASS ... and it is not shown for the Virtual Calculator, which needs no cable
+PASS ... in Firefox the sentence names Firefox
+PASS ... and it is not shown where the cable works (Chrome or Edge at the test address): there the two ways show
+PASS ... nor where the cable is not offered (without the test address), in a browser that cannot reach a USB device either: the page is v2d's
 PASS no errors in the page
 
-148 PASS, 0 FAIL
+153 PASS, 0 FAIL
