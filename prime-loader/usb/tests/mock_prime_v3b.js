@@ -1,10 +1,10 @@
-// mock_prime_v3a.js -- a pretend HP Prime on a pretend cable, for the tests of prime_usb_v3a.js and of the Loader that
+// mock_prime_v3b.js -- a pretend HP Prime on a pretend cable, for the tests of prime_usb_v3b.js and of the Loader that
 // uses it.  Roger Metcalf & Claude, 17 Nov 2026.
 //
 // IT IS NOT A CALCULATOR.  By default it does what the author's G2 and G1 did on 17 Nov 2026, as far as the five logs
 // of ../logs/ go (both on firmware build 15751); each line below marked [log] is something one of those logs shows.
 // What the logs do not show has a switch and a default that says so.  Its byte work is written apart from
-// prime_usb_v3a.js (its own checksum, its own framing), so that a slip in one is not hidden by the same slip in the other.
+// prime_usb_v3b.js (its own checksum, its own framing), so that a slip in one is not hidden by the same slip in the other.
 //
 // THE OLD FRAMING [log]
 //   fmt 1           "who are you" (FA) is answered with version 01
@@ -104,7 +104,7 @@ const MockPrime = (function () {
     this.size = this.o.reportSize || (this.o.product === 0x2441 ? 1024 : 64);
     this.fmt = this.o.fmt;         // the version it speaks now
     this.programs = {};            // name -> source text, as stored
-    this.arrived = [];             // {name, layout, framing, reports, bytes, kept, why}
+    this.arrived = [];             // {name, layout, framing, reports, bytes, kept, why, at, quiet}
     this.fds = [];                 // {kind, framing}: each "FD" that came
     this.handled = 0; this.handledNew = 0; this.releases = 0; this.reportsIn = 0; this.reportsOut = 0;
     this.hostAcks = [];            // every acknowledgement the host sent: {ok, seq, pos, id}
@@ -207,6 +207,7 @@ const MockPrime = (function () {
       const id = le(r, 1), total = le(r, 5);
       this.outOld = false;
       this.rx2 = { id: id, total: total, buf: new Uint8Array(total), got: 0, seq: 2, n: 1, asked: -1, acks: 0, ticked: false };
+      this.began2 = Date.now();                                   // when this message's first report came (v3b)
       if (!this.clock) this.arm();                                // its clock runs while a message is coming in, whether or not it has said anything yet
       const take = Math.min(total, cap - 8);
       this.rx2.buf.set(r.subarray(9, 9 + take)); this.rx2.got = take;
@@ -360,6 +361,13 @@ const MockPrime = (function () {
     }
     if (cmd === 0xF7) {
       const rec = { name: null, layout: m[1] === 3 ? 'v3' : 'v1', framing: framing, reports: n, bytes: m.length, kept: false };
+      // v3b: `quiet` is how long the calculator was left alone between one program's arrival and the next one's first
+      // report.  On 18 Nov 2026 the author's G2, sent four programs, would not run two of them until they were
+      // Checked; they are the two that (by the page's pace) had the shortest quiet.  Whether that is why is NOT
+      // known: the mock only measures it, so that a test can say what the page left.
+      const prev = this.arrived.length ? this.arrived[this.arrived.length - 1] : null, now = Date.now();
+      if (prev && prev.at) prev.quiet = (framing === 'new' && this.began2 ? this.began2 : now) - prev.at;
+      rec.at = now;
       this.arrived.push(rec);
       if (m[1] === 3) {
         if (this.o.takeV3 !== true) { rec.why = 'compressed'; return; }

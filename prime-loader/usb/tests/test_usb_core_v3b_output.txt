@@ -75,6 +75,8 @@ PASS E6c a calculator still on its cable that takes nothing for a minute (the G2
 PASS E6d making room on a G2 (ui.remove): the names given are taken off before anything is sent, one that is not there costs nothing, a program of the student's own stays, and the three then go on and verify
 PASS E6d making room on a G1 (ui.remove): the names given are taken off before anything is sent, one that is not there costs nothing, a program of the student's own stays, and the three then go on and verify
 PASS E6e Stop while making room: the load ends there, nothing is sent, and the log says where
+PASS E6f a lull between programs (the G2 of 18 Nov would not run the two programs that had 0.54 s and 0.77 s before the next one began, and ran those that had 0.99 s): each program is given 2 s from its arrival before the next begins, the last needs none, and the log says what each was given
+PASS E6g ... and with no lull asked (as these tests ask, to be quick) the next program begins at once: the mock measures it
 PASS E7 a calculator that still says version 01 after the "FD": "version"; no program is sent and the newer framing is not asked for
 PASS E8 a calculator that answers nothing: "silent", after the 0.6 s allowed; nothing was sent but the question
 PASS E9 the cable pulled in the middle of the second program: the load ends at once, "gone", with the first program done and no failure invented for the second
@@ -87,6 +89,6 @@ PASS F1 all 31 programs onto a pretend G1: each read back the same; 131,683 repo
 PASS F2 all 31 programs onto a pretend G2: each read back the same; 8,125 reports of programs, none sent twice, no word of the clock needed (1.7 s against the mock, which takes a report at once)
 PASS G1 the log of reports: a message's start with its number, size and first twelve bytes; the reports after it only counted, with their numbers; three of a run of one kind and then their count
 PASS G2 after its budget of ordinary lines the rest are counted, and said at the next line of the caller's; a "send again" is written all the same; and the last ones left out can be had
-PASS G3 in 137 lines of two loads' logs: no line shows more than twelve bytes of a message, and the serial number, which the mock sends in its answer to "who are you", is in none, as text or as bytes
+PASS G3 in 141 lines of two loads' logs: no line shows more than twelve bytes of a message, and the serial number, which the mock sends in its answer to "who are you", is in none, as text or as bytes
 
-88 PASS, 0 FAIL
+90 PASS, 0 FAIL

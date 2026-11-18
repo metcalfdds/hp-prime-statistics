@@ -1,4 +1,13 @@
-// prime_usb_v3a.js -- a real HP Prime on its USB cable, from a web page (WebHID).  Roger Metcalf & Claude, 17 Nov 2026.
+// prime_usb_v3b.js -- a real HP Prime on its USB cable, from a web page (WebHID).  Roger Metcalf & Claude, 17 Nov 2026.
+//
+// v3b (18 Nov 2026, 17:05): a lull between programs (opts.lull, 2 s).  Loader v2g sent Chapters 1-3 to the author's G2:
+// all four verified, and two of them, DataLoad and ScatterLab, would not run until they were Checked on the calculator
+// (Run opened the editor); NormExplorer and TestChooser ran at once, as ChiTable had at 15:33.  A GUESS, NOT PROVEN:
+// the calculator compiles a program a moment after it arrives, and the next program's arrival cut that short; the two
+// that needed Check had the shortest time before the next program began (under a second by the page's pace), and
+// ChiTable had had a second.  So the next program now waits until 2 s have passed since the last one arrived; the
+// time the verify takes counts towards it.  The log says how long each program was given.  If a calculator still wants
+// its Check after this, the guess is wrong.
 //
 // v3a (18 Nov 2026, 15:50): one outcome more, 'full'.  On 18 Nov at 15:41 the author's G1, sent all 30 programs by
 // Loader v2d, took 15 (2,104,376 characters), then acknowledged every report of NormExplorer and, asked for it back,
@@ -47,7 +56,7 @@
 // before a request, which is how the G1's answer came to stand unacknowledged.
 // WHAT OF THIS VERSION HAS NOT RUN ON A CALCULATOR: its pacing (77 reports, the acknowledgement, 77 more, with
 // nothing between: the calculators were sent 77 at a time only with 0.7 s between), what it does at a "send again",
-// and load() with one of the book's programs.  The tests run it against tests/mock_prime_v3a.js, which is the two
+// and load() with one of the book's programs.  The tests run it against tests/mock_prime_v3b.js, which is the two
 // calculators as far as five logs go.
 //
 // WHERE EACH FACT NOT FROM THE LOGS COMES FROM (all four MIT; no code of theirs is here, only what they measured or read)
@@ -765,7 +774,8 @@ const PrimeUSB = (function () {
   // also drops one newline at the end of a text file, and that is for the caller to do or not.  What comes back
   // counts as the same if it differs in nothing but its line ends and the empty lines at its end.
   // ui: {log(text), trace(text, at), item(k, state), stop() -> bool}; state is 'send', 'check', 'ok' or 'bad'.
-  // opts: {first, settle, then, budget, keep, patience(chars) -> ms (patienceFor unless a test gives its own)}.
+  // opts: {first, settle, then, budget, keep, patience(chars) -> ms (patienceFor unless a test gives its own),
+  //        lull: ms a program is given, from its arrival, before the next one begins (2,000)}.
   // -> {ok, done: [name], failed: null | {name, why, text}, stopped, gone, info, told, reports, ms}
   //    why: 'silent'  no answer to "who are you" (nothing was sent)
   //         'version' it does not speak version 03 after being told (nothing was sent)
@@ -814,15 +824,23 @@ const PrimeUSB = (function () {
         res.removed = off.slice();
         log('  Done: ' + num(off.length) + ' delete' + (off.length === 1 ? '' : 's') + ' sent.');
       }
+      const lull = opts.lull === undefined ? 2000 : opts.lull;      // see v3b, at the top
+      let arrivedAt = 0;
       for (let k = 0; k < programs.length; k++) {
         if (ui.stop && ui.stop()) { res.stopped = true; log('STOPPED by the Stop button, before ' + programs[k].name + '.'); break; }
         const p = programs[k], src = String(p.source).replace(/\r\n?/g, '\n');
         item(k, 'send');
+        if (arrivedAt) {
+          const had = Date.now() - arrivedAt;
+          if (had < lull) await sleep(lull - had);
+          log('  (' + programs[k - 1].name + ' was given ' + secs2(Date.now() - arrivedAt) + ' before the next program began)');
+        }
         log(p.name + ': ' + num(src.length) + ' characters.');
         let out, back;
         try { out = await link.sendProgram(p.name, src, { layout: 'v1' }); }
         catch (e) { if (isGone(e)) throw e; return fail(p.name, 'unsent', said(e), '  NOT SENT: ' + said(e) + '.', k); }
         res.reports += out.reports;
+        arrivedAt = Date.now();
         log('  Sent ' + num(out.bytes) + ' bytes in ' + reportsText(out.reports) + ', ' + (out.ms / 1000).toFixed(2) + ' s. Acknowledged ' + num(out.acks.length) + ' time' + (out.acks.length === 1 ? '' : 's') +
             (out.backs ? '; ' + num(out.backs) + ' time' + (out.backs === 1 ? '' : 's') + ' a report was sent again' : '') +
             (out.slow.length ? '; the cable stood at ' + out.slow.map(function (x) { return 'report ' + num(x.report) + ' (' + secs(x.ms) + ')'; }).join(', ') : '') +

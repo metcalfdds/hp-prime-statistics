@@ -25,7 +25,7 @@
 // physical Prime G1 or G2 calculator" (Statisticles, in italics, being the book's name for its programs), and the
 // two called the first way and the second way: the same checks, with those words, and three more for the title, the
 // sentence under it and the two names.
-// v2b is v2a with the cable route written again (usb/prime_usb_v3a.js, usb/tests/mock_prime_v3a.js): parts 1 to 12
+// v2b is v2a with the cable route written again (usb/prime_usb_v3b.js, usb/tests/mock_prime_v3b.js): parts 1 to 12
 // are v2a's test, with the page's new names; part 13 is new.  NOTHING HERE TOUCHES A CALCULATOR.
 // v2a is a new page (two questions and one button), so this is a new test, on the scaffolding of test_loader_v1v.js:
 // the browser's folder picker is replaced by one that returns a folder in the browser's private file system (OPFS),
@@ -535,8 +535,8 @@ function check(name, ok, detail) {
   check('opens as a local file without errors', errs3.length === 0 && (await p3.textContent('#summary')) === 'All 31 programs.', errs3);
 
   // ---- 13. the cable, at the page's test address, against a pretend calculator ----
-  // (usb/tests/mock_prime_v3a.js: by default it does what the author's G2 and G1 did on 17 Nov 2026.  Not a calculator.)
-  const MOCK = fs.readFileSync(path.join(__dirname, '..', 'usb', 'tests', 'mock_prime_v3a.js'), 'utf8');
+  // (usb/tests/mock_prime_v3b.js: by default it does what the author's G2 and G1 did on 17 Nov 2026.  Not a calculator.)
+  const MOCK = fs.readFileSync(path.join(__dirname, '..', 'usb', 'tests', 'mock_prime_v3b.js'), 'utf8');
   const PROGRAMS = path.join(__dirname, '..', '..', 'programs');
   const canon = s => s.replace(/\r\n?/g, '\n').replace(/\s+$/, '');
   const repoSource = n => { const f = fs.readdirSync(PROGRAMS).find(x => x.startsWith(n + '_')); return canon(fs.readFileSync(path.join(PROGRAMS, f), 'utf8')); };

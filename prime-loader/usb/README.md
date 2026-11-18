@@ -6,7 +6,7 @@
 
 ## What the calculators did with the Loader (the six logs of 18 November 2026)
 
-All on firmware build 15751; the first four with Loader v2d (whose cable code is `prime_usb_v3.js`), the last two with the first build of v2f (`prime_usb_v3a.js`, longer wait).
+All on firmware build 15751; the first four with Loader v2d (whose cable code is `prime_usb_v3.js`), the last two with the first build of v2f (`prime_usb_v3b.js`, longer wait).
 
 | Log | Calculator, browser | Sent | What happened |
 |---|---|---|---|
@@ -66,7 +66,7 @@ Then that page waited for an answer that did not come, and each repeated acknowl
 
 ## What a calculator does on its own account
 
-Each line is from the two logs of the second test, and `tests/mock_prime_v3a.js` does each by default.
+Each line is from the two logs of the second test, and `tests/mock_prime_v3b.js` does each by default.
 
 - **It acknowledges every 77th report of a message as it arrives** (`FE 01`, the number of the report it wants next, `00`, the room of the reports it has, the message's number), and the whole message with the number of its last report. The room is 1,015 bytes for a G2's first report and 1,023 for each after; 55 and 63 for a G1.
 - **It has a clock.** When the sender stops in the middle of a message, it says where it stands within 0.7 s: the report it wants next and the room of what it has. On the G2 the first such word in a message was a "send again" (`FE 00`), on the G1 an acknowledgement. While nothing is happening it repeats its last acknowledgement with `FF` for the report, every 0.6 s on the G2 and about every second on the G1.
@@ -79,14 +79,14 @@ Each line is from the two logs of the second test, and `tests/mock_prime_v3a.js`
 ## What did not work, and what the pages got wrong
 
 - **A compressed program is not kept**, in either framing, whether the calculator speaks 01 or 03. hp-prime-kit's G2 (firmware 2.4.15515) kept one compressed by zlib at level 1, whose stream begins `78 01`; the browser's begins `78 9C`. Whether that is why is not known. Nothing that loads a calculator here compresses.
-- **The old framing ends at 255 reports.** Not compressed, 20 of the book's 31 programs fit that on a G2 and 11 do not; none fits a G1 (`tests/test_usb_core_v3a.js`, A14).
+- **The old framing ends at 255 reports.** Not compressed, 20 of the book's 31 programs fit that on a G2 and 11 do not; none fits a G1 (`tests/test_usb_core_v3b.js`, A14).
 - The first page **waited without end** (above). Since then every wait is counted once from when it starts, and the browser's `disconnect` ends them all.
 - The second page **stopped after 76 reports** where the calculator acknowledges the 77th, so each 77 reports cost the 0.7 s after which the calculator's clock spoke: 80 s for the G1's largest program.
 - It **gave a G1 3.0 s** to begin an answer that took 3.1.
 - It **went back at every "send again"**, and so, after the G2's clock spoke, sent seven reports a second time, each of which brought the next "send again".
 - It **threw away what was waiting** before a request, which is how the G1's answer came to stand unacknowledged.
 
-`prime_usb_v3a.js` sends 77 reports and waits for the acknowledgement; allows an answer 3 s and 0.04 ms a character to begin (14.6 s for EpiStats); at a "send again" sends ONE report again and listens to what the calculator says to it; and before each request takes any answer that is waiting to its end and acknowledges it.
+`prime_usb_v3b.js` sends 77 reports and waits for the acknowledgement; allows an answer 3 s and 0.04 ms a character to begin (14.6 s for EpiStats); at a "send again" sends ONE report again and listens to what the calculator says to it; and before each request takes any answer that is waiting to its end and acknowledges it.
 
 ## What is known from others, and from whom
 
@@ -116,11 +116,11 @@ Four projects, each under the MIT licence, worked out what travels on the cable 
 
 | File | What it is |
 |---|---|
-| `prime_usb_v3a.js` | What travels on the cable: the messages, the two framings, a `Link` that opens a session (`begin`), sends a program, reads one back and deletes one; `load`, which puts a list of programs on a calculator and reads each back; `Tracer`, which writes the reports that pass as lines of a log; and `HidPort`, which wraps the browser's WebHID device. Each fact is marked with its source, the logs among them. No DOM. |
+| `prime_usb_v3b.js` | What travels on the cable: the messages, the two framings, a `Link` that opens a session (`begin`), sends a program, reads one back and deletes one; `load`, which puts a list of programs on a calculator and reads each back; `Tracer`, which writes the reports that pass as lines of a log; and `HidPort`, which wraps the browser's WebHID device. Each fact is marked with its source, the logs among them. No DOM. |
 | `logs/` | What the two test pages wrote on the author's G2 and G1, 17 Nov 2026: three logs of the first, two of the second. No serial number is in them. |
-| `tests/mock_prime_v3a.js` | A pretend calculator, written apart from `prime_usb_v3a.js`. By default it does what the two calculators did; what the logs do not show has a switch. |
+| `tests/mock_prime_v3b.js` | A pretend calculator, written apart from `prime_usb_v3b.js`. By default it does what the two calculators did; what the logs do not show has a switch. |
 | `tests/kit_reference_v1.py` | Writes hp-prime-kit's own message for every program in `programs/`, for the next test to compare with. |
-| `tests/test_usb_core_v3a.js` | The messages against hp-prime-kit's, byte for byte, and against hp-prime-web's published byte examples; the numbers in the logs; a `Link` and a `load` against the mock; that no wait is without an end; all the book's programs onto a pretend G1 and a pretend G2; the log. |
+| `tests/test_usb_core_v3b.js` | The messages against hp-prime-kit's, byte for byte, and against hp-prime-web's published byte examples; the numbers in the logs; a `Link` and a `load` against the mock; that no wait is without an end; all the book's programs onto a pretend G1 and a pretend G2; the log. |
 | `tests/vc_2026-11-17/` | The test programs on the Virtual Calculator (below). |
 
 The two test pages, their ladders, the first two versions of this code and their tests are in the repository's history: the first at commit `819489a`, the second at `0ca5146`.
@@ -153,7 +153,7 @@ This says the test programs are programs to HP's own compiler, the largest inclu
 
 ```
 python3 tests/kit_reference_v1.py REF          # hp-prime-kit's messages, into a scratch folder
-node tests/test_usb_core_v3a.js REF             # 88 PASS, 0 FAIL   (about a minute and a half)
+node tests/test_usb_core_v3b.js REF             # 88 PASS, 0 FAIL   (about a minute and a half)
 node ../tests/test_loader_v2g.js ../PrimeLoader_v2g.html ../../starter-pack/HP_Prime_Statistics_Starter_Pack_v23.zip     # the cable is its part 13
 ```
 
