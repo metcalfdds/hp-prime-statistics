@@ -1,0 +1,6 @@
+salary	sex	age
+$45,000	Male	34
+$52,500	male	4O
+$61,250	Female	29
+NA	Female	41
+48,000	NA	38

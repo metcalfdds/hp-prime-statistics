@@ -1,5 +1,8 @@
-// loader_core_v1.js -- the Prime Loader's file work: find the Virtual Calculator's folder, move what is on it to a
-// dated backup, and write the chosen programs and data into it.  Roger Metcalf & Claude, 1 Nov 2026.
+// loader_core_v2.js -- the Prime Loader's file work: find the Virtual Calculator's folder, move what is on it to a
+// dated backup, and write the chosen programs and data into it.  Roger Metcalf & Claude.
+// v2 (17 Nov 2026, the review "they must be bullet proof and as simple as possible"): planAdd, for a data file loaded
+//   on its own (only the files about to be replaced are moved; v1 moved every program off the calculator), and
+//   checkHpmat, which looks inside a data file before it is taken.  Everything else is v1's (1 Nov 2026).
 //
 // No DOM here.  The page hands it a FileSystemDirectoryHandle (the folder the student picked, through the browser's
 // File System Access API); the tests hand it a folder in the browser's private file system (OPFS), which has the same
@@ -73,6 +76,29 @@ const LoaderCore = (function () {
       else if (e.kind === 'file' && dataSlots.some(s => s.toLowerCase() === e.name.toLowerCase())) move.push(e);
     }
     return move;
+  }
+
+  // v2: what would move when files are ADDED to what is on the calculator (a data file on its own, with DataLoad):
+  // only the entries about to be replaced, matched by name without regard to capitals.  HP's own apps never.
+  async function planAdd(calc, paths) {
+    const tops = paths.map(p => p.split('/')[0].toLowerCase());
+    const move = [];
+    for (const e of await names(calc)) if (e.name[0] !== '&' && tops.includes(e.name.toLowerCase())) move.push(e);
+    return move;
+  }
+
+  // v2: is this a matrix file the calculator can read?  '' when it is, else the reason as the end of a sentence.
+  // (hp-prime-kit, docs/topics/formats.md, formats.hpmat: bytes 01 00; the type, whose low byte is 14 for real and
+  // 94 for complex numbers; the rank, 2 or 1; rows; columns; then 8 bytes for a real cell, 16 for a complex one.)
+  function checkHpmat(b) {
+    if (b.length < 16) return 'it is too short to be a calculator matrix file';
+    if (b[0] !== 1 || b[1] !== 0 || (b[2] !== 0x14 && b[2] !== 0x94)) return 'it does not begin the way a calculator matrix file does';
+    const v = new DataView(b.buffer, b.byteOffset, b.byteLength);
+    const rank = v.getUint32(4, true), rows = v.getUint32(8, true), cols = v.getUint32(12, true);
+    if (rank !== 1 && rank !== 2) return 'it does not begin the way a calculator matrix file does';
+    if (rows * cols === 0) return 'it holds no numbers';
+    if (16 + (b[2] === 0x94 ? 16 : 8) * rows * cols !== b.length) return 'its size does not match the rows and columns it names (the file may be cut short)';
+    return '';
   }
 
   async function readAll(fileHandle) {
@@ -185,7 +211,7 @@ const LoaderCore = (function () {
     return out;
   }
 
-  return { locate, isRunning, plan, backup, install, unzip, crc32, stamp, names };
+  return { locate, isRunning, plan, planAdd, checkHpmat, backup, install, unzip, crc32, stamp, names };
 })();
 
 if (typeof module !== 'undefined') module.exports = LoaderCore;
