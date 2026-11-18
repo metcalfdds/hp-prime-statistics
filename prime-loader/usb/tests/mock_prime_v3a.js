@@ -53,6 +53,9 @@
 //   deadAfter k     it answers nothing after its k-th message;  deadAfterNew k: after its k-th of the newer framing
 //   busy            the browser cannot open it (another program has it);  none: the browser's list is empty
 //   dieAt 0         it goes off the cable when this many reports have come from the host
+//   stallAt 0       it stays on the cable and takes nothing more when this many reports have come: the browser's write
+//                   to it never comes back, and no "disconnect" is told (the author's G2, 18 Nov 2026, 16:11, at its
+//                   14th program) [log]
 //   muteAt 0        it stays on the cable and says nothing more when this many reports have come
 //   hang false      ... and a write to it afterwards never comes back, as Chrome's did on 17 Nov [log]
 //   stallMs, busyMs what the old framing does at a report too many: the cable stands, then it answers nothing for a while [log]
@@ -96,7 +99,7 @@ const MockPrime = (function () {
       v2: true, ecReply: null, ackEvery: 77, nack: true, tickMs: 600, tickNack: g2, tickOnReport: 0, tickLate: 1, window: 240, needAck: true, oldFlush: true,
       takeV3: false, lagMs: 0, lagPerChar: 0, firstId: 3,
       drop: [], loseAt: 0, cutAt: null, copies: 1, crlf: false, silentF8: false, keepOnDelete: false, deadAfter: null, deadAfterNew: null, room: null,
-      busy: false, none: false, dieAt: 0, muteAt: 0, hang: false }, opts || {});
+      busy: false, none: false, dieAt: 0, muteAt: 0, stallAt: 0, hang: false }, opts || {});
     if (!this.o.version) this.o.version = this.o.product === 0x2441 ? 'V2.060.650' : 'V0.050.640';
     this.size = this.o.reportSize || (this.o.product === 0x2441 ? 1024 : 64);
     this.fmt = this.o.fmt;         // the version it speaks now
@@ -469,6 +472,7 @@ const MockPrime = (function () {
       close: async function () { device.opened = false; mock.closes = (mock.closes || 0) + 1; },
       sendReport: function (id, data) {
         if (mock.unplugged) return mock.o.hang ? new Promise(function () {}) : Promise.reject(new DOMException('Failed to write the report.', 'NotAllowedError'));
+        if (mock.o.stallAt && mock.reportsIn >= mock.o.stallAt) return new Promise(function () {});
         if (!device.opened) return Promise.reject(new DOMException('The device must be opened first.', 'InvalidStateError'));
         const b = data instanceof Uint8Array ? data : new Uint8Array(data.buffer || data);
         mock.lastLength = b.length;

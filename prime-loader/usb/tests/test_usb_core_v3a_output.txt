@@ -72,6 +72,9 @@ PASS E6 a calculator that keeps only the first 30,000 characters: "differs", the
 PASS E6a a calculator with no room left, as the author's G1 on 18 Nov: it takes all of DataLoad and keeps the name only; the page reads it back EMPTY and says "full", AAA is done, CCC is never sent
 PASS E6b a calculator that begins its answer only after 20 s, saying where it stands every 0.6 s meanwhile (the G2 of 18 Nov, 15:49, took 8.0 s for DNAMixLR and more than 14.6 s for EpiStats): with the default wait the program is read back and found the same
 PASS E6c a calculator still on its cable that takes nothing for a minute (the G2 of 18 Nov, 16:11, at its 14th program): "stuck", and the log says it stopped responding, not that it went off the cable
+PASS E6d making room on a G2 (ui.remove): the names given are taken off before anything is sent, one that is not there costs nothing, a program of the student's own stays, and the three then go on and verify
+PASS E6d making room on a G1 (ui.remove): the names given are taken off before anything is sent, one that is not there costs nothing, a program of the student's own stays, and the three then go on and verify
+PASS E6e Stop while making room: the load ends there, nothing is sent, and the log says where
 PASS E7 a calculator that still says version 01 after the "FD": "version"; no program is sent and the newer framing is not asked for
 PASS E8 a calculator that answers nothing: "silent", after the 0.6 s allowed; nothing was sent but the question
 PASS E9 the cable pulled in the middle of the second program: the load ends at once, "gone", with the first program done and no failure invented for the second
@@ -80,10 +83,10 @@ PASS E11 a calculator that hands a program back with CRLF and a last line end: s
 PASS E12 a name the calculator would not take is refused before anything of it is sent: "unsent", with the name
 PASS E13 the log of a load: a "send again" is always in it, however long the message; the ordinary lines beyond the first forty are counted and left out
 PASS E14 ... and when a load fails, the last reports that the log had left out are written after the failure, since those are the ones wanted
-PASS F1 all 31 programs onto a pretend G1: each read back the same; 131,683 reports of programs, none sent twice, no word of the clock needed (2.2 s against the mock, which takes a report at once)
-PASS F2 all 31 programs onto a pretend G2: each read back the same; 8,125 reports of programs, none sent twice, no word of the clock needed (1.8 s against the mock, which takes a report at once)
+PASS F1 all 31 programs onto a pretend G1: each read back the same; 131,683 reports of programs, none sent twice, no word of the clock needed (2.1 s against the mock, which takes a report at once)
+PASS F2 all 31 programs onto a pretend G2: each read back the same; 8,125 reports of programs, none sent twice, no word of the clock needed (1.7 s against the mock, which takes a report at once)
 PASS G1 the log of reports: a message's start with its number, size and first twelve bytes; the reports after it only counted, with their numbers; three of a run of one kind and then their count
 PASS G2 after its budget of ordinary lines the rest are counted, and said at the next line of the caller's; a "send again" is written all the same; and the last ones left out can be had
 PASS G3 in 137 lines of two loads' logs: no line shows more than twelve bytes of a message, and the serial number, which the mock sends in its answer to "who are you", is in none, as text or as bytes
 
-85 PASS, 0 FAIL
+88 PASS, 0 FAIL

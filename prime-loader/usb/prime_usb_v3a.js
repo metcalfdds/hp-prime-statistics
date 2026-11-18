@@ -377,7 +377,7 @@ const PrimeUSB = (function () {
     // for us.  ack: how long the calculator may leave a message where it stands before the message is given up.
     // back: after one report is sent again, how long to listen for what the calculator says to it.  quiet: a word
     // that comes this long after our last report was sent knows of every report we sent.
-    this.pace = { release: 250, stall: 300, ack: 5000, back: 40, quiet: 100 };
+    this.pace = { release: 250, stall: 300, ack: 5000, back: 40, quiet: 100, erase: 300 };
     this.last = null;
   }
 
@@ -746,7 +746,7 @@ const PrimeUSB = (function () {
   // [web], [log]: EB has no answer; ask for the file afterwards, and silence means it is gone.
   Link.prototype.deleteProgram = async function (name, ver) {
     await this.send(deleteMessage(name, ver || 1));
-    await sleep(300);
+    await sleep(this.pace.erase);          // [log] 17 Nov: deletes 0.3 s apart were taken by both calculators; nothing shorter was tried
   };
 
   // ---------------------------------------------------------------- a load: programs onto a calculator, each read back
@@ -777,7 +777,7 @@ const PrimeUSB = (function () {
   //         'differs' what came back is not what was sent
   async function load(link, programs, ui, opts) {
     ui = ui || {}; opts = opts || {};
-    const t0 = Date.now(), res = { ok: false, done: [], failed: null, stopped: false, gone: false, stuck: false, info: null, told: false, reports: 0, ms: 0 };
+    const t0 = Date.now(), res = { ok: false, done: [], failed: null, stopped: false, gone: false, stuck: false, removed: [], info: null, told: false, reports: 0, ms: 0 };
     const tracer = ui.trace ? new Tracer(ui.trace, { budget: opts.budget, keep: opts.keep }) : null;
     const log = function (text) { if (tracer) tracer.mark(); if (ui.log) ui.log(text); };
     const item = function (k, state) { if (ui.item) ui.item(k, state); };
@@ -799,6 +799,21 @@ const PrimeUSB = (function () {
       catch (e) { if (isGone(e)) throw e; return fail(null, 'silent', said(e), 'NO ANSWER: ' + said(e) + '.'); }
       res.info = b.info; res.told = b.told;
       if (b.ver !== 3) return fail(null, 'version', 'version ' + hex2(b.ver), 'IT DOES NOT SPEAK VERSION 03, which the two calculators this route was proved on did once they were told. Nothing was sent.');
+      // Room first (ui.remove: names to take off, the book's programs not in this choice).  A delete has no answer
+      // [web].  [log] 17 Nov: the G2 deleted a program so in the newer framing, the G1 in the OLD framing only; a
+      // delete in the newer framing has NOT yet been seen to work on a G1 (the next log shows it: a G1 that keeps
+      // what should have gone fills up, and the page then says so).  A name that is not there costs nothing.
+      const off = ui.remove || [];
+      if (off.length) {
+        log('Making room: taking off the book\'s programs that are not in this choice, if they are there (' + num(off.length) + '): ' + off.join(', ') + '.');
+        for (let k = 0; k < off.length; k++) {
+          if (ui.stop && ui.stop()) { res.stopped = true; log('STOPPED by the Stop button, while making room.'); return res; }
+          if (ui.removing) ui.removing(k, off.length);
+          await link.deleteProgram(off[k], 3);
+        }
+        res.removed = off.slice();
+        log('  Done: ' + num(off.length) + ' delete' + (off.length === 1 ? '' : 's') + ' sent.');
+      }
       for (let k = 0; k < programs.length; k++) {
         if (ui.stop && ui.stop()) { res.stopped = true; log('STOPPED by the Stop button, before ' + programs[k].name + '.'); break; }
         const p = programs[k], src = String(p.source).replace(/\r\n?/g, '\n');

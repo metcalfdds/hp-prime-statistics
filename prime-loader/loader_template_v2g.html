@@ -8,7 +8,16 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* PrimeLoader v2f (18 Nov 2026, 15:40).  The cable for every student.  At 15:31 and 15:34 Loader v2d put Chapter 12 on
+/* PrimeLoader v2g (18 Nov 2026, 16:50).  Groups, because neither calculator held all 30 programs (the logs of 15:41,
+   15:50, 16:04 and 16:11 in usb/logs/).  Roger, 16:16 to 16:19: "for the Virtual Calculator: load all programs at once;
+   then for a physical G1 or G2 choose 1) Ch 1-3, 2) Ch 4-6, 3) Ch 7--9. 4) Ch 10-12, 5) Ch 13-15, 6) Advanced 1, 7)
+   Advanced 2, 8) Advanced 3" and "we should just make the choice of VIrtual Calculato automatically load all".  So:
+   step 2 for a real HP Prime is a list of eight groups (CAT.groups, made by the build), with no "All the programs";
+   the cable first takes the book's programs that are not in the group off the calculator (Roger: "Yes, take them
+   off"), never one of the student's own; "One chapter" is gone for both calculators (its code stays, unreached); a
+   full calculator and one that stops responding are each said in plain words.  v2f, below, went to the author's PC
+   at 15:59 and wrote the logs of 16:04 and 16:11; it was never published.
+   PrimeLoader v2f (18 Nov 2026, 15:40).  The cable for every student.  At 15:31 and 15:34 Loader v2d put Chapter 12 on
    the author's G2 (Chrome) and G1 (Edge) down the cable, each program read back the same (usb/logs/PrimeLoader_v2d_*),
    and ChiTable ran at once without Check (Roger, 15:33: "program started right up!").  That is the condition set on
    18 Nov (CLAUDE.md), so: cableWanted is true everywhere; the "still being tested" note is a line saying what was
@@ -226,7 +235,11 @@ ol.steps li > p { margin: 2px 0 0; }
       <div class="choice"><label><input type="radio" name="what" id="w_all" value="all" checked>
         <span class="ctitle">All <span id="nall">the</span> programs</span>
         <span class="cwhat">Everything the book uses, in one go.</span></label></div>
-      <div class="choice"><label><input type="radio" name="what" id="w_chapter" value="chapter">
+      <div class="choice" id="c_group" hidden><label><input type="radio" name="what" id="w_group" value="group">
+        <span class="ctitle">A group of chapters</span>
+        <span class="cwhat">A real calculator holds about one group at a time.</span></label>
+        <select id="group" aria-label="The group"><option value="">Choose a group ...</option></select></div>
+      <div class="choice" id="c_chapter" hidden><label><input type="radio" name="what" id="w_chapter" value="chapter">
         <span class="ctitle">One chapter</span>
         <span class="cwhat">Just the programs of the chapter you are on: a short list on the calculator.</span></label>
         <select id="chapter" aria-label="The chapter"><option value="">Choose your chapter ...</option></select></div>
@@ -298,8 +311,7 @@ ol.steps li > p { margin: 2px 0 0; }
       <summary>What Load does</summary>
       <p class="why" style="margin:10px 0 8px">Load checks that the calculator is closed, copies the programs into the calculator's folder, and reads each one back to make sure it arrived whole. It takes a few seconds.</p>
       <p class="why" style="margin:0 0 8px"><b>All the programs</b>, or <b>programs you tick</b>, are added: the programs already on the calculator stay. If one of them has the same name as a program being loaded, it is replaced by this page's copy.</p>
-      <p class="why" style="margin:0 0 8px"><b>One chapter</b> leaves the calculator with that chapter's programs: the book's other programs are moved off first. A program of your own is never moved.</p>
-      <p class="why" style="margin:0">Nothing is ever deleted. Whatever is replaced or moved off is kept in <code>Documents\HP Prime\Loader backups</code>, in a folder named with the date and time. HP's own apps and settings are never touched.</p>
+      <p class="why" style="margin:0">Nothing is ever deleted. Whatever is replaced is kept in <code>Documents\HP Prime\Loader backups</code>, in a folder named with the date and time. HP's own apps and settings are never touched.</p>
     </details>
   </section>
 
@@ -368,7 +380,7 @@ ol.steps li > p { margin: 2px 0 0; }
       <details class="opt">
         <summary>What Send does</summary>
         <p class="why" style="margin:10px 0 8px">Send asks the calculator who it is, sends each program down the cable, and then verifies the download: it reads the copy on the calculator and compares the two, character for character. A program counts as loaded only when the two are the same. The first one that does not stops the sending, and the page says which.</p>
-        <p class="why" style="margin:0 0 8px">The programs are <b>added</b>: programs already on your calculator stay, whichever choice you made in step 2. One with the same name as a program being sent is replaced by this page's copy.</p>
+        <p class="why" style="margin:0 0 8px">For a group, the book's programs that are not in it are taken off the calculator first, to make room; a calculator holds about one group at a time. Programs of your own always stay. One with the same name as a program being sent is replaced by this page's copy.</p>
         <p class="why" style="margin:0">A chapter takes seconds, a little longer on an older calculator (a G1), whose cable carries less at a time; the bar shows how far it is. <b>Stop</b> stops after the program being sent, never in the middle of one.</p>
       </details>
     </div>
@@ -435,7 +447,8 @@ ol.steps li > p { margin: 2px 0 0; }
       <p>If you typed the program's name in the calculator's Home screen instead, type it exactly as listed, capitals included (for example <code>TTESTLABG</code>). Tapping it in the program list is easier.</p>
     </div></details>
     <details><summary>A program I had is gone, or I want an old one back</summary><div>
-      <p>Load never deletes a program. One that it replaced, or that <b>One chapter</b> moved off the Virtual Calculator, is in <code>Documents\HP Prime\Loader backups</code>, in a folder named with the date and time. To get the book's programs back, choose <b>All the programs</b> and click <b>Load</b>. To get back a file from the backup, close the calculator, copy it from there into <code>Documents\HP Prime\Calculators\Prime</code>, and start the calculator.</p>
+      <p><b>On a real HP Prime:</b> to make room, <b>Send to the calculator</b> takes the book's programs that are not in the group you chose off the calculator before it sends the group. To get one back, choose its group in step 2 and send it again. A program of your own is never taken off.</p>
+      <p><b>On the Virtual Calculator:</b> Load never deletes a program. One that it replaced is in <code>Documents\HP Prime\Loader backups</code>, in a folder named with the date and time. To get the book's programs back, click <b>Load</b> again. To get back a file from the backup, close the calculator, copy it from there into <code>Documents\HP Prime\Calculators\Prime</code>, and start the calculator.</p>
     </div></details>
     <details><summary>Can the Connectivity Kit load the Virtual Calculator too?</summary><div>
       <p>Yes. Choose <b>A real HP Prime</b> in step 1 and follow its steps, with one change: start the Virtual Calculator where the steps say to plug the calculator in. The Kit lists it as <b>Virtual Prime</b>.</p>
@@ -509,8 +522,10 @@ function dataNeedsProg() { return dataChosen().length > 0 && !!CAT.programs[DATA
 function chapter() { return CAT.chapters.find(x => String(x.num) === $('chapter').value) || null; }
 // What step 2's choice names, before DataLoad is added for any data.  A chapter brings the which-test flowchart,
 // which the book introduces before Chapter 1 and uses with every chapter.
+function group() { return (CAT.groups || []).find(g => g.id === $('group').value) || null; }
 function chosen() {
   if (state.what === 'all') return NAMES.slice();
+  if (state.what === 'group') { const g = group(); return g ? NAMES.filter(p => g.programs.includes(p)) : []; }
   if (state.what === 'chapter') { const c = chapter(); return c ? NAMES.filter(p => c.programs.includes(p) || p === CAT.always) : []; }
   return NAMES.filter(p => state.picked.has(p));
 }
@@ -551,17 +566,32 @@ function buildList() {
     sel.appendChild(o);
   }
   $('nall').textContent = String(NAMES.length);
+  for (const g of (CAT.groups || [])) {
+    const o = document.createElement('option'); o.value = g.id;
+    o.textContent = g.title + ': ' + g.programs.join(', ');
+    $('group').appendChild(o);
+  }
 }
 document.querySelectorAll('input[name="target"]').forEach(r => r.addEventListener('change', () => { if (r.checked) { state.target = r.value; refresh(); } }));
 document.querySelectorAll('input[name="what"]').forEach(r => r.addEventListener('change', () => { if (r.checked) { state.what = r.value; refresh(); } }));
 $('w_pick').addEventListener('click', () => { listAsked = true; refresh(); });
 // Choosing a chapter in the list is choosing "One chapter": the student need not click the circle too.
 $('chapter').addEventListener('change', () => { if ($('chapter').value) { state.what = 'chapter'; $('w_chapter').checked = true; } refresh(); });
+$('group').addEventListener('change', () => { if ($('group').value) { state.what = 'group'; $('w_group').checked = true; } refresh(); });
+// What goes off a real calculator before a group or a chapter goes on it: the book's other programs (programs only;
+// an app is three files and does not travel by the cable), never one of the student's own (Roger, 18 Nov 2026:
+// "Yes, take them off").
+function takeOff() {
+  if (state.target !== 'real' || (state.what !== 'group' && state.what !== 'chapter')) return [];
+  const keep = new Set(chosen());
+  return keep.size ? NAMES.filter(n => !keep.has(n) && CAT.programs[n].src) : [];
+}
 
 function zipName() {
   if (chosen().length === 0) return 'HP_Prime_data.zip';
   if (state.what === 'all') return 'HP_Prime_all_programs.zip';
   if (state.what === 'chapter') return 'HP_Prime_Chapter_' + chapter().num + '.zip';
+  if (state.what === 'group') return 'HP_Prime_' + group().file + '.zip';
   return 'HP_Prime_programs.zip';
 }
 
@@ -569,9 +599,16 @@ function refresh() {
   // A real HP Prime cannot hold all the book's programs at once: on 18 Nov 2026 the author's G1 was full after 15 of
   // the 30, and his G2 slowed to a stop after 13 (usb/logs/).  So for it there is no "All the programs" (Roger:
   // "Let's forget the 'load all at once'"); the Virtual Calculator keeps it.
+  // Roger, 16:16: "for a physical G1 or G2 choose 1) Ch 1-3 ... 6) Advanced 1, 7) Advanced 2, 8) Advanced 3": the groups
+  // are for a real calculator only, and the Virtual Calculator keeps "All the programs".
   const realNow = state.target === 'real';
   $('w_all').closest('.choice').hidden = realNow;
-  if (realNow && state.what === 'all') { state.what = 'chapter'; $('w_chapter').checked = true; }
+  $('c_group').hidden = !realNow;
+  if (realNow && state.what === 'all') { state.what = 'group'; $('w_group').checked = true; }
+  if (!realNow && state.what === 'group') { state.what = 'all'; $('w_all').checked = true; }
+  // Roger, 16:19: "we should just make the choice of VIrtual Calculato automatically load all": no "One chapter" for
+  // either calculator (its code stays, unused, for the day it is wanted again).
+  if (state.what === 'chapter') { state.what = realNow ? 'group' : 'all'; $(realNow ? 'w_group' : 'w_all').checked = true; }
   const sel = selection(), base = chosen(), data = dataChosen(), auto = dataNeedsProg(), c = chapter(), real = state.target === 'real';
   // step 2's own parts
   $('proglist').hidden = state.what !== 'pick' || (fromDataLoader && state.picked.size === 0 && !listAsked);
@@ -586,8 +623,9 @@ function refresh() {
   let h;
   if (state.what === 'all') h = 'All ' + NAMES.length + ' programs';
   else if (state.what === 'chapter') h = c ? 'Chapter ' + c.num + ', ' + esc(c.title) + ': <b>' + esc(base.join(', ')) + '</b>' : '';
+  else if (state.what === 'group') h = group() ? esc(group().title) + ': <b>' + esc(base.join(', ')) + '</b>' : '';
   else h = base.length ? plural(base.length, 'program') + ' ticked' + (base.length <= 8 ? ': <b>' + esc(base.join(', ')) + '</b>' : '') : '';
-  if (!h && !data.length) h = state.what === 'chapter' ? 'Choose your chapter in the list above.' : (fromDataLoader && $('proglist').hidden) ? 'No data file added yet.' : 'Nothing ticked yet: tick the programs you want below.';
+  if (!h && !data.length) h = state.what === 'chapter' ? 'Choose your chapter in the list above.' : state.what === 'group' ? 'Choose a group in the list above.' : (fromDataLoader && $('proglist').hidden) ? 'No data file added yet.' : 'Nothing ticked yet: tick the programs you want below.';
   else {
     if (!h) h = 'No program chosen';
     if (data.length) h += ', and the data <b>' + dnames + '</b>';
@@ -600,7 +638,9 @@ function refresh() {
   // what it will do to what is already there
   let e = '';
   if (sel.length || data.length) {
-    if (real) e = 'Programs already on your calculator stay there. All the book\'s programs do not fit in a calculator\'s memory at one time: load three or four at a time (one chapter, or a few you tick).';
+    if (real && takeOff().length && usbOn) e = 'To make room, the book\'s programs that are not in your choice are taken off the calculator first, and then these go on. Programs of your own stay. All the book\'s programs do not fit in a calculator\'s memory at one time.';
+    else if (real && takeOff().length) e = 'All the book\'s programs do not fit in a calculator\'s memory at one time, so before these go on, take off the book\'s programs you are not using now: in the calculator\'s Program Catalog, tap a name, then More, then Delete. Programs of your own can stay.';
+    else if (real) e = 'Programs already on your calculator stay there. All the book\'s programs do not fit in a calculator\'s memory at one time, so tick only a few.';
     else if (!canWrite) e = 'Programs already on your calculator stay there.';
     else if (movesBookOff()) e = 'The calculator will list this chapter\'s programs. The book\'s other programs are moved off into a backup folder; programs of your own stay.';
     else e = 'They are added: programs already on the calculator stay.';
@@ -864,12 +904,15 @@ async function usbSend() {
     usbLog.push('Browser: ' + navigator.userAgent);
     usbLog.push('Device: ' + (PrimeUSB.MODELS[d.productId] || 'not a model this page knows') + ' (USB ' + ('000' + d.vendorId.toString(16)).slice(-4).toUpperCase() + ':' + ('000' + d.productId.toString(16)).slice(-4).toUpperCase() +
                 '), "' + (d.productName || '') + '"; reports of ' + port.inSize + ' bytes in and ' + port.outSize + ' out, by ' + port.sizeFrom + '.');
-    usbLog.push('Chosen: ' + (state.what === 'all' ? 'all the programs' : state.what === 'chapter' ? 'Chapter ' + chapter().num : 'programs ticked one by one') + '; ' + plural(programs.length, 'program') + ', ' + PrimeUSB.num(total) + ' characters: ' + names.join(', ') + '.' + (rest.length ? ' Not sent this way: ' + rest.join(', ') + '.' : ''));
+    usbLog.push('Chosen: ' + (state.what === 'all' ? 'all the programs' : state.what === 'chapter' ? 'Chapter ' + chapter().num : state.what === 'group' ? group().title : 'programs ticked one by one') + '; ' + plural(programs.length, 'program') + ', ' + PrimeUSB.num(total) + ' characters: ' + names.join(', ') + '.' + (rest.length ? ' Not sent this way: ' + rest.join(', ') + '.' : ''));
     usbLog.push('');
     $('usblog').textContent = usbLog.join('\n') + '\n';
     const link = new PrimeUSB.Link(port);
     link.progress = (have, of) => { if (phase === 'send' && now >= 0) bar((before + programs[now].source.length * have / of) / total); };
+    const off = takeOff();
     const res = await PrimeUSB.load(link, programs, {
+      remove: off,
+      removing: (k, n) => usbSay('Making room: taking the book\'s other programs off the calculator (' + (k + 1) + ' of ' + n + ') ...'),
       log: text => usbLine(text),
       trace: (text, at) => usbLine('      . ' + text, at),
       stop: () => usbStopNow,
@@ -895,7 +938,8 @@ async function usbSend() {
     } else if (res.gone && res.stuck) {
       usbFail('The calculator stopped responding', 'It took nothing from the page for a minute, which a nearly full calculator does. ' + marked + (first ? esc(first) + ' and the programs after it are not.' : ''),
               ['Unplug the cable. If the calculator does not respond to its keys, switch it off and on again.',
-               'Load three or four programs at a time: in step 2 choose <b>One chapter</b>. All the book\'s programs do not fit in a calculator\'s memory at one time.'], false);
+               'Plug it in again, and click <b>Send to the calculator</b> again.',
+               'If it happens again, make room: in the calculator\'s Program Catalog, take off programs you are not using (tap a name, tap <b>More</b>, then <b>Delete</b>).'], false);
     } else if (res.gone) {
       usbFail('The calculator went off the cable', marked + (first ? esc(first) + ' and the programs after it are not.' : ''),
               ['Was the cable pulled out, or did the calculator switch itself off? Plug it in again and switch it on.', 'Click <b>Send to the calculator</b> again. It sends them all again, which does no harm.'], false);
@@ -910,8 +954,8 @@ async function usbSend() {
     } else if (f.why === 'full') {
       usbFail('The calculator is full', 'It took ' + esc(f.name) + ' in and kept only its name, which is what a calculator with no room left does. ' + marked + esc(f.name) + ' and the programs after it are not.',
               ['On the calculator, press <kbd>Shift</kbd>, then <kbd>Program</kbd>. Tap <b>' + esc(f.name) + '</b> (it shows 0 KB), tap <b>More</b>, then <b>Delete</b>.',
-               'Load three or four programs at a time: in step 2 choose <b>One chapter</b>. All the book\'s programs do not fit in a calculator\'s memory at one time.',
-               'To make room for a new chapter, take off the programs of a chapter you have finished, the same way.'], false);
+               'Make room: take off programs you are not using now, the same way (tap the name, tap <b>More</b>, then <b>Delete</b>).',
+               'Then click <b>Send to the calculator</b> again.'], false);
     } else if (f.why === 'unsent') {
       usbFail(esc(f.name) + ' did not go through', marked + esc(f.name) + ' and the programs after it are not.',
               ['Pull the calculator\'s cable out, push it in again, and click <b>Send to the calculator</b> again.', 'If it stops at the same place, ' + kitWay + '.'], true);
@@ -946,7 +990,8 @@ function usbDone(names, rest, res) {
   const ul = $('usbreport'); ul.innerHTML = '';
   const r = h => { const x = document.createElement('li'); x.innerHTML = h; ul.appendChild(x); };
   r(plural(names.length, 'program') + ' went down the cable' + (names.length <= 12 ? ': ' + esc(names.join(', ')) : '') + '. Each download was then verified: the copy on the calculator is the same, character for character.');
-  r('The programs that were already on the calculator were left where they are. One with the same name as a program sent was replaced by it.');
+  if (res.removed && res.removed.length) r('To make room, the book\'s programs that are not in your choice were taken off first (those that were there). Programs of your own were left where they are. To have another group, choose it in step 2 and click Send again.');
+  else r('The programs that were already on the calculator were left where they are. One with the same name as a program sent was replaced by it.');
   if (rest.length) r('<b>Not sent this way:</b> ' + esc(rest.join(', ')) + ' (an app or data). For ' + (rest.length === 1 ? 'it' : 'those') + ', use the official HP way (2, just below).');
   r('It took ' + (res.ms < 9950 ? (res.ms / 1000).toFixed(1) : Math.round(res.ms / 1000)) + ' seconds.');
   $('usbdone').hidden = false;

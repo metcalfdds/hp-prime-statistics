@@ -33,7 +33,7 @@ function check(name, ok, detail) {
   if (ok) { pass++; console.log('PASS', name); } else { fail++; console.log('FAIL', name, detail === undefined ? '' : detail); }
 }
 // The waits of a test: the mock's clock every 80 ms, and the Link's patience to match.
-const quick = link => { Object.assign(link.pace, { release: 5, stall: 40, ack: 500, back: 25, quiet: 40 }); return link; };
+const quick = link => { Object.assign(link.pace, { release: 5, stall: 40, ack: 500, back: 25, quiet: 40, erase: 5 }); return link; };
 const G1 = 0x1541;
 
 (async () => {
@@ -465,6 +465,21 @@ const G1 = 0x1541;
     mock.stop();
     check('E6c a calculator still on its cable that takes nothing for a minute (the G2 of 18 Nov, 16:11, at its 14th program): "stuck", and the log says it stopped responding, not that it went off the cable',
           !res.ok && res.gone && res.stuck && /THE CALCULATOR STOPPED RESPONDING: the calculator did not take a report within 60 s\./.test(log.join('\n')) && !/WENT OFF THE CABLE/.test(log.join('\n')), JSON.stringify(res) + log.slice(-3).join('|'));
+  }
+  for (const prod of [0x2441, 0x1541]) {
+    const mock = new MockPrime({ tickMs: 80, product: prod }), link = quick(new P.Link(mock.port())), log = [], seen = [];
+    mock.programs.ChiTable = 'EXPORT ChiTable()\nBEGIN\nEND;'; mock.programs.Norm3 = 'EXPORT Norm3()\nBEGIN\nEND;'; mock.programs.MyOwn = 'EXPORT MyOwn()\nBEGIN\nEND;'; mock.programs.AAA = 'old';
+    const res = await P.load(link, three, { log: t => log.push(t), remove: ['ChiTable', 'Norm3', 'NotThere'], removing: (k, n) => seen.push(k + '/' + n) }, { settle: 10 });
+    mock.stop();
+    check('E6d making room on a ' + (prod === 0x2441 ? 'G2' : 'G1') + ' (ui.remove): the names given are taken off before anything is sent, one that is not there costs nothing, a program of the student\'s own stays, and the three then go on and verify',
+          res.ok && res.removed.join() === 'ChiTable,Norm3,NotThere' && seen.join() === '0/3,1/3,2/3' && !('ChiTable' in mock.programs) && !('Norm3' in mock.programs) && mock.programs.MyOwn === 'EXPORT MyOwn()\nBEGIN\nEND;' &&
+          mock.programs.AAA === tiny && Object.keys(mock.programs).sort().join() === 'AAA,CCC,DataLoad,MyOwn' &&
+          /Making room: taking off the book's programs that are not in this choice, if they are there \(3\): ChiTable, Norm3, NotThere\.\n(.*\n)*?  Done: 3 deletes sent\.\n(.*\n)*?AAA: /.test(log.join('\n') + '\n'), JSON.stringify(res.failed) + Object.keys(mock.programs) + log.slice(0, 8).join('|'));
+  }
+  {
+    let n = 0;
+    const L2 = await run({}, three, { remove: ['ChiTable', 'Norm3'], stop: () => n++ >= 1 });
+    check('E6e Stop while making room: the load ends there, nothing is sent, and the log says where', !L2.res.ok && L2.res.stopped && L2.res.done.length === 0 && L2.mock.arrived.length === 0 && /STOPPED by the Stop button, while making room\./.test(L2.text), JSON.stringify(L2.res));
   }
   L = await run({ fdOld: null }, three);
   check('E7 a calculator that still says version 01 after the "FD": "version"; no program is sent and the newer framing is not asked for',

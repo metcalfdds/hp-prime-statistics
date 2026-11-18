@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
-"""build_loader_v2f.py -- assembles PrimeLoader_v2f.html: the page template, the loader's core, the Data Loader's core
+"""build_loader_v2g.py -- assembles PrimeLoader_v2g.html: the page template, the loader's core, the Data Loader's core
 (for its zip writer), the USB core, the chapter list, and every program file from a starter pack, embedded so the
 page works offline.
 
-    python3 build_loader_v2f.py PACK.zip [OUT.html] [--kit PATH]
-v2f (18 Nov 2026, 15:40): the template's v2f, the cable for every student (the G2 and G1 logs of 18 Nov).
+    python3 build_loader_v2g.py PACK.zip [OUT.html] [--kit PATH]
+v2g (18 Nov 2026, 16:50): the template's v2g: groups of chapters for a real HP Prime (CHAPTER_GROUPS below, and the
+advanced programs dealt into three), which the cable sends after taking the book's other programs off; the Virtual
+Calculator takes all the programs with nothing to choose.  prime_usb_v3a.js.
+v2f (18 Nov 2026, 15:40): the template's v2f, the cable for every student (the G2 and G1 logs of 18 Nov).  It went to the author's PC
+at 15:59 and wrote the logs of 16:04 and 16:11, and was never published.
 v2e (18 Nov 2026, 12:30): the template's v2e, which tells a student in Firefox or Safari with a real HP Prime
 that Chrome or Edge can send the programs down the cable.  The same pack and cable code.
 v2d (18 Nov 2026, 04:20 to 04:35): the page template's v2d, in which the two ways are "1) The Statisticles way" and
@@ -160,7 +164,7 @@ KIT = os.environ.get('HPKIT', '/tmp/kit/hp-prime-kit-HEAD')
 if '--kit' in argv:
     i = argv.index('--kit'); KIT = argv[i + 1]; del argv[i:i + 2]
 PACK = argv[0]
-OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v2f.html')
+OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v2g.html')
 SITE = 'https://metcalfdds.github.io/hp-prime-statistics/'
 sys.path.insert(0, KIT)
 from hpkit import program as kitprog            # hp-prime-kit (MIT, JordiRigau/hp-prime-kit)
@@ -241,6 +245,13 @@ for num, title, progs, _ in CHAPTERS:
         assert p in PROGRAMS, (num, p)
 assert ALWAYS_OFFERED in PROGRAMS
 
+# Groups for a real HP Prime (Roger, 18 Nov 2026, 16:16 and 16:18: "for a physical G1 or G2 choose 1) Ch 1-3, 2) Ch 4-6,
+# 3) Ch 7--9. 4) Ch 10-12, 5) Ch 13-15, 6) Advanced 1, 7) Advanced 2, 8) Advanced 3"), because neither calculator
+# held all 30 programs (the G1 full after 15, the G2 stopped after 13: usb/logs/, 18 Nov).  A chapter group is its
+# chapters' programs and the flowchart; the advanced programs (those of no chapter) are dealt into three groups of
+# about the same size, in alphabetical order within each, by this script.
+CHAPTER_GROUPS = [(1, 3), (4, 6), (7, 9), (10, 12), (13, 15)]
+
 # ---- take the files from the pack ----
 zin = zipfile.ZipFile(PACK)
 prefix = 'Copy these into Prime/'
@@ -270,6 +281,7 @@ for k, v in PROGRAMS.items():
 # not as its .hpprgm: hp-prime-kit, docs/topics/usb.md).  The source found there must be the repository's own,
 # character for character, or the build stops.  An app is three files and does not travel this way.
 src_at = {}
+src_len = {}        # the characters each program sends down the cable
 for k, v in PROGRAMS.items():
     if not v[0].endswith('.hpprgm'):
         continue
@@ -283,6 +295,32 @@ for k, v in PROGRAMS.items():
     if packed[v[0]][start:end].decode('utf-16-le').rstrip('\0') != text:
         sys.exit('STOP: the offsets of %s do not give its source' % v[0])
     src_at[k] = [start, end]
+    src_len[k] = len(text)
+
+# The groups (see CHAPTER_GROUPS), sized by the characters each program sends down the cable.
+def _chars(k):
+    return src_len.get(k, 0)
+GROUPS = []
+_in_chapters = set()
+for a, b in CHAPTER_GROUPS:
+    progs = set(ALWAYS_OFFERED for _ in [0])
+    for num, title, p, _ in CHAPTERS:
+        if a <= num <= b:
+            progs |= set(p)
+    _in_chapters |= progs
+    GROUPS.append({'id': 'c%d' % a, 'title': 'Chapters %d\u2013%d' % (a, b), 'file': 'Chapters_%d-%d' % (a, b),
+                   'programs': sorted(progs, key=str.lower)})
+_adv = sorted((k for k in PROGRAMS if k not in _in_chapters), key=lambda k: (-_chars(k), k))
+_bins = [[], [], []]
+for k in _adv:                                   # largest first, each into the lightest group
+    min(_bins, key=lambda g: (sum(_chars(x) for x in g), len(g))).append(k)
+for i, g in enumerate(_bins):
+    GROUPS.append({'id': 'a%d' % (i + 1), 'title': 'Advanced %d' % (i + 1), 'file': 'Advanced_%d' % (i + 1),
+                   'programs': sorted(g, key=str.lower)})
+for g in GROUPS:
+    g['chars'] = sum(_chars(k) for k in g['programs'])
+    assert g['chars'] < 1300000, (g['title'], g['chars'])      # both calculators gave out near 2,000,000 (18 Nov)
+assert sorted(set(k for g in GROUPS for k in g['programs'])) == sorted(PROGRAMS), 'every program is in a group'
 
 buf = io.BytesIO()
 with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as z:
@@ -302,13 +340,14 @@ catalog = {
   'all_checked': all(checked.values()),
   'chapters': [{'num': n, 'title': t, 'programs': p, 'coming': c} for n, t, p, c in CHAPTERS],
   'always': ALWAYS_OFFERED,
+  'groups': GROUPS,
   'data': {k: {'file': v[1], 'what': v[2], 'bytes': len(packed[v[1]])} for k, v in DATA.items()},
   'pack': os.path.basename(PACK),
-  'loader': 'v2f',
+  'loader': 'v2g',
   'pack_sha256': hashlib.sha256(open(PACK, 'rb').read()).hexdigest()[:12],
 }
 
-t = open(os.path.join(HERE, 'loader_template_v2f.html'), encoding='utf-8').read()
+t = open(os.path.join(HERE, 'loader_template_v2g.html'), encoding='utf-8').read()
 import glob as _glob
 _dl = sorted(_glob.glob(os.path.join(HERE, '..', 'data-loader', 'DataLoader_v*.html')),
              key=lambda p: [int(x) if x.isdigit() else x for x in __import__('re').split(r'(\d+)', os.path.basename(p))])
@@ -342,7 +381,7 @@ redirect = ('<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n
             '<link rel="canonical" href="' + SITE + 'prime-loader/' + page + '">\n'
             '<style>body{font:16px/1.5 system-ui,sans-serif;margin:2rem;color:#172033;background:#f6f8fb}'
             '@media (prefers-color-scheme:dark){body{color:#e8edf6;background:#0f1420}a{color:#7d9cff}}</style>\n'
-            '</head>\n<body>\n<!-- Written by build_loader_v2f.py: sends the browser on to the current Prime Loader, so the '
+            '</head>\n<body>\n<!-- Written by build_loader_v2g.py: sends the browser on to the current Prime Loader, so the '
             'address .../prime-loader/ never changes. -->\n'
             '<p>Opening the HP Prime Loader&hellip; If nothing happens, <a href="' + page + '">click here</a>.</p>\n'
             '</body>\n</html>\n')

@@ -1,6 +1,24 @@
 # A real HP Prime on its USB cable, from a web page
 
-**Status, 17 November 2026, late.** That evening the author's G2 and his G1 took test programs of every size the book has straight down their cables from a test page, with no Connectivity Kit, by one route, and each one the test page read back was the same: every size on the G2, and up to 140,000 characters on the G1, whose largest (289,813 characters, the size of EpiStats) went in and was acknowledged and was not read back, because the page stopped waiting too soon (the table below). That route is now in the Prime Loader (`../PrimeLoader_v2e.html`), behind its test address, which ends `?usb=1`. **The Loader's own cable code has no log from a calculator yet**: it paces its sending differently from the test page. On 18 November 2026 the author reported that Loader v2d sent Chapter 12 to his G2 in Chrome and "it seems to have worked fine"; no log of that run was saved, so by this folder's rule it is not yet called tested. Until it has put a chapter on a G2 and on a G1, and a program of that chapter has run, students see only the Connectivity Kit's steps, and those steps stay on the page after that as way 2), "The official HP way".
+**Status, 18 November 2026, evening.** The Prime Loader's own cable code has now run on the author's G2 and G1, and its logs are in `logs/` (the six of 18 November; the table below). **What worked:** Chapter 12, three programs, on the G2 (Chrome, 4.6 s) and on the G1 (Edge, 10.2 s), every download verified, and a program of it ran at once with no Check. **What did not:** all 30 programs at once, on either calculator. The G1 was full after 15 and kept the 16th empty; the G2 answered later and later and stopped at the 14th. So the Loader (`../PrimeLoader_v2g.html`) now sends a real HP Prime one **group** of chapters at a time, takes the book's other programs off first, and says "the calculator is full" or "the calculator stopped responding" in those words. **Not yet seen on a calculator:** v2g itself, and with it a delete in the newer framing on a G1. The Connectivity Kit's steps stay on the page as way 2), "The official HP way".
+
+**Before that, 17 November 2026, late.** The author's G2 and his G1 took test programs of every size the book has straight down their cables from a test page, with no Connectivity Kit, by one route, and each one the test page read back was the same: every size on the G2, and up to 140,000 characters on the G1, whose largest (289,813 characters, the size of EpiStats) went in and was acknowledged and was not read back, because the page stopped waiting too soon (the table below).
+
+## What the calculators did with the Loader (the six logs of 18 November 2026)
+
+All on firmware build 15751; the first four with Loader v2d (whose cable code is `prime_usb_v3.js`), the last two with the first build of v2f (`prime_usb_v3a.js`, longer wait).
+
+| Log | Calculator, browser | Sent | What happened |
+|---|---|---|---|
+| `PrimeLoader_v2d_G2_Chrome_2026-11-18_1532.txt` | G2, Chrome | Chapter 12: ChiTable, FitCheck, TestChooser (441,568 characters) | All three verified. 1,037 reports there and back, 4.6 s. No "send again". Each verify took 0.6, 1.3 and 0.4 s. ChiTable then ran at once from the Program Catalog (Roger: "program started right up!"). |
+| `PrimeLoader_v2d_G1_Edge_2026-11-18_1535.txt` | G1, Edge | Chapter 12 | All three verified. 16,778 reports, 10.2 s. No "send again". The G1 sent each answer in runs of 240 reports and went on at each acknowledgement. |
+| `PrimeLoader_v2d_G1_Chrome_2026-11-18_1541.txt` | G1, Chrome | All 30 | 15 verified (2,104,376 characters, 47 s). The 16th, NormExplorer, was acknowledged in full (5,899 reports, 77 acknowledgements) and came back as a file of 36 bytes: its head and its name, not compressed, and no text. The Program Catalog listed it at 0 KB, and showed 4.35 MB of programs. **A full calculator says nothing; it keeps the name.** |
+| `PrimeLoader_v2d_G2_Chrome_2026-11-18_1550.txt` | G2, Chrome | All 30 | 9 verified. Each verify took longer as the load went on: 0.4 s (AgreeLab), 1.2, 0.6, 0.2, 3.2 (BurrLab), 4.4 (ChiTable, which had taken 0.6 s at 15:32), 3.4, 2.2 (DataLoad, 40,856 characters), 8.0 (DNAMixLR). EpiStats's answer had not begun when the page gave up at 14.6 s. From DataLoad on, a "send again" or two in most programs. |
+| `PrimeLoader_v2f_G2_Chrome_2026-11-18_1604.txt` | G2, Chrome | All 30 | The G2 began this run still sending: pieces of BurrLab's answer from the run before, and "send again: report 02 of message 12" every half second, through the whole load. 9 verified among it; EpiStats stood at 539 of 567 reports. **A calculator left with an answer nobody took keeps offering it**, as the G1 did on 17 November. |
+| `PrimeLoader_v2f_G2_Chrome_2026-11-18_1611.txt` | G2, Chrome, after off and on | All 30 | 13 verified, slower and slower: 0.4 s to verify the first, then 1.7, 1.1, 0.3, 2.8, 3.9, 3.3, 2.0, 7.5, 22 (EpiStats, which the longer wait let through), 9.9, 12, 22 (FitCheck). At the 14th, GaltonBoard, the G2 took one report, said "send again" for the second every half second, and took nothing more; the browser's write stood for 60 s. It was still on its cable. |
+
+Neither calculator holds all 30 of the book's programs: the G1 filled at about 2.1 million characters, and the G2 stopped at about 1.9 million. Why the G2 slows as it fills is not known.
+
 
 Roger, 17 November 2026: "we do need to make some sort of very simple loader to interface somehow with Connectivity Kit to get the programs on a physical calcuator", and then: "the calculator is connected to the computer somehow--do we need the Kit?" At 20:14, with the first log: "the program seems stuck". At 21:51, with the fifth: "took a while for the 140k and 289k characters". At 22:01: "maybe we shoould keep the instructions for the COnnectivity Kit as a backup".
 
@@ -8,7 +26,7 @@ The Virtual Calculator keeps its programs as files in a folder, which is why the
 
 Chrome and Edge let a web page talk to a USB device of the HID class when the user picks the device from the browser's own list (WebHID). An HP Prime is such a device. So a page can send the programs itself.
 
-## What the calculators did (the five logs in `logs/`)
+## What the calculators did with the test pages (the five logs of 17 November 2026)
 
 A G2 (`03F0:2441`, reports of 1,024 bytes) and a G1 (`03F0:1541`, reports of 64 bytes), both on firmware build 15751, from Chrome 157 and Edge 157 on Windows.
 
@@ -83,9 +101,11 @@ Four projects, each under the MIT licence, worked out what travels on the cable 
 
 ## What is not known yet
 
-- **Whether the Loader's own sending works on a calculator**: 77 reports, the acknowledgement, 77 more, with no pause between. The calculators have been sent 77 reports at a time only with 0.7 s between.
-- **Whether a program that arrives this way runs without a Check.** The Loader's last words say what to do if one does not.
-- **Whether the 0.4 s between a program's last acknowledgement and the request for it back can be shorter.** It is 12 s of a load of 30 programs. No shorter gap has been tried.
+- **Whether a delete in the newer framing works on a G1.** On 17 November the G2 deleted a program so, and the G1 deleted one in the old framing only. v2g's "making room" sends its deletes in the newer framing to both. If a G1 does not take them, it fills up after a group or two, and the page then says the calculator is full.
+- **Whether deletes can go faster than 0.3 s apart.** Nothing shorter has been tried; 26 of them are 8 s of a load.
+- **Why the G2 answers later as it fills, and what it does when it has no room.** It stopped taking reports; it did not keep an empty program as the G1 did.
+- **Whether a calculator that was left with an answer nobody took can be set right from the page.** On 18 November it took switching the G2 off and on.
+- **Whether the 0.4 s between a program's last acknowledgement and the request for it back can be shorter.** No shorter gap has been tried.
 - **Other firmware.** Both calculators are on build 15751. A calculator that still says version 01 after the `FD` is sent nothing, and the page points to the Kit.
 - **An app and a data file.** CentralLimit is three files in a folder, and a matrix is not a program; nobody reports sending either this way. They stay with the Kit.
 - **A calculator left in the middle of a message** by a page that was closed while sending. The Loader stops only between two programs, and asks before the page is left while it is sending.
@@ -107,10 +127,12 @@ The two test pages, their ladders, the first two versions of this code and their
 
 ## The Loader's cable route
 
-`../PrimeLoader_v2e.html` shows it only at the test address (`.../prime-loader/?usb=1`), in a browser that has WebHID, for "A real HP Prime". There the step is called "Two ways to load *Statisticles* onto a physical Prime G1 or G2 calculator", and its two ways are "1) The *Statisticles* way: straight down the USB cable" and "2) The official HP way: the Connectivity Kit", whose steps are folded below the first (Roger's names, 18 November 2026; [../README.md](../README.md) has his words and the sentence the page puts under the title).
+`../PrimeLoader_v2g.html` shows it to every student in a browser that has WebHID, for "A real HP Prime". There the step is called "Two ways to load *Statisticles* onto a physical Prime G1 or G2 calculator", and its two ways are "1) The *Statisticles* way: straight down the USB cable" and "2) The official HP way: the Connectivity Kit", whose steps are folded below the first (Roger's names, 18 November 2026; [../README.md](../README.md) has his words and the sentence the page puts under the title).
 
-- **Send to the calculator** asks the browser for the calculator (its small window, the first time), opens the session as above, and sends each program of the choice, then asks for it back and compares. A program counts as loaded only when it came back the same; the first that does not ends the load, and the page says which programs are on the calculator and what to do.
-- The programs are added. Nothing is deleted from a calculator.
+- **A group first.** Step 2 offers eight groups of programs, none over about 1.2 million characters. **Making room:** before the group goes, the page sends a delete (`EB`, the name, no answer) for each of the book's programs that is not in it, 0.3 s apart. It never names a program that is not the book's.
+- **Send to the calculator** asks the browser for the calculator (its small window, the first time), opens the session as above, and sends each program of the choice, then verifies the download: it asks for the program back and compares. A program counts as loaded only when the two are the same; the first that is not ends the load, and the page says which programs are on the calculator and what to do. It gives the calculator 30 s and 0.1 ms a character to begin its answer (59 s for EpiStats), since the G2 took 22 s over one.
+- **A program that comes back empty** is "full": the calculator had no room and kept the name. **A report that stands for a minute** with no "disconnect" from the browser is "stopped responding".
+- Programs ticked one by one are added, and nothing is taken off for them.
 - CentralLimit and data files are named as not travelling this way, and the Kit's steps open for them.
 - **Stop** takes effect between two programs.
 - **What passed on the cable** is the log: the page's version, the browser, the calculator's model and report size, the choice, what each step did, and a line for each report that starts a message, acknowledges or controls, with the first twelve bytes of a message at most; the reports that carry a message on are counted. After forty ordinary lines in one step the rest are counted and left out; a "send again" is always written; and when a load fails, the last thirty lines that were left out are written after the failure. **Save the details** writes it to a file. It does not hold the calculator's serial number: the code never reads it, and it lies in the last sixteen of the 108 bytes of the answer to "who are you", of which the log shows six.
@@ -127,12 +149,12 @@ The smallest and the largest of the first test's programs (`ZZUSBA`, 300 charact
 
 This says the test programs are programs to HP's own compiler, the largest included. It says nothing about the cable.
 
-## Tests (17 November 2026, late; all against the mock)
+## Tests (18 November 2026; all against the mock)
 
 ```
 python3 tests/kit_reference_v1.py REF          # hp-prime-kit's messages, into a scratch folder
-node tests/test_usb_core_v3a.js REF             # 82 PASS, 0 FAIL   (about 40 s)
-node ../tests/test_loader_v2e.js ../PrimeLoader_v2e.html ../../starter-pack/HP_Prime_Statistics_Starter_Pack_v23.zip     # the cable is its part 13
+node tests/test_usb_core_v3a.js REF             # 88 PASS, 0 FAIL   (about a minute and a half)
+node ../tests/test_loader_v2g.js ../PrimeLoader_v2g.html ../../starter-pack/HP_Prime_Statistics_Starter_Pack_v23.zip     # the cable is its part 13
 ```
 
 What a pass means: the messages are the ones hp-prime-kit builds, byte for byte, for all 31 programs, and the ones hp-prime-web's tests expect; the requests and the deletes begin with the bytes the two calculators answered; the positions and the reports' numbers are the ones in the logs; the code and the mock, which were written apart, agree on the route; the calculator's clock speaking in the middle of a message, a report lost on the way, an answer that takes 3.3 s to begin, an answer left standing and a calculator left standing by an earlier page are each survived; no wait is without an end; and every one of the book's programs goes onto a pretend G1 (131,683 reports for the 31 texts in `programs/`; 127,913 for the 30 that the Loader sends, CentralLimit being an app) and a pretend G2 (8,125; 7,892) and comes back the same. What a pass does not mean: that a calculator agrees. The mock is the two calculators as far as five logs go.
