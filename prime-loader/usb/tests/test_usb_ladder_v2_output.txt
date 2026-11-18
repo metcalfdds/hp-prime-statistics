@@ -1,0 +1,46 @@
+PASS P1 size 3 is DataLoad's length and size 5 EpiStats's, the smallest and the largest of the 31 programs in programs/
+PASS P2 a test program is exactly the length asked for, every time the same text
+PASS P3 it is comment lines and one function, the function last, so that a program cut short does not compile
+PASS P4 route C's two programs fill exactly 254 and 255 reports, of a G2 and of a G1, and one character more would need one report more (254 reports of 1024: 129,910 characters; 255 reports of 1024: 130,421 characters; 254 reports of 64: 7,990 characters; 255 reports of 64: 8,021 characters)
+PASS P5 compressed, the five test programs are 1, 5, 19, 63, 127 reports of a G2; the largest compresses a little worse than EpiStats itself (101), so it is the harder case
+PASS P6 the table of the page: three cells for route C and five for each other
+PASS S1 G2, the leading reading: C comes back at a few lines, at 254 reports and at 255
+PASS S1 A (old framing, compressed) is not kept at first, though told "FD", and the person is asked to look for ZZUSBA
+PASS S1 E carries a few lines in the newer framing; D is kept once the mock is told "FD" there, and climbs to 289,813 characters
+PASS S1 the result leads with the largest size arriving, names each route that carried it, and says what "FD" did
+PASS S1 once the newer framing has raised the version, A is tried again in the OLD framing, as on hp-prime-kit's G2, and there it is kept, to the largest size; the result says it was the second try
+PASS S1 the old framing is asked again at the end and answers; the test's programs are off the calculator
+PASS S1 the log shows what the calculator sent: its control report, its acknowledgements with their positions, how each answer began
+PASS S1 ... and never the serial number
+PASS S1 nothing but the four test programs was ever sent, and the mock had no error of its own
+PASS S2 G1 (64-byte reports), the leading reading: C at 254 and 255 reports (7,990 and 8,021 characters); D to 289,813 characters in 2,061 reports
+PASS S2 the mock stood after 76 reports of its long answers until it was acknowledged, and the log says so once; after that the page acknowledged in time
+PASS S3 a calculator no "FD" moves: D is not kept, the person is asked about ZZUSBD too, and the sizes climb NOT compressed in the newer framing, to 289,813 characters in 567 reports
+PASS S3 all four "FD" were sent, the short one of the old framing last of all, and each is in the result
+PASS S3 a calculator that listens to nothing in the newer framing until it is told "FD": who it is and the few lines of E go unanswered first; after "FD" it says who it is, D is kept, E is tried once more and kept, and D climbs to the top
+PASS S4 a calculator that takes "FD" in the old framing: A is kept and climbs to 289,813 characters there; the person is asked only to press a key
+PASS S4 the same on a G1: the sizes that would need more than 255 reports are not sent, and the table and the result say how many they would have been
+PASS S4 a calculator that keeps a compressed program only when the report "01" follows: found at the few lines, and every later size is sent with one
+PASS S4 a calculator that speaks 03 from the start, as hp-prime-kit's did: A is kept with no "FD" sent in the old framing
+PASS S4 a calculator that only the short "FD" of the old framing moves: that is tried last of all, A is then kept there, and the result says which "FD" did it
+PASS S5 a calculator that keeps 254 reports and not 255, holding the cable: C2 is OK, C3 fails as "the program sent before", and the log says where the cable stood
+PASS S5 ... its first request afterwards has no answer, as on the G2; the test asks again, finds the calculator answering, and goes on: D still climbs to the top
+PASS S5 a calculator whose old framing stops lower still: nothing is sent in it that needs more reports than it has kept (here the first test's 10)
+PASS S6 a calculator without the newer framing: said after one message, and the rest of that part left out; the old framing still answers
+PASS S6 a calculator that no longer answers the old framing once the newer is open: the result says so
+PASS S7 a calculator that stops answering during the old framing: the test ends there, sends nothing more, and names what may still be on it
+PASS S7 a calculator that stops answering in the newer framing: that part ends, the old framing is asked, and nothing is called deleted on the strength of silence
+PASS S7 a calculator that goes off the cable (it switched itself off on 17 Nov): the test ends at once, in 3.8 s all told, says so, and keeps what it had found
+PASS S7 off the cable before it says who it is: nothing was sent, and the result says that
+PASS S7 a calculator that never answers: nothing is sent, and the result asks whether it is on and whether the Kit is closed
+PASS S8 a calculator that repeats its acknowledgements every 20 ms and keeps no compressed program (17 Nov, where the first page stood still): the test runs to its end, in 8.3 s
+PASS S8 a G1 that acknowledges every single report of 9,201: the log stays a log (633 lines), and says what it left out
+PASS S9 a calculator that keeps programs and answers no request (hp-prime-kit's G2): nothing is read back, the person finds ZZUSBA in the list, and the result says it WAS kept
+PASS S9 a person who does not answer: the log says "no answer", and the test goes on
+PASS S9 Stop, pressed early: the test ends, says it was stopped, and takes its program off the calculator first
+PASS S9 a calculator on which the delete does nothing: each program is named as STILL there, once, with how to delete it by hand
+PASS S9 a G1 that sends each file three times: every size still reads back the same
+PASS S9 a calculator that hands a program back with other line ends: counted as the same, and the log says once that it differs so
+PASS S9 a calculator that stores only the first 30,000 characters: the first size past that fails as "differs", with where
+
+44 PASS, 0 FAIL

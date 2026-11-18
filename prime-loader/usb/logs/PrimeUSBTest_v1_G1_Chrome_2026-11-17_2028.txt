@@ -1,0 +1,57 @@
+PrimeUSBTest v1 (ladder v1), Tue Nov 17 2026 20:27:10 GMT-0600 (Central Standard Time)
+Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36
+Device: HP Prime G1 (USB 03F0:1541), "Prime Graphing Calculator"; reports of 64 bytes in and 64 out, by the calculator.
+Identify: firmware build 15751, "V0.050.640".
+
+---- test started 20:27:12 ----
+    0.0  Asking the calculator who it is ...
+    0.0  It answered: firmware build 15751, "V0.050.640"; 108 bytes of information, reply version 01.
+
+    0.0  THE OLD FRAMING. First the smallest program, each way: A = compressed, with the report 01 after it; B = compressed, nothing after it; C = not compressed.
+    0.0    Way A, step 1: 300 characters (a few lines).
+    0.7      Sent 331 bytes in 6 reports, 0.00 s on the cable.
+    3.6      Asked for it back with F8 01, the name ending in a NUL: no answer.
+    6.1      Asked for it back with F8 03, the name ending in a NUL: no answer.
+    8.6      Asked for it back with F8 01, no NUL: no answer.
+   11.1      Asked for it back with F8 03, no NUL: no answer.
+   11.1    Way B, step 1: 300 characters (a few lines).
+   11.5      Sent 324 bytes in 6 reports, 0.00 s on the cable.
+   14.4      Asked for it back with F8 01, the name ending in a NUL: no answer.
+   17.0      Asked for it back with F8 03, the name ending in a NUL: no answer.
+   19.5      Asked for it back with F8 01, no NUL: no answer.
+   22.0      Asked for it back with F8 03, no NUL: no answer.
+   22.0    Way C, step 1: 300 characters (a few lines).
+   22.4      Sent 622 bytes in 10 reports, 0.00 s on the cable.
+   22.8      Asked for it back with F8 01, the name ending in a NUL: the same program came back (10 reports, not compressed, reply version 01; it began F7 01 00 00 02 6A 06 0C 62 18 5A 00 ...).
+   22.8      Asked for it back with F8 03, the name ending in a NUL: the same program came back (10 reports, not compressed, reply version 01; it began F7 01 00 00 02 6A 06 0C 62 18 5A 00 ...).
+   22.8    This calculator answers F8 01, the name ending in a NUL: that is how the rest is read back.
+   22.8    passed over a file named "ZZUSBC"
+   22.8    passed over a file named "ZZUSBC"
+   22.8    passed over a file named "ZZUSBC"
+   22.8    passed over a file named "ZZUSBC"
+   25.3    Way A, step 1, asked for again with F8 01, the name ending in a NUL: no answer.
+   27.8    Way B, step 1, asked for again with F8 01, the name ending in a NUL: no answer.
+
+   27.8  UP THE LADDER, each way that passed step 1.
+   27.8    Way C, step 2: 8,269 characters (the largest program hp-prime-kit sent).
+   28.3      Sent 16,560 bytes in 263 reports, 0.04 s on the cable.
+   28.7        try 1 of 6: what came back differs: 300 characters against 8,269 sent, the first difference at character 42 (it is the program of the step before, whole: the new one was not kept).
+   30.7        try 2 of 6: what came back differs: 300 characters against 8,269 sent, the first difference at character 42 (it is the program of the step before, whole: the new one was not kept).
+   32.7        try 3 of 6: what came back differs: 300 characters against 8,269 sent, the first difference at character 42 (it is the program of the step before, whole: the new one was not kept).
+   34.7        try 4 of 6: what came back differs: 300 characters against 8,269 sent, the first difference at character 42 (it is the program of the step before, whole: the new one was not kept).
+   36.8        try 5 of 6: what came back differs: 300 characters against 8,269 sent, the first difference at character 42 (it is the program of the step before, whole: the new one was not kept).
+   38.8        try 6 of 6: what came back differs: 300 characters against 8,269 sent, the first difference at character 42 (it is the program of the step before, whole: the new one was not kept).
+   38.8      NOT THE SAME: what came back differs: 300 characters against 8,269 sent, the first difference at character 42 (it is the program of the step before, whole: the new one was not kept).
+   38.8    passed over a report that begins 00 F7 01 00 00 02 6A 06 0C 62 18 5A ...
+   38.8    passed over a report that begins 01 00 74 00 68 00 65 00 20 00 55 00 ...
+   38.8    passed over a report that begins 02 65 00 20 00 74 00 6F 00 20 00 64 ...
+
+   38.8  TAKING ZZUSBA, ZZUSBB, ZZUSBC OFF AGAIN (EB 01).
+   40.6    ZZUSBA: deleted (a request for it now has no answer).
+   42.4    ZZUSBB: deleted (a request for it now has no answer).
+   44.2    ZZUSBC: deleted (a request for it now has no answer).
+
+   44.2  THE NEWER FRAMING (way D: compressed, in the newer framing; PrimeDev; the Connectivity Kit's framing).
+   44.3    Asked for the newer framing (FF EC).
+   44.4    Way D, step 1: 300 characters (a few lines).
+   44.8      Sent 324 bytes in 6 reports, 0.01 s on the cable. The calculator said: ok report 6 position 370.

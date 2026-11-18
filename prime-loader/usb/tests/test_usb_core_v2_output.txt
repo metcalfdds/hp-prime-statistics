@@ -1,0 +1,72 @@
+PASS A1 the checksum is CRC-16/XMODEM: "123456789" gives 31C3
+PASS A2 delete "ZZT_TEST" is hp-prime-web's example, byte for byte
+PASS A3 the older layout of a program is hp-prime-web's example, byte for byte
+PASS A4 a request for "HI", its name ending in a NUL, is hp-prime-web's example, byte for byte
+PASS A5 a request for "SELFTEST" in version 03 with no NUL begins as hp-prime-kit's did: F8 03 00 00 00 14 06 10 91 6E
+PASS A6 SELFTEST's uncompressed part is 2,304 bytes beginning 06 10 98 D2, as a G2 sent it (hp-prime-kit)
+PASS A7 its message begins F7 03, the stream's length plus 4, then 00 09 00 00 and a zlib stream (78)
+PASS A8 all 31 programs: the uncompressed part is hp-prime-kit's, byte for byte (SHA-256), checksum included
+PASS A9 all 31: the message's two lengths are right and its stream unpacks to that part
+PASS A10 all 31: hp-prime-kit's message is cut into hp-prime-kit's reports, byte for byte
+PASS A11 all 31: hp-prime-kit's message reads back to the program's name and source, checksum good
+PASS A12 all 31: the older layout reads back to the same name and source
+     reports a program of a G2: compressed by this browser's zlib 17 to 101 (hp-prime-kit's level 1: 21 to 129); not compressed 80 to 567; not compressed, 11 of the 31 take more than 255 reports (AnovaLab, BayesTree, BurrLab, ChiTable, DNAMixLR, EpiStats, FitCheck, NormExplorer, PowerViz, RankLab, StatDist), and the largest of the other 20 takes 254
+PASS A13 no program needs more than 255 reports of a G2 compressed, so compressed every one fits the old framing
+PASS A14 not compressed, 20 of the 31 fit 255 reports of a G2 and 11 do not; none fits 255 reports of a G1 (63 bytes each)
+PASS A15 normalizeSource: CRLF and CR become LF, and one newline at the end is dropped (hp-prime-kit's rule)
+PASS A16 names: letters, digits and "_", a letter or "_" first
+PASS B1 old framing: 301 reports, numbered 00 to FE and then 00 again, never FF
+PASS B2 old framing: the pieces put together are the message
+PASS B3 old framing: a one-byte message is one report of two bytes
+PASS B4 newer framing: 01, the message number and the size low byte first, then 1,015 bytes; then 02, 03 ... with 1,023
+PASS B5 newer framing: a long message's reports are numbered 01, then 02 to FD, then 02 again (hp-prime-emulator's reading of the Kit), never 00, FE or FF
+PASS B6 an acknowledgement is FE 01, the report, 00, the position, the message number
+PASS B7 a G1's 64-byte reports: 63 bytes a report
+PASS B8 a position is the room of the reports taken: 1,015 after one report of a G2 and 370 after six of a G1, as the two calculators said on 17 Nov
+PASS B9 "the newest version I speak": PrimeDev's seven bytes, and the two of its table
+PASS B10 the old framing's most is 255 reports and the window 76
+PASS C1 identify: build 15751, the text, 108 bytes, version 01, as the G2 answered on 17 Nov
+PASS C2 the serial number is nowhere in what identify returns
+PASS C3 ready: the calculator says Y
+PASS C4 old framing, not compressed: one report, kept; read back with F8 01 and a NUL, the same text, not compressed, checksum good
+PASS C5 asked with F8 03, the mock answers with F7 01 all the same, as both calculators did
+PASS C6 with no NUL after the name the mock stays silent: no answer, reported after 0.3 s and not later
+PASS C7 compressed, old framing, to a calculator that speaks version 01: sent, not kept, nothing comes back (17 Nov, both calculators)
+PASS C8 exactly 255 reports, numbered 00 to FE: kept, and read back the same in 255
+PASS C9 one report more, 256: not kept, and the program before is what comes back (17 Nov: 274 of the G2, 263 of the G1)
+PASS C10 a calculator that holds the cable at the report too many: the send says where it stood (report 256) and for how long; the next request has no answer, the one after has the old program
+PASS C11 delete: the program is gone from the mock, and a request for it is met with silence
+PASS C12 "FD" to the default mock in the old framing: nothing of its own comes back, and it still speaks 01
+PASS C13 a calculator that takes the short "FD" in the old framing: the long one changes nothing, the short one is answered and it speaks 03; DataLoad compressed is then kept, and comes back compressed in 17 reports
+PASS C14 newer framing: asked for with FF EC 00 00 00 00 00 00, and the mock's control report is handed back for the log
+PASS C15 newer framing: identify answers, and the answer was acknowledged with the room of its one report, 1,015
+PASS C16 newer framing, not compressed: acknowledged once with position 1,015, kept, read back the same
+PASS C17 newer framing, compressed, while it speaks 01: acknowledged and NOT kept, as on 17 Nov
+PASS C18 after "FD" in the newer framing the mock answers it and speaks 03; EpiStats compressed (101 reports) is kept and comes back the same, compressed
+PASS C19 ... and at its window of 76 reports, where this mock says nothing, the Link waited and then went on: the count is handed back
+PASS C20 ... and the mock, which stops after 76 reports until it is acknowledged, was acknowledged at 76 and at the end, and sent nothing twice
+PASS C21 the second time the Link acknowledges at 76 without being waited for
+PASS C22 a G1's 64-byte reports, newer framing: EpiStats not compressed is 9,201 reports, past the numbers' turn many times; kept, and read back the same
+PASS C23 a calculator that acknowledges every 76 reports: the Link never goes on unacknowledged
+PASS C24 a calculator that acknowledges on a clock: the Link waits at its window for the clock, and the program arrives
+PASS C25 asked for report 40 again, the Link sends from there and the program arrives whole
+PASS C26 a calculator that sends without waiting to be acknowledged: read back the same, with no pause
+PASS C27 a calculator that sends each file three times (the G1 sent one several times): after a listen the next answer is the right one, and every copy was acknowledged
+PASS C28 a calculator without the newer framing: no acknowledgement, named as such, after 0.4 s
+PASS C29 a calculator that no longer answers the old framing once the newer is open: "no answer within 0.3 s"
+PASS C30 reports that come a second time are dropped, counted, and the message is whole
+PASS C31 a report missing: the Link asks for it once ("FE 00" and its number), drops what came out of turn, and puts the message together when it is sent again
+PASS D1 newer framing: acknowledgements arriving every 20 ms do not lengthen the wait for an answer: none in 0.4 s, said after 402 ms
+PASS D2 old framing: the same, with 27 reports that were not the answer: "no answer within 0.4 s", after 408 ms, and it says how many others came
+PASS D3 old framing: a reply that begins and then only control reports come: "the reply stopped", 0.3 s after its last report (318 ms)
+PASS D4 a calculator that goes off the cable in the middle of a program: the send ends at once with "Gone", and so does whatever is tried next
+PASS D5 HidPort: a report goes out at its full size, 1,024 bytes, padded
+PASS D6 HidPort: when the browser says the calculator has gone, a write that never comes back and a read that is waiting both end at once with "Gone"
+PASS D7 HidPort: with no word from the browser, a write that never comes back ends at its own limit: "did not take a report within 0.1 s"
+PASS D8 HidPort: a write the browser refuses is a calculator that has gone, in the browser's own words
+PASS E1 the trace of all the sessions above (24,498 reports) never holds the serial number, as text or as bytes
+PASS E2 no line of it shows more than twelve bytes of a report
+PASS E3 an information reply is shown by its six-byte head alone, in either framing
+PASS E4 the mock ran without an error of its own
+
+69 PASS, 0 FAIL

@@ -31,7 +31,7 @@ Roger, after the review of that evening: "i'm thinking we need to make this proc
 
 A phone, a computer that is not Windows, and a browser too old to unpack the programs each get a notice at the top. A "Something not working?" section covers a missing Virtual Calculator, opening the page in Edge, no HP Prime folder, "the calculator looks open", "Syntax Error", a program that is gone, and the Kit for the Virtual Calculator.
 
-**Straight down the cable, without the Kit: in the page, and switched off.** The page can send a program to a real HP Prime itself (WebHID), read it back, and compare. That has not been proved on a calculator, so it shows only at the page's test address (`?usb=1`): [usb/README.md](usb/README.md) has what is known, what is not, and the test page for a real calculator.
+**Straight down the cable, without the Kit: in the page, and switched off.** The page can send a program to a real HP Prime itself (WebHID), read it back, and compare. It shows only at the page's test address (`?usb=1`). On 17 November 2026, late, a test page ran on a G2 and a G1: a program sent not compressed arrived and came back the same, and a program sent compressed, **which is the way this panel sends**, was kept by neither. So the panel as it stands would stop at its first program and say so. It is left unchanged until a second test says what to send: [usb/README.md](usb/README.md) has what the calculators did, what is not known, and that test.
 
 ### What v2a was tested with
 

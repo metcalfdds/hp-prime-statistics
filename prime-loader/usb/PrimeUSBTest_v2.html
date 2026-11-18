@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HP Prime USB test 2</title>
+<style>
+/* PrimeUSBTest v2 (17 Nov 2026, night).  Roger: "the calculator is connected to the computer somehow--do we need the
+   Kit?"  The first page ran on his G2 and his G1 that evening and stood still at its last step ("the program seems
+   stuck"): it waited for an answer with no end to the wait.  This one cannot: every wait has one end, and the
+   calculator going off the cable ends them all.  It asks what the first run left open, and writes down every report
+   the calculator sends.  It is for the author and for an instructor with a calculator to spare, not for students.
+   The colours are the Prime Loader's. */
+:root {
+  --paper: #f6f8fb; --surface: #ffffff; --ink: #172033; --muted: #5a6478; --line: #d9dfea;
+  --accent: #003cc8; --frame: #e04000; --good: #008c3c; --warn-bg: #fff3e8; --good-bg: #e9f7ef; --bad-bg: #fde9e4;
+  --accent-soft: #e6edff;
+  --body: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1420; --surface: #172033; --ink: #e8edf6; --muted: #9aa6bc; --line: #2b3650;
+    --accent: #7d9cff; --frame: #ff8a55; --good: #43d081; --warn-bg: #3a2717; --good-bg: #13301f; --bad-bg: #3d1c16;
+    --accent-soft: #1f2d52; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1420; --surface: #172033; --ink: #e8edf6; --muted: #9aa6bc; --line: #2b3650;
+  --accent: #7d9cff; --frame: #ff8a55; --good: #43d081; --warn-bg: #3a2717; --good-bg: #13301f; --bad-bg: #3d1c16;
+  --accent-soft: #1f2d52; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { background: var(--paper); color: var(--ink); font: 16px/1.5 var(--body); }
+main { max-width: 980px; margin: 0 auto; padding: 28px 16px 48px; display: grid; gap: 20px; }
+header h1 { font: 600 2rem/1.15 var(--body); margin: 0 0 6px; }
+header p { margin: 0 0 6px; max-width: 74ch; }
+.step { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 18px 20px; display: grid; gap: 12px; }
+.step > h2 { font: 600 1.2rem/1.2 var(--body); margin: 0; display: flex; align-items: center; gap: 10px; }
+.stepnum { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
+           border: 2px solid var(--frame); color: var(--frame); font: 600 0.95rem var(--body); flex: none; }
+.why { color: var(--muted); font-size: 0.92rem; margin: 0; max-width: 78ch; }
+.why b { color: var(--ink); }
+ol.steps { margin: 0; padding-left: 1.4em; display: grid; gap: 8px; max-width: 78ch; }
+button { font: 500 0.95rem var(--body); border-radius: 8px; padding: 8px 14px; cursor: pointer;
+         border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; padding: 12px 22px; font-size: 1.05rem; }
+:root[data-theme="dark"] button.primary { color: #0f1420; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) button.primary { color: #0f1420; } }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+button:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.status { margin: 0; font-weight: 500; max-width: 78ch; }
+.status.ok { color: var(--good); }
+.status.bad { color: var(--frame); }
+.panel { border-radius: 8px; padding: 12px 14px; margin: 0; display: grid; gap: 8px; }
+.panel.warn { background: var(--warn-bg); }
+.panel.done { background: var(--good-bg); }
+.panel h3 { margin: 0; font: 600 1.05rem var(--body); }
+.panel p { margin: 0; max-width: 78ch; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 0.9rem; }
+th, td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; }
+thead th { font-weight: 600; background: var(--accent-soft); }
+tbody th { font-weight: 500; min-width: 190px; }
+td { font-family: var(--mono); font-size: 0.82rem; min-width: 104px; }
+td.ok { background: var(--good-bg); }
+td.bad { background: var(--bad-bg); }
+td.busy { background: var(--accent-soft); }
+td.skip { color: var(--muted); }
+td .cap { display: block; font-family: var(--body); color: var(--muted); font-size: 0.78rem; }
+td .mark { font-weight: 700; }
+textarea { width: 100%; height: 320px; font: 0.8rem/1.45 var(--mono); border: 1px solid var(--line); border-radius: 8px;
+           padding: 10px; background: var(--surface); color: var(--ink); white-space: pre; }
+pre.result { margin: 0; white-space: pre-wrap; font: inherit; max-width: 82ch; }
+code { font-family: var(--mono); font-size: 0.9em; background: var(--accent-soft); padding: 0 4px; border-radius: 4px; }
+kbd { font: 500 0.85em var(--mono); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--surface); }
+footer { color: var(--muted); font-size: 0.85rem; display: grid; gap: 6px; max-width: 84ch; }
+footer a, .step a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>HP Prime USB test 2</h1>
+    <p>This page tries whether a web page can put a program on a <b>real HP Prime</b> through its USB cable, with <b>no Connectivity Kit</b>, and read it back to see that it arrived whole.</p>
+    <p><b>This is the second test.</b> The first ran on a G2 and a G1 on 17 November 2026. It found that a program travels and comes back the same when it is sent <b>not compressed</b>, up to 80 reports of the G2; that a <b>compressed</b> program was not kept; and then the page stood still. This one asks what that left open, and it cannot stand still: every wait in it has an end.</p>
+    <p class="why">The page is for the book's author, or for an instructor with a calculator to spare. It is not for students: they should use the <a href="https://metcalfdds.github.io/hp-prime-statistics/prime-loader/">HP Prime Loader</a>.</p>
+  </header>
+
+  <section class="panel warn" id="nohid" hidden>
+    <h3>This browser cannot talk to a USB device</h3>
+    <p id="nohidp">Open this page in <b>Microsoft Edge</b> or <b>Google Chrome</b> on the Windows computer the calculator is plugged into. Firefox and Safari do not let a web page reach a USB device, and neither does a phone.</p>
+  </section>
+
+  <section class="step" aria-labelledby="s0">
+    <h2 id="s0"><span class="stepnum">1</span>Before you start</h2>
+    <ol class="steps">
+      <li><b>Back the calculator up first, if it holds anything you would miss.</b> HP's Connectivity Kit can make the backup.
+        <p class="why">The test writes four test programs of its own and deletes them again. But a calculator that freezes may need its reset hole, which can cost what is in its memory.</p></li>
+      <li><b>Close HP's Connectivity Kit.</b>
+        <p class="why">Windows gives a USB device to one program at a time. While the Kit is open, this page cannot reach the calculator.</p></li>
+      <li><b>Turn the calculator on, leave it at its Home screen, and plug it into this computer with its USB cable.</b></li>
+      <li><b>Just before you click Run, press the <kbd>Home</kbd> key on the calculator.</b>
+        <p class="why">A calculator switches itself off after about five minutes without a key. The test takes two or three, and half way through it asks you to press a key once more.</p></li>
+    </ol>
+  </section>
+
+  <section class="step" aria-labelledby="s1">
+    <h2 id="s1"><span class="stepnum">2</span>Connect</h2>
+    <div class="row">
+      <button type="button" class="primary" id="connect">Connect to the calculator</button>
+      <button type="button" id="disconnect" hidden>Disconnect</button>
+    </div>
+    <p class="why">The browser opens a small window that lists the calculator. Click its name, then click <b>Connect</b>. The browser asks every time, so that no page can reach a device behind your back.</p>
+    <p class="status" id="cstatus" role="status" aria-live="polite"></p>
+  </section>
+
+  <section class="step" aria-labelledby="s2">
+    <h2 id="s2"><span class="stepnum">3</span>Run the test</h2>
+    <div class="row">
+      <button type="button" class="primary" id="run" disabled>Run the test</button>
+      <button type="button" id="stop" disabled>Stop</button>
+    </div>
+    <p class="why">The test tries four routes, each with a program of a few lines first. A route that works climbs toward the size of the book's largest program (EpiStats, 289,813 characters). It takes two or three minutes; do not unplug the calculator while it runs.</p>
+    <p class="why">On the calculator it writes four programs at most, named <b>ZZUSBC</b>, <b>ZZUSBA</b>, <b>ZZUSBE</b> and <b>ZZUSBD</b>, and deletes them at the end. It reads, changes and deletes nothing else.</p>
+    <p class="status" id="rstatus" role="status" aria-live="polite"></p>
+    <div class="panel warn" id="ask" hidden>
+      <h3 id="askh">Please look at the calculator</h3>
+      <p id="askp"></p>
+      <div class="row"><button type="button" id="askyes">Yes</button><button type="button" id="askno">No</button></div>
+    </div>
+    <div class="panel warn" id="pause" hidden>
+      <h3>Please press a key on the calculator</h3>
+      <p>Press the <kbd>Home</kbd> key on the calculator, then click <b>Continue</b>. (It keeps the calculator from switching itself off during the second half of the test.)</p>
+      <div class="row"><button type="button" class="primary" id="pausego">Continue</button></div>
+    </div>
+    <div class="scroll">
+      <table id="grid" aria-label="The four routes, and the test program at each step of each">
+        <tbody id="gridbody"></tbody>
+      </table>
+    </div>
+    <div class="panel done" id="result" hidden>
+      <h3>What the test found</h3>
+      <pre class="result" id="resulttext"></pre>
+    </div>
+  </section>
+
+  <section class="step" aria-labelledby="s3">
+    <h2 id="s3"><span class="stepnum">4</span>Send the log</h2>
+    <p class="why">The log is what tells us what to build next. It holds what was sent and what came back, in numbers; it does not hold the calculator's serial number, or anything from the calculator but the test programs and how its answers begin. <b>Save it and attach the file to your chat with Claude</b>, whatever the test found, failures most of all.</p>
+    <div class="row">
+      <button type="button" id="save" disabled>Save the log</button>
+      <button type="button" id="copy" disabled>Copy the log</button>
+      <span class="status" id="lstatus" role="status"></span>
+    </div>
+    <textarea id="log" readonly aria-label="The log of the test" spellcheck="false"></textarea>
+  </section>
+
+  <footer>
+    <p>What travels on the cable was worked out and published by others, and this page is written from what they measured and read: <a href="https://github.com/JordiRigau/hp-prime-kit">hp-prime-kit</a> (Jordi Rigau), <a href="https://github.com/APie357/hp-prime-web">hp-prime-web</a> (APie357), <a href="https://github.com/BeatSkip/PrimeDev">PrimeDev</a> (Oscar Spierings) and <a href="https://github.com/golba98/hp-prime-emulator">hp-prime-emulator</a> (golba98), each under the MIT licence. None of their code is here. The page is from <a href="https://github.com/metcalfdds/hp-prime-statistics">hp-prime-statistics</a>, by Roger Metcalf, written with Claude (Anthropic). It is not from HP, and HP has not looked at it.</p>
+    <p id="verline"></p>
+  </footer>
+</main>
+
+<script>
+// prime_usb_v2.js -- a real HP Prime on its USB cable, from a web page (WebHID).  Roger Metcalf & Claude, 17 Nov 2026.
+//
+// WHAT HAS RUN ON A CALCULATOR (logs/, 17 Nov 2026: the author's G2 and his G1, both on firmware build 15751, from
+// Chrome and Edge 157 on Windows, with prime_usb_v1.js).  These lines are marked [log] below.
+//   * The old framing, and the information request, answered with version 01 by both calculators.
+//   * A program sent as "F7 01", not compressed, and read back with "F8 01" or "F8 03", the name ending in a NUL: the
+//     same came back at 1, 17 and 80 reports of a G2 and at 10 reports of a G1.  The answer was "F7 01" both times.
+//   * NOT kept: the same layout in 274 reports of a G2 (the cable stood for 49 s on the way) and in 263 of a G1.
+//   * NOT kept: a program sent compressed, "F7 03", in the old framing, with or without the report "01" after it.
+//   * A delete, "EB 01".
+//   * The newer framing: "FF EC" was taken, and a message in it was acknowledged with a position of 1,015 after one
+//     report of a G2 and 370 after six of a G1, which is the room of those reports and not the message's length.
+//     The compressed program in it was not kept.  v1 then waited without end for an answer, because every repeated
+//     acknowledgement started its wait again; v2's waits each have one end, whatever arrives meanwhile.
+// EVERYTHING ELSE is still a reading of somebody else's measurements, marked with its source, and the second test
+// page (PrimeUSBTest_v2.html) is there to try it.
+//
+// WHERE EACH FACT COMES FROM (all four MIT; no code of theirs is here, only what they measured or read)
+//   [kit]  JordiRigau/hp-prime-kit, docs/topics/usb.md and hpkit/usb.py.  One G2 on firmware 2.4.15515, from Windows,
+//          3 to 5 Nov 2026.  Its G2 answered the information request with version 03 and kept a program sent as
+//          "F7 03", compressed, in the old framing; it had been used with HP's Connectivity Kit just before.
+//   [web]  APie357/hp-prime-web, docs/PROTOCOL.md.  One G2, 9 and 10 Nov 2026, old framing: "F7 01", "F8 01" with the
+//          name ENDING IN A NUL, "EB 01".
+//   [pd]   BeatSkip/PrimeDev (Oscar Spierings), PrimeWeb/Frames and Utility/MessageUtils.cs.  The newer framing, and
+//          the bytes of a message "FD 01 00 00 00 01 03" that it calls the newest protocol version.
+//   [emu]  golba98/hp-prime-emulator, docs/reverse-engineering and docs/device.  A reading of HP's Connectivity Kit
+//          2.4.2 r15751 as data: the Kit asks "00 FA", then sends "FF EC", and the calculator's answer chooses a
+//          mode; in the first mode a message's reports are numbered 01, then 02 to FD and 02 again, at most 76 are
+//          sent ahead of an acknowledgement, and there is a retry after 500 ms.  Its own G1 kept a program of 15,926
+//          bytes in the old framing (254 reports) and not one of 16,284 (259).
+//
+// No DOM here.  The page hands Link a port ({reportSize, send, read, poll, drain}); HidPort wraps a WebHID device, and
+// the tests hand it the mock.
+
+'use strict';
+
+const PrimeUSB = (function () {
+
+  const VENDOR = 0x03F0;                                                   // [kit] usb.device; [web]
+  const MODELS = { 0x2441: 'HP Prime G2', 0x1541: 'HP Prime G1', 0x0441: 'HP Prime G1 (early firmware)' };   // [web], [pd]
+  const FILTERS = Object.keys(MODELS).map(function (p) { return { vendorId: VENDOR, productId: Number(p) }; });
+  const F7 = 0xF7, F8 = 0xF8, F9 = 0xF9, FA = 0xFA, FD = 0xFD, EB = 0xEB, READY = 0xFF, YES = 0x59, PROGRAM = 0x06;
+  const MAX_MESSAGE = 16 * 1024 * 1024;                                    // more than this in one reply is a misread length
+  const OLD_MOST = 255;                                                    // [log], [emu]: see framesLegacy
+  const WINDOW = 76;                                                       // [emu]
+
+  // ---------------------------------------------------------------- bytes
+  function cat() {
+    let n = 0;
+    for (let i = 0; i < arguments.length; i++) n += arguments[i].length;
+    const out = new Uint8Array(n);
+    let o = 0;
+    for (let i = 0; i < arguments.length; i++) { out.set(arguments[i], o); o += arguments[i].length; }
+    return out;
+  }
+  function u32be(n) { return [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255]; }
+  function u32le(n) { return [n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255]; }
+  function rdU32be(b, o) { return ((b[o] << 24) | (b[o + 1] << 16) | (b[o + 2] << 8) | b[o + 3]) >>> 0; }
+  function rdU32le(b, o) { return (b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (b[o + 3] << 24)) >>> 0; }
+  function utf16le(s) {
+    const b = new Uint8Array(s.length * 2);
+    for (let i = 0; i < s.length; i++) { const c = s.charCodeAt(i); b[2 * i] = c & 255; b[2 * i + 1] = c >> 8; }
+    return b;
+  }
+  function fromUtf16le(b) {
+    const n = b.length >> 1, parts = [];
+    for (let i = 0; i < n; i += 8192) {
+      const m = Math.min(n, i + 8192), codes = new Array(m - i);
+      for (let j = i; j < m; j++) codes[j - i] = b[2 * j] | (b[2 * j + 1] << 8);
+      parts.push(String.fromCharCode.apply(null, codes));
+    }
+    return parts.join('');
+  }
+  function hex(b, n) {
+    const m = Math.min(b.length, n || b.length), out = [];
+    for (let i = 0; i < m; i++) out.push((b[i] < 16 ? '0' : '') + b[i].toString(16).toUpperCase());
+    return out.join(' ') + (m < b.length ? ' ...' : '');
+  }
+  function hex2(n) { return (n < 16 ? '0' : '') + n.toString(16).toUpperCase(); }
+  function num(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function secs(ms) { return (ms / 1000).toFixed(ms < 9950 ? 1 : 0) + ' s'; }
+  // CRC-16, polynomial 1021, starting from 0 ("XMODEM"): [kit] usb.program-message; [web].
+  function crc16(b, from, to) {
+    let c = 0;
+    for (let i = from || 0, e = to === undefined ? b.length : to; i < e; i++) {
+      c ^= b[i] << 8;
+      for (let k = 0; k < 8; k++) c = (c & 0x8000) ? ((c << 1) ^ 0x1021) & 0xFFFF : (c << 1) & 0xFFFF;
+    }
+    return c;
+  }
+  // The text as the Connectivity Kit stores it: LF line ends, and no newline after the last line.  [kit] program.py
+  function normalizeSource(t) {
+    const s = String(t).replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    return s.charAt(s.length - 1) === '\n' ? s.slice(0, -1) : s;
+  }
+  // [kit] takes letters, digits and "_", up to 127 characters; [web] wants a letter or "_" first.  Both rules here.
+  function validName(n) { return /^[A-Za-z_][A-Za-z0-9_]{0,62}$/.test(n); }
+
+  // ---------------------------------------------------------------- zlib, by the browser's own streams
+  async function pipe(bytes, ts) {
+    const w = ts.writable.getWriter();
+    w.write(bytes).catch(function () {});
+    w.close().catch(function () {});
+    return new Uint8Array(await new Response(ts.readable).arrayBuffer());
+  }
+  function deflate(b) { return pipe(b, new CompressionStream('deflate')); }       // 'deflate' is the zlib format
+  function inflate(b) { return pipe(b, new DecompressionStream('deflate')); }
+
+  // ---------------------------------------------------------------- messages
+  // [kit] usb.program-message, read from a G2's own message: the part that is compressed is
+  //   type 06, the name's length in bytes, a checksum low byte first, the name, the source, 00 00
+  // (name and source UTF-16, low byte first), and the checksum is taken over F7 03, that part's length as four bytes
+  // big-endian, and the part itself with its checksum bytes at 0.  [pd] HpAppDir.cs builds an app's the same way.
+  function innerV3(name, source) {
+    const nm = utf16le(name);
+    if (nm.length > 255) throw new Error('the name is too long');
+    const inner = cat([PROGRAM, nm.length, 0, 0], nm, utf16le(source), [0, 0]);
+    const crc = crc16(cat([F7, 0x03], u32be(inner.length), inner));
+    inner[2] = crc & 255; inner[3] = crc >> 8;
+    return inner;
+  }
+  // The message: F7 03, the compressed part's length plus 4 (big-endian), the uncompressed length (low byte first),
+  // and the zlib stream.  [kit]
+  async function programV3(name, source) {
+    const inner = innerV3(name, source), stream = await deflate(inner);
+    return cat([F7, 0x03], u32be(stream.length + 4), u32le(inner.length), stream);
+  }
+  // The older layout, nothing compressed: F7 01, a length (big-endian), type, name length, checksum, name, source.
+  // The checksum is taken over all but the last six bytes, its own two at 0, and no NUL follows the source.
+  // [web]; [log]: both calculators kept it.
+  function programV1(name, source) {
+    const nm = utf16le(name);
+    if (nm.length > 255) throw new Error('the name is too long');
+    const body = cat([PROGRAM, nm.length, 0, 0], nm, utf16le(source));
+    const msg = cat([F7, 0x01], u32be(body.length), body);
+    const crc = crc16(msg, 0, msg.length - 6);
+    msg[8] = crc & 255; msg[9] = crc >> 8;
+    return msg;
+  }
+  // F8 asks for a file and EB deletes one: cmd, version, length, type, name length, checksum (over all but the last
+  // six bytes), name.  [web]: the name of a request must end in a NUL, counted in its length; a delete's must not.
+  // [log]: both hold on build 15751.
+  function named(cmd, ver, name, nul) {
+    const nm = nul ? cat(utf16le(name), [0, 0]) : utf16le(name);
+    if (nm.length > 255) throw new Error('the name is too long');
+    const msg = cat([cmd, ver], u32be(4 + nm.length), [PROGRAM, nm.length, 0, 0], nm);
+    const crc = crc16(msg, 0, msg.length - 6);
+    msg[8] = crc & 255; msg[9] = crc >> 8;
+    return msg;
+  }
+  function requestMessage(name, ver, nul) { return named(F8, ver || 1, name, nul !== false); }
+  function deleteMessage(name, ver) { return named(EB, ver || 1, name, false); }
+  // "The newest version of the messages that I speak is 03."  [pd] names the command (MAX_PROT_VER, FD) and holds, as
+  // the first message of a session, the seven bytes of the 'long' form; its table of commands gives the two bytes of
+  // the 'short' one.  Nobody has written down what a calculator does with either.  NOT MEASURED.
+  function maxVersionMessage(kind) { return kind === 'short' ? Uint8Array.of(FD, 0x03) : Uint8Array.of(FD, 0x01, 0, 0, 0, 0x01, 0x03); }
+
+  // ---------------------------------------------------------------- framing
+  // The old framing: a report is a sequence number and up to cap bytes; the number starts at 00 and counts up, FE is
+  // followed by 00, and FF is never a sequence number.  [web], from hplp; [emu]: the Connectivity Kit's own old-framing
+  // code counts the same way.  [log], [emu]: a message of more than 255 reports was nevertheless not kept by a G2
+  // (274), a G1 (263) or [emu]'s G1 (259), and one of 254 was; so OLD_MOST is 255 until a calculator says otherwise.
+  function framesLegacy(msg, cap) {
+    const out = [];
+    let seq = 0, o = 0;
+    do {
+      const piece = msg.subarray(o, o + cap), r = new Uint8Array(1 + piece.length);
+      r[0] = seq; r.set(piece, 1); out.push(r);
+      o += piece.length;
+      seq = seq === 0xFE ? 0 : seq + 1;
+    } while (o < msg.length);
+    return out;
+  }
+  // The newer framing: the first report is 01, a message number and the message's size (each four bytes, low byte
+  // first), then up to cap - 8 bytes; the reports after it are a sequence number and up to cap bytes.  [pd], [kit].
+  // The numbers run 02 to FD and then 02 again.  [emu]
+  function framesV2(msg, id, cap) {
+    if (msg.length > MAX_MESSAGE) throw new Error('this message is ' + num(msg.length) + ' bytes, more than this page sends as one');
+    const out = [], first = cap - 8;
+    out.push(cat([0x01], u32le(id), u32le(msg.length), msg.subarray(0, first)));
+    let seq = 2;
+    for (let o = first; o < msg.length; o += cap) { out.push(cat([seq], msg.subarray(o, o + cap))); seq = seq === 0xFD ? 2 : seq + 1; }
+    return out;
+  }
+  // What an acknowledgement's position counts: the room of the reports taken, 1,015 for a G2's first and 1,023 for
+  // each after it (55 and 63 for a G1).  [log]: 1,015 after one report of a G2, 370 after six of a G1.
+  function roomAfter(k, cap) { return k < 1 ? 0 : (cap - 8) + (k - 1) * cap; }
+  function reportsAt(pos, cap) { return pos < cap - 8 ? 0 : 1 + Math.floor((pos - (cap - 8)) / cap); }
+  // An acknowledgement: FE, 01 (or 00 for "send again"), a sequence number, 00, a position and the message number.
+  // [pd], [kit]; [log]: the calculators' own are laid out so.
+  function ackV2(seq, pos, id, ok) { return cat([0xFE, ok === false ? 0 : 1, seq, 0], u32le(pos), u32le(id)); }
+  const V2_OPEN = Uint8Array.of(0xFF, 0xEC, 0, 0, 0, 0, 0, 0);          // [pd], [kit] usb.newer-framing, [emu]
+  const RELEASE = Uint8Array.of(0x01);                                     // [kit] the report that followed every send
+
+  // ---------------------------------------------------------------- what the calculator sends
+  // The information reply: the build number two bytes low byte first, 36 bytes from the end; ten characters 32 from
+  // the end ("V2.060.650" on a G2 and "V0.050.640" on a G1, whatever the firmware: [log], [emu]).  The serial number
+  // is 16 from the end, and it is not read.  [kit] identify; [web]
+  function parseInfo(body) {
+    const n = body.length;
+    if (n < 36) throw new Error('the calculator answered with ' + n + ' bytes of information, and at least 36 were expected');
+    let v = '';
+    for (let i = n - 32; i < n - 22 && body[i] !== 0; i++) v += String.fromCharCode(body[i]);
+    return { build: body[n - 36] | (body[n - 35] << 8), version: v.replace(/[^\x20-\x7e]/g, '?') };
+  }
+  // A file from the calculator, in either layout.  -> {ver, type, name, data, text, compressed, crcOk}
+  async function parseFile(msg) {
+    if (msg.length < 10 || msg[0] !== F7) throw new Error('not a file: it begins ' + hex(msg, 8));
+    const strip = function (s) { return s.replace(/\u0000+$/, ''); };
+    // [kit]: after the six-byte head, the uncompressed length (low byte first) and a zlib stream, which starts 78.
+    if (msg.length > 12 && msg[10] === 0x78 && ((msg[10] << 8) | msg[11]) % 31 === 0) {
+      let inner = null;
+      try { inner = await inflate(msg.subarray(10)); } catch (e) { inner = null; }
+      if (inner && inner.length >= 4) {
+        if (inner[0] === F7) {                       // [web]'s other reading: a whole old-layout message inside
+          const f = await parseFile(inner); f.compressed = true; return f;
+        }
+        const nl = inner[1], crc = inner[2] | (inner[3] << 8), z = inner.slice();
+        z[2] = 0; z[3] = 0;
+        const data = inner.subarray(4 + nl);
+        return { ver: msg[1], type: inner[0], name: strip(fromUtf16le(inner.subarray(4, 4 + nl))), data: data,
+                 text: strip(fromUtf16le(data)), compressed: true, lengthOk: inner.length === rdU32le(msg, 6),
+                 crcOk: crc16(cat([F7, msg[1]], u32be(z.length), z)) === crc };
+      }
+    }
+    const nl = msg[7], crc = msg[8] | (msg[9] << 8), z = msg.slice();
+    z[8] = 0; z[9] = 0;
+    const data = msg.subarray(10 + nl);
+    return { ver: msg[1], type: msg[6], name: strip(fromUtf16le(msg.subarray(10, 10 + nl))), data: data,
+             text: strip(fromUtf16le(data)), compressed: false, lengthOk: rdU32be(msg, 2) + 6 === msg.length,
+             crcOk: crc16(z, 0, z.length - 6) === crc };
+  }
+
+  // One report, for a log: what kind it is and a line about it.  Only a report that starts a message has any of its
+  // content shown, twelve bytes of it at most; the serial number is in the last sixteen of 108.
+  // -> {kind: 'start' | 'more' | 'ack' | 'control', seq, key, text}
+  function describe(r, v2) {
+    const s = r[0];
+    if (s === 0xFF) return { kind: 'control', key: 'c', text: 'a control report: ' + hex(r.subarray(0, 12)) };
+    if (s === 0xFE && r.length >= 12 && r[1] <= 1 && r[3] === 0) {
+      const id = rdU32le(r, 8);
+      return { kind: 'ack', key: 'a' + id + (r[1] ? '' : 'n'), seq: r[2], ok: r[1] === 1, pos: rdU32le(r, 4), id: id,
+               text: (r[1] ? 'acknowledgement' : '"SEND AGAIN"') + ': report ' + hex2(r[2]) + ', position ' + num(rdU32le(r, 4)) + ', message ' + id };
+    }
+    if (v2 && s === 0x01) {
+      const body = r.subarray(9);
+      return { kind: 'start', seq: 1, text: 'message ' + rdU32le(r, 1) + ', ' + num(rdU32le(r, 5)) + ' bytes, begins ' + hex(body.subarray(0, body[0] === FA ? 6 : 12)) };
+    }
+    if (v2 && s === 0x00) return { kind: 'start', seq: 0, text: 'a report of the OLD framing, begins ' + hex(r.subarray(1, r[1] === FA ? 7 : 13)) };
+    if (!v2 && s === 0x00) return { kind: 'start', seq: 0, text: 'message begins ' + hex(r.subarray(1, r[1] === FA ? 7 : 13)) };
+    return { kind: 'more', seq: s, key: 'm', text: 'report ' + hex2(s) };
+  }
+  // 00 01 02 ... as "00-FE,00-3A": what a long message's sequence numbers did.
+  function runs(a) {
+    const out = [];
+    for (let i = 0; i < a.length;) {
+      let j = i;
+      while (j + 1 < a.length && a[j + 1] === a[j] + 1) j++;
+      out.push(hex2(a[i]) + (j > i ? '-' + hex2(a[j]) : ''));
+      i = j + 1;
+    }
+    return out.length > 6 ? out.slice(0, 3).join(',') + ', ... ,' + out.slice(-2).join(',') + ' (' + out.length + ' runs)' : out.join(',');
+  }
+
+  // ---------------------------------------------------------------- the link
+  function Silent(what) { this.name = 'Silent'; this.message = what; }       // nothing came in the time allowed
+  Silent.prototype = Object.create(Error.prototype);
+  function Cut(what) { this.name = 'Cut'; this.message = what; }             // something came, and it broke off or made no sense
+  Cut.prototype = Object.create(Error.prototype);
+  function Gone(what) { this.name = 'Gone'; this.message = what; }           // the calculator is no longer on the cable
+  Gone.prototype = Object.create(Error.prototype);
+  function isGone(e) { return !!e && e.name === 'Gone'; }
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function said(e) { return String(e && e.message ? e.message : e).replace(/[.\s]+$/, ''); }
+
+  // port: {reportSize, send(Uint8Array) -> Promise, read(ms) -> Promise<Uint8Array|null>, poll() -> Uint8Array|null,
+  //        drain() -> count}.  A port whose calculator has gone rejects with an error named 'Gone'.
+  // hooks: {note(text), trace(dir, report, v2)}.  Every report that goes out or comes in passes trace, so that a log
+  // can show what the calculator did and not only what this code made of it.
+  function Link(port, hooks) {
+    hooks = typeof hooks === 'function' ? { note: hooks } : (hooks || {});
+    this.port = port;
+    this.cap = port.reportSize - 1;
+    this.note = hooks.note || function () {};
+    this.trace = hooks.trace || function () {};
+    this.v2 = false;
+    this.id = 1;                    // the newer framing's message number
+    this.stash = [];                // reports that came while a message was going out, and are not acknowledgements of it
+    this.window = WINDOW;
+    this.learned = 0;               // newer framing: after how many reports the calculator stood and waited for us
+    // release: [kit]'s gap before the report "01".  stall: how long a pause in a reply counts as the calculator waiting
+    // for us.  patience: how long we wait for it at our window.  ack: how long for its acknowledgement of a whole message.
+    this.pace = { release: 250, stall: 300, patience: 650, ack: 3000 };
+    this.last = null;
+  }
+
+  Link.prototype.tx = async function (frame) { this.trace('>', frame, this.v2); await this.port.send(frame); };
+  // What comes next, within ms.  The stash first.
+  Link.prototype.rx = async function (ms) {
+    if (this.stash.length) return this.stash.shift();
+    const r = await this.port.read(ms);
+    if (r) this.trace('<', r, this.v2);
+    return r;
+  };
+  Link.prototype.rawNow = function () { const r = this.port.poll(); if (r) this.trace('<', r, this.v2); return r; };
+  // Before a request: what is waiting belongs to something earlier.  It goes through the trace, not into the dark.
+  Link.prototype.clear = function () {
+    let n = this.stash.length;
+    this.stash = [];
+    for (let r = this.rawNow(); r; r = this.rawNow()) n++;
+    return n;
+  };
+
+  // ---- the old framing
+  // -> {reports, ms, slow: [{report, ms}]}: slow is where the cable stood ([log]: 49 s somewhere in 274 reports).
+  Link.prototype.sendLegacy = async function (msg) {
+    const frames = framesLegacy(msg, this.cap), slow = [], t0 = Date.now();
+    for (let i = 0; i < frames.length; i++) {
+      const t = Date.now();
+      await this.tx(frames[i]);
+      const ms = Date.now() - t;
+      if (ms >= 250 && slow.length < 8) slow.push({ report: i + 1, ms: ms });
+    }
+    return { reports: frames.length, ms: Date.now() - t0, slow: slow };
+  };
+  // One reply in the old framing.  cmds: the first bytes that count as this reply.  A report that is not the start
+  // of it is passed over, and does not lengthen the wait: `first` ms for the reply to begin, counted once, and `then`
+  // ms between two reports of it.  -> the message, from its command byte on.
+  Link.prototype.recvLegacy = async function (cmds, first, then) {
+    const end = Date.now() + first;
+    let buf = null, total = 0, got = 0, seq = 0, n = 0, last = 0, skipped = 0;
+    const firsts = [];
+    for (;;) {
+      const left = (buf === null ? end : last + then) - Date.now(), r = left > 0 ? await this.rx(left) : null;
+      if (!r) {
+        if (buf === null) throw new Silent('no answer within ' + secs(first) + (skipped ? ' (' + skipped + ' other report' + (skipped === 1 ? '' : 's') + ' came)' : ''));
+        throw new Cut('the reply stopped after ' + num(got) + ' of ' + num(total) + ' bytes, ' + n + ' report' + (n === 1 ? '' : 's') + ', numbered ' + runs(firsts));
+      }
+      const s = r[0];
+      if (buf === null) {
+        if (s !== 0x00 || cmds.indexOf(r[1]) < 0) { skipped++; continue; }
+        if (r[1] === YES || r[1] === READY) return r.slice(1, 2);
+        total = 6 + rdU32be(r, 3);
+        if (total > MAX_MESSAGE) throw new Cut('the reply claims ' + num(total) + ' bytes: ' + hex(r, 8));
+        buf = new Uint8Array(total);
+      } else {
+        if (s === 0xFF) continue;                                  // never a sequence number: [web], [kit]
+        if (s !== seq) {
+          if (s === 0xFE) continue;                                // an acknowledgement of the newer framing: [kit]
+          if (!(seq === 0xFE && s === 0x00))                       // (a sender that keeps FE for itself wraps one early)
+            throw new Cut('the reply came out of order: report ' + hex2(s) + ' where ' + hex2(seq) + ' was next, after ' + num(got) + ' of ' + num(total) + ' bytes; numbered ' + runs(firsts));
+        }
+      }
+      const take = Math.min(total - got, r.length - 1);
+      buf.set(r.subarray(1, 1 + take), got);
+      got += take; n++; firsts.push(s); last = Date.now();
+      seq = s === 0xFE ? 0 : s + 1;
+      if (got >= total) { this.last = { reports: n, numbered: runs(firsts) }; return buf; }
+    }
+  };
+
+  // ---- the newer framing
+  // Opening it is one report.  [emu]: the calculator answers with a control report, which chooses the mode; what that
+  // report holds is not written down, so whatever comes in the next `listen` ms is handed back for the log.
+  // -> {replies: [hex], others: count}
+  Link.prototype.openV2 = async function (listen) {
+    this.clear();
+    await this.tx(V2_OPEN);
+    this.v2 = true;
+    const end = Date.now() + (listen || 600), replies = [];
+    let others = 0;
+    for (;;) {
+      const left = end - Date.now(), r = left > 0 ? await this.rx(left) : null;
+      if (!r) break;
+      if (r[0] === 0xFF) { if (replies.length < 4) replies.push(hex(r.subarray(0, 12))); } else others++;
+    }
+    return { replies: replies, others: others };
+  };
+  // Send one message.  At most `window` reports go ahead of what the calculator has acknowledged ([emu]: the
+  // Connectivity Kit's window is 76).  What a calculator does at that point is not written down: if no
+  // acknowledgement comes within `pace.patience` ms the sending goes on, and the count of such times is handed back.
+  // A "send again" goes back to the report it names ([pd]).  The message is through when an acknowledgement's
+  // position covers it ([log]: both calculators acknowledge a whole message), or when the calculator starts an
+  // answer of its own.
+  // -> {id, reports, ms, acks: [{ms, ok, seq, pos, sent}], waits, unacked, slow, implied}
+  Link.prototype.sendV2 = async function (msg, wait) {
+    wait = wait || this.pace.ack;
+    const id = this.id++, cap = this.cap, frames = framesV2(msg, id, cap), n = frames.length, acks = [], slow = [], t0 = Date.now(), self = this;
+    let acked = 0, floor = 0, i = 0, again = 0, waits = 0, unacked = 0, dumb = 0, stood = 0, progress = Date.now(), implied = false;
+    const take = function (r) {
+      if (r[0] === 0xFF) return;
+      if (r[0] !== 0xFE) {                                         // not an acknowledgement: it is kept for whoever reads next
+        self.stash.push(r);
+        if (i >= n && r[0] === 0x01) implied = true;               // the calculator is answering, so it has the message
+        return;
+      }
+      if (r.length < 12 || rdU32le(r, 8) !== id) return;           // about an earlier message (they repeat: [kit])
+      const ok = r[1] === 0x01, pos = rdU32le(r, 4);
+      if (acks.length < 400) acks.push({ ms: Date.now() - t0, ok: ok, seq: r[2], pos: pos, sent: i });
+      if (ok) {
+        const k = (pos >= msg.length && i >= n) ? n : Math.min(n, reportsAt(pos, cap));
+        if (k > acked) { acked = k; progress = Date.now(); if (acked > floor) floor = acked; }
+        return;
+      }
+      if (r[2] === 0) return;                                      // [emu]: a "send again" that names no report
+      let j = -1;
+      for (let k = Math.min(i, n) - 1; k >= 0; k--) if (frames[k][0] === r[2]) { j = k; break; }
+      if (j < 0) return;
+      if (++again > 8) throw new Cut('the calculator asked nine times for a report of message ' + id + ' again, the last time for report ' + hex2(r[2]));
+      i = j; if (acked > j) acked = j; if (floor > j) floor = j;
+      progress = Date.now();
+    };
+    while (acked < n && !implied) {
+      if (i < n && i - floor < this.window) {
+        const t = Date.now();
+        await this.tx(frames[i]);
+        const ms = Date.now() - t;
+        if (ms >= 250 && slow.length < 8) slow.push({ report: i + 1, ms: ms });
+        i++; progress = Date.now(); stood = 0;
+        for (let r = this.rawNow(); r; r = this.rawNow()) take(r);
+        continue;
+      }
+      if (i < n) {                                                 // at the window: an acknowledgement is due
+        if (!stood) stood = Date.now();
+        // (three windows running with no word, and the pause there is a short one from then on: this calculator
+        // acknowledges a message at its end, and waiting 0.65 s at each of 120 windows would only be waiting)
+        const left = stood + (dumb >= 3 ? Math.min(50, this.pace.patience) : this.pace.patience) - Date.now(), r = left > 0 ? await this.port.read(left) : null;
+        if (!r) { floor = i; unacked++; dumb++; stood = 0; continue; }     // none came: go on
+        this.trace('<', r, this.v2);
+        const before = floor;
+        take(r);
+        if (floor > before) { waits++; dumb = 0; stood = 0; }
+        continue;
+      }
+      const left = progress + wait - Date.now(), r = left > 0 ? await this.port.read(left) : null;
+      if (!r) {
+        const a = acks.length ? acks[acks.length - 1] : null;
+        throw new Silent('no acknowledgement of the whole of message ' + id + ' (' + n + ' report' + (n === 1 ? '' : 's') + ') within ' + secs(wait) +
+                         (a ? '; the last one said report ' + hex2(a.seq) + ', position ' + num(a.pos) : '; none came at all'));
+      }
+      this.trace('<', r, this.v2);
+      take(r);
+    }
+    return { id: id, reports: n, ms: Date.now() - t0, acks: acks, waits: waits, unacked: unacked, slow: slow, implied: implied };
+  };
+  // One message from the calculator in the newer framing.  `first` ms for it to begin, counted once whatever else
+  // arrives; `then` ms between two of its reports.  It is acknowledged when it is whole, with the position the
+  // calculator's own acknowledgements use ([log]).  If the calculator stops in the middle, it may be waiting for an
+  // acknowledgement of what it has sent ([emu]: a window of 76): one is sent after `pace.stall` ms, and the number of
+  // reports it had sent is remembered, so that the next time the acknowledgement goes out without the wait.
+  // A report again, after a "send again" or a retry of the calculator's, is dropped; a gap asks for the missing one.
+  Link.prototype.recvV2 = async function (cmds, first, then) {
+    const end = Date.now() + first, cap = this.cap;
+    let m = null;
+    for (;;) {
+      const now = Date.now();
+      let wait;
+      if (m === null) wait = end - now;
+      else {
+        const idle = now - m.at;
+        if (idle >= then) throw new Cut('the reply stopped after ' + num(m.got) + ' of ' + num(m.total) + ' bytes, ' + m.n + ' report' + (m.n === 1 ? '' : 's') + ' of message ' + m.id);
+        wait = m.nudged === m.n ? then - idle : Math.min(then - idle, Math.max(1, this.pace.stall - idle));
+      }
+      const r = wait > 0 ? await this.rx(wait) : null;
+      if (!r) {
+        if (m === null) throw new Silent('no answer within ' + secs(first));
+        if (m.nudged !== m.n && Date.now() - m.at >= this.pace.stall) {            // it may be waiting for us
+          await this.tx(ackV2(m.seq, roomAfter(m.n, cap), m.id, true));
+          const since = m.n - m.ackedAt;
+          m.nudged = m.n; m.ackedAt = m.n; m.stalls.push(m.n);
+          if (since > 1 && (!this.learned || since < this.learned)) this.learned = since;
+        }
+        continue;
+      }
+      const s = r[0];
+      if (s === 0xFE || s === 0xFF) continue;                      // acknowledgements of our own messages (they repeat), and control reports
+      if (s === 0x00) {                                            // a report of the old framing
+        if (m === null && cmds.indexOf(r[1]) >= 0) {               // ... which begins what we wait for: [kit] found the old framing still answered
+          if (!this.mixed) this.note('  (the answer came in the OLD framing, though the newer one is open)');
+          this.mixed = (this.mixed || 0) + 1;
+          this.stash.unshift(r);
+          return this.recvLegacy(cmds, Math.max(1, end - Date.now()), then);
+        }
+        continue;                                                   // otherwise the trace has it
+      }
+      if (s === 0x01) {
+        const id = rdU32le(r, 1), total = rdU32le(r, 5);
+        if (m !== null && id === m.id) { m.again++; continue; }    // its first report again
+        if (total > MAX_MESSAGE) throw new Cut('the reply claims ' + num(total) + ' bytes: ' + hex(r, 9));
+        m = { id: id, total: total, buf: new Uint8Array(total), got: 0, n: 1, seq: 1, next: 2, at: Date.now(), nudged: 0, ackedAt: 0, asked: 0, stalls: [], again: 0, gaps: 0 };
+        const take = Math.min(total, r.length - 9);
+        m.buf.set(r.subarray(9, 9 + take), 0); m.got = take;
+      } else {
+        if (m === null) continue;                                   // the tail of something that began before we listened
+        if (s !== m.next) {
+          const behind = ((m.next - s) + 252) % 252;                // the numbers 02 to FD go round: [emu]
+          if (behind >= 1 && behind <= 126) { m.again++; continue; }                // one we have: a retry of the calculator's
+          m.gaps++;
+          if (m.asked !== m.n) { m.asked = m.n; await this.tx(ackV2(m.next, roomAfter(m.n, cap), m.id, false)); }   // one is missing: ask for it
+          continue;
+        }
+        const take = Math.min(m.total - m.got, r.length - 1);
+        m.buf.set(r.subarray(1, 1 + take), m.got);
+        m.got += take; m.n++; m.seq = s; m.next = s === 0xFD ? 2 : s + 1; m.at = Date.now();
+      }
+      if (m.got >= m.total) {
+        await this.tx(ackV2(m.seq, roomAfter(m.n, cap), m.id, true));
+        const done = m;
+        m = null;
+        this.last = { reports: done.n, numbered: 'message ' + done.id, id: done.id, stalls: done.stalls, again: done.again, gaps: done.gaps };
+        if (cmds.indexOf(done.buf[0]) >= 0) return done.buf;
+        continue;                                                   // some other message: acknowledged, and the trace has it
+      }
+      if (this.learned && m.n - m.ackedAt >= this.learned) {        // where it stood the last time: acknowledge before it has to wait
+        await this.tx(ackV2(m.seq, roomAfter(m.n, cap), m.id, true));
+        m.ackedAt = m.n;
+      }
+    }
+  };
+
+  // Send a message in the link's framing, after putting aside whatever was waiting.
+  Link.prototype.send = async function (msg) {
+    this.clear();
+    return this.v2 ? this.sendV2(msg) : this.sendLegacy(msg);
+  };
+  Link.prototype.recv = function (cmds, first, then) {
+    return this.v2 ? this.recvV2(cmds, first, then || 2500) : this.recvLegacy(cmds, first, then || 2500);
+  };
+
+  // Listen for ms and take nothing: whatever comes is passed over, and in the newer framing a whole message is
+  // acknowledged all the same, so that the calculator does not go on sending it.  [log]: the G1 sent one file
+  // several times for one request, and a late copy must not be taken for the answer to the next.
+  Link.prototype.swallow = async function (ms) {
+    try { await this.recv([], ms, Math.min(ms, 2500)); }
+    catch (e) { if (!(e instanceof Silent) && !(e instanceof Cut)) throw e; }
+  };
+
+  // -> {build, version, bytes, ver}.  [kit]: "00 FA" was answered by "00 FA 03 00 00 00 6C"; [log]: by version 01.
+  Link.prototype.info = async function (first) {
+    await this.send(Uint8Array.of(FA));
+    const r = await this.recv([FA], first || 3000);
+    const i = parseInfo(r.subarray(6));
+    i.bytes = r.length - 6; i.ver = r[1];
+    return i;
+  };
+  // [web]: FF is answered by the one byte 59, "Y".
+  Link.prototype.ready = async function (first) {
+    await this.send(Uint8Array.of(READY));
+    try { const r = await this.recv([YES, READY], first || 2000); return r[0] === YES || r[0] === READY; }
+    catch (e) { if (e instanceof Silent) return false; throw e; }
+  };
+  // "FD": see maxVersionMessage.  -> {reports, acks, reply}: reply is how an answer of its own began, or null.
+  Link.prototype.maxVersion = async function (kind, listen) {
+    const out = await this.send(maxVersionMessage(kind));
+    let reply = null;
+    try { reply = hex((await this.recv([FD], listen || 900, 900)).subarray(0, 12)); }
+    catch (e) { if (!(e instanceof Silent)) throw e; }
+    return { reports: out.reports, acks: out.acks || null, reply: reply };
+  };
+  // [kit]: a report "01" followed every program it sent in the old framing.
+  Link.prototype.release = async function () { await this.tx(RELEASE); };
+
+  // how: {layout: 'v3' | 'v1', release: true | false, listen: ms}; the framing is the link's.
+  // Nothing acknowledges a program in the old framing ([kit], [web], [log]), so "sent" is all this can say there:
+  // -> {bytes, reports, ms, slow, acks, waits, unacked, implied, said, refused}.  said: what the calculator answered in the
+  // next moment, if anything ([web]: an F9 then was a refusal on older firmware).
+  Link.prototype.sendProgram = async function (name, source, how) {
+    how = how || {};
+    if (!validName(name)) throw new Error('"' + name + '" is not a name the calculator takes');
+    const msg = how.layout === 'v1' ? programV1(name, source) : await programV3(name, source);
+    const out = await this.send(msg);
+    let said = null, refused = false;
+    if (!this.v2) {
+      if (how.release) { await sleep(this.pace.release); await this.release(); }
+      const r = await this.rx(how.listen === undefined ? 300 : how.listen);
+      if (r && r[0] === 0x00 && r[1] !== 0x00) { said = hex(r.subarray(0, 12)); refused = r[1] === F9; }
+    }
+    return { bytes: msg.length, reports: out.reports, ms: out.ms, slow: out.slow || [], acks: out.acks || null, waits: out.waits || 0,
+             unacked: out.unacked || 0, implied: !!out.implied, said: said, refused: refused };
+  };
+
+  // how: {ver: 1 | 3, nul: true | false, first: ms, then: ms}.  -> the file (parseFile), or null when the calculator
+  // stays silent, which is also what it does for a program it does not have ([web], [log]).  It ends within
+  // `first` ms of the request's going unless the answer has begun by then.
+  Link.prototype.readProgram = async function (name, how) {
+    how = how || {};
+    try { await this.send(requestMessage(name, how.ver || 1, how.nul !== false)); }
+    catch (e) { if (e instanceof Silent) { this.note('  ' + e.message); return null; } throw e; }
+    const end = Date.now() + (how.first || 3000);                  // counted from when the request has gone
+    for (;;) {
+      const left = end - Date.now();
+      if (left <= 0) return null;
+      let msg;
+      try { msg = await this.recv([F7], left, how.then || 2500); }
+      catch (e) { if (e instanceof Silent) return null; throw e; }
+      const f = await parseFile(msg);
+      const l = this.last || {};
+      f.reports = l.reports || 0; f.numbered = l.numbered || ''; f.stalls = l.stalls || []; f.again = l.again || 0; f.gaps = l.gaps || 0;
+      f.bytes = msg.length; f.head = hex(msg.subarray(0, 12));
+      if (f.name === name) return f;
+      this.note('  passed over a file named "' + f.name + '"');      // a late answer, or the calculator's own Send key
+    }
+  };
+
+  // [web], [log]: EB has no answer; ask for the file afterwards, and silence means it is gone.
+  Link.prototype.deleteProgram = async function (name, ver) {
+    await this.send(deleteMessage(name, ver || 1));
+    await sleep(300);
+  };
+
+  // ---------------------------------------------------------------- WebHID
+  // The size of report 0 in a direction, from the device's own description; 1,024 on a G2 and 64 on a G1 ([log]).
+  function reportSize(device, dir) {
+    const cs = device.collections || [];
+    for (let i = 0; i < cs.length; i++) {
+      const rs = (dir === 'in' ? cs[i].inputReports : cs[i].outputReports) || [];
+      for (let j = 0; j < rs.length; j++) {
+        if ((rs[j].reportId || 0) !== 0) continue;
+        let bits = 0;
+        const it = rs[j].items || [];
+        for (let k = 0; k < it.length; k++) bits += (it[k].reportSize || 0) * (it[k].reportCount || 0);
+        if (bits > 0) return Math.ceil(bits / 8);
+      }
+    }
+    return null;
+  }
+  // Every report goes out at its full size, padded with zeros: that is what Windows did for [kit]'s measurements.
+  function HidPort(device) {
+    const fallback = device.productId === 0x2441 ? 1024 : 64, self = this;
+    this.device = device;
+    this.inSize = reportSize(device, 'in') || reportSize(device, 'out') || fallback;
+    this.outSize = reportSize(device, 'out') || this.inSize;
+    this.reportSize = Math.min(this.inSize, this.outSize);
+    this.sizeFrom = reportSize(device, 'out') ? 'the calculator' : 'the usual size for this model';
+    this.queue = []; this.waiter = null; this.fail = null; this.sent = 0; this.received = 0;
+    this.gone = null;               // why the calculator is no longer there, once it is not
+    this.limit = 90000;             // one report: [log] a G2 let the cable stand for 49 s and then went on
+    this.onReport = function (e) {
+      const r = new Uint8Array(e.data.buffer, e.data.byteOffset, e.data.byteLength).slice();
+      self.received++;
+      if (self.waiter) { const w = self.waiter; self.waiter = null; w(r); } else self.queue.push(r);
+    };
+    device.addEventListener('inputreport', this.onReport);
+  }
+  // The calculator went off the cable (the browser's "disconnect").  Whatever is waiting ends now, with Gone.
+  // [log]: on 17 Nov a write to a calculator that had gone never came back, and the page stood still.
+  HidPort.prototype.lose = function (why) {
+    if (this.gone) return;
+    this.gone = why || 'the calculator went off the cable';
+    if (this.waiter) { const w = this.waiter; this.waiter = null; w(null); }
+    if (this.fail) { const f = this.fail; this.fail = null; f(new Gone(this.gone)); }
+  };
+  HidPort.prototype.send = async function (frame) {
+    if (this.gone) throw new Gone(this.gone);
+    const data = new Uint8Array(this.outSize), self = this;
+    data.set(frame.subarray(0, this.outSize));
+    let timer = null;
+    const guard = new Promise(function (res, rej) {
+      self.fail = rej;
+      timer = setTimeout(function () { rej(new Gone('the calculator did not take a report within ' + secs(self.limit))); }, self.limit);
+    });
+    try {
+      const w = Promise.resolve(this.device.sendReport(0, data));
+      w.catch(function () {});                                    // (if the guard wins, a late failure of the write has nowhere else to go)
+      await Promise.race([w, guard]);
+    }
+    catch (e) {
+      const g = isGone(e) ? e : new Gone('the browser could not write to the calculator (' + said(e) + ')');
+      this.gone = this.gone || g.message;
+      throw g;
+    }
+    finally { clearTimeout(timer); this.fail = null; }
+    this.sent++;
+  };
+  HidPort.prototype.read = function (ms) {
+    const self = this;
+    if (this.queue.length) return Promise.resolve(this.queue.shift());
+    if (this.gone) return Promise.reject(new Gone(this.gone));
+    return new Promise(function (res, rej) {
+      const t = setTimeout(function () { self.waiter = null; res(null); }, ms);
+      self.waiter = function (r) { clearTimeout(t); if (r === null && self.gone) rej(new Gone(self.gone)); else res(r); };
+    });
+  };
+  HidPort.prototype.poll = function () { return this.queue.length ? this.queue.shift() : null; };
+  HidPort.prototype.drain = function () { const n = this.queue.length; this.queue = []; return n; };
+  HidPort.prototype.close = async function () {
+    this.device.removeEventListener('inputreport', this.onReport);
+    if (this.waiter) { const w = this.waiter; this.waiter = null; w(null); }
+    try { if (this.device.opened) await this.device.close(); } catch (e) { /* unplugged already */ }
+  };
+
+  function supported() { return typeof navigator !== 'undefined' && !!navigator.hid && (typeof window === 'undefined' || window.isSecureContext !== false); }
+  // The browser's own window listing the calculators on the cable.  -> a device, or null when the window was closed.
+  async function choose() {
+    const d = await navigator.hid.requestDevice({ filters: FILTERS });
+    return d && d.length ? d[0] : null;
+  }
+  async function open(device) {
+    if (!device.opened) await device.open();
+    return new HidPort(device);
+  }
+
+  return { VENDOR: VENDOR, MODELS: MODELS, FILTERS: FILTERS, MAX_MESSAGE: MAX_MESSAGE, OLD_MOST: OLD_MOST, WINDOW: WINDOW, V2_OPEN: V2_OPEN, RELEASE: RELEASE,
+           cat: cat, u32be: u32be, u32le: u32le, rdU32be: rdU32be, rdU32le: rdU32le, utf16le: utf16le, fromUtf16le: fromUtf16le,
+           hex: hex, hex2: hex2, num: num, secs: secs, crc16: crc16, normalizeSource: normalizeSource, validName: validName, deflate: deflate, inflate: inflate,
+           innerV3: innerV3, programV3: programV3, programV1: programV1, requestMessage: requestMessage, deleteMessage: deleteMessage,
+           maxVersionMessage: maxVersionMessage, framesLegacy: framesLegacy, framesV2: framesV2, roomAfter: roomAfter, reportsAt: reportsAt, ackV2: ackV2,
+           parseInfo: parseInfo, parseFile: parseFile, describe: describe, runs: runs,
+           Link: Link, Silent: Silent, Cut: Cut, Gone: Gone, isGone: isGone, HidPort: HidPort, supported: supported, choose: choose, open: open,
+           sleep: sleep, said: said };
+})();
+
+if (typeof module !== 'undefined') module.exports = PrimeUSB;
+
+</script>
+<script>
+// usb_ladder_v2.js -- the second test of a real HP Prime on its cable, with prime_usb_v2.js.  Roger Metcalf & Claude,
+// 17 Nov 2026.
+//
+// WHAT THE FIRST TEST FOUND (logs/, the author's G2 and G1, both on firmware build 15751)
+//   * Both answer with version 01.  A program sent NOT compressed ("F7 01") in the old framing is kept and comes back
+//     the same: 80 reports of the G2, 10 of the G1.  At 274 reports (G2) and 263 (G1) it is not kept.
+//   * A program sent COMPRESSED ("F7 03") is not kept, in either framing.
+//   * The newer framing is taken, and a message in it is acknowledged.
+// WHAT THIS ONE ASKS, in the order it asks
+//   C  Where does the old framing stop?  A program of exactly 254 reports, then one of exactly 255, the most there
+//      are before their numbers start again.  (11 of the book's 31 programs take more than 255 reports of a G2 as
+//      they are; all 31 take more than 255 of a G1.)
+//   A  Does the calculator keep a compressed program once it has been told that this page speaks version 03?
+//      PrimeDev holds the bytes of such a message ("FD"); nobody has written down what a calculator does with them.
+//   E  Does the newer framing carry a program that is not compressed, past 255 reports?
+//   D  The same, compressed: what HP's own Connectivity Kit appears to do.
+// Each route begins with a program of a few lines, and a route that works climbs toward the size of the book's largest
+// program.  Every report the calculator sends is in the log, the long runs counted and the rest shown, because what it
+// does at each of these points is the thing to find out.
+//
+// WHAT GOES ON THE CALCULATOR.  Four programs at most, ZZUSBC, ZZUSBA, ZZUSBE and ZZUSBD, each replaced at every step
+// and deleted at the end.  Each is comment lines and one function that returns a number, the function LAST, so that a
+// program cut short on the way does not compile.  Nothing else on the calculator is written, read or deleted.
+//
+// No DOM here.  run() takes a Link and an object of callbacks; the page supplies one that draws, the Node test one that
+// records.
+
+'use strict';
+
+const PrimeLadder = (function () {
+
+  const VERSION = 'v2';
+  // The characters of the test program at each size.  3 is DataLoad's size and 5 is EpiStats's, the smallest and the
+  // largest program of the book at the time of writing (tests/test_usb_ladder_v2.js counts them again).
+  const SIZES = [
+    { step: 1, chars: 300, like: 'a few lines' },
+    { step: 2, chars: 8269, like: 'the largest program hp-prime-kit sent' },
+    { step: 3, chars: 40856, like: 'DataLoad, our smallest program' },
+    { step: 4, chars: 140000, like: 'a program of middle size' },
+    { step: 5, chars: 289813, like: 'EpiStats, our largest program' }
+  ];
+  const LIMITS = [254, 255];                      // route C's second and third steps, in reports
+  const ROUTES = [
+    { key: 'C', name: 'ZZUSBC', framing: 'old', layout: 'v1', title: 'Old framing, not compressed', from: 'hp-prime-web; kept on 17 Nov up to 80 reports of the G2 and 10 of the G1' },
+    { key: 'A', name: 'ZZUSBA', framing: 'old', layout: 'v3', title: 'Old framing, compressed', from: 'hp-prime-kit; not kept on 17 Nov' },
+    { key: 'E', name: 'ZZUSBE', framing: 'new', layout: 'v1', title: 'Newer framing, not compressed', from: 'PrimeDev\'s framing; not tried before' },
+    { key: 'D', name: 'ZZUSBD', framing: 'new', layout: 'v3', title: 'Newer framing, compressed', from: 'PrimeDev; what the Connectivity Kit appears to do; not kept on 17 Nov' }
+  ];
+  function cellsOf(key) {
+    if (key === 'C') return [{ col: 1, cap: '300 characters' }].concat(LIMITS.map(function (n, i) { return { col: i + 2, cap: 'exactly ' + n + ' reports' }; }));
+    return SIZES.map(function (s) { return { col: s.step, cap: num(s.chars) + ' characters' }; });
+  }
+
+  const WORDS = ('LOCAL BEGIN END IF THEN ELSE FOR FROM TO DO WHILE REPEAT UNTIL RETURN EXPORT CASE DEFAULT BREAK CONTINUE STEP DOWNTO ' +
+    'TEXTOUT_P RECT_P LINE_P FILLPOLY_P ARC_P PIXON_P BLIT_P DIMGROB_P GETKEY WAIT MOUSE CHOOSE INPUT MSGBOX PRINT STRING SIZE MAX MIN ABS SQRT EXP LN ' +
+    'ROUND FLOOR CEILING IP FP SIGN RANDOM RANDINT SUM MAKELIST CONCAT SORT REVERSE POS LEFT RIGHT MID UPPER LOWER EXPR IFTE NOT AND OR XOR ' +
+    'mean sd alpha beta power sample count total index value result table list matrix row col width height left top color label title help page ' +
+    'x y z n k m p q r s t i j a b c d e f g h u v w lo hi mid sum sq df se ci lower upper tail area curve shade axis tick grid plot draw key touch').split(' ');
+
+  function rng(seed) {                               // xorshift32: the same text on every computer
+    let x = (seed >>> 0) || 1;
+    return function () { x ^= x << 13; x >>>= 0; x ^= x >>> 17; x ^= x << 5; x >>>= 0; return x; };
+  }
+  // A test program of exactly `chars` characters, which returns `tag`.  Its comment lines are made of the words a PPL
+  // program is made of, so that it compresses about as our programs do (a little worse: the test counts both).
+  function makeProgram(name, tag, chars) {
+    const head = '// ' + name + ': a test of the USB cable, number ' + tag + '. Safe to delete.\n';
+    const tail = '\nEXPORT ' + name + '()\nBEGIN\n RETURN ' + tag + ';\nEND;';
+    const room = chars - head.length - tail.length;
+    if (room < 0) throw new Error('a test program needs at least ' + (head.length + tail.length) + ' characters');
+    const r = rng(1000 * tag + name.charCodeAt(name.length - 1)), lines = [];
+    let n = 0;
+    while (n < room + 1) {                                       // n counts a newline after every line, the last too
+      const k = 3 + r() % 9, parts = [];
+      for (let i = 0; i < k; i++) {
+        const t = r() % 10;
+        if (t < 6) parts.push(WORDS[r() % WORDS.length]);
+        else if (t < 8) parts.push(String(r() % 1000));
+        else parts.push(WORDS[r() % WORDS.length] + '(' + WORDS[r() % WORDS.length] + ',' + (r() % 100) + ')');
+      }
+      const line = '// ' + ' '.repeat(r() % 4) + parts.join(r() % 3 ? ' ' : ':=') + ';';
+      lines.push(line); n += line.length + 1;
+    }
+    let body = lines.join('\n').slice(0, room);
+    // The cut can leave a last line of one character, "/", which is not a comment, or of none: either joins the line
+    // before it as blanks, and the length stays what was asked for.
+    const li = body.lastIndexOf('\n');
+    if (li >= 0 && body.length - li - 1 <= 1) body = body.slice(0, li) + ' '.repeat(body.length - li);
+    return head + body + tail;
+  }
+  // The characters of a program whose "F7 01" message fills exactly `reports` reports of the old framing: the message
+  // is ten bytes, the name and the source, two bytes a character.
+  function charsFor(reports, cap, name) { return Math.floor((reports * cap - 10 - 2 * name.length) / 2); }
+  function firstDifference(a, b) {
+    const n = Math.min(a.length, b.length);
+    for (let i = 0; i < n; i++) if (a.charCodeAt(i) !== b.charCodeAt(i)) return i;
+    return a.length === b.length ? -1 : n;
+  }
+  function num(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function said(e) { return String(e && e.message ? e.message : e).replace(/[.\s]+$/, ''); }      // an error's own words, less its full stop
+  function secs(ms) { return (ms / 1000).toFixed(ms < 9950 ? 1 : 0) + ' s'; }
+  function reportsText(n) { return num(n) + ' report' + (n === 1 ? '' : 's'); }
+  function Halt() { this.name = 'Halt'; }           // the test ends here
+  function Leave() { this.name = 'Leave'; }         // the part in hand ends here
+
+  // The reports that pass, for the log: a line for each one that starts a message, acknowledges or controls, the first
+  // three of any run of one kind and then their count; the reports that carry on a message are only counted, with
+  // their numbers.  `budget` lines between two lines of the test's own, and then a count of what was left out.
+  function Tracer(emit, P, budget) {
+    let run = null, serial = 0, left = budget || 60, dropped = 0;
+    const out = function (s) { if (left > 0) { left--; emit(s); } else dropped++; };
+    const over = function (r) { return r.t1 - r.t0 >= 100 ? ', over ' + secs(r.t1 - r.t0) : ''; };
+    const flush = function () {
+      if (!run) return;
+      const r = run;
+      run = null;
+      if (r.kind === 'more') out(r.dir + ' ' + num(r.count) + ' more report' + (r.count === 1 ? '' : 's') + ' of it, numbered ' + P.runs(r.seqs) + over(r));
+      else if (r.count > r.shown) out(r.dir + ' ... and ' + num(r.count - r.shown) + ' more of that kind' + over(r) + '; the last: ' + r.last);
+    };
+    this.flush = function () {
+      flush();
+      if (dropped) { emit('(' + num(dropped) + ' more lines of this kind were left out)'); dropped = 0; }
+      left = budget || 60;
+    };
+    this.report = function (dir, rep, v2) {
+      const d = P.describe(rep, v2), key = dir + d.kind + (d.kind === 'start' ? ++serial : (d.key || '')), now = Date.now();
+      if (run && run.key === key) {
+        run.count++; run.t1 = now; run.last = d.text;
+        if (d.kind === 'more') { if (run.seqs.length < 20000) run.seqs.push(d.seq); }
+        else if (run.count <= 3) { run.shown = run.count; out(dir + ' ' + d.text); }
+        return;
+      }
+      flush();
+      run = { key: key, dir: dir, kind: d.kind, count: 1, shown: d.kind === 'more' ? 0 : 1, t0: now, t1: now, last: d.text, seqs: d.kind === 'more' ? [d.seq] : null };
+      if (d.kind !== 'more') out(dir + ' ' + d.text);
+    };
+  }
+
+  // ui: {log(text), cell(routeKey, col, state, text), ask({name}) -> Promise<bool>, pause() -> Promise, stop() -> bool}
+  // opts.core: PrimeUSB.  opts.t: the waits in ms, for a test that cannot wait as long as a calculator may need.
+  // -> {info, routes: {C: {steps, best, ...}}, told, opened, oldAfterNew, alive, gone, stopped, left, top, text}
+  async function run(link, ui, opts) {
+    opts = opts || {};
+    const P = opts.core;
+    const t = Object.assign({ first: 3000, then: 2500, probe: 1200, listen: 900, gap: 1500, tries: 4, settle: 400, quiet: 250, recover: 24000 }, opts.t || {});
+    const T0 = Date.now();
+    const res = { info: null, routes: {}, told: [], opened: null, newInfo: null, oldAfterNew: null, alive: true, gone: false, stopped: false, newDead: false, left: [], top: null, text: '' };
+    ROUTES.forEach(function (r) { res.routes[r.key] = { key: r.key, title: r.title, name: r.name, steps: [], best: null, tried: false, reader: null, release: false, lastSrc: null, seen: null }; });
+    const stamp = function () { return ('      ' + ((Date.now() - T0) / 1000).toFixed(1)).slice(-7); };
+    const tracer = new Tracer(function (s) { ui.log(stamp() + '        . ' + s); }, P, opts.budget);
+    const log = function (s) { tracer.flush(); ui.log(s === '' ? '' : stamp() + '  ' + s); };
+    const route = function (k) { return ROUTES.filter(function (r) { return r.key === k; })[0]; };
+    let fmt = 1, cleaning = false;
+    link.trace = function (dir, r, v2) { tracer.report(dir, r, v2); };
+    link.note = function (s) { log('  ' + s); };
+    const check = function () {
+      if (cleaning || !ui.stop || !ui.stop()) return;
+      if (!res.stopped) { res.stopped = true; log('STOPPED by the Stop button.'); }
+      throw new Halt();
+    };
+
+    const askInfo = async function () {
+      try { return await link.info(t.first); }
+      catch (e) { if (P.isGone(e)) throw e; log('    Asked who it is: ' + said(e) + '.'); return null; }
+    };
+    // The ways of asking for a program back, the one in the version the calculator speaks first.  [log]: the name
+    // must end in a NUL; the two without one are asked only when neither of the others is answered.
+    const readers = function () {
+      const a = fmt === 3 ? 3 : 1, b = a === 3 ? 1 : 3;
+      return [{ ver: a, nul: true }, { ver: b, nul: true }, { ver: a, nul: false }, { ver: b, nul: false }];
+    };
+    const titleOf = function (rd) { return 'F8 0' + rd.ver + (rd.nul ? ', the name ending in a NUL' : ', no NUL'); };
+    const describe = function (b) {
+      return reportsText(b.reports) + (b.compressed ? ', compressed' : ', not compressed') + ', version 0' + b.ver + (b.crcOk ? '' : ', ITS CHECKSUM NOT AS EXPECTED') +
+             (/,/.test(b.numbered || '') ? ', numbered ' + b.numbered : '') +
+             (b.stalls && b.stalls.length ? '; the calculator stood until it was acknowledged after ' + b.stalls.slice(0, 6).map(num).join(', ') + (b.stalls.length > 6 ? ', ...' : '') + ' reports' : '') +
+             (b.again ? '; ' + num(b.again) + ' reports came a second time' : '') + (b.gaps ? '; ' + num(b.gaps) + ' came out of turn' : '');
+    };
+    const slowText = function (out) {
+      if (!out.slow || !out.slow.length) return '';
+      return ' THE CABLE STOOD: ' + out.slow.map(function (x) { return secs(x.ms) + ' at report ' + num(x.report); }).join(', ') + '.';
+    };
+    const ackText = function (out) {
+      if (!out.acks) return '';
+      if (!out.acks.length) return out.implied ? ' No acknowledgement; the calculator began an answer instead.' : ' No acknowledgement.';
+      const a = out.acks, one = function (x) { return (x.ok ? '' : '"send again" ') + 'report ' + P.hex2(x.seq) + ' position ' + num(x.pos) + ' (' + num(x.sent) + ' sent, ' + secs(x.ms) + ')'; };
+      let s = ' Acknowledged ' + num(a.length) + ' time' + (a.length === 1 ? '' : 's') + ': ' + a.slice(0, 4).map(one).join('; ') + (a.length > 5 ? '; ...' : '') + (a.length > 4 ? '; ' + one(a[a.length - 1]) : '') + '.';
+      if (out.waits) s += ' The page stood at its window of ' + link.window + ' reports ' + num(out.waits) + ' time' + (out.waits === 1 ? '' : 's') + ' until an acknowledgement came.';
+      if (out.unacked) s += ' ' + num(out.unacked) + ' time' + (out.unacked === 1 ? '' : 's') + ' none came while the page waited at its window (' + secs(link.pace.patience) + ' the first three times, 0.05 s after that), and it went on.';
+      return s;
+    };
+
+    // Ask for the program back until it is the one sent, or the tries run out.  A calculator may need a moment to
+    // store a long program, and until then it answers with the copy before, or not at all.
+    const readBack = async function (r, src, how, tries, first, before) {
+      const start = Date.now();
+      let why = 'no answer';
+      for (let k = 1; k <= tries; k++) {
+        check();
+        let back = null;
+        why = 'no answer';
+        try { back = await link.readProgram(r.name, { ver: how.ver, nul: how.nul, first: first, then: t.then }); }
+        catch (e) { if (P.isGone(e)) throw e; why = said(e); back = null; }
+        if (back && back.text === src) return { ok: true, back: back, tries: k, ms: Date.now() - start };
+        if (back && P.normalizeSource(back.text) === src) {        // the same program with other line ends, or a newline added
+          if (!res.lineEnds) { res.lineEnds = true; log('      (what came back is the same but for its line ends or a last newline: ' + num(back.text.length) + ' characters against ' + num(src.length) + ')'); }
+          return { ok: true, back: back, tries: k, ms: Date.now() - start };
+        }
+        if (back) {
+          why = 'what came back differs: ' + num(back.text.length) + ' characters against ' + num(src.length) + ' sent, the first difference at character ' + num(firstDifference(back.text, src) + 1);
+          if (before && back.text === before) why += ' (it is the program sent before, whole: the new one was not kept)';
+        }
+        if (tries > 1) log('      try ' + k + ' of ' + tries + ': ' + why + '.');
+        if (k < tries) await link.swallow(t.gap);                 // (listening: a late copy of an earlier answer is passed over here)
+      }
+      return { ok: false, why: why, tries: tries, ms: Date.now() - start };
+    };
+    // bare: whether the two requests without a NUL are asked at all (once for each route is enough).
+    const find = async function (r, src, bare) {
+      let best = null;
+      let asked = 0;
+      for (const rd of readers()) {
+        check();
+        if (!rd.nul && (best || !bare)) break;
+        if (asked++) await link.swallow(t.quiet);                  // so that a second copy of the last answer is not taken for this one
+        const g = await readBack(r, src, rd, 1, t.probe, null);
+        log('    Asked for it back with ' + titleOf(rd) + ': ' + (g.ok ? 'the same program came back (' + describe(g.back) + '; it began ' + g.back.head + ').' : g.why + '.'));
+        if (g.ok && (!best || (g.back.compressed && !best.back.compressed))) { best = g; best.reader = rd; }
+      }
+      return best;
+    };
+    // One program by one route: send, and read back.  mode 'find': try the ways of asking, and keep the one that
+    // answers; 'read': ask the way that answered before.  -> the step's record
+    const attempt = async function (r, st, mode) {
+      check();
+      const w = res.routes[r.key], src = makeProgram(r.name, st.tag, st.chars), rec = { col: st.col, tag: st.tag, chars: st.chars, ok: false, src: src, why: 'the test ended before this was done' };
+      w.steps.push(rec); w.tried = true;
+      ui.cell(r.key, st.col, 'busy', 'sending');
+      log('  ' + r.name + ': ' + num(st.chars) + ' characters (' + st.like + ').');
+      let out;
+      try { out = await link.sendProgram(r.name, src, { layout: r.layout, release: w.release }); }
+      catch (e) {
+        if (P.isGone(e)) throw e;
+        rec.why = 'not sent: ' + said(e);
+        log('    NOT SENT: ' + said(e) + '.');
+        ui.cell(r.key, st.col, 'bad', 'not sent');
+        return rec;
+      }
+      rec.reports = out.reports; rec.bytes = out.bytes; rec.sendMs = out.ms; rec.acks = out.acks ? out.acks.length : null; rec.waits = out.waits; rec.unacked = out.unacked;
+      log('    Sent ' + num(out.bytes) + ' bytes in ' + reportsText(out.reports) + ', ' + (out.ms / 1000).toFixed(2) + ' s on the cable.' + slowText(out) + ackText(out) + (out.said ? ' Then it sent: ' + out.said + '.' : ''));
+      if (out.refused) { rec.why = 'the calculator refused it (F9)'; log('    REFUSED (F9).'); ui.cell(r.key, st.col, 'bad', 'refused'); return rec; }
+      await link.swallow(t.settle);
+      ui.cell(r.key, st.col, 'busy', 'reading back');
+      let got = null;
+      if (mode === 'find') {
+        got = await find(r, src, !w.bared);
+        w.bared = true;
+        if (!got) { rec.unread = true; rec.why = 'sent, and no request brought it back'; ui.cell(r.key, st.col, 'bad', 'not read back'); return rec; }
+        w.reader = got.reader;
+      } else {
+        got = await readBack(r, src, w.reader, t.tries, t.first, w.lastSrc);
+        if (got.ok) log('    Read back the same: ' + describe(got.back) + ', ' + secs(got.ms) + (got.tries > 1 ? ', on try ' + got.tries : '') + '.');
+      }
+      if (got.ok) {
+        rec.ok = true; rec.readMs = got.ms; rec.backReports = got.back.reports; rec.backCompressed = got.back.compressed;
+        w.best = { chars: st.chars, reports: out.reports, bytes: out.bytes }; w.lastSrc = src;
+        ui.cell(r.key, st.col, 'ok', reportsText(out.reports));
+        return rec;
+      }
+      rec.why = got.why;
+      log('    NOT THE SAME: ' + rec.why + '.');
+      ui.cell(r.key, st.col, 'bad', /differs/.test(rec.why) ? 'came back changed' : 'did not come back');
+      return rec;
+    };
+    const size1 = function () { return { col: 1, tag: 1, chars: SIZES[0].chars, like: SIZES[0].like }; };
+    // The small program of a route.  In the old framing, if nothing brings it back, hp-prime-kit's report "01" is sent
+    // and it is asked for once more: its G2 got one after every program, and whether a program needs it "was not separated".
+    const small = async function (r) {
+      const rec = await attempt(r, size1(), 'find');
+      if (rec.ok || !rec.unread || r.framing !== 'old' || r.layout !== 'v3') return rec;
+      log('    hp-prime-kit sent a report "01" after each program. One is sent now, and the program asked for again.');
+      await link.release();
+      await link.swallow(t.settle);
+      const g = await find(r, rec.src, false);
+      if (g) {
+        const w = res.routes[r.key];
+        rec.ok = true; rec.unread = false; rec.why = null; w.reader = g.reader; w.release = true;
+        w.best = { chars: rec.chars, reports: rec.reports, bytes: rec.bytes }; w.lastSrc = rec.src;
+        ui.cell(r.key, 1, 'ok', reportsText(rec.reports) + ', then a report 01');
+      }
+      return rec;
+    };
+    // "FD": tell the calculator the newest version of the messages this page speaks, and ask who it is again.
+    const tell = async function (kind) {
+      check();
+      log('  Telling the calculator that this page speaks version 03: "' + P.hex(P.maxVersionMessage(kind)) + '" (PrimeDev\'s bytes' + (kind === 'short' ? ', the short form' : '') + ').');
+      let r = null;
+      try { r = await link.maxVersion(kind, t.listen); }
+      catch (e) { if (P.isGone(e)) throw e; log('    ' + said(e) + '.'); }
+      if (r) log(r.reply ? '    It answered: ' + r.reply + '.' : '    It sent no answer of its own within ' + secs(t.listen) + (r.acks && r.acks.length ? ' (it acknowledged the message)' : '') + '.');
+      const i = await askInfo();
+      if (i) {
+        log('    Asked who it is: it answers with version 0' + i.ver + (i.ver !== fmt ? ', CHANGED from 0' + fmt : ', as before') + (link.v2 && !res.newInfo ? ' (the first time it has said who it is in the newer framing)' : '') + '.');
+        fmt = i.ver;
+        if (link.v2) res.newInfo = i;
+      }
+      res.told.push({ framing: link.v2 ? 'new' : 'old', kind: kind, reply: r ? r.reply : null, ver: i ? i.ver : null });
+      if (!i && (!link.v2 || res.newInfo)) await stillThere();        // it said who it was before this message, and now it does not
+    };
+    // A compressed program of a few lines, after telling the calculator "FD" in each of the forms given until one
+    // is kept (none is told to a calculator that speaks 03 already).
+    const compressed = async function (r, kinds) {
+      let rec = null;
+      for (const kind of (fmt === 3 ? [null] : kinds)) {
+        if (kind) await tell(kind);
+        rec = await small(r);
+        if (rec.ok) break;
+      }
+      return rec;
+    };
+    // Up the sizes.  most: in the old framing, the most reports a message has been kept at; a size that needs more is
+    // not sent, because the calculator's answer to one too many is to hold the cable ([log]: for 49 s).
+    const climb = async function (r, most) {
+      for (const sz of SIZES.slice(1)) {
+        check();
+        if (most) {
+          const src = makeProgram(r.name, sz.step, sz.chars), msg = r.layout === 'v1' ? P.programV1(r.name, src) : await P.programV3(r.name, src);
+          const n = Math.ceil(msg.length / link.cap);
+          if (n > most) {
+            res.routes[r.key].steps.push({ col: sz.step, tag: sz.step, chars: sz.chars, ok: false, skipped: true, reports: n });
+            log('  ' + r.name + ': ' + num(sz.chars) + ' characters would be ' + reportsText(n) + ' here, more than the ' + most + ' the old framing has kept. Not sent.');
+            ui.cell(r.key, sz.step, 'skip', reportsText(n) + ': more than the old framing keeps');
+            continue;
+          }
+        }
+        const rec = await attempt(r, { col: sz.step, tag: sz.step, chars: sz.chars, like: sz.like }, 'read');
+        if (!rec.ok) return false;
+      }
+      return true;
+    };
+    // After a failure: does the calculator still answer?  It may need a while ([log]: the G2's first request after the
+    // message it did not keep had no answer).
+    const recover = async function () {
+      const t0 = Date.now();
+      for (let k = 0; ; k++) {
+        check();
+        let i = null;
+        try { i = await link.info(k ? Math.min(2000, t.first) : t.first); } catch (e) { if (P.isGone(e)) throw e; }
+        if (i) { if (k) log('  The calculator answers again, ' + secs(Date.now() - t0) + ' later.'); return true; }
+        if (Date.now() - t0 >= t.recover) return false;
+        await P.sleep(Math.min(1000, t.gap));
+      }
+    };
+    // ... and if it does not: in the old framing the test ends; in the newer one that part of it ends, and the old
+    // framing is asked afterwards.
+    const stillThere = async function () {
+      if (await recover()) return;
+      if (link.v2) { res.newDead = true; log('  THE CALCULATOR HAS STOPPED ANSWERING in the newer framing. The rest of this part is left out.'); throw new Leave(); }
+      res.alive = false;
+      log('THE CALCULATOR HAS STOPPED ANSWERING. Nothing more will be sent.');
+      throw new Halt();
+    };
+    const answers = async function () {
+      try { await link.info(t.first); return true; } catch (e) { if (P.isGone(e)) throw e; return false; }
+    };
+    // Take test programs off again ("EB"), and ask for each to see that it is gone.
+    const takeOff = async function (keys) {
+      const mine = ROUTES.filter(function (r) { return keys.indexOf(r.key) >= 0 && res.routes[r.key].tried && !res.routes[r.key].off; });
+      if (!mine.length) return;
+      log('');
+      log('TAKING ' + mine.map(function (r) { return r.name; }).join(', ') + ' OFF THE CALCULATOR AGAIN ("EB", in the ' + (link.v2 ? 'newer' : 'old') + ' framing).');
+      // A delete has no answer, and the proof of it is that a request for the program then has none either: which
+      // proves nothing on a calculator that has stopped answering.  So it is asked who it is before, and after.
+      const can = !link.v2 || !!res.newInfo, bySilence = [];
+      if (can && !(await answers())) {
+        log('  The calculator does not answer, so its programs cannot be taken off, or checked.');
+        mine.forEach(function (r) { if (res.left.indexOf(r.name) < 0) res.left.push(r.name); });
+        return;
+      }
+      for (const r of mine) {
+        const w = res.routes[r.key], vers = fmt === 3 ? [3, 1] : [1, 3];
+        try {
+          if (!w.reader) {                                          // never read back: both versions of the delete, and the page cannot check
+            for (const v of vers) await link.deleteProgram(r.name, v);
+            log('  ' + r.name + ': a delete was sent. It was never read back, so the page cannot tell whether it was there' + (w.seen ? ' (the person saw it in the list): please look' : '') + '.');
+            if (w.seen && res.left.indexOf(r.name) < 0) res.left.push(r.name);
+            if (!link.v2) w.off = true;                             // (sent in the newer framing, it is sent once more in the old one, where a delete is known to work)
+            continue;
+          }
+          let still = null;
+          for (const v of vers) {
+            await link.deleteProgram(r.name, v);
+            try { still = await link.readProgram(r.name, { ver: w.reader.ver, nul: w.reader.nul, first: Math.min(t.probe, 1200), then: t.then }); }
+            catch (e) { if (P.isGone(e)) throw e; still = null; }
+            if (!still) break;
+          }
+          const at = res.left.indexOf(r.name);
+          if (still) { if (at < 0) res.left.push(r.name); log('  ' + r.name + ' is STILL on the calculator after the delete.'); }
+          else { w.off = true; bySilence.push(r); if (at >= 0) res.left.splice(at, 1); log('  ' + r.name + ': deleted (a request for it now has no answer).'); }
+        } catch (e) {
+          if (P.isGone(e)) throw e;
+          if (res.left.indexOf(r.name) < 0) res.left.push(r.name);
+          log('  Could not delete ' + r.name + ': ' + said(e) + '.');
+        }
+      }
+      if (bySilence.length && can && !(await answers())) {
+        log('  The calculator has stopped answering, so the silence after ' + (bySilence.length === 1 ? 'that delete' : 'those deletes') + ' proves nothing.');
+        bySilence.forEach(function (r) { res.routes[r.key].off = false; if (res.left.indexOf(r.name) < 0) res.left.push(r.name); });
+      }
+    };
+
+    const body = async function () {
+      // ---- who is there
+      log('Asking the calculator who it is (old framing, "00 FA") ...');
+      res.info = await askInfo();
+      if (!res.info) { res.alive = false; return; }
+      fmt = res.info.ver;
+      log('It answered: firmware build ' + res.info.build + ', "' + res.info.version + '"; ' + res.info.bytes + ' bytes of information, version 0' + fmt + '. Its reports carry ' + num(link.cap) + ' bytes each.');
+
+      // ---- C: the old framing, not compressed, and where it stops
+      const C = route('C'), wC = res.routes.C;
+      log('');
+      log('C. THE OLD FRAMING, NOT COMPRESSED ("F7 01"). A few lines first; then a program of exactly ' + LIMITS[0] + ' reports and one of exactly ' + LIMITS[1] + ', the most there are before their numbers start again.');
+      const c1 = await small(C);
+      if (c1.ok) {
+        for (let k = 0; k < LIMITS.length; k++) {
+          const rec = await attempt(C, { col: k + 2, tag: LIMITS[k], chars: charsFor(LIMITS[k], link.cap, C.name), like: 'exactly ' + LIMITS[k] + ' reports' }, 'read');
+          if (!rec.ok) break;
+        }
+      }
+      if (wC.steps.some(function (s) { return !s.ok; })) await stillThere();
+      // What the old framing has kept, in reports: this run's best, or the first test's ([log]).
+      const most = Math.max(wC.best ? wC.best.reports : 0, link.cap >= 1023 ? 80 : 10);
+
+      // ---- A: the old framing, compressed
+      const A = route('A');
+      log('');
+      log('A. THE OLD FRAMING, COMPRESSED ("F7 03"). On 17 Nov neither calculator kept this, and both answered with version 01 where hp-prime-kit\'s G2, which did keep it, answered 03.');
+      res.most = most;
+      const a1 = await compressed(A, ['long']);
+      if (a1.ok) { if (!(await climb(A, most))) await stillThere(); }
+
+      // ---- between the two framings: a key on the calculator, and a look at it if a program went unread
+      check();
+      log('');
+      if (a1.unread && ui.ask) {
+        const yes = await ui.ask({ name: A.name });
+        check();
+        res.routes.A.seen = yes === true;
+        log('The person at the calculator was asked whether ' + A.name + ' is in its list of programs: ' + (yes === true ? 'YES, it is there.' : yes === false ? 'no, it is not there.' : 'no answer.'));
+      } else if (ui.pause) {
+        await ui.pause();
+        check();
+        log('The person at the calculator pressed a key and clicked Continue.');
+      }
+      check();
+      await takeOff(['C', 'A']);
+
+      try { await newer(); }
+      catch (e) { if (!(e instanceof Leave)) throw e; }
+    };
+    const newer = async function () {
+      // ---- E and D: the newer framing
+      const E = route('E'), D = route('D');
+      log('');
+      log('E and D. THE NEWER FRAMING ("FF EC 00 00 00 00 00 00"; PrimeDev; by hp-prime-emulator\'s reading, what the Connectivity Kit itself asks for).');
+      res.opened = await link.openV2(t.listen);
+      log('  Asked for it. ' + (res.opened.replies.length ? 'The calculator answered: ' + res.opened.replies.join(' | ') + '.' : 'The calculator sent no answer of its own within ' + secs(t.listen) + '.') +
+          (res.opened.others ? ' (' + res.opened.others + ' other report' + (res.opened.others === 1 ? '' : 's') + ' came: the lines above.)' : ''));
+      res.newInfo = await askInfo();
+      if (res.newInfo) { log('  Asked who it is, in the newer framing: it answers with version 0' + res.newInfo.ver + '.'); fmt = res.newInfo.ver; }
+      else log('  It did not say who it is in the newer framing. The test goes on: on 17 Nov it acknowledged a message there.');
+      log('  E, not compressed:');
+      const e1 = await small(E);
+      if (!res.newInfo && !e1.ok && /^not sent/.test(e1.why || '')) {
+        res.newDead = true;
+        log('  The calculator acknowledges nothing in the newer framing, so the rest of this part is left out.');
+        throw new Leave();
+      }
+      log('  D, compressed:');
+      const d1 = await compressed(D, ['long', 'short']);
+      // If the few lines of E were not kept before "FD" was told, they are tried once more now: the first message of
+      // a session that PrimeDev holds is the "FD", and a calculator may want it before anything else.
+      let e2 = e1;
+      if (!e1.ok && res.told.some(function (x) { return x.framing === 'new'; })) { log('  E once more, now that "FD" has been told:'); e2 = await small(E); }
+      let whole = true;
+      if (d1.ok) whole = await climb(D, 0);
+      else if (e2.ok) { log('  The compressed program was not kept, so the sizes are tried not compressed.'); whole = await climb(E, 0); }
+      if ((!whole || (!e2.ok && !d1.ok)) && res.newInfo && !(await recover())) { res.newDead = true; log('  The calculator does not answer in the newer framing any more.'); }
+      // A look at the calculator for whatever was sent and not read back: whether it is in the list says whether the
+      // newer framing delivered it at all.
+      for (const r of [E, D]) {
+        const w = res.routes[r.key], last = w.steps[w.steps.length - 1];
+        if (!last || !last.unread || !ui.ask) continue;
+        check();
+        const yes = await ui.ask({ name: r.name });
+        check();
+        w.seen = yes === true;
+        log('The person at the calculator was asked whether ' + r.name + ' is in its list of programs: ' + (yes === true ? 'YES, it is there.' : yes === false ? 'no, it is not there.' : 'no answer.'));
+      }
+    };
+    // What is left to do whether or not the body ran to its end: the test programs off, and the old framing asked
+    // once more, which says whether a page can go back to it.
+    const ending = async function () {
+      cleaning = true;
+      if (!res.info || !res.alive) return;
+      if (!link.v2) { await takeOff(['C', 'A']); return; }
+      if (!res.newDead) await takeOff(['E', 'D']);
+      log('');
+      link.v2 = false;
+      let i = null;
+      try { i = await link.info(t.first); } catch (e) { if (P.isGone(e)) throw e; }
+      res.oldAfterNew = !!i;
+      log('AFTER THE NEWER FRAMING, the old one was asked "00 FA" again: ' + (i ? 'answered, with version 0' + i.ver + '.' : 'NO ANSWER.'));
+      if (!i) { ['E', 'D'].forEach(function (k) { const w = res.routes[k]; if (w.tried && !w.off && res.left.indexOf(w.name) < 0) res.left.push(w.name); }); return; }
+      fmt = i.ver;
+      // A once more.  If the newer framing raised the version, this is hp-prime-kit's own case: its G2 had been with
+      // the Connectivity Kit, answered 03, and kept a compressed program in the OLD framing.  If nothing has raised
+      // it, the short "FD" is tried here, last of all, where nothing that follows depends on what it does.
+      const A = route('A'), wA = res.routes.A;
+      if (!res.stopped && wA.tried && !wA.best) {
+        log('');
+        log('A AGAIN, the old framing, compressed' + (fmt === 3 ? ', now that the calculator speaks version 03.' : ': the calculator still speaks version 01, so the short "FD" is tried.'));
+        wA.off = false; wA.again = true;
+        const raised = fmt === 3;
+        try {
+          const a2 = await compressed(A, ['short']);
+          if (a2.ok) { wA.late = raised ? 'after the newer framing had raised its version to 03' : 'after the short "FD" in the old framing'; await climb(A, res.most); }
+        } catch (e) { if (P.isGone(e)) throw e; if (!(e instanceof Halt) && !(e instanceof Leave)) throw e; }
+      }
+      await takeOff(['C', 'A', 'E', 'D']);
+    };
+
+    for (const part of [body, ending]) {
+      try { await part(); }
+      catch (e) {
+        if (P.isGone(e)) { res.gone = true; res.alive = false; log('THE CALCULATOR WENT OFF THE CABLE: ' + said(e) + '. Nothing more can be sent.'); break; }
+        if (!(e instanceof Halt)) throw e;
+      }
+    }
+    if (res.gone || !res.alive) ROUTES.forEach(function (r) { const w = res.routes[r.key]; if (w.tried && !w.off && res.left.indexOf(r.name) < 0) res.left.push(r.name); });
+    tracer.flush();
+    res.text = summary(res, link);
+    ROUTES.forEach(function (r) { res.routes[r.key].steps.forEach(function (s) { delete s.src; }); res.routes[r.key].lastSrc = null; });
+    log('');
+    log('RESULT');
+    res.text.split('\n').forEach(function (l) { log('  ' + l); });
+    return res;
+  }
+
+  // What the test found, in sentences.
+  function summary(res, link) {
+    const L = [], R = res.routes, big = SIZES[SIZES.length - 1].chars;
+    if (!res.info) return res.gone ? 'The calculator went off the cable before it said who it is. Nothing was sent to it.'
+                                   : 'The calculator did not answer, so nothing was sent to it. Is it switched on and at its Home screen? Is HP\'s Connectivity Kit closed?';
+    let top = null;
+    ROUTES.forEach(function (r) { const w = R[r.key]; if (w.best && (!top || w.best.chars > top.chars)) top = { key: r.key, title: r.title, chars: w.best.chars, reports: w.best.reports }; });
+    res.top = top;
+    // every route that carried the largest size, the fewest reports first
+    const tops = ROUTES.filter(function (r) { return R[r.key].best && R[r.key].best.chars >= big; }).map(function (r) { return { title: r.title, reports: R[r.key].best.reports }; })
+                       .sort(function (a, b) { return a.reports - b.reports; });
+    if (tops.length) L.push('A PROGRAM THE SIZE OF THE BOOK\'S LARGEST (' + num(big) + ' characters) WENT TO THIS CALCULATOR AND CAME BACK THE SAME: ' +
+                            tops.map(function (x) { return x.title.toLowerCase() + ', ' + reportsText(x.reports); }).join('; and ') + '.');
+    else if (top && top.chars < big) L.push('The largest program that went to this calculator and came back the same: ' + num(top.chars) + ' characters (' + top.title.toLowerCase() + ', ' + reportsText(top.reports) + '). The book\'s largest is ' + num(big) + '.');
+    else if (!top) L.push('No program came back from this calculator.');
+    L.push('');
+    ROUTES.forEach(function (r) {
+      const w = R[r.key];
+      if (!w.tried) { L.push(r.key + '. ' + w.title + ': not tried.'); return; }
+      const ok = w.steps.filter(function (s) { return s.ok; }), bad = w.steps.filter(function (s) { return !s.ok && !s.skipped; }), skipped = w.steps.filter(function (s) { return s.skipped; });
+      let s = r.key + '. ' + w.title + ': ';
+      if (ok.length) {
+        const last = ok[ok.length - 1];
+        s += 'came back the same at ' + ok.map(function (x) { return num(x.chars); }).join(', ') + ' characters (the last in ' + reportsText(last.reports) + ')';
+        if (w.release) s += ', with a report "01" after each';
+        if (w.late) s += ', but only at the second try, ' + w.late;
+      } else s += 'NOT kept';
+      const b = bad.length ? bad[bad.length - 1] : null;
+      if (b && (!ok.length || b.chars > ok[ok.length - 1].chars)) s += (ok.length ? '; NOT at ' + num(b.chars) + ' characters' + (b.reports ? ' (' + reportsText(b.reports) + ')' : '') : '') + ': ' + b.why;
+      if (skipped.length) s += '; ' + skipped.map(function (x) { return num(x.chars); }).join(', ') + ' characters not sent (' + skipped.map(function (x) { return num(x.reports); }).join(', ') + ' reports)';
+      if (w.seen === true) s += '. The person saw ' + w.name + ' in the calculator\'s list, so it WAS kept, and no request reads it back';
+      if (w.seen === false && !ok.length) s += '. The person did not find ' + w.name + ' in the calculator\'s list';
+      L.push(s + '.');
+    });
+    L.push('');
+    L.push('It answered with version 0' + res.info.ver + ' at the start.' + res.told.map(function (x) {
+      return ' Told "FD" (' + (x.kind === 'short' ? 'short' : 'long') + ' form, ' + x.framing + ' framing): ' + (x.reply ? 'it answered ' + x.reply : 'no answer of its own') + (x.ver ? ', and then spoke version 0' + x.ver : '') + '.';
+    }).join(''));
+    if (res.opened) L.push('The newer framing: ' + (res.opened.replies.length ? 'on being asked, it answered ' + res.opened.replies.join(' | ') : 'on being asked, it sent nothing of its own') + '.' +
+                           (res.oldAfterNew === null ? '' : ' Afterwards the old framing was ' + (res.oldAfterNew ? 'still answered.' : 'NOT answered.')));
+    if (res.gone) L.push('THE CALCULATOR WENT OFF THE CABLE before the test ended. What is above this line in the log stands.');
+    else if (!res.alive) L.push('THE CALCULATOR STOPPED ANSWERING. If it does not come back by itself, press its On key; failing that, press a straightened paperclip into the reset hole on its back.');
+    if (res.stopped) L.push('The test was stopped before its end.');
+    if (res.left.length) L.push('STILL ON THE CALCULATOR, or not known to be off it: ' + res.left.join(', ') + '. Each is comment lines and one small function; to delete one, press Shift, then Program, tap its name, tap More, then Delete.');
+    else L.push('The test\'s programs were taken off the calculator again.');
+    return L.join('\n');
+  }
+
+  return { VERSION: VERSION, SIZES: SIZES, LIMITS: LIMITS, ROUTES: ROUTES, cellsOf: cellsOf, makeProgram: makeProgram, charsFor: charsFor,
+           firstDifference: firstDifference, num: num, Tracer: Tracer, run: run, summary: summary };
+})();
+
+if (typeof module !== 'undefined') module.exports = PrimeLadder;
+
+</script>
+<script>
+'use strict';
+const PAGE = 'PrimeUSBTest v2';
+const $ = id => document.getElementById(id);
+let port = null, link = null, running = false, wantStop = false, lostNow = false, lines = [], waiting = null;
+
+function say(id, text, kind) { const s = $(id); s.textContent = text; s.className = 'status' + (kind ? ' ' + kind : ''); }
+function said(e) { return String(e && e.message ? e.message : e).replace(/[.\s]+$/, ''); }      // an error's own words, less its full stop
+function logLine(s) {
+  lines.push(s);
+  const ta = $('log');
+  ta.value = lines.join('\n');
+  ta.scrollTop = ta.scrollHeight;
+  $('save').disabled = false; $('copy').disabled = false;
+}
+
+// ---------- the table: a row for each route, a cell for each program it tries ----------
+(function () {
+  const body = $('gridbody');
+  for (const r of PrimeLadder.ROUTES) {
+    const tr = document.createElement('tr'), th = document.createElement('th');
+    th.scope = 'row'; th.innerHTML = '<b>' + r.key + '</b>: ' + r.title + '<br><span style="font-weight:400;font-size:0.85em">' + r.name + '; ' + r.from + '</span>';
+    tr.appendChild(th);
+    const cells = PrimeLadder.cellsOf(r.key);
+    for (let c = 1; c <= 5; c++) {
+      const td = document.createElement('td'), def = cells.filter(x => x.col === c)[0];
+      if (def) { td.id = 'c_' + r.key + c; td.dataset.cap = def.cap; }
+      tr.appendChild(td);
+    }
+    body.appendChild(tr);
+  }
+  clearGrid();
+})();
+function esc(s) { return String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
+function clearGrid() { document.querySelectorAll('#gridbody td').forEach(td => { td.className = ''; td.innerHTML = td.dataset.cap ? '<span class="cap">' + esc(td.dataset.cap) + '</span>' : ''; }); }
+function cell(route, col, state, text) {
+  const td = $('c_' + route + col);
+  if (!td) return;
+  td.className = state;
+  // The mark is a word as well as a colour, for a reader who cannot tell the colours apart.
+  const mark = state === 'ok' ? 'OK' : state === 'bad' ? 'FAILED' : state === 'skip' ? 'NOT SENT' : '...';
+  td.innerHTML = '<span class="cap">' + esc(td.dataset.cap) + '</span><span class="mark">' + mark + '</span><br>' + esc(text);
+}
+
+// ---------- the two things the page asks of the person at the calculator ----------
+// Stop answers either of them with nothing, and the test ends at its next step.
+function ask(q) {
+  return new Promise(res => {
+    $('askp').innerHTML = 'On the calculator, press <kbd>Shift</kbd>, then <kbd>Program</kbd> (the <kbd>1</kbd> key). <b>Is ' + q.name + ' in the list?</b> Then press <kbd>Home</kbd>.';
+    $('askyes').textContent = 'Yes, ' + q.name + ' is in the list';
+    $('askno').textContent = 'No, it is not';
+    $('ask').hidden = false;
+    $('askyes').focus();
+    const done = v => { waiting = null; $('ask').hidden = true; $('askyes').onclick = null; $('askno').onclick = null; res(v); };
+    $('askyes').onclick = () => done(true);
+    $('askno').onclick = () => done(false);
+    waiting = () => done(null);
+  });
+}
+function pause() {
+  return new Promise(res => {
+    $('pause').hidden = false;
+    $('pausego').focus();
+    const done = () => { waiting = null; $('pause').hidden = true; $('pausego').onclick = null; res(); };
+    $('pausego').onclick = done;
+    waiting = done;
+  });
+}
+
+// ---------- connect ----------
+function modelOf(d) { return PrimeUSB.MODELS[d.productId] || 'a device this page does not know'; }
+async function connect() {
+  $('connect').disabled = true;
+  say('cstatus', 'Waiting for you to choose the calculator in the browser\'s window ...');
+  try {
+    const d = await PrimeUSB.choose();
+    if (!d) {
+      say('cstatus', 'No calculator was chosen. If the browser\'s list was empty, the calculator is not reaching the computer: is it switched on, and is the cable pushed in at both ends? (Some USB cables only charge; use the one that came with the calculator.) Then click Connect again.', 'bad');
+      return;
+    }
+    try { port = await PrimeUSB.open(d); }
+    catch (e) {
+      say('cstatus', 'The browser found the calculator and could not open it. That is what happens while HP\'s Connectivity Kit is open, because Windows gives the calculator to one program at a time. Close the Kit, then click Connect again. (The browser said: ' + said(e) + '.)', 'bad');
+      port = null;
+      return;
+    }
+    lostNow = false;
+    link = new PrimeUSB.Link(port, {});
+    if (window.__pace) Object.assign(link.pace, window.__pace);
+    let info = null;
+    try { info = await link.info(3000); } catch (e) { info = null; }
+    lines = [];
+    logLine(PAGE + ' (ladder ' + PrimeLadder.VERSION + '), ' + new Date().toString());
+    logLine('Browser: ' + navigator.userAgent);
+    logLine('Device: ' + modelOf(d) + ' (USB ' + d.vendorId.toString(16).toUpperCase().padStart(4, '0') + ':' + d.productId.toString(16).toUpperCase().padStart(4, '0') + '), "' + (d.productName || '') + '"; reports of ' +
+            port.inSize + ' bytes in and ' + port.outSize + ' out, by ' + port.sizeFrom + '.');
+    if (!info) {
+      logLine('Identify: no answer.');
+      say('cstatus', 'Connected to ' + modelOf(d) + ', but it did not answer when asked who it is. Is it switched on and at its Home screen? If a test has just run, unplug the calculator, plug it in again and click Disconnect, then Connect. You can still run the test; it will ask again.', 'bad');
+    } else {
+      logLine('Identify: firmware build ' + info.build + ', "' + info.version + '", version 0' + info.ver + '.');
+      say('cstatus', 'Connected: ' + modelOf(d) + ', firmware build ' + info.build + ' (' + info.version + '). Its reports are ' + PrimeLadder.num(port.reportSize) + ' bytes.', 'ok');
+    }
+    $('run').disabled = false; $('disconnect').hidden = false; $('connect').hidden = true;
+  } catch (e) {
+    say('cstatus', 'Could not connect: ' + said(e) + '.', 'bad');
+  } finally {
+    $('connect').disabled = false;
+  }
+}
+async function disconnect(why) {
+  if (port) { try { await port.close(); } catch (e) { /* gone already */ } }
+  port = null; link = null;
+  $('run').disabled = true; $('disconnect').hidden = true; $('connect').hidden = false;
+  say('cstatus', why || 'Disconnected.', why ? 'bad' : '');
+}
+
+// ---------- run ----------
+async function run() {
+  if (running || !link) return;
+  running = true; wantStop = false;
+  $('run').disabled = true; $('stop').disabled = false; $('disconnect').disabled = true; $('result').hidden = true; $('ask').hidden = true; $('pause').hidden = true;
+  clearGrid();
+  say('rstatus', 'The test is running. Leave the calculator alone unless the page asks you to press a key.');
+  logLine('');
+  logLine('---- test started ' + new Date().toTimeString().slice(0, 8) + ' ----');
+  let res = null;
+  try {
+    res = await PrimeLadder.run(link, { log: logLine, cell: cell, ask: ask, pause: pause, stop: () => wantStop }, { core: PrimeUSB, t: window.__ladderT });
+  } catch (e) {
+    logLine('THE TEST BROKE OFF: ' + (e && e.stack ? e.stack : e));
+    say('rstatus', 'The test broke off with an error of its own: ' + said(e) + '. Please save the log and send it.', 'bad');
+  }
+  if (res) {
+    const big = PrimeLadder.SIZES[PrimeLadder.SIZES.length - 1].chars;
+    $('resulttext').textContent = res.text;
+    $('result').hidden = false;
+    $('result').className = 'panel ' + (res.top && res.top.chars >= big && !res.gone ? 'done' : 'warn');
+    say('rstatus', 'The test has ended. Please save the log (step 4) and send it.', res.alive ? 'ok' : 'bad');
+  }
+  logLine('---- test ended ' + new Date().toTimeString().slice(0, 8) + '; reports sent ' + (port ? port.sent : '?') + ', received ' + (port ? port.received : '?') + ' ----');
+  running = false;
+  $('stop').disabled = true; $('disconnect').disabled = false; $('run').disabled = !link;
+  if (lostNow) { lostNow = false; await disconnect('The calculator went off the cable during the test: unplugged, or it switched itself off. Turn it on, plug it in again and click Connect.'); }
+}
+
+$('connect').addEventListener('click', connect);
+$('disconnect').addEventListener('click', () => disconnect());
+$('run').addEventListener('click', run);
+$('stop').addEventListener('click', () => {
+  wantStop = true; $('stop').disabled = true;
+  say('rstatus', 'Stopping after the step in hand ...');
+  if (waiting) waiting();
+});
+
+// ---------- the log ----------
+$('save').addEventListener('click', () => {
+  const a = document.createElement('a');
+  const d = new Date(), z = n => String(n).padStart(2, '0');
+  a.href = URL.createObjectURL(new Blob([lines.join('\r\n') + '\r\n'], { type: 'text/plain' }));
+  a.download = 'PrimeUSBTest2_log_' + d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + '_' + z(d.getHours()) + z(d.getMinutes()) + '.txt';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  say('lstatus', 'Saved ' + a.download + ' in your Downloads folder.', 'ok');
+});
+$('copy').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(lines.join('\n')); say('lstatus', 'Copied. Paste it into the chat.', 'ok'); }
+  catch (e) { $('log').select(); say('lstatus', 'The browser would not copy it. The log is selected: press Ctrl+C.', 'bad'); }
+});
+
+// ---------- start ----------
+$('verline').textContent = PAGE + ', ladder ' + PrimeLadder.VERSION + ', built 17 November 2026.';
+if (!PrimeUSB.supported()) {
+  $('nohid').hidden = false;
+  $('connect').disabled = true;
+  if (typeof navigator !== 'undefined' && navigator.hid && window.isSecureContext === false)
+    $('nohidp').textContent = 'The browser lets a page reach a USB device only when the page comes from a file on this computer or from an https address. Open the page that way.';
+} else if (navigator.hid.addEventListener) {
+  // The calculator went off the cable.  Everything that is waiting on it ends now (PrimeUSB.HidPort.lose): on
+  // 17 Nov a write to a calculator that had gone never came back, and the first page stood still for good.
+  navigator.hid.addEventListener('disconnect', ev => {
+    if (port && ev.device === port.device) {
+      logLine('THE BROWSER SAYS THE CALCULATOR WENT OFF THE CABLE (' + new Date().toTimeString().slice(0, 8) + ').');
+      port.lose('the browser says it went off the cable (unplugged, or switched off)');
+      if (!running) disconnect('The calculator went off the cable: unplugged, or it switched itself off. Turn it on, plug it in again and click Connect.');
+      else { lostNow = true; say('cstatus', 'The calculator went off the cable during the test.', 'bad'); if (waiting) waiting(); }
+    }
+  });
+}
+</script>
+</body>
+</html>

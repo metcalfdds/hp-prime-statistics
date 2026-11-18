@@ -391,7 +391,7 @@ A few things from it that are hard to find elsewhere:
 
 [data-loader/](data-loader/) has the Data Loader page, its number encoder and its tests (20,011 numbers against hp-prime-kit's encoder, and the page itself in Chromium).
 
-[prime-loader/](prime-loader/) has the Prime Loader page, its source, the build script that embeds the starter pack's files and the chapter list, and its Chromium test; [prime-loader/usb/](prime-loader/usb/README.md) has the code for a real HP Prime on its USB cable, a pretend calculator to test it with, and the test page for a real one.
+[prime-loader/](prime-loader/) has the Prime Loader page, its source, the build script that embeds the starter pack's files and the chapter list, and its Chromium test; [prime-loader/usb/](prime-loader/usb/README.md) has the code for a real HP Prime on its USB cable, a pretend calculator to test it with, the logs of the first test on a G2 and a G1 (17 November 2026), and the second test page for a real one.
 
 **On Windows, a Connectivity Kit launcher that starts Bonjour first:** [tools/windows-launcher/](tools/windows-launcher/). If the Kit sometimes fails to see your calculator because Apple's Bonjour Service has stopped, double-click `Start_HP_Prime.cmd` instead of the Kit's own shortcut.
 

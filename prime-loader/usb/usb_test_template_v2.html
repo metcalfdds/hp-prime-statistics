@@ -3,13 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HP Prime USB test</title>
+<title>HP Prime USB test 2</title>
 <style>
-/* PrimeUSBTest v1 (17 Nov 2026).  Roger: "we do need to make some sort of very simple loader ... to get the programs on
-   a physical calcuator", and "the calculator is connected to the computer somehow--do we need the Kit?"  This page is
-   the first step of the answer: it tries, on a real HP Prime, whether a web page can put a program on the calculator
-   through the cable and read it back.  It is for the author and for an instructor with a calculator to spare, not for
-   students.  The colours are the Prime Loader's. */
+/* PrimeUSBTest v2 (17 Nov 2026, night).  Roger: "the calculator is connected to the computer somehow--do we need the
+   Kit?"  The first page ran on his G2 and his G1 that evening and stood still at its last step ("the program seems
+   stuck"): it waited for an answer with no end to the wait.  This one cannot: every wait has one end, and the
+   calculator going off the cable ends them all.  It asks what the first run left open, and writes down every report
+   the calculator sends.  It is for the author and for an instructor with a calculator to spare, not for students.
+   The colours are the Prime Loader's. */
 :root {
   --paper: #f6f8fb; --surface: #ffffff; --ink: #172033; --muted: #5a6478; --line: #d9dfea;
   --accent: #003cc8; --frame: #e04000; --good: #008c3c; --warn-bg: #fff3e8; --good-bg: #e9f7ef; --bad-bg: #fde9e4;
@@ -65,10 +66,12 @@ table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 0.9
 th, td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; }
 thead th { font-weight: 600; background: var(--accent-soft); }
 tbody th { font-weight: 500; min-width: 190px; }
-td { font-family: var(--mono); font-size: 0.82rem; min-width: 96px; }
+td { font-family: var(--mono); font-size: 0.82rem; min-width: 104px; }
 td.ok { background: var(--good-bg); }
 td.bad { background: var(--bad-bg); }
 td.busy { background: var(--accent-soft); }
+td.skip { color: var(--muted); }
+td .cap { display: block; font-family: var(--body); color: var(--muted); font-size: 0.78rem; }
 td .mark { font-weight: 700; }
 textarea { width: 100%; height: 320px; font: 0.8rem/1.45 var(--mono); border: 1px solid var(--line); border-radius: 8px;
            padding: 10px; background: var(--surface); color: var(--ink); white-space: pre; }
@@ -82,9 +85,9 @@ footer a, .step a { color: var(--accent); }
 <body>
 <main>
   <header>
-    <h1>HP Prime USB test</h1>
-    <p>This page tries something new: putting a program on a <b>real HP Prime</b> through its USB cable, straight from the browser, with <b>no Connectivity Kit</b>, and reading the program back to see that it arrived whole.</p>
-    <p><b>It has never been run on a calculator.</b> It was written from other people's published measurements and tried only on a pretend calculator. This test is the first real run, and its log says what works.</p>
+    <h1>HP Prime USB test 2</h1>
+    <p>This page tries whether a web page can put a program on a <b>real HP Prime</b> through its USB cable, with <b>no Connectivity Kit</b>, and read it back to see that it arrived whole.</p>
+    <p><b>This is the second test.</b> The first ran on a G2 and a G1 on 17 November 2026. It found that a program travels and comes back the same when it is sent <b>not compressed</b>, up to 80 reports of the G2; that a <b>compressed</b> program was not kept; and then the page stood still. This one asks what that left open, and it cannot stand still: every wait in it has an end.</p>
     <p class="why">The page is for the book's author, or for an instructor with a calculator to spare. It is not for students: they should use the <a href="__LOADER_URL__">HP Prime Loader</a>.</p>
   </header>
 
@@ -97,10 +100,12 @@ footer a, .step a { color: var(--accent); }
     <h2 id="s0"><span class="stepnum">1</span>Before you start</h2>
     <ol class="steps">
       <li><b>Back the calculator up first, if it holds anything you would miss.</b> HP's Connectivity Kit can make the backup.
-        <p class="why">The test only writes four test programs of its own and deletes them again. But it is a first run, and a calculator that freezes may need its reset hole, which can cost what is in its memory.</p></li>
+        <p class="why">The test writes four test programs of its own and deletes them again. But a calculator that freezes may need its reset hole, which can cost what is in its memory.</p></li>
       <li><b>Close HP's Connectivity Kit.</b>
         <p class="why">Windows gives a USB device to one program at a time. While the Kit is open, this page cannot reach the calculator.</p></li>
       <li><b>Turn the calculator on, leave it at its Home screen, and plug it into this computer with its USB cable.</b></li>
+      <li><b>Just before you click Run, press the <kbd>Home</kbd> key on the calculator.</b>
+        <p class="why">A calculator switches itself off after about five minutes without a key. The test takes two or three, and half way through it asks you to press a key once more.</p></li>
     </ol>
   </section>
 
@@ -120,17 +125,21 @@ footer a, .step a { color: var(--accent); }
       <button type="button" class="primary" id="run" disabled>Run the test</button>
       <button type="button" id="stop" disabled>Stop</button>
     </div>
-    <p class="why">The test sends a small test program four different ways and reads it back. Each way that works then climbs to bigger programs, up to the size of the book's largest (EpiStats, 289,813 characters). A way stops at its first failure. The whole test takes a few minutes; do not unplug the calculator or press its keys while it runs.</p>
-    <p class="why">On the calculator it writes four programs at most, named <b>ZZUSBA</b>, <b>ZZUSBB</b>, <b>ZZUSBC</b> and <b>ZZUSBD</b>, and deletes them at the end. It reads, changes and deletes nothing else.</p>
+    <p class="why">The test tries four routes, each with a program of a few lines first. A route that works climbs toward the size of the book's largest program (EpiStats, 289,813 characters). It takes two or three minutes; do not unplug the calculator while it runs.</p>
+    <p class="why">On the calculator it writes four programs at most, named <b>ZZUSBC</b>, <b>ZZUSBA</b>, <b>ZZUSBE</b> and <b>ZZUSBD</b>, and deletes them at the end. It reads, changes and deletes nothing else.</p>
     <p class="status" id="rstatus" role="status" aria-live="polite"></p>
     <div class="panel warn" id="ask" hidden>
       <h3 id="askh">Please look at the calculator</h3>
       <p id="askp"></p>
       <div class="row"><button type="button" id="askyes">Yes</button><button type="button" id="askno">No</button></div>
     </div>
+    <div class="panel warn" id="pause" hidden>
+      <h3>Please press a key on the calculator</h3>
+      <p>Press the <kbd>Home</kbd> key on the calculator, then click <b>Continue</b>. (It keeps the calculator from switching itself off during the second half of the test.)</p>
+      <div class="row"><button type="button" class="primary" id="pausego">Continue</button></div>
+    </div>
     <div class="scroll">
-      <table id="grid" aria-label="The ways of sending, and the size of the test program at each step">
-        <thead><tr id="gridhead"><th scope="col">Way of sending</th></tr></thead>
+      <table id="grid" aria-label="The four routes, and the test program at each step of each">
         <tbody id="gridbody"></tbody>
       </table>
     </div>
@@ -142,7 +151,7 @@ footer a, .step a { color: var(--accent); }
 
   <section class="step" aria-labelledby="s3">
     <h2 id="s3"><span class="stepnum">4</span>Send the log</h2>
-    <p class="why">The log is what tells us what to build next. It holds what was sent and what came back, in numbers; it does not hold the calculator's serial number or anything from the calculator but the test programs. <b>Save it and attach the file to your chat with Claude</b>, whatever the test found, failures most of all.</p>
+    <p class="why">The log is what tells us what to build next. It holds what was sent and what came back, in numbers; it does not hold the calculator's serial number, or anything from the calculator but the test programs and how its answers begin. <b>Save it and attach the file to your chat with Claude</b>, whatever the test found, failures most of all.</p>
     <div class="row">
       <button type="button" id="save" disabled>Save the log</button>
       <button type="button" id="copy" disabled>Copy the log</button>
@@ -152,7 +161,7 @@ footer a, .step a { color: var(--accent); }
   </section>
 
   <footer>
-    <p>What travels on the cable was worked out and published by others, and this page is written from what they measured: <a href="https://github.com/JordiRigau/hp-prime-kit">hp-prime-kit</a> (Jordi Rigau), <a href="https://github.com/APie357/hp-prime-web">hp-prime-web</a> (APie357) and <a href="https://github.com/BeatSkip/PrimeDev">PrimeDev</a> (Oscar Spierings), each under the MIT licence. None of their code is here. The page is from <a href="https://github.com/metcalfdds/hp-prime-statistics">hp-prime-statistics</a>, by Roger Metcalf, written with Claude (Anthropic). It is not from HP, and HP has not looked at it.</p>
+    <p>What travels on the cable was worked out and published by others, and this page is written from what they measured and read: <a href="https://github.com/JordiRigau/hp-prime-kit">hp-prime-kit</a> (Jordi Rigau), <a href="https://github.com/APie357/hp-prime-web">hp-prime-web</a> (APie357), <a href="https://github.com/BeatSkip/PrimeDev">PrimeDev</a> (Oscar Spierings) and <a href="https://github.com/golba98/hp-prime-emulator">hp-prime-emulator</a> (golba98), each under the MIT licence. None of their code is here. The page is from <a href="https://github.com/metcalfdds/hp-prime-statistics">hp-prime-statistics</a>, by Roger Metcalf, written with Claude (Anthropic). It is not from HP, and HP has not looked at it.</p>
     <p id="verline"></p>
   </footer>
 </main>
@@ -167,7 +176,7 @@ footer a, .step a { color: var(--accent); }
 'use strict';
 const PAGE = 'PrimeUSBTest __VERSION__';
 const $ = id => document.getElementById(id);
-let port = null, link = null, running = false, wantStop = false, unplugged = false, lines = [];
+let port = null, link = null, running = false, wantStop = false, lostNow = false, lines = [], waiting = null;
 
 function say(id, text, kind) { const s = $(id); s.textContent = text; s.className = 'status' + (kind ? ' ' + kind : ''); }
 function said(e) { return String(e && e.message ? e.message : e).replace(/[.\s]+$/, ''); }      // an error's own words, less its full stop
@@ -179,45 +188,56 @@ function logLine(s) {
   $('save').disabled = false; $('copy').disabled = false;
 }
 
-// ---------- the table: a row for each way, a column for each step ----------
+// ---------- the table: a row for each route, a cell for each program it tries ----------
 (function () {
-  const head = $('gridhead'), body = $('gridbody');
-  for (const st of PrimeLadder.STEPS) {
-    const th = document.createElement('th'); th.scope = 'col';
-    th.innerHTML = 'Step ' + st.step + '<br><span style="font-weight:400">' + PrimeLadder.num(st.chars) + ' characters<br>' + st.like + '</span>';
-    head.appendChild(th);
-  }
-  for (const w of PrimeLadder.WAYS) {
+  const body = $('gridbody');
+  for (const r of PrimeLadder.ROUTES) {
     const tr = document.createElement('tr'), th = document.createElement('th');
-    th.scope = 'row'; th.innerHTML = '<b>' + w.key + '</b>: ' + w.title + '<br><span style="font-weight:400;font-size:0.85em">' + w.name + '; from ' + w.from + '</span>';
+    th.scope = 'row'; th.innerHTML = '<b>' + r.key + '</b>: ' + r.title + '<br><span style="font-weight:400;font-size:0.85em">' + r.name + '; ' + r.from + '</span>';
     tr.appendChild(th);
-    for (const st of PrimeLadder.STEPS) { const td = document.createElement('td'); td.id = 'c_' + w.key + st.step; td.textContent = ''; tr.appendChild(td); }
+    const cells = PrimeLadder.cellsOf(r.key);
+    for (let c = 1; c <= 5; c++) {
+      const td = document.createElement('td'), def = cells.filter(x => x.col === c)[0];
+      if (def) { td.id = 'c_' + r.key + c; td.dataset.cap = def.cap; }
+      tr.appendChild(td);
+    }
     body.appendChild(tr);
   }
+  clearGrid();
 })();
-function clearGrid() { document.querySelectorAll('#gridbody td').forEach(td => { td.textContent = ''; td.className = ''; }); }
-function cell(way, step, state, text) {
-  const td = $('c_' + way + step);
+function esc(s) { return String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
+function clearGrid() { document.querySelectorAll('#gridbody td').forEach(td => { td.className = ''; td.innerHTML = td.dataset.cap ? '<span class="cap">' + esc(td.dataset.cap) + '</span>' : ''; }); }
+function cell(route, col, state, text) {
+  const td = $('c_' + route + col);
   if (!td) return;
   td.className = state;
   // The mark is a word as well as a colour, for a reader who cannot tell the colours apart.
-  td.innerHTML = '<span class="mark">' + (state === 'ok' ? 'OK' : state === 'bad' ? 'FAILED' : '...') + '</span><br>' + text.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const mark = state === 'ok' ? 'OK' : state === 'bad' ? 'FAILED' : state === 'skip' ? 'NOT SENT' : '...';
+  td.innerHTML = '<span class="cap">' + esc(td.dataset.cap) + '</span><span class="mark">' + mark + '</span><br>' + esc(text);
 }
 
-// ---------- asking the person at the calculator, when nothing can be read back ----------
-function ask(way, st) {
+// ---------- the two things the page asks of the person at the calculator ----------
+// Stop answers either of them with nothing, and the test ends at its next step.
+function ask(q) {
   return new Promise(res => {
-    // What a calculator shows was seen on the Virtual Calculator, 17 Nov 2026: a small box, "ZZUSBA 1" (tests/vc_2026-11-17).
-    $('askp').innerHTML = 'On the calculator, press <kbd>Shift</kbd>, then <kbd>Program</kbd>. Is <b>' + way.name + '</b> in the list? If it is, tap its name, then tap <b>Run</b>. ' +
-      '<b>Does a small box appear that says \u201c' + way.name + ' ' + st.step + '\u201d?</b> ' +
-      'If Run does nothing at all, tap <b>Edit</b>, tap <b>Check</b>, tap <b>OK</b>, press <kbd>Esc</kbd>, and tap <b>Run</b> once more. (Afterwards tap <b>OK</b> and press <kbd>Home</kbd>.)';
-    $('askyes').textContent = 'Yes, it says ' + way.name + ' ' + st.step;
-    $('askno').textContent = 'No (not in the list, an error, or another number)';
+    $('askp').innerHTML = 'On the calculator, press <kbd>Shift</kbd>, then <kbd>Program</kbd> (the <kbd>1</kbd> key). <b>Is ' + q.name + ' in the list?</b> Then press <kbd>Home</kbd>.';
+    $('askyes').textContent = 'Yes, ' + q.name + ' is in the list';
+    $('askno').textContent = 'No, it is not';
     $('ask').hidden = false;
     $('askyes').focus();
-    const done = v => { $('ask').hidden = true; $('askyes').onclick = null; $('askno').onclick = null; res(v); };
+    const done = v => { waiting = null; $('ask').hidden = true; $('askyes').onclick = null; $('askno').onclick = null; res(v); };
     $('askyes').onclick = () => done(true);
     $('askno').onclick = () => done(false);
+    waiting = () => done(null);
+  });
+}
+function pause() {
+  return new Promise(res => {
+    $('pause').hidden = false;
+    $('pausego').focus();
+    const done = () => { waiting = null; $('pause').hidden = true; $('pausego').onclick = null; res(); };
+    $('pausego').onclick = done;
+    waiting = done;
   });
 }
 
@@ -238,7 +258,9 @@ async function connect() {
       port = null;
       return;
     }
-    link = new PrimeUSB.Link(port, function () {});
+    lostNow = false;
+    link = new PrimeUSB.Link(port, {});
+    if (window.__pace) Object.assign(link.pace, window.__pace);
     let info = null;
     try { info = await link.info(3000); } catch (e) { info = null; }
     lines = [];
@@ -248,9 +270,9 @@ async function connect() {
             port.inSize + ' bytes in and ' + port.outSize + ' out, by ' + port.sizeFrom + '.');
     if (!info) {
       logLine('Identify: no answer.');
-      say('cstatus', 'Connected to ' + modelOf(d) + ', but it did not answer when asked who it is. Is it switched on and at its Home screen? You can still run the test; it will ask again.', 'bad');
+      say('cstatus', 'Connected to ' + modelOf(d) + ', but it did not answer when asked who it is. Is it switched on and at its Home screen? If a test has just run, unplug the calculator, plug it in again and click Disconnect, then Connect. You can still run the test; it will ask again.', 'bad');
     } else {
-      logLine('Identify: firmware build ' + info.build + ', "' + info.version + '".');
+      logLine('Identify: firmware build ' + info.build + ', "' + info.version + '", version 0' + info.ver + '.');
       say('cstatus', 'Connected: ' + modelOf(d) + ', firmware build ' + info.build + ' (' + info.version + '). Its reports are ' + PrimeLadder.num(port.reportSize) + ' bytes.', 'ok');
     }
     $('run').disabled = false; $('disconnect').hidden = false; $('connect').hidden = true;
@@ -271,41 +293,46 @@ async function disconnect(why) {
 async function run() {
   if (running || !link) return;
   running = true; wantStop = false;
-  $('run').disabled = true; $('stop').disabled = false; $('disconnect').disabled = true; $('result').hidden = true; $('ask').hidden = true;
+  $('run').disabled = true; $('stop').disabled = false; $('disconnect').disabled = true; $('result').hidden = true; $('ask').hidden = true; $('pause').hidden = true;
   clearGrid();
-  say('rstatus', 'The test is running. Leave the calculator alone until it ends.');
+  say('rstatus', 'The test is running. Leave the calculator alone unless the page asks you to press a key.');
   logLine('');
   logLine('---- test started ' + new Date().toTimeString().slice(0, 8) + ' ----');
   let res = null;
   try {
-    res = await PrimeLadder.run(link, { log: logLine, cell: cell, ask: ask, stop: () => wantStop }, { core: PrimeUSB, t: window.__ladderT });
+    res = await PrimeLadder.run(link, { log: logLine, cell: cell, ask: ask, pause: pause, stop: () => wantStop }, { core: PrimeUSB, t: window.__ladderT });
   } catch (e) {
     logLine('THE TEST BROKE OFF: ' + (e && e.stack ? e.stack : e));
     say('rstatus', 'The test broke off with an error of its own: ' + said(e) + '. Please save the log and send it.', 'bad');
   }
   if (res) {
+    const big = PrimeLadder.SIZES[PrimeLadder.SIZES.length - 1].chars;
     $('resulttext').textContent = res.text;
     $('result').hidden = false;
-    $('result').className = 'panel ' + (res.alive && Object.keys(res.ways).some(k => res.ways[k].best > 0) ? 'done' : 'warn');
+    $('result').className = 'panel ' + (res.top && res.top.chars >= big && !res.gone ? 'done' : 'warn');
     say('rstatus', 'The test has ended. Please save the log (step 4) and send it.', res.alive ? 'ok' : 'bad');
   }
   logLine('---- test ended ' + new Date().toTimeString().slice(0, 8) + '; reports sent ' + (port ? port.sent : '?') + ', received ' + (port ? port.received : '?') + ' ----');
   running = false;
   $('stop').disabled = true; $('disconnect').disabled = false; $('run').disabled = !link;
-  if (unplugged) { unplugged = false; await disconnect('The calculator was unplugged or switched off during the test. Plug it in again and click Connect.'); }
+  if (lostNow) { lostNow = false; await disconnect('The calculator went off the cable during the test: unplugged, or it switched itself off. Turn it on, plug it in again and click Connect.'); }
 }
 
 $('connect').addEventListener('click', connect);
 $('disconnect').addEventListener('click', () => disconnect());
 $('run').addEventListener('click', run);
-$('stop').addEventListener('click', () => { wantStop = true; $('stop').disabled = true; say('rstatus', 'Stopping after the step in hand ...'); });
+$('stop').addEventListener('click', () => {
+  wantStop = true; $('stop').disabled = true;
+  say('rstatus', 'Stopping after the step in hand ...');
+  if (waiting) waiting();
+});
 
 // ---------- the log ----------
 $('save').addEventListener('click', () => {
   const a = document.createElement('a');
   const d = new Date(), z = n => String(n).padStart(2, '0');
   a.href = URL.createObjectURL(new Blob([lines.join('\r\n') + '\r\n'], { type: 'text/plain' }));
-  a.download = 'PrimeUSBTest_log_' + d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + '_' + z(d.getHours()) + z(d.getMinutes()) + '.txt';
+  a.download = 'PrimeUSBTest2_log_' + d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + '_' + z(d.getHours()) + z(d.getMinutes()) + '.txt';
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   say('lstatus', 'Saved ' + a.download + ' in your Downloads folder.', 'ok');
@@ -323,11 +350,14 @@ if (!PrimeUSB.supported()) {
   if (typeof navigator !== 'undefined' && navigator.hid && window.isSecureContext === false)
     $('nohidp').textContent = 'The browser lets a page reach a USB device only when the page comes from a file on this computer or from an https address. Open the page that way.';
 } else if (navigator.hid.addEventListener) {
+  // The calculator went off the cable.  Everything that is waiting on it ends now (PrimeUSB.HidPort.lose): on
+  // 17 Nov a write to a calculator that had gone never came back, and the first page stood still for good.
   navigator.hid.addEventListener('disconnect', ev => {
     if (port && ev.device === port.device) {
-      logLine('THE CALCULATOR WAS UNPLUGGED (or switched off).');
-      if (!running) disconnect('The calculator was unplugged or switched off. Plug it in again and click Connect.');
-      else { unplugged = true; say('cstatus', 'The calculator was unplugged or switched off during the test.', 'bad'); }
+      logLine('THE BROWSER SAYS THE CALCULATOR WENT OFF THE CABLE (' + new Date().toTimeString().slice(0, 8) + ').');
+      port.lose('the browser says it went off the cable (unplugged, or switched off)');
+      if (!running) disconnect('The calculator went off the cable: unplugged, or it switched itself off. Turn it on, plug it in again and click Connect.');
+      else { lostNow = true; say('cstatus', 'The calculator went off the cable during the test.', 'bad'); if (waiting) waiting(); }
     }
   });
 }
