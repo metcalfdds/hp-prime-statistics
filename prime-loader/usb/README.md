@@ -1,6 +1,6 @@
 # A real HP Prime on its USB cable, from a web page
 
-**Status, 17 November 2026, late.** That evening the author's G2 and his G1 took test programs of every size the book has straight down their cables from a test page, with no Connectivity Kit, by one route, and each program came back from the calculator the same. That route is now in the Prime Loader (`../PrimeLoader_v2c.html`), behind its test address, which ends `?usb=1`. **The Loader's own cable code has not run on a calculator yet**: it paces its sending differently from the test page, and it has never carried one of the book's programs. Until it has put a chapter on a G2 and on a G1, and a program of that chapter has run, students see only the Connectivity Kit's steps, and those steps stay on the page after that as the second way.
+**Status, 17 November 2026, late.** That evening the author's G2 and his G1 took test programs of every size the book has straight down their cables from a test page, with no Connectivity Kit, by one route, and each one the test page read back was the same: every size on the G2, and up to 140,000 characters on the G1, whose largest (289,813 characters, the size of EpiStats) went in and was acknowledged and was not read back, because the page stopped waiting too soon (the table below). That route is now in the Prime Loader (`../PrimeLoader_v2d.html`), behind its test address, which ends `?usb=1`. **The Loader's own cable code has not run on a calculator yet**: it paces its sending differently from the test page, and it has never carried one of the book's programs. Until it has put a chapter on a G2 and on a G1, and a program of that chapter has run, students see only the Connectivity Kit's steps, and those steps stay on the page after that as way 2), "The official HP way".
 
 Roger, 17 November 2026: "we do need to make some sort of very simple loader to interface somehow with Connectivity Kit to get the programs on a physical calcuator", and then: "the calculator is connected to the computer somehow--do we need the Kit?" At 20:14, with the first log: "the program seems stuck". At 21:51, with the fifth: "took a while for the 140k and 289k characters". At 22:01: "maybe we shoould keep the instructions for the COnnectivity Kit as a backup".
 
@@ -107,7 +107,7 @@ The two test pages, their ladders, the first two versions of this code and their
 
 ## The Loader's cable route
 
-`../PrimeLoader_v2c.html` shows it only at the test address (`.../prime-loader/?usb=1`), in a browser that has WebHID, for "A real HP Prime". There the step is called "Two ways to load *Statisticles* onto a physical Prime G1 or G2 calculator" (Roger's name for it, 18 November 2026): the cable is the first way, and the Connectivity Kit's steps are the second, folded below it.
+`../PrimeLoader_v2d.html` shows it only at the test address (`.../prime-loader/?usb=1`), in a browser that has WebHID, for "A real HP Prime". There the step is called "Two ways to load *Statisticles* onto a physical Prime G1 or G2 calculator", and its two ways are "1) The *Statisticles* way: straight down the USB cable" and "2) The official HP way: the Connectivity Kit", whose steps are folded below the first (Roger's names, 18 November 2026; [../README.md](../README.md) has his words and the sentence the page puts under the title).
 
 - **Send to the calculator** asks the browser for the calculator (its small window, the first time), opens the session as above, and sends each program of the choice, then asks for it back and compares. A program counts as loaded only when it came back the same; the first that does not ends the load, and the page says which programs are on the calculator and what to do.
 - The programs are added. Nothing is deleted from a calculator.
@@ -131,8 +131,8 @@ This says the test programs are programs to HP's own compiler, the largest inclu
 
 ```
 python3 tests/kit_reference_v1.py REF          # hp-prime-kit's messages, into a scratch folder
-node tests/test_usb_core_v3.js REF             # 82 PASS, 0 FAIL   (about 25 s)
-node ../tests/test_loader_v2c.js ../PrimeLoader_v2c.html ../../starter-pack/HP_Prime_Statistics_Starter_Pack_v23.zip     # the cable is its part 13
+node tests/test_usb_core_v3.js REF             # 82 PASS, 0 FAIL   (about 40 s)
+node ../tests/test_loader_v2d.js ../PrimeLoader_v2d.html ../../starter-pack/HP_Prime_Statistics_Starter_Pack_v23.zip     # the cable is its part 13
 ```
 
 What a pass means: the messages are the ones hp-prime-kit builds, byte for byte, for all 31 programs, and the ones hp-prime-web's tests expect; the requests and the deletes begin with the bytes the two calculators answered; the positions and the reports' numbers are the ones in the logs; the code and the mock, which were written apart, agree on the route; the calculator's clock speaking in the middle of a message, a report lost on the way, an answer that takes 3.3 s to begin, an answer left standing and a calculator left standing by an earlier page are each survived; no wait is without an end; and every one of the book's programs goes onto a pretend G1 (131,683 reports for the 31 texts in `programs/`; 127,913 for the 30 that the Loader sends, CentralLimit being an app) and a pretend G2 (8,125; 7,892) and comes back the same. What a pass does not mean: that a calculator agrees. The mock is the two calculators as far as five logs go.

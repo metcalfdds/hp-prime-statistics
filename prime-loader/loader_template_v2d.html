@@ -8,7 +8,17 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* PrimeLoader v2c (18 Nov 2026).  Roger, of the step that offers the cable and the Connectivity Kit: "Call this 'Two
+/* PrimeLoader v2d (18 Nov 2026, 04:20 to 04:35).  Roger, of the two ways: "How about: '1) The Statisticles way....' And
+   2) The official HP Connectivity Kit....'   We believe our method should work, and we have tested it--it is easier
+   than the Connetivity Kit and avoids the mDNS issue--but just in case you have issues with the Statisticles way,
+   here's 2) the official HP way....something along those lines", and ten minutes later, of that sentence: "Oh,
+   yeah--the testing claim is not valid yet--just a suggestion".  So the two are "1) The Statisticles way: straight
+   down the USB cable" and "2) The official HP way: the Connectivity Kit", the sentence under the step's title is his,
+   AND IT LEAVES OUT "and we have tested it" until that is so: until this page's own route has put a chapter of the
+   book on a G2 and on a G1 and a program of it has run.  The note under 1) says what has been done and what has not.
+   Also put right here: v2b's and v2c's note said every test program was read back the same; the G1's largest was
+   sent and acknowledged, and the test page had stopped waiting when the calculator sent it back.
+   v2c (18 Nov 2026).  Roger, of the step that offers the cable and the Connectivity Kit: "Call this 'Two
    ways to load these programs onto a physical Prime G1 or G2 calculator.' Or something like that." and, three minutes
    later: "I mean of course...'Two ways to load Statisticles.....'"  (Statisticles, in italics, is the book's name
    for its programs.)  So where both ways show (the test address, in Chrome or Edge, for a real HP Prime) step 3 is
@@ -298,12 +308,12 @@ ol.steps li > p { margin: 2px 0 0; }
   <section class="step" id="step3real" aria-labelledby="s3r" hidden>
     <h2 id="s3r"><span class="stepnum">3</span><span id="s3rtitle">Put them on your HP Prime with HP's Connectivity Kit</span></h2>
 
-    <p class="do" id="twoways" hidden>The first way sends them straight down the calculator's USB cable from this page, and needs nothing installed. The second way uses HP's free Connectivity Kit; CentralLimit and data files go only by the second way.</p>
+    <p class="do" id="twoways" hidden>We believe our method should work. It is easier than the Connectivity Kit, and it avoids the Kit's mDNS (Bonjour) issue. But just in case you have trouble with the <i>Statisticles</i> way, here is 2), the official HP way. CentralLimit and data files go only by 2).</p>
 
     <div id="cable" hidden>
-      <h3 class="way" id="way1">The first way: straight down the USB cable</h3>
+      <h3 class="way" id="way1">1) The <i>Statisticles</i> way: straight down the USB cable</h3>
       <div class="panel warn" id="cabletested">
-        <p class="note" style="color:inherit"><b>This way is being tested.</b> On 17 November 2026 it put test programs of every size on an HP Prime G2 and on a G1, and read each one back the same. It has not yet loaded the book's own programs onto a calculator: this is that test. If it does not work on yours, the second way, HP's Connectivity Kit, is right below.</p>
+        <p class="note" style="color:inherit"><b>This way is still being tested.</b> On 17 November 2026 a test page sent test programs of every size to an HP Prime G2 and to a G1, and each one it read back was the same (for the G1's largest it stopped waiting too soon). The book's own programs have not yet gone to a calculator this way: this is that test. If it does not work on yours, 2), the official HP way, is right below.</p>
       </div>
       <ol class="steps">
         <li><b>Plug the calculator into this computer with its USB cable, and switch it on.</b> Leave it at its Home screen.
@@ -343,7 +353,7 @@ ol.steps li > p { margin: 2px 0 0; }
     </div>
 
     <details id="kitfold" open>
-      <summary id="kitsum" hidden>The second way: HP's Connectivity Kit</summary>
+      <summary id="kitsum" hidden>2) The official HP way: the Connectivity Kit</summary>
       <div id="kitroute">
         <p class="do">A real HP Prime keeps its programs inside the calculator, so they travel down its USB cable. HP's free <b>Connectivity Kit</b> does the moving.</p>
         <p class="why">Don't have the Kit? <a href="https://www.hpcalc.org/prime/">hpcalc.org's HP Prime page</a> lists it, with Hewlett-Packard as its author. Download it and install it.</p>
@@ -584,8 +594,8 @@ function refresh() {
     // what the page says of a finished load is about that load's programs: a different choice starts afresh
     if (usbShown !== null && usbShown !== cableProgs.join()) { usbShown = null; $('usbdone').hidden = true; $('usbfail').hidden = true; $('usbbar').hidden = true; $('usblist').innerHTML = ''; }
     if ($('usbdone').hidden && $('usbfail').hidden)
-      usbSay(cableProgs.length === 0 ? (any ? 'Nothing in your choice goes down the cable: ' + cableRest.join(', ') + ' (an app or data) goes by the second way, HP\'s Connectivity Kit, below.' : '')
-             : cableRest.length ? 'Ready to send ' + plural(cableProgs.length, 'program') + '. ' + cableRest.join(', ') + ' (an app or data) does not travel the first way: it goes by the second, HP\'s Connectivity Kit, below.' : '');
+      usbSay(cableProgs.length === 0 ? (any ? 'Nothing in your choice goes the Statisticles way: ' + cableRest.join(', ') + ' (an app or data) goes by the official HP way, 2) below.' : '')
+             : cableRest.length ? 'Ready to send ' + plural(cableProgs.length, 'program') + '. ' + cableRest.join(', ') + ' (an app or data) does not travel the Statisticles way: it goes by the official HP way, 2) below.' : '');
     if (cableProgs.length === 0 && any) $('kitfold').open = true;       // the Kit is then the only way
   }
   const progs = sel.filter(p => CAT.programs[p].home);
@@ -779,7 +789,7 @@ async function usbSend() {
   usbBusy = true; usbStopNow = false; usbLog = []; usbT0 = 0;
   $('usbsend').disabled = true; $('usblist').innerHTML = ''; $('usblog').textContent = ''; $('usbsave').disabled = true; $('usbsaved').textContent = '';
   $('usbdone').hidden = true; $('usbfail').hidden = true; $('usbbar').hidden = true;
-  const kitWay = 'use the second way, HP\'s Connectivity Kit, whose steps are just below';
+  const kitWay = 'use the official HP way (2, just below)';
   let port = null, lost = null;
   try {
     const sel = selection(), data = dataChosen();
@@ -862,7 +872,7 @@ async function usbSend() {
               ['Is the calculator switched on, and at its Home screen? Press its <kbd>Home</kbd> key.', 'Pull its cable out, push it in again, and click <b>Send to the calculator</b> again.', 'If it still does not answer, ' + kitWay + '.'], true);
     } else if (f.why === 'version') {
       usbFail('This calculator answers differently from the two this way was proved on', 'So nothing was sent to it. That is no fault of the calculator; its software may be older or newer.',
-              ['Use the second way, HP\'s Connectivity Kit: its steps are just below.', 'Please click <b>Save the details</b>, under "What passed on the cable", and send that file to your instructor.'], true);
+              ['Use the official HP way, the Connectivity Kit: its steps are under 2), just below.', 'Please click <b>Save the details</b>, under "What passed on the cable", and send that file to your instructor.'], true);
     } else if (f.why === 'unsent') {
       usbFail(esc(f.name) + ' did not go through', marked + esc(f.name) + ' and the programs after it are not.',
               ['Pull the calculator\'s cable out, push it in again, and click <b>Send to the calculator</b> again.', 'If it stops at the same place, ' + kitWay + '.'], true);
@@ -876,7 +886,7 @@ async function usbSend() {
   } catch (e) {
     usbLine('THE PAGE STOPPED: ' + why(e) + '.');
     usbFail('Something went wrong on this page', esc(why(e)) + '. The programs marked ✓, if any, are on the calculator.',
-            ['Pull the calculator\'s cable out, push it in again, and click <b>Send to the calculator</b> again.', 'If it happens again, use the second way, HP\'s Connectivity Kit, whose steps are just below.'], true);
+            ['Pull the calculator\'s cable out, push it in again, and click <b>Send to the calculator</b> again.', 'If it happens again, use the official HP way (2, just below).'], true);
   } finally {
     window.onbeforeunload = null;
     if (lost) navigator.hid.removeEventListener('disconnect', lost);
@@ -898,7 +908,7 @@ function usbDone(names, rest, res) {
   const r = h => { const x = document.createElement('li'); x.innerHTML = h; ul.appendChild(x); };
   r(plural(names.length, 'program') + ' went down the cable' + (names.length <= 12 ? ': ' + esc(names.join(', ')) : '') + '. Each was then read back from the calculator and found the same, character for character.');
   r('The programs that were already on the calculator were left where they are. One with the same name as a program sent was replaced by it.');
-  if (rest.length) r('<b>Not sent this way:</b> ' + esc(rest.join(', ')) + ' (an app or data). For ' + (rest.length === 1 ? 'it' : 'those') + ', use the second way, HP\'s Connectivity Kit, whose steps are just below.');
+  if (rest.length) r('<b>Not sent this way:</b> ' + esc(rest.join(', ')) + ' (an app or data). For ' + (rest.length === 1 ? 'it' : 'those') + ', use the official HP way (2, just below).');
   r('It took ' + (res.ms < 9950 ? (res.ms / 1000).toFixed(1) : Math.round(res.ms / 1000)) + ' seconds.');
   $('usbdone').hidden = false;
   if (rest.length) $('kitfold').open = true;

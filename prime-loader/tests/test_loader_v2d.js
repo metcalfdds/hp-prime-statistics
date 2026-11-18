@@ -1,7 +1,12 @@
-// test_loader_v2c.js -- drives PrimeLoader_v2c.html in Chromium against a mock Virtual Calculator folder, and its
+// test_loader_v2d.js -- drives PrimeLoader_v2d.html in Chromium against a mock Virtual Calculator folder, and its
 // cable route (shown only at ?usb=1) against a pretend calculator that does what two real ones did on 17 Nov 2026.
-// Roger Metcalf & Claude, 18 Nov 2026.   node tests/test_loader_v2c.js PrimeLoader_v2c.html PACK.zip
+// Roger Metcalf & Claude, 18 Nov 2026.   node tests/test_loader_v2d.js PrimeLoader_v2d.html PACK.zip
 //
+// v2d is v2c with the two ways named as Roger named them next, "1) The Statisticles way" and "2) The official HP
+// way: the Connectivity Kit", and his sentence under the step's title ("We believe our method should work. ... But just
+// in case ..."), WITHOUT its "and we have tested it", which he took back ten minutes later ("the testing claim is not
+// valid yet"): the same checks with those words, and one more, that nothing the page shows says "we have tested it"
+// while its own note says that this way is still being tested.
 // v2c is v2b with the step that offers both ways named as Roger named it, "Two ways to load Statisticles onto a
 // physical Prime G1 or G2 calculator" (Statisticles, in italics, being the book's name for its programs), and the
 // two called the first way and the second way: the same checks, with those words, and three more for the title, the
@@ -26,8 +31,8 @@
 //   - a calculator that is open is not written to; the wrong folder, a cancelled picker, a bad data file, a phone,
 //     a Mac and an old browser each get their sentence (v1v's checks, kept);
 //   - Firefox's route: one zip of the choice, to unpack;
-//   - the cable does not show without ?usb=1, nor in a browser that cannot reach a USB device; with it, it is the
-//     first way for a real HP Prime and the Connectivity Kit's steps, whole, are the second; each program is sent,
+//   - the cable does not show without ?usb=1, nor in a browser that cannot reach a USB device; with it, it is way
+//     1) for a real HP Prime and the Connectivity Kit's steps, whole, are way 2); each program is sent,
 //     read back and compared with the pack's own source, character for character; the first one that does not come
 //     back the same stops the load; and each slip a student can make (no calculator picked, the Kit left open, the
 //     cable pulled out, Stop, a second click) gets its sentence and leaves the page ready to try again.
@@ -429,8 +434,8 @@ function check(name, ok, detail) {
   await ipg.goto('file://' + path.join(path.dirname(PAGE), 'index.html') + '?data=1');
   await ipg.waitForFunction(() => !!document.getElementById('fromdl'), null, { timeout: 15000 }).catch(() => {});
   check('index.html carries ?data=1 on to the page, so the Data Loader\'s link to the folder\'s address opens it ready for the file',
-        /PrimeLoader_v2c\.html\?data=1$/.test(ipg.url()) && await ipg.isVisible('#fromdl'), ipg.url());
-  check('... and a browser with scripts off is still sent on, by the line in noscript', /<noscript><meta http-equiv="refresh" content="0; url=PrimeLoader_v2c\.html"><\/noscript>/.test(idx));
+        /PrimeLoader_v2d\.html\?data=1$/.test(ipg.url()) && await ipg.isVisible('#fromdl'), ipg.url());
+  check('... and a browser with scripts off is still sent on, by the line in noscript', /<noscript><meta http-equiv="refresh" content="0; url=PrimeLoader_v2d\.html"><\/noscript>/.test(idx));
 
   // ---- 10. Firefox: no folder API, Firefox's user-agent ----
   const fctx = await browser.newContext({ acceptDownloads: true,
@@ -538,28 +543,38 @@ function check(name, ok, detail) {
   check('two ways: where both show, step 3 is called what Roger called it, "Two ways to load Statisticles onto a physical Prime G1 or G2 calculator", with Statisticles in italics as the book writes it',
         (await u.p.textContent('#s3rtitle')) === 'Two ways to load Statisticles onto a physical Prime G1 or G2 calculator' && await u.p.isVisible('#s3rtitle') &&
         (await u.p.textContent('#s3rtitle i')) === 'Statisticles' && await u.p.evaluate(() => getComputedStyle(document.querySelector('#s3rtitle i')).fontStyle === 'italic'));
-  check('two ways: a sentence under the title tells the two apart (the cable needs nothing installed; the Kit is the only way for CentralLimit and data), and each has its name: "The first way: straight down the USB cable", "The second way: HP\'s Connectivity Kit"',
-        await u.p.isVisible('#twoways') && /^The first way sends them straight down the calculator's USB cable from this page, and needs nothing installed\. The second way uses HP's free Connectivity Kit; CentralLimit and data files go only by the second way\.$/.test(await u.p.textContent('#twoways')) &&
-        await u.p.isVisible('#way1') && (await u.p.textContent('#way1')) === 'The first way: straight down the USB cable' && (await u.p.textContent('#kitsum')) === 'The second way: HP\'s Connectivity Kit' &&
+  check('two ways: under the title, Roger\'s sentence: we believe our method should work; it is easier than the Kit and avoids its mDNS (Bonjour) issue; but just in case, 2) is the official HP way',
+        await u.p.isVisible('#twoways') && (await u.p.textContent('#twoways')) === 'We believe our method should work. It is easier than the Connectivity Kit, and it avoids the Kit\'s mDNS (Bonjour) issue. ' +
+        'But just in case you have trouble with the Statisticles way, here is 2), the official HP way. CentralLimit and data files go only by 2).' &&
+        (await u.p.textContent('#twoways i')) === 'Statisticles');
+  check('two ways: each has the name he gave it, "1) The Statisticles way: straight down the USB cable" and "2) The official HP way: the Connectivity Kit", in that order down the page under the sentence',
+        await u.p.isVisible('#way1') && (await u.p.textContent('#way1')) === '1) The Statisticles way: straight down the USB cable' && (await u.p.textContent('#way1 i')) === 'Statisticles' &&
+        (await u.p.textContent('#kitsum')) === '2) The official HP way: the Connectivity Kit' &&
         await u.p.evaluate(() => { const a = document.getElementById('twoways'), b = document.getElementById('way1'), c = document.getElementById('kitsum'); return a.getBoundingClientRect().top < b.getBoundingClientRect().top && b.getBoundingClientRect().top < c.getBoundingClientRect().top; }));
-  check('two ways: nowhere on the page is either still called "the other way"', !/other way/i.test(await u.p.evaluate(() => document.documentElement.outerHTML.replace(/<script[^>]*>[^]*?<\/script>/g, m => m.replace(/\/\*[^]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')))));
-  check('cable: for a real HP Prime it is the first way: three steps and one button',
+  check('two ways: nothing the page shows or can come to show says "we have tested it" (Roger: "the testing claim is not valid yet"), and right under 1) its note says that this way is still being tested, that the book\'s own programs have not yet gone to a calculator this way, and that the G1\'s largest test program was not read back',
+        !/we have tested|have tested it|is tested\b|fully tested/i.test(await u.p.evaluate(() => document.documentElement.outerHTML.replace(/<(script|style)[^>]*>[^]*?<\/\1>/g, m => m.replace(/\/\*[^]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')))) &&
+        /we have tested it/.test(await u.p.evaluate(() => document.documentElement.outerHTML)) &&   // not an empty check: the words are in the page's history comment, where Roger's message is quoted
+        /^\s*This way is still being tested\./.test(await u.p.textContent('#cabletested')) && await u.p.isVisible('#cabletested') &&
+        /The book's own programs have not yet gone to a calculator this way: this is that test\./.test(await u.p.textContent('#cabletested')) && /each one it read back was the same \(for the G1's largest it stopped waiting too soon\)/.test(await u.p.textContent('#cabletested')) &&
+        !/read each one back the same/.test(await u.p.textContent('#step3real')));
+  check('two ways: nowhere in what the page shows or can come to show (its comments aside, which keep the history) is either still called "the other way", "the first way" or "the second way"', !/other way|first way|second way/i.test(await u.p.evaluate(() => document.documentElement.outerHTML.replace(/<(script|style)[^>]*>[^]*?<\/\1>/g, m => m.replace(/\/\*[^]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')))) &&
+        /The first way: straight down the USB cable/.test(await u.p.evaluate(() => document.documentElement.outerHTML)));   // the second half shows the first is not empty: the words are still in the page's history comment, and only there
+  check('cable: for a real HP Prime it is way 1): three steps and one button',
         await u.p.isVisible('#cable') && await u.p.locator('#cable ol.steps > li').count() === 3 &&
         await u.p.isVisible('#usbsend') && !(await u.p.isDisabled('#usbsend')) && !(await u.p.isVisible('#usbstop')) && !(await u.p.isVisible('#load')));
-  check('cable: it says it is being tested, what it has done on two calculators and what it has not, and where the second way is',
-        /being tested/.test(await u.p.textContent('#cabletested')) && /on an HP Prime G2 and on a G1/.test(await u.p.textContent('#cabletested')) && /has not yet loaded the book's own programs/.test(await u.p.textContent('#cabletested')) &&
-        /the second way, HP's Connectivity Kit, is right below/.test(await u.p.textContent('#cabletested')));
+  check('cable: the note under 1) says where the official HP way is, should this one not work',
+        /being tested/.test(await u.p.textContent('#cabletested')) && /to an HP Prime G2 and to a G1/.test(await u.p.textContent('#cabletested')) && /If it does not work on yours, 2\), the official HP way, is right below\./.test(await u.p.textContent('#cabletested')));
   check('cable: its steps say to plug in and switch on at the Home screen, to close the Kit, and what the browser\'s small window is',
         /switch it on/.test(await u.p.textContent('#cable ol.steps')) && /Home screen/.test(await u.p.textContent('#cable ol.steps')) && /Connectivity Kit is open, close it/.test(await u.p.textContent('#cable ol.steps')) &&
         /^The first time, the browser opens a small window/.test(await u.p.textContent('#usbfirst')) && /Click its name, then click Connect/.test(await u.p.textContent('#usbfirst')));
-  check('cable: the Connectivity Kit\'s steps are kept whole as the second way, folded under "The second way: HP\'s Connectivity Kit"',
-        await u.p.isVisible('#kitsum') && (await u.p.textContent('#kitsum')) === 'The second way: HP\'s Connectivity Kit' && !(await u.p.evaluate(() => document.getElementById('kitfold').open)) && !(await u.p.isVisible('#download3')) &&
+  check('cable: the Connectivity Kit\'s steps are kept whole as way 2), folded under "2) The official HP way: the Connectivity Kit"',
+        await u.p.isVisible('#kitsum') && (await u.p.textContent('#kitsum')) === '2) The official HP way: the Connectivity Kit' && !(await u.p.evaluate(() => document.getElementById('kitfold').open)) && !(await u.p.isVisible('#download3')) &&
         await u.p.locator('#kitroute ol.steps > li').count() === 6 && /Bonjour/.test(await u.p.textContent('#kitroute')) && /Drag each program file/.test(await u.p.textContent('#kitroute')));
   await u.p.click('#kitsum');
   check('... one click opens them: the download button and the six steps', await u.p.isVisible('#download3') && await u.p.isVisible('#kitroute ol.steps'));
   await u.p.click('#kitsum');
   check('cable: all the programs: CentralLimit, an app, is named as not travelling this way before anything is sent; the Kit\'s steps stay folded until they are wanted',
-        /^Ready to send 30 programs\. CentralLimit \(an app or data\) does not travel the first way: it goes by the second, HP's Connectivity Kit, below\.$/.test(await u.p.textContent('#usbstatus')) && !(await u.p.evaluate(() => document.getElementById('kitfold').open)),
+        /^Ready to send 30 programs\. CentralLimit \(an app or data\) does not travel the Statisticles way: it goes by the official HP way, 2\) below\.$/.test(await u.p.textContent('#usbstatus')) && !(await u.p.evaluate(() => document.getElementById('kitfold').open)),
         await u.p.textContent('#usbstatus'));
   await u.p.selectOption('#chapter', '12');
   const ch12 = CATALOG.chapters.find(c => c.num === 12).programs.concat([CATALOG.always]).filter((x, i, a) => a.indexOf(x) === i).sort((a, b) => a.localeCompare(b));
@@ -581,7 +596,7 @@ function check(name, ok, detail) {
         /went down the cable/.test(st.report[0]) && /read back from the calculator and found the same, character for character/.test(st.report[0]) && /left where they are/.test(st.report[1]) && /^It took \d+(\.\d)? seconds\.$/.test(st.report[2]),
         JSON.stringify([st.next, st.report]));
   check('... the details name the page, the browser, the calculator and the choice; say who answered and what each program did; end in a RESULT line; and hold neither the serial number nor more than twelve bytes of any message',
-        /^HP Prime Loader, v2c, straight down the cable\. /.test(st.log) && /\nBrowser: Mozilla/.test(st.log) && /\nDevice: HP Prime G2 \(USB 03F0:2441\), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator\.\n/.test(st.log) &&
+        /^HP Prime Loader, v2d, straight down the cable\. /.test(st.log) && /\nBrowser: Mozilla/.test(st.log) && /\nDevice: HP Prime G2 \(USB 03F0:2441\), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator\.\n/.test(st.log) &&
         new RegExp('\\nChosen: Chapter 12; ' + ch12.length + ' programs, [\\d,]+ characters: ' + ch12.join(', ') + '\\.\\n').test(st.log) && /It answered: firmware build 15751, "V2\.060\.650", version 01\./.test(st.log) &&
         ch12.every(n => new RegExp('\\n +\\d+\\.\\d\\d  ' + n + ': [\\d,]+ characters\\.\\n').test(st.log)) && (st.log.match(/Read back the same: /g) || []).length === ch12.length &&
         new RegExp('RESULT: all ' + ch12.length + ' programs on the calculator, each read back the same\\. [\\d,]+ reports carried the programs there and back; \\d+\\.\\d s in all\\.').test(st.log) && !/SECRET|SERIAL/.test(st.log) &&
@@ -622,7 +637,7 @@ function check(name, ok, detail) {
   const chars30 = names30.reduce((s, n) => s + packSource(n).length, 0), g2Want = names30.reduce((s, n) => s + 1 + Math.ceil((10 + 2 * n.length + 2 * packSource(n).length - 1015) / 1023), 0);
   check('... counted, because the page\'s notes say it: the 30 programs that travel by cable are 4,028,362 characters, 127,913 reports of a G1 and 7,892 of a G2; none has a CR in it',
         chars30 === 4028362 && sentAll === 127913 && g2Want === 7892 && names30.every(n => !/\r/.test(packSource(n))), [chars30, sentAll, g2Want].join(' '));
-  check('... CentralLimit is said not to have been sent this way, and the Kit\'s steps are opened for it', st.report.some(l => /^Not sent this way: CentralLimit \(an app or data\)\. For it, use the second way, HP's Connectivity Kit, whose steps are just below\.$/.test(l)) && st.kitOpen && /Device: HP Prime G1 \(USB 03F0:1541\)/.test(st.log) &&
+  check('... CentralLimit is said not to have been sent this way, and the Kit\'s steps are opened for it', st.report.some(l => /^Not sent this way: CentralLimit \(an app or data\)\. For it, use the official HP way \(2, just below\)\.$/.test(l)) && st.kitOpen && /Device: HP Prime G1 \(USB 03F0:1541\)/.test(st.log) &&
         /reports of 64 bytes in and 64 out/.test(st.log), JSON.stringify(st.report));
   check('... and the details stay readable: the page shows at most 1,500 lines of them', st.log.split('\n').length <= 1510, st.log.split('\n').length);
   check('cable: no errors in the page', u.errs.length === 0, u.errs);
@@ -663,7 +678,7 @@ function check(name, ok, detail) {
         'it says to delete it if it is in the list and to use the Kit for it and the rest',
         st.fail && !st.done && st.failh === ch12[1] + ' did not come back the same' && /The calculator did not have it\./.test(st.failp) && /does not count it as loaded/.test(st.failp) && /marked ✓ is on the calculator, whole/.test(st.failp) &&
         st.list[0] === 'ok:' + ch12[0] && st.list[1] === 'bad:' + ch12[1] && st.list.slice(2).every(l => /^wait:/.test(l)) && got.arrived.length === 2 && /tap More, then Delete/.test(st.todo[0]) &&
-        new RegExp('Connectivity Kit, whose steps are just below, for ' + ch12[1] + ' and the programs after it').test(st.todo[1]) && st.kitOpen && !st.sendOff, JSON.stringify([st.failh, st.failp, st.list, st.todo]));
+        new RegExp('^Then use the official HP way \\(2, just below\\), for ' + ch12[1] + ' and the programs after it\\.$').test(st.todo[1]) && st.kitOpen && !st.sendOff, JSON.stringify([st.failh, st.failp, st.list, st.todo]));
   u = await usbPage({ cutAt: 5000 });
   await u.p.check('#t_real'); await u.p.selectOption('#chapter', '12');
   await u.p.click('#usbsend'); await usbEnd(u.p);
@@ -725,11 +740,11 @@ function check(name, ok, detail) {
   await u.p.check('#t_real');
   await u.p.click('#more > summary'); await u.p.check('#w_pick'); await u.p.check('#p_CentralLimit');
   check('slip: only CentralLimit ticked, which is an app: Send is off, and the page says it goes by the Kit, whose steps are open',
-        await u.p.isDisabled('#usbsend') && /^Nothing in your choice goes down the cable: CentralLimit \(an app or data\) goes by the second way, HP's Connectivity Kit, below\.$/.test(await u.p.textContent('#usbstatus')) &&
+        await u.p.isDisabled('#usbsend') && /^Nothing in your choice goes the Statisticles way: CentralLimit \(an app or data\) goes by the official HP way, 2\) below\.$/.test(await u.p.textContent('#usbstatus')) &&
         await u.p.evaluate(() => document.getElementById('kitfold').open) && await u.p.isVisible('#download3'), await u.p.textContent('#usbstatus'));
   await u.p.check('#p_DataLoad'); await u.p.check('#rossi');
   check('... with DataLoad ticked too and the sample data: Send is on for the one program, and the data is named with the app as going by the Kit',
-        !(await u.p.isDisabled('#usbsend')) && /^Ready to send 1 program\. CentralLimit, M1 \(an app or data\) does not travel the first way: it goes by the second, HP's Connectivity Kit, below\.$/.test(await u.p.textContent('#usbstatus')), await u.p.textContent('#usbstatus'));
+        !(await u.p.isDisabled('#usbsend')) && /^Ready to send 1 program\. CentralLimit, M1 \(an app or data\) does not travel the Statisticles way: it goes by the official HP way, 2\) below\.$/.test(await u.p.textContent('#usbstatus')), await u.p.textContent('#usbstatus'));
   await u.p.setViewportSize({ width: 380, height: 800 });
   check('cable: at a phone\'s width nothing runs off the side', await u.p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
   // where the cable must not show
