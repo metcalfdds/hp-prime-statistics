@@ -347,5 +347,5 @@ open(os.path.join(os.path.dirname(os.path.abspath(OUT)), 'index.html'), 'w', enc
 print('index.html -> ' + page + '; Data Loader link: ' + DL_URL)
 print(f'checked files: {sum(checked.values())} of {len(checked)}' + ('' if all(checked.values()) else
       '  (unchecked: ' + ', '.join(k for k, c in checked.items() if not c) + ')'))
-print(f'{os.path.basename(OUT)}: {len(t):,} bytes; {len(packed)} files embedded '
+print(f'{os.path.basename(OUT)}: {len(t.encode("utf-8")):,} bytes; {len(packed)} files embedded '
       f'({sum(len(b) for b in packed.values()):,} bytes, {len(emb):,} zipped); pack {catalog["pack"]} {catalog["pack_sha256"]}')
