@@ -12,8 +12,8 @@ v2d (18 Nov 2026, 04:20 to 04:35): the page template's v2d, in which the two way
 have tested it" until that is so (Roger: "the testing claim is not valid yet").  The same pack and cable code.
 v2c (18 Nov 2026): the page template's v2c, which names the step that offers the cable and the Connectivity Kit as Roger
 named it ("Two ways to load Statisticles onto a physical Prime G1 or G2 calculator") and the two ways as the first and
-the second.  The same pack (v23) and the same usb/prime_usb_v3.js.
-v2b (17 Nov 2026, late): the page template's v2b and usb/prime_usb_v3.js, on starter pack v23 as before (no program
+the second.  The same pack (v23) and the same usb/prime_usb_v3a.js.
+v2b (17 Nov 2026, late): the page template's v2b and usb/prime_usb_v3a.js, on starter pack v23 as before (no program
 changed).  That evening the author's G2 and his G1 took test programs of every size down their cables by one route
 (usb/logs/); v2b's cable panel sends the chosen programs by that route and reads each back.  It shows only at the
 test address (?usb=1) until a real chapter has loaded on a calculator, and there it stands above the Connectivity
@@ -323,7 +323,7 @@ dl = next(p for p in (os.path.join(HERE, '..', 'data-loader', 'dl_core_v2.js'), 
 parts = {
   '/*LOADERCORE*/': open(os.path.join(HERE, 'loader_core_v3.js'), encoding='utf-8').read(),
   '/*DLCORE*/': open(dl, encoding='utf-8').read(),
-  '/*PRIMEUSB*/': open(os.path.join(HERE, 'usb', 'prime_usb_v3.js'), encoding='utf-8').read(),
+  '/*PRIMEUSB*/': open(os.path.join(HERE, 'usb', 'prime_usb_v3a.js'), encoding='utf-8').read(),
   '/*CATALOG*/': json.dumps(catalog, ensure_ascii=False),
   '/*PACK*/': json.dumps(base64.b64encode(emb).decode('ascii')),
 }

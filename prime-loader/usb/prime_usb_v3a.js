@@ -1,4 +1,12 @@
-// prime_usb_v3.js -- a real HP Prime on its USB cable, from a web page (WebHID).  Roger Metcalf & Claude, 17 Nov 2026.
+// prime_usb_v3a.js -- a real HP Prime on its USB cable, from a web page (WebHID).  Roger Metcalf & Claude, 17 Nov 2026.
+//
+// v3a (18 Nov 2026, 15:50): one outcome more, 'full'.  On 18 Nov at 15:41 the author's G1, sent all 30 programs by
+// Loader v2d, took 15 (2,104,376 characters), then acknowledged every report of NormExplorer and, asked for it back,
+// sent it EMPTY: 36 bytes, its head and its name, not compressed.  Its Program Catalog showed NormExplorer at 0 KB
+// and 4.35 MB of programs (Roger: "I think we're out of memory").  [log] usb/logs/PrimeLoader_v2d_G1_Chrome_2026-11-18_1541.txt
+// And one wait longer: the time given the calculator to begin giving a program back (patienceFor, below), after the
+// G2's log of 15:49 the same day, in which that time grew as the load went on and EpiStats outlasted it.  Nothing
+// else changed: the route and the pacing are v3's.
 //
 // WHAT HAS RUN ON A CALCULATOR (logs/, 17 Nov 2026: the author's G2 and his G1, both on firmware build 15751, from
 // Chrome and Edge 157 on Windows; the first three logs with prime_usb_v1.js, the two of 21:43 and 21:47 with v2).
@@ -38,7 +46,7 @@
 // before a request, which is how the G1's answer came to stand unacknowledged.
 // WHAT OF THIS VERSION HAS NOT RUN ON A CALCULATOR: its pacing (77 reports, the acknowledgement, 77 more, with
 // nothing between: the calculators were sent 77 at a time only with 0.7 s between), what it does at a "send again",
-// and load() with one of the book's programs.  The tests run it against tests/mock_prime_v3.js, which is the two
+// and load() with one of the book's programs.  The tests run it against tests/mock_prime_v3a.js, which is the two
 // calculators as far as five logs go.
 //
 // WHERE EACH FACT NOT FROM THE LOGS COMES FROM (all four MIT; no code of theirs is here, only what they measured or read)
@@ -654,9 +662,15 @@ const PrimeUSB = (function () {
     catch (e) { if (!(e instanceof Silent)) throw e; }
     return { reports: out.reports, acks: out.acks || null, reply: reply };
   };
-  // How long to give a calculator to BEGIN sending a program of so many characters back.  [log]: it compresses the
-  // program first, and a G1 took 3.1 s over 289,813 characters, a G2 0.9 s.  This allows 3 s and four times that rate.
-  function patienceFor(chars) { return 3000 + Math.ceil(0.04 * (chars || 0)); }
+  // How long to give a calculator to BEGIN sending a program of so many characters back.  [log] 17 Nov: it compresses
+  // the program first, and a G1 took 3.1 s over 289,813 characters, a G2 0.9 s; v3 allowed 3 s and 0.04 ms a
+  // character (14.6 s for EpiStats).  [log] 18 Nov, 15:49, the G2 sent all 30 by Loader v2d: the time before each
+  // answer GREW as the load went on, though the programs did not (ChiTable 4.4 s where it had taken 0.6 s by itself
+  // at 15:31; DataLoad, 40,856 characters, 2.2 s; DNAMixLR 8.0 s), and EpiStats did not begin within its 14.6 s.
+  // Why it grew is not known.  So v3a allows 30 s and 0.1 ms a character (59 s for EpiStats).  The calculator's
+  // "where it stands" words keep coming every 0.6 s whether it is busy or not, so they say nothing here.  The cost:
+  // a program the calculator did not keep is called missing that much later.
+  function patienceFor(chars) { return 30000 + Math.ceil(0.1 * (chars || 0)); }
   // Open a session the way both calculators took it on 17 Nov [log]: who are you; "FD" if it speaks 01, and who are
   // you again; then the newer framing, and who are you in it, so that the framing is known to work before any program
   // goes.  The newer framing is asked for only of a calculator that now speaks 03 (what one that still speaks 01
@@ -750,13 +764,15 @@ const PrimeUSB = (function () {
   // also drops one newline at the end of a text file, and that is for the caller to do or not.  What comes back
   // counts as the same if it differs in nothing but its line ends and the empty lines at its end.
   // ui: {log(text), trace(text, at), item(k, state), stop() -> bool}; state is 'send', 'check', 'ok' or 'bad'.
-  // opts: {first, settle, then, budget, keep}.
+  // opts: {first, settle, then, budget, keep, patience(chars) -> ms (patienceFor unless a test gives its own)}.
   // -> {ok, done: [name], failed: null | {name, why, text}, stopped, gone, info, told, reports, ms}
   //    why: 'silent'  no answer to "who are you" (nothing was sent)
   //         'version' it does not speak version 03 after being told (nothing was sent)
   //         'unsent'  the program did not go through (a program in pieces is not kept by the calculator)
   //         'unread'  it went, and the request for it back failed, so the page cannot tell
   //         'missing' it went, was acknowledged, and the calculator does not have it
+  //         'full'    it went, was acknowledged, and came back EMPTY: the calculator had no room left and kept the
+  //                   name only (a G1, 18 Nov 2026, after 15 of the book's 30 programs: its log in usb/logs/)
   //         'differs' what came back is not what was sent
   async function load(link, programs, ui, opts) {
     ui = ui || {}; opts = opts || {};
@@ -798,10 +814,12 @@ const PrimeUSB = (function () {
         item(k, 'check');
         await sleep(opts.settle === undefined ? 400 : opts.settle);
         const tb = Date.now();
-        try { back = await link.readProgram(p.name, { ver: 3, nul: true, first: patienceFor(src.length), then: opts.then || 2500 }); }
+        try { back = await link.readProgram(p.name, { ver: 3, nul: true, first: (opts.patience || patienceFor)(src.length), then: opts.then || 2500 }); }
         catch (e) { if (isGone(e)) throw e; return fail(p.name, 'unread', said(e), '  NOT READ BACK: ' + said(e) + '.', k); }
         if (!back) return fail(p.name, 'missing', 'no answer in ' + secs(Date.now() - tb), '  NOT ON THE CALCULATOR: it acknowledged the request for ' + p.name + ' and sent nothing in ' + secs(Date.now() - tb) + '.', k);
         res.reports += back.reports;
+        if (back.text.length === 0 && src.length > 0)
+          return fail(p.name, 'full', 'it came back empty', '  NOT KEPT: the calculator took all of ' + p.name + ' and gave it back empty, as a calculator with no room left does.', k);
         if (back.text !== src && sameBut(back.text) !== sameBut(src)) {
           const what = num(back.text.length) + ' characters came back against ' + num(src.length) + ' sent';
           return fail(p.name, 'differs', what, '  NOT THE SAME: ' + what + '; the first difference is at character ' + num(firstDifference(back.text, src) + 1) + '.', k);

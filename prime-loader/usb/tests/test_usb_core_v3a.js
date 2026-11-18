@@ -1,8 +1,8 @@
-// test_usb_core_v3.js -- prime_usb_v3.js against hp-prime-kit's own code, against the numbers in the logs of two real
+// test_usb_core_v3a.js -- prime_usb_v3a.js against hp-prime-kit's own code, against the numbers in the logs of two real
 // calculators, and against the mock calculator.  Roger Metcalf & Claude, 17 Nov 2026.
 //
 //     python3 kit_reference_v1.py REF      (writes hp-prime-kit's message for every program in programs/)
-//     node test_usb_core_v3.js REF
+//     node test_usb_core_v3a.js REF
 //
 // NOTHING HERE TOUCHES A CALCULATOR.  A pass says this and no more:
 //   A  the messages are, byte for byte, the ones hp-prime-kit builds and hp-prime-web's tests expect, and the requests
@@ -16,7 +16,7 @@
 //   F  the book's programs, every one, go onto a pretend G1 and a pretend G2 and come back the same;
 //   G  a log shows what passed, twelve bytes of a message at most, and never the serial number.
 const fs = require('fs'), path = require('path'), crypto = require('crypto'), zlib = require('zlib');
-const P = require('../prime_usb_v3.js'), MockPrime = require('./mock_prime_v3.js');
+const P = require('../prime_usb_v3a.js'), MockPrime = require('./mock_prime_v3a.js');
 
 const REF = path.resolve(process.argv[2]);
 const ref = JSON.parse(fs.readFileSync(path.join(REF, 'reference.json'), 'utf8'));
@@ -140,7 +140,7 @@ const G1 = 0x1541;
   const e63 = P.framesV2(new Uint8Array(579648), 16, 63), e1023 = P.framesV2(new Uint8Array(579648), 16, 1023);
   check('B12 the 579,648 bytes of the largest test program: 9,201 reports of a G1, the 77th numbered 4D and the last 81; 567 of a G2, the last 3F; as the two logs number them',
         e63.length === 9201 && e63[76][0] === 0x4D && e63[9200][0] === 0x81 && e1023.length === 567 && e1023[76][0] === 0x4D && e1023[566][0] === 0x3F, [e63.length, P.hex2(e63[9200][0]), e1023.length, P.hex2(e1023[566][0])].join(' '));
-  check('B13 the time allowed for an answer to begin: 3 s for a short program, and for the largest four times the 3.1 s a G1 took', P.patienceFor(0) === 3000 && P.patienceFor(300) < 3100 && P.patienceFor(289813) >= 4 * 3100 && P.patienceFor(289813) < 20000, P.patienceFor(289813));
+  check('B13 the time allowed for an answer to begin (v3a, after the G2 of 18 Nov, 15:49, whose answers came later as the load went on and outlasted 14.6 s for EpiStats): 30 s for a short program, and 59 s for EpiStats, the largest', P.patienceFor(0) === 30000 && P.patienceFor(300) === 30030 && P.patienceFor(289813) === 58982, P.patienceFor(289813));
   const d = (hexs, v2, ex) => P.describe(bytes(hexs + ' 00 00 00 00 00 00 00 00 00 00 00 00'), v2, ex);
   check('B14 a report is named for the log: an acknowledgement, a "send again" (always written), the last acknowledgement again (FF), a message\'s start',
         /^acknowledgement: report 4E, position 78,763, message 16$/.test(d('FE 01 4E 00 AB 33 01 00 10 00 00 00', true).text) && d('FE 00 02 00 F7 03 00 00 10 00 00 00', true).loud === true &&
@@ -416,7 +416,7 @@ const G1 = 0x1541;
     const mock = new MockPrime(Object.assign({ tickMs: 80 }, opts || {})), link = quick(new P.Link(mock.port()));
     const log = [], items = [];
     const ui = Object.assign({ log: t => log.push(t), trace: (t, at) => log.push('    . ' + t), item: (k, st) => items.push(k + st) }, more || {});
-    const res = await P.load(link, programs, ui, { settle: 10, first: 600 });
+    const res = await P.load(link, programs, ui, { settle: 10, first: 600, patience: c => 3000 + Math.ceil(0.04 * c) });   // v3's wait, so a missing program shows in seconds
     mock.stop();
     return { mock, res, log, items, text: log.join('\n') };
   };
@@ -439,13 +439,24 @@ const G1 = 0x1541;
   {
     const mock = new MockPrime({ tickMs: 80, drop: ['DataLoad'] }), link = quick(new P.Link(mock.port())), log = [];
     mock.programs.DataLoad = 'EXPORT DataLoad()\nBEGIN\n// the version of last term\nEND;';
-    const res = await P.load(link, three, { log: t => log.push(t) }, { settle: 10 });
+    const res = await P.load(link, three, { log: t => log.push(t) }, { settle: 10, patience: c => 3000 + Math.ceil(0.04 * c) });
     mock.stop();
     check('E5 ... and when an older DataLoad is on the calculator and the new one is not kept, the old one comes back: "differs", with both lengths and where they part',
           !res.ok && res.failed.name === 'DataLoad' && res.failed.why === 'differs' && /NOT THE SAME: \d\d characters came back against 40,857 sent; the first difference is at character \d+\./.test(log.join('\n')), JSON.stringify(res.failed));
   }
   L = await run({ cutAt: 30000 }, three);
   check('E6 a calculator that keeps only the first 30,000 characters: "differs", the first difference at character 30,001', L.res.failed.why === 'differs' && L.res.failed.name === 'DataLoad' && /first difference is at character 30,001\./.test(L.text), L.text.slice(-300));
+  L = await run({ room: 30000, product: 0x1541 }, three);
+  check('E6a a calculator with no room left, as the author\'s G1 on 18 Nov: it takes all of DataLoad and keeps the name only; the page reads it back EMPTY and says "full", AAA is done, CCC is never sent',
+        !L.res.ok && L.res.failed.name === 'DataLoad' && L.res.failed.why === 'full' && L.res.done.join() === 'AAA' && L.mock.programs.DataLoad === '' && L.mock.arrived.length === 2 &&
+        /NOT KEPT: the calculator took all of DataLoad and gave it back empty, as a calculator with no room left does\./.test(L.text), JSON.stringify(L.res.failed) + L.text.slice(-600));
+  {
+    const mock = new MockPrime({ tickMs: 600, lagMs: 20000 }), link = quick(new P.Link(mock.port())), log = [];
+    const res = await P.load(link, three.slice(0, 1), { log: t => log.push(t) }, { settle: 10 });
+    mock.stop();
+    check('E6b a calculator that begins its answer only after 20 s, saying where it stands every 0.6 s meanwhile (the G2 of 18 Nov, 15:49, took 8.0 s for DNAMixLR and more than 14.6 s for EpiStats): with the default wait the program is read back and found the same',
+          res.ok && res.done.join() === 'AAA', JSON.stringify(res.failed) + log.join('\n').slice(-400));
+  }
   L = await run({ fdOld: null }, three);
   check('E7 a calculator that still says version 01 after the "FD": "version"; no program is sent and the newer framing is not asked for',
         L.res.failed.why === 'version' && L.res.failed.name === null && L.res.done.length === 0 && L.mock.arrived.length === 0 && !L.mock.v2open && L.items.length === 0 && /IT DOES NOT SPEAK VERSION 03/.test(L.text), JSON.stringify(L.res));

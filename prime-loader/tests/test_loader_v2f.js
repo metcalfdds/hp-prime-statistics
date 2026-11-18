@@ -21,7 +21,7 @@
 // physical Prime G1 or G2 calculator" (Statisticles, in italics, being the book's name for its programs), and the
 // two called the first way and the second way: the same checks, with those words, and three more for the title, the
 // sentence under it and the two names.
-// v2b is v2a with the cable route written again (usb/prime_usb_v3.js, usb/tests/mock_prime_v3.js): parts 1 to 12
+// v2b is v2a with the cable route written again (usb/prime_usb_v3a.js, usb/tests/mock_prime_v3a.js): parts 1 to 12
 // are v2a's test, with the page's new names; part 13 is new.  NOTHING HERE TOUCHES A CALCULATOR.
 // v2a is a new page (two questions and one button), so this is a new test, on the scaffolding of test_loader_v1v.js:
 // the browser's folder picker is replaced by one that returns a folder in the browser's private file system (OPFS),
@@ -519,8 +519,8 @@ function check(name, ok, detail) {
   check('opens as a local file without errors', errs3.length === 0 && (await p3.textContent('#summary')) === 'All 31 programs.', errs3);
 
   // ---- 13. the cable, at the page's test address, against a pretend calculator ----
-  // (usb/tests/mock_prime_v3.js: by default it does what the author's G2 and G1 did on 17 Nov 2026.  Not a calculator.)
-  const MOCK = fs.readFileSync(path.join(__dirname, '..', 'usb', 'tests', 'mock_prime_v3.js'), 'utf8');
+  // (usb/tests/mock_prime_v3a.js: by default it does what the author's G2 and G1 did on 17 Nov 2026.  Not a calculator.)
+  const MOCK = fs.readFileSync(path.join(__dirname, '..', 'usb', 'tests', 'mock_prime_v3a.js'), 'utf8');
   const PROGRAMS = path.join(__dirname, '..', '..', 'programs');
   const canon = s => s.replace(/\r\n?/g, '\n').replace(/\s+$/, '');
   const repoSource = n => { const f = fs.readdirSync(PROGRAMS).find(x => x.startsWith(n + '_')); return canon(fs.readFileSync(path.join(PROGRAMS, f), 'utf8')); };
@@ -755,6 +755,18 @@ function check(name, ok, detail) {
         !(await u.p.isDisabled('#usbsend')) && /^Ready to send 1 program\. CentralLimit, M1 \(an app or data\) does not travel the Statisticles way: it goes by the official HP way, 2\) below\.$/.test(await u.p.textContent('#usbstatus')), await u.p.textContent('#usbstatus'));
   await u.p.setViewportSize({ width: 380, height: 800 });
   check('cable: at a phone\'s width nothing runs off the side', await u.p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
+  // a G1 that fills up, as the author's did on 18 Nov at 15:41 (all 30 sent; full after 15; NormExplorer kept empty)
+  u = await usbPage({ product: 0x1541, room: 2200000 });
+  check('a G1: the cable\'s first step tells it to load one chapter at a time', await u.p.isVisible('#g1room') && /On an HP Prime G1, load one chapter at a time/.test(await u.p.textContent('#g1room')));
+  await u.p.check('#w_all');
+  await u.p.click('#usbsend');
+  await usbEnd(u.p, 300000);
+  { const st = await state(u.p), got = await u.p.evaluate(() => ({ h: document.getElementById('usbfailh').textContent, p: document.getElementById('usbfailp').textContent, d: document.getElementById('usbfaildo').textContent, kit: document.getElementById('kitfold').open }));
+    check('... and when it fills up (here after 15 programs, at NormExplorer, as the author\'s did): "The calculator is full", the 15 marked done, NormExplorer marked bad, and what to do: delete its empty entry, load one chapter at a time',
+          st.fail && got.h === 'The calculator is full' && st.list.filter(x => /^ok:/.test(x)).length === 15 && st.list.indexOf('bad:NormExplorer') === 15 &&
+          /It took NormExplorer in and kept only its name/.test(got.p) && /The 15 programs marked ✓ are on the calculator, whole\./.test(got.p) &&
+          /Tap NormExplorer \(it shows 0 KB\), tap More, then Delete\./.test(got.d) && /in step 2 choose One chapter/.test(got.d) && /NOT KEPT: the calculator took all of NormExplorer/.test(st.log), JSON.stringify([got, st.list.slice(13, 17)])); }
+
   // the plain address, as every student opens it (v2f: the cable for every student)
   u = await usbPage({}, '');
   check('the plain address opens on the Virtual Calculator, as always', await u.p.isChecked('#t_vc') && await u.p.isVisible('#load') && !(await u.p.isVisible('#cable')));

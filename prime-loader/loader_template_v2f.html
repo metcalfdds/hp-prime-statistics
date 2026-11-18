@@ -14,6 +14,9 @@
    18 Nov (CLAUDE.md), so: cableWanted is true everywhere; the "still being tested" note is a line saying what was
    tried; and the sentence under the title is Roger's book wording (cable_sections_v1d.md), "and we have tested it"
    included, with the Issues address.  The cable code is the same file as in v2d.
+   Then, at 15:41, the G1 sent all 30 filled up after 15 and kept NormExplorer empty (prime_usb_v3a.js, 'full'): the
+   page now says "The calculator is full" and what to do, and the cable's first step tells a G1 to load one chapter
+   at a time.
    PrimeLoader v2e (18 Nov 2026, 12:30).  A student's slip of the kind the review of 17 November looked for: a real HP
    Prime, and a browser that cannot reach a USB device (Firefox, Safari).  Until now the page said nothing about the
    cable there and showed the Kit alone, so the student never learned that Chrome or Edge could do it in one click.
@@ -327,7 +330,8 @@ ol.steps li > p { margin: 2px 0 0; }
       <p class="note" id="cabletested">Tried on the author's HP Prime G2 (in Chrome) and G1 (in Edge) on 18 November 2026: each program of Chapter 12 came back from the calculator the same, and ChiTable ran at once, with no Check.</p>
       <ol class="steps">
         <li><b>Plug the calculator into this computer with its USB cable, and switch it on.</b> Leave it at its Home screen.
-          <p class="why">The Home screen is the one you calculate on. If the calculator shows anything else, press the <kbd>Home</kbd> key (the little house).</p></li>
+          <p class="why">The Home screen is the one you calculate on. If the calculator shows anything else, press the <kbd>Home</kbd> key (the little house).</p>
+          <p class="why" id="g1room"><b>On an HP Prime G1, load one chapter at a time</b> (step 2, <b>One chapter</b>): a G1 has room for about half of the book's programs.</p></li>
         <li><b>If HP's Connectivity Kit is open, close it.</b>
           <p class="why">Only one program at a time can talk to the calculator. You do not need the Kit for this way at all.</p></li>
         <li><b>Click this button:</b>
@@ -886,6 +890,11 @@ async function usbSend() {
     } else if (f.why === 'version') {
       usbFail('This calculator answers differently from the two this way was proved on', 'So nothing was sent to it. That is no fault of the calculator; its software may be older or newer.',
               ['Use the official HP way, the Connectivity Kit: its steps are under 2), just below.', 'Please click <b>Save the details</b>, under "What passed on the cable", and send that file to your instructor.'], true);
+    } else if (f.why === 'full') {
+      usbFail('The calculator is full', 'It took ' + esc(f.name) + ' in and kept only its name, which is what a calculator with no room left does. ' + marked + esc(f.name) + ' and the programs after it are not.',
+              ['On the calculator, press <kbd>Shift</kbd>, then <kbd>Program</kbd>. Tap <b>' + esc(f.name) + '</b> (it shows 0 KB), tap <b>More</b>, then <b>Delete</b>.',
+               'Load one chapter at a time: in step 2 choose <b>One chapter</b>. An HP Prime G1 has room for about half of the book\'s programs.',
+               'To make room for a new chapter, take off the programs of a chapter you have finished, the same way.'], false);
     } else if (f.why === 'unsent') {
       usbFail(esc(f.name) + ' did not go through', marked + esc(f.name) + ' and the programs after it are not.',
               ['Pull the calculator\'s cable out, push it in again, and click <b>Send to the calculator</b> again.', 'If it stops at the same place, ' + kitWay + '.'], true);

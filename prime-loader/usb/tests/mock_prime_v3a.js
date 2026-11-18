@@ -1,10 +1,10 @@
-// mock_prime_v3.js -- a pretend HP Prime on a pretend cable, for the tests of prime_usb_v3.js and of the Loader that
+// mock_prime_v3a.js -- a pretend HP Prime on a pretend cable, for the tests of prime_usb_v3a.js and of the Loader that
 // uses it.  Roger Metcalf & Claude, 17 Nov 2026.
 //
 // IT IS NOT A CALCULATOR.  By default it does what the author's G2 and G1 did on 17 Nov 2026, as far as the five logs
 // of ../logs/ go (both on firmware build 15751); each line below marked [log] is something one of those logs shows.
 // What the logs do not show has a switch and a default that says so.  Its byte work is written apart from
-// prime_usb_v3.js (its own checksum, its own framing), so that a slip in one is not hidden by the same slip in the other.
+// prime_usb_v3a.js (its own checksum, its own framing), so that a slip in one is not hidden by the same slip in the other.
 //
 // THE OLD FRAMING [log]
 //   fmt 1           "who are you" (FA) is answered with version 01
@@ -45,6 +45,8 @@
 //   drop []         names of programs it acknowledges and does not keep
 //   loseAt 0        it loses this report of a message (counted from 1), once
 //   cutAt null      it keeps only so many characters of a program
+//   room null       it holds programs of so many characters in all; one that would go over is kept EMPTY (name only)
+//                   and given back so, uncompressed, as the author's G1 did on 18 Nov 2026 [log]
 //   copies 1        how many times it sends a file for one request
 //   crlf            it gives a program back with CRLF line ends and one more at the end
 //   silentF8        it answers no request for a program;  keepOnDelete: a delete takes nothing off
@@ -93,7 +95,7 @@ const MockPrime = (function () {
       fmt: 1, fdOld: 'long', fdNew: 'long', fdReply: true, maxOld: 255, stallMs: 0, busyMs: 0, nulTail: true, needNul: true, wrap: 'hplp',
       v2: true, ecReply: null, ackEvery: 77, nack: true, tickMs: 600, tickNack: g2, tickOnReport: 0, tickLate: 1, window: 240, needAck: true, oldFlush: true,
       takeV3: false, lagMs: 0, lagPerChar: 0, firstId: 3,
-      drop: [], loseAt: 0, cutAt: null, copies: 1, crlf: false, silentF8: false, keepOnDelete: false, deadAfter: null, deadAfterNew: null,
+      drop: [], loseAt: 0, cutAt: null, copies: 1, crlf: false, silentF8: false, keepOnDelete: false, deadAfter: null, deadAfterNew: null, room: null,
       busy: false, none: false, dieAt: 0, muteAt: 0, hang: false }, opts || {});
     if (!this.o.version) this.o.version = this.o.product === 0x2441 ? 'V2.060.650' : 'V0.050.640';
     this.size = this.o.reportSize || (this.o.product === 0x2441 ? 1024 : 64);
@@ -323,6 +325,10 @@ const MockPrime = (function () {
     let src = p.source;
     if (this.o.cutAt !== null) src = src.slice(0, this.o.cutAt);
     if (this.o.drop.indexOf(p.name) >= 0) { p.why = 'dropped'; return; }
+    if (this.o.room !== null) {
+      let held = 0; for (const n in this.programs) if (n !== p.name) held += this.programs[n].length;
+      if (held + src.length > this.o.room) src = '';             // no room: the name only [log]
+    }
     this.programs[p.name] = src;
     p.kept = true;
   };
@@ -387,7 +393,12 @@ const MockPrime = (function () {
       const stored = this.programs[name];
       const src = bytes(this.o.crlf ? stored.replace(/\n/g, '\r\n') + '\r\n' : stored), nm = bytes(name), end = this.o.nulTail ? [0, 0] : [];
       let out;
-      if (this.fmt === 3) {                                       // it answers in the version it speaks, whichever was asked: [log]
+      if (this.fmt === 3 && stored === '') {                      // an empty program comes back whole, not compressed: [log] 18 Nov
+        const inner = join([[0x06, nm.length, 0, 0], nm, [0, 0]]);
+        out = join([[0xF7, 0x03], b32(inner.length), inner]);
+        const c = crc(out, 0, out.length);
+        out[8] = c & 255; out[9] = c >> 8;
+      } else if (this.fmt === 3) {                                // it answers in the version it speaks, whichever was asked: [log]
         const inner = join([[0x06, nm.length, 0, 0], nm, src, [0, 0]]);
         const all = join([[0xF7, 0x03], b32(inner.length), inner]);
         const c = crc(all, 0, all.length);
