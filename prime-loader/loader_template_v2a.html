@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HP Prime Loader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* PrimeLoader v2a (17 Nov 2026, night).  Roger, after the review of that evening: "i'm thinking we need to make this
+   process as simple as is possible", then "How about let the student choose?--1) put all the programs on the Virtual
+   Calculator at once or 2) I'll choose which Chapter to load, one at a time", then "we do need to make some sort of
+   very simple loader ... to get the programs on a physical calcuator".  So the page asks two things and has one
+   button: which calculator (the Virtual Calculator, or a real HP Prime), and which programs (all of them, or one
+   chapter).  Programs one by one, and data, are folded away under "More choices".
+     All the programs, or programs ticked one by one: ADDED; what is on the calculator stays.
+     One chapter: the calculator then lists that chapter's programs; the book's other programs are moved to the backup
+       (v1 moved every program, the student's own too; now a program whose name the book does not use is never moved).
+     A real HP Prime: the same choice, downloaded as one zip for HP's Connectivity Kit, whose steps are now part of
+       the page's main line.  Sending straight down the cable is in the page too, switched off until it has been
+       proved on a calculator (usb/README.md).
+   v1d (17 Nov 2026): the review's fixes.  v1c, v1b, v1a, v1 (1 Nov 2026): the first pages; colours are the Data
+   Loader's, which echo the fleet's screens (curve blue, frame orange, mean green). */
+:root {
+  --paper: #f6f8fb; --surface: #ffffff; --ink: #172033; --muted: #5a6478; --line: #d9dfea;
+  --accent: #003cc8; --frame: #e04000; --good: #008c3c; --warn-bg: #fff3e8; --good-bg: #e9f7ef;
+  --accent-soft: #e6edff;
+  --display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1420; --surface: #172033; --ink: #e8edf6; --muted: #9aa6bc; --line: #2b3650;
+    --accent: #7d9cff; --frame: #ff8a55; --good: #43d081; --warn-bg: #3a2717; --good-bg: #13301f;
+    --accent-soft: #1f2d52; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1420; --surface: #172033; --ink: #e8edf6; --muted: #9aa6bc; --line: #2b3650;
+  --accent: #7d9cff; --frame: #ff8a55; --good: #43d081; --warn-bg: #3a2717; --good-bg: #13301f;
+  --accent-soft: #1f2d52; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }      /* .panel's display:grid must not show a hidden panel */
+html, body { margin: 0; }
+body { background: var(--paper); color: var(--ink); font: 16px/1.5 var(--body); }
+main { max-width: 980px; margin: 0 auto; padding: 28px 16px 48px; display: grid; gap: 20px; }
+header h1 { font: 600 2rem/1.15 var(--display); margin: 0 0 6px; letter-spacing: 0.2px; }
+header p { margin: 0; color: var(--muted); max-width: 66ch; }
+.step { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 18px 20px;
+        display: grid; gap: 12px; }
+.step > h2 { font: 600 1.2rem/1.2 var(--display); margin: 0; display: flex; align-items: center; gap: 10px; }
+.stepnum { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
+           border: 2px solid var(--frame); color: var(--frame); font: 600 0.95rem var(--display); flex: none; }
+.note { color: var(--muted); font-size: 0.92rem; margin: 0; max-width: 72ch; }
+button, .filebtn { font: 500 0.95rem var(--body); border-radius: 8px; padding: 8px 14px; cursor: pointer;
+                   border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600;
+                 padding: 12px 22px; font-size: 1.05rem; }
+:root[data-theme="dark"] button.primary { color: #0f1420; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) button.primary { color: #0f1420; } }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible, .filebtn:focus-within {
+  outline: 3px solid var(--accent); outline-offset: 2px; }
+.filebtn { position: relative; display: inline-block; }
+.filebtn input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.summary { margin: 0; font-weight: 500; }
+.summary b { font-family: var(--mono); font-weight: 500; }
+details { border-top: 1px solid var(--line); padding-top: 10px; }
+summary { cursor: pointer; color: var(--accent); font-weight: 500; }
+.proglist { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 6px 14px; }
+.prog { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: start; padding: 8px 10px; cursor: pointer;
+        border: 1.5px solid var(--line); border-radius: 8px; background: var(--surface); }
+.prog:hover { border-color: var(--accent); }
+.prog:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.prog input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--accent); grid-row: 1 / span 2; }
+.prog .name { font: 600 1rem/1.25 var(--display); }
+.prog .ch { font: 500 0.78rem var(--display); color: var(--frame); letter-spacing: 0.3px; margin-left: 6px; }
+.prog .what { font-size: 0.86rem; color: var(--muted); grid-column: 2; }
+select { font: 500 0.95rem var(--body); border-radius: 8px; padding: 8px 10px; border: 1px solid var(--line);
+         background: var(--surface); color: var(--ink); max-width: 100%; }
+.opt label { display: flex; gap: 8px; align-items: baseline; max-width: 74ch; }
+.datarow label { display: flex; gap: 8px; align-items: baseline; }
+.status { margin: 0; font-weight: 500; }
+.status.ok { color: var(--good); }
+.status.bad { color: var(--frame); }
+.panel { border-radius: 8px; padding: 12px 14px; margin: 0; display: grid; gap: 8px; }
+.panel.warn { background: var(--warn-bg); }
+.panel.done { background: var(--good-bg); }
+.panel h3 { margin: 0; font: 600 1.05rem var(--display); }
+.panel ol, .panel ul { margin: 0; padding-left: 1.3em; display: grid; gap: 4px; }
+kbd { font: 500 0.85em var(--mono); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px;
+      padding: 0 5px; background: var(--surface); }
+code { font-family: var(--mono); font-size: 0.9em; background: var(--accent-soft); padding: 0 4px; border-radius: 4px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.two h3 { margin: 0 0 6px; font: 600 1rem var(--display); }
+@media (max-width: 720px) { .two { grid-template-columns: 1fr; } header h1 { font-size: 1.6rem; } }
+footer { color: var(--muted); font-size: 0.85rem; display: grid; gap: 6px; max-width: 80ch; }
+footer a, .step a { color: var(--accent); }
+.why { color: var(--muted); font-size: 0.92rem; margin: 0; max-width: 74ch; }
+.why b { color: var(--ink); font-weight: 600; }
+.do { margin: 0; font-weight: 500; max-width: 74ch; }
+.mode { border-radius: 10px; padding: 14px 16px; display: grid; gap: 6px; background: var(--accent-soft); }
+.mode h2 { font: 600 1.1rem var(--display); margin: 0; }
+.mode p { margin: 0; max-width: 74ch; }
+ol.steps { margin: 0; padding-left: 1.4em; display: grid; gap: 10px; max-width: 76ch; }
+ol.steps li > p { margin: 2px 0 0; }
+.help details { border-top: 1px solid var(--line); padding: 10px 0 0; }
+.help details:first-of-type { border-top: 0; padding-top: 0; }
+.help summary { color: var(--ink); font-weight: 600; }
+.help details > div { display: grid; gap: 6px; padding: 8px 0 4px 18px; max-width: 74ch; }
+.help details p, .help details ol { margin: 0; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+.choices { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+@media (max-width: 720px) { .choices { grid-template-columns: minmax(0, 1fr); } }
+.choice { border: 2px solid var(--line); border-radius: 10px; background: var(--surface); display: grid; gap: 8px;
+          padding: 12px 14px; align-content: start; }
+.choice:hover { border-color: var(--accent); }
+.choice:has(input[type="radio"]:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.choice > label { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: start; cursor: pointer; }
+.choice input[type="radio"] { width: 22px; height: 22px; margin: 2px 0 0; accent-color: var(--accent); grid-row: 1 / span 2; }
+.choice .ctitle { font: 600 1.12rem/1.25 var(--display); }
+.choice .cwhat { font-size: 0.92rem; color: var(--muted); grid-column: 2; }
+.choice select { justify-self: start; margin-left: 32px; width: calc(100% - 32px); min-width: 0; }
+.choice.small { border-width: 1.5px; padding: 8px 12px; }
+.choice.small .ctitle { font-size: 1rem; }
+.effect { margin: 0; font-size: 0.95rem; max-width: 76ch; }
+#proglist { margin-top: 4px; }
+.filebtn.hot { border: 2px solid var(--accent); font-weight: 600; }
+#more > div { display: grid; gap: 12px; margin-top: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>HP Prime Loader</h1>
+    <p>Puts the book's programs on your calculator. Answer two questions and click one button.</p>
+  </header>
+
+  <section class="panel warn" id="platform" aria-labelledby="platformh" hidden>
+    <h3 id="platformh"></h3>
+    <p id="platformp" style="margin:0"></p>
+  </section>
+
+  <section class="step" aria-labelledby="s1">
+    <h2 id="s1"><span class="stepnum">1</span>Which calculator?</h2>
+    <div class="choices" role="radiogroup" aria-labelledby="s1">
+      <div class="choice"><label><input type="radio" name="target" id="t_vc" value="vc" checked>
+        <span class="ctitle">The Virtual Calculator on this computer</span>
+        <span class="cwhat">HP's free calculator program for Windows. <a href="#need">Don't have it yet?</a></span></label></div>
+      <div class="choice"><label><input type="radio" name="target" id="t_real" value="real">
+        <span class="ctitle">A real HP Prime</span>
+        <span class="cwhat">The calculator in your hand (a G1 or a G2), on its USB cable.</span></label></div>
+    </div>
+  </section>
+
+  <section class="step" aria-labelledby="s2">
+    <h2 id="s2"><span class="stepnum">2</span>Which programs?</h2>
+    <div class="choices" role="radiogroup" aria-labelledby="s2">
+      <div class="choice"><label><input type="radio" name="what" id="w_all" value="all" checked>
+        <span class="ctitle">All <span id="nall">the</span> programs</span>
+        <span class="cwhat">Everything the book uses, in one go.</span></label></div>
+      <div class="choice"><label><input type="radio" name="what" id="w_chapter" value="chapter">
+        <span class="ctitle">One chapter</span>
+        <span class="cwhat">Just the programs of the chapter you are on: a short list on the calculator.</span></label>
+        <select id="chapter" aria-label="The chapter"><option value="">Choose your chapter ...</option></select></div>
+    </div>
+    <div class="panel done" id="fromdl" hidden>
+      <h3>Adding a data file you made with the Data Loader?</h3>
+      <p class="note" style="color:inherit">Click <b>Add a data file you were given</b>, a little further down, and choose your file (it is in your Downloads folder, and its name is like <code>M1.hpmat</code>). Then click the button in step 3. Your data and the DataLoad program are added; everything else on the calculator stays.</p>
+    </div>
+    <p class="summary" id="summary" role="status"></p>
+    <p class="effect why" id="effect"></p>
+    <details id="more">
+      <summary>More choices: single programs, and data</summary>
+      <div>
+        <div class="choice small"><label><input type="radio" name="what" id="w_pick" value="pick">
+          <span class="ctitle">Only the programs I tick</span>
+          <span class="cwhat">They are added to what is on the calculator.</span></label></div>
+        <div class="proglist" id="proglist" hidden></div>
+        <div id="datadetails">
+          <div class="datarow">
+            <label><input type="checkbox" id="rossi"> <span>Add the sample data set: <span id="rossiwhat"></span>.</span></label>
+            <p class="why" style="margin-top:4px">A <b>data set</b> is a table of numbers from a real study. You only need one if the book or your instructor tells you to use it. It goes into the calculator's matrix M1; the program <b>DataLoad</b> then moves it into the calculator's statistics lists. DataLoad is added for you whenever you load data.</p>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <label class="filebtn" for="ownfile">Add a data file you were given (M1.hpmat)<input type="file" id="ownfile" accept=".hpmat" multiple></label>
+            <span class="note" id="ownlist"></span>
+          </div>
+          <p class="why" style="margin-top:6px">Use this only if your instructor gave you a data file, or you made one with the <a href="__DATALOADER_URL__">Data Loader</a>. Its name must be M0.hpmat to M9.hpmat.</p>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section class="mode" id="mode-manual" aria-labelledby="mm" hidden>
+    <h2 id="mm">You're using <span id="brname">Firefox</span>: that's fine, it just takes a few more clicks</h2>
+    <p><b>Why it's different:</b> <span class="brname2">Firefox</span> never lets a web page put files into a folder on your computer. That is a safety choice its makers made on purpose, so nothing on this page can change it. Instead, the page gives you <b>one file to download</b>, and Windows itself unpacks it into the calculator's folder. It takes about two minutes.</p>
+    <p class="why">If you would rather have the page do the copying, open it in Microsoft Edge instead, which every Windows computer has. "Something not working?" at the bottom of the page says how.</p>
+  </section>
+
+  <section class="step" id="step3auto" aria-labelledby="s3">
+    <h2 id="s3"><span class="stepnum">3</span>Load</h2>
+    <p class="do">If the Virtual Calculator is open, close it first. Then click the button.</p>
+    <div class="row">
+      <button type="button" class="primary" id="load" disabled>Load onto the Virtual Calculator</button>
+      <button type="button" id="repick" hidden>Choose a different folder</button>
+    </div>
+    <div id="firsttime">
+      <p class="why"><b>The first time you click Load, the browser asks two things:</b></p>
+      <ol class="steps why">
+        <li>A window opens showing your <b>Documents</b> folder. Click the folder <b>HP Prime</b> once, then click <b>Select Folder</b>. (Ignore "Upload from mobile".) This tells the page where the calculator keeps its programs.</li>
+        <li>Your browser asks whether to let this page edit files there. Click <b>Edit files</b> (or <b>Allow</b>). This lets the page work in that one folder and nowhere else.</li>
+      </ol>
+      <p class="why">After that, the page remembers the folder and doesn't ask again.</p>
+    </div>
+    <p class="status" id="status" role="status" aria-live="polite"></p>
+    <div class="panel warn" id="running" hidden>
+      <h3>The Virtual Calculator looks open</h3>
+      <p class="note" style="color:inherit">Close it: click the small word <b>Calculator</b> at the top left of its window, then <b>Exit</b> (or click the <b>X</b> at the top right of its window). Then click <b>Try again</b>.</p>
+      <p class="note" style="color:inherit"><b>Why:</b> when the calculator closes it saves everything it remembers, right over the new programs, and they would be gone.</p>
+      <p class="note" style="color:inherit">If you are sure it is closed, click <b>It is closed: load</b>. (The calculator leaves a small marker file while it is open; if it ever crashed, that marker can be left behind.)</p>
+      <div class="row"><button type="button" id="again">Try again</button><button type="button" id="force">It is closed: load</button></div>
+    </div>
+    <div class="panel done" id="done" hidden>
+      <h3>Done. Now start the Virtual Calculator.</h3>
+      <ol id="nextsteps"></ol>
+      <p class="note" style="color:inherit"><b>What just happened:</b></p>
+      <ul class="note" id="report"></ul>
+    </div>
+    <details class="opt">
+      <summary>What Load does</summary>
+      <p class="why" style="margin:10px 0 8px">Load checks that the calculator is closed, copies the programs into the calculator's folder, and reads each one back to make sure it arrived whole. It takes a few seconds.</p>
+      <p class="why" style="margin:0 0 8px"><b>All the programs</b>, or <b>programs you tick</b>, are added: the programs already on the calculator stay. If one of them has the same name as a program being loaded, it is replaced by this page's copy.</p>
+      <p class="why" style="margin:0 0 8px"><b>One chapter</b> leaves the calculator with that chapter's programs: the book's other programs are moved off first. A program of your own is never moved.</p>
+      <p class="why" style="margin:0">Nothing is ever deleted. Whatever is replaced or moved off is kept in <code>Documents\HP Prime\Loader backups</code>, in a folder named with the date and time. HP's own apps and settings are never touched.</p>
+    </details>
+  </section>
+
+  <section class="step" id="step3manual" aria-labelledby="s3m" hidden>
+    <h2 id="s3m"><span class="stepnum">3</span>Download the programs and unpack them into the calculator</h2>
+    <ol class="steps">
+      <li><b>Close the Virtual Calculator</b> if it is open (the small word <b>Calculator</b> at the top left of its window, then <b>Exit</b>).
+        <p class="why">The calculator reads its programs only when it starts, and when it closes it saves its old memory right over anything new.</p></li>
+      <li><b>Click this button:</b>
+        <div class="row" style="margin-top:6px"><button type="button" class="primary" id="download2" disabled>Download the programs</button><span class="status" id="dlstatus2" role="status"></span></div>
+        <p class="why">Your browser saves one file, called <b id="zipname">HP_Prime_programs.zip</b>, in your <b>Downloads</b> folder. A zip file is a bundle: several files packed into one so they download together.</p></li>
+      <li><b>Open your Downloads folder.</b>
+        <p class="why">In <span class="brname2">Firefox</span>: click the downloads arrow at the top right of the window, then the small folder icon next to the file. Or open <b>File Explorer</b> (the yellow folder on the taskbar) and click <b>Downloads</b> on the left.</p></li>
+      <li><b>Right-click the zip file and choose Extract All…</b>
+        <p class="why">"Extract" means unpack. Windows will ask where to put the files: the next step points it at the calculator's folder.</p></li>
+      <li><b>Click Browse…, then open Documents, then HP Prime, then Calculators, then Prime, and click Select Folder.</b>
+        <p class="why">The long box above Browse should now end in <code>\HP Prime\Calculators\Prime</code>. That <b>Prime</b> folder is where the calculator keeps its programs. It reads them from there each time it starts.</p></li>
+      <li><b>Click Extract.</b>
+        <p class="why">If Windows says files with the same name are already there, choose <b>Replace the files in the destination</b>: the new ones are the up-to-date programs. A window showing the folder may pop up afterwards; you can close it.</p></li>
+      <li><b>Start the Virtual Calculator.</b> Press <kbd>Shift</kbd>, then <kbd>Program</kbd> (the <kbd>1</kbd> key). Your programs are listed: <b id="manualprogs">…</b>. Tap one, then tap <b>Run</b>. That's all.
+        <p class="why" id="manualcheck">If one ever says Syntax Error, or Run does nothing: tap it, tap <b>Edit</b>, tap <b>Check</b>, tap <b>OK</b>, press <kbd>Esc</kbd>, then tap <b>Run</b>. Once is enough.</p>
+        <p class="why" id="manualapp" hidden><b>CentralLimit</b> is an app rather than a program: press <kbd>Apps</kbd>, move to CentralLimit without touching it, and tap <b>Start</b>. Then press <kbd>View</kbd> for its menu.</p>
+        <p class="why" id="manualdata" hidden>Your data is in matrix M1: open the <b>Statistics 1Var</b> app once (<kbd>Apps</kbd>), then run <b>DataLoad</b> to put the columns into its lists.</p></li>
+    </ol>
+    <p class="why">Unpacking adds programs without taking any away: programs already on your calculator stay there, whichever choice you made in step 2.</p>
+  </section>
+
+  <section class="step" id="step3real" aria-labelledby="s3r" hidden>
+    <h2 id="s3r"><span class="stepnum">3</span>Put them on your HP Prime with HP's Connectivity Kit</h2>
+    <p class="do">A real HP Prime keeps its programs inside the calculator, so they travel down its USB cable. HP's free <b>Connectivity Kit</b> does the moving.</p>
+    <p class="why">Don't have the Kit? <a href="https://www.hpcalc.org/prime/">hpcalc.org's HP Prime page</a> lists it, with Hewlett-Packard as its author. Download it and install it.</p>
+    <ol class="steps">
+      <li><b>Click this button:</b>
+        <div class="row" style="margin-top:6px"><button type="button" class="primary" id="download3" disabled>Download the programs</button><span class="status" id="dlstatus3" role="status"></span></div>
+        <p class="why">Your browser saves one file, called <b id="zipname3">HP_Prime_programs.zip</b>, in your <b>Downloads</b> folder.</p></li>
+      <li><b>Unpack it:</b> open your Downloads folder, right-click the zip file, choose <b>Extract All…</b>, then click <b>Extract</b>.
+        <p class="why">A window opens showing the program files, each ending in <code>.hpprgm</code>. Leave that window open.</p></li>
+      <li><b>Start the Connectivity Kit. Then plug the calculator into the computer with its USB cable, and turn it on.</b>
+        <p class="why">At the top left of the Kit's window, under <b>Calculators</b>, your calculator's name appears.</p></li>
+      <li><b>Drag each program file from the unpacked folder and drop it on the calculator's name.</b>
+        <p class="why">Drop it right on the name, not into the <b>Content</b> box below it: Content is only the Kit's own shelf. The calculator takes each program in straight away.</p>
+        <p class="why" id="realapp" hidden><b>CentralLimit</b> is an app, not a program, so it is a folder: <code>CentralLimit.hpappdir</code>. Drag the whole folder onto the calculator's name the same way. (This one step has not been tried on a real calculator yet; if the Kit will not take the folder, tell your instructor.)</p>
+        <p class="why" id="realdata" hidden>Your data file (<span id="realdatanames">M1.hpmat</span>) goes on the same way (not yet tried on a real calculator). On the calculator, open the <b>Statistics 1Var</b> app once (<kbd>Apps</kbd>), then run <b>DataLoad</b> to put its columns into the lists.</p></li>
+      <li><b>Close the Connectivity Kit</b>, or unplug the calculator.
+        <p class="why">While the Kit is open it keeps asking the calculator what it holds, and that slows the calculator down.</p></li>
+      <li><b>On the calculator,</b> press <kbd>Shift</kbd>, then <kbd>Program</kbd> (the <kbd>1</kbd> key). Your programs are listed: <b id="realprogs">…</b>. Tap one, then tap <b>Run</b>.
+        <p class="why" id="realapp2" hidden><b>CentralLimit</b> is an app rather than a program: press <kbd>Apps</kbd>, move to CentralLimit without touching it, and tap <b>Start</b>. Then press <kbd>View</kbd> for its menu.</p></li>
+    </ol>
+    <p class="why">Programs already on your calculator stay there, whichever choice you made in step 2. A real calculator has much less room than a computer; to take a program off, open the Program Catalog, tap its name, tap <b>More</b>, then <b>Delete</b>.</p>
+    <details>
+      <summary>The Kit does not show my calculator</summary>
+      <div class="panel warn" style="margin-top:10px">
+        <p style="margin:0"><b>Make sure Bonjour is running.</b> The Connectivity Kit uses a small Apple program called <b>Bonjour</b> to find calculators (HP includes Bonjour with the Kit). On some computers Bonjour gets stopped, and then the Kit may not see your calculator at all, or may misbehave. To check it:</p>
+        <ol>
+          <li>Press the <kbd>Windows</kbd> key, type <b>Services</b>, and open the <b>Services</b> app.</li>
+          <li>Find <b>Bonjour Service</b> in the list. The list is in alphabetical order, so it is near the top.</li>
+          <li>Look at its <b>Status</b> column: it should say <b>Running</b>. If it doesn't, right-click <b>Bonjour Service</b> and choose <b>Start</b>. Windows may ask for an administrator's permission; on a school computer, ask your instructor or the IT help desk.</li>
+        </ol>
+        <p class="why" style="margin:0">Instructors: the hp-prime-statistics repository has a small launcher (<code>tools/windows-launcher</code>) that checks Bonjour, starts it if needed, and then opens the Kit.</p>
+      </div>
+      <p class="why" style="margin-top:8px">If the mouse pointer shows a circle with a line through it when you drag, the Kit may be set to run as administrator: right-click its shortcut, <b>Properties</b>, <b>Compatibility</b>, and clear "Run this program as an administrator".</p>
+    </details>
+    <div class="panel warn" id="usbpanel" hidden>
+      <h3>Being tested: straight down the cable, with no Connectivity Kit</h3>
+      <p class="note" style="color:inherit">This sends the programs from this page to the calculator through its USB cable, and reads each one back to see that it arrived whole. <b>It has not been proved on a real calculator yet</b>, which is why only this page's test address shows it. Close the Connectivity Kit first, and leave the calculator switched on at its Home screen.</p>
+      <div class="row"><button type="button" class="primary" id="usbsend" disabled>Send to the calculator</button><button type="button" id="usbstop" disabled>Stop</button></div>
+      <p class="status" id="usbstatus" role="status" aria-live="polite"></p>
+      <ul class="note" id="usblist" style="color:inherit"></ul>
+    </div>
+  </section>
+
+  <section class="step help" aria-labelledby="s5">
+    <h2 id="s5">Something not working?</h2>
+    <details id="need"><summary>I don't have the Virtual Calculator yet</summary><div>
+      <p>It is a free program from HP for Windows. <a href="https://www.hpcalc.org/prime/">hpcalc.org's HP Prime page</a> lists it, with Hewlett-Packard as its author. Download it and install it.</p>
+      <p>Then start it once and close it again. Its first start makes a folder in your Documents called <b>HP Prime</b>, which is where it keeps its programs and where this page puts them.</p>
+    </div></details>
+    <details><summary>The page says it can't put files on the calculator, or I want to open it in Edge</summary><div>
+      <p>Firefox and Safari don't allow any web page to put files into a folder, so the page shows the download steps instead. Those work fine. To have the page do the copying for you, open it in <b>Microsoft Edge</b>:</p>
+      <ol><li>If you opened this page from a file on your computer: right-click the file, choose <b>Open with</b>, then <b>Microsoft Edge</b>.</li>
+          <li>If you opened it from a link: click in the address bar at the top of this window, copy the address (<kbd>Ctrl</kbd>+<kbd>C</kbd>), open Edge (the blue-green swirl on the taskbar or Start menu), click its address bar, paste (<kbd>Ctrl</kbd>+<kbd>V</kbd>) and press <kbd>Enter</kbd>.</li></ol>
+    </div></details>
+    <details><summary>There's no folder called HP Prime in my Documents</summary><div>
+      <p>Start the Virtual Calculator once and close it again: its first start makes the folder. If you still can't find it, your computer may keep Documents in OneDrive: on the left of the window, look under <b>OneDrive</b> → <b>Documents</b>.</p>
+    </div></details>
+    <details><summary>The page says the calculator looks open, but I closed it</summary><div>
+      <p>Look at the taskbar at the bottom of the screen: if the calculator's icon is still there, it may be open on another screen or minimized. Close it there. If it really is closed, click <b>It is closed: load</b>.</p>
+    </div></details>
+    <details><summary>A program says "Syntax Error", or Run does nothing</summary><div>
+      <p>Press <kbd>Shift</kbd>, then <kbd>Program</kbd>. Tap the program, tap <b>Edit</b>, tap <b>Check</b> (bottom right). The calculator says "No errors in the program". Tap <b>OK</b>, press <kbd>Esc</kbd>, then tap <b>Run</b>. This rebuilds the program for your calculator; you only ever need to do it once per program.</p>
+      <p>If you typed the program's name in the calculator's Home screen instead, type it exactly as listed, capitals included (for example <code>TTESTLABG</code>). Tapping it in the program list is easier.</p>
+    </div></details>
+    <details><summary>A program I had is gone, or I want an old one back</summary><div>
+      <p>Load never deletes a program. One that it replaced, or that <b>One chapter</b> moved off the Virtual Calculator, is in <code>Documents\HP Prime\Loader backups</code>, in a folder named with the date and time. To get the book's programs back, choose <b>All the programs</b> and click <b>Load</b>. To get back a file from the backup, close the calculator, copy it from there into <code>Documents\HP Prime\Calculators\Prime</code>, and start the calculator.</p>
+    </div></details>
+    <details><summary>Can the Connectivity Kit load the Virtual Calculator too?</summary><div>
+      <p>Yes. Choose <b>A real HP Prime</b> in step 1 and follow its steps, with one change: start the Virtual Calculator where the steps say to plug the calculator in. The Kit lists it as <b>Virtual Prime</b>.</p>
+    </div></details>
+  </section>
+
+  <footer>
+    <p>Loading programs by copying them into the Virtual Calculator's folder was found by <a href="https://github.com/JordiRigau/hp-prime-kit">hp-prime-kit</a> (Jordi Rigau). This page, the programs and the Data Loader are from <a href="https://github.com/metcalfdds/hp-prime-statistics">hp-prime-statistics</a>, by Roger Metcalf, written with Claude (Anthropic). Free for educational and personal use. © 2026 Roger Metcalf.</p>
+    <p id="packline"></p>
+  </footer>
+</main>
+
+<script>
+/*LOADERCORE*/
+</script>
+<script>
+/*DLCORE*/
+</script>
+<script>
+/*PRIMEUSB*/
+</script>
+<script>
+'use strict';
+const CAT = /*CATALOG*/;
+const PACK_B64 = /*PACK*/;
+const $ = id => document.getElementById(id);
+const canWrite = typeof window.showDirectoryPicker === 'function';
+const canUnpack = typeof DecompressionStream === 'function';     // the programs are packed inside the page
+// The browser's name, for the manual route's wording only (never to decide anything: canWrite decides).
+const browserName = /Firefox\//.test(navigator.userAgent) ? 'Firefox'
+  : (/Safari\//.test(navigator.userAgent) && !/Chrom(e|ium)\//.test(navigator.userAgent)) ? 'Safari' : 'this browser';
+// Sending straight down the cable is in the page and switched off: it shows only at the page's test address
+// (...?usb=1), in a browser that can reach a USB device.  usb/README.md says what has to be proved first.
+const usbOn = /[?&]usb=1(&|$)/.test(location.search) && typeof PrimeUSB !== 'undefined' && PrimeUSB.supported();
+// The Data Loader's last step links here with ?data=1: the page then opens ready for a data file, with no program
+// chosen, so that the student's data and DataLoad are all that Load adds.
+const fromDataLoader = /[?&]data=1(&|$)/.test(location.search);
+
+// target: 'vc' (the Virtual Calculator) or 'real'.  what: 'all', 'chapter' or 'pick'.
+const state = { target: 'vc', what: 'all', picked: new Set(), own: [] };
+let packFiles = null;                     // Map(path -> bytes), unpacked on first use
+let listAsked = false;                    // coming from the Data Loader, the list of 31 stays folded until its circle is clicked
+let loading = false;                      // a load is under way: Load stays off whatever is clicked meanwhile
+
+async function pack() {
+  if (!packFiles) {
+    const bin = atob(PACK_B64), b = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i);
+    packFiles = await LoaderCore.unzip(b);
+  }
+  return packFiles;
+}
+
+// ---------- step 2: what to load ----------
+const DATAPROG = 'DataLoad';             // the program that moves a matrix into the lists: it goes wherever data goes
+const NAMES = Object.keys(CAT.programs).sort((a, b) => a.localeCompare(b));
+const BOOKTOPS = NAMES.map(p => CAT.programs[p].file);       // every file or folder name the page can load
+function ownSample() { return state.own.some(o => o.name.toLowerCase() === CAT.data.rossi.file.toLowerCase()); }
+function dataChosen() {                  // the student's own M1 wins over the sample data set, which is M1 too
+  const d = [];
+  if ($('rossi').checked && !ownSample()) d.push({ path: CAT.data.rossi.file, src: CAT.data.rossi.file });
+  for (const f of state.own) d.push({ path: f.name, bytes: f.bytes });
+  return d;
+}
+function dataNeedsProg() { return dataChosen().length > 0 && !!CAT.programs[DATAPROG]; }
+function chapter() { return CAT.chapters.find(x => String(x.num) === $('chapter').value) || null; }
+// What step 2's choice names, before DataLoad is added for any data.  A chapter brings the which-test flowchart,
+// which the book introduces before Chapter 1 and uses with every chapter.
+function chosen() {
+  if (state.what === 'all') return NAMES.slice();
+  if (state.what === 'chapter') { const c = chapter(); return c ? NAMES.filter(p => c.programs.includes(p) || p === CAT.always) : []; }
+  return NAMES.filter(p => state.picked.has(p));
+}
+function selection() {                   // what goes on the calculator: the choice, and DataLoad when data go
+  const s = new Set(chosen());
+  if (dataNeedsProg()) s.add(DATAPROG);
+  return NAMES.filter(p => s.has(p));
+}
+// "One chapter" on the Virtual Calculator leaves it with that chapter's programs: the book's others are moved off.
+function movesBookOff() { return state.target === 'vc' && canWrite && state.what === 'chapter' && !!chapter(); }
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function plural(n, one, many) { return n + ' ' + (n === 1 ? one : (many || one + 's')); }
+function why(e) { return String(e && e.message ? e.message : e).replace(/[.\s]+$/, ''); }      // an error's own words, less its full stop
+
+// The chapters each program belongs to, for the small tag beside its name.
+function chaptersOf(name) {
+  const n = CAT.chapters.filter(c => c.programs.includes(name)).map(c => c.num);
+  return name === CAT.always ? 'any chapter' : n.length ? 'Ch. ' + n.join(', ') : '';
+}
+function buildList() {
+  const box = $('proglist');
+  for (const name of NAMES) {
+    const p = CAT.programs[name];
+    const l = document.createElement('label'); l.className = 'prog';
+    const cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = name; cb.id = 'p_' + name;
+    cb.addEventListener('change', () => { cb.checked ? state.picked.add(name) : state.picked.delete(name); refresh(); });
+    const ch = chaptersOf(name);
+    const top = document.createElement('span');
+    top.innerHTML = '<span class="name">' + esc(name) + '</span>' + (ch ? '<span class="ch">' + esc(ch) + '</span>' : '');
+    const what = document.createElement('span'); what.className = 'what'; what.textContent = p.what;
+    l.appendChild(cb); l.appendChild(top); l.appendChild(what); box.appendChild(l);
+  }
+  const sel = $('chapter');
+  for (const c of CAT.chapters) {
+    const o = document.createElement('option'); o.value = String(c.num);
+    o.textContent = 'Chapter ' + c.num + ': ' + c.title + (c.programs.length ? '' : ' (no program yet)');
+    o.disabled = c.programs.length === 0;
+    sel.appendChild(o);
+  }
+  $('nall').textContent = String(NAMES.length);
+}
+document.querySelectorAll('input[name="target"]').forEach(r => r.addEventListener('change', () => { if (r.checked) { state.target = r.value; refresh(); } }));
+document.querySelectorAll('input[name="what"]').forEach(r => r.addEventListener('change', () => { if (r.checked) { state.what = r.value; refresh(); } }));
+$('w_pick').addEventListener('click', () => { listAsked = true; refresh(); });
+// Choosing a chapter in the list is choosing "One chapter": the student need not click the circle too.
+$('chapter').addEventListener('change', () => { if ($('chapter').value) { state.what = 'chapter'; $('w_chapter').checked = true; } refresh(); });
+
+function zipName() {
+  if (chosen().length === 0) return 'HP_Prime_data.zip';
+  if (state.what === 'all') return 'HP_Prime_all_programs.zip';
+  if (state.what === 'chapter') return 'HP_Prime_Chapter_' + chapter().num + '.zip';
+  return 'HP_Prime_programs.zip';
+}
+
+function refresh() {
+  const sel = selection(), base = chosen(), data = dataChosen(), auto = dataNeedsProg(), c = chapter(), real = state.target === 'real';
+  // step 2's own parts
+  $('proglist').hidden = state.what !== 'pick' || (fromDataLoader && state.picked.size === 0 && !listAsked);
+  if (state.what === 'pick' || data.length) $('more').open = true;
+  for (const name of NAMES) {             // the boxes show what will go: DataLoad is ticked and held while data are chosen
+    const cb = $('p_' + name), held = auto && name === DATAPROG && state.what === 'pick';
+    cb.checked = state.picked.has(name) || held; cb.disabled = held;
+  }
+  // what is chosen, in a sentence
+  const dnames = esc(data.map(d => d.path.replace('.hpmat', '')).join(', '));
+  const extra = auto && !base.includes(DATAPROG);
+  let h;
+  if (state.what === 'all') h = 'All ' + NAMES.length + ' programs';
+  else if (state.what === 'chapter') h = c ? 'Chapter ' + c.num + ', ' + esc(c.title) + ': <b>' + esc(base.join(', ')) + '</b>' : '';
+  else h = base.length ? plural(base.length, 'program') + ' ticked' + (base.length <= 8 ? ': <b>' + esc(base.join(', ')) + '</b>' : '') : '';
+  if (!h && !data.length) h = state.what === 'chapter' ? 'Choose your chapter in the list above.' : (fromDataLoader && $('proglist').hidden) ? 'No data file added yet.' : 'Nothing ticked yet: tick the programs you want below.';
+  else {
+    if (!h) h = 'No program chosen';
+    if (data.length) h += ', and the data <b>' + dnames + '</b>';
+    h += '.';
+    if (state.what === 'chapter' && c && CAT.always && !c.programs.includes(CAT.always)) h += ' ' + esc(CAT.always) + ', the which-test flowchart, goes with every chapter.';
+    if (extra) h += ' ' + DATAPROG + ' is added because the data need it.';
+    if ($('rossi').checked && ownSample()) h += ' Your own ' + esc(CAT.data.rossi.file) + ' is used; the sample data set would go into the same matrix, so it is left out.';
+  }
+  $('summary').innerHTML = h;
+  // what it will do to what is already there
+  let e = '';
+  if (sel.length || data.length) {
+    if (real || !canWrite) e = 'Programs already on your calculator stay there.';
+    else if (movesBookOff()) e = 'The calculator will list this chapter\'s programs. The book\'s other programs are moved off into a backup folder; programs of your own stay.';
+    else e = 'They are added: programs already on the calculator stay.';
+    if (real && state.what === 'all') e += ' A real calculator has much less room than a computer; if yours runs short, load one chapter at a time.';
+  }
+  $('effect').textContent = e;
+  // the route
+  $('step3auto').hidden = real || !canWrite;
+  $('step3manual').hidden = real || canWrite;
+  $('step3real').hidden = !real;
+  $('mode-manual').hidden = real || canWrite || mobile;
+  const any = sel.length > 0 || data.length > 0;
+  $('load').disabled = !any || !canWrite || !canUnpack || loading;
+  $('repick').disabled = loading;
+  $('download2').disabled = !any || !canUnpack;
+  $('download3').disabled = !any || !canUnpack;
+  $('usbsend').disabled = !any || !canUnpack || usbBusy;
+  const progs = sel.filter(p => CAT.programs[p].home);
+  const listed = progs.length ? progs.join(', ') : '(choose your programs in step 2)';
+  $('manualprogs').textContent = listed; $('realprogs').textContent = listed;
+  $('zipname').textContent = zipName(); $('zipname3').textContent = zipName();
+  $('manualapp').hidden = !sel.includes('CentralLimit'); $('realapp').hidden = !sel.includes('CentralLimit'); $('realapp2').hidden = !sel.includes('CentralLimit');
+  $('manualdata').hidden = data.length === 0; $('realdata').hidden = data.length === 0;
+  $('realdatanames').textContent = data.map(d => d.path).join(', ');
+  if (!progs.every(p => CAT.checked[p]))
+    $('manualcheck').innerHTML = '<b>The first time you run each one:</b> tap its name, tap <b>Edit</b>, tap <b>Check</b> (it says "No errors in the program"), tap <b>OK</b>, press <kbd>Esc</kbd>, then tap <b>Run</b>. After that, just tap it and tap <b>Run</b>.';
+}
+
+$('ownfile').addEventListener('change', async ev => {
+  const refused = [], broken = [];
+  for (const f of ev.target.files) {
+    // "M1 (2).hpmat" is how a browser names a second download of M1.hpmat: it is still M1.
+    const m = /^(M[0-9])(\s*\(\d+\))?\.hpmat$/i.exec(f.name);
+    if (!m) { refused.push(f.name); continue; }
+    const name = m[1].toUpperCase() + '.hpmat';
+    const bytes = new Uint8Array(await f.arrayBuffer());
+    const why = LoaderCore.checkHpmat(bytes);            // v1d: a file of the right name and the wrong content is refused
+    if (why) { broken.push(f.name + ': ' + why); continue; }
+    state.own = state.own.filter(o => o.name !== name);
+    state.own.push({ name: name, bytes: bytes });
+  }
+  const msg = [];
+  if (state.own.length) msg.push('Your data: ' + state.own.map(o => o.name).join(', ') + '.');
+  if (refused.length) msg.push('Not added: ' + refused.join(', ') + '. A data file must be named M0.hpmat to M9.hpmat, as the Data Loader names it.');
+  if (broken.length) msg.push('Not added: ' + broken.join('; ') + '. Make the file again with the Data Loader, or ask for a new copy.');
+  $('ownlist').textContent = msg.join(' ');
+  ev.target.value = '';
+  refresh();
+});
+$('rossi').addEventListener('change', refresh);
+
+// ---------- step 3, the Virtual Calculator: the folder, remembered between visits ----------
+function idb() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open('prime-loader', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('kv');
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  });
+}
+async function idbGet(k) {
+  try { const db = await idb(); return await new Promise(res => { const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => res(undefined); }); }
+  catch (e) { return undefined; }
+}
+async function idbSet(k, v) {
+  try { const db = await idb(); await new Promise(res => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = res; t.onerror = res; }); }
+  catch (e) { /* remembering is a convenience only */ }
+}
+
+async function folder(forcePick) {
+  if (!forcePick) {
+    const h = await idbGet('hpprime');
+    if (h) {
+      try {
+        let p = await h.queryPermission({ mode: 'readwrite' });
+        if (p !== 'granted') p = await h.requestPermission({ mode: 'readwrite' });
+        if (p === 'granted') { const loc = await LoaderCore.locate(h); if (loc.ok) return loc; }
+      } catch (e) { /* fall through to picking */ }
+    }
+  }
+  const picked = await window.showDirectoryPicker({ id: 'hpprime', mode: 'readwrite', startIn: 'documents' });
+  const loc = await LoaderCore.locate(picked);
+  if (loc.ok) { await idbSet('hpprime', loc.base); $('repick').hidden = false; $('firsttime').hidden = true; }
+  return loc;
+}
+
+function say(text, kind) { const s = $('status'); s.textContent = text; s.className = 'status' + (kind ? ' ' + kind : ''); }
+
+async function load(force, forcePick) {
+  if (loading) return;
+  loading = true;
+  $('running').hidden = true; $('done').hidden = true;
+  const sel = selection(), data = dataChosen(), off = movesBookOff();
+  $('load').disabled = true; $('repick').disabled = true;
+  try {
+    say('Waiting for the folder ...');
+    const loc = await folder(forcePick);
+    if (!loc.ok) { say(loc.why, 'bad'); return; }
+    if (!force && await LoaderCore.isRunning(loc.base)) { say(''); $('running').hidden = false; return; }
+    say('Unpacking ...');
+    const pf = await pack();
+    const files = [];
+    for (const p of sel) for (const f of CAT.programs[p].files) files.push({ path: f, data: pf.get(f) });
+    for (const d of data) files.push({ path: d.path, data: d.src ? pf.get(d.src) : d.bytes });
+    say(off ? 'Moving the book\'s other programs to the backup ...' : 'Putting aside the files about to be replaced ...');
+    const paths = files.map(f => f.path);
+    const move = off ? await LoaderCore.planBook(loc.calc, BOOKTOPS, paths) : await LoaderCore.planAdd(loc.calc, paths);
+    const b = await LoaderCore.backup(loc.base, loc.calc, move, new Date());
+    say('Loading ' + plural(files.length, 'file') + ' ...');
+    const written = await LoaderCore.install(loc.calc, files);
+    say('Loaded ' + plural(sel.length, 'program') + (data.length ? ' and ' + plural(data.length, 'data file') : '') + ', every file read back and checked.', 'ok');
+    showDone(sel, data, b, written, off);
+  } catch (e) {
+    if (e && e.name === 'AbortError') say('No folder was chosen, so nothing was loaded.', 'bad');
+    else if (e && (e.name === 'NotAllowedError' || e.name === 'SecurityError'))
+      say('The browser was not allowed to change that folder. Click Load again and choose Edit files (or Allow) when it asks. If it says the folder has system files, open Documents and choose HP Prime inside it.', 'bad');
+    else say('Something went wrong: ' + why(e) + '. Nothing is lost: anything moved is in HP Prime\\Loader backups. Make sure the calculator is closed, then click Load again.', 'bad');
+  } finally {
+    loading = false;
+    refresh();
+  }
+}
+
+function showDone(sel, data, b, written, off) {
+  const ol = $('nextsteps'); ol.innerHTML = '';
+  const li = h => { const x = document.createElement('li'); x.innerHTML = h; ol.appendChild(x); };
+  li('Start the <b>HP Prime Virtual Calculator</b> (from the Start menu, or its icon on your desktop or taskbar).');
+  const progs = sel.filter(p => CAT.programs[p].home);
+  if (progs.length) {
+    const ready = progs.every(p => CAT.checked[p]);
+    li('Press <kbd>Shift</kbd>, then <kbd>Program</kbd> (the <kbd>1</kbd> key). This opens the <b>Program Catalog</b>, the calculator\'s list of programs. ' +
+       (progs.length <= 8 ? 'Yours are: <b>' + esc(progs.join(', ')) + '</b>.' : 'Your programs are all listed there.') +
+       (ready ? ' Tap one, then tap <b>Run</b> at the bottom right. That is all.' : ''));
+    if (ready)
+      li('<span class="note" style="color:inherit">If one ever says Syntax Error, or <b>Run</b> does nothing: tap it, tap <b>Edit</b>, tap <b>Check</b>, tap <b>OK</b>, press <kbd>Esc</kbd>, then tap <b>Run</b>. Once is enough.</span>');
+    else
+      li('<b>The first time you run each one:</b> tap its name, tap <b>Edit</b>, tap <b>Check</b> (it says "No errors in the program"), tap <b>OK</b>, press <kbd>Esc</kbd>, then tap <b>Run</b>. After that, just tap it and tap <b>Run</b>.');
+  }
+  if (sel.includes('CentralLimit')) li('<b>CentralLimit</b> is an app: press <kbd>Apps</kbd>, move to CentralLimit without touching it, and tap <b>Start</b>. Then press <kbd>View</kbd> for its menu.');
+  if (data.length) li('Your data is in matrix ' + esc(data.map(d => d.path.replace('.hpmat', '')).join(', ')) + '. Open the <b>Statistics 1Var</b> app once (<kbd>Apps</kbd>), then run <b>DataLoad</b> to put the columns into its lists.');
+  const ul = $('report'); ul.innerHTML = '';
+  const r = h => { const x = document.createElement('li'); x.innerHTML = h; ul.appendChild(x); };
+  r(plural(written.length, 'file') + ' went onto the calculator, and each was read back and checked' + (written.length <= 12 ? ': ' + esc(written.join(', ')) : '') + '.');
+  if (off) r('The book\'s other programs were moved off, so that the calculator lists this chapter\'s. Programs of your own were left where they are.');
+  else r('The programs that were already on the calculator were left where they are.');
+  if (b.folder) r((off ? 'What was moved off, and any file that was replaced, is' : 'The files that were replaced are') + ' in <code>Documents\\HP Prime\\' + esc(b.folder) + '</code>, not deleted: ' + esc(b.moved.join(', ')) +
+                  '. To get one back, close the calculator and copy it from there into <code>Documents\\HP Prime\\Calculators\\Prime</code>.');
+  else r('Nothing needed moving: none of them replaced a file.');
+  $('done').hidden = false;
+}
+
+$('load').addEventListener('click', () => load(false, false));
+$('repick').addEventListener('click', () => load(false, true));
+$('again').addEventListener('click', () => load(false, false));
+$('force').addEventListener('click', () => load(true, false));
+
+// ---------- the zip, for a real HP Prime or a browser that cannot write to folders ----------
+async function download(statusId) {
+  const st = $(statusId);
+  st.textContent = 'Making the file ...';
+  try {
+    const pf = await pack(), files = [];
+    for (const p of selection()) for (const f of CAT.programs[p].files) files.push({ name: f, data: pf.get(f) });
+    for (const d of dataChosen()) files.push({ name: d.path, data: d.src ? pf.get(d.src) : d.bytes });
+    const z = DLCore.zip(files), name = zipName();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([z], { type: 'application/zip' }));
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    st.textContent = 'Downloaded ' + name + ' (' + plural(files.length, 'file') + '). Now go on to the next step.';
+  } catch (e) { st.textContent = 'Could not make the file: ' + why(e) + '.'; }
+}
+$('download2').addEventListener('click', () => download('dlstatus2'));
+$('download3').addEventListener('click', () => download('dlstatus3'));
+
+// ---------- being tested: a real HP Prime, straight down the cable (shown only with ?usb=1) ----------
+// Each program is sent the way hp-prime-kit measured on a G2 (compressed, the report 01 after it) and then asked for
+// back; it counts as loaded only when what comes back is, character for character, what was sent.  The first program
+// that cannot be read back stops the run: the page never says "done" for a program it could not check.
+let usbBusy = false, usbStopNow = false;
+const USB_READS = [{ ver: 3, nul: true }, { ver: 1, nul: true }, { ver: 3, nul: false }, { ver: 1, nul: false }];
+function usbSay(text, kind) { const s = $('usbstatus'); s.textContent = text; s.className = 'status' + (kind ? ' ' + kind : ''); }
+function usbItem(text, kind) { const li = document.createElement('li'); li.textContent = text; if (kind) li.className = kind; $('usblist').appendChild(li); return li; }
+function sourceOf(pf, name) {             // the program's text, from its file in the pack: where it lies was found at build time
+  const p = CAT.programs[name], b = pf.get(p.files[0]);
+  return PrimeUSB.normalizeSource(PrimeUSB.fromUtf16le(b.subarray(p.src[0], p.src[1])).replace(/\u0000+$/, ''));
+}
+async function usbSend() {
+  if (usbBusy) return;
+  usbBusy = true; usbStopNow = false;
+  $('usbsend').disabled = true; $('usbstop').disabled = false; $('usblist').innerHTML = '';
+  let port = null;
+  try {
+    const sel = selection(), data = dataChosen();
+    const progs = sel.filter(p => CAT.programs[p].src), apps = sel.filter(p => !CAT.programs[p].src);
+    if (progs.length === 0) { usbSay('There is no program in your choice that can go down the cable.', 'bad'); return; }
+    usbSay('Waiting for you to choose the calculator in the browser\'s window ...');
+    const d = await PrimeUSB.choose();
+    if (!d) { usbSay('No calculator was chosen. If the browser\'s list was empty: is the calculator switched on, and is the cable pushed in at both ends? Then click Send again.', 'bad'); return; }
+    try { port = await PrimeUSB.open(d); }
+    catch (e) { usbSay('The browser found the calculator and could not open it. That is what happens while HP\'s Connectivity Kit is open: close the Kit, then click Send again.', 'bad'); return; }
+    const link = new PrimeUSB.Link(port);
+    let info;
+    try { info = await link.info(3000); }
+    catch (e) { usbSay('The calculator did not answer. Is it switched on and at its Home screen? Nothing was sent.', 'bad'); return; }
+    usbItem('Connected: ' + (PrimeUSB.MODELS[d.productId] || 'HP Prime') + ', firmware build ' + info.build + '.');
+    const pf = await pack();
+    let reader = null, done = 0;
+    for (const name of progs) {
+      if (usbStopNow) { usbSay('Stopped after ' + plural(done, 'program') + '. The ones marked "arrived whole" are on the calculator.', 'bad'); return; }
+      usbSay('Sending ' + name + ' (' + (done + 1) + ' of ' + progs.length + ') ...');
+      const src = sourceOf(pf, name), li = usbItem(name + ': sending ...');
+      const out = await link.sendProgram(name, src, { layout: 'v3', release: true });
+      li.textContent = name + ': sent in ' + plural(out.reports, 'report') + '; reading it back ...';
+      let back = null;
+      const tries = reader ? [reader] : USB_READS;
+      const same = b => !!b && (b.text === src || PrimeUSB.normalizeSource(b.text) === src);      // (a calculator may hand it back with other line ends)
+      for (let round = 0; round < 6 && !same(back); round++) {
+        if (round) await PrimeUSB.sleep(2000);                    // a long program may take the calculator a moment to store
+        for (const rd of tries) {
+          try { back = await link.readProgram(name, { ver: rd.ver, nul: rd.nul, first: reader ? 4000 : 2500, then: 3000 }); } catch (e) { back = null; }
+          if (back) { reader = rd; break; }
+        }
+        if (!reader) break;                                       // no way of asking was answered: more waiting will not help
+      }
+      if (same(back)) { li.textContent = name + ': arrived whole (' + plural(out.reports, 'report') + ', read back the same).'; done++; continue; }
+      if (!back) {
+        li.textContent = name + ': sent, but the calculator did not give it back, so the page cannot tell whether it arrived.';
+        usbSay('Stopped at ' + name + '. The page could not read it back, so it will not send the rest. Look in the calculator\'s Program Catalog for ' + name +
+               ', and use the Connectivity Kit steps above for your programs.', 'bad');
+      } else {
+        li.textContent = name + ': what came back is not what was sent (' + back.text.length + ' characters against ' + src.length + ').';
+        usbSay('Stopped at ' + name + ': it did not arrive whole. Delete ' + name + ' on the calculator (Program Catalog, tap its name, More, Delete), and use the Connectivity Kit steps above.', 'bad');
+      }
+      return;
+    }
+    const rest = apps.concat(data.map(x => x.path));
+    usbSay(plural(done, 'program') + ' on the calculator, each read back and found the same.' +
+           (rest.length ? ' Not sent this way: ' + rest.join(', ') + ' (an app or a data file; use the Connectivity Kit steps above for those).' : '') +
+           ' On the calculator, press Shift, then Program.', 'ok');
+  } catch (e) {
+    usbSay('The sending broke off: ' + why(e) + '. Was the cable pulled out? The programs marked "arrived whole" are on the calculator; the rest are not.', 'bad');
+  } finally {
+    if (port) { try { await port.close(); } catch (e) { /* gone already */ } }
+    usbBusy = false; $('usbstop').disabled = true;
+    refresh();
+  }
+}
+$('usbsend').addEventListener('click', usbSend);
+$('usbstop').addEventListener('click', () => { usbStopNow = true; $('usbstop').disabled = true; });
+
+// ---------- start ----------
+// A phone, a computer that is not Windows, or a browser too old to unpack the programs: say so at the top, in plain
+// words, before the student follows steps that cannot work.  (Only wording hangs on the browser's name; whether the
+// page can write is still decided by canWrite alone.)
+const ua = navigator.userAgent, uad = navigator.userAgentData;
+const mobile = /Android|iPhone|iPad|iPod/i.test(ua) || !!(uad && uad.mobile) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+(function () {
+  const windows = /Windows/i.test(ua) || !!(uad && uad.platform === 'Windows');
+  const tooOld = !canUnpack;
+  let h = '', p = '';
+  if (mobile) {
+    h = 'This page needs your computer';
+    p = 'You are on a phone or a tablet. The Virtual Calculator is a program for a Windows computer, and a real HP Prime is loaded from a computer too, so the steps below cannot work here. Open this page on that computer.' +
+        (/^https?:/.test(location.protocol) ? ' Its address is <b>' + esc(location.origin + location.pathname) + '</b>.' : '');
+  } else if (tooOld) {
+    h = 'This browser is too old for this page';
+    p = 'It cannot unpack the programs. Update the browser, or open this page in Microsoft Edge, which every Windows computer has.';
+  } else if (!windows) {
+    h = 'These steps were written for Windows';
+    p = 'This does not look like a Windows computer. On a Mac the Virtual Calculator keeps its programs in a different place, and the steps for it below have not been tested there. The route to try on a Mac is HP\'s Connectivity Kit: choose “A real HP Prime” in step 1 for its steps (the Kit lists the Virtual Calculator as Virtual Prime).';
+  }
+  if (h) { $('platformh').textContent = h; $('platformp').innerHTML = p; $('platform').hidden = false; }
+})();
+buildList();
+$('rossiwhat').textContent = CAT.data.rossi.what;
+$('packline').textContent = 'Program files from ' + CAT.pack + ' (' + CAT.pack_sha256 + ').';
+$('brname').textContent = browserName === 'this browser' ? 'a browser that cannot write to folders' : browserName;
+document.querySelectorAll('.brname2').forEach(e => { e.textContent = browserName === 'this browser' ? 'This browser' : browserName; });
+$('usbpanel').hidden = !usbOn;
+// A browser can keep a form's last state when a page is reloaded; the page starts from what the circles show.
+state.target = $('t_real').checked ? 'real' : 'vc';
+state.what = $('w_chapter').checked ? 'chapter' : $('w_pick').checked ? 'pick' : 'all';
+if (fromDataLoader) { state.what = 'pick'; $('w_pick').checked = true; $('more').open = true; $('fromdl').hidden = false; document.querySelector('label[for="ownfile"]').classList.add('hot'); }
+idbGet('hpprime').then(h => { if (h) { $('repick').hidden = false; $('firsttime').hidden = true; } });
+refresh();
+</script>
+</body>
+</html>

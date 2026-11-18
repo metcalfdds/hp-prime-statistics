@@ -4,11 +4,11 @@ Typing a long data set into a calculator is not feasible. This page turns column
 
 ## Using it
 
-1. **Open the page.** On the web it is <https://metcalfdds.github.io/hp-prime-statistics/data-loader/>. Or download `DataLoader_v4.html` (on GitHub: open the file, then "Download raw file") and open it in any current browser. It is one self-contained file: it works offline, and nothing you paste leaves your computer.
+1. **Open the page.** On the web it is <https://metcalfdds.github.io/hp-prime-statistics/data-loader/>. Or download `DataLoader_v5.html` (on GitHub: open the file, then "Download raw file") and open it in any current browser. It is one self-contained file: it works offline, and nothing you paste leaves your computer.
 2. **Paste** columns from Excel or SPSS (or open a CSV or text file). The box starts empty. One variable per column, one case per row; a first row of names is recognized. Empty cells, `NA` and `.` become blanks.
 3. **Check the columns.** Each shows whether it is numbers or text, how many values and blanks, and its range. Text columns (*male*/*female*) become codes 1, 2, 3 … in alphabetical order; the page shows which is which, so write the codes down. Anything the page did to the paste that you did not ask for is said in a line beginning "Check:". If the names or the columns came out wrong, the two controls under the table say whether the first row holds names and what separates the columns.
 4. **Download M1.hpmat** (or choose M0–M9).
-5. **Virtual Calculator:** open the [Prime Loader](../prime-loader/README.md), click "Add a data file you were given", choose the file, close the calculator and click Load. The Loader checks the file, puts it in `Documents\HP Prime\Calculators\Prime` and puts DataLoad beside it; the programs on the calculator stay. Then start the calculator, open the Statistics 1Var app once, and run **DataLoad**: *Columns* (column 1 to D1, column 2 to D2 …) or *Scores by group* (each group's scores to its own list, the smallest code to D1). If DataLoad says lists after the new ones hold data from before, choose *clear*. (The file can also be copied into that folder by hand, with the calculator closed; the page says how.)
+5. **Virtual Calculator:** follow step 4's link to the [Prime Loader](../prime-loader/README.md), which opens ready for a data file; in its step 2 click "Add a data file you were given", choose the file, close the calculator and click Load. The Loader checks the file, puts it in `Documents\HP Prime\Calculators\Prime` and puts DataLoad beside it; the programs on the calculator stay. Then start the calculator, open the Statistics 1Var app once, and run **DataLoad**: *Columns* (column 1 to D1, column 2 to D2 …) or *Scores by group* (each group's scores to its own list, the smallest code to D1). If DataLoad says lists after the new ones hold data from before, choose *clear*. (The file can also be copied into that folder by hand, with the calculator closed; the page says how.)
 6. **G1 or G2:** drag the file onto the calculator in the Connectivity Kit, or paste the columns into M1 in the Kit's matrix editor. *Not yet tested.*
 
 `examples/M1.hpmat` is the Rossi data ready to load (the starter pack carries the same file under `Sample data (optional)`). Try *Scores by group*, scores in column 1, groups in column 3, then TTestLab with "Raw scores in D1 and D2": t(421.19) = −1.68, p = 0.094.
@@ -38,7 +38,9 @@ The file written for a tidy table is v3's, byte for byte (the Rossi file is the 
 
 ## What has been tested
 
-**17 November 2026, v4.** `tests/test_core_v2.js`: 34 PASS, 0 FAIL (the encoder against hp-prime-kit over 20,011 numbers, the Rossi file byte for byte, and each row of the table above). `tests/page_check_v4.js`: 32 PASS, 0 FAIL in Chromium, a real Ctrl+V among them. **On the Virtual Calculator 2.4.2 (build 2026-09-09), in the cloud workspace, 18:08 to 18:10:** the 5 × 3 file that v4 makes from `tests/vc_2026-11-17/paste.txt` (dollar signs and a thousands comma, *Male*/*male*/*Female* and an NA, an age typed `4O`) was put in the calculator's folder with DataLoad beta 1g from starter pack v23. DataLoad's title read "DataLoad: M1, 5 × 3"; *Columns* filled D1, D2 and D3 with n = 4 each; D1 showed min 45,000, max 61,250, mean 51,688 and s 7,081; D2 showed min 1, max 2, mean 1.5; D3 showed min 29, max 41, mean 35.5 and s 5.196. Those are the numbers of the paste with its three blanks left out (the captures are beside the paste). Not run on a G1 or a G2, and not yet opened in Edge on a Windows computer.
+**17 November 2026, night, v5.** The Prime Loader's layout changed (its v2a: which calculator, which programs, one button), so step 4's two lines changed with it: the link now ends `?data=1`, which opens the Loader with no program chosen and a notice saying what to click, and the second line names the Loader's step 2. The same two lines changed in the note that goes into the zip. Nothing the page computes or writes changed: the core is still v2, and the file it makes is v4's byte for byte. `tests/test_core_v2.js`: 34 PASS, 0 FAIL; `tests/page_check_v5.js`: 32 PASS, 0 FAIL.
+
+**17 November 2026, v4.** `tests/test_core_v2.js`: 34 PASS, 0 FAIL (the encoder against hp-prime-kit over 20,011 numbers, the Rossi file byte for byte, and each row of the table above). `tests/page_check_v4.js` (now v5): 32 PASS, 0 FAIL in Chromium, a real Ctrl+V among them. **On the Virtual Calculator 2.4.2 (build 2026-09-09), in the cloud workspace, 18:08 to 18:10:** the 5 × 3 file that v4 makes from `tests/vc_2026-11-17/paste.txt` (dollar signs and a thousands comma, *Male*/*male*/*Female* and an NA, an age typed `4O`) was put in the calculator's folder with DataLoad beta 1g from starter pack v23. DataLoad's title read "DataLoad: M1, 5 × 3"; *Columns* filled D1, D2 and D3 with n = 4 each; D1 showed min 45,000, max 61,250, mean 51,688 and s 7,081; D2 showed min 1, max 2, mean 1.5; D3 showed min 29, max 41, mean 35.5 and s 5.196. Those are the numbers of the paste with its three blanks left out (the captures are beside the paste). Not run on a G1 or a G2, and not yet opened in Edge on a Windows computer.
 
 **31 October 2026, v1 to v3.** On the Virtual Calculator 2.4.2 (build 2026-09-09): the page's Rossi file (432 × 5) loaded whole; DataLoad filled D1–D5 and the two financial-aid groups; its summaries matched Python; TTestLab read the loaded lists and matched SciPy; a 10 × 3 file with text codes, an `NA` and a short column loaded as it should.
 
@@ -46,16 +48,16 @@ The file written for a tidy table is v3's, byte for byte (the Rossi file is the 
 
 | File | What it is |
 |---|---|
-| `DataLoader_v4.html` | The page, built; open this one. |
+| `DataLoader_v5.html` | The page, built; open this one. |
 | `index.html` | Written by the build: sends a browser on to the page, so the address `.../data-loader/` stays the same. |
-| `page_template_v4.html` | The page's source, with slots for the encoder, the example and the Prime Loader's address. |
+| `page_template_v5.html` | The page's source, with slots for the encoder, the example and the Prime Loader's address. |
 | `dl_core_v2.js` | The encoder: reads the table (v2: what a student's paste really looks like), describes each column, writes the `.hpmat` and the zip. Plain JavaScript, no libraries; also runs under Node for the tests. |
-| `build_page_v4.py` | Puts the template, the encoder and `examples/rossi.csv` together into `DataLoader_v4.html`, and writes `index.html`. |
+| `build_page_v5.py` | Puts the template, the encoder and `examples/rossi.csv` together into `DataLoader_v5.html`, and writes `index.html`. |
 | `examples/rossi.csv` | The example: Rossi, Berk & Lenihan (1980), *Money, Work, and Crime*, via the R package carData; 432 men released from Maryland state prisons, followed 52 weeks. As SurvLab carries it. |
 | `examples/M1.hpmat` | That example as matrix M1, the file that ran on the Virtual Calculator. |
 | `tests/gen_cases_v1.py`, `tests/cases_v1.json` | 20,014 numbers as text with hp-prime-kit's encoding of each. |
 | `tests/test_core_v2.js` | The page's encoder against the kit's: 20,011 compared, 0 differ (the other 3 are beyond a double: 1E499, 9.99999999999E499, 1E-499); the Rossi file byte for byte; rounding at the 13th digit; and 26 pastes a student makes. `node tests/test_core_v2.js` |
-| `tests/page_check_v4.js` | Opens the page in Chromium (Playwright): the empty box, a real paste, the example downloaded and compared with `examples/M1.hpmat`, every "Check:" line, the two controls, and files that are refused or read. `node tests/page_check_v4.js` |
+| `tests/page_check_v5.js` | Opens the page in Chromium (Playwright): the empty box, a real paste, the example downloaded and compared with `examples/M1.hpmat`, every "Check:" line, the two controls, and files that are refused or read. `node tests/page_check_v5.js` |
 | `tests/make_m2_v2.js` | Rebuilds the 10 × 3 test matrix used on the calculator on 31 October. |
 | `tests/vc_2026-11-17/` | The paste, the 5 × 3 file v4 made from it, and five captures of DataLoad reading it on the Virtual Calculator. |
 

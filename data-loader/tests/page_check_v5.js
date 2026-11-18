@@ -1,4 +1,5 @@
-// page_check_v4.js -- DataLoader_v4.html in Chromium (Playwright).  Run: node tests/page_check_v4.js   (17 Nov 2026)
+// page_check_v5.js -- DataLoader_v5.html in Chromium (Playwright).  Run: node tests/page_check_v5.js   (17 Nov 2026)
+// v5: v4's checks; step 4's link now opens the Prime Loader ready for a data file (?data=1) and names its step 2.
 // v3's checks (the example downloads as the file that ran on the Virtual Calculator; a text-coded paste), and the
 // review's: the box starts empty, a paste replaces nothing it should not, every silent change of v3 now has a
 // sentence in step 2, the two "Not right?" controls work, and a workbook opened as a file is refused.
@@ -14,7 +15,7 @@ function check(name, ok, detail) { if (ok) { pass++; console.log('PASS', name); 
   const errs = [];
   p.on('pageerror', e => errs.push(String(e)));
   p.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
-  await p.goto('file://' + path.join(__dirname, '..', 'DataLoader_v4.html'));
+  await p.goto('file://' + path.join(__dirname, '..', 'DataLoader_v5.html'));
   await p.waitForTimeout(500);
   const settle = () => p.waitForTimeout(450);
   const warn = async () => (await p.isVisible('#warnings')) ? await p.$$eval('#warnings li', l => l.map(x => x.textContent)) : [];
@@ -39,11 +40,11 @@ function check(name, ok, detail) { if (ok) { pass++; console.log('PASS', name); 
   await p.click('#example'); await settle();
   check('the example: 432 rows and 5 columns, with a row of names', /^432 rows and 5 columns read, with a row of names\. 5 columns will go/.test(await p.textContent('#readout')), await p.textContent('#readout'));
   const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#save')]);
-  const dlPath = path.join(os.tmpdir(), 'page_v4_M1.hpmat'); await dl.saveAs(dlPath);
+  const dlPath = path.join(os.tmpdir(), 'page_v5_M1.hpmat'); await dl.saveAs(dlPath);
   check('the example downloads as M1.hpmat, identical to the file tested on the calculator', dl.suggestedFilename() === 'M1.hpmat' &&
         Buffer.compare(fs.readFileSync(dlPath), fs.readFileSync(path.join(__dirname, '..', 'examples', 'M1.hpmat'))) === 0);
   check('... the status sends the student on to step 4', /Now go on to step 4/.test(await p.textContent('#savestatus')));
-  check('step 4 leads to the Prime Loader, and names the file', (await p.getAttribute('#s4 ~ .two a', 'href')) === 'https://metcalfdds.github.io/hp-prime-statistics/prime-loader/' &&
+  check('step 4 leads to the Prime Loader, and names the file', (await p.getAttribute('#s4 ~ .two a', 'href')) === 'https://metcalfdds.github.io/hp-prime-statistics/prime-loader/?data=1' && /In its step 2, click Add a data file you were given/.test(await p.textContent('#s4 ~ .two')) &&
         (await p.textContent('#fname1')) === 'M1.hpmat' && /Add a data file you were given/.test(await p.textContent('main')));
 
   // ---- every silent change of v3 has a sentence ----
@@ -107,7 +108,7 @@ function check(name, ok, detail) { if (ok) { pass++; console.log('PASS', name); 
   await p.selectOption('#mat', '3'); await settle();
   check('choosing M3 names M3.hpmat on the button and in step 4', /M3\.hpmat/.test(await p.textContent('#save')) && (await p.textContent('#fname1')) === 'M3.hpmat' &&
         (await p.textContent('#fname5')) === 'M3 (1).hpmat');
-  await p.screenshot({ path: path.join(os.tmpdir(), 'dl_page_v4.png'), fullPage: true });
+  await p.screenshot({ path: path.join(os.tmpdir(), 'dl_page_v5.png'), fullPage: true });
   check('no errors in the page', errs.length === 0, errs);
   console.log('\n' + pass + ' PASS, ' + fail + ' FAIL');
   await b.close();

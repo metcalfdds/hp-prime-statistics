@@ -1,5 +1,9 @@
-// loader_core_v2.js -- the Prime Loader's file work: find the Virtual Calculator's folder, move what is on it to a
+// loader_core_v3.js -- the Prime Loader's file work: find the Virtual Calculator's folder, move what is on it to a
 // dated backup, and write the chosen programs and data into it.  Roger Metcalf & Claude.
+// v3 (17 Nov 2026, night; Roger: "let the student choose?--1) put all the programs on the Virtual Calculator at once
+//   or 2) I'll choose which Chapter to load, one at a time"): planBook, for "one chapter": the book's own programs are
+//   moved to the backup, so that the calculator lists that chapter's, and a program of the student's own is never
+//   moved.  plan, which moved every program whoever wrote it (v1's way), is gone: nothing on the page uses it.
 // v2 (17 Nov 2026, the review "they must be bullet proof and as simple as possible"): planAdd, for a data file loaded
 //   on its own (only the files about to be replaced are moved; v1 moved every program off the calculator), and
 //   checkHpmat, which looks inside a data file before it is taken.  Everything else is v1's (1 Nov 2026).
@@ -66,20 +70,23 @@ const LoaderCore = (function () {
     return !!(await child(t, 'HPEmuInstance.lock', 'file'));
   }
 
-  // What would move to the backup: every program, every app that is not HP's, and the matrix files about to be
-  // replaced.  Built-in apps (&...), settings, lists and other matrices stay.
-  async function plan(calc, dataSlots) {
+  // planBook (v3), for "one chapter": what to move before that chapter's programs are written.  bookTops is every
+  // file and folder name the page can load (AnovaLab.hpprgm ... CentralLimit.hpappdir).  Whatever on the calculator
+  // has one of those names is moved, and so is a file about to be replaced (a data matrix); a program of the
+  // student's own, whose name the book does not use, stays where it is, and so does everything of HP's.
+  async function planBook(calc, bookTops, paths) {
+    const book = bookTops.map(s => s.toLowerCase()), tops = paths.map(p => p.split('/')[0].toLowerCase());
     const move = [];
     for (const e of await names(calc)) {
-      if (e.kind === 'file' && /\.hpprgm$/i.test(e.name)) move.push(e);
-      else if (e.kind === 'directory' && /\.hpappdir$/i.test(e.name) && e.name[0] !== '&') move.push(e);
-      else if (e.kind === 'file' && dataSlots.some(s => s.toLowerCase() === e.name.toLowerCase())) move.push(e);
+      const n = e.name.toLowerCase();
+      if (e.name[0] !== '&' && (book.includes(n) || tops.includes(n))) move.push(e);
     }
     return move;
   }
 
-  // v2: what would move when files are ADDED to what is on the calculator (a data file on its own, with DataLoad):
-  // only the entries about to be replaced, matched by name without regard to capitals.  HP's own apps never.
+  // v2: what would move when files are ADDED to what is on the calculator (all the programs, programs picked one by
+  // one, a data file with DataLoad): only the entries about to be replaced, matched by name without regard to
+  // capitals.  HP's own apps never.
   async function planAdd(calc, paths) {
     const tops = paths.map(p => p.split('/')[0].toLowerCase());
     const move = [];
@@ -211,7 +218,7 @@ const LoaderCore = (function () {
     return out;
   }
 
-  return { locate, isRunning, plan, planAdd, checkHpmat, backup, install, unzip, crc32, stamp, names };
+  return { locate, isRunning, planAdd, planBook, checkHpmat, backup, install, unzip, crc32, stamp, names };
 })();
 
 if (typeof module !== 'undefined') module.exports = LoaderCore;

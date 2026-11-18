@@ -1,0 +1,116 @@
+PASS the page is two questions and one button: which calculator, which programs, Load
+PASS it opens on the Virtual Calculator and all 31 programs, with Load ready
+PASS it says what Load will do to what is there: added, and what is there stays
+PASS the chapter list has 15 chapters; chapter 1, which has no program yet, cannot be chosen
+PASS single programs and data are folded away: the 31 tick boxes exist and are not shown
+PASS on Windows there is no notice at the top
+PASS the Data Loader link is the Data Loader page on GitHub Pages
+PASS index.html beside the page sends the browser on to it
+PASS Edge/Chrome route shown; the Firefox route, the real-calculator route, and the running and done panels hidden
+PASS seven help topics, the first for a student without the Virtual Calculator, which step 1 links to
+PASS the USB route is in the page and not shown
+PASS running calculator: the warning shows, the done panel does not
+PASS running calculator: nothing written
+PASS after loading, the running warning is gone
+PASS all the programs: the pack's 30 program files and the app's three, byte for byte
+PASS all the programs: the student's own program is still there, untouched, and so is the matrix
+PASS one backup folder, named by date and time
+PASS the backup holds exactly what was replaced, byte for byte: the old ChiTable and the old app
+PASS HP's apps, settings and lists left alone
+PASS nothing written outside Prime and the backup
+PASS next steps: the Program Catalog, and CentralLimit as an app
+PASS checked pack: tap and Run, Check only as a fallback
+PASS the report: 33 files, the programs already there left, the replaced files in the backup and not deleted
+PASS the picker was used once
+PASS choosing a chapter in the list chooses "One chapter"
+PASS the summary names chapter 11's programs, and TestChooser with its reason
+PASS ... and says the book's other programs are moved off and the student's own stay
+PASS after a reload the folder is remembered (no second pick)
+PASS one chapter: its five programs are on the calculator byte for byte, and the student's own program with them, untouched
+PASS one chapter: a second backup folder holds every book program that was there, 30 and the app, byte for byte
+PASS one chapter: the app is off the calculator; HP's apps, settings, lists and the matrix stay
+PASS the report says the book's other programs were moved off, the student's own left, and where they are
+PASS next steps name the five programs
+PASS chapter 7 with the sample data: DataLoad is added, with the reason
+PASS chapter 7: its programs, DataLoad and the app on the calculator byte for byte; chapter 11's others gone to the backup; the student's own stays
+PASS the sample data is M1 byte for byte, and the old M1 is in the third backup with chapter 11's five programs
+PASS next steps: CentralLimit is an app; the data and DataLoad
+PASS while a load is under way, choosing something else leaves Load off, and a second click starts nothing: what was chosen at the click is what is loaded
+PASS "Only the programs I tick": the list of 31 shows, each with what it does and its chapters; nothing ticked, so Load is off
+PASS two ticks: the summary names them
+PASS ticked programs are added: chapter 7's programs, the app and the student's own all stay; nothing was replaced, so no backup was made
+PASS "M3 (2).hpmat", a browser's name for a second download, is taken as M3
+PASS a data file alone: DataLoad is ticked and held for it, Load is on, and the summary says why
+PASS own data written as M3, with DataLoad, byte for byte; every program that was there stays
+PASS "One chapter" and no chapter: the page asks for the chapter, and Load is off
+PASS ... with the sample data added: Load is on, and the page says the programs there stay
+PASS ... and no book program was moved off: all seven are still there
+PASS a badly named data file is refused with a reason
+PASS a 4-byte file named M4.hpmat is refused: too short
+PASS a CSV file renamed M1.hpmat is refused: not a matrix file
+PASS a matrix file cut short is refused
+PASS ... and after three refusals nothing is chosen and Load is off
+PASS own M1 beside the sample data: the page says which one is used
+PASS ... and M1 on the calculator is the student's own file, not the sample
+PASS picking Calculators explains which folder to pick
+PASS picking an unrelated folder explains which folder to pick
+PASS picking Documents finds HP Prime inside it: chapter 14 is loaded
+PASS cancelling the picker says nothing was loaded
+PASS a real HP Prime: step 3 is the Connectivity Kit's steps, and there is no Load button to click
+PASS ... it says programs on the calculator stay, and that a real calculator has less room
+PASS ... the steps: download, unpack, start the Kit and plug in, drag onto the calculator's name, close the Kit, run
+PASS ... the app's note shows for all the programs, and says it has not been tried on a real calculator; the last step says how to start an app
+PASS ... Bonjour is one click away, folded
+PASS ... and opens to how to check it
+PASS the USB route does not show for a real HP Prime either, without the test address
+PASS all the programs download as HP_Prime_all_programs.zip, the name the step shows
+PASS zip of everything: all 30 programs and the app, byte for byte
+PASS the status says what to do next
+PASS a real HP Prime, one chapter: the page says the programs there stay (nothing is moved off a real calculator)
+PASS chapter 12 downloads as HP_Prime_Chapter_12.zip, holding its two programs and TestChooser byte for byte
+PASS ... with data: the data note shows, names the file, and says it has not been tried on a real calculator
+PASS back to the Virtual Calculator: Load returns, the Kit steps go, and the chapter is still chosen
+PASS the help has the Kit for the Virtual Calculator too, pointing at step 1
+PASS from the Data Loader: a notice says what to click, no program is chosen, the data button is in sight, the list of 31 is not, and Load is off
+PASS ... a file added: Load comes on, and the page says the data and DataLoad are all that go
+PASS ... loaded: M2 and DataLoad byte for byte, and every program that was there is still there
+PASS ... and a click on "Only the programs I tick" brings out the list
+PASS without ?data=1 the notice is not shown
+PASS index.html carries ?data=1 on to the page, so the Data Loader's link to the folder's address opens it ready for the file
+PASS ... and a browser with scripts off is still sent on, by the line in noscript
+PASS Firefox: its own route shows, the Edge route is hidden
+PASS Firefox: named, with the reason in plain words
+PASS Firefox: three numbered steps, and the third begins with closing the calculator
+PASS Firefox: all the programs are ready to download, and the page says what is on the calculator stays
+PASS Firefox: one chapter names the zip and the programs, and does not promise to move anything off
+PASS Firefox: the download is HP_Prime_Chapter_12.zip
+PASS Firefox: the zip holds the chapter's programs at its top level, byte for byte
+PASS Firefox: the status says what to do next
+PASS Firefox: the app note shows for chapter 7
+PASS Firefox: the data note shows when data is picked, and DataLoad joins the list
+PASS Firefox: with nothing but data chosen the zip is HP_Prime_data.zip
+PASS Firefox, a real HP Prime: the Kit's steps show, and the note about Firefox and folders goes
+PASS Firefox on Windows: no notice at the top
+PASS Firefox: no errors in the page
+PASS a phone: the notice says the page needs the computer, and gives the address
+PASS a phone: "that's fine, a few more clicks" is not shown
+PASS a Mac: the notice says the steps were written for Windows, and points at "A real HP Prime" for the Kit
+PASS a browser that cannot unpack: the notice says so, and Load and Download stay off
+PASS at a phone's width nothing runs off the side
+PASS opens as a local file without errors
+PASS USB: at the test address the panel still does not show for the Virtual Calculator
+PASS USB: for a real HP Prime it shows, under the Kit's steps, and says it has not been proved on a real calculator
+PASS USB, chapter 7: its three programs arrive, each read back the same; the app is named as not sent this way
+PASS USB: what the calculator holds is each program's source in programs/, character for character
+PASS USB: the list says so program by program, and gives the firmware build
+PASS USB: no errors in the page
+PASS USB, a calculator that gives nothing back: the run stops at the first program and sends no more, and the page does not say it arrived
+PASS USB, a calculator that drops long messages without a word: stopped at the first program, nothing claimed
+PASS USB, a program damaged on the way: "it did not arrive whole", with what to do
+PASS USB, the cable pulled out half way: "the sending broke off", and which programs are on the calculator is not overstated
+PASS USB, the Connectivity Kit still open: the page says to close it
+PASS USB, nothing on the cable: the page says what to check
+PASS USB: without the test address the panel is hidden, whatever the browser can do
+PASS no errors in the page
+
+114 PASS, 0 FAIL

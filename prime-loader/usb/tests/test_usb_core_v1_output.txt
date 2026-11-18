@@ -1,0 +1,58 @@
+PASS A1 the checksum is CRC-16/XMODEM: "123456789" gives 31C3
+PASS A2 delete "ZZT_TEST" is hp-prime-web's example, byte for byte
+PASS A3 the older layout of a program is hp-prime-web's example, byte for byte
+PASS A4 a request for "HI", its name ending in a NUL, is hp-prime-web's example, byte for byte
+PASS A5 a request for "SELFTEST" in version 03 with no NUL begins as hp-prime-kit's did: F8 03 00 00 00 14 06 10 91 6E
+PASS A6 SELFTEST's uncompressed part is 2,304 bytes beginning 06 10 98 D2, as a G2 sent it (hp-prime-kit)
+PASS A7 its message begins F7 03, the stream's length plus 4, then 00 09 00 00 and a zlib stream (78)
+PASS A8 all 31 programs: the uncompressed part is hp-prime-kit's, byte for byte (SHA-256), checksum included
+PASS A9 all 31: the message's two lengths are right and its stream unpacks to that part
+PASS A10 all 31: hp-prime-kit's message is cut into hp-prime-kit's reports, byte for byte
+PASS A11 all 31: hp-prime-kit's message reads back to the program's name and source, checksum good
+PASS A12 all 31: the older layout reads back to the same name and source
+     reports a program: compressed by this browser's zlib 17 to 101 (hp-prime-kit's level 1: 21 to 129); not compressed 80 to 567; all 31 compressed: 1,597,341 bytes; not compressed, 11 of the 31 take more than 254 reports
+PASS A13 no program needs more than 254 reports compressed, so none reaches the sequence number's wrap
+PASS A14 every program fits one message of the newer framing (245,512 bytes)
+PASS A15 normalizeSource: CRLF and CR become LF, and one newline at the end is dropped (hp-prime-kit's rule)
+PASS A16 names: letters, digits and "_", a letter or "_" first
+PASS B1 old framing: 301 reports, numbered 00 to FE and then 00 again, never FF
+PASS B2 old framing: the pieces put together are the message
+PASS B3 old framing: a one-byte message is one report of two bytes
+PASS B4 newer framing: 01, the message number and the size low byte first, then 1,015 bytes; then 02, 03 ... with 1,023
+PASS B5 newer framing: a message over its limit is refused before anything is sent
+PASS B6 an acknowledgement is FE 01, the report, 00, the position, the message number
+PASS B7 a G1's 64-byte reports: 63 bytes a report
+PASS C1 identify: build 15515, the version text, 108 bytes, reply version 03
+PASS C2 the serial number is nowhere in what identify returns
+PASS C3 ready: the calculator says Y
+PASS C4 a small program, compressed, with the report 01 after it: one report, kept, and one 01 seen
+PASS C5 read back with F8 01 and a NUL: the same text, not compressed, checksum good
+PASS C6 read back with F8 03 and a NUL: the same text, compressed, checksum good
+PASS C7 with no NUL after the name the mock stays silent, and that is reported as no answer, not as a failure to parse
+PASS C8 a program that is not there: silence, reported as no answer
+PASS C9 DataLoad (40,856 characters): 17 reports compressed; read back the same
+PASS C10 EpiStats (289,813 characters): 101 reports compressed; read back the same in 101 reports
+PASS C11 EpiStats not compressed: 567 reports, past the wrap, and the mock put them together
+PASS C12 read back not compressed: 567 reports whose numbers ran 00-FE,00-FE,00-38, and the same text
+PASS C13 delete: the program is gone from the mock, and a request for it is met with silence
+PASS C14 newer framing: the mock opened it, took the program, and acknowledged it
+PASS C15 newer framing: read back the same, and the answer was acknowledged with its size and number
+PASS C16 newer framing: EpiStats in 101 reports, read back the same
+PASS C17 newer framing: identify still answers
+PASS C18 newer framing: asked for report 40 again, the Link sends from there and the program arrives whole
+PASS C18b newer framing: a message the calculator sends a second time is acknowledged again and passed over, never taken for the next answer
+PASS C19 a calculator without the newer framing: no acknowledgement, named as such
+PASS C20 a calculator that drops long messages without a word (G1 firmware): the send looks the same, and the read-back finds nothing
+PASS C21 a program cut short on the calculator: the read-back differs from what was sent
+PASS C22 a calculator that never answers a request (hp-prime-kit's G2): no answer, though the program is there
+PASS C23 a calculator that keeps a program only when the report 01 follows: not kept without it, kept with it
+PASS C24 a calculator whose long reply counts FD, 00 (keeping FE for itself): still put together, and its numbers are in the log line
+PASS C25 a calculator that stops answering: "no answer within 0.4 s"
+PASS C26 a reply with a report missing: "out of order", with where it stopped
+PASS C27 a calculator that takes only the older layout: the compressed one is not kept, the older one is
+PASS C28 a G1's 64-byte reports: identify in two reports, the program in 2, read back the same
+PASS C29 a name the calculator would not take is refused before anything is sent
+PASS C30 an answer for another program that arrives first is passed over, not taken for the one asked for
+PASS C31 the mock ran without an error of its own
+
+55 PASS, 0 FAIL

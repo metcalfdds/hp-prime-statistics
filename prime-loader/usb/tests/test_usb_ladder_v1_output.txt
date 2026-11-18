@@ -1,0 +1,45 @@
+PASS P1 step 3 is the size of the book's smallest program and step 5 of its largest, counted in programs/ now
+PASS P2 every test program has exactly the characters its step names
+PASS P3 every line of every test program is a comment or one of the function's four lines, and the function comes last
+PASS P4 ... and so at every length from 140 to 3,999 characters (a cut never leaves half a comment mark)
+PASS P5 the same program every time, and a different one for each way and step
+PASS P6 the test programs are plain ASCII, and their names are ones the calculator takes
+PASS P7 the largest test program takes 127 reports compressed: more than any program of the book (101), under the 254 where the numbers wrap
+PASS S1 everything works: all four ways reach 289,813 characters
+PASS S1 the two requests with a NUL are tried on way A step 1, the one kept is the one that brings the program back compressed (F8 03), and no request without a NUL is sent to a calculator that has answered
+PASS S1 every cell ends green with its report count
+PASS S1 way C's largest went in 567 reports and came back, compressed, in fewer than 140
+PASS S1 the four test programs are gone from the mock, and the result says so
+PASS S1 the result names the four ways and says "read back the same"
+PASS S1 nobody was asked anything, and the serial number is nowhere in the log
+PASS S1 the old framing's three test programs are taken off in the old framing, before the newer one is asked for; way D's after it
+PASS S1 the mock saw nothing but the four test names
+PASS S2 nothing can be read back: the page says so and asks the person, about step 1 of A, B and C, then A at steps 3 and 5 only, then D once
+PASS S2 way A is good by eye to the largest size; B and C stand at step 1; D, which the person did not see, is not good
+PASS S2 the result says "checked by eye", that nothing could be read back, and which programs to delete by hand
+PASS S2b the same calculator and a person who sees nothing: no way is called good
+PASS S3 messages over 16,000 bytes dropped: compressed ways stop after 8,269 characters, the uncompressed way after 300
+PASS S3 the failure is named: what came back was the step before, whole
+PASS S3 no way was pushed past its first failure
+PASS S3 the cells: green, green, red, and nothing after
+PASS S4 only the way that sends the report 01 works in the old framing
+PASS S4 ... and B and C are named as failing at the smallest program
+PASS S5 only the uncompressed way works, and the reader is found on it, not given up for lost after way A
+PASS S5 ways A and B were asked for again once the reader was known, and still did not come back
+PASS S6 the calculator stops answering: the test stops, nothing more is sent, and the result says what to do
+PASS S6 ... and the programs it may hold are listed for deleting by hand
+PASS S6b a calculator that never answers: nothing is sent, and the result asks about the power and the Connectivity Kit
+PASS S7 a calculator without the newer framing: A, B, C good, D not sent, named
+PASS S7 ... and silence in the newer framing is not taken for a dead calculator: the old framing is asked, it answers, and the test ends as usual
+PASS S8 a program cut to 100,000 characters on the calculator: good to 40,856, and the difference is placed
+PASS S8b only F8 01 is answered: old-framing ways are good, their long programs read back in 567 reports whose numbers are logged
+PASS S8b ... and in the newer framing, where a reply that long does not fit one message, way D stops at 40,856 with the reason
+PASS S8c a delete that does nothing: the program is found still there, and the result lists it
+PASS S8d at most 253 reports a message: every compressed way reaches the largest size, and the uncompressed way stops at 40,856 (its next step is 274 reports)
+PASS S8e CR LF line ends and a last newline on what comes back: still the same program, said once in the log
+PASS S8f neither request with a NUL is answered: only then are the two without one tried, the first that answers is kept, and the other is not sent
+PASS S9 Stop: the test ends early, says so, and still takes its programs off
+PASS S10 64-byte reports, way A only, three steps: good to 40,856, in 310 reports
+PASS S10 ... and the result does not call 40,856 "the size of our largest program"
+
+43 PASS, 0 FAIL
