@@ -1,6 +1,11 @@
-// test_loader_v2e.js -- drives PrimeLoader_v2e.html in Chromium against a mock Virtual Calculator folder, and its
+// test_loader_v2f.js -- drives PrimeLoader_v2f.html in Chromium against a mock Virtual Calculator folder, and its
 // cable route (shown only at ?usb=1) against a pretend calculator that does what two real ones did on 17 Nov 2026.
-// Roger Metcalf & Claude, 18 Nov 2026.   node tests/test_loader_v2e.js PrimeLoader_v2e.html PACK.zip
+// Roger Metcalf & Claude, 18 Nov 2026.   node tests/test_loader_v2f.js PrimeLoader_v2f.html PACK.zip
+//
+// v2f shows the cable to every student (after the G2 and G1 logs of 18 Nov): without ?usb=1, in Chrome or Edge, a
+// real HP Prime gets the two ways; in a browser without WebHID, the Kit and the sentence naming Chrome and Edge.
+// Part 9 (the Kit's way) therefore runs in a page without WebHID, as Firefox and Safari show it; part 13 has the
+// cable.  The sentence under the title is Roger's book wording, "and we have tested it" included.
 //
 // v2e is v2d with one sentence more, for a student's slip: a real HP Prime in a browser that cannot reach it on its
 // cable (Firefox, Safari) is told that Chrome or Edge can send the programs down the cable.  Five checks for it,
@@ -177,7 +182,7 @@ function check(name, ok, detail) {
   check('seven help topics, the first for a student without the Virtual Calculator, which step 1 links to', await page.locator('.help details').count() === 7 &&
         /don't have the Virtual Calculator yet/.test(await page.textContent('.help details:first-of-type summary')) &&
         (await page.getAttribute('.choice:has(#t_vc) a', 'href')) === '#need');
-  check('the cable route is in the page and not shown', await page.evaluate(() => typeof PrimeUSB === 'object' && typeof PrimeUSB.load === 'function' && !usbOn) && !(await page.isVisible('#cable')));
+  check('the cable route is in the page, on in a browser with WebHID (Chromium here), and not shown while the Virtual Calculator is chosen', await page.evaluate(() => typeof PrimeUSB === 'object' && typeof PrimeUSB.load === 'function' && usbOn) && !(await page.isVisible('#cable')));
   const onCalc = t => Object.keys(t).filter(k => k.startsWith(C) && k.endsWith('.hpprgm')).map(k => k.slice(C.length)).sort();
   const folders = t => Array.from(new Set(Object.keys(t).filter(k => k.startsWith('HP Prime/Loader backups/')).map(k => k.split('/')[2]))).sort();
   const inBackup = (t, f) => Object.keys(t).filter(k => k.startsWith('HP Prime/Loader backups/' + f + '/')).map(k => k.slice(('HP Prime/Loader backups/' + f + '/').length)).sort();
@@ -370,6 +375,9 @@ function check(name, ok, detail) {
   check('cancelling the picker says nothing was loaded', true);
 
   // ---- 9. a real HP Prime: the same choice, as a zip for the Connectivity Kit ----
+  // From here this page is a browser without WebHID (Firefox, Safari), where the Kit's way is the main line; Chrome and
+  // Edge get the cable (part 13).
+  await page.addInitScript(() => { Object.defineProperty(navigator, 'hid', { value: undefined, configurable: true }); });
   await page.reload();
   await page.check('#t_real');
   check('a real HP Prime: step 3 is the Connectivity Kit\'s steps, and there is no Load button to click',
@@ -384,7 +392,7 @@ function check(name, ok, detail) {
   check('... Bonjour is one click away, folded', !(await page.isVisible('#kitroute .panel.warn')) && /The Kit does not show my calculator/.test(await page.textContent('#kitroute details > summary')));
   await page.locator('#kitroute details > summary').click();
   check('... and opens to how to check it', await page.isVisible('#kitroute details .panel.warn') && /Bonjour Service/.test(await page.textContent('#kitroute details')) && /Running/.test(await page.textContent('#kitroute details')));
-  check('the cable does not show for a real HP Prime either, without the test address: the Kit\'s steps are the page\'s main line, open, with no fold to click, under the Kit\'s own title',
+  check('in a browser without WebHID the cable does not show for a real HP Prime: the Kit\'s steps are the page\'s main line, open, with no fold to click, under the Kit\'s own title',
         !(await page.isVisible('#cable')) && !(await page.isVisible('#kitsum')) && await page.evaluate(() => document.getElementById('kitfold').open) && (await page.textContent('#s3rtitle')) === 'Put them on your HP Prime with HP\'s Connectivity Kit');
   let [dl] = await Promise.all([page.waitForEvent('download'), page.click('#download3')]);
   check('all the programs download as HP_Prime_all_programs.zip, the name the step shows', dl.suggestedFilename() === 'HP_Prime_all_programs.zip' && (await page.textContent('#zipname3')) === 'HP_Prime_all_programs.zip', dl.suggestedFilename());
@@ -439,8 +447,8 @@ function check(name, ok, detail) {
   await ipg.goto('file://' + path.join(path.dirname(PAGE), 'index.html') + '?data=1');
   await ipg.waitForFunction(() => !!document.getElementById('fromdl'), null, { timeout: 15000 }).catch(() => {});
   check('index.html carries ?data=1 on to the page, so the Data Loader\'s link to the folder\'s address opens it ready for the file',
-        /PrimeLoader_v2e\.html\?data=1$/.test(ipg.url()) && await ipg.isVisible('#fromdl'), ipg.url());
-  check('... and a browser with scripts off is still sent on, by the line in noscript', /<noscript><meta http-equiv="refresh" content="0; url=PrimeLoader_v2e\.html"><\/noscript>/.test(idx));
+        /PrimeLoader_v2f\.html\?data=1$/.test(ipg.url()) && await ipg.isVisible('#fromdl'), ipg.url());
+  check('... and a browser with scripts off is still sent on, by the line in noscript', /<noscript><meta http-equiv="refresh" content="0; url=PrimeLoader_v2f\.html"><\/noscript>/.test(idx));
 
   // ---- 10. Firefox: no folder API, Firefox's user-agent ----
   const fctx = await browser.newContext({ acceptDownloads: true,
@@ -548,27 +556,22 @@ function check(name, ok, detail) {
   check('two ways: where both show, step 3 is called what Roger called it, "Two ways to load Statisticles onto a physical Prime G1 or G2 calculator", with Statisticles in italics as the book writes it',
         (await u.p.textContent('#s3rtitle')) === 'Two ways to load Statisticles onto a physical Prime G1 or G2 calculator' && await u.p.isVisible('#s3rtitle') &&
         (await u.p.textContent('#s3rtitle i')) === 'Statisticles' && await u.p.evaluate(() => getComputedStyle(document.querySelector('#s3rtitle i')).fontStyle === 'italic'));
-  check('two ways: under the title, Roger\'s sentence: we believe our method should work; it is easier than the Kit and avoids its mDNS (Bonjour) issue; but just in case, 2) is the official HP way',
-        await u.p.isVisible('#twoways') && (await u.p.textContent('#twoways')) === 'We believe our method should work. It is easier than the Connectivity Kit, and it avoids the Kit\'s mDNS (Bonjour) issue. ' +
-        'But just in case you have trouble with the Statisticles way, here is 2), the official HP way. CentralLimit and data files go only by 2).' &&
-        (await u.p.textContent('#twoways i')) === 'Statisticles');
+  check('two ways: under the title, Roger\'s sentence as the book has it: we believe our method should work, and we have tested it, and are continually testing it; easier than the Kit, no mDNS (Bonjour) issue; 2) just in case; tell us on GitHub, with the Issues address as a link',
+        await u.p.isVisible('#twoways') && (await u.p.textContent('#twoways')) === 'We believe our method should work, and we have tested it, and are continually testing it. It is easier to use than the Connectivity Kit, and it avoids the Kit\'s mDNS (Bonjour) issue. ' +
+        'But just in case you have trouble with the Statisticles way, we also present 2), the official HP way. (And if something does go wrong, please be sure to let us know on our GitHub page, github.com/metcalfdds/hp-prime-statistics/issues.) CentralLimit and data files go only by 2).' &&
+        (await u.p.textContent('#twoways i')) === 'Statisticles' && (await u.p.getAttribute('#twoways a', 'href')) === 'https://github.com/metcalfdds/hp-prime-statistics/issues');
   check('two ways: each has the name he gave it, "1) The Statisticles way: straight down the USB cable" and "2) The official HP way: the Connectivity Kit", in that order down the page under the sentence',
         await u.p.isVisible('#way1') && (await u.p.textContent('#way1')) === '1) The Statisticles way: straight down the USB cable' && (await u.p.textContent('#way1 i')) === 'Statisticles' &&
         (await u.p.textContent('#kitsum')) === '2) The official HP way: the Connectivity Kit' &&
         await u.p.evaluate(() => { const a = document.getElementById('twoways'), b = document.getElementById('way1'), c = document.getElementById('kitsum'); return a.getBoundingClientRect().top < b.getBoundingClientRect().top && b.getBoundingClientRect().top < c.getBoundingClientRect().top; }));
-  check('two ways: nothing the page shows or can come to show says "we have tested it" (Roger: "the testing claim is not valid yet"), and right under 1) its note says that this way is still being tested, that the book\'s own programs have not yet gone to a calculator this way, and that the G1\'s largest test program was not read back',
-        !/we have tested|have tested it|is tested\b|fully tested/i.test(await u.p.evaluate(() => document.documentElement.outerHTML.replace(/<(script|style)[^>]*>[^]*?<\/\1>/g, m => m.replace(/\/\*[^]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')))) &&
-        /we have tested it/.test(await u.p.evaluate(() => document.documentElement.outerHTML)) &&   // not an empty check: the words are in the page's history comment, where Roger's message is quoted
-        /^\s*This way is still being tested\./.test(await u.p.textContent('#cabletested')) && await u.p.isVisible('#cabletested') &&
-        /The book's own programs have not yet gone to a calculator this way: this is that test\./.test(await u.p.textContent('#cabletested')) && /each one it read back was the same \(for the G1's largest it stopped waiting too soon\)/.test(await u.p.textContent('#cabletested')) &&
-        !/read each one back the same/.test(await u.p.textContent('#step3real')));
+  check('two ways: right under 1) a line says what was tried (a G2 in Chrome, a G1 in Edge, 18 November 2026; Chapter 12 read back the same; ChiTable ran with no Check), and nothing the page shows still says it is being tested',
+        await u.p.isVisible('#cabletested') && (await u.p.textContent('#cabletested')) === 'Tried on the author\'s HP Prime G2 (in Chrome) and G1 (in Edge) on 18 November 2026: each program of Chapter 12 came back from the calculator the same, and ChiTable ran at once, with no Check.' &&
+        !/being tested|this is that test|test address/i.test(await u.p.evaluate(() => document.documentElement.outerHTML.replace(/<(script|style)[^>]*>[^]*?<\/\1>/g, m => m.replace(/\/\*[^]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')))));
   check('two ways: nowhere in what the page shows or can come to show (its comments aside, which keep the history) is either still called "the other way", "the first way" or "the second way"', !/other way|first way|second way/i.test(await u.p.evaluate(() => document.documentElement.outerHTML.replace(/<(script|style)[^>]*>[^]*?<\/\1>/g, m => m.replace(/\/\*[^]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')))) &&
         /The first way: straight down the USB cable/.test(await u.p.evaluate(() => document.documentElement.outerHTML)));   // the second half shows the first is not empty: the words are still in the page's history comment, and only there
   check('cable: for a real HP Prime it is way 1): three steps and one button',
         await u.p.isVisible('#cable') && await u.p.locator('#cable ol.steps > li').count() === 3 &&
         await u.p.isVisible('#usbsend') && !(await u.p.isDisabled('#usbsend')) && !(await u.p.isVisible('#usbstop')) && !(await u.p.isVisible('#load')));
-  check('cable: the note under 1) says where the official HP way is, should this one not work',
-        /being tested/.test(await u.p.textContent('#cabletested')) && /to an HP Prime G2 and to a G1/.test(await u.p.textContent('#cabletested')) && /If it does not work on yours, 2\), the official HP way, is right below\./.test(await u.p.textContent('#cabletested')));
   check('cable: its steps say to plug in and switch on at the Home screen, to close the Kit, and what the browser\'s small window is',
         /switch it on/.test(await u.p.textContent('#cable ol.steps')) && /Home screen/.test(await u.p.textContent('#cable ol.steps')) && /Connectivity Kit is open, close it/.test(await u.p.textContent('#cable ol.steps')) &&
         /^The first time, the browser opens a small window/.test(await u.p.textContent('#usbfirst')) && /Click its name, then click Connect/.test(await u.p.textContent('#usbfirst')));
@@ -601,7 +604,7 @@ function check(name, ok, detail) {
         /went down the cable/.test(st.report[0]) && /read back from the calculator and found the same, character for character/.test(st.report[0]) && /left where they are/.test(st.report[1]) && /^It took \d+(\.\d)? seconds\.$/.test(st.report[2]),
         JSON.stringify([st.next, st.report]));
   check('... the details name the page, the browser, the calculator and the choice; say who answered and what each program did; end in a RESULT line; and hold neither the serial number nor more than twelve bytes of any message',
-        /^HP Prime Loader, v2e, straight down the cable\. /.test(st.log) && /\nBrowser: Mozilla/.test(st.log) && /\nDevice: HP Prime G2 \(USB 03F0:2441\), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator\.\n/.test(st.log) &&
+        /^HP Prime Loader, v2f, straight down the cable\. /.test(st.log) && /\nBrowser: Mozilla/.test(st.log) && /\nDevice: HP Prime G2 \(USB 03F0:2441\), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator\.\n/.test(st.log) &&
         new RegExp('\\nChosen: Chapter 12; ' + ch12.length + ' programs, [\\d,]+ characters: ' + ch12.join(', ') + '\\.\\n').test(st.log) && /It answered: firmware build 15751, "V2\.060\.650", version 01\./.test(st.log) &&
         ch12.every(n => new RegExp('\\n +\\d+\\.\\d\\d  ' + n + ': [\\d,]+ characters\\.\\n').test(st.log)) && (st.log.match(/Read back the same: /g) || []).length === ch12.length &&
         new RegExp('RESULT: all ' + ch12.length + ' programs on the calculator, each read back the same\\. [\\d,]+ reports carried the programs there and back; \\d+\\.\\d s in all\\.').test(st.log) && !/SECRET|SERIAL/.test(st.log) &&
@@ -752,12 +755,17 @@ function check(name, ok, detail) {
         !(await u.p.isDisabled('#usbsend')) && /^Ready to send 1 program\. CentralLimit, M1 \(an app or data\) does not travel the Statisticles way: it goes by the official HP way, 2\) below\.$/.test(await u.p.textContent('#usbstatus')), await u.p.textContent('#usbstatus'));
   await u.p.setViewportSize({ width: 380, height: 800 });
   check('cable: at a phone\'s width nothing runs off the side', await u.p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
-  // where the cable must not show
+  // the plain address, as every student opens it (v2f: the cable for every student)
   u = await usbPage({}, '');
-  check('without the test address the page opens on the Virtual Calculator, as always', await u.p.isChecked('#t_vc') && await u.p.isVisible('#load'));
+  check('the plain address opens on the Virtual Calculator, as always', await u.p.isChecked('#t_vc') && await u.p.isVisible('#load') && !(await u.p.isVisible('#cable')));
   await u.p.check('#t_real');
-  check('without the test address the cable is hidden, whatever the browser can do: one way shows, the Kit\'s, under the Kit\'s own title, and nothing says "two ways"', !(await u.p.isVisible('#cable')) && await u.p.evaluate(() => PrimeUSB.supported() && !usbOn) &&
-        await u.p.isVisible('#download3') && !(await u.p.isVisible('#kitsum')) && !(await u.p.isVisible('#twoways')) && !(await u.p.isVisible('#way1')) && (await u.p.textContent('#s3rtitle')) === 'Put them on your HP Prime with HP\'s Connectivity Kit');
+  check('the plain address in Chrome or Edge, for a real HP Prime: the two ways, under their title, with the cable\'s button and the Kit folded below as 2)', await u.p.isVisible('#cable') && await u.p.evaluate(() => PrimeUSB.supported() && usbOn && !usbAsked) &&
+        await u.p.isVisible('#usbsend') && await u.p.isVisible('#kitsum') && await u.p.isVisible('#twoways') && !(await u.p.isVisible('#nocable')) && !(await u.p.evaluate(() => document.getElementById('kitfold').open)) &&
+        (await u.p.textContent('#s3rtitle')) === 'Two ways to load Statisticles onto a physical Prime G1 or G2 calculator');
+  await u.p.click('#usbsend');
+  await usbEnd(u.p);
+  { const st = await state(u.p);
+    check('... and Send puts the 30 programs on a pretend G2 from the plain address, each read back the same', st.done && !st.fail && st.list.length === 30 && st.list.every(x => /^ok:/.test(x)), JSON.stringify(st).slice(0, 400)); }
   u = await usbPage({}, '?usb=1', false);
   await u.p.check('#t_real');
   check('at the test address in a browser that cannot reach a USB device (Firefox, Safari): no cable, no dead button, no "two ways"; the Kit\'s steps are the main line as before, and no error',
@@ -783,11 +791,11 @@ function check(name, ok, detail) {
   }
   u = await usbPage({}, '?usb=1');
   await u.p.check('#t_real');
-  check('... and it is not shown where the cable works (Chrome or Edge at the test address): there the two ways show', !(await u.p.isVisible('#nocable')) && await u.p.isVisible('#cable') && await u.p.isVisible('#twoways'));
+  check('... and it is not shown where the cable works (Chrome or Edge): there the two ways show', !(await u.p.isVisible('#nocable')) && await u.p.isVisible('#cable') && await u.p.isVisible('#twoways'));
   u = await usbPage({}, '', false);
   await u.p.check('#t_real');
-  check('... nor where the cable is not offered (without the test address), in a browser that cannot reach a USB device either: the page is v2d\'s',
-        !(await u.p.isVisible('#nocable')) && !(await u.p.isVisible('#cable')) && await u.p.isVisible('#download3') && u.errs.length === 0, u.errs);
+  check('... and at the plain address, in a browser that cannot reach a USB device, the sentence shows too, above the Kit\'s steps',
+        await u.p.isVisible('#nocable') && !(await u.p.isVisible('#cable')) && await u.p.isVisible('#download3') && u.errs.length === 0, u.errs);
 
   check('no errors in the page', errors.length === 0, errors);
   console.log(`\n${pass} PASS, ${fail} FAIL`);

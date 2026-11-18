@@ -8,7 +8,13 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* PrimeLoader v2e (18 Nov 2026, 12:30).  A student's slip of the kind the review of 17 November looked for: a real HP
+/* PrimeLoader v2f (18 Nov 2026, 15:40).  The cable for every student.  At 15:31 and 15:34 Loader v2d put Chapter 12 on
+   the author's G2 (Chrome) and G1 (Edge) down the cable, each program read back the same (usb/logs/PrimeLoader_v2d_*),
+   and ChiTable ran at once without Check (Roger, 15:33: "program started right up!").  That is the condition set on
+   18 Nov (CLAUDE.md), so: cableWanted is true everywhere; the "still being tested" note is a line saying what was
+   tried; and the sentence under the title is Roger's book wording (cable_sections_v1d.md), "and we have tested it"
+   included, with the Issues address.  The cable code is the same file as in v2d.
+   PrimeLoader v2e (18 Nov 2026, 12:30).  A student's slip of the kind the review of 17 November looked for: a real HP
    Prime, and a browser that cannot reach a USB device (Firefox, Safari).  Until now the page said nothing about the
    cable there and showed the Kit alone, so the student never learned that Chrome or Edge could do it in one click.
    Now, wherever the cable is offered (today the test address only: cableWanted) and the browser cannot carry it, one
@@ -313,14 +319,12 @@ ol.steps li > p { margin: 2px 0 0; }
   <section class="step" id="step3real" aria-labelledby="s3r" hidden>
     <h2 id="s3r"><span class="stepnum">3</span><span id="s3rtitle">Put them on your HP Prime with HP's Connectivity Kit</span></h2>
 
-    <p class="do" id="twoways" hidden>We believe our method should work. It is easier than the Connectivity Kit, and it avoids the Kit's mDNS (Bonjour) issue. But just in case you have trouble with the <i>Statisticles</i> way, here is 2), the official HP way. CentralLimit and data files go only by 2).</p>
+    <p class="do" id="twoways" hidden>We believe our method should work, and we have tested it, and are continually testing it. It is easier to use than the Connectivity Kit, and it avoids the Kit's mDNS (Bonjour) issue. But just in case you have trouble with the <i>Statisticles</i> way, we also present 2), the official HP way. (And if something does go wrong, please be sure to let us know on our GitHub page, <a href="https://github.com/metcalfdds/hp-prime-statistics/issues" target="_blank" rel="noopener">github.com/metcalfdds/hp-prime-statistics/issues</a>.) CentralLimit and data files go only by 2).</p>
 
     <p class="do" id="nocable" hidden><span class="brname2">This browser</span> cannot reach a calculator on its USB cable, so this page shows the official HP way, the Connectivity Kit, below. In Google Chrome or Microsoft Edge it can also send the programs straight down the cable, the <i>Statisticles</i> way.</p>
     <div id="cable" hidden>
       <h3 class="way" id="way1">1) The <i>Statisticles</i> way: straight down the USB cable</h3>
-      <div class="panel warn" id="cabletested">
-        <p class="note" style="color:inherit"><b>This way is still being tested.</b> On 17 November 2026 a test page sent test programs of every size to an HP Prime G2 and to a G1, and each one it read back was the same (for the G1's largest it stopped waiting too soon). The book's own programs have not yet gone to a calculator this way: this is that test. If it does not work on yours, 2), the official HP way, is right below.</p>
-      </div>
+      <p class="note" id="cabletested">Tried on the author's HP Prime G2 (in Chrome) and G1 (in Edge) on 18 November 2026: each program of Chapter 12 came back from the calculator the same, and ChiTable ran at once, with no Check.</p>
       <ol class="steps">
         <li><b>Plug the calculator into this computer with its USB cable, and switch it on.</b> Leave it at its Home screen.
           <p class="why">The Home screen is the one you calculate on. If the calculator shows anything else, press the <kbd>Home</kbd> key (the little house).</p></li>
@@ -456,9 +460,9 @@ const browserName = /Firefox\//.test(navigator.userAgent) ? 'Firefox'
 // USB device (Chrome and Edge can; Firefox and Safari cannot).  usb/README.md says what has been proved on a
 // calculator, and what must be before the test address is no longer needed.
 const usbAsked = /[?&]usb=1(&|$)/.test(location.search);
-// Where the page offers the cable at all.  Today the test address only; when the cable is shown to every student,
-// this line is the one that changes.
-const cableWanted = usbAsked;
+// Where the page offers the cable at all: everywhere since v2f (it was the test address only until a chapter had gone
+// to a G2 and a G1 and a program of it had run).  ?usb=1 now only chooses "A real HP Prime" for the reader.
+const cableWanted = true;
 const usbOn = cableWanted && typeof PrimeUSB !== 'undefined' && PrimeUSB.supported();
 // The Data Loader's last step links here with ?data=1: the page then opens ready for a data file, with no program
 // chosen, so that the student's data and DataLoad are all that Load adds.

@@ -8,7 +8,7 @@ PASS the Data Loader link is the Data Loader page on GitHub Pages
 PASS index.html beside the page sends the browser on to it
 PASS Edge/Chrome route shown; the Firefox route, the real-calculator route, and the running and done panels hidden
 PASS seven help topics, the first for a student without the Virtual Calculator, which step 1 links to
-PASS the cable route is in the page and not shown
+PASS the cable route is in the page, on in a browser with WebHID (Chromium here), and not shown while the Virtual Calculator is chosen
 PASS running calculator: the warning shows, the done panel does not
 PASS running calculator: nothing written
 PASS after loading, the running warning is gone
@@ -62,7 +62,7 @@ PASS ... the steps: download, unpack, start the Kit and plug in, drag onto the c
 PASS ... the app's note shows for all the programs, and says it has not been tried on a real calculator; the last step says how to start an app
 PASS ... Bonjour is one click away, folded
 PASS ... and opens to how to check it
-PASS the cable does not show for a real HP Prime either, without the test address: the Kit's steps are the page's main line, open, with no fold to click, under the Kit's own title
+PASS in a browser without WebHID the cable does not show for a real HP Prime: the Kit's steps are the page's main line, open, with no fold to click, under the Kit's own title
 PASS all the programs download as HP_Prime_all_programs.zip, the name the step shows
 PASS zip of everything: all 30 programs and the app, byte for byte
 PASS the status says what to do next
@@ -101,12 +101,11 @@ PASS opens as a local file without errors
 PASS cable: the test address opens on "A real HP Prime", since that is what it is for
 PASS cable: nothing of it shows while the Virtual Calculator is chosen
 PASS two ways: where both show, step 3 is called what Roger called it, "Two ways to load Statisticles onto a physical Prime G1 or G2 calculator", with Statisticles in italics as the book writes it
-PASS two ways: under the title, Roger's sentence: we believe our method should work; it is easier than the Kit and avoids its mDNS (Bonjour) issue; but just in case, 2) is the official HP way
+PASS two ways: under the title, Roger's sentence as the book has it: we believe our method should work, and we have tested it, and are continually testing it; easier than the Kit, no mDNS (Bonjour) issue; 2) just in case; tell us on GitHub, with the Issues address as a link
 PASS two ways: each has the name he gave it, "1) The Statisticles way: straight down the USB cable" and "2) The official HP way: the Connectivity Kit", in that order down the page under the sentence
-PASS two ways: nothing the page shows or can come to show says "we have tested it" (Roger: "the testing claim is not valid yet"), and right under 1) its note says that this way is still being tested, that the book's own programs have not yet gone to a calculator this way, and that the G1's largest test program was not read back
+PASS two ways: right under 1) a line says what was tried (a G2 in Chrome, a G1 in Edge, 18 November 2026; Chapter 12 read back the same; ChiTable ran with no Check), and nothing the page shows still says it is being tested
 PASS two ways: nowhere in what the page shows or can come to show (its comments aside, which keep the history) is either still called "the other way", "the first way" or "the second way"
 PASS cable: for a real HP Prime it is way 1): three steps and one button
-PASS cable: the note under 1) says where the official HP way is, should this one not work
 PASS cable: its steps say to plug in and switch on at the Home screen, to close the Kit, and what the browser's small window is
 PASS cable: the Connectivity Kit's steps are kept whole as way 2), folded under "2) The official HP way: the Connectivity Kit"
 PASS ... one click opens them: the download button and the six steps
@@ -142,14 +141,15 @@ PASS slip: "One chapter" with no chapter picked: Send is off, and the page says 
 PASS slip: only CentralLimit ticked, which is an app: Send is off, and the page says it goes by the Kit, whose steps are open
 PASS ... with DataLoad ticked too and the sample data: Send is on for the one program, and the data is named with the app as going by the Kit
 PASS cable: at a phone's width nothing runs off the side
-PASS without the test address the page opens on the Virtual Calculator, as always
-PASS without the test address the cable is hidden, whatever the browser can do: one way shows, the Kit's, under the Kit's own title, and nothing says "two ways"
+PASS the plain address opens on the Virtual Calculator, as always
+PASS the plain address in Chrome or Edge, for a real HP Prime: the two ways, under their title, with the cable's button and the Kit folded below as 2)
+PASS ... and Send puts the 30 programs on a pretend G2 from the plain address, each read back the same
 PASS at the test address in a browser that cannot reach a USB device (Firefox, Safari): no cable, no dead button, no "two ways"; the Kit's steps are the main line as before, and no error
 PASS a student's slip, a real HP Prime in a browser that cannot reach it on its cable: one sentence says so and names Chrome and Edge, above the Kit's steps, which are whole and work
 PASS ... and it is not shown for the Virtual Calculator, which needs no cable
 PASS ... in Firefox the sentence names Firefox
-PASS ... and it is not shown where the cable works (Chrome or Edge at the test address): there the two ways show
-PASS ... nor where the cable is not offered (without the test address), in a browser that cannot reach a USB device either: the page is v2d's
+PASS ... and it is not shown where the cable works (Chrome or Edge): there the two ways show
+PASS ... and at the plain address, in a browser that cannot reach a USB device, the sentence shows too, above the Kit's steps
 PASS no errors in the page
 
 153 PASS, 0 FAIL
