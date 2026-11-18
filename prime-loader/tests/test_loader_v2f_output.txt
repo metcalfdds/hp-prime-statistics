@@ -130,8 +130,8 @@ PASS slip: the Connectivity Kit left open, so the calculator cannot be opened: t
 PASS slip: a calculator that does not answer (switched off at the wrong moment, or not at Home): said after 3 s, "Nothing was sent", press Home, pull the cable and push it in again; the Kit's steps open; one report went, the question
 PASS slip, not the student's: a calculator that still says version 01 after the "FD" (other software than the two it was proved on): nothing is sent, nothing about the calculator is changed, and the page points to the Kit and asks for the details
 PASS a program the calculator acknowledges and does not keep (FitCheck): the load stops there; the one before it is ticked, this one crossed, the ones after never sent; the page does not say Done; it says to delete it if it is in the list and to use the Kit for it and the rest
-PASS a program damaged on the way: "What came back is not what was sent", nothing ticked, and the details say where the two part
-PASS slip: the cable pulled out in the middle of the second program, and the browser's write to it never comes back: the page says so within seconds (1.2 s here), counts the first program and no other, and is ready to send again
+PASS a program damaged on the way: "What is on the calculator is not what was sent", nothing ticked, and the details say where the two part
+PASS slip: the cable pulled out in the middle of the second program, and the browser's write to it never comes back: the page says so within seconds (1.1 s here), counts the first program and no other, and is ready to send again
 PASS ... no errors in the page
 PASS slip: the cable pulled out and the browser says so at once: the same words
 PASS while a load runs: Send is off and Stop is there; leaving the page would be asked about, because the calculator is in the middle of a program
@@ -141,6 +141,8 @@ PASS slip: "One chapter" with no chapter picked: Send is off, and the page says 
 PASS slip: only CentralLimit ticked, which is an app: Send is off, and the page says it goes by the Kit, whose steps are open
 PASS ... with DataLoad ticked too and the sample data: Send is on for the one program, and the data is named with the app as going by the Kit
 PASS cable: at a phone's width nothing runs off the side
+PASS a G1: the cable's first step tells it to load three or four programs at a time
+PASS ... and when it fills up (here after 15 programs, at NormExplorer, as the author's did): "The calculator is full", the 15 marked done, NormExplorer marked bad, and what to do: delete its empty entry, load one chapter at a time
 PASS the plain address opens on the Virtual Calculator, as always
 PASS the plain address in Chrome or Edge, for a real HP Prime: the two ways, under their title, with the cable's button and the Kit folded below as 2)
 PASS ... and Send puts the 30 programs on a pretend G2 from the plain address, each read back the same
@@ -152,4 +154,4 @@ PASS ... and it is not shown where the cable works (Chrome or Edge): there the t
 PASS ... and at the plain address, in a browser that cannot reach a USB device, the sentence shows too, above the Kit's steps
 PASS no errors in the page
 
-153 PASS, 0 FAIL
+155 PASS, 0 FAIL
