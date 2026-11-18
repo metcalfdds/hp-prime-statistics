@@ -1,35 +1,77 @@
 # HP Prime Loader
 
-**For students: pick your chapter, click Load (or, in Firefox, download and unpack one file), start the Virtual Calculator, tap a program, tap Run.** That's all. The chapter's programs are waiting in the Program Catalog with nothing else to get lost in, and nothing needs checking or compiling first.
+**For students: say which calculator and which programs, and click one button.** Then start the calculator, tap a program, tap Run. Nothing needs checking or compiling first.
 
-**Open it here: <https://metcalfdds.github.io/hp-prime-statistics/prime-loader/>.** That address never changes: it always opens the newest version (this folder's `index.html` sends the browser on to it). The page is one file, `PrimeLoader_v1l.html`, and also works offline on a Windows computer with HP's free Virtual Calculator: download it (on GitHub: open the file, then "Download raw file") and open it in any browser.
+**Open it here: <https://metcalfdds.github.io/hp-prime-statistics/prime-loader/>.** That address never changes: it always opens the newest version (this folder's `index.html` sends the browser on to it). The page is one file, `PrimeLoader_v2d.html`, and also works offline: download it (on GitHub: open the file, then "Download raw file") and open it in any browser.
 
-- **In Edge or Chrome** the page puts the programs on the calculator itself, with one click on Load.
-- **In Firefox (or Safari)** the page gives you one file to download, named for your chapter (`HP_Prime_Chapter_11.zip`), and walks you through unpacking it with Windows' own **Extract All** into the calculator's folder. That takes about two minutes. Firefox never lets a web page write into a folder on your computer, by its makers' design, and many schools require Firefox, so this route is a full part of the page, not a fallback. The page explains the difference to the student in plain words.
+## What it does (v2d, 18 November 2026)
 
-Every step on the page says, in plain words, what is happening and why. A "Something not working?" section at the bottom covers the questions students are likely to have: how to open the page in Edge; no HP Prime folder (start the calculator once; OneDrive); "the calculator looks open"; "Syntax Error"; getting old programs back; a real HP Prime.
+*v2d is v2a for the Virtual Calculator and for the Connectivity Kit, word for word. What is new since v2a is the cable, below, which shows only at the test address (v2b, 17 November), the name of the step that offers it (v2c, 18 November) and the names of its two ways, with Roger's sentence under the title (v2d, 18 November).*
 
-## What it does
+Roger, after the review of that evening: "i'm thinking we need to make this process as simple as is possible", then "How about let the student choose?--1) put all the programs on the Virtual Calculator at once or 2) I'll choose which Chapter to load, one at a time", then "we do need to make some sort of very simple loader ... to get the programs on a physical calcuator".
 
-1. **You pick** one or more of the companion guide's 15 chapters, or programs one by one. You can add the sample data set, or your own data file from the [Data Loader](../data-loader/README.md). The page opens a data file and checks that it is a matrix file before it takes it, and whenever data go on the calculator, DataLoad goes with them.
-2. **You click Load.** The first time, a window opens at Documents: click **HP Prime**, then **Select Folder**, then let the page edit files there. After that it remembers.
-3. **The page checks that the Virtual Calculator is closed.** It looks for the lock file the calculator keeps in `HP Prime\Temp` while it runs. A running calculator writes its memory back when it exits, which would undo the load.
-4. **It clears the calculator, safely.** Every program on it, every app that is not HP's, and any matrix about to be replaced are moved to `HP Prime\Loader backups\<date time>`. Each file is copied, read back, and only then removed. HP's own apps, settings and lists are left alone.
-5. **It writes the chosen files** into `HP Prime\Calculators\Prime` and reads each one back.
+**1. Which calculator?** The Virtual Calculator on this computer, or a real HP Prime (a G1 or a G2) on its USB cable.
 
-**A data file on its own (since v1v).** With a data file picked and no chapter, step 4 does not clear the calculator: the file and DataLoad are added, and only a file they replace is moved to the backup. Until v1v a data file loaded on its own moved every program off the calculator, DataLoad too.
-6. **You start the Virtual Calculator.** The page says what to do next: Shift, Program, tap a program, Run. It also says how to start CentralLimit (an app) and how to use DataLoad for data.
+**2. Which programs?**
 
-**Firefox or Safari:** steps 2 to 6 become: download the chapter's zip; close the calculator; Extract All, with Browse pointed at `Documents\HP Prime\Calculators\Prime`; start the calculator. Programs already on the calculator stay (nothing is cleared or backed up on this route).
+| Choice | What goes on | What happens to what is already there |
+|---|---|---|
+| **All 31 programs** (the page opens on this) | Every program of the book, and the CentralLimit app. | Stays. A file of the same name is replaced, and the old copy goes to the backup. |
+| **One chapter** | That chapter's programs, and TestChooser, the which-test flowchart the book introduces before Chapter 1. | On the Virtual Calculator the book's other programs are moved to the backup, so that the Program Catalog lists that chapter's. **A program of the student's own is never moved** (until v2a every program was). |
+| *Only the programs I tick* (under "More choices") | The programs ticked in a list of all 31. | Stays, as for all the programs. |
+| *Data* (under "More choices") | The book's sample data set, or a data file from the [Data Loader](../data-loader/README.md), and DataLoad with it, whatever else is chosen. A data file is opened and checked before it is taken. | Stays; the matrix it replaces goes to the backup. |
 
-**HP's Connectivity Kit, and a real HP Prime (G1 or G2):** the page downloads the same files as a zip, and its help says how to use them with the Kit:
-1. start the Kit;
-2. start the Virtual Calculator, or plug in the real Prime;
-3. drag each file onto the calculator's name (**Virtual Prime** for the Virtual Calculator) in the **Calculators** list at the top left of the Kit's window, not into the Content box below it.
+"One chapter" chosen with no chapter picked moves nothing. Nothing is ever deleted: whatever is replaced or moved off is in `Documents\HP Prime\Loader backups\<date time>`, copied, read back, and only then removed from the calculator's folder. HP's own apps, settings and lists are never touched.
 
-This works the same for the Virtual Calculator, a G1 and a G2, and for a real Prime it is the only way. Its help opens with a highlighted reminder to **make sure Apple's Bonjour Service is running**: the Kit uses Bonjour to find calculators (HP's release notes: the Kit and Virtual Calculator "now include Apple Bonjour installers to enable mDns networking on Windows"), and where Bonjour has stopped, the Kit may not see the calculator. The reminder says how to check it in Windows' Services app and points instructors to [`tools/windows-launcher`](../tools/windows-launcher/README.md), which checks Bonjour before opening the Kit.
+**3. One button.**
+
+- **The Virtual Calculator, in Edge or Chrome: Load.** The first time, a window opens at Documents: click **HP Prime**, then **Select Folder**, then let the page edit files there. After that it remembers. The page checks that the calculator is closed (it looks for the lock file the calculator keeps in `HP Prime\Temp` while it runs: a running calculator writes its memory back when it exits, which would undo the load), writes the files into `HP Prime\Calculators\Prime`, and reads each one back.
+- **The Virtual Calculator, in Firefox or Safari: Download.** Firefox never lets a web page write into a folder, by its makers' design, and many schools require Firefox, so this route is a full part of the page. The choice downloads as one zip (`HP_Prime_all_programs.zip`, `HP_Prime_Chapter_11.zip`), and the page walks the student through Windows' own **Extract All** into the calculator's folder. Programs already on the calculator stay on this route, whichever choice was made.
+- **A real HP Prime: Download, and HP's Connectivity Kit.** The same zip, and six steps in the page's main line (until v2a they were folded away under "Something not working?"): download, unpack, start the Kit and plug the calculator in, drag each file onto the calculator's name, close the Kit, run. A folded note says how to check that Bonjour is running. Nothing is ever moved off a real calculator.
+
+**From the Data Loader.** The Data Loader's last step links to `.../prime-loader/?data=1`. The page then opens with no program chosen and a notice that says what to click, so that the student's data and DataLoad are all that Load adds. `index.html` carries the `?data=1` on.
+
+A phone, a computer that is not Windows, and a browser too old to unpack the programs each get a notice at the top. A "Something not working?" section covers a missing Virtual Calculator, opening the page in Edge, no HP Prime folder, "the calculator looks open", "Syntax Error", a program that is gone, and the Kit for the Virtual Calculator.
+
+**Straight down the cable, without the Kit: in the page, at its test address.** Chrome and Edge let a page talk to a calculator on its cable (WebHID). On 17 November 2026 a test page put test programs of every size the book has on the author's G2 and on his G1 by one route, and each one the page read back was the same; for the G1's largest (289,813 characters) the calculator took the program and sent it back, and the test page had stopped waiting 0.1 s before, so that one was not compared ([usb/README.md](usb/README.md) has the five logs and the route). The page sends the chosen programs by that route and reads each one back.
+
+It shows only at `.../prime-loader/?usb=1`, in a browser that has WebHID. There step 3 for a real HP Prime is called **"Two ways to load *Statisticles* onto a physical Prime G1 or G2 calculator"** (Roger, 18 November 2026, 03:43: "Call this 'Two ways to load these programs onto a physical Prime G1 or G2 calculator.' Or something like that." and then: "I mean of course...'Two ways to load Statisticles.....'"; *Statisticles* is the book's name for its programs).
+
+The two ways have the names Roger gave them at 04:18: "How about: '1) The Statisticles way....' And 2) The official HP Connectivity Kit....' We believe our method should work, and we have tested it--it is easier than the Connetivity Kit and avoids the mDNS issue--but just in case you have issues with the Statisticles way, here's 2) the official HP way....something along those lines". And at 04:30, of that sentence: "Oh, yeah--the testing claim is not valid yet--just a suggestion". So the page says, under the title:
+
+> We believe our method should work. It is easier than the Connectivity Kit, and it avoids the Kit's mDNS (Bonjour) issue. But just in case you have trouble with the *Statisticles* way, here is 2), the official HP way. CentralLimit and data files go only by 2).
+
+and the two are **"1) The *Statisticles* way: straight down the USB cable"** and **"2) The official HP way: the Connectivity Kit"**, wherever the page speaks of them ("the official HP way (2, just below)" in a sentence). **The sentence gains his "and we have tested it" when that is so, and not before**: when the Loader's own route has put a chapter of the book on a G2 and on a G1 and a program of it has run. Until then a note under 1) says what has been done and what has not ("This way is still being tested...").
+
+1) The *Statisticles* way: plug in, close the Kit, click **Send to the calculator**. A program counts as loaded only when the calculator gave it back the same, character for character; the first that does not ends the load, and the page says which programs are on the calculator and what to do next. The programs are added, and nothing is ever taken off a calculator. CentralLimit, which is an app of three files, and data files do not travel this way, and the page says so and opens the Kit's steps for them. **Stop** takes effect between two programs. "What passed on the cable" is a log that can be saved and sent to an instructor; it does not hold the calculator's serial number. This way does not go through Bonjour: the page reaches the calculator through the browser's WebHID, as a USB device, and looks for nothing on a network, which is what "avoids the Kit's mDNS (Bonjour) issue" rests on. A load with the Bonjour Service stopped has not been tried.
+
+**The Connectivity Kit's steps are kept whole** (Roger, 17 November 2026: "maybe we shoould keep the instructions for the COnnectivity Kit as a backup"). Without the test address, and in Firefox or Safari, they are the page's main line as in v2a. At the test address they are way 2), folded below way 1) under "2) The official HP way: the Connectivity Kit", and they open by themselves when the cable cannot do what is wanted.
+
+**The cable has not yet put one of the book's programs on a calculator.** When it has loaded a chapter on a G2 and on a G1, and a program of it has run, the next version shows it without the test address.
+
+### What v2d was tested with
+
+`tests/test_loader_v2d.js`: **148 PASS, 0 FAIL** in Chromium against a mock of `Documents\HP Prime` and a pretend calculator, with starter pack v23 (`tests/test_loader_v2d_output.txt`; about a minute). Five of them are about the step that offers both ways: its title, with *Statisticles* in italics; the sentence under it, word for word; the two ways' names, in that order down the page; that nothing the page shows says "we have tested it", while the note under 1) says that this way is still being tested and that the book's own programs have not yet gone to a calculator this way; and that nothing the page shows still says "the other way", "the first way" or "the second way". Where one way shows (no test address, or a browser without WebHID) the step keeps the Kit's own title and nothing says "two ways". The mock folder holds HP's apps and settings, an old book program, an old copy of the app, a matrix, and a program of the student's own, and every file the page writes is compared with the pack byte for byte:
+
+- a running calculator is refused, with nothing written;
+- all the programs: 30 program files and the app's three, byte for byte; the student's own program and the matrix untouched; the backup holds exactly the two things replaced;
+- one chapter (11, then 7 with the sample data): the calculator lists that chapter's programs and the student's own, and the backup holds every book program that was there, byte for byte;
+- ticked programs, a data file on its own, and "One chapter" with no chapter picked: added, and nothing moved off;
+- a badly named data file, a renamed CSV, a file cut short and one too short are each refused with the reason; the student's own M1 wins over the sample;
+- the wrong folder, Documents picked in place of HP Prime, and a cancelled picker;
+- a real HP Prime, without the test address: the Kit's six steps as the main line, no Load button, the zips of all the programs and of chapter 12 byte for byte, and the notes for the app and for data, each saying that it has not been tried on a real calculator;
+- from the Data Loader (`?data=1`): the notice, no program chosen, the file and DataLoad added, and `index.html` carrying the address on;
+- Firefox's route, a phone, a Mac, an old browser, a narrow window, and the page opened as a file;
+- **the cable** (part 13, against `usb/tests/mock_prime_v3.js`, which by default does what the two calculators did): hidden without `?usb=1` and in a browser without WebHID; with it, way 1), with the Kit's six steps whole below it as way 2). Chapter 12 to a pretend G2 and all 30 programs to a pretend G1 (127,913 reports of 64 bytes): what the calculator holds is each program's source exactly as the pack's file holds it, character for character, sent not compressed in the newer framing after one `FD`, no report twice. A second load without unplugging does not show the browser's window again. The log names the page, the browser, the calculator and the choice, and holds neither the serial number nor more than twelve bytes of a message; Save the details writes it to a file.
+- **the cable's slips**: no calculator picked; the Kit left open; a calculator that does not answer; one that still says version 01 (nothing is sent); a program the calculator acknowledges and does not keep, and one damaged on the way (the load stops there, the one before is ticked, the ones after are never sent, and the page does not say Done); the cable pulled out in the middle of a program, with a write that never comes back and with one that fails at once; Stop and a second click on Send while a program is being checked; the calculator's clock saying "send again" in the middle of every program; "One chapter" with no chapter; only an app ticked; a phone's width. Each gets its sentence, and each leaves Send ready to click again.
+
+**Not yet run in Edge on a Windows computer**: the folder work was driven in Chromium against a mock folder, as for every version, and the first load on Roger's computer is the check that counts. Three things on the page are marked as not yet tried on a real calculator: the CentralLimit app's folder dragged in the Kit, a data file dragged in the Kit, and the cable with the book's own programs.
+
+**For the book's next draft:** Appendix B's "The easy way: the Prime Loader" says the page "moves whatever was on the Virtual Calculator into a backup"; it now moves the book's other programs only, and only for "One chapter". "Room for programs" advises loading a chapter at a time; the page now opens on all the programs. Once the cable has loaded a chapter on both calculators: Appendix B's "On a real calculator" takes the page's title and its two names, "1) The *Statisticles* way" for the cable and "2) The official HP way" for the Kit, whose steps it keeps whole, and Appendix F, "For HP programmers", gets what was learned about the cable (Roger, 17 November 2026: "we'll want to put what we learn about loading program into the programmming Appendix").
 
 ## The review of 17 November 2026 (v1v)
+
+*v1v's files are in the repository's history: v2a replaced them the same night, v2b replaced v2a's a few hours later, and v2c and then v2d replaced those the next morning.*
 
 Roger asked for the students' helpers to be reviewed: "they must be bullet proof and as simple as possible". The tests passed, 59 of 59, but every one of them did what a careful student does. Tried with the slips a student makes, v1u did these things, and v1v does not:
 
@@ -152,12 +194,13 @@ The page was also looked at in light and dark, at desktop and phone widths: noth
 
 | File | What it is |
 |---|---|
-| `PrimeLoader_v1v.html` | The page, built: open this one. About 2 MB, all 31 programs inside, checked. |
-| `index.html` | Written by the build: sends a browser at `.../prime-loader/` on to the current page, so the book's link never changes. |
-| `loader_template_v1d.html` | The page's source, with slots for the two cores, the catalog, the files and the Data Loader's web address. |
-| `loader_core_v2.js` | The file work: find the folder, check the lock, back up, clear (or, for data on its own, put aside only what is replaced), write, read back; the check of a data file; and the zip reader for the embedded files (every CRC checked). No DOM: the page and the tests share it. |
-| `build_loader_v1v.py` | `python3 build_loader_v1v.py ../starter-pack/HP_Prime_Statistics_Starter_Pack_v23.zip --kit PATH_TO_hp-prime-kit`. Holds the chapter list (from the companion guide's Chapter Plan), each program's one line, and the name to type in Home. Stops if the catalog and the pack disagree, and says how many files are checked. Uses `../data-loader/dl_core_v1.js` for the zip it offers. |
-| `tests/test_loader_v1v.js` | The Chromium test: `node tests/test_loader_v1v.js PrimeLoader_v1v.html ../starter-pack/HP_Prime_Statistics_Starter_Pack_v23.zip` (Playwright). |
+| `PrimeLoader_v2d.html` | The page, built: open this one. About 2.4 MB, all 31 programs inside, checked. |
+| `index.html` | Written by the build: sends a browser at `.../prime-loader/` on to the current page, with whatever follows the address (`?data=1`, `?usb=1`), so the book's link never changes. |
+| `loader_template_v2d.html` | The page's source, with slots for the three cores, the catalog, the files and the Data Loader's web address. |
+| `loader_core_v3.js` | The file work: find the folder, check the lock, plan what to move (`planAdd`: only what is replaced; `planBook`: the book's programs, for one chapter), back up, write, read back; the check of a data file; and the zip reader for the embedded files (every CRC checked). No DOM: the page and the tests share it. |
+| `build_loader_v2d.py` | `python3 build_loader_v2d.py ../starter-pack/HP_Prime_Statistics_Starter_Pack_v23.zip --kit PATH_TO_hp-prime-kit`. Holds the chapter list (from the companion guide's Chapter Plan), each program's one line, and the name to type in Home. Stops if the catalog and the pack disagree, or if the source inside a program's file is not the one in `programs/`, and says how many files are checked. Uses `../data-loader/dl_core_v2.js` for the zip it offers and `usb/prime_usb_v3.js` for the cable. |
+| `tests/test_loader_v2d.js` | The Chromium test: `node tests/test_loader_v2d.js PrimeLoader_v2d.html ../starter-pack/HP_Prime_Statistics_Starter_Pack_v23.zip` (Playwright; about a minute). |
+| `usb/` | A real HP Prime on its USB cable, from a web page: the code, a pretend calculator to test it with, and the logs of two real ones. [usb/README.md](usb/README.md). |
 | `tests/idb_handle_probe_v1.js` | Shows the browser fault the test steps round: a folder handle read back from IndexedDB ends Chrome for Testing 153 (see above). |
 
 *Free for educational and personal use. © 2026 Roger Metcalf. Written with AI assistance (Anthropic Claude).*

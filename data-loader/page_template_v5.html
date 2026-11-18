@@ -169,8 +169,8 @@ footer a, .step a { color: var(--accent); }
       <div>
         <h3>The Virtual Calculator (Windows)</h3>
         <ol class="howto">
-          <li>Open the <a href="__PRIMELOADER_URL__">HP Prime Loader</a>.</li>
-          <li>In its step 1, click <b>Add a data file you were given</b> and choose <code id="fname1">M1.hpmat</code> from your Downloads folder.</li>
+          <li>Open the <a href="__PRIMELOADER_URL__?data=1">HP Prime Loader</a>. This link opens it ready for a data file.</li>
+          <li>In its step 2, click <b>Add a data file you were given</b> and choose <code id="fname1">M1.hpmat</code> from your Downloads folder.</li>
           <li>Close the Virtual Calculator, then click <b>Load</b>. The Loader checks the file, puts it where the calculator looks for it, and makes sure the DataLoad program is on the calculator. Your other programs stay.</li>
           <li>Start the calculator and open the Statistics 1Var app once (press <kbd>Apps</kbd>). Then press <kbd>Shift</kbd>, then <kbd>Program</kbd>, tap <b>DataLoad</b>, tap <b>Run</b>, and choose <i>Columns</i> or <i>Scores by group</i>.</li>
           <li>If DataLoad says lists after the new ones hold data from before, choose <i>clear</i>: AnovaLab, RankLab and AgreeLab read every list that holds data as one more group (or rater).</li>
@@ -355,8 +355,8 @@ function update() {
 function readme(name) {
   return ['DataLoad file ' + name + '.hpmat, made by the HP Prime Data Loader.', '',
     'Virtual Calculator (Windows), the easy way:',
-    '1. Open the HP Prime Loader: __PRIMELOADER_URL__',
-    '2. In its step 1, click "Add a data file you were given" and choose ' + name + '.hpmat.',
+    '1. Open the HP Prime Loader, ready for a data file: __PRIMELOADER_URL__?data=1',
+    '2. In its step 2, click "Add a data file you were given" and choose ' + name + '.hpmat.',
     '3. Close the Virtual Calculator, then click Load.',
     '4. Start it, open the Statistics 1Var app once, then run DataLoad from the Program Catalog.',
     '5. If DataLoad says lists after the new ones hold data from before, choose clear.', '',

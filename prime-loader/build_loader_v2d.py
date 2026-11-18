@@ -1,8 +1,34 @@
 #!/usr/bin/env python3
-"""build_loader_v1v.py -- assembles PrimeLoader_v1v.html: the page template, the loader's core, the Data Loader's core
-(for its zip writer), the chapter list, and every program file from a starter pack, embedded so the page works offline.
+"""build_loader_v2d.py -- assembles PrimeLoader_v2d.html: the page template, the loader's core, the Data Loader's core
+(for its zip writer), the USB core, the chapter list, and every program file from a starter pack, embedded so the
+page works offline.
 
-    python3 build_loader_v1v.py PACK.zip [OUT.html] [--kit PATH]
+    python3 build_loader_v2d.py PACK.zip [OUT.html] [--kit PATH]
+v2d (18 Nov 2026, 04:20 to 04:35): the page template's v2d, in which the two ways are "1) The Statisticles way" and
+"2) The official HP way: the Connectivity Kit" and the sentence under the step's title is Roger's, without its "and we
+have tested it" until that is so (Roger: "the testing claim is not valid yet").  The same pack and cable code.
+v2c (18 Nov 2026): the page template's v2c, which names the step that offers the cable and the Connectivity Kit as Roger
+named it ("Two ways to load Statisticles onto a physical Prime G1 or G2 calculator") and the two ways as the first and
+the second.  The same pack (v23) and the same usb/prime_usb_v3.js.
+v2b (17 Nov 2026, late): the page template's v2b and usb/prime_usb_v3.js, on starter pack v23 as before (no program
+changed).  That evening the author's G2 and his G1 took test programs of every size down their cables by one route
+(usb/logs/); v2b's cable panel sends the chosen programs by that route and reads each back.  It shows only at the
+test address (?usb=1) until a real chapter has loaded on a calculator, and there it stands above the Connectivity
+Kit's steps, which are kept whole (Roger: "maybe we shoould keep the instructions for the COnnectivity Kit as a
+backup").  The catalog now names the page's version, for the cable's log.
+v2a (17 Nov 2026, night): the page template's v2a and the loader core's v3, on starter pack v23 as before.  Roger,
+after the review: "i'm thinking we need to make this process as simple as is possible", then "How about let the
+student choose?--1) put all the programs on the Virtual Calculator at once or 2) I'll choose which Chapter to load, one
+at a time", then "we do need to make some sort of very simple loader ... to get the programs on a physical
+calcuator".  The page asks two things and has one button: which calculator (the Virtual Calculator, or a real HP
+Prime), and which programs (all of them, or one chapter).  All the programs are ADDED to what is on the calculator;
+one chapter leaves the calculator with that chapter's programs and TestChooser, the book's other programs moved to
+the backup, and a program of the student's own is never moved (loader_core_v3.js, planBook).  For a real HP Prime the
+same choice downloads as one zip, with HP's Connectivity Kit steps in the page's main line.
+  The build now also (a) finds where each program's source lies inside its .hpprgm (hp-prime-kit's reader), checks
+that source against programs/ character for character, and writes the two offsets into the catalog, and (b) embeds
+usb/prime_usb_v1.js.  Both serve sending a program straight down the USB cable, which the page shows only at its
+test address (?usb=1) until it has been proved on a calculator: usb/README.md.
 v1v (17 Nov 2026, the review "they must be bullet proof and as simple as possible"): the page template's v1d and the
 loader core's v2, on starter pack v23 as before (no program changed).  A data file loaded on its own is ADDED, with
 DataLoad, and the programs on the calculator stay (v1u moved every program to the backup and left the student with
@@ -131,7 +157,7 @@ KIT = os.environ.get('HPKIT', '/tmp/kit/hp-prime-kit-HEAD')
 if '--kit' in argv:
     i = argv.index('--kit'); KIT = argv[i + 1]; del argv[i:i + 2]
 PACK = argv[0]
-OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v1v.html')
+OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v2d.html')
 SITE = 'https://metcalfdds.github.io/hp-prime-statistics/'
 sys.path.insert(0, KIT)
 from hpkit import program as kitprog            # hp-prime-kit (MIT, JordiRigau/hp-prime-kit)
@@ -237,6 +263,24 @@ for k, v in PROGRAMS.items():
     assert len(prg) == 1, (k, prg)
     checked[k] = checked_file(packed[prg[0]])
 
+# v2a: where each program's source lies in its file, for the USB route (a program travels down the cable as its source,
+# not as its .hpprgm: hp-prime-kit, docs/topics/usb.md).  The source found there must be the repository's own,
+# character for character, or the build stops.  An app is three files and does not travel this way.
+src_at = {}
+for k, v in PROGRAMS.items():
+    if not v[0].endswith('.hpprgm'):
+        continue
+    text, _, start, end = kitprog.read(packed[v[0]])
+    mine = glob.glob(os.path.join(os.path.dirname(HERE), 'programs', k + '_*.txt'))
+    # (blank space after a program's last line does not count: make_starter_pack_v4.py compares the same way, and
+    # programs/ResampLab_beta1j.txt ends in one blank line more than its checked file)
+    want = kitprog.normalize_source(open(mine[0], encoding='utf-8').read()).rstrip()
+    if kitprog.normalize_source(text).rstrip() != want:
+        sys.exit('STOP: the source inside %s is not programs/%s' % (v[0], os.path.basename(mine[0])))
+    if packed[v[0]][start:end].decode('utf-16-le').rstrip('\0') != text:
+        sys.exit('STOP: the offsets of %s do not give its source' % v[0])
+    src_at[k] = [start, end]
+
 buf = io.BytesIO()
 with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as z:
     for name in sorted(packed):
@@ -248,7 +292,8 @@ emb = buf.getvalue()
 catalog = {
   'programs': {k: {'file': v[0], 'version': v[1], 'what': v[2], 'home': v[3],
                    'files': sorted(p for p in packed if p.split('/')[0] == v[0]),
-                   'bytes': sum(len(packed[p]) for p in packed if p.split('/')[0] == v[0])}
+                   'bytes': sum(len(packed[p]) for p in packed if p.split('/')[0] == v[0]),
+                   'src': src_at.get(k)}
                for k, v in PROGRAMS.items()},
   'checked': {k: bool(c) for k, c in checked.items()},
   'all_checked': all(checked.values()),
@@ -256,10 +301,11 @@ catalog = {
   'always': ALWAYS_OFFERED,
   'data': {k: {'file': v[1], 'what': v[2], 'bytes': len(packed[v[1]])} for k, v in DATA.items()},
   'pack': os.path.basename(PACK),
+  'loader': 'v2d',
   'pack_sha256': hashlib.sha256(open(PACK, 'rb').read()).hexdigest()[:12],
 }
 
-t = open(os.path.join(HERE, 'loader_template_v1d.html'), encoding='utf-8').read()
+t = open(os.path.join(HERE, 'loader_template_v2d.html'), encoding='utf-8').read()
 import glob as _glob
 _dl = sorted(_glob.glob(os.path.join(HERE, '..', 'data-loader', 'DataLoader_v*.html')),
              key=lambda p: [int(x) if x.isdigit() else x for x in __import__('re').split(r'(\d+)', os.path.basename(p))])
@@ -272,8 +318,9 @@ t = t.replace('__DATALOADER_URL__', DL_URL)
 dl = next(p for p in (os.path.join(HERE, '..', 'data-loader', 'dl_core_v2.js'), os.path.join(HERE, 'dl_core_v2.js'))
           if os.path.exists(p))
 parts = {
-  '/*LOADERCORE*/': open(os.path.join(HERE, 'loader_core_v2.js'), encoding='utf-8').read(),
+  '/*LOADERCORE*/': open(os.path.join(HERE, 'loader_core_v3.js'), encoding='utf-8').read(),
   '/*DLCORE*/': open(dl, encoding='utf-8').read(),
+  '/*PRIMEUSB*/': open(os.path.join(HERE, 'usb', 'prime_usb_v3.js'), encoding='utf-8').read(),
   '/*CATALOG*/': json.dumps(catalog, ensure_ascii=False),
   '/*PACK*/': json.dumps(base64.b64encode(emb).decode('ascii')),
 }
@@ -282,14 +329,17 @@ for k, v in parts.items():
     t = t.replace(k, v)
 open(OUT, 'w', encoding='utf-8').write(t)
 page = os.path.basename(OUT)
+# v2a: the redirect carries on whatever follows the address (the Data Loader links to .../prime-loader/?data=1, and
+# the author's test address ends ?usb=1); a browser with scripts off still gets there, without it.
 redirect = ('<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
             '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
             '<title>HP Prime Loader</title>\n'
-            '<meta http-equiv="refresh" content="0; url=' + page + '">\n'
+            '<script>location.replace("' + page + '" + location.search + location.hash);</script>\n'
+            '<noscript><meta http-equiv="refresh" content="0; url=' + page + '"></noscript>\n'
             '<link rel="canonical" href="' + SITE + 'prime-loader/' + page + '">\n'
             '<style>body{font:16px/1.5 system-ui,sans-serif;margin:2rem;color:#172033;background:#f6f8fb}'
             '@media (prefers-color-scheme:dark){body{color:#e8edf6;background:#0f1420}a{color:#7d9cff}}</style>\n'
-            '</head>\n<body>\n<!-- Written by build_loader_v1v.py: sends the browser on to the current Prime Loader, so the '
+            '</head>\n<body>\n<!-- Written by build_loader_v2d.py: sends the browser on to the current Prime Loader, so the '
             'address .../prime-loader/ never changes. -->\n'
             '<p>Opening the HP Prime Loader&hellip; If nothing happens, <a href="' + page + '">click here</a>.</p>\n'
             '</body>\n</html>\n')
@@ -297,5 +347,5 @@ open(os.path.join(os.path.dirname(os.path.abspath(OUT)), 'index.html'), 'w', enc
 print('index.html -> ' + page + '; Data Loader link: ' + DL_URL)
 print(f'checked files: {sum(checked.values())} of {len(checked)}' + ('' if all(checked.values()) else
       '  (unchecked: ' + ', '.join(k for k, c in checked.items() if not c) + ')'))
-print(f'{os.path.basename(OUT)}: {len(t):,} bytes; {len(packed)} files embedded '
+print(f'{os.path.basename(OUT)}: {len(t.encode("utf-8")):,} bytes; {len(packed)} files embedded '
       f'({sum(len(b) for b in packed.values()):,} bytes, {len(emb):,} zipped); pack {catalog["pack"]} {catalog["pack_sha256"]}')
