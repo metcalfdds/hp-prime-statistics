@@ -2,7 +2,7 @@
 
 **For students: say which calculator and which programs, and click one button.** Then start the calculator, tap a program, tap Run. Nothing needs checking or compiling first.
 
-**Open it here: <https://metcalfdds.github.io/hp-prime-statistics/prime-loader/>.** That address never changes: it always opens the newest version (this folder's `index.html` sends the browser on to it). The page is one file, `PrimeLoader_v2e.html`, and also works offline: download it (on GitHub: open the file, then "Download raw file") and open it in any browser.
+**Open it here: <https://metcalfdds.github.io/hp-prime-statistics/prime-loader/>.** That address never changes: it always opens the newest version (this folder's `index.html` sends the browser on to it). The page is one file, `PrimeLoader_v2g.html`, and also works offline: download it (on GitHub: open the file, then "Download raw file") and open it in any browser.
 
 ## What it does (v2g, 18 November 2026)
 
