@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
-"""build_loader_v2a.py -- assembles PrimeLoader_v2a.html: the page template, the loader's core, the Data Loader's core
-(for its zip writer), the USB core (switched off: see below), the chapter list, and every program file from a starter
-pack, embedded so the page works offline.
+"""build_loader_v2b.py -- assembles PrimeLoader_v2b.html: the page template, the loader's core, the Data Loader's core
+(for its zip writer), the USB core, the chapter list, and every program file from a starter pack, embedded so the
+page works offline.
 
-    python3 build_loader_v2a.py PACK.zip [OUT.html] [--kit PATH]
+    python3 build_loader_v2b.py PACK.zip [OUT.html] [--kit PATH]
+v2b (17 Nov 2026, late): the page template's v2b and usb/prime_usb_v3.js, on starter pack v23 as before (no program
+changed).  That evening the author's G2 and his G1 took test programs of every size down their cables by one route
+(usb/logs/); v2b's cable panel sends the chosen programs by that route and reads each back.  It shows only at the
+test address (?usb=1) until a real chapter has loaded on a calculator, and there it stands above the Connectivity
+Kit's steps, which are kept whole (Roger: "maybe we shoould keep the instructions for the COnnectivity Kit as a
+backup").  The catalog now names the page's version, for the cable's log.
 v2a (17 Nov 2026, night): the page template's v2a and the loader core's v3, on starter pack v23 as before.  Roger,
 after the review: "i'm thinking we need to make this process as simple as is possible", then "How about let the
 student choose?--1) put all the programs on the Virtual Calculator at once or 2) I'll choose which Chapter to load, one
@@ -145,7 +151,7 @@ KIT = os.environ.get('HPKIT', '/tmp/kit/hp-prime-kit-HEAD')
 if '--kit' in argv:
     i = argv.index('--kit'); KIT = argv[i + 1]; del argv[i:i + 2]
 PACK = argv[0]
-OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v2a.html')
+OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v2b.html')
 SITE = 'https://metcalfdds.github.io/hp-prime-statistics/'
 sys.path.insert(0, KIT)
 from hpkit import program as kitprog            # hp-prime-kit (MIT, JordiRigau/hp-prime-kit)
@@ -289,10 +295,11 @@ catalog = {
   'always': ALWAYS_OFFERED,
   'data': {k: {'file': v[1], 'what': v[2], 'bytes': len(packed[v[1]])} for k, v in DATA.items()},
   'pack': os.path.basename(PACK),
+  'loader': 'v2b',
   'pack_sha256': hashlib.sha256(open(PACK, 'rb').read()).hexdigest()[:12],
 }
 
-t = open(os.path.join(HERE, 'loader_template_v2a.html'), encoding='utf-8').read()
+t = open(os.path.join(HERE, 'loader_template_v2b.html'), encoding='utf-8').read()
 import glob as _glob
 _dl = sorted(_glob.glob(os.path.join(HERE, '..', 'data-loader', 'DataLoader_v*.html')),
              key=lambda p: [int(x) if x.isdigit() else x for x in __import__('re').split(r'(\d+)', os.path.basename(p))])
@@ -307,7 +314,7 @@ dl = next(p for p in (os.path.join(HERE, '..', 'data-loader', 'dl_core_v2.js'), 
 parts = {
   '/*LOADERCORE*/': open(os.path.join(HERE, 'loader_core_v3.js'), encoding='utf-8').read(),
   '/*DLCORE*/': open(dl, encoding='utf-8').read(),
-  '/*PRIMEUSB*/': open(os.path.join(HERE, 'usb', 'prime_usb_v1.js'), encoding='utf-8').read(),
+  '/*PRIMEUSB*/': open(os.path.join(HERE, 'usb', 'prime_usb_v3.js'), encoding='utf-8').read(),
   '/*CATALOG*/': json.dumps(catalog, ensure_ascii=False),
   '/*PACK*/': json.dumps(base64.b64encode(emb).decode('ascii')),
 }
@@ -326,7 +333,7 @@ redirect = ('<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n
             '<link rel="canonical" href="' + SITE + 'prime-loader/' + page + '">\n'
             '<style>body{font:16px/1.5 system-ui,sans-serif;margin:2rem;color:#172033;background:#f6f8fb}'
             '@media (prefers-color-scheme:dark){body{color:#e8edf6;background:#0f1420}a{color:#7d9cff}}</style>\n'
-            '</head>\n<body>\n<!-- Written by build_loader_v2a.py: sends the browser on to the current Prime Loader, so the '
+            '</head>\n<body>\n<!-- Written by build_loader_v2b.py: sends the browser on to the current Prime Loader, so the '
             'address .../prime-loader/ never changes. -->\n'
             '<p>Opening the HP Prime Loader&hellip; If nothing happens, <a href="' + page + '">click here</a>.</p>\n'
             '</body>\n</html>\n')

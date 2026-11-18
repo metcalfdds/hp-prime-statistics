@@ -1,0 +1,535 @@
+PrimeUSBTest v2 (ladder v2), Tue Nov 17 2026 21:47:17 GMT-0600 (Central Standard Time)
+Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36
+Device: HP Prime G1 (USB 03F0:1541), "Prime Graphing Calculator"; reports of 64 bytes in and 64 out, by the calculator.
+Identify: firmware build 15751, "V0.050.640", version 01.
+
+---- test started 21:47:19 ----
+    0.0  Asking the calculator who it is (old framing, "00 FA") ...
+    0.0        . > message begins FA
+    0.0        . < message begins FA 01 00 00 00 6C
+    0.0        . < 1 more report of it, numbered 01
+    0.0  It answered: firmware build 15751, "V0.050.640"; 108 bytes of information, version 01. Its reports carry 63 bytes each.
+
+    0.0  C. THE OLD FRAMING, NOT COMPRESSED ("F7 01"). A few lines first; then a program of exactly 254 reports and one of exactly 255, the most there are before their numbers start again.
+    0.0    ZZUSBC: 300 characters (a few lines).
+    0.0        . > message begins F7 01 00 00 02 68 06 0C 75 B2 5A 00
+    0.3        . > 9 more reports of it, numbered 01-09
+    0.3      Sent 622 bytes in 10 reports, 0.00 s on the cable.
+    0.7        . > message begins F8 01 00 00 00 12 06 0E 07 00 5A 00
+    0.7        . < message begins F7 01 00 00 02 6A 06 0C 8C 6E 5A 00
+    0.7        . < 9 more reports of it, numbered 01-09
+    0.7      Asked for it back with F8 01, the name ending in a NUL: the same program came back (10 reports, not compressed, version 01; it began F7 01 00 00 02 6A 06 0C 8C 6E 5A 00).
+    1.0        . > message begins F8 03 00 00 00 12 06 0E C3 21 5A 00
+    1.0        . < message begins F7 01 00 00 02 6A 06 0C 8C 6E 5A 00
+    1.0        . < 9 more reports of it, numbered 01-09
+    1.0      Asked for it back with F8 03, the name ending in a NUL: the same program came back (10 reports, not compressed, version 01; it began F7 01 00 00 02 6A 06 0C 8C 6E 5A 00).
+    1.0    ZZUSBC: 7,990 characters (exactly 254 reports).
+    1.0        . > message begins F7 01 00 00 3E 7C 06 0C 68 BA 5A 00
+    1.3        . > 253 more reports of it, numbered 01-FD
+    1.3      Sent 16,002 bytes in 254 reports, 0.04 s on the cable.
+    1.8        . > message begins F8 01 00 00 00 12 06 0E 07 00 5A 00
+    1.8        . < message begins F7 01 00 00 3E 7E 06 0C F1 1B 5A 00
+    1.8        . < 253 more reports of it, numbered 01-FD
+    1.8        . < "SEND AGAIN": report 00, position 5,439,573, message 4390978
+    1.8      Read back the same: 255 reports, not compressed, version 01, 0.1 s.
+    1.8    ZZUSBC: 8,021 characters (exactly 255 reports).
+    1.8        . > message begins F7 01 00 00 3E BA 06 0C BE 66 5A 00
+    2.2        . > 254 more reports of it, numbered 01-FE
+    2.2      Sent 16,064 bytes in 255 reports, 0.04 s on the cable.
+    2.6        . > message begins F8 01 00 00 00 12 06 0E 07 00 5A 00
+    2.6        . < message begins F7 01 00 00 3E BC 06 0C 3B 64 5A 00
+    2.7        . < 254 more reports of it, numbered 01-FE
+    2.7        . < message begins 00 00 55 00 53 00 42 00 43 00 28 00
+    2.7      Read back the same: 256 reports, not compressed, version 01, numbered 00-FE,00, 0.1 s.
+
+    2.7  A. THE OLD FRAMING, COMPRESSED ("F7 03"). On 17 Nov neither calculator kept this, and both answered with version 01 where hp-prime-kit's G2, which did keep it, answered 03.
+    2.7    Telling the calculator that this page speaks version 03: "FD 01 00 00 00 01 03" (PrimeDev's bytes).
+    2.7        . > message begins FD 01 00 00 00 01 03
+    2.7        . < message begins FD 01 00 00 00 01 03 00 43 00 28 00
+    2.7      It answered: FD 01 00 00 00 01 03.
+    2.7        . > message begins FA
+    2.7        . < message begins FA 03 00 00 00 6C
+    2.7        . < 1 more report of it, numbered 01
+    2.7      Asked who it is: it answers with version 03, CHANGED from 01.
+    2.7    ZZUSBA: 300 characters (a few lines).
+    2.7        . > message begins F7 03 00 00 01 49 6A 02 00 00 78 9C
+    3.0        . > 5 more reports of it, numbered 01-05
+    3.0      Sent 335 bytes in 6 reports, 0.00 s on the cable.
+    3.4        . > message begins F8 03 00 00 00 12 06 0E C3 21 5A 00
+    4.6      Asked for it back with F8 03, the name ending in a NUL: no answer.
+    4.9        . > message begins F8 01 00 00 00 12 06 0E 07 00 5A 00
+    6.1      Asked for it back with F8 01, the name ending in a NUL: no answer.
+    6.4        . > message begins F8 03 00 00 00 10 06 0C 39 9A 5A 00
+    7.6      Asked for it back with F8 03, no NUL: no answer.
+    7.9        . > message begins F8 01 00 00 00 10 06 0C E0 D7 5A 00
+    9.1      Asked for it back with F8 01, no NUL: no answer.
+    9.1      hp-prime-kit sent a report "01" after each program. One is sent now, and the program asked for again.
+    9.5        . > 1 more report of it, numbered 01
+    9.5        . > message begins F8 03 00 00 00 12 06 0E C3 21 5A 00
+   10.7      Asked for it back with F8 03, the name ending in a NUL: no answer.
+   11.0        . > message begins F8 01 00 00 00 12 06 0E 07 00 5A 00
+   12.2      Asked for it back with F8 01, the name ending in a NUL: no answer.
+
+   28.5  The person at the calculator was asked whether ZZUSBA is in its list of programs: no, it is not there.
+
+   28.5  TAKING ZZUSBC, ZZUSBA OFF THE CALCULATOR AGAIN ("EB", in the old framing).
+   28.5        . > message begins FA
+   28.5        . < message begins FA 03 00 00 00 6C
+   28.5        . < 1 more report of it, numbered 01
+   28.5        . > message begins EB 03 00 00 00 10 06 0C 7E 51 5A 00
+   28.8        . > message begins F8 01 00 00 00 12 06 0E 07 00 5A 00
+   30.0    ZZUSBC: deleted (a request for it now has no answer).
+   30.0        . > message begins EB 03 00 00 00 10 06 0C 7E 51 5A 00
+   30.3        . > message begins EB 01 00 00 00 10 06 0C A7 1C 5A 00
+   30.6    ZZUSBA: a delete was sent. It was never read back, so the page cannot tell whether it was there.
+   30.6        . > message begins FA
+   30.7        . < message begins FA 03 00 00 00 6C
+   30.7        . < 1 more report of it, numbered 01
+
+   30.7  E and D. THE NEWER FRAMING ("FF EC 00 00 00 00 00 00"; PrimeDev; by hp-prime-emulator's reading, what the Connectivity Kit itself asks for).
+   30.7        . > a control report: FF EC 00 00 00 00 00 00
+   31.6    Asked for it. The calculator sent no answer of its own within 0.9 s.
+   31.6        . > message 1, 1 bytes, begins FA
+   31.6        . < acknowledgement: report 01, position 55, message 1
+   31.6        . < message 11, 114 bytes, begins FA 03 00 00 00 6C
+   31.6        . < 1 more report of it, numbered 02
+   31.6        . > acknowledgement: report 02, position 118, message 11
+   31.6    Asked who it is, in the newer framing: it answers with version 03.
+   31.6    E, not compressed:
+   31.6    ZZUSBE: 300 characters (a few lines).
+   31.6        . > message 2, 622 bytes, begins F7 01 00 00 02 68 06 0C F7 37 5A 00
+   31.6        . > 9 more reports of it, numbered 02-0A
+   31.6        . < acknowledgement: report 0A, position 622, message 2
+   31.6      Sent 622 bytes in 10 reports, 0.01 s on the cable. Acknowledged 1 time: report 0A position 622 (10 sent, 0.0 s).
+   32.0        . > message 3, 24 bytes, begins F8 03 00 00 00 12 06 0E C3 21 5A 00
+   32.0        . < acknowledgement: report 01, position 55, message 3
+   32.0        . < message 12, 339 bytes, begins F7 03 00 00 01 4D 6A 02 00 00 78 01
+   32.0        . < 5 more reports of it, numbered 02-06
+   32.0        . > acknowledgement: report 06, position 370, message 12
+   32.0      Asked for it back with F8 03, the name ending in a NUL: the same program came back (6 reports, compressed, version 03; it began F7 03 00 00 01 4D 6A 02 00 00 78 01).
+   32.3        . > message 4, 24 bytes, begins F8 01 00 00 00 12 06 0E 07 00 5A 00
+   32.3        . < acknowledgement: report 01, position 55, message 4
+   32.3        . < message 13, 339 bytes, begins F7 03 00 00 01 4D 6A 02 00 00 78 01
+   32.3        . < 5 more reports of it, numbered 02-06
+   32.3        . > acknowledgement: report 06, position 370, message 13
+   32.3      Asked for it back with F8 01, the name ending in a NUL: the same program came back (6 reports, compressed, version 03; it began F7 03 00 00 01 4D 6A 02 00 00 78 01).
+   32.3    D, compressed:
+   32.3    ZZUSBD: 300 characters (a few lines).
+   32.3        . > message 5, 328 bytes, begins F7 03 00 00 01 42 6A 02 00 00 78 9C
+   32.3        . > 5 more reports of it, numbered 02-06
+   32.3        . < acknowledgement: report 06, position 370, message 5
+   32.3      Sent 328 bytes in 6 reports, 0.01 s on the cable. Acknowledged 1 time: report 06 position 370 (6 sent, 0.0 s).
+   32.7        . > message 6, 24 bytes, begins F8 03 00 00 00 12 06 0E C3 21 5A 00
+   32.7        . < acknowledgement: report 01, position 55, message 6
+   33.3        . < acknowledgement: report FF, position 55, message 6
+   33.9      Asked for it back with F8 03, the name ending in a NUL: no answer.
+   34.2        . > message 7, 24 bytes, begins F8 01 00 00 00 12 06 0E 07 00 5A 00
+   34.2        . < acknowledgement: report 01, position 55, message 7
+   35.3        . < acknowledgement: report FF, position 55, message 7
+   35.4      Asked for it back with F8 01, the name ending in a NUL: no answer.
+   35.7        . > message 8, 22 bytes, begins F8 03 00 00 00 10 06 0C 39 9A 5A 00
+   35.7        . < acknowledgement: report 01, position 55, message 8
+   36.3        . < acknowledgement: report FF, position 55, message 8
+   36.9      Asked for it back with F8 03, no NUL: no answer.
+   37.1        . > message 9, 22 bytes, begins F8 01 00 00 00 10 06 0C E0 D7 5A 00
+   37.2        . < acknowledgement: report 01, position 55, message 9
+   38.4        . < acknowledgement: report FF, position 55, message 9
+   38.4      Asked for it back with F8 01, no NUL: no answer.
+   38.4    The compressed program was not kept, so the sizes are tried not compressed.
+   38.4    ZZUSBE: 8,269 characters (the largest program hp-prime-kit sent).
+   38.4        . > message 10, 16,560 bytes, begins F7 01 00 00 40 AA 06 0C 25 2B 5A 00
+   39.1        . > 78 more reports of it, numbered 02-4F, over 0.7 s
+   39.1        . < acknowledgement: report 4E, position 4,843, message 10
+   39.8        . > 80 more reports of it, numbered 50-9F, over 0.7 s
+   39.8        . < acknowledgement: report 9B, position 9,694, message 10
+   40.4        . > 71 more reports of it, numbered A0-E6
+   40.4        . < acknowledgement: report E7, position 14,482, message 10
+   40.4        . > 4 more reports of it, numbered E7-EA
+   40.4        . < acknowledgement: report E8, position 14,545, message 10
+   40.4        . > 29 more reports of it, numbered EB-FD,02-0B
+   40.4        . < acknowledgement: report 0B, position 16,561, message 10
+   40.4      Sent 16,560 bytes in 263 reports, 2.03 s on the cable. Acknowledged 5 times: report 4E position 4,843 (79 sent, 0.7 s); report 9B position 9,694 (159 sent, 1.4 s); report E7 position 14,482 (230 sent, 2.0 s); report E8 position 14,545 (234 sent, 2.0 s); report 0B position 16,561 (263 sent, 2.0 s). The page stood at its window of 76 reports 1 time until an acknowledgement came. 2 times none came while the page waited at its window (0.7 s the first three times, 0.05 s after that), and it went on.
+   40.8        . > message 11, 24 bytes, begins F8 03 00 00 00 12 06 0E C3 21 5A 00
+   40.8        . < acknowledgement: report 01, position 55, message 11
+   40.9        . < message 14, 4,656 bytes, begins F7 03 00 00 12 2A AC 40 00 00 78 01
+   40.9        . < 74 more reports of it, numbered 02-4B
+   40.9        . > acknowledgement: report 4B, position 4,717, message 14
+   40.9      Read back the same: 75 reports, compressed, version 03, 0.1 s.
+   40.9    ZZUSBE: 40,856 characters (DataLoad, our smallest program).
+   40.9        . > message 12, 81,734 bytes, begins F7 01 00 01 3F 40 06 0C E2 B3 5A 00
+   41.6        . > 80 more reports of it, numbered 02-51, over 0.7 s
+   41.6        . < acknowledgement: report 4E, position 4,843, message 12
+   42.3        . > 77 more reports of it, numbered 52-9E, over 0.7 s
+   42.3        . < acknowledgement: report 9B, position 9,694, message 12
+   42.9        . > 72 more reports of it, numbered 9F-E6
+   42.9        . < acknowledgement: report E7, position 14,482, message 12
+   42.9        . > 6 more reports of it, numbered E7-EC
+   42.9        . < acknowledgement: report E8, position 14,545, message 12
+   43.6        . > 74 more reports of it, numbered ED-FD,02-3A, over 0.7 s
+   43.6        . < acknowledgement: report 39, position 19,396, message 12
+   44.3        . > 76 more reports of it, numbered 3B-86, over 0.7 s
+   44.3        . < acknowledgement: report 86, position 24,247, message 12
+   44.9        . > 75 more reports of it, numbered 87-D1
+   44.9        . < acknowledgement: report D2, position 29,035, message 12
+   44.9        . > 3 more reports of it, numbered D2-D4
+   44.9        . < acknowledgement: report D3, position 29,098, message 12
+   45.6        . > 77 more reports of it, numbered D5-FD,02-25, over 0.7 s
+   45.6        . < acknowledgement: report 24, position 33,949, message 12
+   46.3        . > 77 more reports of it, numbered 26-72, over 0.7 s
+   46.3        . < acknowledgement: report 71, position 38,800, message 12
+   46.9        . > 74 more reports of it, numbered 73-BC
+   46.9        . < acknowledgement: report BD, position 43,588, message 12
+   46.9        . > 2 more reports of it, numbered BD-BE
+   46.9        . < acknowledgement: report BE, position 43,651, message 12
+   47.6        . > 80 more reports of it, numbered BF-FD,02-12, over 0.7 s
+   47.6        . < acknowledgement: report 0F, position 48,502, message 12
+   48.3        . > 77 more reports of it, numbered 13-5F, over 0.7 s
+   48.3        . < acknowledgement: report 5C, position 53,353, message 12
+   48.9        . > 72 more reports of it, numbered 60-A7
+   48.9        . < acknowledgement: report A8, position 58,141, message 12
+   49.0        . > 7 more reports of it, numbered A8-AE
+   49.0        . < acknowledgement: report A9, position 58,204, message 12
+   49.6        . > 74 more reports of it, numbered AF-F8, over 0.7 s
+   49.6        . < acknowledgement: report F6, position 63,055, message 12
+   50.3        . > 75 more reports of it, numbered F9-FD,02-47, over 0.7 s
+   50.3        . < acknowledgement: report 47, position 67,906, message 12
+   51.0        . > 75 more reports of it, numbered 48-92
+   51.0        . < acknowledgement: report 93, position 72,694, message 12
+   51.0        . > 3 more reports of it, numbered 93-95
+   51.0        . < acknowledgement: report 94, position 72,757, message 12
+   51.6        . > 78 more reports of it, numbered 96-E3, over 0.7 s
+   51.6        . < acknowledgement: report E1, position 77,608, message 12
+   51.7        . > 63 more reports of it, numbered E4-FD,02-26
+   51.7        . < acknowledgement: report 26, position 81,766, message 12
+   51.7      Sent 81,734 bytes in 1,298 reports, 10.78 s on the cable. Acknowledged 22 times: report 4E position 4,843 (81 sent, 0.7 s); report 9B position 9,694 (158 sent, 1.4 s); report E7 position 14,482 (230 sent, 2.0 s); report E8 position 14,545 (236 sent, 2.0 s); ...; report 26 position 81,766 (1,298 sent, 11 s). The page stood at its window of 76 reports 5 times until an acknowledgement came. 11 times none came while the page waited at its window (0.7 s the first three times, 0.05 s after that), and it went on.
+   52.1        . > message 13, 24 bytes, begins F8 03 00 00 00 12 06 0E C3 21 5A 00
+   52.1        . < acknowledgement: report 01, position 55, message 13
+   52.5        . < message 15, 19,731 bytes, begins F7 03 00 00 4D 0D 42 3F 01 00 78 01
+   52.6        . < 240 more reports of it, numbered 02-F1
+   52.6        . < acknowledgement: report FF, position 55, message 13
+   52.8        . > acknowledgement: report F1, position 15,175, message 15
+   52.9        . < 73 more reports of it, numbered F2-FD,02-3E
+   52.9        . > acknowledgement: report 3E, position 19,774, message 15
+   52.9      Read back the same: 314 reports, compressed, version 03; the calculator stood until it was acknowledged after 241 reports, 0.8 s.
+   52.9    ZZUSBE: 140,000 characters (a program of middle size).
+   52.9        . > message 14, 280,022 bytes, begins F7 01 00 04 45 D0 06 0C 25 29 5A 00
+   53.6        . > 84 more reports of it, numbered 02-55, over 0.7 s
+   53.6        . < acknowledgement: report 4E, position 4,843, message 14
+   54.2        . > 73 more reports of it, numbered 56-9E, over 0.7 s
+   54.3        . < acknowledgement: report 9B, position 9,694, message 14
+   54.9        . > 72 more reports of it, numbered 9F-E6
+   54.9        . < acknowledgement: report E7, position 14,482, message 14
+   54.9        . > 3 more reports of it, numbered E7-E9
+   54.9        . < acknowledgement: report E8, position 14,545, message 14
+   55.6        . > 80 more reports of it, numbered EA-FD,02-3D, over 0.7 s
+   55.6        . < acknowledgement: report 39, position 19,396, message 14
+   56.3        . > 73 more reports of it, numbered 3E-86, over 0.7 s
+   56.3        . < acknowledgement: report 86, position 24,247, message 14
+   56.9        . > 75 more reports of it, numbered 87-D1
+   56.9        . < acknowledgement: report D2, position 29,035, message 14
+   56.9        . > 4 more reports of it, numbered D2-D5
+   56.9        . < acknowledgement: report D3, position 29,098, message 14
+   57.6        . > 78 more reports of it, numbered D6-FD,02-27, over 0.7 s
+   57.6        . < acknowledgement: report 24, position 33,949, message 14
+   58.3        . > 76 more reports of it, numbered 28-73, over 0.7 s
+   58.3        . < acknowledgement: report 71, position 38,800, message 14
+   58.9        . > 73 more reports of it, numbered 74-BC
+   58.9        . < acknowledgement: report BD, position 43,588, message 14
+   58.9        . > 3 more reports of it, numbered BD-BF
+   58.9        . < acknowledgement: report BE, position 43,651, message 14
+   59.6        . > 76 more reports of it, numbered C0-FD,02-0F, over 0.7 s
+   59.6        . < acknowledgement: report 0F, position 48,502, message 14
+   60.3        . > 81 more reports of it, numbered 10-60, over 0.7 s
+   60.3        . < acknowledgement: report 5C, position 53,353, message 14
+   60.9        . > 71 more reports of it, numbered 61-A7
+   60.9        . < acknowledgement: report A8, position 58,141, message 14
+   60.9        . > 2 more reports of it, numbered A8-A9
+   60.9        . < acknowledgement: report A9, position 58,204, message 14
+   61.6        . > 79 more reports of it, numbered AA-F8, over 0.7 s
+   61.6        . < acknowledgement: report F6, position 63,055, message 14
+   62.3        . > 77 more reports of it, numbered F9-FD,02-49, over 0.7 s
+   62.3        . < acknowledgement: report 47, position 67,906, message 14
+   62.9        . > 73 more reports of it, numbered 4A-92
+   63.0        . < acknowledgement: report 93, position 72,694, message 14
+   63.0        . > 2 more reports of it, numbered 93-94
+   63.0        . < acknowledgement: report 94, position 72,757, message 14
+   63.6        . > 81 more reports of it, numbered 95-E5, over 0.7 s
+   63.6        . < acknowledgement: report E1, position 77,608, message 14
+   64.3        . > 75 more reports of it, numbered E6-FD,02-34, over 0.7 s
+   64.3        . < acknowledgement: report 32, position 82,459, message 14
+   65.0        . > 73 more reports of it, numbered 35-7D
+   65.0        . < acknowledgement: report 7E, position 87,247, message 14
+   65.0        . > 20 more reports of it, numbered 7E-91
+   65.0        . < acknowledgement: report 7F, position 87,310, message 14
+   65.7        . > 60 more reports of it, numbered 92-CD, over 0.7 s
+   65.7        . < acknowledgement: report CC, position 92,161, message 14
+   66.3        . > 79 more reports of it, numbered CE-FD,02-20, over 0.7 s
+   66.3        . < acknowledgement: report 1D, position 97,012, message 14
+   67.0        . > 72 more reports of it, numbered 21-68
+   67.0        . < acknowledgement: report 69, position 101,800, message 14
+   67.0        . > 9 more reports of it, numbered 69-71
+   67.0        . < acknowledgement: report 6A, position 101,863, message 14
+   67.7        . > 71 more reports of it, numbered 72-B8, over 0.7 s
+   67.7        . < acknowledgement: report B7, position 106,714, message 14
+   68.4        . > 77 more reports of it, numbered B9-FD,02-09, over 0.7 s
+   91.2        . (95 more lines of this kind were left out)
+   91.2      Sent 280,022 bytes in 4,445 reports, 38.28 s on the cable. Acknowledged 77 times: report 4E position 4,843 (85 sent, 0.7 s); report 9B position 9,694 (158 sent, 1.4 s); report E7 position 14,482 (230 sent, 2.0 s); report E8 position 14,545 (233 sent, 2.0 s); ...; report A1 position 280,027 (4,445 sent, 38 s). The page stood at its window of 76 reports 19 times until an acknowledgement came. 38 times none came while the page waited at its window (0.7 s the first three times, 0.05 s after that), and it went on.
+   91.6        . > message 15, 24 bytes, begins F8 03 00 00 00 12 06 0E C3 21 5A 00
+   91.6        . < acknowledgement: report 01, position 55, message 15
+   92.2        . < acknowledgement: report FF, position 55, message 15
+   93.1        . < acknowledgement: report FF, position 55, message 15
+   93.1        . < message 16, 64,625 bytes, begins F7 03 00 00 FC 6B D2 45 04 00 78 01
+   93.1        . < 240 more reports of it, numbered 02-F1
+   93.1        . > acknowledgement: report F1, position 15,175, message 16
+   93.5        . < 240 more reports of it, numbered F2-FD,02-E5
+   93.5        . > acknowledgement: report E5, position 30,295, message 16
+   93.6        . < 115 more reports of it, numbered E6-FD,02-5C
+   93.6        . < acknowledgement: report FF, position 55, message 15
+   93.6        . < 125 more reports of it, numbered 5D-D9
+   93.6        . > acknowledgement: report D9, position 45,415, message 16
+   93.7        . < 240 more reports of it, numbered DA-FD,02-CD
+   93.7        . > acknowledgement: report CD, position 60,535, message 16
+   93.7        . < 65 more reports of it, numbered CE-FD,02-12
+   93.7        . > acknowledgement: report 12, position 64,630, message 16
+   93.7      Read back the same: 1,026 reports, compressed, version 03; the calculator stood until it was acknowledged after 481 reports, 2.1 s.
+   93.7    ZZUSBE: 289,813 characters (EpiStats, our largest program).
+   93.7        . > message 16, 579,648 bytes, begins F7 01 00 08 D8 3A 06 0C AA 0B 5A 00
+   94.4        . > 77 more reports of it, numbered 02-4E, over 0.7 s
+   94.4        . < acknowledgement: report 4E, position 4,843, message 16
+   95.1        . > 78 more reports of it, numbered 4F-9C, over 0.7 s
+   95.1        . < acknowledgement: report 9B, position 9,694, message 16
+   95.7        . > 74 more reports of it, numbered 9D-E6
+   95.7        . < acknowledgement: report E7, position 14,482, message 16
+   95.7        . > 8 more reports of it, numbered E7-EE
+   95.7        . < acknowledgement: report E8, position 14,545, message 16
+   96.4        . > 73 more reports of it, numbered EF-FD,02-3B, over 0.7 s
+   96.4        . < acknowledgement: report 39, position 19,396, message 16
+   97.1        . > 76 more reports of it, numbered 3C-87, over 0.7 s
+   97.1        . < acknowledgement: report 86, position 24,247, message 16
+   97.7        . > 74 more reports of it, numbered 88-D1
+   97.7        . < acknowledgement: report D2, position 29,035, message 16
+   97.7        . > 3 more reports of it, numbered D2-D4
+   97.7        . < acknowledgement: report D3, position 29,098, message 16
+   98.4        . > 78 more reports of it, numbered D5-FD,02-26, over 0.7 s
+   98.4        . < acknowledgement: report 24, position 33,949, message 16
+   99.1        . > 78 more reports of it, numbered 27-74, over 0.7 s
+   99.1        . < acknowledgement: report 71, position 38,800, message 16
+   99.7        . > 72 more reports of it, numbered 75-BC
+   99.7        . < acknowledgement: report BD, position 43,588, message 16
+   99.8        . > 2 more reports of it, numbered BD-BE
+   99.8        . < acknowledgement: report BE, position 43,651, message 16
+  100.4        . > 78 more reports of it, numbered BF-FD,02-10, over 0.7 s
+  100.4        . < acknowledgement: report 0F, position 48,502, message 16
+  101.1        . > 79 more reports of it, numbered 11-5F, over 0.7 s
+  101.1        . < acknowledgement: report 5C, position 53,353, message 16
+  101.8        . > 72 more reports of it, numbered 60-A7
+  101.8        . < acknowledgement: report A8, position 58,141, message 16
+  101.8        . > 9 more reports of it, numbered A8-B0
+  101.8        . < acknowledgement: report A9, position 58,204, message 16
+  102.4        . > 72 more reports of it, numbered B1-F8, over 0.7 s
+  102.5        . < acknowledgement: report F6, position 63,055, message 16
+  103.1        . > 78 more reports of it, numbered F9-FD,02-4A, over 0.7 s
+  103.1        . < acknowledgement: report 47, position 67,906, message 16
+  103.8        . > 72 more reports of it, numbered 4B-92
+  103.8        . < acknowledgement: report 93, position 72,694, message 16
+  103.8        . > 4 more reports of it, numbered 93-96
+  103.8        . < acknowledgement: report 94, position 72,757, message 16
+  104.5        . > 76 more reports of it, numbered 97-E2, over 0.7 s
+  104.5        . < acknowledgement: report E1, position 77,608, message 16
+  105.1        . > 81 more reports of it, numbered E3-FD,02-37, over 0.7 s
+  105.1        . < acknowledgement: report 32, position 82,459, message 16
+  105.8        . > 70 more reports of it, numbered 38-7D
+  105.8        . < acknowledgement: report 7E, position 87,247, message 16
+  105.8        . > 2 more reports of it, numbered 7E-7F
+  105.8        . < acknowledgement: report 7F, position 87,310, message 16
+  106.5        . > 83 more reports of it, numbered 80-D2, over 0.7 s
+  106.5        . < acknowledgement: report CC, position 92,161, message 16
+  107.2        . > 72 more reports of it, numbered D3-FD,02-1E, over 0.7 s
+  107.2        . < acknowledgement: report 1D, position 97,012, message 16
+  107.8        . > 74 more reports of it, numbered 1F-68
+  107.8        . < acknowledgement: report 69, position 101,800, message 16
+  107.8        . > 2 more reports of it, numbered 69-6A
+  107.8        . < acknowledgement: report 6A, position 101,863, message 16
+  108.5        . > 80 more reports of it, numbered 6B-BA, over 0.7 s
+  108.5        . < acknowledgement: report B7, position 106,714, message 16
+  109.2        . > 82 more reports of it, numbered BB-FD,02-10, over 0.7 s
+  173.6        . (259 more lines of this kind were left out)
+  173.6      Sent 579,648 bytes in 9,201 reports, 79.89 s on the cable. Acknowledged 159 times: report 4E position 4,843 (78 sent, 0.7 s); report 9B position 9,694 (156 sent, 1.4 s); report E7 position 14,482 (230 sent, 2.0 s); report E8 position 14,545 (238 sent, 2.0 s); ...; report 81 position 579,655 (9,201 sent, 80 s). The page stood at its window of 76 reports 39 times until an acknowledgement came. 80 times none came while the page waited at its window (0.7 s the first three times, 0.05 s after that), and it went on.
+  174.0        . > message 17, 24 bytes, begins F8 03 00 00 00 12 06 0E C3 21 5A 00
+  174.1        . < acknowledgement: report 01, position 55, message 17
+  175.3        . < acknowledgement: report FF, position 55, message 17
+  176.3        . < acknowledgement: report FF, position 55, message 17
+  177.1        try 1 of 4: no answer.
+  177.2        . < acknowledgement: report FF, position 55, message 17
+  177.2        . < message 17, 132,431 bytes, begins F7 03 00 02 05 49 3C D8 08 00 78 01
+  177.2        . < 239 more reports of it, numbered 02-F0
+  177.2        . > acknowledgement: report F0, position 15,112, message 17
+  177.3        . < 240 more reports of it, numbered F1-FD,02-E4, over 0.1 s
+  177.3        . > acknowledgement: report E4, position 30,232, message 17
+  177.4        . < 240 more reports of it, numbered E5-FD,02-D8
+  177.4        . > acknowledgement: report D8, position 45,352, message 17
+  177.5        . < 240 more reports of it, numbered D9-FD,02-CC
+  177.5        . > acknowledgement: report CC, position 60,472, message 17
+  177.5        . < 240 more reports of it, numbered CD-FD,02-C0
+  177.5        . > acknowledgement: report C0, position 75,592, message 17
+  177.6        . < 240 more reports of it, numbered C1-FD,02-B4
+  177.6        . > acknowledgement: report B4, position 90,712, message 17
+  177.7        . < 159 more reports of it, numbered B5-FD,02-57
+  177.7        . < acknowledgement: report FF, position 55, message 17
+  177.7        . < 81 more reports of it, numbered 58-A8
+  177.7        . > acknowledgement: report A8, position 105,832, message 17
+  177.7        . < 240 more reports of it, numbered A9-FD,02-9C
+  177.8        . > acknowledgement: report 9C, position 120,952, message 17
+  177.8        . < 183 more reports of it, numbered 9D-FD,02-57
+  177.8        . > acknowledgement: report 57, position 132,481, message 17
+  178.6        . > message 18, 24 bytes, begins F8 03 00 00 00 12 06 0E C3 21 5A 00
+  178.6        . < acknowledgement: report 01, position 55, message 18
+  179.8        . < acknowledgement: report FF, position 55, message 18
+  180.8        . < acknowledgement: report FF, position 55, message 18
+  181.6        try 2 of 4: no answer.
+  181.6        . < acknowledgement: report FF, position 55, message 18
+  181.7        . < message 18, 132,431 bytes, begins F7 03 00 02 05 49 3C D8 08 00 78 01
+  181.7        . < 239 more reports of it, numbered 02-F0
+  181.7        . > acknowledgement: report F0, position 15,112, message 18
+  181.8        . < 240 more reports of it, numbered F1-FD,02-E4
+  181.8        . > acknowledgement: report E4, position 30,232, message 18
+  181.9        . < 240 more reports of it, numbered E5-FD,02-D8
+  181.9        . > acknowledgement: report D8, position 45,352, message 18
+  181.9        . < 240 more reports of it, numbered D9-FD,02-CC
+  182.0        . > acknowledgement: report CC, position 60,472, message 18
+  182.0        . < 240 more reports of it, numbered CD-FD,02-C0
+  182.0        . > acknowledgement: report C0, position 75,592, message 18
+  182.1        . < 240 more reports of it, numbered C1-FD,02-B4
+  182.1        . > acknowledgement: report B4, position 90,712, message 18
+  182.1        . < 181 more reports of it, numbered B5-FD,02-6D
+  182.1        . < acknowledgement: report FF, position 55, message 18
+  182.2        . < 59 more reports of it, numbered 6E-A8
+  182.2        . > acknowledgement: report A8, position 105,832, message 18
+  182.2        . < 240 more reports of it, numbered A9-FD,02-9C
+  182.2        . > acknowledgement: report 9C, position 120,952, message 18
+  182.3        . < 183 more reports of it, numbered 9D-FD,02-57
+  182.3        . > acknowledgement: report 57, position 132,481, message 18
+  183.1        . > message 19, 24 bytes, begins F8 03 00 00 00 12 06 0E C3 21 5A 00
+  183.1        . < acknowledgement: report 01, position 55, message 19
+  184.3        . < acknowledgement: report FF, position 55, message 19
+  185.3        . < acknowledgement: report FF, position 55, message 19
+  186.1        try 3 of 4: no answer.
+  186.2        . < acknowledgement: report FF, position 55, message 19
+  186.2        . < message 19, 132,431 bytes, begins F7 03 00 02 05 49 3C D8 08 00 78 01
+  186.2        . < 239 more reports of it, numbered 02-F0
+  186.2        . > acknowledgement: report F0, position 15,112, message 19
+  186.3        . < 240 more reports of it, numbered F1-FD,02-E4
+  186.3        . > acknowledgement: report E4, position 30,232, message 19
+  186.4        . < 240 more reports of it, numbered E5-FD,02-D8
+  186.4        . > acknowledgement: report D8, position 45,352, message 19
+  186.5        . < 240 more reports of it, numbered D9-FD,02-CC
+  186.5        . > acknowledgement: report CC, position 60,472, message 19
+  186.6        . < 240 more reports of it, numbered CD-FD,02-C0
+  186.6        . > acknowledgement: report C0, position 75,592, message 19
+  186.6        . < 240 more reports of it, numbered C1-FD,02-B4
+  186.6        . > acknowledgement: report B4, position 90,712, message 19
+  186.7        . < 176 more reports of it, numbered B5-FD,02-68
+  186.7        . < acknowledgement: report FF, position 55, message 19
+  186.7        . < 64 more reports of it, numbered 69-A8
+  186.7        . > acknowledgement: report A8, position 105,832, message 19
+  186.8        . < 240 more reports of it, numbered A9-FD,02-9C
+  186.8        . > acknowledgement: report 9C, position 120,952, message 19
+  186.8        . < 183 more reports of it, numbered 9D-FD,02-57
+  186.8        . > acknowledgement: report 57, position 132,481, message 19
+  187.7        . > message 20, 24 bytes, begins F8 03 00 00 00 12 06 0E C3 21 5A 00
+  187.7        . < acknowledgement: report 01, position 55, message 20
+  188.8        . < acknowledgement: report FF, position 55, message 20
+  189.9        . < acknowledgement: report FF, position 55, message 20
+  190.7        try 4 of 4: no answer.
+  190.7      NOT THE SAME: no answer.
+  190.7        . > message 21, 1 bytes, begins FA
+  190.7        . < acknowledgement: report 01, position 55, message 21
+  190.7        . < message 20, 114 bytes, begins FA 03 00 00 00 6C
+  190.7        . < 1 more report of it, numbered 02
+  190.7        . > acknowledgement: report 02, position 118, message 20
+  207.3  The person at the calculator was asked whether ZZUSBD is in its list of programs: no, it is not there.
+
+  207.3  TAKING ZZUSBE, ZZUSBD OFF THE CALCULATOR AGAIN ("EB", in the newer framing).
+  207.3        . < message 21, 132,431 bytes, begins F7 03 00 02 05 49 3C D8 08 00 78 01
+  207.3        . < 240 more reports of it, numbered 02-F1
+  207.3        . < acknowledgement: report FF, position 55, message 21
+  207.3        . < acknowledgement: report FF, position 55, message 21
+  207.3        . < acknowledgement: report FF, position 55, message 21
+  207.3        . < ... and 30 more of that kind; the last: acknowledgement: report FF, position 55, message 21
+  207.3        . > message 22, 1 bytes, begins FA
+  207.3        . < acknowledgement: report 01, position 55, message 22
+  207.8        . < acknowledgement: report FF, position 55, message 22
+  208.3        . < acknowledgement: report FF, position 55, message 22
+  210.3        . < ... and 3 more of that kind, over 2.5 s; the last: acknowledgement: report FF, position 55, message 22
+  210.4    The calculator does not answer, so its programs cannot be taken off, or checked.
+
+  210.4        . > message begins FA
+  210.4        . < acknowledgement: report FF, position 55, message 22
+  210.4        . < 13 more reports of it, numbered F2-FE
+  210.4        . < message begins 58 D6 71 BA CF DF CE B0 2E 83 E3 EB
+  210.4        . < 254 more reports of it, numbered 01-FE
+  210.4        . < message begins C5 E2 18 E3 79 9E B6 71 98 11 2B FA
+  210.5        . < 254 more reports of it, numbered 01-FE
+  210.5        . < message begins 75 C9 7C 05 95 0D DF EF BA 64 1D B2
+  210.6        . < 254 more reports of it, numbered 01-FE
+  210.6        . < message begins A5 91 C7 F2 18 74 A7 72 56 45 36 1C
+  210.6        . < 254 more reports of it, numbered 01-FE
+  210.6        . < message begins 46 EF 2A 9C B6 95 1A 7B 28 07 E7 B8
+  210.7        . < 254 more reports of it, numbered 01-FE
+  210.7        . < message begins C5 6F 94 11 3D CC 82 D2 39 21 B1 5E
+  210.8        . < 254 more reports of it, numbered 01-FE
+  210.8        . < message begins 67 F0 69 AE A1 78 93 B1 18 7A 1E DC
+  210.8        . < 254 more reports of it, numbered 01-FE
+  210.8        . < message begins BB D7 3D F3 E5 B7 E5 1E 64 DE 8F 60
+  210.8        . < 63 more reports of it, numbered 01-3F
+  210.8        . < message begins FA 03 00 00 00 6C
+  210.8        . < 1 more report of it, numbered 01
+  210.9  AFTER THE NEWER FRAMING, the old one was asked "00 FA" again: answered, with version 03.
+
+  210.9  A AGAIN, the old framing, compressed, now that the calculator speaks version 03.
+  210.9    ZZUSBA: 300 characters (a few lines).
+  210.9        . < message begins FA 03 00 00 00 6C
+  210.9        . < 1 more report of it, numbered 01
+  210.9        . > message begins F7 03 00 00 01 49 6A 02 00 00 78 9C
+  211.2        . > 5 more reports of it, numbered 01-05
+  211.2      Sent 335 bytes in 6 reports, 0.01 s on the cable.
+  211.6        . > message begins F8 03 00 00 00 12 06 0E C3 21 5A 00
+  212.8      Asked for it back with F8 03, the name ending in a NUL: no answer.
+  213.1        . > message begins F8 01 00 00 00 12 06 0E 07 00 5A 00
+  214.3      Asked for it back with F8 01, the name ending in a NUL: no answer.
+  214.3      hp-prime-kit sent a report "01" after each program. One is sent now, and the program asked for again.
+  214.7        . > 1 more report of it, numbered 01
+  214.7        . > message begins F8 03 00 00 00 12 06 0E C3 21 5A 00
+  215.9      Asked for it back with F8 03, the name ending in a NUL: no answer.
+  216.2        . > message begins F8 01 00 00 00 12 06 0E 07 00 5A 00
+  217.4      Asked for it back with F8 01, the name ending in a NUL: no answer.
+
+  217.4  TAKING ZZUSBA, ZZUSBE, ZZUSBD OFF THE CALCULATOR AGAIN ("EB", in the old framing).
+  217.4        . > message begins FA
+  217.4        . < message begins FA 03 00 00 00 6C
+  217.4        . < 1 more report of it, numbered 01
+  217.4        . > message begins EB 03 00 00 00 10 06 0C 7E 51 5A 00
+  217.7        . > message begins EB 01 00 00 00 10 06 0C A7 1C 5A 00
+  218.1    ZZUSBA: a delete was sent. It was never read back, so the page cannot tell whether it was there.
+  218.1        . > message begins EB 03 00 00 00 10 06 0C 7E 51 5A 00
+  218.4        . > message begins F8 03 00 00 00 12 06 0E C3 21 5A 00
+  219.6    ZZUSBE: deleted (a request for it now has no answer).
+  219.6        . > message begins EB 03 00 00 00 10 06 0C 7E 51 5A 00
+  219.9        . > message begins EB 01 00 00 00 10 06 0C A7 1C 5A 00
+  220.2    ZZUSBD: a delete was sent. It was never read back, so the page cannot tell whether it was there.
+  220.2        . > message begins FA
+  220.2        . < message begins FA 03 00 00 00 6C
+  220.3        . < 1 more report of it, numbered 01
+
+  220.3  RESULT
+  220.3    The largest program that went to this calculator and came back the same: 140,000 characters (newer framing, not compressed, 4,445 reports). The book's largest is 289,813.
+  220.3    
+  220.3    C. Old framing, not compressed: came back the same at 300, 7,990, 8,021 characters (the last in 255 reports).
+  220.3    A. Old framing, compressed: NOT kept: sent, and no request brought it back. The person did not find ZZUSBA in the calculator's list.
+  220.3    E. Newer framing, not compressed: came back the same at 300, 8,269, 40,856, 140,000 characters (the last in 4,445 reports); NOT at 289,813 characters (9,201 reports): no answer.
+  220.3    D. Newer framing, compressed: NOT kept: sent, and no request brought it back. The person did not find ZZUSBD in the calculator's list.
+  220.3    
+  220.3    It answered with version 01 at the start. Told "FD" (long form, old framing): it answered FD 01 00 00 00 01 03, and then spoke version 03.
+  220.3    The newer framing: on being asked, it sent nothing of its own. Afterwards the old framing was still answered.
+  220.3    STILL ON THE CALCULATOR, or not known to be off it: ZZUSBD. Each is comment lines and one small function; to delete one, press Shift, then Program, tap its name, tap More, then Delete.
+---- test ended 21:50:59; reports sent 15845, received 10735 ----

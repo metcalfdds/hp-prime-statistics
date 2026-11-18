@@ -1,7 +1,9 @@
-// test_loader_v2a.js -- drives PrimeLoader_v2a.html in Chromium against a mock Virtual Calculator folder, and its
-// switched-off USB route against a pretend calculator.
-// Roger Metcalf & Claude, 17 Nov 2026, night.   node tests/test_loader_v2a.js PrimeLoader_v2a.html PACK.zip
+// test_loader_v2b.js -- drives PrimeLoader_v2b.html in Chromium against a mock Virtual Calculator folder, and its
+// cable route (shown only at ?usb=1) against a pretend calculator that does what two real ones did on 17 Nov 2026.
+// Roger Metcalf & Claude, 17 Nov 2026, late.   node tests/test_loader_v2b.js PrimeLoader_v2b.html PACK.zip
 //
+// v2b is v2a with the cable route written again (usb/prime_usb_v3.js, usb/tests/mock_prime_v3.js): parts 1 to 12
+// are v2a's test, with the page's new names; part 13 is new.  NOTHING HERE TOUCHES A CALCULATOR.
 // v2a is a new page (two questions and one button), so this is a new test, on the scaffolding of test_loader_v1v.js:
 // the browser's folder picker is replaced by one that returns a folder in the browser's private file system (OPFS),
 // seeded to look like Documents\HP Prime on a PC that has run the Virtual Calculator (Calculators\Prime with HP's
@@ -20,8 +22,11 @@
 //   - a calculator that is open is not written to; the wrong folder, a cancelled picker, a bad data file, a phone,
 //     a Mac and an old browser each get their sentence (v1v's checks, kept);
 //   - Firefox's route: one zip of the choice, to unpack;
-//   - the USB route does not show without ?usb=1; with it, each program is sent, read back and compared with
-//     programs/, and the first one that cannot be read back stops the run.
+//   - the cable does not show without ?usb=1, nor in a browser that cannot reach a USB device; with it, it is the
+//     first way for a real HP Prime and the Connectivity Kit's steps, whole, are the second; each program is sent,
+//     read back and compared with the pack's own source, character for character; the first one that does not come
+//     back the same stops the load; and each slip a student can make (no calculator picked, the Kit left open, the
+//     cable pulled out, Stop, a second click) gets its sentence and leaves the page ready to try again.
 // (The Chromium on this machine stops with SIGTRAP when a folder handle is read back from IndexedDB, so the handle's
 // NAME goes into IndexedDB in its place: v1t's note, in the code below.)
 const { chromium } = require('playwright');
@@ -158,7 +163,7 @@ function check(name, ok, detail) {
   check('seven help topics, the first for a student without the Virtual Calculator, which step 1 links to', await page.locator('.help details').count() === 7 &&
         /don't have the Virtual Calculator yet/.test(await page.textContent('.help details:first-of-type summary')) &&
         (await page.getAttribute('.choice:has(#t_vc) a', 'href')) === '#need');
-  check('the USB route is in the page and not shown', await page.evaluate(() => typeof PrimeUSB === 'object' && !usbOn) && !(await page.isVisible('#usbpanel')));
+  check('the cable route is in the page and not shown', await page.evaluate(() => typeof PrimeUSB === 'object' && typeof PrimeUSB.load === 'function' && !usbOn) && !(await page.isVisible('#cable')));
   const onCalc = t => Object.keys(t).filter(k => k.startsWith(C) && k.endsWith('.hpprgm')).map(k => k.slice(C.length)).sort();
   const folders = t => Array.from(new Set(Object.keys(t).filter(k => k.startsWith('HP Prime/Loader backups/')).map(k => k.split('/')[2]))).sort();
   const inBackup = (t, f) => Object.keys(t).filter(k => k.startsWith('HP Prime/Loader backups/' + f + '/')).map(k => k.slice(('HP Prime/Loader backups/' + f + '/').length)).sort();
@@ -355,17 +360,18 @@ function check(name, ok, detail) {
   await page.check('#t_real');
   check('a real HP Prime: step 3 is the Connectivity Kit\'s steps, and there is no Load button to click',
         JSON.stringify(await steps(page)) === JSON.stringify(['1Which calculator?', '2Which programs?', '3Put them on your HP Prime with HP\'s Connectivity Kit', 'Something not working?']) &&
-        !(await page.isVisible('#load')) && await page.isVisible('#download3') && await page.locator('#step3real ol.steps > li').count() === 6, JSON.stringify(await steps(page)));
+        !(await page.isVisible('#load')) && await page.isVisible('#download3') && await page.locator('#kitroute ol.steps > li').count() === 6, JSON.stringify(await steps(page)));
   check('... it says programs on the calculator stay, and that a real calculator has less room', (await page.textContent('#effect')) ===
         'Programs already on your calculator stay there. A real calculator has much less room than a computer; if yours runs short, load one chapter at a time.', await page.textContent('#effect'));
   check('... the steps: download, unpack, start the Kit and plug in, drag onto the calculator\'s name, close the Kit, run', /Extract All/.test(await page.textContent('#step3real')) &&
         /drop it on the calculator's name/.test(await page.textContent('#step3real')) && /not into the Content box/.test(await page.textContent('#step3real')) && /Close the Connectivity Kit/.test(await page.textContent('#step3real')));
   check('... the app\'s note shows for all the programs, and says it has not been tried on a real calculator; the last step says how to start an app', await page.isVisible('#realapp') && /has not been tried on a real calculator yet/.test(await page.textContent('#realapp')) && !(await page.isVisible('#realdata')) &&
         await page.isVisible('#realapp2') && /press Apps/.test(await page.textContent('#realapp2')));
-  check('... Bonjour is one click away, folded', !(await page.isVisible('#step3real .panel.warn')) && /The Kit does not show my calculator/.test(await page.textContent('#step3real details > summary')));
-  await page.locator('#step3real details > summary').click();
-  check('... and opens to how to check it', await page.isVisible('#step3real details .panel.warn') && /Bonjour Service/.test(await page.textContent('#step3real details')) && /Running/.test(await page.textContent('#step3real details')));
-  check('the USB route does not show for a real HP Prime either, without the test address', !(await page.isVisible('#usbpanel')));
+  check('... Bonjour is one click away, folded', !(await page.isVisible('#kitroute .panel.warn')) && /The Kit does not show my calculator/.test(await page.textContent('#kitroute details > summary')));
+  await page.locator('#kitroute details > summary').click();
+  check('... and opens to how to check it', await page.isVisible('#kitroute details .panel.warn') && /Bonjour Service/.test(await page.textContent('#kitroute details')) && /Running/.test(await page.textContent('#kitroute details')));
+  check('the cable does not show for a real HP Prime either, without the test address: the Kit\'s steps are the page\'s main line, open, with no fold to click, under the Kit\'s own title',
+        !(await page.isVisible('#cable')) && !(await page.isVisible('#kitsum')) && await page.evaluate(() => document.getElementById('kitfold').open) && (await page.textContent('#s3rtitle')) === 'Put them on your HP Prime with HP\'s Connectivity Kit');
   let [dl] = await Promise.all([page.waitForEvent('download'), page.click('#download3')]);
   check('all the programs download as HP_Prime_all_programs.zip, the name the step shows', dl.suggestedFilename() === 'HP_Prime_all_programs.zip' && (await page.textContent('#zipname3')) === 'HP_Prime_all_programs.zip', dl.suggestedFilename());
   const zp = path.join(tmp, 'dl.zip'); await dl.saveAs(zp);
@@ -419,8 +425,8 @@ function check(name, ok, detail) {
   await ipg.goto('file://' + path.join(path.dirname(PAGE), 'index.html') + '?data=1');
   await ipg.waitForFunction(() => !!document.getElementById('fromdl'), null, { timeout: 15000 }).catch(() => {});
   check('index.html carries ?data=1 on to the page, so the Data Loader\'s link to the folder\'s address opens it ready for the file',
-        /PrimeLoader_v2a\.html\?data=1$/.test(ipg.url()) && await ipg.isVisible('#fromdl'), ipg.url());
-  check('... and a browser with scripts off is still sent on, by the line in noscript', /<noscript><meta http-equiv="refresh" content="0; url=PrimeLoader_v2a\.html"><\/noscript>/.test(idx));
+        /PrimeLoader_v2b\.html\?data=1$/.test(ipg.url()) && await ipg.isVisible('#fromdl'), ipg.url());
+  check('... and a browser with scripts off is still sent on, by the line in noscript', /<noscript><meta http-equiv="refresh" content="0; url=PrimeLoader_v2b\.html"><\/noscript>/.test(idx));
 
   // ---- 10. Firefox: no folder API, Firefox's user-agent ----
   const fctx = await browser.newContext({ acceptDownloads: true,
@@ -490,73 +496,240 @@ function check(name, ok, detail) {
   await p3.goto('file://' + PAGE);
   check('opens as a local file without errors', errs3.length === 0 && (await p3.textContent('#summary')) === 'All 31 programs.', errs3);
 
-  // ---- 13. the USB route, at the page's test address, against a pretend calculator ----
-  // (tests/../usb/tests/mock_prime_v1.js: it answers as three public descriptions say a G2 does.  Not a calculator.)
-  const MOCK = fs.readFileSync(path.join(__dirname, '..', 'usb', 'tests', 'mock_prime_v1.js'), 'utf8');
+  // ---- 13. the cable, at the page's test address, against a pretend calculator ----
+  // (usb/tests/mock_prime_v3.js: by default it does what the author's G2 and G1 did on 17 Nov 2026.  Not a calculator.)
+  const MOCK = fs.readFileSync(path.join(__dirname, '..', 'usb', 'tests', 'mock_prime_v3.js'), 'utf8');
   const PROGRAMS = path.join(__dirname, '..', '..', 'programs');
-  const repoSource = n => { const f = fs.readdirSync(PROGRAMS).find(x => x.startsWith(n + '_')); return fs.readFileSync(path.join(PROGRAMS, f), 'utf8').replace(/\r\n?/g, '\n').replace(/\s+$/, ''); };
-  const usbPage = async (mopts, query) => {
-    const c = await browser.newContext({ userAgent: WIN });
+  const canon = s => s.replace(/\r\n?/g, '\n').replace(/\s+$/, '');
+  const repoSource = n => { const f = fs.readdirSync(PROGRAMS).find(x => x.startsWith(n + '_')); return canon(fs.readFileSync(path.join(PROGRAMS, f), 'utf8')); };
+  const CATALOG = await page.evaluate(() => CAT);
+  // a program's source exactly as its file in the pack holds it
+  const packSource = n => { const p = CATALOG.programs[n], f = packFile(p.files[0]); return f.subarray(p.src[0], p.src[1]).toString('utf16le').replace(/\0+$/, ''); };
+  const usbPage = async (mopts, query, hid) => {
+    const c = await browser.newContext({ userAgent: WIN, acceptDownloads: true });
     const p = await c.newPage(), errs = [];
     p.on('pageerror', e => errs.push(String(e)));
-    await p.addInitScript({ content: MOCK + '\n;MockPrime.install(' + JSON.stringify(mopts || {}) + ');\n' +
-      'window.addEventListener("DOMContentLoaded", () => { const s = PrimeUSB.sleep; PrimeUSB.sleep = ms => s(Math.min(ms, 20)); });' });
+    p.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
+    if (hid !== false) await p.addInitScript({ content: MOCK + '\n;MockPrime.install(' + JSON.stringify(mopts || {}) + ');\n' });
+    else await p.addInitScript(() => { Object.defineProperty(navigator, 'hid', { value: undefined, configurable: true }); });
     await p.goto('http://localhost:8766/' + (query === undefined ? '?usb=1' : query));
     return { p, errs };
   };
-  const usbEnd = p => p.waitForFunction(() => /found the same|Stopped|broke off|No calculator|could not open|did not answer|no program/.test(document.getElementById('usbstatus').textContent), null, { timeout: 120000 });
+  // the load is over when Send can be clicked again and one of the two panels shows, or the status is a final word
+  const usbEnd = (p, ms) => p.waitForFunction(() => !usbBusy && (!document.getElementById('usbdone').hidden || !document.getElementById('usbfail').hidden), null, { timeout: ms || 120000 });
+  const state = p => p.evaluate(() => ({ status: document.getElementById('usbstatus').textContent, cls: document.getElementById('usbstatus').className,
+    list: [...document.querySelectorAll('#usblist li')].map(x => x.className + ':' + x.children[1].textContent), done: !document.getElementById('usbdone').hidden, fail: !document.getElementById('usbfail').hidden,
+    failh: document.getElementById('usbfailh').textContent, failp: document.getElementById('usbfailp').textContent, todo: [...document.querySelectorAll('#usbfaildo li')].map(x => x.textContent),
+    report: [...document.querySelectorAll('#usbreport li')].map(x => x.textContent), next: [...document.querySelectorAll('#usbnext li')].map(x => x.textContent),
+    bar: document.getElementById('usbbar').getAttribute('aria-valuenow'), barHidden: document.getElementById('usbbar').hidden, log: document.getElementById('usblog').textContent,
+    sendOff: document.getElementById('usbsend').disabled, stopHidden: document.getElementById('usbstop').hidden, kitOpen: document.getElementById('kitfold').open, unload: window.onbeforeunload === null }));
+  const prime = p => p.evaluate(() => { const m = window.__prime; return { programs: m.programs, arrived: m.arrived.map(a => ({ name: a.name, layout: a.layout, framing: a.framing, reports: a.reports, kept: a.kept })),
+    fds: m.fds, outOfTurn: m.outOfTurn, nacks: m.nacks, statuses: m.statuses, asked: m.asked || 0, opens: m.opens || 0, closes: m.closes || 0, reportsIn: m.reportsIn, waits: m.waits.map(w => w.ms), last: m.lastLength, err: m.error || null, standing: !!m.standing, v2open: m.v2open }; });
+
   let u = await usbPage({});
-  check('USB: at the test address the panel still does not show for the Virtual Calculator', !(await u.p.isVisible('#usbpanel')));
+  check('cable: the test address opens on "A real HP Prime", since that is what it is for', await u.p.isChecked('#t_real') && await u.p.isVisible('#cable'));
+  await u.p.check('#t_vc');
+  check('cable: nothing of it shows while the Virtual Calculator is chosen', !(await u.p.isVisible('#cable')) && !(await u.p.isVisible('#step3real')) && await u.p.isVisible('#load'));
   await u.p.check('#t_real');
-  check('USB: for a real HP Prime it shows, under the Kit\'s steps, and says it has not been proved on a real calculator', await u.p.isVisible('#usbpanel') &&
-        /has not been proved on a real calculator yet/.test(await u.p.textContent('#usbpanel')) && /Close the Connectivity Kit first/.test(await u.p.textContent('#usbpanel')) && await u.p.isVisible('#download3'));
-  await u.p.selectOption('#chapter', '7');
+  check('cable: for a real HP Prime it is the first way: step 3 is "Send them to your HP Prime, down its USB cable", three steps and one button',
+        await u.p.isVisible('#cable') && (await u.p.textContent('#s3rtitle')) === 'Send them to your HP Prime, down its USB cable' && await u.p.locator('#cable ol.steps > li').count() === 3 &&
+        await u.p.isVisible('#usbsend') && !(await u.p.isDisabled('#usbsend')) && !(await u.p.isVisible('#usbstop')) && !(await u.p.isVisible('#load')));
+  check('cable: it says it is being tested, what it has done on two calculators and what it has not, and where the other way is',
+        /being tested/.test(await u.p.textContent('#cabletested')) && /on an HP Prime G2 and on a G1/.test(await u.p.textContent('#cabletested')) && /has not yet loaded the book's own programs/.test(await u.p.textContent('#cabletested')) &&
+        /Connectivity Kit, is right below/.test(await u.p.textContent('#cabletested')));
+  check('cable: its steps say to plug in and switch on at the Home screen, to close the Kit, and what the browser\'s small window is',
+        /switch it on/.test(await u.p.textContent('#cable ol.steps')) && /Home screen/.test(await u.p.textContent('#cable ol.steps')) && /Connectivity Kit is open, close it/.test(await u.p.textContent('#cable ol.steps')) &&
+        /^The first time, the browser opens a small window/.test(await u.p.textContent('#usbfirst')) && /Click its name, then click Connect/.test(await u.p.textContent('#usbfirst')));
+  check('cable: the Connectivity Kit\'s steps are kept whole as the second way, folded under "The other way: HP\'s Connectivity Kit"',
+        await u.p.isVisible('#kitsum') && (await u.p.textContent('#kitsum')) === 'The other way: HP\'s Connectivity Kit' && !(await u.p.evaluate(() => document.getElementById('kitfold').open)) && !(await u.p.isVisible('#download3')) &&
+        await u.p.locator('#kitroute ol.steps > li').count() === 6 && /Bonjour/.test(await u.p.textContent('#kitroute')) && /Drag each program file/.test(await u.p.textContent('#kitroute')));
+  await u.p.click('#kitsum');
+  check('... one click opens them: the download button and the six steps', await u.p.isVisible('#download3') && await u.p.isVisible('#kitroute ol.steps'));
+  await u.p.click('#kitsum');
+  check('cable: all the programs: CentralLimit, an app, is named as not travelling this way before anything is sent; the Kit\'s steps stay folded until they are wanted',
+        /^Ready to send 30 programs\. CentralLimit \(an app or data\) does not travel this way: it goes by HP's Connectivity Kit, below\.$/.test(await u.p.textContent('#usbstatus')) && !(await u.p.evaluate(() => document.getElementById('kitfold').open)),
+        await u.p.textContent('#usbstatus'));
+  await u.p.selectOption('#chapter', '12');
+  const ch12 = CATALOG.chapters.find(c => c.num === 12).programs.concat([CATALOG.always]).filter((x, i, a) => a.indexOf(x) === i).sort((a, b) => a.localeCompare(b));
+  check('cable: Chapter 12 (' + ch12.join(', ') + ') has no app in it: nothing to say before sending', (await u.p.textContent('#usbstatus')) === '' && ch12.every(n => CATALOG.programs[n].src), await u.p.textContent('#usbstatus'));
   await u.p.click('#usbsend');
   await usbEnd(u.p);
-  let us = await u.p.textContent('#usbstatus'), ul = await u.p.$$eval('#usblist li', e => e.map(x => x.textContent));
-  let got = await u.p.evaluate(() => ({ programs: window.__prime.programs, arrived: window.__prime.arrived.map(a => a.name + ':' + a.layout), last: window.__prime.lastLength, releases: window.__prime.releases }));
-  check('USB, chapter 7: its three programs arrive, each read back the same; the app is named as not sent this way',
-        /^3 programs on the calculator, each read back and found the same\. Not sent this way: CentralLimit \(an app or a data file; use the Connectivity Kit steps above for those\)\./.test(us) &&
-        JSON.stringify(got.arrived) === JSON.stringify(['GaltonBoard:v3', 'SampDist:v3', 'TestChooser:v3']) && got.releases === 3 && got.last === 1024, us + ' ' + JSON.stringify(got.arrived));
-  check('USB: what the calculator holds is each program\'s source in programs/, character for character', ['GaltonBoard', 'SampDist', 'TestChooser'].every(n => got.programs[n] === repoSource(n)));
-  check('USB: the list says so program by program, and gives the firmware build', /^Connected: HP Prime G2, firmware build 15515\.$/.test(ul[0]) && ul.slice(1).every(l => /: arrived whole \(\d+ reports?, read back the same\)\.$/.test(l)) && ul.length === 4, JSON.stringify(ul));
-  check('USB: no errors in the page', u.errs.length === 0, u.errs);
-  u = await usbPage({ silentF8: true });
+  let st = await state(u.p), got = await prime(u.p);
+  check('cable, Chapter 12 to a G2: "Done. Your programs are on the calculator.", the bar full, each program ticked, Send ready again and Stop gone',
+        st.done && !st.fail && st.cls === 'status ok' && st.status === ch12.length + ' programs on the calculator, each one read back and found the same.' && st.bar === '100' &&
+        st.list.join() === ch12.map(n => 'ok:' + n).join() && !st.sendOff && st.stopHidden && st.unload, JSON.stringify([st.status, st.list, st.bar, st.sendOff]));
+  check('... what the calculator holds is each program\'s source exactly as the pack\'s file holds it, character for character; and that is programs/ but for the blank space at its end',
+        ch12.every(n => got.programs[n] === packSource(n)) && ch12.every(n => canon(got.programs[n]) === repoSource(n)) && Object.keys(got.programs).length === ch12.length,
+        ch12.map(n => [n, (got.programs[n] || '').length, packSource(n).length]).join(' '));
+  check('... sent the way both calculators kept: "FD 01 00 00 00 01 03" once in the old framing, then every program not compressed in the newer framing, 1,024-byte reports, none sent twice',
+        got.fds.length === 1 && got.fds[0].kind === 'long' && got.fds[0].framing === 'old' && got.arrived.length === ch12.length && got.arrived.every(a => a.layout === 'v1' && a.framing === 'new' && a.kept) &&
+        got.last === 1024 && got.outOfTurn === 0 && got.nacks === 0 && !got.err && got.opens === 1 && got.closes === 1, JSON.stringify([got.fds, got.arrived.length, got.last, got.outOfTurn, got.err, got.opens, got.closes]));
+  check('... the page says what to do next (Shift, Program; tap, Run; Check if it says Syntax Error; unplug) and what happened (read back, character for character; nothing taken off)',
+        /Shift, then Program/.test(st.next[0]) && ch12.every(n => st.next[0].includes(n)) && /tap Run/.test(st.next[1]) && /Syntax Error/.test(st.next[2]) && /tap Check/.test(st.next[2]) && /unplug/.test(st.next[3]) &&
+        /went down the cable/.test(st.report[0]) && /read back from the calculator and found the same, character for character/.test(st.report[0]) && /left where they are/.test(st.report[1]) && /^It took \d+(\.\d)? seconds\.$/.test(st.report[2]),
+        JSON.stringify([st.next, st.report]));
+  check('... the details name the page, the browser, the calculator and the choice; say who answered and what each program did; end in a RESULT line; and hold neither the serial number nor more than twelve bytes of any message',
+        /^HP Prime Loader, v2b, straight down the cable\. /.test(st.log) && /\nBrowser: Mozilla/.test(st.log) && /\nDevice: HP Prime G2 \(USB 03F0:2441\), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator\.\n/.test(st.log) &&
+        new RegExp('\\nChosen: Chapter 12; ' + ch12.length + ' programs, [\\d,]+ characters: ' + ch12.join(', ') + '\\.\\n').test(st.log) && /It answered: firmware build 15751, "V2\.060\.650", version 01\./.test(st.log) &&
+        ch12.every(n => new RegExp('\\n +\\d+\\.\\d\\d  ' + n + ': [\\d,]+ characters\\.\\n').test(st.log)) && (st.log.match(/Read back the same: /g) || []).length === ch12.length &&
+        new RegExp('RESULT: all ' + ch12.length + ' programs on the calculator, each read back the same\\. [\\d,]+ reports carried the programs there and back; \\d+\\.\\d s in all\\.').test(st.log) && !/SECRET|SERIAL/.test(st.log) &&
+        Math.max(...(st.log.match(/begins ((?:[0-9A-F]{2} ?)+)/g) || []).map(x => x.trim().split(' ').length - 1)) === 12, st.log.slice(0, 900));
+  await u.p.click('#usbdetails > summary');
+  const [dlLog] = await Promise.all([u.p.waitForEvent('download'), u.p.click('#usbsave')]);
+  const saved = fs.readFileSync(await dlLog.path(), 'utf8');
+  check('... Save the details gives a text file named with the date, holding those lines and no serial number', /^PrimeLoader_cable_\d{4}-\d\d-\d\d_\d{4}\.txt$/.test(dlLog.suggestedFilename()) &&
+        saved.replace(/\r\n/g, '\n') === st.log && !/SECRET|SERIAL/.test(saved) && /^Saved PrimeLoader_cable_.*\.txt in your Downloads folder\.$/.test(await u.p.textContent('#usbsaved')), dlLog.suggestedFilename());
+  // a second load on the same page, without unplugging: the calculator speaks 03 already
+  await u.p.selectOption('#chapter', '5');
+  const ch5 = CATALOG.chapters.find(c => c.num === 5).programs.concat([CATALOG.always]).filter((x, i, a) => a.indexOf(x) === i).filter(n => CATALOG.programs[n].src).sort((a, b) => a.localeCompare(b));
+  const after = await state(u.p);
+  check('cable: choosing another chapter afterwards takes away what the page said of the finished load ("Done", the ticks, the bar), which was about other programs; the details stay',
+        !after.done && !after.fail && after.list.length === 0 && after.barHidden && after.status === '' && /RESULT: all/.test(after.log), JSON.stringify([after.done, after.list, after.status]));
+  await u.p.click('#usbsend');
+  await usbEnd(u.p);
+  st = await state(u.p); got = await prime(u.p);
+  check('cable: a second load without unplugging (Chapter 5: ' + ch5.join(', ') + '): the browser\'s small window is not shown again, the calculator is not told "FD" again, the list starts afresh, the programs are ADDED to the first load\'s',
+        st.done && st.list.join() === ch5.map(n => 'ok:' + n).join() && got.fds.length === 1 && ch5.concat(ch12).every(n => got.programs[n] === packSource(n)) && got.opens === 2 && got.closes === 2 && got.asked === 1 &&
+        !/Told that this page speaks/.test(st.log) && /version 03\. Its reports/.test(st.log), JSON.stringify([st.list, got.fds.length, Object.keys(got.programs).length]));
+  check('cable: no errors in the page', u.errs.length === 0, u.errs);
+
+  // all the programs, onto a G1: 64-byte reports, 131,683 of them
+  u = await usbPage({ product: 0x1541 });
+  await u.p.check('#t_real');
+  const names30 = Object.keys(CATALOG.programs).filter(n => CATALOG.programs[n].src).sort((a, b) => a.localeCompare(b));
+  let tAll = Date.now();
+  await u.p.click('#usbsend');
+  await usbEnd(u.p, 300000);
+  tAll = Date.now() - tAll;
+  st = await state(u.p); got = await prime(u.p);
+  const sentAll = got.arrived.reduce((s, a) => s + a.reports, 0), g1Want = names30.reduce((s, n) => s + 1 + Math.ceil((10 + 2 * n.length + 2 * packSource(n).length - 55) / 63), 0);
+  check('cable, all the programs to a G1 (' + (tAll / 1000).toFixed(0) + ' s against the mock): the ' + names30.length + ' that are programs arrive, each the pack\'s source character for character, in ' + sentAll.toLocaleString('en-US') +
+        ' reports of 64 bytes, none sent twice; the mock, which stands at 240 reports\' worth of an answer, never stood long',
+        st.done && names30.length === 30 && st.list.join() === names30.map(n => 'ok:' + n).join() && names30.every(n => got.programs[n] === packSource(n)) && sentAll === g1Want && sentAll > 120000 && got.last === 64 &&
+        got.outOfTurn === 0 && got.waits.every(w => w < 250) && !got.err, JSON.stringify([st.status, st.failh, sentAll, g1Want, got.outOfTurn, Math.max(0, ...got.waits), got.err]));
+  const chars30 = names30.reduce((s, n) => s + packSource(n).length, 0), g2Want = names30.reduce((s, n) => s + 1 + Math.ceil((10 + 2 * n.length + 2 * packSource(n).length - 1015) / 1023), 0);
+  check('... counted, because the page\'s notes say it: the 30 programs that travel by cable are 4,028,362 characters, 127,913 reports of a G1 and 7,892 of a G2; none has a CR in it',
+        chars30 === 4028362 && sentAll === 127913 && g2Want === 7892 && names30.every(n => !/\r/.test(packSource(n))), [chars30, sentAll, g2Want].join(' '));
+  check('... CentralLimit is said not to have been sent this way, and the Kit\'s steps are opened for it', st.report.some(l => /^Not sent this way: CentralLimit \(an app or data\)\. For it, use HP's Connectivity Kit/.test(l)) && st.kitOpen && /Device: HP Prime G1 \(USB 03F0:1541\)/.test(st.log) &&
+        /reports of 64 bytes in and 64 out/.test(st.log), JSON.stringify(st.report));
+  check('... and the details stay readable: the page shows at most 1,500 lines of them', st.log.split('\n').length <= 1510, st.log.split('\n').length);
+  check('cable: no errors in the page', u.errs.length === 0, u.errs);
+
+  // ---- the slips ----
+  u = await usbPage({ none: true });
   await u.p.check('#t_real'); await u.p.selectOption('#chapter', '12');
   await u.p.click('#usbsend'); await usbEnd(u.p);
-  us = await u.p.textContent('#usbstatus');
-  check('USB, a calculator that gives nothing back: the run stops at the first program and sends no more, and the page does not say it arrived',
-        /^Stopped at ChiTable\. The page could not read it back, so it will not send the rest\./.test(us) && /Connectivity Kit steps above/.test(us) && (await u.p.evaluate(() => window.__prime.arrived.length)) === 1 &&
-        /cannot tell whether it arrived/.test(await u.p.textContent('#usblist')), us);
-  u = await usbPage({ maxMessage: 16000 });
+  st = await state(u.p);
+  check('slip: the browser\'s window closed with no calculator picked (or its list empty): "No calculator was chosen", what to look at (switched on, the cable, a cable that only charges), and Send ready again',
+        st.fail && !st.done && st.failh === 'No calculator was chosen' && /Nothing was sent/.test(st.failp) && /switched on/.test(st.todo[0]) && /only charge/.test(st.todo[1]) && /then click Connect/.test(st.todo[2]) && !st.sendOff && st.barHidden && st.list.length === 0,
+        JSON.stringify([st.failh, st.todo]));
+  u = await usbPage({ busy: true });
   await u.p.check('#t_real'); await u.p.selectOption('#chapter', '12');
   await u.p.click('#usbsend'); await usbEnd(u.p);
-  us = await u.p.textContent('#usbstatus');
-  check('USB, a calculator that drops long messages without a word: stopped at the first program, nothing claimed', /^Stopped at ChiTable\./.test(us) && (await u.p.evaluate(() => Object.keys(window.__prime.programs).length)) === 0, us);
+  st = await state(u.p);
+  check('slip: the Connectivity Kit left open, so the calculator cannot be opened: the page says to close the Kit and click again', st.fail && /could not open it/.test(st.failh) && /Close HP's Connectivity Kit/.test(st.todo[0]) && !st.sendOff, JSON.stringify([st.failh, st.todo]));
+  u = await usbPage({ deadAfter: 0 });
+  await u.p.check('#t_real'); await u.p.selectOption('#chapter', '12');
+  let tS = Date.now();
+  await u.p.click('#usbsend'); await usbEnd(u.p);
+  st = await state(u.p); got = await prime(u.p);
+  check('slip: a calculator that does not answer (switched off at the wrong moment, or not at Home): said after 3 s, "Nothing was sent", press Home, pull the cable and push it in again; the Kit\'s steps open; one report went, the question',
+        st.fail && st.failh === 'The calculator did not answer' && st.failp === 'Nothing was sent.' && /Home/.test(st.todo[0]) && /Pull its cable out/.test(st.todo[1]) && st.kitOpen && got.reportsIn === 1 && got.arrived.length === 0 &&
+        Date.now() - tS < 6000 && !st.sendOff && /NO ANSWER: no answer within 3\.0 s\./.test(st.log), JSON.stringify([st.failh, st.todo, got.reportsIn, Date.now() - tS]));
+  u = await usbPage({ fdOld: null });
+  await u.p.check('#t_real'); await u.p.selectOption('#chapter', '12');
+  await u.p.click('#usbsend'); await usbEnd(u.p);
+  st = await state(u.p); got = await prime(u.p);
+  check('slip, not the student\'s: a calculator that still says version 01 after the "FD" (other software than the two it was proved on): nothing is sent, nothing about the calculator is changed, and the page points to the Kit and asks for the details',
+        st.fail && /answers differently from the two this way was proved on/.test(st.failh) && /nothing was sent to it/.test(st.failp) && /Connectivity Kit/.test(st.todo[0]) && /Save the details/.test(st.todo[1]) && st.kitOpen &&
+        got.arrived.length === 0 && !got.v2open && st.list.every(l => /^wait:/.test(l)), JSON.stringify([st.failh, got.arrived.length, got.v2open, st.list]));
+  u = await usbPage({ drop: [ch12[1]] });
+  await u.p.check('#t_real'); await u.p.selectOption('#chapter', '12');
+  await u.p.click('#usbsend'); await usbEnd(u.p);
+  st = await state(u.p); got = await prime(u.p);
+  check('a program the calculator acknowledges and does not keep (' + ch12[1] + '): the load stops there; the one before it is ticked, this one crossed, the ones after never sent; the page does not say Done; ' +
+        'it says to delete it if it is in the list and to use the Kit for it and the rest',
+        st.fail && !st.done && st.failh === ch12[1] + ' did not come back the same' && /The calculator did not have it\./.test(st.failp) && /does not count it as loaded/.test(st.failp) && /marked ✓ is on the calculator, whole/.test(st.failp) &&
+        st.list[0] === 'ok:' + ch12[0] && st.list[1] === 'bad:' + ch12[1] && st.list.slice(2).every(l => /^wait:/.test(l)) && got.arrived.length === 2 && /tap More, then Delete/.test(st.todo[0]) &&
+        new RegExp('Connectivity Kit, whose steps are just below, for ' + ch12[1] + ' and the programs after it').test(st.todo[1]) && st.kitOpen && !st.sendOff, JSON.stringify([st.failh, st.failp, st.list, st.todo]));
   u = await usbPage({ cutAt: 5000 });
   await u.p.check('#t_real'); await u.p.selectOption('#chapter', '12');
   await u.p.click('#usbsend'); await usbEnd(u.p);
-  us = await u.p.textContent('#usbstatus');
-  check('USB, a program damaged on the way: "it did not arrive whole", with what to do', /^Stopped at ChiTable: it did not arrive whole\. Delete ChiTable on the calculator/.test(us) &&
-        /what came back is not what was sent \(5000 characters against \d+\)/.test(await u.p.textContent('#usblist')), us);
-  u = await usbPage({});
+  st = await state(u.p);
+  check('a program damaged on the way: "What came back is not what was sent", nothing ticked, and the details say where the two part', st.fail && /What came back is not what was sent\./.test(st.failp) && st.list[0] === 'bad:' + ch12[0] &&
+        /NOT THE SAME: 5,000 characters came back against [\d,]+ sent; the first difference is at character 5,001\./.test(st.log) && !/marked ✓/.test(st.failp), JSON.stringify([st.failp, st.list]));
+  // the cable pulled out in the middle of a program; the browser's write never comes back (17 Nov, on the G2)
+  // (the reports that have come from the host by the middle of the second program: the six of the opening, the first
+  // program's, the request for it back and the acknowledgement of the answer, and thirty of the second)
+  const first12 = 1 + Math.ceil((10 + 2 * ch12[0].length + 2 * packSource(ch12[0]).length - 1015) / 1023);
+  u = await usbPage({ dieAt: 6 + first12 + 2 + 30, hang: true, tellAfter: 300 });
   await u.p.check('#t_real'); await u.p.selectOption('#chapter', '12');
-  await u.p.evaluate(() => { const m = window.__prime, r0 = m.receive.bind(m); m.receive = function (r) { if (m.reportsIn > 40 && !m.unplugged) m.unplug(); return r0(r); }; });
+  tS = Date.now();
+  await u.p.click('#usbsend'); await usbEnd(u.p, 30000);
+  st = await state(u.p); got = await prime(u.p);
+  check('slip: the cable pulled out in the middle of the second program, and the browser\'s write to it never comes back: the page says so within seconds (' + ((Date.now() - tS) / 1000).toFixed(1) +
+        ' s here), counts the first program and no other, and is ready to send again',
+        st.fail && st.failh === 'The calculator went off the cable' && /The program marked ✓ is on the calculator, whole\./.test(st.failp) && new RegExp(ch12[1] + ' and the programs after it are not\\.').test(st.failp) &&
+        st.list[0] === 'ok:' + ch12[0] && st.list[1] === 'bad:' + ch12[1] && st.list.slice(2).every(l => /^wait:/.test(l)) && got.arrived.length === 1 && Date.now() - tS < 12000 && !st.sendOff && st.stopHidden && st.unload && /Plug it in again/.test(st.todo[0]) &&
+        /THE CALCULATOR WENT OFF THE CABLE/.test(st.log), JSON.stringify([st.failh, st.failp, st.list, Date.now() - tS]));
+  check('... no errors in the page', u.errs.length === 0, u.errs);
+  u = await usbPage({ dieAt: 60 });
+  await u.p.check('#t_real'); await u.p.selectOption('#chapter', '12');
+  await u.p.click('#usbsend'); await usbEnd(u.p, 30000);
+  st = await state(u.p);
+  check('slip: the cable pulled out and the browser says so at once: the same words', st.fail && st.failh === 'The calculator went off the cable' && !st.sendOff && u.errs.length === 0, JSON.stringify([st.failh, u.errs]));
+  // Stop, clicked while the first program is being checked: the load ends after that program, not in it
+  u = await usbPage({ lagMs: 900 });
+  await u.p.check('#t_real'); await u.p.selectOption('#chapter', '12');
+  await u.p.click('#usbsend');
+  await u.p.waitForFunction(() => /^Checking /.test(document.getElementById('usbstatus').textContent));
+  const mid = await state(u.p);
+  await u.p.click('#usbsend', { force: true, timeout: 2000 }).catch(() => {});     // a second click on Send while it runs
+  await u.p.click('#usbstop');
+  const stopping = await u.p.textContent('#usbstop');
+  await usbEnd(u.p);
+  st = await state(u.p); got = await prime(u.p);
+  check('while a load runs: Send is off and Stop is there; leaving the page would be asked about, because the calculator is in the middle of a program',
+        mid.sendOff && !mid.stopHidden && !mid.unload && !mid.done && !mid.fail && /^check:/.test(mid.list[0]), JSON.stringify([mid.sendOff, mid.stopHidden, mid.unload, mid.list]));
+  check('slip: Stop, and a second click on Send, while the first program is being checked: the button says it stops after this program; that program is finished and ticked, the next is never begun; ' +
+        'the browser was asked for the calculator once only',
+        stopping === 'Stopping after this program ...' && st.fail && st.failh === 'Stopped' && st.list[0] === 'ok:' + ch12[0] && st.list.slice(1).every(l => /^wait:/.test(l)) && got.arrived.length === 1 &&
+        got.programs[ch12[0]] === packSource(ch12[0]) && got.asked === 1 && /were not sent/.test(st.failp) && /click Send to the calculator again/.test(st.todo[0]) && !st.sendOff && st.unload,
+        JSON.stringify([stopping, st.failh, st.list, got.arrived.length, got.asked]));
+  // the calculator's clock speaks while the first program is on its way (the G2 on 17 Nov)
+  u = await usbPage({ tickOnReport: 1 });
+  await u.p.check('#t_real'); await u.p.selectOption('#chapter', '12');
   await u.p.click('#usbsend'); await usbEnd(u.p);
-  us = await u.p.textContent('#usbstatus');
-  check('USB, the cable pulled out half way: "the sending broke off", and which programs are on the calculator is not overstated', /^The sending broke off: /.test(us) && /The programs marked "arrived whole" are on the calculator; the rest are not/.test(us) &&
-        !(await u.p.isDisabled('#usbsend')) && u.errs.length === 0, us + u.errs);
-  u = await usbPage({ busy: true });
+  st = await state(u.p); got = await prime(u.p);
+  check('the calculator\'s clock says "send again" just as each program\'s second report goes: every program still arrives the same, at the cost of one report sent twice each; the details show the "SEND AGAIN" lines',
+        st.done && got.outOfTurn === ch12.length && got.nacks === ch12.length && ch12.every(n => got.programs[n] === packSource(n)) && (st.log.match(/"SEND AGAIN": report 02/g) || []).length === ch12.length &&
+        /1 time a report was sent again/.test(st.log), JSON.stringify([st.done, got.outOfTurn, got.nacks]));
+  // nothing chosen yet
+  u = await usbPage({});
+  await u.p.check('#w_chapter');
+  check('slip: "One chapter" with no chapter picked: Send is off, and the page says to choose the chapter', await u.p.isDisabled('#usbsend') && (await u.p.textContent('#summary')) === 'Choose your chapter in the list above.' && (await u.p.textContent('#usbstatus')) === '');
+  // nothing in the choice that the cable carries
+  u = await usbPage({});
   await u.p.check('#t_real');
-  await u.p.click('#usbsend'); await usbEnd(u.p);
-  check('USB, the Connectivity Kit still open: the page says to close it', /close the Kit, then click Send again/.test(await u.p.textContent('#usbstatus')) && !(await u.p.isDisabled('#usbsend')));
-  u = await usbPage({ none: true });
-  await u.p.check('#t_real');
-  await u.p.click('#usbsend'); await usbEnd(u.p);
-  check('USB, nothing on the cable: the page says what to check', /No calculator was chosen/.test(await u.p.textContent('#usbstatus')) && /cable pushed in at both ends/.test(await u.p.textContent('#usbstatus')));
+  await u.p.click('#more > summary'); await u.p.check('#w_pick'); await u.p.check('#p_CentralLimit');
+  check('slip: only CentralLimit ticked, which is an app: Send is off, and the page says it goes by the Kit, whose steps are open',
+        await u.p.isDisabled('#usbsend') && /^Nothing in your choice goes down the cable: CentralLimit \(an app or data\) goes by HP's Connectivity Kit, below\.$/.test(await u.p.textContent('#usbstatus')) &&
+        await u.p.evaluate(() => document.getElementById('kitfold').open) && await u.p.isVisible('#download3'), await u.p.textContent('#usbstatus'));
+  await u.p.check('#p_DataLoad'); await u.p.check('#rossi');
+  check('... with DataLoad ticked too and the sample data: Send is on for the one program, and the data is named with the app as going by the Kit',
+        !(await u.p.isDisabled('#usbsend')) && /^Ready to send 1 program\. CentralLimit, M1 \(an app or data\) does not travel this way/.test(await u.p.textContent('#usbstatus')), await u.p.textContent('#usbstatus'));
+  await u.p.setViewportSize({ width: 380, height: 800 });
+  check('cable: at a phone\'s width nothing runs off the side', await u.p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
+  // where the cable must not show
   u = await usbPage({}, '');
+  check('without the test address the page opens on the Virtual Calculator, as always', await u.p.isChecked('#t_vc') && await u.p.isVisible('#load'));
   await u.p.check('#t_real');
-  check('USB: without the test address the panel is hidden, whatever the browser can do', !(await u.p.isVisible('#usbpanel')) && await u.p.evaluate(() => PrimeUSB.supported()));
+  check('without the test address the cable is hidden, whatever the browser can do, and the Kit\'s steps are the main line', !(await u.p.isVisible('#cable')) && await u.p.evaluate(() => PrimeUSB.supported() && !usbOn) &&
+        await u.p.isVisible('#download3') && !(await u.p.isVisible('#kitsum')) && (await u.p.textContent('#s3rtitle')) === 'Put them on your HP Prime with HP\'s Connectivity Kit');
+  u = await usbPage({}, '?usb=1', false);
+  await u.p.check('#t_real');
+  check('at the test address in a browser that cannot reach a USB device (Firefox, Safari): no cable, no dead button; the Kit\'s steps are the main line as before, and no error',
+        !(await u.p.isVisible('#cable')) && await u.p.evaluate(() => !PrimeUSB.supported() && usbAsked && !usbOn) && await u.p.isVisible('#download3') && !(await u.p.isVisible('#kitsum')) && u.errs.length === 0, u.errs);
 
   check('no errors in the page', errors.length === 0, errors);
   console.log(`\n${pass} PASS, ${fail} FAIL`);

@@ -8,7 +8,7 @@ PASS the Data Loader link is the Data Loader page on GitHub Pages
 PASS index.html beside the page sends the browser on to it
 PASS Edge/Chrome route shown; the Firefox route, the real-calculator route, and the running and done panels hidden
 PASS seven help topics, the first for a student without the Virtual Calculator, which step 1 links to
-PASS the USB route is in the page and not shown
+PASS the cable route is in the page and not shown
 PASS running calculator: the warning shows, the done panel does not
 PASS running calculator: nothing written
 PASS after loading, the running warning is gone
@@ -62,7 +62,7 @@ PASS ... the steps: download, unpack, start the Kit and plug in, drag onto the c
 PASS ... the app's note shows for all the programs, and says it has not been tried on a real calculator; the last step says how to start an app
 PASS ... Bonjour is one click away, folded
 PASS ... and opens to how to check it
-PASS the USB route does not show for a real HP Prime either, without the test address
+PASS the cable does not show for a real HP Prime either, without the test address: the Kit's steps are the page's main line, open, with no fold to click, under the Kit's own title
 PASS all the programs download as HP_Prime_all_programs.zip, the name the step shows
 PASS zip of everything: all 30 programs and the app, byte for byte
 PASS the status says what to do next
@@ -98,19 +98,48 @@ PASS a Mac: the notice says the steps were written for Windows, and points at "A
 PASS a browser that cannot unpack: the notice says so, and Load and Download stay off
 PASS at a phone's width nothing runs off the side
 PASS opens as a local file without errors
-PASS USB: at the test address the panel still does not show for the Virtual Calculator
-PASS USB: for a real HP Prime it shows, under the Kit's steps, and says it has not been proved on a real calculator
-PASS USB, chapter 7: its three programs arrive, each read back the same; the app is named as not sent this way
-PASS USB: what the calculator holds is each program's source in programs/, character for character
-PASS USB: the list says so program by program, and gives the firmware build
-PASS USB: no errors in the page
-PASS USB, a calculator that gives nothing back: the run stops at the first program and sends no more, and the page does not say it arrived
-PASS USB, a calculator that drops long messages without a word: stopped at the first program, nothing claimed
-PASS USB, a program damaged on the way: "it did not arrive whole", with what to do
-PASS USB, the cable pulled out half way: "the sending broke off", and which programs are on the calculator is not overstated
-PASS USB, the Connectivity Kit still open: the page says to close it
-PASS USB, nothing on the cable: the page says what to check
-PASS USB: without the test address the panel is hidden, whatever the browser can do
+PASS cable: the test address opens on "A real HP Prime", since that is what it is for
+PASS cable: nothing of it shows while the Virtual Calculator is chosen
+PASS cable: for a real HP Prime it is the first way: step 3 is "Send them to your HP Prime, down its USB cable", three steps and one button
+PASS cable: it says it is being tested, what it has done on two calculators and what it has not, and where the other way is
+PASS cable: its steps say to plug in and switch on at the Home screen, to close the Kit, and what the browser's small window is
+PASS cable: the Connectivity Kit's steps are kept whole as the second way, folded under "The other way: HP's Connectivity Kit"
+PASS ... one click opens them: the download button and the six steps
+PASS cable: all the programs: CentralLimit, an app, is named as not travelling this way before anything is sent; the Kit's steps stay folded until they are wanted
+PASS cable: Chapter 12 (ChiTable, FitCheck, TestChooser) has no app in it: nothing to say before sending
+PASS cable, Chapter 12 to a G2: "Done. Your programs are on the calculator.", the bar full, each program ticked, Send ready again and Stop gone
+PASS ... what the calculator holds is each program's source exactly as the pack's file holds it, character for character; and that is programs/ but for the blank space at its end
+PASS ... sent the way both calculators kept: "FD 01 00 00 00 01 03" once in the old framing, then every program not compressed in the newer framing, 1,024-byte reports, none sent twice
+PASS ... the page says what to do next (Shift, Program; tap, Run; Check if it says Syntax Error; unplug) and what happened (read back, character for character; nothing taken off)
+PASS ... the details name the page, the browser, the calculator and the choice; say who answered and what each program did; end in a RESULT line; and hold neither the serial number nor more than twelve bytes of any message
+PASS ... Save the details gives a text file named with the date, holding those lines and no serial number
+PASS cable: choosing another chapter afterwards takes away what the page said of the finished load ("Done", the ticks, the bar), which was about other programs; the details stay
+PASS cable: a second load without unplugging (Chapter 5: GaltonBoard, StatDist, TestChooser): the browser's small window is not shown again, the calculator is not told "FD" again, the list starts afresh, the programs are ADDED to the first load's
+PASS cable: no errors in the page
+PASS cable, all the programs to a G1 (15 s against the mock): the 30 that are programs arrive, each the pack's source character for character, in 127,913 reports of 64 bytes, none sent twice; the mock, which stands at 240 reports' worth of an answer, never stood long
+PASS ... counted, because the page's notes say it: the 30 programs that travel by cable are 4,028,362 characters, 127,913 reports of a G1 and 7,892 of a G2; none has a CR in it
+PASS ... CentralLimit is said not to have been sent this way, and the Kit's steps are opened for it
+PASS ... and the details stay readable: the page shows at most 1,500 lines of them
+PASS cable: no errors in the page
+PASS slip: the browser's window closed with no calculator picked (or its list empty): "No calculator was chosen", what to look at (switched on, the cable, a cable that only charges), and Send ready again
+PASS slip: the Connectivity Kit left open, so the calculator cannot be opened: the page says to close the Kit and click again
+PASS slip: a calculator that does not answer (switched off at the wrong moment, or not at Home): said after 3 s, "Nothing was sent", press Home, pull the cable and push it in again; the Kit's steps open; one report went, the question
+PASS slip, not the student's: a calculator that still says version 01 after the "FD" (other software than the two it was proved on): nothing is sent, nothing about the calculator is changed, and the page points to the Kit and asks for the details
+PASS a program the calculator acknowledges and does not keep (FitCheck): the load stops there; the one before it is ticked, this one crossed, the ones after never sent; the page does not say Done; it says to delete it if it is in the list and to use the Kit for it and the rest
+PASS a program damaged on the way: "What came back is not what was sent", nothing ticked, and the details say where the two part
+PASS slip: the cable pulled out in the middle of the second program, and the browser's write to it never comes back: the page says so within seconds (1.1 s here), counts the first program and no other, and is ready to send again
+PASS ... no errors in the page
+PASS slip: the cable pulled out and the browser says so at once: the same words
+PASS while a load runs: Send is off and Stop is there; leaving the page would be asked about, because the calculator is in the middle of a program
+PASS slip: Stop, and a second click on Send, while the first program is being checked: the button says it stops after this program; that program is finished and ticked, the next is never begun; the browser was asked for the calculator once only
+PASS the calculator's clock says "send again" just as each program's second report goes: every program still arrives the same, at the cost of one report sent twice each; the details show the "SEND AGAIN" lines
+PASS slip: "One chapter" with no chapter picked: Send is off, and the page says to choose the chapter
+PASS slip: only CentralLimit ticked, which is an app: Send is off, and the page says it goes by the Kit, whose steps are open
+PASS ... with DataLoad ticked too and the sample data: Send is on for the one program, and the data is named with the app as going by the Kit
+PASS cable: at a phone's width nothing runs off the side
+PASS without the test address the page opens on the Virtual Calculator, as always
+PASS without the test address the cable is hidden, whatever the browser can do, and the Kit's steps are the main line
+PASS at the test address in a browser that cannot reach a USB device (Firefox, Safari): no cable, no dead button; the Kit's steps are the main line as before, and no error
 PASS no errors in the page
 
-114 PASS, 0 FAIL
+143 PASS, 0 FAIL

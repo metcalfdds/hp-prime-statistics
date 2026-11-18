@@ -8,7 +8,14 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* PrimeLoader v2a (17 Nov 2026, night).  Roger, after the review of that evening: "i'm thinking we need to make this
+/* PrimeLoader v2b (17 Nov 2026, late).  The cable.  That evening the author's G2 and his G1 took test programs of
+   every size straight down their USB cables from a test page, with no Connectivity Kit (usb/logs/, usb/README.md), by
+   one route: "FD", the newer framing, each program not compressed.  This page sends the chosen programs that way and
+   reads each one back.  IT HAS NOT YET PUT A REAL CHAPTER ON A CALCULATOR, so the cable shows only at the page's
+   test address (...?usb=1); there it is the first way offered for a real HP Prime, and HP's Connectivity Kit, whose
+   steps are kept whole, is the second (Roger: "maybe we shoould keep the instructions for the COnnectivity Kit as a
+   backup").  Everywhere else the page is v2a's.
+   v2a (17 Nov 2026, night).  Roger, after the review of that evening: "i'm thinking we need to make this
    process as simple as is possible", then "How about let the student choose?--1) put all the programs on the Virtual
    Calculator at once or 2) I'll choose which Chapter to load, one at a time", then "we do need to make some sort of
    very simple loader ... to get the programs on a physical calcuator".  So the page asks two things and has one
@@ -18,8 +25,7 @@
      One chapter: the calculator then lists that chapter's programs; the book's other programs are moved to the backup
        (v1 moved every program, the student's own too; now a program whose name the book does not use is never moved).
      A real HP Prime: the same choice, downloaded as one zip for HP's Connectivity Kit, whose steps are now part of
-       the page's main line.  Sending straight down the cable is in the page too, switched off until it has been
-       proved on a calculator (usb/README.md).
+       the page's main line.
    v1d (17 Nov 2026): the review's fixes.  v1c, v1b, v1a, v1 (1 Nov 2026): the first pages; colours are the Data
    Loader's, which echo the fleet's screens (curve blue, frame orange, mean green). */
 :root {
@@ -132,6 +138,21 @@ ol.steps li > p { margin: 2px 0 0; }
 #proglist { margin-top: 4px; }
 .filebtn.hot { border: 2px solid var(--accent); font-weight: 600; }
 #more > div { display: grid; gap: 12px; margin-top: 12px; }
+#cable { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.bar { height: 14px; border-radius: 7px; background: var(--accent-soft); border: 1px solid var(--line); overflow: hidden; max-width: 76ch; }
+.bar > div { height: 100%; width: 0; background: var(--accent); }
+.usblist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 4px 14px; max-width: 76ch; }
+.usblist li { font: 500 0.92rem var(--mono); color: var(--muted); display: flex; gap: 8px; align-items: baseline; }
+.usblist li .mark { width: 1.1em; text-align: center; flex: none; }
+.usblist li.send, .usblist li.check { color: var(--ink); }
+.usblist li.ok { color: var(--good); }
+.usblist li.bad { color: var(--frame); font-weight: 600; }
+#usblog { font: 0.78rem/1.35 var(--mono); max-height: 320px; overflow: auto; background: var(--paper); border: 1px solid var(--line); border-radius: 8px;
+          padding: 8px 10px; margin: 8px 0; white-space: pre; }
+#kitfold { border-top: 0; padding-top: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+#kitfold.second { border-top: 1px solid var(--line); padding-top: 12px; }
+#kitfold > summary { font-weight: 600; }
+#kitroute { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 </style>
 </head>
 <body>
@@ -266,47 +287,87 @@ ol.steps li > p { margin: 2px 0 0; }
   </section>
 
   <section class="step" id="step3real" aria-labelledby="s3r" hidden>
-    <h2 id="s3r"><span class="stepnum">3</span>Put them on your HP Prime with HP's Connectivity Kit</h2>
-    <p class="do">A real HP Prime keeps its programs inside the calculator, so they travel down its USB cable. HP's free <b>Connectivity Kit</b> does the moving.</p>
-    <p class="why">Don't have the Kit? <a href="https://www.hpcalc.org/prime/">hpcalc.org's HP Prime page</a> lists it, with Hewlett-Packard as its author. Download it and install it.</p>
-    <ol class="steps">
-      <li><b>Click this button:</b>
-        <div class="row" style="margin-top:6px"><button type="button" class="primary" id="download3" disabled>Download the programs</button><span class="status" id="dlstatus3" role="status"></span></div>
-        <p class="why">Your browser saves one file, called <b id="zipname3">HP_Prime_programs.zip</b>, in your <b>Downloads</b> folder.</p></li>
-      <li><b>Unpack it:</b> open your Downloads folder, right-click the zip file, choose <b>Extract All…</b>, then click <b>Extract</b>.
-        <p class="why">A window opens showing the program files, each ending in <code>.hpprgm</code>. Leave that window open.</p></li>
-      <li><b>Start the Connectivity Kit. Then plug the calculator into the computer with its USB cable, and turn it on.</b>
-        <p class="why">At the top left of the Kit's window, under <b>Calculators</b>, your calculator's name appears.</p></li>
-      <li><b>Drag each program file from the unpacked folder and drop it on the calculator's name.</b>
-        <p class="why">Drop it right on the name, not into the <b>Content</b> box below it: Content is only the Kit's own shelf. The calculator takes each program in straight away.</p>
-        <p class="why" id="realapp" hidden><b>CentralLimit</b> is an app, not a program, so it is a folder: <code>CentralLimit.hpappdir</code>. Drag the whole folder onto the calculator's name the same way. (This one step has not been tried on a real calculator yet; if the Kit will not take the folder, tell your instructor.)</p>
-        <p class="why" id="realdata" hidden>Your data file (<span id="realdatanames">M1.hpmat</span>) goes on the same way (not yet tried on a real calculator). On the calculator, open the <b>Statistics 1Var</b> app once (<kbd>Apps</kbd>), then run <b>DataLoad</b> to put its columns into the lists.</p></li>
-      <li><b>Close the Connectivity Kit</b>, or unplug the calculator.
-        <p class="why">While the Kit is open it keeps asking the calculator what it holds, and that slows the calculator down.</p></li>
-      <li><b>On the calculator,</b> press <kbd>Shift</kbd>, then <kbd>Program</kbd> (the <kbd>1</kbd> key). Your programs are listed: <b id="realprogs">…</b>. Tap one, then tap <b>Run</b>.
-        <p class="why" id="realapp2" hidden><b>CentralLimit</b> is an app rather than a program: press <kbd>Apps</kbd>, move to CentralLimit without touching it, and tap <b>Start</b>. Then press <kbd>View</kbd> for its menu.</p></li>
-    </ol>
-    <p class="why">Programs already on your calculator stay there, whichever choice you made in step 2. A real calculator has much less room than a computer; to take a program off, open the Program Catalog, tap its name, tap <b>More</b>, then <b>Delete</b>.</p>
-    <details>
-      <summary>The Kit does not show my calculator</summary>
-      <div class="panel warn" style="margin-top:10px">
-        <p style="margin:0"><b>Make sure Bonjour is running.</b> The Connectivity Kit uses a small Apple program called <b>Bonjour</b> to find calculators (HP includes Bonjour with the Kit). On some computers Bonjour gets stopped, and then the Kit may not see your calculator at all, or may misbehave. To check it:</p>
-        <ol>
-          <li>Press the <kbd>Windows</kbd> key, type <b>Services</b>, and open the <b>Services</b> app.</li>
-          <li>Find <b>Bonjour Service</b> in the list. The list is in alphabetical order, so it is near the top.</li>
-          <li>Look at its <b>Status</b> column: it should say <b>Running</b>. If it doesn't, right-click <b>Bonjour Service</b> and choose <b>Start</b>. Windows may ask for an administrator's permission; on a school computer, ask your instructor or the IT help desk.</li>
-        </ol>
-        <p class="why" style="margin:0">Instructors: the hp-prime-statistics repository has a small launcher (<code>tools/windows-launcher</code>) that checks Bonjour, starts it if needed, and then opens the Kit.</p>
+    <h2 id="s3r"><span class="stepnum">3</span><span id="s3rtitle">Put them on your HP Prime with HP's Connectivity Kit</span></h2>
+
+    <div id="cable" hidden>
+      <div class="panel warn" id="cabletested">
+        <p class="note" style="color:inherit"><b>This way is being tested.</b> On 17 November 2026 it put test programs of every size on an HP Prime G2 and on a G1, and read each one back the same. It has not yet loaded the book's own programs onto a calculator: this is that test. If it does not work on yours, the other way, HP's Connectivity Kit, is right below.</p>
       </div>
-      <p class="why" style="margin-top:8px">If the mouse pointer shows a circle with a line through it when you drag, the Kit may be set to run as administrator: right-click its shortcut, <b>Properties</b>, <b>Compatibility</b>, and clear "Run this program as an administrator".</p>
-    </details>
-    <div class="panel warn" id="usbpanel" hidden>
-      <h3>Being tested: straight down the cable, with no Connectivity Kit</h3>
-      <p class="note" style="color:inherit">This sends the programs from this page to the calculator through its USB cable, and reads each one back to see that it arrived whole. <b>It has not been proved on a real calculator yet</b>, which is why only this page's test address shows it. Close the Connectivity Kit first, and leave the calculator switched on at its Home screen.</p>
-      <div class="row"><button type="button" class="primary" id="usbsend" disabled>Send to the calculator</button><button type="button" id="usbstop" disabled>Stop</button></div>
+      <ol class="steps">
+        <li><b>Plug the calculator into this computer with its USB cable, and switch it on.</b> Leave it at its Home screen.
+          <p class="why">The Home screen is the one you calculate on. If the calculator shows anything else, press the <kbd>Home</kbd> key (the little house).</p></li>
+        <li><b>If HP's Connectivity Kit is open, close it.</b>
+          <p class="why">Only one program at a time can talk to the calculator. You do not need the Kit for this way at all.</p></li>
+        <li><b>Click this button:</b>
+          <div class="row" style="margin-top:6px"><button type="button" class="primary" id="usbsend" disabled>Send to the calculator</button><button type="button" id="usbstop" hidden>Stop</button></div>
+          <p class="why" id="usbfirst">The first time, the browser opens a small window that lists your calculator (<b>HP Prime</b>, or <b>Prime Graphing Calculator</b>). Click its name, then click <b>Connect</b>. That lets this page talk to that one calculator and to nothing else.</p></li>
+      </ol>
       <p class="status" id="usbstatus" role="status" aria-live="polite"></p>
-      <ul class="note" id="usblist" style="color:inherit"></ul>
+      <div class="bar" id="usbbar" role="progressbar" aria-label="How much has been sent" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden><div id="usbfill"></div></div>
+      <ul class="usblist" id="usblist" aria-label="The programs being sent"></ul>
+      <div class="panel done" id="usbdone" hidden>
+        <h3>Done. Your programs are on the calculator.</h3>
+        <ol id="usbnext"></ol>
+        <p class="note" style="color:inherit"><b>What just happened:</b></p>
+        <ul class="note" id="usbreport"></ul>
+      </div>
+      <div class="panel warn" id="usbfail" hidden>
+        <h3 id="usbfailh"></h3>
+        <p class="note" id="usbfailp" style="color:inherit"></p>
+        <ol id="usbfaildo"></ol>
+      </div>
+      <details class="opt" id="usbdetails">
+        <summary>What passed on the cable (for your instructor)</summary>
+        <p class="why" style="margin:10px 0 0">Every message between this page and the calculator, in short. It holds nothing about you and not the calculator's serial number. If something went wrong, click <b>Save the details</b> and send the file to your instructor.</p>
+        <pre id="usblog" tabindex="0" aria-label="The messages that passed on the cable"></pre>
+        <div class="row"><button type="button" id="usbsave" disabled>Save the details</button><span class="status" id="usbsaved" role="status"></span></div>
+      </details>
+      <details class="opt">
+        <summary>What Send does</summary>
+        <p class="why" style="margin:10px 0 8px">Send asks the calculator who it is, sends each program down the cable, and then asks the calculator for that program back and compares the two, character for character. A program counts as loaded only when it came back the same. The first one that does not stops the sending, and the page says which.</p>
+        <p class="why" style="margin:0 0 8px">The programs are <b>added</b>: programs already on your calculator stay, whichever choice you made in step 2. One with the same name as a program being sent is replaced by this page's copy.</p>
+        <p class="why" style="margin:0">A chapter takes seconds. All the programs take longer, most of all on an older calculator (a G1), whose cable carries less at a time; the bar shows how far it is. <b>Stop</b> stops after the program being sent, never in the middle of one.</p>
+      </details>
     </div>
+
+    <details id="kitfold" open>
+      <summary id="kitsum" hidden>The other way: HP's Connectivity Kit</summary>
+      <div id="kitroute">
+        <p class="do">A real HP Prime keeps its programs inside the calculator, so they travel down its USB cable. HP's free <b>Connectivity Kit</b> does the moving.</p>
+        <p class="why">Don't have the Kit? <a href="https://www.hpcalc.org/prime/">hpcalc.org's HP Prime page</a> lists it, with Hewlett-Packard as its author. Download it and install it.</p>
+        <ol class="steps">
+          <li><b>Click this button:</b>
+            <div class="row" style="margin-top:6px"><button type="button" class="primary" id="download3" disabled>Download the programs</button><span class="status" id="dlstatus3" role="status"></span></div>
+            <p class="why">Your browser saves one file, called <b id="zipname3">HP_Prime_programs.zip</b>, in your <b>Downloads</b> folder.</p></li>
+          <li><b>Unpack it:</b> open your Downloads folder, right-click the zip file, choose <b>Extract All…</b>, then click <b>Extract</b>.
+            <p class="why">A window opens showing the program files, each ending in <code>.hpprgm</code>. Leave that window open.</p></li>
+          <li><b>Start the Connectivity Kit. Then plug the calculator into the computer with its USB cable, and turn it on.</b>
+            <p class="why">At the top left of the Kit's window, under <b>Calculators</b>, your calculator's name appears.</p></li>
+          <li><b>Drag each program file from the unpacked folder and drop it on the calculator's name.</b>
+            <p class="why">Drop it right on the name, not into the <b>Content</b> box below it: Content is only the Kit's own shelf. The calculator takes each program in straight away.</p>
+            <p class="why" id="realapp" hidden><b>CentralLimit</b> is an app, not a program, so it is a folder: <code>CentralLimit.hpappdir</code>. Drag the whole folder onto the calculator's name the same way. (This one step has not been tried on a real calculator yet; if the Kit will not take the folder, tell your instructor.)</p>
+            <p class="why" id="realdata" hidden>Your data file (<span id="realdatanames">M1.hpmat</span>) goes on the same way (not yet tried on a real calculator). On the calculator, open the <b>Statistics 1Var</b> app once (<kbd>Apps</kbd>), then run <b>DataLoad</b> to put its columns into the lists.</p></li>
+          <li><b>Close the Connectivity Kit</b>, or unplug the calculator.
+            <p class="why">While the Kit is open it keeps asking the calculator what it holds, and that slows the calculator down.</p></li>
+          <li><b>On the calculator,</b> press <kbd>Shift</kbd>, then <kbd>Program</kbd> (the <kbd>1</kbd> key). Your programs are listed: <b id="realprogs">…</b>. Tap one, then tap <b>Run</b>.
+            <p class="why" id="realapp2" hidden><b>CentralLimit</b> is an app rather than a program: press <kbd>Apps</kbd>, move to CentralLimit without touching it, and tap <b>Start</b>. Then press <kbd>View</kbd> for its menu.</p></li>
+        </ol>
+        <p class="why">Programs already on your calculator stay there, whichever choice you made in step 2. A real calculator has much less room than a computer; to take a program off, open the Program Catalog, tap its name, tap <b>More</b>, then <b>Delete</b>.</p>
+        <details>
+          <summary>The Kit does not show my calculator</summary>
+          <div class="panel warn" style="margin-top:10px">
+            <p style="margin:0"><b>Make sure Bonjour is running.</b> The Connectivity Kit uses a small Apple program called <b>Bonjour</b> to find calculators (HP includes Bonjour with the Kit). On some computers Bonjour gets stopped, and then the Kit may not see your calculator at all, or may misbehave. To check it:</p>
+            <ol>
+              <li>Press the <kbd>Windows</kbd> key, type <b>Services</b>, and open the <b>Services</b> app.</li>
+              <li>Find <b>Bonjour Service</b> in the list. The list is in alphabetical order, so it is near the top.</li>
+              <li>Look at its <b>Status</b> column: it should say <b>Running</b>. If it doesn't, right-click <b>Bonjour Service</b> and choose <b>Start</b>. Windows may ask for an administrator's permission; on a school computer, ask your instructor or the IT help desk.</li>
+            </ol>
+            <p class="why" style="margin:0">Instructors: the hp-prime-statistics repository has a small launcher (<code>tools/windows-launcher</code>) that checks Bonjour, starts it if needed, and then opens the Kit.</p>
+          </div>
+          <p class="why" style="margin-top:8px">If the mouse pointer shows a circle with a line through it when you drag, the Kit may be set to run as administrator: right-click its shortcut, <b>Properties</b>, <b>Compatibility</b>, and clear "Run this program as an administrator".</p>
+        </details>
+      </div>
+    </details>
   </section>
 
   <section class="step help" aria-labelledby="s5">
@@ -363,9 +424,11 @@ const canUnpack = typeof DecompressionStream === 'function';     // the programs
 // The browser's name, for the manual route's wording only (never to decide anything: canWrite decides).
 const browserName = /Firefox\//.test(navigator.userAgent) ? 'Firefox'
   : (/Safari\//.test(navigator.userAgent) && !/Chrom(e|ium)\//.test(navigator.userAgent)) ? 'Safari' : 'this browser';
-// Sending straight down the cable is in the page and switched off: it shows only at the page's test address
-// (...?usb=1), in a browser that can reach a USB device.  usb/README.md says what has to be proved first.
-const usbOn = /[?&]usb=1(&|$)/.test(location.search) && typeof PrimeUSB !== 'undefined' && PrimeUSB.supported();
+// Sending straight down the cable shows only at the page's test address (...?usb=1), in a browser that can reach a
+// USB device (Chrome and Edge can; Firefox and Safari cannot).  usb/README.md says what has been proved on a
+// calculator, and what must be before the test address is no longer needed.
+const usbAsked = /[?&]usb=1(&|$)/.test(location.search);
+const usbOn = usbAsked && typeof PrimeUSB !== 'undefined' && PrimeUSB.supported();
 // The Data Loader's last step links here with ?data=1: the page then opens ready for a data file, with no program
 // chosen, so that the student's data and DataLoad are all that Load adds.
 const fromDataLoader = /[?&]data=1(&|$)/.test(location.search);
@@ -501,7 +564,18 @@ function refresh() {
   $('repick').disabled = loading;
   $('download2').disabled = !any || !canUnpack;
   $('download3').disabled = !any || !canUnpack;
-  $('usbsend').disabled = !any || !canUnpack || usbBusy;
+  // the cable carries programs; an app (three files) and data go by the Kit
+  const cableProgs = sel.filter(p => CAT.programs[p].src), cableRest = sel.filter(p => !CAT.programs[p].src).concat(data.map(d => d.path.replace('.hpmat', '')));
+  $('usbsend').disabled = cableProgs.length === 0 || !canUnpack || usbBusy;
+  if (usbOn && !usbBusy) {
+    $('s3rtitle').textContent = 'Send them to your HP Prime, down its USB cable';
+    // what the page says of a finished load is about that load's programs: a different choice starts afresh
+    if (usbShown !== null && usbShown !== cableProgs.join()) { usbShown = null; $('usbdone').hidden = true; $('usbfail').hidden = true; $('usbbar').hidden = true; $('usblist').innerHTML = ''; }
+    if ($('usbdone').hidden && $('usbfail').hidden)
+      usbSay(cableProgs.length === 0 ? (any ? 'Nothing in your choice goes down the cable: ' + cableRest.join(', ') + ' (an app or data) goes by HP\'s Connectivity Kit, below.' : '')
+             : cableRest.length ? 'Ready to send ' + plural(cableProgs.length, 'program') + '. ' + cableRest.join(', ') + ' (an app or data) does not travel this way: it goes by HP\'s Connectivity Kit, below.' : '');
+    if (cableProgs.length === 0 && any) $('kitfold').open = true;       // the Kit is then the only way
+  }
   const progs = sel.filter(p => CAT.programs[p].home);
   const listed = progs.length ? progs.join(', ') : '(choose your programs in step 2)';
   $('manualprogs').textContent = listed; $('realprogs').textContent = listed;
@@ -660,81 +734,175 @@ async function download(statusId) {
 $('download2').addEventListener('click', () => download('dlstatus2'));
 $('download3').addEventListener('click', () => download('dlstatus3'));
 
-// ---------- being tested: a real HP Prime, straight down the cable (shown only with ?usb=1) ----------
-// Each program is sent the way hp-prime-kit measured on a G2 (compressed, the report 01 after it) and then asked for
-// back; it counts as loaded only when what comes back is, character for character, what was sent.  The first program
-// that cannot be read back stops the run: the page never says "done" for a program it could not check.
-let usbBusy = false, usbStopNow = false;
-const USB_READS = [{ ver: 3, nul: true }, { ver: 1, nul: true }, { ver: 3, nul: false }, { ver: 1, nul: false }];
+// ---------- a real HP Prime, straight down the cable (shown only with ?usb=1 until a chapter has loaded on a calculator) ----------
+// The route is PrimeUSB.load's: who are you; "FD"; the newer framing; each program not compressed, and then asked
+// for back.  A program counts as loaded only when what came back is, character for character, what was sent, and
+// the first that does not stops the load: the page never says "done" for a program it could not check.
+let usbBusy = false, usbStopNow = false, usbLog = [], usbT0 = 0, usbShown = null;      // usbShown: the choice the list and the panels on the page are about
 function usbSay(text, kind) { const s = $('usbstatus'); s.textContent = text; s.className = 'status' + (kind ? ' ' + kind : ''); }
-function usbItem(text, kind) { const li = document.createElement('li'); li.textContent = text; if (kind) li.className = kind; $('usblist').appendChild(li); return li; }
-function sourceOf(pf, name) {             // the program's text, from its file in the pack: where it lies was found at build time
+function usbLine(text, at) {              // one line of the details, with the seconds since the load began
+  const t = usbT0 ? ('       ' + (((at || Date.now()) - usbT0) / 1000).toFixed(2)).slice(-8) + '  ' : '';
+  usbLog.push(text === '' ? '' : t + text);
+  const pre = $('usblog');
+  if (usbLog.length <= 1500) { pre.textContent += (text === '' ? '' : t + text) + '\n'; if ($('usbdetails').open) pre.scrollTop = pre.scrollHeight; }
+  else if (usbLog.length === 1501) pre.textContent += '(the rest is in the file that Save the details makes)\n';
+}
+// The program's text, exactly as its file in the pack holds it: where it lies in the file was found when the page was built.
+function sourceOf(pf, name) {
   const p = CAT.programs[name], b = pf.get(p.files[0]);
-  return PrimeUSB.normalizeSource(PrimeUSB.fromUtf16le(b.subarray(p.src[0], p.src[1])).replace(/\u0000+$/, ''));
+  return PrimeUSB.fromUtf16le(b.subarray(p.src[0], p.src[1])).replace(/\u0000+$/, '');
+}
+const USB_MARK = { send: '→', check: '…', ok: '✓', bad: '✗', wait: '·' };
+const USB_WORD = { send: 'sending', check: 'checking', ok: 'on the calculator', bad: 'NOT loaded', wait: 'waiting' };
+function usbFail(head, text, todo, openKit) {
+  $('usbfailh').textContent = head; $('usbfailp').innerHTML = text;
+  const ol = $('usbfaildo'); ol.innerHTML = '';
+  for (const h of todo) { const li = document.createElement('li'); li.innerHTML = h; ol.appendChild(li); }
+  $('usbfail').hidden = false;
+  if (openKit) $('kitfold').open = true;
+  usbSay(head, 'bad');
 }
 async function usbSend() {
   if (usbBusy) return;
-  usbBusy = true; usbStopNow = false;
-  $('usbsend').disabled = true; $('usbstop').disabled = false; $('usblist').innerHTML = '';
-  let port = null;
+  usbBusy = true; usbStopNow = false; usbLog = []; usbT0 = 0;
+  $('usbsend').disabled = true; $('usblist').innerHTML = ''; $('usblog').textContent = ''; $('usbsave').disabled = true; $('usbsaved').textContent = '';
+  $('usbdone').hidden = true; $('usbfail').hidden = true; $('usbbar').hidden = true;
+  const kitWay = 'use the other way, HP\'s Connectivity Kit, whose steps are just below';
+  let port = null, lost = null;
   try {
     const sel = selection(), data = dataChosen();
-    const progs = sel.filter(p => CAT.programs[p].src), apps = sel.filter(p => !CAT.programs[p].src);
-    if (progs.length === 0) { usbSay('There is no program in your choice that can go down the cable.', 'bad'); return; }
-    usbSay('Waiting for you to choose the calculator in the browser\'s window ...');
-    const d = await PrimeUSB.choose();
-    if (!d) { usbSay('No calculator was chosen. If the browser\'s list was empty: is the calculator switched on, and is the cable pushed in at both ends? Then click Send again.', 'bad'); return; }
-    try { port = await PrimeUSB.open(d); }
-    catch (e) { usbSay('The browser found the calculator and could not open it. That is what happens while HP\'s Connectivity Kit is open: close the Kit, then click Send again.', 'bad'); return; }
-    const link = new PrimeUSB.Link(port);
-    let info;
-    try { info = await link.info(3000); }
-    catch (e) { usbSay('The calculator did not answer. Is it switched on and at its Home screen? Nothing was sent.', 'bad'); return; }
-    usbItem('Connected: ' + (PrimeUSB.MODELS[d.productId] || 'HP Prime') + ', firmware build ' + info.build + '.');
-    const pf = await pack();
-    let reader = null, done = 0;
-    for (const name of progs) {
-      if (usbStopNow) { usbSay('Stopped after ' + plural(done, 'program') + '. The ones marked "arrived whole" are on the calculator.', 'bad'); return; }
-      usbSay('Sending ' + name + ' (' + (done + 1) + ' of ' + progs.length + ') ...');
-      const src = sourceOf(pf, name), li = usbItem(name + ': sending ...');
-      const out = await link.sendProgram(name, src, { layout: 'v3', release: true });
-      li.textContent = name + ': sent in ' + plural(out.reports, 'report') + '; reading it back ...';
-      let back = null;
-      const tries = reader ? [reader] : USB_READS;
-      const same = b => !!b && (b.text === src || PrimeUSB.normalizeSource(b.text) === src);      // (a calculator may hand it back with other line ends)
-      for (let round = 0; round < 6 && !same(back); round++) {
-        if (round) await PrimeUSB.sleep(2000);                    // a long program may take the calculator a moment to store
-        for (const rd of tries) {
-          try { back = await link.readProgram(name, { ver: rd.ver, nul: rd.nul, first: reader ? 4000 : 2500, then: 3000 }); } catch (e) { back = null; }
-          if (back) { reader = rd; break; }
-        }
-        if (!reader) break;                                       // no way of asking was answered: more waiting will not help
-      }
-      if (same(back)) { li.textContent = name + ': arrived whole (' + plural(out.reports, 'report') + ', read back the same).'; done++; continue; }
-      if (!back) {
-        li.textContent = name + ': sent, but the calculator did not give it back, so the page cannot tell whether it arrived.';
-        usbSay('Stopped at ' + name + '. The page could not read it back, so it will not send the rest. Look in the calculator\'s Program Catalog for ' + name +
-               ', and use the Connectivity Kit steps above for your programs.', 'bad');
-      } else {
-        li.textContent = name + ': what came back is not what was sent (' + back.text.length + ' characters against ' + src.length + ').';
-        usbSay('Stopped at ' + name + ': it did not arrive whole. Delete ' + name + ' on the calculator (Program Catalog, tap its name, More, Delete), and use the Connectivity Kit steps above.', 'bad');
-      }
+    const names = sel.filter(p => CAT.programs[p].src), rest = sel.filter(p => !CAT.programs[p].src).concat(data.map(x => x.path.replace('.hpmat', '')));
+    if (names.length === 0) { usbSay('There is no program in your choice that can go down the cable.', 'bad'); return; }
+    usbShown = names.join();
+    usbSay('Looking for the calculator ... If the browser shows a small window, click the calculator\'s name in it, then Connect.');
+    let d;
+    try { d = await PrimeUSB.choose(); }
+    catch (e) { usbFail('The browser would not show its list of calculators', esc(why(e)) + '.', ['Click <b>Send to the calculator</b> again.', 'If it happens again, ' + kitWay + '.'], true); return; }
+    if (!d) {
+      usbFail('No calculator was chosen', 'The browser\'s small window was closed without a calculator picked, or its list was empty. Nothing was sent.',
+              ['Is the calculator switched on?', 'Is the cable pushed in firmly at both ends? Some cables only charge, and carry nothing else: use the one that came with the calculator.',
+               'Click <b>Send to the calculator</b> again, click the calculator\'s name in the small window, then click <b>Connect</b>.'], false);
       return;
     }
-    const rest = apps.concat(data.map(x => x.path));
-    usbSay(plural(done, 'program') + ' on the calculator, each read back and found the same.' +
-           (rest.length ? ' Not sent this way: ' + rest.join(', ') + ' (an app or a data file; use the Connectivity Kit steps above for those).' : '') +
-           ' On the calculator, press Shift, then Program.', 'ok');
+    try { port = await PrimeUSB.open(d); }
+    catch (e) {
+      usbFail('The browser found the calculator and could not open it', 'That is what happens while another program is talking to the calculator. Nothing was sent.',
+              ['Close HP\'s Connectivity Kit if it is open.', 'Click <b>Send to the calculator</b> again.'], false);
+      return;
+    }
+    lost = ev => { if (ev.device === d) port.lose('the calculator went off the cable'); };
+    navigator.hid.addEventListener('disconnect', lost);
+    const pf = await pack();
+    const programs = names.map(n => ({ name: n, source: sourceOf(pf, n) }));
+    const total = programs.reduce((t, p) => t + p.source.length, 0);
+    // the list, the bar
+    const lis = programs.map(p => {
+      const li = document.createElement('li'); li.className = 'wait';
+      li.innerHTML = '<span class="mark" aria-hidden="true">' + USB_MARK.wait + '</span><span>' + esc(p.name) + '</span><span class="say" style="position:absolute;left:-9999px"> ' + USB_WORD.wait + '</span>';
+      $('usblist').appendChild(li); return li;
+    });
+    let before = 0, now = -1, phase = '';
+    const bar = frac => { const pc = Math.max(0, Math.min(100, Math.round(100 * frac))); $('usbfill').style.width = pc + '%'; $('usbbar').setAttribute('aria-valuenow', String(pc)); };
+    $('usbbar').hidden = false; bar(0);
+    $('usbstop').hidden = false; $('usbstop').disabled = false; $('usbstop').textContent = 'Stop';
+    window.onbeforeunload = ev => { ev.preventDefault(); ev.returnValue = ''; return ''; };      // the calculator is in the middle of taking a program
+    usbT0 = Date.now();
+    const when = new Date();
+    usbLog.push('HP Prime Loader, ' + CAT.loader + ', straight down the cable. ' + when.toString());
+    usbLog.push('Browser: ' + navigator.userAgent);
+    usbLog.push('Device: ' + (PrimeUSB.MODELS[d.productId] || 'not a model this page knows') + ' (USB ' + ('000' + d.vendorId.toString(16)).slice(-4).toUpperCase() + ':' + ('000' + d.productId.toString(16)).slice(-4).toUpperCase() +
+                '), "' + (d.productName || '') + '"; reports of ' + port.inSize + ' bytes in and ' + port.outSize + ' out, by ' + port.sizeFrom + '.');
+    usbLog.push('Chosen: ' + (state.what === 'all' ? 'all the programs' : state.what === 'chapter' ? 'Chapter ' + chapter().num : 'programs ticked one by one') + '; ' + plural(programs.length, 'program') + ', ' + PrimeUSB.num(total) + ' characters: ' + names.join(', ') + '.' + (rest.length ? ' Not sent this way: ' + rest.join(', ') + '.' : ''));
+    usbLog.push('');
+    $('usblog').textContent = usbLog.join('\n') + '\n';
+    const link = new PrimeUSB.Link(port);
+    link.progress = (have, of) => { if (phase === 'send' && now >= 0) bar((before + programs[now].source.length * have / of) / total); };
+    const res = await PrimeUSB.load(link, programs, {
+      log: text => usbLine(text),
+      trace: (text, at) => usbLine('      . ' + text, at),
+      stop: () => usbStopNow,
+      item: (k, st) => {
+        if (st === 'send') { now = k; before = programs.slice(0, k).reduce((t, p) => t + p.source.length, 0); usbSay('Sending ' + programs[k].name + ' (' + (k + 1) + ' of ' + programs.length + ') ...'); }
+        if (st === 'check') { bar((before + programs[k].source.length) / total); usbSay('Checking ' + programs[k].name + ' (' + (k + 1) + ' of ' + programs.length + '): asking the calculator for it back ...'); }
+        phase = st;
+        const li = lis[k]; li.className = st; li.querySelector('.mark').textContent = USB_MARK[st]; li.querySelector('.say').textContent = ' ' + USB_WORD[st];
+      }
+    });
+    const done = res.done.length, first = names[done], f = res.failed;
+    // a program that was on its way when the load ended is not on the calculator as far as the page knows
+    lis.forEach(li => { if (li.className === 'send' || li.className === 'check') { li.className = 'bad'; li.querySelector('.mark').textContent = USB_MARK.bad; li.querySelector('.say').textContent = ' ' + USB_WORD.bad; } });
+    usbLine('');
+    usbLine('RESULT: ' + (res.ok ? 'all ' + plural(done, 'program') + ' on the calculator, each read back the same' : plural(done, 'program') + ' of ' + programs.length + ' on the calculator and read back the same' +
+            (res.gone ? '; the calculator went off the cable' : res.stopped ? '; stopped by the Stop button' : f ? '; ' + (f.name ? f.name + ': ' : '') + f.why + ' (' + f.text + ')' : '')) +
+            '. ' + PrimeUSB.num(res.reports) + ' reports carried the programs there and back; ' + (res.ms / 1000).toFixed(1) + ' s in all.');
+    const marked = done ? 'The ' + (done === 1 ? 'program' : plural(done, 'program')) + ' marked ✓ ' + (done === 1 ? 'is' : 'are') + ' on the calculator, whole. ' : '';
+    if (res.ok) {
+      bar(1);
+      usbSay(plural(done, 'program') + ' on the calculator, each one read back and found the same.', 'ok');
+      usbDone(names, rest, res);
+    } else if (res.gone) {
+      usbFail('The calculator went off the cable', marked + (first ? esc(first) + ' and the programs after it are not.' : ''),
+              ['Was the cable pulled out, or did the calculator switch itself off? Plug it in again and switch it on.', 'Click <b>Send to the calculator</b> again. It sends them all again, which does no harm.'], false);
+    } else if (res.stopped) {
+      usbFail('Stopped', marked + (first ? esc(first) + ' and the programs after it were not sent.' : ''), ['To send the rest, click <b>Send to the calculator</b> again.'], false);
+    } else if (f.why === 'silent') {
+      usbFail('The calculator did not answer', 'Nothing was sent.',
+              ['Is the calculator switched on, and at its Home screen? Press its <kbd>Home</kbd> key.', 'Pull its cable out, push it in again, and click <b>Send to the calculator</b> again.', 'If it still does not answer, ' + kitWay + '.'], true);
+    } else if (f.why === 'version') {
+      usbFail('This calculator answers differently from the two this way was proved on', 'So nothing was sent to it. That is no fault of the calculator; its software may be older or newer.',
+              ['Use the other way, HP\'s Connectivity Kit: its steps are just below.', 'Please click <b>Save the details</b>, under "What passed on the cable", and send that file to your instructor.'], true);
+    } else if (f.why === 'unsent') {
+      usbFail(esc(f.name) + ' did not go through', marked + esc(f.name) + ' and the programs after it are not.',
+              ['Pull the calculator\'s cable out, push it in again, and click <b>Send to the calculator</b> again.', 'If it stops at the same place, ' + kitWay + '.'], true);
+    } else {
+      usbFail(esc(f.name) + ' did not come back the same',
+              'The page sent ' + esc(f.name) + ' and asked the calculator for it back. ' + (f.why === 'differs' ? 'What came back is not what was sent.' : f.why === 'missing' ? 'The calculator did not have it.' : 'The calculator did not give it back.') +
+              ' So the page does not count it as loaded, and it stopped there. ' + marked,
+              ['On the calculator, press <kbd>Shift</kbd>, then <kbd>Program</kbd>. If <b>' + esc(f.name) + '</b> is in the list, take it off: tap its name, tap <b>More</b>, then <b>Delete</b>.',
+               'Then ' + kitWay + ', for ' + esc(f.name) + ' and the programs after it.', 'Please click <b>Save the details</b>, under "What passed on the cable", and send that file to your instructor.'], true);
+    }
   } catch (e) {
-    usbSay('The sending broke off: ' + why(e) + '. Was the cable pulled out? The programs marked "arrived whole" are on the calculator; the rest are not.', 'bad');
+    usbLine('THE PAGE STOPPED: ' + why(e) + '.');
+    usbFail('Something went wrong on this page', esc(why(e)) + '. The programs marked ✓, if any, are on the calculator.',
+            ['Pull the calculator\'s cable out, push it in again, and click <b>Send to the calculator</b> again.', 'If it happens again, use the other way, HP\'s Connectivity Kit, whose steps are just below.'], true);
   } finally {
+    window.onbeforeunload = null;
+    if (lost) navigator.hid.removeEventListener('disconnect', lost);
     if (port) { try { await port.close(); } catch (e) { /* gone already */ } }
-    usbBusy = false; $('usbstop').disabled = true;
+    usbBusy = false; $('usbstop').hidden = true;
+    $('usbsave').disabled = usbLog.length === 0;
     refresh();
   }
 }
+function usbDone(names, rest, res) {
+  const ol = $('usbnext'); ol.innerHTML = '';
+  const li = h => { const x = document.createElement('li'); x.innerHTML = h; ol.appendChild(x); };
+  li('On the calculator, press <kbd>Shift</kbd>, then <kbd>Program</kbd> (the <kbd>1</kbd> key). This opens the <b>Program Catalog</b>, the calculator\'s list of programs. ' +
+     (names.length <= 8 ? 'Yours are: <b>' + esc(names.join(', ')) + '</b>.' : 'Your programs are all listed there.'));
+  li('Tap one, then tap <b>Run</b>.');
+  li('<span class="note" style="color:inherit">If one says Syntax Error, or <b>Run</b> does nothing: tap it, tap <b>Edit</b>, tap <b>Check</b> (it says "No errors in the program"), tap <b>OK</b>, press <kbd>Esc</kbd>, then tap <b>Run</b>.</span>');
+  li('You can unplug the calculator now.');
+  const ul = $('usbreport'); ul.innerHTML = '';
+  const r = h => { const x = document.createElement('li'); x.innerHTML = h; ul.appendChild(x); };
+  r(plural(names.length, 'program') + ' went down the cable' + (names.length <= 12 ? ': ' + esc(names.join(', ')) : '') + '. Each was then read back from the calculator and found the same, character for character.');
+  r('The programs that were already on the calculator were left where they are. One with the same name as a program sent was replaced by it.');
+  if (rest.length) r('<b>Not sent this way:</b> ' + esc(rest.join(', ')) + ' (an app or data). For ' + (rest.length === 1 ? 'it' : 'those') + ', use HP\'s Connectivity Kit, whose steps are just below.');
+  r('It took ' + (res.ms < 9950 ? (res.ms / 1000).toFixed(1) : Math.round(res.ms / 1000)) + ' seconds.');
+  $('usbdone').hidden = false;
+  if (rest.length) $('kitfold').open = true;
+}
 $('usbsend').addEventListener('click', usbSend);
-$('usbstop').addEventListener('click', () => { usbStopNow = true; $('usbstop').disabled = true; });
+$('usbstop').addEventListener('click', () => { usbStopNow = true; $('usbstop').disabled = true; $('usbstop').textContent = 'Stopping after this program ...'; });
+$('usbsave').addEventListener('click', () => {
+  const t = new Date(), two = n => ('0' + n).slice(-2);
+  const name = 'PrimeLoader_cable_' + t.getFullYear() + '-' + two(t.getMonth() + 1) + '-' + two(t.getDate()) + '_' + two(t.getHours()) + two(t.getMinutes()) + '.txt';
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([usbLog.join('\r\n') + '\r\n'], { type: 'text/plain' }));
+  a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  $('usbsaved').textContent = 'Saved ' + name + ' in your Downloads folder.';
+});
 
 // ---------- start ----------
 // A phone, a computer that is not Windows, or a browser too old to unpack the programs: say so at the top, in plain
@@ -764,7 +932,10 @@ $('rossiwhat').textContent = CAT.data.rossi.what;
 $('packline').textContent = 'Program files from ' + CAT.pack + ' (' + CAT.pack_sha256 + ').';
 $('brname').textContent = browserName === 'this browser' ? 'a browser that cannot write to folders' : browserName;
 document.querySelectorAll('.brname2').forEach(e => { e.textContent = browserName === 'this browser' ? 'This browser' : browserName; });
-$('usbpanel').hidden = !usbOn;
+$('cable').hidden = !usbOn;
+if (usbOn) { $('kitfold').open = false; $('kitfold').classList.add('second'); $('kitsum').hidden = false; }
+// The test address is for the cable, so it opens on a real HP Prime.
+if (usbAsked) $('t_real').checked = true;
 // A browser can keep a form's last state when a page is reloaded; the page starts from what the circles show.
 state.target = $('t_real').checked ? 'real' : 'vc';
 state.what = $('w_chapter').checked ? 'chapter' : $('w_pick').checked ? 'pick' : 'all';
