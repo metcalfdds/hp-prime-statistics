@@ -11,11 +11,13 @@ Every step on the page says, in plain words, what is happening and why. A "Somet
 
 ## What it does
 
-1. **You pick** one or more of the companion guide's 15 chapters, or programs one by one. You can add the sample data set, or your own data file from the [Data Loader](../data-loader/README.md).
+1. **You pick** one or more of the companion guide's 15 chapters, or programs one by one. You can add the sample data set, or your own data file from the [Data Loader](../data-loader/README.md). The page opens a data file and checks that it is a matrix file before it takes it, and whenever data go on the calculator, DataLoad goes with them.
 2. **You click Load.** The first time, a window opens at Documents: click **HP Prime**, then **Select Folder**, then let the page edit files there. After that it remembers.
 3. **The page checks that the Virtual Calculator is closed.** It looks for the lock file the calculator keeps in `HP Prime\Temp` while it runs. A running calculator writes its memory back when it exits, which would undo the load.
 4. **It clears the calculator, safely.** Every program on it, every app that is not HP's, and any matrix about to be replaced are moved to `HP Prime\Loader backups\<date time>`. Each file is copied, read back, and only then removed. HP's own apps, settings and lists are left alone.
 5. **It writes the chosen files** into `HP Prime\Calculators\Prime` and reads each one back.
+
+**A data file on its own (since v1v).** With a data file picked and no chapter, step 4 does not clear the calculator: the file and DataLoad are added, and only a file they replace is moved to the backup. Until v1v a data file loaded on its own moved every program off the calculator, DataLoad too.
 6. **You start the Virtual Calculator.** The page says what to do next: Shift, Program, tap a program, Run. It also says how to start CentralLimit (an app) and how to use DataLoad for data.
 
 **Firefox or Safari:** steps 2 to 6 become: download the chapter's zip; close the calculator; Extract All, with Browse pointed at `Documents\HP Prime\Calculators\Prime`; start the calculator. Programs already on the calculator stay (nothing is cleared or backed up on this route).
@@ -26,6 +28,22 @@ Every step on the page says, in plain words, what is happening and why. A "Somet
 3. drag each file onto the calculator's name (**Virtual Prime** for the Virtual Calculator) in the **Calculators** list at the top left of the Kit's window, not into the Content box below it.
 
 This works the same for the Virtual Calculator, a G1 and a G2, and for a real Prime it is the only way. Its help opens with a highlighted reminder to **make sure Apple's Bonjour Service is running**: the Kit uses Bonjour to find calculators (HP's release notes: the Kit and Virtual Calculator "now include Apple Bonjour installers to enable mDns networking on Windows"), and where Bonjour has stopped, the Kit may not see the calculator. The reminder says how to check it in Windows' Services app and points instructors to [`tools/windows-launcher`](../tools/windows-launcher/README.md), which checks Bonjour before opening the Kit.
+
+## The review of 17 November 2026 (v1v)
+
+Roger asked for the students' helpers to be reviewed: "they must be bullet proof and as simple as possible". The tests passed, 59 of 59, but every one of them did what a careful student does. Tried with the slips a student makes, v1u did these things, and v1v does not:
+
+| What a student does | v1u | v1v |
+| --- | --- | --- |
+| Adds a data file, picks no chapter, clicks Load | Every program was moved to the backup. The student had data, no DataLoad, and an empty Program Catalog. | The file and DataLoad are added. The programs stay. |
+| Picks Chapter 13 (or 4 to 10, or 12) and the sample data | The data went on without DataLoad, and the next steps said "run DataLoad". | DataLoad is added, and the summary says why. |
+| Adds a file named M1.hpmat that is not a matrix file (a renamed CSV, a download cut short) | Taken as it was. | Opened and checked (`LoaderCore.checkHpmat`): refused with the reason. |
+| Ticks the sample data and adds an M1.hpmat of their own | Both were written to M1, one over the other, without a word. | The student's own file is used, and the summary says the sample is left out. |
+| Opens the page on a phone | The download-and-unpack steps were shown, as if they could work. | A notice at the top: the page needs the Windows computer, and its address. |
+| Opens the page on a Mac | Windows steps, with one sentence lower down that Macs are untested. | A notice at the top says so, and points to the Connectivity Kit. |
+| Uses a browser too old to unpack the programs | "Could not make the file: DecompressionStream is not defined". | A notice at the top, and the buttons stay off. |
+
+`tests/test_loader_v1v.js`: **81 PASS, 0 FAIL** (`tests/test_loader_v1v_output.txt`). The check "loading only data clears the programs too (a clean slate)" is gone: it described the first fault as if it were intended.
 
 ## How it works
 
@@ -59,7 +77,7 @@ The Edge route, with v1 and starter pack v4 (unchecked files):
 - The calculator, started, listed exactly those three in its Program Catalog.
 - Two things came out of the run. "Calculator menu" was not clear, so the page now says "the small word Calculator at the top left of its window, or its X". And a computer whose default browser is Firefox opens the page there: the page shows its Edge-or-Chrome note.
 
-**In Chromium:** `tests/test_loader_v1u.js`, **59 PASS, 0 FAIL** with starter pack v23 (`tests/test_loader_v1u_output.txt`; v1t's, the same checks, gave 59 with pack v22; v1s's, the same checks, gave 59 with pack v21; v1r's, the same checks, gave 59 with pack v20; v1q's gave 59 with pack v19; v1p's gave 59 with pack v18; v1o's gave 59 with pack v17; v1n's gave 59 with pack v16; v1m's gave 59 with pack v15, one check more than v1l's, chapter 11 now loads four programs; v1l's gave 58 with pack v14; v1k's, the same checks, gave 58 with pack v13; v1j's, the same checks, gave 58 with pack v12; v1i's, the same checks, gave 58 with pack v11; v1h's, the same checks, gave 58 with pack v10; v1g's, the same checks, gave 58 with pack v9; v1f's, the same checks, gave 58 with pack v8; v1e's, the same checks, gave 58 with pack v7; v1d's test, which ran four times in a row with pack v6, after the test was made to wait for the own-data list, which one run in four had read too early). It drives the page in Chromium 141 against a mock `HP Prime` folder in the browser's private file system: HP's apps, settings, a list, a matrix, old programs, an old CentralLimit app, and the lock file. The folder picker is replaced by one that returns that folder. Checked:
+**In Chromium:** `tests/test_loader_v1v.js`, **81 PASS, 0 FAIL** with starter pack v23 (`tests/test_loader_v1v_output.txt`; v1u's 59 checks with the review's changes and additions, above; v1u's gave 59 with pack v23; v1t's, the same checks, gave 59 with pack v22; v1s's, the same checks, gave 59 with pack v21; v1r's, the same checks, gave 59 with pack v20; v1q's gave 59 with pack v19; v1p's gave 59 with pack v18; v1o's gave 59 with pack v17; v1n's gave 59 with pack v16; v1m's gave 59 with pack v15, one check more than v1l's, chapter 11 now loads four programs; v1l's gave 58 with pack v14; v1k's, the same checks, gave 58 with pack v13; v1j's, the same checks, gave 58 with pack v12; v1i's, the same checks, gave 58 with pack v11; v1h's, the same checks, gave 58 with pack v10; v1g's, the same checks, gave 58 with pack v9; v1f's, the same checks, gave 58 with pack v8; v1e's, the same checks, gave 58 with pack v7; v1d's test, which ran four times in a row with pack v6, after the test was made to wait for the own-data list, which one run in four had read too early). It drives the page in Chromium 141 against a mock `HP Prime` folder in the browser's private file system: HP's apps, settings, a list, a matrix, old programs, an old CentralLimit app, and the lock file. The folder picker is replaced by one that returns that folder. Checked:
 
 - a running calculator is refused, with nothing written;
 - chapter 11, then chapter 7 with the sample data, then your own `M3.hpmat`: every file byte for byte against the pack;
@@ -87,6 +105,8 @@ The page was also looked at in light and dark, at desktop and phone widths: noth
 **v1b with the checked pack, on Roger's computer (1 November 2026, 08:59-09:03):** Roger opened `PrimeLoader_v1b.html` in Edge, picked chapter 7 and clicked Load. The page moved the six programs then on the calculator to `Loader backups\2026-11-01 0859` and wrote SampDist, GaltonBoard and the CentralLimit app, each byte for byte pack v5's. Claude then started the calculator: its Program Catalog listed GaltonBoard and SampDist; `GaltonBoard` and `SampDist` typed in Home ran at once (the board; the Sampling Distribution menu); CentralLimit, started from Apps, showed its welcome page and then its own Views menu. **Nothing was checked.**
 
 **On the web (1 November 2026):** after the repository went on GitHub Pages, v1b opened from its web address in Chromium worked as Edge/Chrome (a secure page with folder access, no errors) and as Firefox (its own route; chapter 11's zip held the checked TTestLabG, DataLoad and ResampLab). v1c is v1b with the Data Loader link changed and `index.html` added.
+
+**v1v (17 November 2026, evening)** is the review's version: the page template's v1d and the loader core's v2, on starter pack v23 as before (no program changed). "The review of 17 November 2026", above, has what changed and why. Not yet run in Edge on a Windows computer: the folder work was driven in Chromium against a mock folder, as for every version, and the first load on Roger's computer is the check that counts.
 
 **v1u (17 November 2026)** is v1t built from starter pack v23, whose sixteen programs changed by round 17 carry their new versions. Round 17 changed words on the screen only, to the book's house form for a statistic's letter ("F-test", "df = (n - 1)", "p-value"): AgreeLab beta 1i, AnovaLab beta 1j, CICatcher beta 2m, EpiStats v1.7m, ExhibitLab beta 1i, FitCheck beta 1j, PowerViz v2.5t, RankLab beta 1k, ResampLab beta 1j, ScatterLab beta 2m, StudRange beta 15n, TDist3D beta 1b, TTestLab beta 1l, TTestLabG beta 1i, TestChooser beta 2h and TrendTest beta 3n. The page's catalog names the new versions (it reads each one from `programs/`); 31 of 31 files are checked files; the test is v1t's, unchanged, and gives the same 59.
 
@@ -132,12 +152,12 @@ The page was also looked at in light and dark, at desktop and phone widths: noth
 
 | File | What it is |
 |---|---|
-| `PrimeLoader_v1u.html` | The page, built: open this one. About 2 MB, all 31 programs inside, checked. |
+| `PrimeLoader_v1v.html` | The page, built: open this one. About 2 MB, all 31 programs inside, checked. |
 | `index.html` | Written by the build: sends a browser at `.../prime-loader/` on to the current page, so the book's link never changes. |
-| `loader_template_v1c.html` | The page's source, with slots for the two cores, the catalog, the files and the Data Loader's web address. |
-| `loader_core_v1.js` | The file work: find the folder, check the lock, back up, clear, write, read back; and the zip reader for the embedded files (every CRC checked). No DOM: the page and the tests share it. |
-| `build_loader_v1u.py` | `python3 build_loader_v1u.py ../starter-pack/HP_Prime_Statistics_Starter_Pack_v23.zip --kit PATH_TO_hp-prime-kit`. Holds the chapter list (from the companion guide's Chapter Plan), each program's one line, and the name to type in Home. Stops if the catalog and the pack disagree, and says how many files are checked. Uses `../data-loader/dl_core_v1.js` for the zip it offers. |
-| `tests/test_loader_v1u.js` | The Chromium test: `node tests/test_loader_v1u.js PrimeLoader_v1u.html ../starter-pack/HP_Prime_Statistics_Starter_Pack_v23.zip` (Playwright). |
+| `loader_template_v1d.html` | The page's source, with slots for the two cores, the catalog, the files and the Data Loader's web address. |
+| `loader_core_v2.js` | The file work: find the folder, check the lock, back up, clear (or, for data on its own, put aside only what is replaced), write, read back; the check of a data file; and the zip reader for the embedded files (every CRC checked). No DOM: the page and the tests share it. |
+| `build_loader_v1v.py` | `python3 build_loader_v1v.py ../starter-pack/HP_Prime_Statistics_Starter_Pack_v23.zip --kit PATH_TO_hp-prime-kit`. Holds the chapter list (from the companion guide's Chapter Plan), each program's one line, and the name to type in Home. Stops if the catalog and the pack disagree, and says how many files are checked. Uses `../data-loader/dl_core_v1.js` for the zip it offers. |
+| `tests/test_loader_v1v.js` | The Chromium test: `node tests/test_loader_v1v.js PrimeLoader_v1v.html ../starter-pack/HP_Prime_Statistics_Starter_Pack_v23.zip` (Playwright). |
 | `tests/idb_handle_probe_v1.js` | Shows the browser fault the test steps round: a folder handle read back from IndexedDB ends Chrome for Testing 153 (see above). |
 
 *Free for educational and personal use. © 2026 Roger Metcalf. Written with AI assistance (Anthropic Claude).*

@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
-"""build_loader_v1u.py -- assembles PrimeLoader_v1u.html: the page template, the loader's core, the Data Loader's core
+"""build_loader_v1v.py -- assembles PrimeLoader_v1v.html: the page template, the loader's core, the Data Loader's core
 (for its zip writer), the chapter list, and every program file from a starter pack, embedded so the page works offline.
 
-    python3 build_loader_v1u.py PACK.zip [OUT.html] [--kit PATH]
+    python3 build_loader_v1v.py PACK.zip [OUT.html] [--kit PATH]
+v1v (17 Nov 2026, the review "they must be bullet proof and as simple as possible"): the page template's v1d and the
+loader core's v2, on starter pack v23 as before (no program changed).  A data file loaded on its own is ADDED, with
+DataLoad, and the programs on the calculator stay (v1u moved every program to the backup and left the student with
+data and no DataLoad); DataLoad goes on with any data, whatever chapter is picked; a data file is opened and checked
+before it is taken; the student's own M1 wins over the sample data set; a phone, a computer that is not Windows and
+a browser too old to unpack the programs each get a plain notice at the top.  The Data Loader's core is its v2 (the
+zip writer is unchanged).
 v1u (17 Nov 2026): starter pack v23, whose sixteen programs changed by round 17 carry their new versions.  Round 17
 changed words on their screens only, to the book's house form for a statistic's letter ("F-test", "df = (n - 1)",
 "p-value"): AgreeLab beta 1i, AnovaLab beta 1j, CICatcher beta 2m, EpiStats v1.7m, ExhibitLab beta 1i, FitCheck beta 1j,
@@ -124,7 +131,7 @@ KIT = os.environ.get('HPKIT', '/tmp/kit/hp-prime-kit-HEAD')
 if '--kit' in argv:
     i = argv.index('--kit'); KIT = argv[i + 1]; del argv[i:i + 2]
 PACK = argv[0]
-OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v1u.html')
+OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v1v.html')
 SITE = 'https://metcalfdds.github.io/hp-prime-statistics/'
 sys.path.insert(0, KIT)
 from hpkit import program as kitprog            # hp-prime-kit (MIT, JordiRigau/hp-prime-kit)
@@ -252,7 +259,7 @@ catalog = {
   'pack_sha256': hashlib.sha256(open(PACK, 'rb').read()).hexdigest()[:12],
 }
 
-t = open(os.path.join(HERE, 'loader_template_v1c.html'), encoding='utf-8').read()
+t = open(os.path.join(HERE, 'loader_template_v1d.html'), encoding='utf-8').read()
 import glob as _glob
 _dl = sorted(_glob.glob(os.path.join(HERE, '..', 'data-loader', 'DataLoader_v*.html')),
              key=lambda p: [int(x) if x.isdigit() else x for x in __import__('re').split(r'(\d+)', os.path.basename(p))])
@@ -261,11 +268,11 @@ if not _dl:
 DL_URL = SITE + 'data-loader/' + os.path.basename(_dl[-1])
 assert t.count('__DATALOADER_URL__') == 1
 t = t.replace('__DATALOADER_URL__', DL_URL)
-# the Data Loader's core (its zip writer): in the repository it is ../data-loader/dl_core_v1.js
-dl = next(p for p in (os.path.join(HERE, '..', 'data-loader', 'dl_core_v1.js'), os.path.join(HERE, 'dl_core_v1.js'))
+# the Data Loader's core (its zip writer): in the repository it is ../data-loader/dl_core_v2.js
+dl = next(p for p in (os.path.join(HERE, '..', 'data-loader', 'dl_core_v2.js'), os.path.join(HERE, 'dl_core_v2.js'))
           if os.path.exists(p))
 parts = {
-  '/*LOADERCORE*/': open(os.path.join(HERE, 'loader_core_v1.js'), encoding='utf-8').read(),
+  '/*LOADERCORE*/': open(os.path.join(HERE, 'loader_core_v2.js'), encoding='utf-8').read(),
   '/*DLCORE*/': open(dl, encoding='utf-8').read(),
   '/*CATALOG*/': json.dumps(catalog, ensure_ascii=False),
   '/*PACK*/': json.dumps(base64.b64encode(emb).decode('ascii')),
@@ -282,7 +289,7 @@ redirect = ('<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n
             '<link rel="canonical" href="' + SITE + 'prime-loader/' + page + '">\n'
             '<style>body{font:16px/1.5 system-ui,sans-serif;margin:2rem;color:#172033;background:#f6f8fb}'
             '@media (prefers-color-scheme:dark){body{color:#e8edf6;background:#0f1420}a{color:#7d9cff}}</style>\n'
-            '</head>\n<body>\n<!-- Written by build_loader_v1u.py: sends the browser on to the current Prime Loader, so the '
+            '</head>\n<body>\n<!-- Written by build_loader_v1v.py: sends the browser on to the current Prime Loader, so the '
             'address .../prime-loader/ never changes. -->\n'
             '<p>Opening the HP Prime Loader&hellip; If nothing happens, <a href="' + page + '">click here</a>.</p>\n'
             '</body>\n</html>\n')

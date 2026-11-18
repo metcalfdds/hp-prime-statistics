@@ -123,6 +123,11 @@ ol.steps li > p { margin: 2px 0 0; }
     <p>This page puts the programs for your chapter of the book onto the <b>HP Prime Virtual Calculator</b>, HP's free calculator program for your computer. You don't need to type anything into the calculator or know how it works inside. Pick your chapter, follow the steps below, and the programs will be waiting for you the next time you start the calculator.</p>
   </header>
 
+  <section class="panel warn" id="platform" aria-labelledby="platformh" hidden>
+    <h3 id="platformh"></h3>
+    <p id="platformp" style="margin:0"></p>
+  </section>
+
   <section class="mode" id="mode-auto" aria-labelledby="ma">
     <h2 id="ma">You're using Edge or Chrome: this page can do the copying for you</h2>
     <p>When you click <b>Load</b>, the page puts the programs straight onto the Virtual Calculator. It asks your permission first, and it can only touch the one folder you choose.</p>
@@ -146,13 +151,13 @@ ol.steps li > p { margin: 2px 0 0; }
     <p class="summary" id="summary" role="status"></p>
     <div class="datarow">
       <label><input type="checkbox" id="rossi"> <span>Also add the sample data set: <span id="rossiwhat"></span>.</span></label>
-      <p class="why" style="margin-top:4px">A <b>data set</b> is a table of numbers from a real study. You only need one if the book or your instructor tells you to use it. It goes into the calculator's matrix M1; the program <b>DataLoad</b> then moves it into the calculator's statistics lists.</p>
+      <p class="why" style="margin-top:4px">A <b>data set</b> is a table of numbers from a real study. You only need one if the book or your instructor tells you to use it. It goes into the calculator's matrix M1; the program <b>DataLoad</b> then moves it into the calculator's statistics lists. DataLoad is added for you whenever you load data.</p>
     </div>
     <div class="row">
       <label class="filebtn" for="ownfile">Add a data file you were given (M1.hpmat)<input type="file" id="ownfile" accept=".hpmat" multiple></label>
       <span class="note" id="ownlist"></span>
     </div>
-    <p class="why">Use this only if your instructor gave you a data file, or you made one with the <a href="__DATALOADER_URL__">Data Loader</a>. Its name must be M0.hpmat to M9.hpmat.</p>
+    <p class="why">Use this only if your instructor gave you a data file, or you made one with the <a href="__DATALOADER_URL__">Data Loader</a>. Its name must be M0.hpmat to M9.hpmat. If you pick a data file and no chapter, the file is added and the programs on your calculator stay where they are.</p>
     <details>
       <summary>Pick programs one by one instead (for instructors)</summary>
       <div class="picklist" id="picklist"></div>
@@ -179,7 +184,7 @@ ol.steps li > p { margin: 2px 0 0; }
       </ol>
       <p class="why">After that, the page remembers the folder and doesn't ask again.</p>
     </div>
-    <p class="why"><b>What Load does:</b> it checks that the calculator is closed. It moves any programs already on the calculator into a backup folder (<code>HP Prime\Loader backups</code>), so nothing is lost and your calculator holds only this chapter's programs. Then it copies your chapter's programs on and checks each one. HP's own apps and settings are never touched. It takes a few seconds.</p>
+    <p class="why"><b>What Load does:</b> it checks that the calculator is closed. It moves any programs already on the calculator into a backup folder (<code>HP Prime\Loader backups</code>), so nothing is lost and your calculator holds only this chapter's programs. Then it copies your chapter's programs on and checks each one. HP's own apps and settings are never touched. It takes a few seconds. (If you picked only a data file, nothing is moved away: the file and DataLoad are added to what is there.)</p>
     <p class="status" id="status" role="status" aria-live="polite"></p>
     <div class="panel warn" id="running" hidden>
       <h3>The Virtual Calculator looks open</h3>
@@ -277,6 +282,7 @@ const CAT = /*CATALOG*/;
 const PACK_B64 = /*PACK*/;
 const $ = id => document.getElementById(id);
 const canWrite = typeof window.showDirectoryPicker === 'function';
+const canUnpack = typeof DecompressionStream === 'function';     // the programs are packed inside the page
 // The browser's name, for the manual route's wording only (never to decide anything: canWrite decides).
 const browserName = /Firefox\//.test(navigator.userAgent) ? 'Firefox'
   : (/Safari\//.test(navigator.userAgent) && !/Chrom(e|ium)\//.test(navigator.userAgent)) ? 'Safari' : 'this browser';
@@ -294,20 +300,29 @@ async function pack() {
 }
 
 // ---------- step 1: what to load ----------
-function selection() {
+const DATAPROG = 'DataLoad';             // the program that moves a matrix into the lists: it goes wherever data goes
+function pickedPrograms() {              // what the student picked, by chapter, card or name
   const s = new Set();
   if (state.everything) Object.keys(CAT.programs).forEach(p => s.add(p));
   for (const n of state.chapters) CAT.chapters.find(c => c.num === n).programs.forEach(p => s.add(p));
   if (state.testchooser) s.add(CAT.always);
   state.picked.forEach(p => s.add(p));
-  return [...s].sort((a, b) => a.localeCompare(b));
+  return s;
 }
-function dataChosen() {
+function ownSample() { return state.own.some(o => o.name.toLowerCase() === CAT.data.rossi.file.toLowerCase()); }
+function dataChosen() {                  // the student's own M1 wins over the sample data set, which is M1 too
   const d = [];
-  if ($('rossi').checked) d.push({ path: CAT.data.rossi.file, src: CAT.data.rossi.file });
+  if ($('rossi').checked && !ownSample()) d.push({ path: CAT.data.rossi.file, src: CAT.data.rossi.file });
   for (const f of state.own) d.push({ path: f.name, bytes: f.bytes });
   return d;
 }
+function selection() {                   // what goes on the calculator: the picks, and DataLoad when data go
+  const s = pickedPrograms();
+  if (dataChosen().length && CAT.programs[DATAPROG]) s.add(DATAPROG);
+  return [...s].sort((a, b) => a.localeCompare(b));
+}
+// Data on its own: the file and DataLoad are ADDED, and the programs on the calculator stay (v1c cleared them).
+function addOnly() { return pickedPrograms().size === 0 && dataChosen().length > 0; }
 
 function card(html, pressed, onToggle, disabled) {
   const b = document.createElement('button');
@@ -360,13 +375,18 @@ function zipName() {
 function refresh() {
   const sel = selection(), data = dataChosen();
   const bytes = sel.reduce((s, p) => s + CAT.programs[p].bytes, 0);
+  const dnames = esc(data.map(d => d.path.replace('.hpmat', '')).join(', '));
   if (sel.length === 0 && data.length === 0) $('summary').textContent = 'Nothing picked yet.';
+  else if (addOnly()) $('summary').innerHTML = 'Will add the data <b>' + dnames + '</b> and the program <b>' + DATAPROG + '</b>, which moves the data into the calculator\'s lists. The programs already on your calculator stay.';
   else $('summary').innerHTML = (sel.length ? 'Will load <b>' + esc(sel.join(', ')) + '</b> (' + sel.length + ' program' + (sel.length > 1 ? 's' : '') + ', ' + (bytes / 1e6).toFixed(1) + ' MB)' : 'Will load no programs') +
-    (data.length ? ' and the data ' + esc(data.map(d => d.path.replace('.hpmat', '')).join(', ')) : '') + '.';
+    (data.length ? ' and the data ' + dnames : '') + '.' +
+    (data.length && !pickedPrograms().has(DATAPROG) ? ' ' + DATAPROG + ' is added because the data need it.' : '');
+  if ($('rossi').checked && ownSample())
+    $('summary').innerHTML += ' Your own ' + esc(CAT.data.rossi.file) + ' is used; the sample data set would go into the same matrix, so it is left out.';
   const any = sel.length > 0 || data.length > 0;
-  $('load').disabled = !any || !canWrite;
-  $('download').disabled = !any;
-  $('download2').disabled = !any;
+  $('load').disabled = !any || !canWrite || !canUnpack;
+  $('download').disabled = !any || !canUnpack;
+  $('download2').disabled = !any || !canUnpack;
   $('zipname').textContent = zipName();
   const progs = sel.filter(p => CAT.programs[p].home);
   $('manualprogs').textContent = progs.length ? progs.join(', ') : '(pick a chapter in step 1)';
@@ -377,18 +397,22 @@ function refresh() {
 }
 
 $('ownfile').addEventListener('change', async ev => {
-  const refused = [];
+  const refused = [], broken = [];
   for (const f of ev.target.files) {
     // "M1 (2).hpmat" is how a browser names a second download of M1.hpmat: it is still M1.
     const m = /^(M[0-9])(\s*\(\d+\))?\.hpmat$/i.exec(f.name);
     if (!m) { refused.push(f.name); continue; }
     const name = m[1].toUpperCase() + '.hpmat';
+    const bytes = new Uint8Array(await f.arrayBuffer());
+    const why = LoaderCore.checkHpmat(bytes);            // v1d: a file of the right name and the wrong content is refused
+    if (why) { broken.push(f.name + ': ' + why); continue; }
     state.own = state.own.filter(o => o.name !== name);
-    state.own.push({ name: name, bytes: new Uint8Array(await f.arrayBuffer()) });
+    state.own.push({ name: name, bytes: bytes });
   }
   const msg = [];
   if (state.own.length) msg.push('Your data: ' + state.own.map(o => o.name).join(', ') + '.');
   if (refused.length) msg.push('Not added: ' + refused.join(', ') + '. A data file must be named M0.hpmat to M9.hpmat, as the Data Loader names it.');
+  if (broken.length) msg.push('Not added: ' + broken.join('; ') + '. Make the file again with the Data Loader, or ask for a new copy.');
   $('ownlist').textContent = msg.join(' ');
   ev.target.value = '';
   refresh();
@@ -445,24 +469,25 @@ async function load(force, forcePick) {
     const files = [];
     for (const p of sel) for (const f of CAT.programs[p].files) files.push({ path: f, data: pf.get(f) });
     for (const d of data) files.push({ path: d.path, data: d.src ? pf.get(d.src) : d.bytes });
-    say('Moving the old programs to the backup ...');
-    const move = await LoaderCore.plan(loc.calc, data.map(d => d.path));
+    const add = addOnly();
+    say(add ? 'Putting aside the files about to be replaced ...' : 'Moving the old programs to the backup ...');
+    const move = add ? await LoaderCore.planAdd(loc.calc, files.map(f => f.path)) : await LoaderCore.plan(loc.calc, data.map(d => d.path));
     const b = await LoaderCore.backup(loc.base, loc.calc, move, new Date());
     say('Loading ' + files.length + ' file' + (files.length > 1 ? 's' : '') + ' ...');
     const written = await LoaderCore.install(loc.calc, files);
     say('Loaded ' + sel.length + ' program' + (sel.length === 1 ? '' : 's') + (data.length ? ' and ' + data.length + ' data file' + (data.length > 1 ? 's' : '') : '') + ', every file read back and checked.', 'ok');
-    showDone(sel, data, b, written);
+    showDone(sel, data, b, written, add);
   } catch (e) {
     if (e && e.name === 'AbortError') say('No folder was chosen, so nothing was loaded.', 'bad');
     else if (e && (e.name === 'NotAllowedError' || e.name === 'SecurityError'))
       say('The browser was not allowed to change that folder. Click Load again and choose Edit files (or Allow) when it asks. If it says the folder has system files, open Documents and choose HP Prime inside it.', 'bad');
-    else say('Something went wrong: ' + (e && e.message ? e.message : e) + '. Nothing is lost: anything moved is in HP Prime\\Loader backups.', 'bad');
+    else say('Something went wrong: ' + (e && e.message ? e.message : e) + '. Nothing is lost: anything moved is in HP Prime\\Loader backups. Make sure the calculator is closed, then click Load again.', 'bad');
   } finally {
     refresh();
   }
 }
 
-function showDone(sel, data, b, written) {
+function showDone(sel, data, b, written, add) {
   const ol = $('nextsteps'); ol.innerHTML = '';
   const li = h => { const x = document.createElement('li'); x.innerHTML = h; ol.appendChild(x); };
   li('Start the <b>HP Prime Virtual Calculator</b> (from the Start menu, or its icon on your desktop or taskbar).');
@@ -474,15 +499,16 @@ function showDone(sel, data, b, written) {
     if (ready)
       li('<span class="note" style="color:inherit">If one ever says Syntax Error, or <b>Run</b> does nothing: tap it, tap <b>Edit</b>, tap <b>Check</b>, tap <b>OK</b>, press <kbd>Esc</kbd>, then tap <b>Run</b>. Once is enough.</span>');
     else
-      li('<b>The first time you run each one:</b> tap its name, tap <b>Check</b> at the bottom of the screen (it says "No errors in the program"), tap <b>OK</b>, press <kbd>Esc</kbd>, then tap <b>Run</b>. After that, just tap it and tap <b>Run</b>.');
+      li('<b>The first time you run each one:</b> tap its name, tap <b>Edit</b>, tap <b>Check</b> (it says "No errors in the program"), tap <b>OK</b>, press <kbd>Esc</kbd>, then tap <b>Run</b>. After that, just tap it and tap <b>Run</b>.');
   }
   if (sel.includes('CentralLimit')) li('<b>CentralLimit</b> is an app: press <kbd>Apps</kbd>, move to CentralLimit without touching it, and tap <b>Start</b>. Then press <kbd>View</kbd> for its menu.');
   if (data.length) li('Your data is in matrix ' + esc(data.map(d => d.path.replace('.hpmat', '')).join(', ')) + '. Open the <b>Statistics 1Var</b> app once (<kbd>Apps</kbd>), then run <b>DataLoad</b> to put the columns into its lists.');
   const ul = $('report'); ul.innerHTML = '';
   const r = h => { const x = document.createElement('li'); x.innerHTML = h; ul.appendChild(x); };
   r('These files went onto the calculator, and each was read back and checked: ' + esc(written.join(', ')) + '.');
-  if (b.folder) r('What was on the calculator before was moved, not deleted, to <code>Documents\\HP Prime\\' + esc(b.folder) + '</code>: ' + esc(b.moved.join(', ')) + '. To get one back, close the calculator and copy it from there into <code>Documents\\HP Prime\\Calculators\\Prime</code>.');
-  else r('The calculator had no programs on it before, so nothing needed moving.');
+  if (add) r('The other programs on the calculator were left where they are.');
+  if (b.folder) r((add ? 'The files that were replaced were' : 'What was on the calculator before was') + ' moved, not deleted, to <code>Documents\\HP Prime\\' + esc(b.folder) + '</code>: ' + esc(b.moved.join(', ')) + '. To get one back, close the calculator and copy it from there into <code>Documents\\HP Prime\\Calculators\\Prime</code>.');
+  else if (!add) r('The calculator had no programs on it before, so nothing needed moving.');
   $('done').hidden = false;
 }
 
@@ -522,6 +548,29 @@ if (!canWrite) {
   $('brname').textContent = browserName === 'this browser' ? 'a browser that cannot write to folders' : browserName;
   document.querySelectorAll('.brname2').forEach(e => { e.textContent = browserName === 'this browser' ? 'This browser' : browserName; });
 }
+// A phone, a computer that is not Windows, or a browser too old to unpack the programs: say so at the top, in plain
+// words, before the student follows steps that cannot work.  (Only wording hangs on the browser's name; whether the
+// page can write is still decided by canWrite alone.)
+(function () {
+  const ua = navigator.userAgent, uad = navigator.userAgentData;
+  const mobile = /Android|iPhone|iPad|iPod/i.test(ua) || !!(uad && uad.mobile) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  const windows = /Windows/i.test(ua) || !!(uad && uad.platform === 'Windows');
+  const tooOld = !canUnpack;
+  let h = '', p = '';
+  if (mobile) {
+    h = 'This page needs your Windows computer';
+    p = 'You are on a phone or a tablet. The Virtual Calculator is a program for a Windows computer, and this page puts programs into its folder there, so the steps below cannot work here. Open this page on that computer.' +
+        (/^https?:/.test(location.protocol) ? ' Its address is <b>' + esc(location.origin + location.pathname) + '</b>.' : '');
+  } else if (tooOld) {
+    h = 'This browser is too old for this page';
+    p = 'It cannot unpack the programs. Update the browser, or open this page in Microsoft Edge, which every Windows computer has.';
+  } else if (!windows) {
+    h = 'These steps were written for Windows';
+    p = 'This does not look like a Windows computer. On a Mac the Virtual Calculator keeps its programs in a different place, and the steps below have not been tested there. The route to try on a Mac is HP\'s Connectivity Kit: \u201cSomething not working?\u201d at the bottom of this page has its steps.';
+  }
+  if (h) { $('platformh').textContent = h; $('platformp').innerHTML = p; $('platform').hidden = false; }
+  if (mobile) { $('mode-auto').hidden = true; $('mode-manual').hidden = true; }     // neither route works on a phone: do not say one does
+})();
 idbGet('hpprime').then(h => { if (h) { $('repick').hidden = false; $('firsttime').hidden = true; } });
 refresh();
 </script>

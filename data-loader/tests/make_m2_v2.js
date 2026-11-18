@@ -1,7 +1,7 @@
-// make_m2_v1.js -- M2.hpmat for the calculator test of 31 Oct 2026: sentences (months) by sex, as text, with a
-// blank score and a ragged third column.  Run: node make_m2_v1.js  (writes M2.hpmat here)
+// make_m2_v2.js -- M2.hpmat for the calculator test of 31 Oct 2026: sentences (months) by sex, as text, with a
+// blank score and a ragged third column.  Run: node make_m2_v2.js  (writes M2.hpmat here)
 const path = require('path');
-const C = require(path.join(__dirname, '..', 'dl_core_v1.js'));
+const C = require(path.join(__dirname, '..', 'dl_core_v2.js'));
 const fs = require('fs');
 const text = 'months\tsex\tprior\n' +
   ['24\tmale\t2', '36\tfemale\t0', '12\tmale\t5', 'NA\tfemale\t1', '60\tmale\t3', '18\tfemale\t',

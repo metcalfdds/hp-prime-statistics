@@ -85,6 +85,14 @@ tr.off td { opacity: 0.45; }
 .status.ok { color: var(--good); }
 .status.bad { color: var(--frame); }
 .warn { background: var(--warn-bg); border-radius: 8px; padding: 10px 12px; margin: 0; }
+[hidden] { display: none !important; }      /* a display rule of ours must never show what the page has hidden */
+ul.warn { list-style: none; display: grid; gap: 6px; }
+ul.warn li::before { content: "Check: "; font-weight: 600; color: var(--frame); }
+.fix { background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; gap: 8px 18px; }
+.fix label { display: inline-flex; gap: 6px; align-items: center; }
+kbd { font: 500 0.85em var(--mono); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--surface); }
+details > summary { cursor: pointer; color: var(--accent); font-weight: 500; }
+details[open] > summary { margin-bottom: 6px; }
 ol.howto { margin: 0; padding-left: 1.4em; display: grid; gap: 6px; max-width: 72ch; }
 ol.howto code, p code { font-family: var(--mono); font-size: 0.9em; background: var(--accent-soft); padding: 0 4px; border-radius: 4px; }
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -104,24 +112,40 @@ footer a, .step a { color: var(--accent); }
 
   <section class="step" aria-labelledby="s1">
     <h2 id="s1"><span class="stepnum">1</span>Paste your data</h2>
-    <p class="note">One variable per column, one case per row. A first row of names is recognized. Empty cells, and cells such as <code>NA</code> or <code>.</code>, become blanks.</p>
-    <label for="paste" class="note">Data (tab, comma or semicolon separated)</label>
-    <textarea id="paste" spellcheck="false"></textarea>
+    <p class="note">In Excel or SPSS, select your cells, with the column names in the first row if you have them, and copy them (<kbd>Ctrl</kbd>+<kbd>C</kbd>). Then click in the box below and paste (<kbd>Ctrl</kbd>+<kbd>V</kbd>). Put one variable in each column and one case in each row. Empty cells, and cells that say <code>NA</code> or <code>.</code>, become blanks.</p>
+    <label for="paste" class="note">Your data</label>
+    <textarea id="paste" spellcheck="false" placeholder="Click here, then paste (Ctrl+V)."></textarea>
     <div class="row">
-      <label class="filebtn" for="file">Open a CSV or text file<input type="file" id="file" accept=".csv,.txt,.tsv,.dat,text/csv,text/plain"></label>
-      <button type="button" id="example">Use the example (Rossi re-arrest data)</button>
+      <label class="filebtn" for="file">Open a CSV or text file<input type="file" id="file" accept=".csv,.txt,.tsv,.dat,.xlsx,.xls,.sav,text/csv,text/plain"></label>
+      <button type="button" id="example">Try it with the example (Rossi re-arrest data)</button>
       <button type="button" id="clear">Clear</button>
     </div>
+    <p class="status bad" id="filestatus" role="status" hidden></p>
   </section>
 
   <section class="step" aria-labelledby="s2">
     <h2 id="s2"><span class="stepnum">2</span>Check the columns</h2>
     <p class="status" id="readout" role="status"></p>
+    <ul class="warn" id="warnings" role="status" hidden></ul>
     <div class="tablewrap"><table id="cols">
       <thead><tr><th scope="col">Use</th><th scope="col">On the Prime</th><th scope="col">Column</th><th scope="col">Kind</th>
       <th scope="col">Values</th><th scope="col">Blanks</th><th scope="col">Range or codes</th><th scope="col">First values</th></tr></thead>
       <tbody></tbody>
     </table></div>
+    <div class="row fix" id="fixrow">
+      <span class="note"><b>Not right?</b></span>
+      <label><input type="checkbox" id="hdr"> The first row holds the column names</label>
+      <label for="delim">Columns are separated by
+        <select id="delim">
+          <option value="">(the page decides)</option>
+          <option value="tab">tabs</option>
+          <option value="comma">commas</option>
+          <option value="semicolon">semicolons</option>
+          <option value="space">spaces</option>
+          <option value="one">nothing: it is one column</option>
+        </select></label>
+    </div>
+    <p class="note">Look at the table before you go on: each column you want should be there under its own name, with as many values as you expect and a sensible range. Untick a column to leave it out.</p>
     <p class="note">Text columns (such as <i>male</i> / <i>female</i>) are numbered 1, 2, 3 &hellip; in alphabetical order, as the codes column shows: the calculator holds numbers only. Write the codes down; DataLoad puts the smallest code's scores in D1.</p>
   </section>
 
@@ -145,15 +169,22 @@ footer a, .step a { color: var(--accent); }
       <div>
         <h3>The Virtual Calculator (Windows)</h3>
         <ol class="howto">
-          <li>Close the Virtual Calculator (its Calculator menu, Exit). It reads its folder only when it starts.</li>
-          <li>Copy <code id="fname1">M1.hpmat</code> into <code>Documents\HP Prime\Calculators\Prime</code>; if the file came in a zip, unzip it first. Replace the file that is there.</li>
-          <li>Start the calculator, open the Statistics 1Var app once (Apps), then run <b>DataLoad</b> from the Program Catalog and choose <i>Columns</i> or <i>Scores by group</i>.</li>
+          <li>Open the <a href="__PRIMELOADER_URL__">HP Prime Loader</a>.</li>
+          <li>In its step 1, click <b>Add a data file you were given</b> and choose <code id="fname1">M1.hpmat</code> from your Downloads folder.</li>
+          <li>Close the Virtual Calculator, then click <b>Load</b>. The Loader checks the file, puts it where the calculator looks for it, and makes sure the DataLoad program is on the calculator. Your other programs stay.</li>
+          <li>Start the calculator and open the Statistics 1Var app once (press <kbd>Apps</kbd>). Then press <kbd>Shift</kbd>, then <kbd>Program</kbd>, tap <b>DataLoad</b>, tap <b>Run</b>, and choose <i>Columns</i> or <i>Scores by group</i>.</li>
           <li>If DataLoad says lists after the new ones hold data from before, choose <i>clear</i>: AnovaLab, RankLab and AgreeLab read every list that holds data as one more group (or rater).</li>
         </ol>
-        <p class="note">Tested on the Virtual Calculator 2.4.2 (build 2026-09-09), 31 Oct 2026: the example's 432 rows &times; 5 columns arrived whole, DataLoad put them in D1&ndash;D5 and the weeks by financial aid in D1 and D2, and TTestLab read those two lists (separate-variances t(421.19) = &minus;1.68, p = 0.094). DataLoad is in the starter pack; the first time, Check it once in the Program Catalog.</p>
+        <details><summary>Or copy the file yourself</summary>
+          <ol class="howto">
+            <li>Close the Virtual Calculator (its Calculator menu, Exit). It reads its folder only when it starts, and it writes over the folder when it closes.</li>
+            <li>Copy <code id="fname3">M1.hpmat</code> into <code>Documents\HP Prime\Calculators\Prime</code> and replace the file that is there. The name must be exactly <code id="fname4">M1.hpmat</code>: if your browser called a second download <code id="fname5">M1 (1).hpmat</code>, rename it first.</li>
+            <li>Start the calculator and go on from step 4 above. DataLoad must already be on the calculator.</li>
+          </ol>
+        </details>
       </div>
       <div>
-        <h3>A G1 or G2</h3>
+        <h3>A real HP Prime (G1 or G2)</h3>
         <ol class="howto">
           <li>Connect the calculator to the HP Connectivity Kit.</li>
           <li>Drag <code id="fname2">M1.hpmat</code> onto the calculator in the Kit, or open its matrix M1 there and paste the columns.</li>
@@ -166,7 +197,8 @@ footer a, .step a { color: var(--accent); }
 
   <footer>
     <p>Part of <a href="https://github.com/metcalfdds/hp-prime-statistics">hp-prime-statistics</a>, Roger Metcalf's teaching programs for the HP Prime. Written with AI assistance (Anthropic Claude). Free for educational and personal use. A teaching aid: not validated for forensic, clinical or legal use.</p>
-    <p>Everything happens in this page; nothing you paste leaves your computer. Numbers are read from their digits and rounded to the Prime's 12 significant digits, half up. The file format is the one hp-prime-kit (JordiRigau/hp-prime-kit, MIT) documents. Blank cells are written as 9.99999999999E499, the Prime's largest real, which DataLoad leaves out.</p>
+    <p>Everything happens in this page; nothing you paste leaves your computer. Numbers are read from their digits and rounded to the Prime's 12 significant digits, half up. The file format is the one hp-prime-kit (JordiRigau/hp-prime-kit, MIT) documents. Blank cells are written as 9.99999999999E499, the Prime's largest real, which DataLoad leaves out. A currency sign or a percent sign is dropped from a number, and labels that differ only in capitals or spacing are one label; step 2 says so whenever it happens.</p>
+    <p>Tested on the Virtual Calculator 2.4.2 (build 2026-09-09), 31 Oct 2026: the example's 432 rows &times; 5 columns arrived whole, DataLoad put them in D1&ndash;D5 and the weeks by financial aid in D1 and D2, and TTestLab read those two lists (separate-variances t(421.19) = &minus;1.68, p = 0.094).</p>
     <p>Example data: Rossi, Berk &amp; Lenihan (1980), <i>Money, Work, and Crime</i>: 432 men released from Maryland state prisons, followed 52 weeks (week of first re-arrest, arrest 1/0, financial aid 1/0, age, prior convictions), via the R package carData.</p>
   </footer>
 </main>
@@ -181,6 +213,11 @@ const EXAMPLE = /*EXAMPLE*/;
 const el = id => document.getElementById(id);
 const paste = el('paste'), tbody = document.querySelector('#cols tbody');
 let table = null, infos = [], use = [];
+// What the student set in "Not right?": undefined lets the page decide.  A paste, a file, the example and Clear
+// put both back to "the page decides"; typing in the box keeps them.
+let hdrChoice, delimChoice;
+const DELIMS = { tab: '\t', comma: ',', semicolon: ';', space: ' ', one: 'one' };
+function auto() { hdrChoice = undefined; delimChoice = undefined; el('delim').value = ''; use = []; }
 
 // The viewer's save prompt, when this page runs inside claude.ai: there a page may not start a download itself, and
 // .zip is a format it may offer.  Elsewhere (the page opened from a file or another site) the browser downloads.
@@ -206,7 +243,8 @@ function fmt(v) {
 }
 
 function render() {
-  table = DLCore.readTable(paste.value);
+  table = DLCore.readTable(paste.value, { header: hdrChoice, delim: delimChoice });
+  el('hdr').checked = table.header;
   infos = table.cols.map(DLCore.describe);
   if (use.length !== infos.length) use = infos.map(i => i.values > 0);
   tbody.textContent = '';
@@ -250,20 +288,52 @@ function chosen() {
   return { cols, inf, names };
 }
 
+// The sentences for step 2: everything the page did to the paste that the student did not ask for in so many words.
+function list(a) { return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]; }
+function warnings(c) {
+  const w = [];
+  const q = s => '<b>' + escapeHtml(s) + '</b>';
+  if (table.why === 'thousands' && delimChoice === undefined)
+    w.push('The page read this as <b>one column</b>, taking each comma as a thousands comma (45,000 is forty-five thousand). If these are two columns, choose <i>commas</i> below.');
+  if (table.why === 'spaces' && delimChoice === undefined)
+    w.push('The page read this as <b>one column</b> of labels. If the spaces separate columns, choose <i>spaces</i> below.');
+  c.inf.forEach((info, k) => {
+    const name = q(c.names[k]);
+    if (info.oddCells.length) {
+      const shown = info.oddCells.slice(0, 5).map(x => '<code>' + escapeHtml(x) + '</code>');
+      w.push(name + ': ' + info.oddCells.length + ' cell' + (info.oddCells.length === 1 ? ' is not a number and will be a blank' : 's are not numbers and will be blanks') +
+             ': ' + shown.join(', ') + (info.oddCells.length > 5 ? ', &hellip;' : '') + '. Correct ' + (info.oddCells.length === 1 ? 'it' : 'them') + ' in the box above if that is a slip.');
+    }
+    if (info.decimalComma) w.push(name + ': the comma is read as a decimal comma (3,14 is 3.14).');
+    if (info.money) w.push(name + ': the currency signs are dropped ($45,000 is read as 45000).');
+    if (info.percent) w.push(name + ': the percent signs are dropped (45% is read as 45, not 0.45).');
+    for (const m of info.merged) w.push(name + ': ' + list(m.map(x => '<code>' + escapeHtml(x) + '</code>')) + ' are counted as one label.');
+    if (info.kind === 'text' && info.codes.size > 9)
+      w.push(name + ' has ' + info.codes.size + ' different labels. DataLoad takes a group column of at most 9 groups; a column of names or ID codes is not data, so untick it unless you want its codes.');
+  });
+  return w;
+}
+
 function update() {
   const c = chosen();
   const readout = el('readout'), save = el('save');
   const name = matName();
-  el('fname1').textContent = name + '.hpmat';
-  el('fname2').textContent = name + '.hpmat';
+  for (const id of ['fname1', 'fname2', 'fname3', 'fname4']) el(id).textContent = name + '.hpmat';
+  el('fname5').textContent = name + ' (1).hpmat';
   if (!table || table.cols.length === 0) {
-    readout.textContent = 'Paste some data in step 1.'; readout.className = 'status';
-    el('summary').textContent = ''; save.disabled = true; el('padnote').hidden = true; return;
+    readout.textContent = 'Nothing here yet: paste your data in step 1.'; readout.className = 'status';
+    el('summary').textContent = ''; save.disabled = true; el('padnote').hidden = true;
+    el('warnings').hidden = true; el('hdr').disabled = true; el('delim').disabled = true; return;
   }
+  el('hdr').disabled = false; el('delim').disabled = false;
+  const wl = warnings(c), wbox = el('warnings');
+  wbox.textContent = '';
+  for (const h of wl) { const li = document.createElement('li'); li.innerHTML = h; wbox.appendChild(li); }
+  wbox.hidden = wl.length === 0;
   const rows = c.cols.length ? Math.max(...c.cols.map(x => x.length)) : 0;
   const textCols = c.inf.filter(i => i.kind === 'text').length;
   readout.textContent = table.cols[0].length + ' rows and ' + table.cols.length + ' columns read' +
-    (table.header ? ', with a row of names' : '') + '. ' + c.cols.length + ' column' + (c.cols.length === 1 ? '' : 's') +
+    (table.header ? ', with a row of names' : ', with no row of names') + '. ' + c.cols.length + ' column' + (c.cols.length === 1 ? '' : 's') +
     ' will go to the calculator' + (textCols ? ', ' + textCols + ' as codes' : '') + '.';
   readout.className = c.cols.length ? 'status ok' : 'status bad';
   if (!c.cols.length) {
@@ -284,11 +354,14 @@ function update() {
 
 function readme(name) {
   return ['DataLoad file ' + name + '.hpmat, made by the HP Prime Data Loader.', '',
-    'Virtual Calculator (Windows):',
-    '1. Close the Virtual Calculator (Calculator menu, Exit).',
-    '2. Copy ' + name + '.hpmat into Documents\\HP Prime\\Calculators\\Prime (replace the file there).',
-    '3. Start it, open the Statistics 1Var app once, then run DataLoad from the Program Catalog.',
-    '4. If DataLoad says lists after the new ones hold data from before, choose clear.', '',
+    'Virtual Calculator (Windows), the easy way:',
+    '1. Open the HP Prime Loader: __PRIMELOADER_URL__',
+    '2. In its step 1, click "Add a data file you were given" and choose ' + name + '.hpmat.',
+    '3. Close the Virtual Calculator, then click Load.',
+    '4. Start it, open the Statistics 1Var app once, then run DataLoad from the Program Catalog.',
+    '5. If DataLoad says lists after the new ones hold data from before, choose clear.', '',
+    'Or by hand: close the Virtual Calculator and copy ' + name + '.hpmat into Documents\\HP Prime\\Calculators\\Prime',
+    '(replace the file there; the name must be exactly ' + name + '.hpmat).', '',
     'G1 or G2: drag ' + name + '.hpmat onto the calculator in the Connectivity Kit (not yet tested), then run DataLoad.', '',
     'https://github.com/metcalfdds/hp-prime-statistics', ''].join('\r\n');
 }
@@ -304,7 +377,7 @@ el('save').addEventListener('click', async () => {
     const z = DLCore.zip([{ name: name + '.hpmat', data: bytes }, { name: 'READ_ME.txt', data: new TextEncoder().encode(readme(name)) }]);
     try {
       await ns.save({ filename: name + '_for_the_HP_Prime.zip', data: z });
-      st.textContent = 'Saved. Unzip it and copy ' + name + '.hpmat as step 4 says.'; st.className = 'status ok';
+      st.textContent = 'Saved. Unzip it, then go on to step 4.'; st.className = 'status ok';
     } catch (e) {
       st.className = 'status bad';
       st.textContent = (e && e.code === 'declined') ? 'Not saved.' : 'This view cannot save files. Open the page in a browser of its own.';
@@ -316,26 +389,48 @@ el('save').addEventListener('click', async () => {
   a.href = url; a.download = name + '.hpmat';
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
-  st.textContent = name + '.hpmat is in your Downloads folder. Copy it as step 4 says.'; st.className = 'status ok';
+  st.textContent = name + '.hpmat is in your Downloads folder. Now go on to step 4.'; st.className = 'status ok';
 });
 
 let timer = null;
+paste.addEventListener('paste', () => { auto(); });      // new data: the page decides again
 paste.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => { use = []; render(); }, 250); });
-el('example').addEventListener('click', () => { paste.value = EXAMPLE; use = []; render(); });
-el('clear').addEventListener('click', () => { paste.value = ''; use = []; render(); paste.focus(); });
-el('file').addEventListener('change', ev => {
+el('example').addEventListener('click', () => { auto(); el('filestatus').hidden = true; paste.value = EXAMPLE; render(); });
+el('clear').addEventListener('click', () => { auto(); el('filestatus').hidden = true; paste.value = ''; render(); paste.focus(); });
+el('hdr').addEventListener('change', () => { hdrChoice = el('hdr').checked; use = []; render(); });
+el('delim').addEventListener('change', () => { const v = el('delim').value; delimChoice = v ? DELIMS[v] : undefined; use = []; render(); });
+
+// A file: text in UTF-8, UTF-16 or Windows-1252 is read; a workbook or any other binary file is refused with the way
+// round it, because read as text it would fill the box with rubbish.
+el('file').addEventListener('change', async ev => {
   const f = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
   if (!f) return;
-  const r = new FileReader();
-  r.onload = () => { paste.value = String(r.result); use = []; render(); };
-  r.readAsText(f);
+  const fst = el('filestatus');
+  const refuse = t => { fst.textContent = t; fst.hidden = false; };
+  fst.hidden = true;
+  const how = ' Open it there, select your cells, copy them (Ctrl+C), then click in the box above and paste (Ctrl+V).';
+  if (f.size > 20e6) { refuse(f.name + ' is ' + Math.round(f.size / 1e6) + ' MB, which is far more than the calculator can hold. Nothing was read.'); return; }
+  let b;
+  try { b = new Uint8Array(await f.arrayBuffer()); } catch (e) { refuse('The browser could not read ' + f.name + '. Nothing was read.'); return; }
+  const ext = (/\.([A-Za-z0-9]+)$/.exec(f.name) || ['', ''])[1].toLowerCase();
+  const starts = (...x) => x.every((v, i) => b[i] === v);
+  const utf16le = starts(0xFF, 0xFE), utf16be = starts(0xFE, 0xFF);
+  if (starts(0x50, 0x4B) || starts(0xD0, 0xCF) || ['xlsx', 'xls', 'xlsm', 'ods'].includes(ext)) {
+    refuse(f.name + ' is a spreadsheet workbook, which this page cannot open.' + how.replace('there', 'in Excel')); return; }
+  if (starts(0x24, 0x46, 0x4C) || ext === 'sav') { refuse(f.name + ' is an SPSS data file, which this page cannot open.' + how.replace('there', 'in SPSS, in Data View')); return; }
+  if (!utf16le && !utf16be && b.subarray(0, 4096).includes(0)) {
+    refuse(f.name + ' is not a text file, so this page cannot read it.' + how.replace('Open it there', 'Open it in the program that made it')); return; }
+  let text;
+  if (utf16le || utf16be) text = new TextDecoder(utf16le ? 'utf-16le' : 'utf-16be').decode(b);
+  else { try { text = new TextDecoder('utf-8', { fatal: true }).decode(b); } catch (e) { text = new TextDecoder('windows-1252').decode(b); } }
+  auto(); paste.value = text; render();
 });
 for (let k = 0; k <= 9; k++) {
   const o = document.createElement('option'); o.value = String(k); o.textContent = 'M' + k; if (k === 1) o.selected = true;
   el('mat').appendChild(o);
 }
 el('mat').addEventListener('change', update);
-paste.value = EXAMPLE;
 render();
 </script>
 </body>

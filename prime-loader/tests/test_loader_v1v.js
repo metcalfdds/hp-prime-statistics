@@ -1,4 +1,14 @@
-// test_loader_v1u.js (17 Nov 2026: v1t's checks, unchanged, on the page built from starter pack v23, round 17: sixteen
+// test_loader_v1v.js (17 Nov 2026, evening: the review "they must be bullet proof and as simple as possible").  v1u's
+//   checks on PrimeLoader_v1v.html, with these changes and additions:
+//   - a data file loaded on its own is ADDED with DataLoad, and the programs on the calculator stay (v1u's check
+//     "loading only data clears the programs too (a clean slate)" is gone: it described the fault);
+//   - a chapter without DataLoad, loaded with data, gets DataLoad;
+//   - a data file is opened and checked: a short file, a text file and a cut-off file are each refused with a reason;
+//   - "M1 (2).hpmat", a browser's name for a second download, is taken as M1;
+//   - the student's own M1 wins over the sample data set, and the page says so;
+//   - a phone, a Mac and Windows: the notice at the top shows, shows, and does not;
+//   - the main browser context carries a Windows user-agent, as a student's Edge does.
+// was: test_loader_v1u.js (17 Nov 2026: v1t's checks, unchanged, on the page built from starter pack v23, round 17: sixteen
 //   programs whose screen text follows the book's house form for a statistic's letter)
 // was: test_loader_v1t.js (15 Nov 2026, night: v1s's checks, unchanged, on the page built from starter pack v22, round 16:
 // nine programs with new versions)
@@ -24,7 +34,7 @@
 // Calculator: Calculators\Prime with HP's apps, settings, old programs and a matrix; Temp with the lock file.  Every file
 // the page writes is compared byte for byte with the starter pack it was built from.
 //
-//   node tests/test_loader_v1u.js PrimeLoader_v1u.html PACK.zip
+//   node tests/test_loader_v1v.js PrimeLoader_v1v.html PACK.zip
 // v1k (4 Nov 2026, night): v1j's checks, run on the page built from starter pack v13 (round 8); Chapter 11's card
 //   is found by its new title, "t-Tests: Two Samples".
 // v1j (4 Nov 2026): v1i's checks, unchanged, run on the page built from starter pack v12 (round 7).
@@ -66,7 +76,10 @@ function check(name, ok, detail) {
 (async () => {
   const srv = http.createServer((q, r) => { r.setHeader('content-type', 'text/html; charset=utf-8'); r.end(fs.readFileSync(PAGE)); }).listen(8766);
   const browser = await chromium.launch();
-  const ctx = await browser.newContext({ acceptDownloads: true });
+  const WIN = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0';
+  const ctx = await browser.newContext({ acceptDownloads: true, userAgent: WIN });
+  // a real matrix file: the 16-byte header, then 8 bytes a cell
+  const hpmat = (rows, cols, fill) => { const b = Buffer.alloc(16 + 8 * rows * cols, fill || 0); b[0] = 1; b[1] = 0; b[2] = 0x14; b[3] = 0x80; b.writeUInt32LE(2, 4); b.writeUInt32LE(rows, 8); b.writeUInt32LE(cols, 12); return b; };
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(String(e)));
@@ -150,6 +163,7 @@ function check(name, ok, detail) {
   check('15 chapter cards and 2 more', await page.locator('#chapters .card').count() === 17);
   check('chapter 1 is disabled (its program is still to come)', await page.locator('#chapters .card').first().isDisabled());
   check('Load is disabled before anything is picked', await page.locator('#load').isDisabled());
+  check('on Windows there is no notice at the top', !(await page.isVisible('#platform')));
   const dlHref = await page.locator('a', { hasText: 'Data Loader' }).first().getAttribute('href');
   check('the Data Loader link is the Data Loader page on GitHub Pages',
         /^https:\/\/metcalfdds\.github\.io\/hp-prime-statistics\/data-loader\/DataLoader_v\d+[a-z]?\.html$/.test(dlHref), dlHref);
@@ -214,25 +228,85 @@ function check(name, ok, detail) {
   for (const p of ['SampDist.hpprgm', 'GaltonBoard.hpprgm', 'CentralLimit.hpappdir/CentralLimit.hpapp', 'CentralLimit.hpappdir/CentralLimit.hpappnote', 'CentralLimit.hpappdir/CentralLimit.hpappprgm'])
     check('loaded byte for byte: ' + p, same(t[C + p], packFile(p)));
   check('the sample data is M1, byte for byte', same(t[C + 'M1.hpmat'], sample));
+  check('chapter 7 has no DataLoad of its own: with data, DataLoad comes too', same(t[C + 'DataLoad.hpprgm'], packFile('DataLoad.hpprgm')));
   check('chapter 11\'s programs went to a second backup', Object.keys(t).some(k => /Loader backups\/[^/]+ \(2\)\/TTestLabG\.hpprgm$/.test(k)) ||
         Object.keys(t).filter(k => k.endsWith('/TTestLabG.hpprgm') && k.includes('Loader backups')).length === 1);
   check('the old M1 is in a backup, byte for byte', Object.entries(t).some(([k, v]) => k.includes('Loader backups') && k.endsWith('/M1.hpmat') && JSON.stringify(v) === '[42,42,42,42]'));
   const steps2 = await page.textContent('#nextsteps');
   check('next steps: CentralLimit is an app; the data and DataLoad', /CentralLimit/.test(steps2) && /Statistics 1Var/.test(steps2), steps2);
 
-  // ---- 4. your own data file ----
+  // ---- 4. your own data file, on its own: it is ADDED, with DataLoad, and the programs stay ----
   await page.reload();
-  await page.setInputFiles('#ownfile', { name: 'M3.hpmat', mimeType: 'application/octet-stream', buffer: Buffer.from([1, 0, 20, 128]) });
+  const own3 = hpmat(4, 2, 7);
+  await page.setInputFiles('#ownfile', { name: 'M3.hpmat', mimeType: 'application/octet-stream', buffer: own3 });
   // v1d: wait for the page to list the file (it reads the file first); one run in four read the list too early
   await page.waitForFunction(() => /M3\.hpmat/.test(document.querySelector('#ownlist').textContent), null, { timeout: 5000 }).catch(() => {});
-  check('own data listed', /M3\.hpmat/.test(await page.textContent('#ownlist')));
+  check('own data listed', /Your data: M3\.hpmat\./.test(await page.textContent('#ownlist')));
+  const sumA = await page.textContent('#summary');
+  check('data on its own: the summary says DataLoad is added and the programs stay', /Will add the data M3 and the program DataLoad/.test(sumA) && /The programs already on your calculator stay/.test(sumA), sumA);
+  const before4 = await readTree();
   await page.click('#load');
   await page.waitForSelector('#done:not([hidden])');
   t = await readTree();
-  check('own data written as M3', JSON.stringify(t[C + 'M3.hpmat']) === '[1,0,20,128]');
-  check('loading only data clears the programs too (a clean slate)', !Object.keys(t).some(k => k.startsWith(C) && k.endsWith('.hpprgm')));
-  await page.setInputFiles('#ownfile', { name: 'mydata.hpmat', mimeType: 'application/octet-stream', buffer: Buffer.from([1]) });
+  check('own data written as M3, byte for byte', same(t[C + 'M3.hpmat'], own3));
+  check('data on its own: DataLoad is put on the calculator, byte for byte', same(t[C + 'DataLoad.hpprgm'], packFile('DataLoad.hpprgm')));
+  check('data on its own: every program and app that was on the calculator is still there, unchanged',
+        Object.keys(before4).filter(k => k.startsWith(C)).every(k => JSON.stringify(t[k]) === JSON.stringify(before4[k])) &&
+        Object.keys(before4).filter(k => k.startsWith(C) && k.endsWith('.hpprgm')).length === 3 &&
+        same(t[C + 'SampDist.hpprgm'], packFile('SampDist.hpprgm')) && same(t[C + 'CentralLimit.hpappdir/CentralLimit.hpapp'], packFile('CentralLimit.hpappdir/CentralLimit.hpapp')));
+  const newBk = Object.keys(t).filter(k => k.includes('Loader backups') && !(k in before4));
+  check('data on its own: the one thing put aside is the DataLoad it replaced (chapter 7 with data had brought one)',
+        newBk.length === 1 && /\/DataLoad\.hpprgm$/.test(newBk[0]) && same(t[newBk[0]], packFile('DataLoad.hpprgm')), newBk);
+  const rep4 = await page.textContent('#report'), steps4 = await page.textContent('#nextsteps');
+  check('data on its own: the report says the other programs were left, and the steps name DataLoad', /other programs on the calculator were left where they are/.test(rep4) && /files that were replaced were moved, not deleted/.test(rep4) && /DataLoad/.test(steps4) && /Statistics 1Var/.test(steps4), rep4);
+  // a second file for the same matrix: the old M3 and the old DataLoad go to a backup, nothing else moves
+  const own3b = hpmat(2, 3, 9);
+  await page.setInputFiles('#ownfile', { name: 'M3 (2).hpmat', mimeType: 'application/octet-stream', buffer: own3b });
+  await page.waitForFunction(() => /M3\.hpmat/.test(document.querySelector('#ownlist').textContent), null, { timeout: 5000 }).catch(() => {});
+  check('"M3 (2).hpmat", a second download, is taken as M3', /Your data: M3\.hpmat\./.test(await page.textContent('#ownlist')));
+  await page.click('#load');
+  await page.waitForFunction(() => /every file read back and checked/.test(document.getElementById('status').textContent));
+  await page.waitForSelector('#done:not([hidden])');
+  t = await readTree();
+  check('the new M3 replaced the old one, which is in a backup byte for byte', same(t[C + 'M3.hpmat'], own3b) &&
+        Object.entries(t).some(([k, v]) => k.includes('Loader backups') && k.endsWith('/M3.hpmat') && same(v, own3)));
+  check('... and the programs are still all there', same(t[C + 'SampDist.hpprgm'], packFile('SampDist.hpprgm')) && same(t[C + 'GaltonBoard.hpprgm'], packFile('GaltonBoard.hpprgm')) &&
+        same(t[C + 'DataLoad.hpprgm'], packFile('DataLoad.hpprgm')));
+
+  // ---- 4b. a data file is opened before it is taken ----
+  await page.reload();
+  await page.setInputFiles('#ownfile', { name: 'mydata.hpmat', mimeType: 'application/octet-stream', buffer: hpmat(1, 1) });
+  await page.waitForFunction(() => /Not added/.test(document.querySelector('#ownlist').textContent), null, { timeout: 5000 }).catch(() => {});
   check('a badly named data file is refused with a reason', /M0\.hpmat to M9\.hpmat/.test(await page.textContent('#ownlist')));
+  const refusedFor = async (name, buf, re) => {
+    await page.setInputFiles('#ownfile', { name: name, mimeType: 'application/octet-stream', buffer: buf });
+    await page.waitForFunction(n => document.querySelector('#ownlist').textContent.includes(n), name, { timeout: 5000 }).catch(() => {});
+    const txt = await page.textContent('#ownlist');
+    return re.test(txt) && !/Your data/.test(txt) ? true : txt;
+  };
+  let rf = await refusedFor('M4.hpmat', Buffer.from([1, 0, 20, 128]), /M4\.hpmat: it is too short to be a calculator matrix file/);
+  check('a 4-byte file named M4.hpmat is refused: too short', rf === true, rf);
+  rf = await refusedFor('M1.hpmat', Buffer.from('week,arrest,fin,age,prio\n20,1,0,27,3\n17,1,0,18,8\n'), /does not begin the way a calculator matrix file does/);
+  check('a CSV file renamed M1.hpmat is refused: not a matrix file', rf === true, rf);
+  rf = await refusedFor('M2.hpmat', hpmat(5, 2).subarray(0, 60), /its size does not match the rows and columns it names/);
+  check('a matrix file cut short is refused', rf === true, rf);
+  check('... and after three refusals nothing is picked and Load is off', /Nothing picked yet/.test(await page.textContent('#summary')) && await page.isDisabled('#load'));
+
+  // ---- 4c. a chapter without DataLoad, with data: DataLoad comes too; the student's own M1 wins over the sample ----
+  await page.locator('#chapters .card', { hasText: 'Correlation and Regression' }).click();
+  await page.check('#rossi');
+  const sumC = await page.textContent('#summary');
+  check('chapter 13 with the sample data: DataLoad is in the list, with the reason', /BiNorm3D, DataLoad, ScatterLab/.test(sumC) && /DataLoad is added because the data need it/.test(sumC), sumC);
+  const own1 = hpmat(3, 1, 5);
+  await page.setInputFiles('#ownfile', { name: 'M1.hpmat', mimeType: 'application/octet-stream', buffer: own1 });
+  await page.waitForFunction(() => /Your data: M1\.hpmat/.test(document.querySelector('#ownlist').textContent), null, { timeout: 5000 }).catch(() => {});
+  check('own M1 beside the sample data: the page says which one is used', /Your own M1\.hpmat is used; the sample data set would go into the same matrix, so it is left out/.test(await page.textContent('#summary')), await page.textContent('#summary'));
+  await page.click('#load');
+  await page.waitForSelector('#done:not([hidden])');
+  t = await readTree();
+  check('chapter 13 with data: ScatterLab, BiNorm3D and DataLoad are on the calculator, and nothing else', JSON.stringify(Object.keys(t).filter(k => k.startsWith(C) && k.endsWith('.hpprgm')).map(k => k.slice(C.length)).sort()) ===
+        JSON.stringify(['BiNorm3D.hpprgm', 'DataLoad.hpprgm', 'ScatterLab.hpprgm']) && same(t[C + 'DataLoad.hpprgm'], packFile('DataLoad.hpprgm')));
+  check('... and M1 is the student\'s own file, not the sample', same(t[C + 'M1.hpmat'], own1));
 
   // ---- 5. the wrong folder ----
   await page.reload();
@@ -310,8 +384,29 @@ function check(name, ok, detail) {
   check('Firefox: two chapters make HP_Prime_Chapters_7_12.zip; the app note shows for CentralLimit',
         (await p2.textContent('#zipname')) === 'HP_Prime_Chapters_7_12.zip' && await p2.isVisible('#manualapp'));
   await p2.check('#rossi');
-  check('Firefox: the data note shows when data is picked', await p2.isVisible('#manualdata'));
+  check('Firefox: the data note shows when data is picked, and DataLoad joins the list', await p2.isVisible('#manualdata') && /DataLoad/.test(await p2.textContent('#manualprogs')), await p2.textContent('#manualprogs'));
+  check('Firefox on Windows: no notice at the top', !(await p2.isVisible('#platform')));
   check('Firefox: no errors in the page', errs2.length === 0, errs2);
+
+  // ---- 8b. a phone and a Mac ----
+  const phone = await (await browser.newContext({ userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36' })).newPage();
+  await phone.addInitScript(() => { delete window.showDirectoryPicker; });
+  await phone.goto('http://localhost:8766/');
+  check('a phone: the notice says the page needs the Windows computer, and gives the address', await phone.isVisible('#platform') &&
+        /needs your Windows computer/.test(await phone.textContent('#platformh')) && /phone or a tablet/.test(await phone.textContent('#platformp')) &&
+        /http:\/\/localhost:8766\//.test(await phone.textContent('#platformp')), await phone.textContent('#platformp'));
+  check('a phone: neither "this page can do the copying" nor "that\'s fine, a few more clicks" is shown', !(await phone.isVisible('#mode-auto')) && !(await phone.isVisible('#mode-manual')));
+  const mac = await (await browser.newContext({ userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15' })).newPage();
+  await mac.addInitScript(() => { delete window.showDirectoryPicker; });
+  await mac.goto('http://localhost:8766/');
+  check('a Mac: the notice says the steps were written for Windows', await mac.isVisible('#platform') && /written for Windows/.test(await mac.textContent('#platformh')) &&
+        /Connectivity Kit/.test(await mac.textContent('#platformp')), await mac.textContent('#platformp'));
+  const old = await (await browser.newContext({ userAgent: WIN })).newPage();
+  await old.addInitScript(() => { delete window.DecompressionStream; });
+  await old.goto('http://localhost:8766/');
+  await old.locator('#chapters .card', { hasText: 'Chi-Square' }).click();
+  check('a browser that cannot unpack: the notice says so, and Load and Download stay off', await old.isVisible('#platform') && /too old for this page/.test(await old.textContent('#platformh')) &&
+        await old.isDisabled('#load') && await old.isDisabled('#download'));
 
   // ---- 9. opened as a local file ----
   const p3 = await ctx.newPage();
