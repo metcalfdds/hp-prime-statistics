@@ -1,0 +1,7 @@
+NEW
+PROGRAM          screens   83/1192  collisions  25 (firm  19) straddles   0 overruns   0 ghosts   0
+walk: {'runs': 80, 'stalls': 0, 'errors': {}, 'budget_s': 60, 'entry': 'AgreeLab()'}
+
+OLD
+PROGRAM          screens   83/1192  collisions  25 (firm  19) straddles   0 overruns   0 ghosts   0
+walk: {'runs': 80, 'stalls': 0, 'errors': {}, 'budget_s': 60, 'entry': 'AgreeLab()'}

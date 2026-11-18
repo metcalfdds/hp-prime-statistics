@@ -1,0 +1,7 @@
+NEW
+PROGRAM        screens   74/465   collisions   5 (firm   2) straddles   2 overruns  19 ghosts   0
+walk: {'runs': 68, 'stalls': 0, 'errors': {}, 'budget_s': 60, 'entry': 'StudRange()'}
+
+OLD
+PROGRAM        screens   74/484   collisions   5 (firm   2) straddles   2 overruns  19 ghosts   0
+walk: {'runs': 69, 'stalls': 0, 'errors': {}, 'budget_s': 60, 'entry': 'StudRange()'}

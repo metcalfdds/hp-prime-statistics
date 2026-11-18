@@ -1,0 +1,119 @@
+AgreeLab_beta1h         1049 (b) | ICC intervals (F quantiles)
+AgreeLab_beta1h         1058 (b) | no F interval (target MS = 0)
+AgreeLab_beta1h         1058 (b) | no F interval (within MS = 0)
+AgreeLab_beta1h         1058 (b) | no F interval (within MS = 0)no F inter
+AgreeLab_beta1h         1070 (b) | no F interval (error MS = 0)
+AgreeLab_beta1h         1070 (b) | no F interval (error MS = 0)no F interv
+AgreeLab_beta1h         1094 (b) | no F interval
+AgreeLab_beta1h        drawn (b) | ICC intervals (F quantiles)
+AnovaLab_beta1i         1118 (b) | The q distribution is an integral, done here
+AnovaLab_beta1i         3260 (a) | F(k - 1, N - k) curve; p = P(F th
+AnovaLab_beta1i         3269 (b) | The F test assumes equal spreads (an
+AnovaLab_beta1i         3308 (a) | group (a placebo, the usual method): k - 1 comparisons,
+AnovaLab_beta1i         3353 (a) | One σ: χ² = (n - 1) s² / σ₀², df n - 1.
+AnovaLab_beta1i         3355 (a) | Two σ: F = s₁² / s₂², df n₁ - 1 and n₂ - 1.
+AnovaLab_beta1i         3355 (a) | Two σ: F = s₁² / s₂², df n₁ - 1 and n₂ - 1.
+AnovaLab_beta1i         3545 (b) | F curve and p
+AnovaLab_beta1i         3957 (b) | F curve of an effect
+AnovaLab_beta1i         4145 (b) | F curve (treatments)
+AnovaLab_beta1i         4232 (b) | Two σ: the F test and interval
+AnovaLab_beta1i        drawn (a) | F(k - 1, N - k) curve; p = P(F th
+AnovaLab_beta1i        drawn (a) | One σ: χ² = (n - 1) s² / σ₀², df n - 1.
+AnovaLab_beta1i        drawn (b) | The F test assumes equal spreads (an
+AnovaLab_beta1i        drawn (a) | Two σ: F = s₁² / s₂², df n₁ - 1 and n₂ - 1.
+AnovaLab_beta1i        drawn (a) | Two σ: F = s₁² / s₂², df n₁ - 1 and n₂ - 1.
+AnovaLab_beta1i        drawn (a) | group (a placebo, the usual method): k - 1 comparisons,
+CICatcher_beta2l        2098 (b) | must be a whole number from 2 to 100 (a t interval needs 2 or more).
+EpiStats_v1.7l          6013 (a) | Breslow-Day (k-1 df): are the strata's ORs
+ExhibitLab_beta1h       2286 (a) | eight, grams, at most 10,000SD (divisor n - 1), grams, 0 to 1,000
+ExhibitLab_beta1h       2286 (a) | SD (divisor n - 1), grams, 0 to 1,000
+ExhibitLab_beta1h       2804 (a) | Cochran; ENFSI s7).  CI: T ± t SE, t on n - 1
+ExhibitLab_beta1h      drawn (a) | Cochran; ENFSI s7).  CI: T ± t SE, t on n - 1
+FitCheck_beta1i         1254 (a) | (k - 1) (Chernoff & Lehmann 1954); df = k - 3 is the usual textbook rul
+FitCheck_beta1i         1918 (a) | df = k - 1 - m = 
+FitCheck_beta1i         1918 (a) | df = k - 1 - m =  - 1 -  = : too few cel
+FitCheck_beta1i         1977 (a) | df = k - 1 - m =  - 1 -  =   (m: fitted)
+FitCheck_beta1i         2009 (a) | df = k - 1 - m =  - 1 -  =    (m = param
+FitCheck_beta1i         2066 (a) | up to N.  One parameter estimated: df = k - 2.
+FitCheck_beta1i         2070 (a) | : one parameter estimated, df = k - 2.
+FitCheck_beta1i         2070 (a) | (n N) = : one parameter estimated, df = k - 2.
+FitCheck_beta1i         2072 (a) |  was given, not estimated: df = k - 1.
+FitCheck_beta1i         2072 (a) | p =  was given, not estimated: df = k - 1.
+FitCheck_beta1i         2076 (a) | e open.  Two parameters estimated: df = k - 3.
+FitCheck_beta1i         2838 (a) |  estimates and the cells match and df = k - 3.
+FitCheck_beta1i         3263 (a) | key): the sparse tails are merged, df = k - 3.
+FitCheck_beta1i         3370 (a) | s.p is estimated from the data, so df = k - 2.
+FitCheck_beta1i         3370 (a) | p is estimated from the data, so df = k - 2.
+FitCheck_beta1i         3626 (a) | g when the counts are far from E.  df = k - 1 - m, where m counts the param
+FitCheck_beta1i         3636 (a) | (K or more), so the E add up to N; df = k - 2.  BINOMIAL: p estimated (
+FitCheck_beta1i         3636 (a) | f = k - 2.  BINOMIAL: p estimated (df = k - 2) or typed (df = k - 1).
+FitCheck_beta1i         3636 (a) | p estimated (df = k - 2) or typed (df = k - 1).
+FitCheck_beta1i         3640 (a) |  and only below 0.10.  χ² on bins: df = k - 3.  
+FitCheck_beta1i        drawn (a) | = k - 1 - m, where m counts the param
+FitCheck_beta1i        drawn (a) | add up to N; df = k - 2.  BINOMIAL: p 
+FitCheck_beta1i        drawn (a) | are merged, df = k - 3.
+FitCheck_beta1i        drawn (a) | df = k - 1 - m = 2 - 1 - 0 = 1   (m = 
+FitCheck_beta1i        drawn (a) | df = k - 1 - m = 3 - 1 - 0 = 2   (m = 
+FitCheck_beta1i        drawn (a) | df = k - 1 - m = 3 - 1 - 1 = 1   (m = 
+FitCheck_beta1i        drawn (a) | df = k - 1 - m = 4 - 1 - 1 = 2   (m = 
+FitCheck_beta1i        drawn (a) | df = k - 1 - m = 5 - 1 - 1 = 3   (m = 
+FitCheck_beta1i        drawn (a) | df = k - 1 - m = 9 - 1 - 0 = 8   (m = 
+FitCheck_beta1i        drawn (a) | estimated (df = k - 2) or typed (df = k - 1).
+FitCheck_beta1i        drawn (a) | estimated (df = k - 2) or typed (df = k - 1).
+FitCheck_beta1i        drawn (a) | only below 0.10.  χ² on bins: df = k - 3.  
+FitCheck_beta1i        drawn (a) | p is estimated from the data, so df = k - 2.
+PowerViz_v2.5s          3331 (b) | F test of s₁²/s₂² (exact, normal
+PowerViz_v2.5s          3365 (b) | The F test of s₁²/s₂² (
+PowerViz_v2.5s          3365 (b) | The F test of s₁²/s₂² ( here) is str
+PowerViz_v2.5s          3785 (b) | tly (CAS), then the program puts in the z values (PPL), giving
+PowerViz_v2.5s          3818 (b) | z test: σ₁, σ₂ taken as known. W
+RankLab_beta1j          4413 (b) | magenta = the p tail(s), marked under the axis
+RankLab_beta1j          4414 (b) | magenta = the p tail(s); bars = orders of y
+RankLab_beta1j         drawn (b) | magenta = the p tail(s), marked under the axis
+ResampLab_beta1i        2857 (b) | Compare the percentile, BCa and t intervals.
+ResampLab_beta1i        2857 (b) | atasets.Compare the percentile, BCa and t intervals.
+ScatterLab_beta2l       2267 (a) | ,  df = n - 2 = 
+ScatterLab_beta2l       2267 (a) | ,  n = ,  df = n - 2 = 
+ScatterLab_beta2l       2416 (a) |   df = n - 2;  H₀: β₁ = 0;  p is two-t
+StudRange_beta15m       1598 (c) | P-value from q
+StudRange_beta15m       1649 (c) | P-value: Studentized Range
+StudRange_beta15m      drawn (c) | P-value: Studentized Range
+TDist3D_beta1a           941 (a) | e parameter, the degrees of freedom ν = n − 1.
+TDist3D_beta1a          1085 (b) | Every t curve at once: t runs across, t
+TDist3D_beta1a         drawn (b) | Every t curve at once: t runs across, t
+TTestLabG_beta1h         979 (a) | Pooled variances:  df = N₁ + N₂ - 2
+TTestLabG_beta1h         994 (a) | By hand: df = the smaller of N₁-1, N₂-1 = 
+TTestLabG_beta1h         994 (a) | By hand: df = the smaller of N₁-1, N₂-1 = 
+TTestLabG_beta1h        1264 (a) | One sample:  df = N - 1
+TTestLabG_beta1h        2028 (a) | t obt = ( - μ₀)/(s/√N), df = N - 1.  Type the mean, SD and N
+TTestLabG_beta1h       drawn (a) | By hand: df = the smaller of N₁-1, N₂-1 = 181,
+TTestLabG_beta1h       drawn (a) | By hand: df = the smaller of N₁-1, N₂-1 = 181,
+TTestLabG_beta1h       drawn (a) | One sample:  df = N - 1
+TTestLabG_beta1h       drawn (a) | Pooled variances:  df = N₁ + N₂ - 2
+TTestLabG_beta1h       drawn (a) | t obt = ( - μ₀)/(s/√N), df = N - 1.  Type the mean, SD and N
+TTestLab_beta1k         1053 (a) | Pooled variances:  df = N₁ + N₂ - 2
+TTestLab_beta1k         1083 (b) | t table, row df = 
+TTestLab_beta1k         1083 (b) | t table, row df = :  t crit = 
+TTestLab_beta1k         1349 (a) | One sample:  df = N - 1
+TTestLab_beta1k         2062 (a) | t obt = ( - μ₀)/(s/√N), df = N - 1.  Type the mean, SD and N
+TTestLab_beta1k        drawn (a) | One sample:  df = N - 1
+TTestLab_beta1k        drawn (a) | Pooled variances:  df = N₁ + N₂ - 2
+TTestLab_beta1k        drawn (a) | t obt = ( - μ₀)/(s/√N), df = N - 1.  Type the mean, SD and N
+TTestLab_beta1k        drawn (b) | t table, row df = 120:  t crit = 
+TTestLab_beta1k        drawn (b) | t table, row df = 4:  t crit = -2
+TTestLab_beta1k        drawn (b) | t table, row df = 60:  t crit = ±
+TTestLab_beta1k        drawn (b) | t table, row df = 9:  t crit = ±2
+TestChooser_beta2g       340 (b) | Cochran's Q test
+TestChooser_beta2g       442 (a) | Extends McNemar; χ², k - 1 df.
+TestChooser_beta2g       460 (a) | Rank one-way ANOVA; χ², k - 1 df.
+TestChooser_beta2g       472 (a) | Rank repeated-measures ANOVA; k - 1 df.
+TestChooser_beta2g       490 (a) | χ², k - 1 df; prop. hazards.
+TrendTest_beta3m        1386 (a) | Departure = Pearson - trend, k-2 df
+TrendTest_beta3m        2149 (a) | χ² (k-1 df) asks only 'do the pro
+TrendTest_beta3m        2154 (a) | Pearson's χ² minus the trend χ² (k-2 df) measures how far the
+TrendTest_beta3m       drawn (a) | Departure = Pearson - trend, k-2 df
+TrendTest_beta3m       drawn (a) | Pearson's χ² minus the trend χ² (k-2 df) measures how far the
+TrendTest_beta3m       drawn (a) | χ² (k-1 df) asks only 'do the pro
+Norm3_v2.4g              495 (b) | s your finger, with the blue area, both P values and   [left alone: two probabilities, each written P(...) on the page: values of P, not a p-value]
+StatDist_v2.7n          4202 (a?) | P(X = k) = C(k+r-1, k) p^r (1 - p)^k
+31 programs, 17596 strings read, 22648 drawn texts; places against the rules: 116 in 16 programs {'AgreeLab_beta1h': 8, 'AnovaLab_beta1i': 17, 'CICatcher_beta2l': 1, 'EpiStats_v1.7l': 1, 'ExhibitLab_beta1h': 4, 'FitCheck_beta1i': 33, 'PowerViz_v2.5s': 5, 'RankLab_beta1j': 3, 'ResampLab_beta1i': 2, 'ScatterLab_beta2l': 3, 'StudRange_beta15m': 3, 'TDist3D_beta1a': 3, 'TTestLabG_beta1h': 10, 'TTestLab_beta1k': 12, 'TestChooser_beta2g': 5, 'TrendTest_beta3m': 6}; left alone: 1; passed over by rule (a), listed for the eye: 1

@@ -1,0 +1,7 @@
+NEW
+PROGRAM           screens  125/165   collisions  21 (firm  18) straddles   0 overruns   9 ghosts   0
+walk: {'runs': 12, 'stalls': 0, 'errors': {}, 'budget_s': 60, 'entry': 'POWERVIZ()'}
+
+OLD
+PROGRAM           screens  125/165   collisions  21 (firm  18) straddles   0 overruns   9 ghosts   0
+walk: {'runs': 12, 'stalls': 0, 'errors': {}, 'budget_s': 60, 'entry': 'POWERVIZ()'}

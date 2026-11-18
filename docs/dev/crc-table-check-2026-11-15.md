@@ -6,6 +6,8 @@
 
 **Corrected on 16 November 2026.** This report said that the row labels of the table of circular normal probabilities (p. 194) are one row too *low*, and that moving them *up* a row sets the table right. The direction was written the wrong way round. The page was read again: it prints the labels 0.2, 0.3, …, 1.0, 1.2, …, 5.8 on 33 rows whose numbers are those of 0.1, 0.2, …, 0.9, 1.0, 1.2, …, 5.6, so each label stands one row *above* its own numbers, one row too *high*, and moving the labels *down* a row sets the table right. The fact the report gave beside the direction ("the row marked 0.2 holds the values for 0.1") and the count (183 of 198 values wrong as labelled) were right and stand. Two lines below are changed, and nothing else.
 
+**Corrected again on 16 November 2026 (evening).** The table under "How much can a table be trusted?" gave the 95% interval for separate misfigures per page as 0.11 to 0.34. The lower limit is 0.1046 (`work/model.json`, `nb_ci`; recomputed from the page counts on 16 November), which rounds to 0.10, so the interval now reads 0.10 to 0.34. Nothing else changes, and that interval is not printed in the book.
+
 ## The short answer
 
 - **57 tables on 151 pages were checked: 39,164 printed values.**
@@ -200,7 +202,7 @@ The variance of the misfigures is 2.76 times their mean (Poisson says 1; the tes
 | --- | --- | --- |
 | Share of tables with a wrong number or label | 22 of 57 = 39% | 27% to 52% |
 | Share of pages with a wrong number | 37 of 151 = 25% | 18% to 32% |
-| Separate misfigures per page | 0.19 (one in five pages) | 0.11 to 0.34 |
+| Separate misfigures per page | 0.19 (one in five pages) | 0.10 to 0.34 |
 | Wrong numbers per page | 18.8 | 9.8 to 43 |
 | Share of all printed values that are wrong | 7.2% | 2.2% to 12.8% |
 | The same, outside the six worst tables | 0.8% | |

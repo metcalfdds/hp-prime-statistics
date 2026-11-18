@@ -1,0 +1,7 @@
+NEW
+PROGRAM       screens   28/1172  collisions  11 (firm  11) straddles  14 overruns  14 ghosts   0
+walk: {'runs': 80, 'stalls': 0, 'errors': {}, 'budget_s': 60, 'entry': 'TestChooser()'}
+
+OLD
+PROGRAM       screens   28/1172  collisions  11 (firm  11) straddles  14 overruns  14 ghosts   0
+walk: {'runs': 80, 'stalls': 0, 'errors': {}, 'budget_s': 60, 'entry': 'TestChooser()'}
