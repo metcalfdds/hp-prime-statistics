@@ -48,7 +48,7 @@ PASS picking Calculators explains which folder to pick
 PASS picking an unrelated folder explains which folder to pick
 PASS picking Documents finds HP Prime inside it: all the programs are loaded
 PASS cancelling the picker says nothing was loaded
-PASS a real HP Prime: step 2 offers eight groups and neither "All the programs" nor "One chapter" (neither calculator held all 30 on 18 Nov): Chapters 1–3, 4–6, 7–9, 10–12, 13–15 and Advanced 1, 2, 3; every program is in a group
+PASS a real HP Prime: step 2 offers eight groups and neither "All the programs" nor "One chapter" (neither calculator held all 30 on 18 Nov): Chapters 1–3, 4–6, 7–9, 10–12, 13–15 and Advanced 1 (EpiStats alone), 2, 3; every program is in a group
 PASS ... with no group chosen yet the page asks for one, and there is nothing to download
 PASS a real HP Prime: step 3 is the Connectivity Kit's steps, and there is no Load button to click
 PASS ... the summary names the group and its programs
@@ -100,24 +100,28 @@ PASS cable: nothing of it shows while the Virtual Calculator is chosen
 PASS two ways: where both show, step 3 is called what Roger called it, "Two ways to load Statisticles onto a physical Prime G1 or G2 calculator", with Statisticles in italics as the book writes it
 PASS two ways: under the title, Roger's sentence as the book has it: we believe our method should work, and we have tested it, and are continually testing it; easier than the Kit, no mDNS (Bonjour) issue; 2) just in case; tell us on GitHub, with the Issues address as a link
 PASS two ways: each has the name he gave it, "1) The Statisticles way: straight down the USB cable" and "2) The official HP way: the Connectivity Kit", in that order down the page under the sentence
-PASS two ways: right under 1) a line says what was tried (a G2 in Chrome, a G1 in Edge, 18 November 2026; Chapter 12 read back the same; ChiTable ran with no Check), and nothing the page shows still says it is being tested
+PASS two ways: right under 1) a line says what was tried and what it showed (a G2 in Chrome, a G1 in Edge, 18 November 2026; every download verified; a program or two then had to be checked before it would start, and the page says how), and nothing the page shows still says it is being tested
 PASS two ways: nowhere in what the page shows or can come to show (its comments aside, which keep the history) is either still called "the other way", "the first way" or "the second way"
-PASS cable: for a real HP Prime it is way 1): three steps and one button, which waits for a group to be chosen
+PASS cable: for a real HP Prime it is way 1): four steps and one button, which waits for a group to be chosen
+PASS cable: the first step asks for a restart, if the student can (Roger, 18 Nov: "if possible, they should do a paperclip reset first before anything else"): the paper clip and the hole on the back, that programs and data stay, and what to do with no paper clip
 PASS cable: its steps say to plug in and switch on at the Home screen, to close the Kit, and what the browser's small window is
 PASS cable: the Connectivity Kit's steps are kept whole as way 2), folded under "2) The official HP way: the Connectivity Kit"
 PASS ... one click opens them: the download button and the six steps
 PASS cable: with no group chosen yet, the page asks for one and Send is off
 PASS cable: a group with the app in it (Chapters 7–9): CentralLimit is named as not travelling this way before anything is sent; the Kit's steps stay folded until they are wanted
 PASS cable: Chapters 1–3 (DataLoad, NormExplorer, ScatterLab, TestChooser) has no app in it: nothing to say before sending
-PASS cable, Chapters 1–3 to a G2: "Done. Your programs are on the calculator.", the bar full, each program ticked, Send ready again and Stop gone
+PASS cable, Chapters 1–3 to a G2: "Done. Your Statisticles programs are on the calculator.", the bar full, each program ticked, Send ready again and Stop gone
 PASS ... what the calculator holds is each program's source exactly as the pack's file holds it, character for character; and that is programs/ but for the blank space at its end
 PASS ... sent the way both calculators kept: "FD 01 00 00 00 01 03" once in the old framing, then every program not compressed in the newer framing, 1,024-byte reports, none sent twice
-PASS ... the page says what to do next (Shift, Program; tap, Run; Check if it says Syntax Error; unplug) and what happened (verified, character for character; the book's other programs taken off to make room, the student's own left)
+PASS ... the page says what to do next (unplug the cable first, because a calculator on its cable runs slowly: Roger's G1, 18 Nov; Shift, Program; tap, Run; Check if Run opens the program's text, as it did on his G2) and what happened (verified, character for character; the other Statisticles programs taken off to make room, the student's own left)
 PASS ... the details name the page, the browser, the calculator and the choice; say who answered and what each program did; end in a RESULT line; and hold neither the serial number nor more than twelve bytes of any message
 PASS ... Save the details gives a text file named with the date, holding those lines and no serial number
 PASS cable: choosing another group afterwards takes away what the page said of the finished load ("Done", the ticks, the bar), which was about other programs; the details stay
 PASS ... and the page says, before anything is sent, that the book's other programs are taken off first and the student's own stay
-PASS cable: a second group without unplugging (Advanced 1: EpiStats, ErrorRate, TrendTest): the browser's small window is not shown again, the calculator is not told "FD" again, the list starts afresh; the first group's programs are taken off to make room, and a program of the student's own stays
+PASS cable: a second group without unplugging (Advanced 1: EpiStats): the browser's small window is not shown again, the calculator is not told "FD" again, the list starts afresh; the first group's programs are taken off to make room, and a program of the student's own stays
+PASS cable: Advanced 1 is EpiStats by itself, the longest program of all (sent to the author's G1 with two programs behind it, it would not run and the calculator reset; sent alone it ran: Roger, 18 Nov), the other ten advanced programs are five in Advanced 2 and five in Advanced 3, and the page explains the list of two names EpiStats shows when it is run
+PASS cable: no errors in the page
+PASS cable, the page as a student has it: after each program but the last the calculator is left alone, once the download is verified, for 2 s and 0.5 s more for each 100,000 characters on a G2 (2.21, 2.93, 2.58 s for DataLoad, NormExplorer, ScatterLab), the page says so while it waits, and the details say what each program was given (18 s in all against the mock)
 PASS cable: no errors in the page
 PASS cable, the eight groups one after another onto one G2: after each, the calculator holds that group's programs, each the pack's source character for character, with the student's own program, and none of the book's others
 PASS cable: no errors in the page
@@ -132,7 +136,7 @@ PASS slip: a calculator that does not answer (switched off at the wrong moment, 
 PASS slip, not the student's: a calculator that still says version 01 after the "FD" (other software than the two it was proved on): nothing is sent, nothing about the calculator is changed, and the page points to the Kit and asks for the details
 PASS a program the calculator acknowledges and does not keep (NormExplorer): the load stops there; the one before it is ticked, this one crossed, the ones after never sent; the page does not say Done; it says to delete it if it is in the list and to use the Kit for it and the rest
 PASS a program damaged on the way: "What is on the calculator is not what was sent", nothing ticked, and the details say where the two part
-PASS slip: the cable pulled out in the middle of the second program, and the browser's write to it never comes back: the page says so within seconds (9.0 s here), counts the first program and no other, and is ready to send again
+PASS slip: the cable pulled out in the middle of the second program, and the browser's write to it never comes back: the page says so within seconds (8.9 s here), counts the first program and no other, and is ready to send again
 PASS ... no errors in the page
 PASS slip: the cable pulled out and the browser says so at once: the same words
 PASS slip: a calculator still on its cable that takes nothing more, as a nearly full G2 did: "The calculator stopped responding", not "went off the cable"; the first program is marked done; what to do: unplug, off and on, send again, and make room if it happens again
@@ -155,4 +159,4 @@ PASS ... and it is not shown where the cable works (Chrome or Edge): there the t
 PASS ... and at the plain address, in a browser that cannot reach a USB device, the sentence shows too, above the Kit's steps
 PASS no errors in the page
 
-156 PASS, 0 FAIL
+160 PASS, 0 FAIL

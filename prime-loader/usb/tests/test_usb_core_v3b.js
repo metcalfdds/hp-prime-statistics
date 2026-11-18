@@ -482,17 +482,34 @@ const G1 = 0x1541;
     check('E6e Stop while making room: the load ends there, nothing is sent, and the log says where', !L2.res.ok && L2.res.stopped && L2.res.done.length === 0 && L2.mock.arrived.length === 0 && /STOPPED by the Stop button, while making room\./.test(L2.text), JSON.stringify(L2.res));
   }
   {
-    const mock = new MockPrime({ tickMs: 80 }), link = quick(new P.Link(mock.port())), log = [];
-    const t0 = Date.now(), res = await P.load(link, three, { log: t => log.push(t) }, { settle: 10 });      // the lull as the page has it: 2 s
+    // v3b: the rest a program is given once its download is verified, before the next one is sent
+    check('E6f the rest is 2 s and 0.5 s more for each 100,000 characters on a G2, 2 s more on a G1: 2.0 s for nothing, 2.93 s for NormExplorer on a G2 (185,782 characters), 4.31 s for ErrorRate on a G1 (115,298), 7.8 s for EpiStats on a G1 (289,813)',
+          P.lullFor(0, 1024) === 2000 && P.lullFor(185782, 1024) === 2929 && P.lullFor(115298, 64) === 4306 && P.lullFor(289813, 64) === 7797 && P.lullFor(289813, 1024) === 3450 && P.lullFor(100000) === 2500,
+          [P.lullFor(0, 1024), P.lullFor(185782, 1024), P.lullFor(115298, 64), P.lullFor(289813, 64), P.lullFor(289813, 1024), P.lullFor(100000)].join(' '));
+    const mock = new MockPrime({ tickMs: 80 }), link = quick(new P.Link(mock.port())), log = [], rests = [];
+    const t0 = Date.now(), res = await P.load(link, three, { log: t => log.push(t), resting: (k, ms) => rests.push([k, ms]) }, { settle: 10 });      // the rest as the page has it
     mock.stop();
-    const quiet = mock.arrived.map(a => a.quiet);
-    check('E6f a lull between programs (the G2 of 18 Nov would not run the two programs that had 0.54 s and 0.77 s before the next one began, and ran those that had 0.99 s): each program is given 2 s from its arrival before the next begins, the last needs none, and the log says what each was given',
-          res.ok && quiet.length === 3 && quiet[0] >= 1990 && quiet[0] < 2400 && quiet[1] >= 1990 && quiet[1] < 2400 && quiet[2] === undefined && Date.now() - t0 >= 4000 &&
-          /\(AAA was given 2\.\d\d s before the next program began\)\nDataLoad: /.test(log.join('\n')) && /\(DataLoad was given 2\.\d\d s before the next program began\)\nCCC: /.test(log.join('\n')), JSON.stringify(quiet) + log.filter(l => /was given/.test(l)).join('|'));
+    const quiet = mock.arrived.map(a => a.quiet), text = log.join('\n'), dlRest = P.lullFor(three[1].source.replace(/\r\n?/g, '\n').length, 1024);
+    check('E6g a rest between programs, as the page has it (on 18 Nov a G2 would not run the two programs that had 0.54 s and 0.77 s before the next one began, and a G1 reset on the one whose 4.84 s it had spent answering the page): on a pretend G2 each program but the last is left alone for its rest after it is verified, the page is told when each rest begins, and the log says what each program was given',
+          res.ok && quiet.length === 3 && quiet[0] >= 2000 && quiet[0] < 3500 && quiet[1] >= dlRest && quiet[1] < dlRest + 1500 && quiet[2] === undefined && Date.now() - t0 >= 2000 + dlRest &&
+          rests.length === 2 && rests[0][0] === 0 && rests[1][0] === 1 && rests[0][1] > 1900 && rests[0][1] <= 2001 && rests[1][1] > dlRest - 100 && rests[1][1] <= dlRest &&
+          /\(AAA was left alone for 2\.\d\d s after it was verified, \d\.\d\d s after it arrived, before the next program began\)\nDataLoad: /.test(text) &&
+          /\(DataLoad was left alone for 2\.\d\d s after it was verified, \d\.\d\d s after it arrived, before the next program began\)\nCCC: /.test(text) && !/CCC was left alone/.test(text),
+          JSON.stringify([quiet, rests, dlRest]) + log.filter(l => /left alone/.test(l)).join('|'));
     const m2 = new MockPrime({ tickMs: 80 }), l2 = quick(new P.Link(m2.port()));
     await P.load(l2, three, {}, { settle: 10, lull: 0 });
     m2.stop();
-    check('E6g ... and with no lull asked (as these tests ask, to be quick) the next program begins at once: the mock measures it', m2.arrived[0].quiet < 500 && m2.arrived[1].quiet < 500, JSON.stringify(m2.arrived.map(a => a.quiet)));
+    check('E6h ... and with no rest asked (as these tests ask, to be quick) the next program begins at once: the mock measures it', m2.arrived[0].quiet < 500 && m2.arrived[1].quiet < 500, JSON.stringify(m2.arrived.map(a => a.quiet)));
+    const m3 = new MockPrime({ tickMs: 80, product: 0x1541 }), l3 = quick(new P.Link(m3.port())), log3 = [];
+    const r3 = await P.load(l3, [three[0], three[2]], { log: t => log3.push(t) }, { settle: 10, lull: (chars, size) => size <= 64 ? 700 : 5 });
+    m3.stop();
+    check('E6i ... a pretend G1 is known for one by its reports of 64 bytes, and gets the G1\'s rest', r3.ok && m3.arrived[0].quiet >= 700 && m3.arrived[0].quiet < 2000 && /AAA was left alone for 0\.7\d s/.test(log3.join('\n')), JSON.stringify(m3.arrived.map(a => a.quiet)));
+    const m4 = new MockPrime({ tickMs: 80 }), l4 = quick(new P.Link(m4.port())), log4 = [];
+    let stopNow = false;
+    const t4 = Date.now(), r4 = await P.load(l4, three, { log: t => log4.push(t), stop: () => stopNow, resting: () => { setTimeout(() => { stopNow = true; }, 300); } }, { settle: 10, lull: 60000 });
+    m4.stop();
+    check('E6j Stop during a rest: the load ends there within a moment, the program that was resting counts as loaded, and the next is not sent',
+          !r4.ok && r4.stopped && r4.done.join() === 'AAA' && m4.arrived.length === 1 && Date.now() - t4 < 5000 && /STOPPED by the Stop button, before DataLoad\./.test(log4.join('\n')), JSON.stringify(r4) + (Date.now() - t4));
   }
   L = await run({ fdOld: null }, three);
   check('E7 a calculator that still says version 01 after the "FD": "version"; no program is sent and the newer framing is not asked for',

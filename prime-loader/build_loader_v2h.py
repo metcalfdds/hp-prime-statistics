@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-"""build_loader_v2g.py -- assembles PrimeLoader_v2g.html: the page template, the loader's core, the Data Loader's core
+"""build_loader_v2h.py -- assembles PrimeLoader_v2h.html: the page template, the loader's core, the Data Loader's core
 (for its zip writer), the USB core, the chapter list, and every program file from a starter pack, embedded so the
 page works offline.
 
-    python3 build_loader_v2g.py PACK.zip [OUT.html] [--kit PATH]
+    python3 build_loader_v2h.py PACK.zip [OUT.html] [--kit PATH]
+v2h (18 Nov 2026, 17:45): the template's v2h, and EpiStats in a group of its own (ALONE, below): sent to the author's
+G1 with two programs behind it, it would not run and the calculator reset; sent alone, it ran (Roger, 17:01 and 17:30).
+prime_usb_v3b.js rests the calculator after each program.
 v2g (18 Nov 2026, 16:50): the template's v2g: groups of chapters for a real HP Prime (CHAPTER_GROUPS below, and the
 advanced programs dealt into three), which the cable sends after taking the book's other programs off; the Virtual
 Calculator takes all the programs with nothing to choose.  prime_usb_v3b.js.
@@ -164,7 +167,7 @@ KIT = os.environ.get('HPKIT', '/tmp/kit/hp-prime-kit-HEAD')
 if '--kit' in argv:
     i = argv.index('--kit'); KIT = argv[i + 1]; del argv[i:i + 2]
 PACK = argv[0]
-OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v2g.html')
+OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v2h.html')
 SITE = 'https://metcalfdds.github.io/hp-prime-statistics/'
 sys.path.insert(0, KIT)
 from hpkit import program as kitprog            # hp-prime-kit (MIT, JordiRigau/hp-prime-kit)
@@ -248,9 +251,13 @@ assert ALWAYS_OFFERED in PROGRAMS
 # Groups for a real HP Prime (Roger, 18 Nov 2026, 16:16 and 16:18: "for a physical G1 or G2 choose 1) Ch 1-3, 2) Ch 4-6,
 # 3) Ch 7--9. 4) Ch 10-12, 5) Ch 13-15, 6) Advanced 1, 7) Advanced 2, 8) Advanced 3"), because neither calculator
 # held all 30 programs (the G1 full after 15, the G2 stopped after 13: usb/logs/, 18 Nov).  A chapter group is its
-# chapters' programs and the flowchart; the advanced programs (those of no chapter) are dealt into three groups of
-# about the same size, in alphabetical order within each, by this script.
+# chapters' programs and the flowchart.  The advanced programs (those of no chapter): EpiStats, the longest program
+# of all, is Advanced 1 by itself (Roger, 18 Nov, 17:25: "I wounder if we maybe should handle EpiStats separately from
+# the others?"; with ErrorRate and TrendTest sent behind it, his G1 would not run it and reset, and sent alone it ran),
+# and the others are dealt into Advanced 2 and Advanced 3, of about the same size, in alphabetical order within each,
+# by this script.
 CHAPTER_GROUPS = [(1, 3), (4, 6), (7, 9), (10, 12), (13, 15)]
+ALONE = 'EpiStats'
 
 # ---- take the files from the pack ----
 zin = zipfile.ZipFile(PACK)
@@ -310,10 +317,12 @@ for a, b in CHAPTER_GROUPS:
     _in_chapters |= progs
     GROUPS.append({'id': 'c%d' % a, 'title': 'Chapters %d\u2013%d' % (a, b), 'file': 'Chapters_%d-%d' % (a, b),
                    'programs': sorted(progs, key=str.lower)})
-_adv = sorted((k for k in PROGRAMS if k not in _in_chapters), key=lambda k: (-_chars(k), k))
-_bins = [[], [], []]
+assert ALONE in PROGRAMS and ALONE not in _in_chapters, ALONE
+assert all(_chars(ALONE) >= _chars(k) for k in PROGRAMS), 'the program that goes alone is the longest'
+_adv = sorted((k for k in PROGRAMS if k not in _in_chapters and k != ALONE), key=lambda k: (-_chars(k), k))
+_bins = [[ALONE], [], []]
 for k in _adv:                                   # largest first, each into the lightest group
-    min(_bins, key=lambda g: (sum(_chars(x) for x in g), len(g))).append(k)
+    min(_bins[1:], key=lambda g: (sum(_chars(x) for x in g), len(g))).append(k)
 for i, g in enumerate(_bins):
     GROUPS.append({'id': 'a%d' % (i + 1), 'title': 'Advanced %d' % (i + 1), 'file': 'Advanced_%d' % (i + 1),
                    'programs': sorted(g, key=str.lower)})
@@ -343,11 +352,11 @@ catalog = {
   'groups': GROUPS,
   'data': {k: {'file': v[1], 'what': v[2], 'bytes': len(packed[v[1]])} for k, v in DATA.items()},
   'pack': os.path.basename(PACK),
-  'loader': 'v2g',
+  'loader': 'v2h',
   'pack_sha256': hashlib.sha256(open(PACK, 'rb').read()).hexdigest()[:12],
 }
 
-t = open(os.path.join(HERE, 'loader_template_v2g.html'), encoding='utf-8').read()
+t = open(os.path.join(HERE, 'loader_template_v2h.html'), encoding='utf-8').read()
 import glob as _glob
 _dl = sorted(_glob.glob(os.path.join(HERE, '..', 'data-loader', 'DataLoader_v*.html')),
              key=lambda p: [int(x) if x.isdigit() else x for x in __import__('re').split(r'(\d+)', os.path.basename(p))])
@@ -381,7 +390,7 @@ redirect = ('<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n
             '<link rel="canonical" href="' + SITE + 'prime-loader/' + page + '">\n'
             '<style>body{font:16px/1.5 system-ui,sans-serif;margin:2rem;color:#172033;background:#f6f8fb}'
             '@media (prefers-color-scheme:dark){body{color:#e8edf6;background:#0f1420}a{color:#7d9cff}}</style>\n'
-            '</head>\n<body>\n<!-- Written by build_loader_v2g.py: sends the browser on to the current Prime Loader, so the '
+            '</head>\n<body>\n<!-- Written by build_loader_v2h.py: sends the browser on to the current Prime Loader, so the '
             'address .../prime-loader/ never changes. -->\n'
             '<p>Opening the HP Prime Loader&hellip; If nothing happens, <a href="' + page + '">click here</a>.</p>\n'
             '</body>\n</html>\n')

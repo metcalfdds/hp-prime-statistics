@@ -1,7 +1,10 @@
-// test_loader_v2g.js -- drives PrimeLoader_v2g.html in Chromium against a mock Virtual Calculator folder, and its
+// test_loader_v2h.js -- drives PrimeLoader_v2h.html in Chromium against a mock Virtual Calculator folder, and its
 // cable route (shown only at ?usb=1) against a pretend calculator that does what two real ones did on 17 Nov 2026.
-// Roger Metcalf & Claude, 18 Nov 2026.   node tests/test_loader_v2g.js PrimeLoader_v2g.html PACK.zip
+// Roger Metcalf & Claude, 18 Nov 2026.   node tests/test_loader_v2h.js PrimeLoader_v2h.html PACK.zip
 //
+// v2h (18 Nov 2026, 17:45): the cable rests the calculator after each program (these tests ask for no rest, to be
+// quick, but for the one that checks the page as it is); Advanced 1 is EpiStats alone; unplug first; a restart with
+// a paper clip asked for first; EpiStats's two names; the programs called Statisticles.
 // v2g gives a real HP Prime GROUPS of chapters in place of "All the programs" and "One chapter" (Roger, 18 Nov,
 // 16:16: "for a physical G1 or G2 choose 1) Ch 1-3 ... 8) Advanced 3"), because neither calculator held all 30; the
 // cable takes the book's other programs off before it sends a group; and the Virtual Calculator loads all the
@@ -379,11 +382,11 @@ function check(name, ok, detail) {
   await page.check('#t_real');
   const GROUPS = await page.evaluate(() => CAT.groups), PROGS = await page.evaluate(() => CAT.programs);
   const filesOf = g => g.programs.map(n => PROGS[n].file).sort();
-  check('a real HP Prime: step 2 offers eight groups and neither "All the programs" nor "One chapter" (neither calculator held all 30 on 18 Nov): Chapters 1–3, 4–6, 7–9, 10–12, 13–15 and Advanced 1, 2, 3; every program is in a group',
+  check('a real HP Prime: step 2 offers eight groups and neither "All the programs" nor "One chapter" (neither calculator held all 30 on 18 Nov): Chapters 1–3, 4–6, 7–9, 10–12, 13–15 and Advanced 1 (EpiStats alone), 2, 3; every program is in a group',
         !(await page.isVisible('#w_all')) && !(await page.isVisible('#w_chapter')) && await page.isChecked('#w_group') && await page.isVisible('#group') &&
         JSON.stringify(GROUPS.map(g => g.title)) === JSON.stringify(['Chapters 1–3', 'Chapters 4–6', 'Chapters 7–9', 'Chapters 10–12', 'Chapters 13–15', 'Advanced 1', 'Advanced 2', 'Advanced 3']) &&
         JSON.stringify(await page.$$eval('#group option', o => o.map(x => x.value))) === JSON.stringify([''].concat(GROUPS.map(g => g.id))) &&
-        names.every(n => GROUPS.some(g => g.programs.includes(n))) && GROUPS.every(g => g.programs.length >= 3 && g.programs.every(n => names.includes(n))) &&
+        names.every(n => GROUPS.some(g => g.programs.includes(n))) && GROUPS.every(g => g.programs.length >= (g.id === 'a1' ? 1 : 3) && g.programs.every(n => names.includes(n))) && GROUPS[5].programs.join() === 'EpiStats' &&
         GROUPS.slice(0, 5).every(g => g.programs.includes('TestChooser')) && GROUPS.slice(5).every((g, i) => GROUPS.slice(5).every((h, j) => i === j || !g.programs.some(n => h.programs.includes(n)))),
         JSON.stringify(GROUPS.map(g => [g.title, g.programs.length])));
   check('... with no group chosen yet the page asks for one, and there is nothing to download', (await page.textContent('#summary')) === 'Choose a group in the list above.' && await page.isDisabled('#download3') && (await page.textContent('#effect')) === '',
@@ -394,7 +397,7 @@ function check(name, ok, detail) {
         !(await page.isVisible('#load')) && await page.isVisible('#download3') && await page.locator('#kitroute ol.steps > li').count() === 6, JSON.stringify(await steps(page)));
   check('... the summary names the group and its programs', (await page.textContent('#summary')) === 'Chapters 7–9: AnovaLab, CentralLimit, CICatcher, FitCheck, GaltonBoard, PowerViz, ResampLab, SampDist, TDist3D, TestChooser, TTestLabG.', await page.textContent('#summary'));
   check('... by the Kit the page takes nothing off a calculator, so it tells the student to make room by hand, and why', (await page.textContent('#effect')) ===
-        'All the book\'s programs do not fit in a calculator\'s memory at one time, so before these go on, take off the book\'s programs you are not using now: in the calculator\'s Program Catalog, tap a name, then More, then Delete. Programs of your own can stay.', await page.textContent('#effect'));
+        'All the Statisticles programs do not fit in a calculator\'s memory at one time, so before these go on, take off the Statisticles programs you are not using now: in the calculator\'s Program Catalog, tap a name, then More, then Delete. Programs of your own can stay.', await page.textContent('#effect'));
   check('... the steps: download, unpack, start the Kit and plug in, drag onto the calculator\'s name, close the Kit, run', /Extract All/.test(await page.textContent('#step3real')) &&
         /drop it on the calculator's name/.test(await page.textContent('#step3real')) && /not into the Content box/.test(await page.textContent('#step3real')) && /Close the Connectivity Kit/.test(await page.textContent('#step3real')));
   check('... the app\'s note shows for a group that has the app, and says it has not been tried on a real calculator; the last step says how to start an app', await page.isVisible('#realapp') && /has not been tried on a real calculator yet/.test(await page.textContent('#realapp')) && !(await page.isVisible('#realdata')) &&
@@ -435,7 +438,7 @@ function check(name, ok, detail) {
         !(await page.isVisible('#group')) && (await page.textContent('#summary')) === 'All 31 programs, and the data M1.', await page.textContent('#summary'));
   check('the help has the Kit for the Virtual Calculator too, pointing at step 1', /Choose A real HP Prime in step 1/.test(await page.textContent('.help details:last-of-type')));
   check('the help says what became of a program that is gone: on a real HP Prime the book\'s other programs are taken off to make room and come back with their group; on the Virtual Calculator nothing is deleted',
-        /On a real HP Prime: to make room, Send to the calculator takes the book's programs that are not in the group you chose off the calculator/.test(await page.textContent('.help')) &&
+        /On a real HP Prime: to make room, Send to the calculator takes the Statisticles programs that are not in the group you chose off the calculator/.test(await page.textContent('.help')) &&
         /On the Virtual Calculator: Load never deletes a program\./.test(await page.textContent('.help')) && !/One chapter/.test(await page.evaluate(() => document.querySelector('main').innerText)));
 
   // ---- 9b. from the Data Loader (?data=1): the page opens ready for a data file ----
@@ -462,8 +465,8 @@ function check(name, ok, detail) {
   await ipg.goto('file://' + path.join(path.dirname(PAGE), 'index.html') + '?data=1');
   await ipg.waitForFunction(() => !!document.getElementById('fromdl'), null, { timeout: 15000 }).catch(() => {});
   check('index.html carries ?data=1 on to the page, so the Data Loader\'s link to the folder\'s address opens it ready for the file',
-        /PrimeLoader_v2g\.html\?data=1$/.test(ipg.url()) && await ipg.isVisible('#fromdl'), ipg.url());
-  check('... and a browser with scripts off is still sent on, by the line in noscript', /<noscript><meta http-equiv="refresh" content="0; url=PrimeLoader_v2g\.html"><\/noscript>/.test(idx));
+        /PrimeLoader_v2h\.html\?data=1$/.test(ipg.url()) && await ipg.isVisible('#fromdl'), ipg.url());
+  check('... and a browser with scripts off is still sent on, by the line in noscript', /<noscript><meta http-equiv="refresh" content="0; url=PrimeLoader_v2h\.html"><\/noscript>/.test(idx));
 
   // ---- 10. Firefox: no folder API, Firefox's user-agent ----
   const fctx = await browser.newContext({ acceptDownloads: true,
@@ -551,6 +554,9 @@ function check(name, ok, detail) {
     if (hid !== false) await p.addInitScript({ content: MOCK + '\n;MockPrime.install(' + JSON.stringify(mopts || {}) + ');\n' });
     else await p.addInitScript(() => { Object.defineProperty(navigator, 'hid', { value: undefined, configurable: true }); });
     await p.goto('http://localhost:8766/' + (query === undefined ? '?usb=1' : query));
+    // the page rests the calculator after each program (prime_usb_v3b.js, lullFor: 2 s and more); these tests ask for
+    // none, to be quick, but for the one that passes rest: true and so drives the page as a student has it
+    if (!(mopts && mopts.rest)) await p.evaluate(() => { if (typeof PrimeUSB !== 'object') return; const load = PrimeUSB.load; PrimeUSB.load = (l, pr, ui, o) => load(l, pr, ui, Object.assign({ lull: 0 }, o || {})); });
     return { p, errs };
   };
   // the load is over when Send can be clicked again and one of the two panels shows, or the status is a final word
@@ -561,7 +567,7 @@ function check(name, ok, detail) {
     report: [...document.querySelectorAll('#usbreport li')].map(x => x.textContent), next: [...document.querySelectorAll('#usbnext li')].map(x => x.textContent),
     bar: document.getElementById('usbbar').getAttribute('aria-valuenow'), barHidden: document.getElementById('usbbar').hidden, log: document.getElementById('usblog').textContent,
     sendOff: document.getElementById('usbsend').disabled, stopHidden: document.getElementById('usbstop').hidden, kitOpen: document.getElementById('kitfold').open, unload: window.onbeforeunload === null }));
-  const prime = p => p.evaluate(() => { const m = window.__prime; return { programs: m.programs, arrived: m.arrived.map(a => ({ name: a.name, layout: a.layout, framing: a.framing, reports: a.reports, kept: a.kept })),
+  const prime = p => p.evaluate(() => { const m = window.__prime; return { programs: m.programs, arrived: m.arrived.map(a => ({ name: a.name, layout: a.layout, framing: a.framing, reports: a.reports, kept: a.kept, quiet: a.quiet })),
     fds: m.fds, outOfTurn: m.outOfTurn, nacks: m.nacks, statuses: m.statuses, asked: m.asked || 0, opens: m.opens || 0, closes: m.closes || 0, reportsIn: m.reportsIn, waits: m.waits.map(w => w.ms), last: m.lastLength, err: m.error || null, standing: !!m.standing, v2open: m.v2open }; });
 
   let u = await usbPage({});
@@ -580,14 +586,17 @@ function check(name, ok, detail) {
         await u.p.isVisible('#way1') && (await u.p.textContent('#way1')) === '1) The Statisticles way: straight down the USB cable' && (await u.p.textContent('#way1 i')) === 'Statisticles' &&
         (await u.p.textContent('#kitsum')) === '2) The official HP way: the Connectivity Kit' &&
         await u.p.evaluate(() => { const a = document.getElementById('twoways'), b = document.getElementById('way1'), c = document.getElementById('kitsum'); return a.getBoundingClientRect().top < b.getBoundingClientRect().top && b.getBoundingClientRect().top < c.getBoundingClientRect().top; }));
-  check('two ways: right under 1) a line says what was tried (a G2 in Chrome, a G1 in Edge, 18 November 2026; Chapter 12 read back the same; ChiTable ran with no Check), and nothing the page shows still says it is being tested',
-        await u.p.isVisible('#cabletested') && (await u.p.textContent('#cabletested')) === 'Tried on the author\'s HP Prime G2 (in Chrome) and G1 (in Edge) on 18 November 2026: every download of Chapter 12 verified, and ChiTable ran at once, with no Check.' &&
+  check('two ways: right under 1) a line says what was tried and what it showed (a G2 in Chrome, a G1 in Edge, 18 November 2026; every download verified; a program or two then had to be checked before it would start, and the page says how), and nothing the page shows still says it is being tested',
+        await u.p.isVisible('#cabletested') && (await u.p.textContent('#cabletested')) === 'Tried on the author\'s HP Prime G2 (in Chrome) and G1 (in Edge) on 18 November 2026: every download verified. A program or two then had to be checked on the calculator before it would start; when your programs are on, the page says how.' &&
         !/being tested|this is that test|test address/i.test(await u.p.evaluate(() => document.documentElement.outerHTML.replace(/<(script|style)[^>]*>[^]*?<\/\1>/g, m => m.replace(/\/\*[^]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')))));
   check('two ways: nowhere in what the page shows or can come to show (its comments aside, which keep the history) is either still called "the other way", "the first way" or "the second way"', !/other way|first way|second way/i.test(await u.p.evaluate(() => document.documentElement.outerHTML.replace(/<(script|style)[^>]*>[^]*?<\/\1>/g, m => m.replace(/\/\*[^]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')))) &&
         /The first way: straight down the USB cable/.test(await u.p.evaluate(() => document.documentElement.outerHTML)));   // the second half shows the first is not empty: the words are still in the page's history comment, and only there
-  check('cable: for a real HP Prime it is way 1): three steps and one button, which waits for a group to be chosen',
-        await u.p.isVisible('#cable') && await u.p.locator('#cable ol.steps > li').count() === 3 &&
+  check('cable: for a real HP Prime it is way 1): four steps and one button, which waits for a group to be chosen',
+        await u.p.isVisible('#cable') && await u.p.locator('#cable ol.steps > li').count() === 4 &&
         await u.p.isVisible('#usbsend') && await u.p.isDisabled('#usbsend') && !(await u.p.isVisible('#usbstop')) && !(await u.p.isVisible('#load')));
+  check('cable: the first step asks for a restart, if the student can (Roger, 18 Nov: "if possible, they should do a paperclip reset first before anything else"): the paper clip and the hole on the back, that programs and data stay, and what to do with no paper clip',
+        /^If you can, restart the calculator first\. With a straightened paper clip, press lightly on the Reset button in the small hole on its back\./.test((await u.p.textContent('#cable ol.steps > li:first-child')).trim()) &&
+        /Your programs and data stay\. No paper clip\? Switch the calculator off and on instead: Shift, then On, and then On again\./.test(await u.p.textContent('#restart')) && await u.p.isVisible('#restart'));
   check('cable: its steps say to plug in and switch on at the Home screen, to close the Kit, and what the browser\'s small window is',
         /switch it on/.test(await u.p.textContent('#cable ol.steps')) && /Home screen/.test(await u.p.textContent('#cable ol.steps')) && /Connectivity Kit is open, close it/.test(await u.p.textContent('#cable ol.steps')) &&
         /^The first time, the browser opens a small window/.test(await u.p.textContent('#usbfirst')) && /Click its name, then click Connect/.test(await u.p.textContent('#usbfirst')));
@@ -608,8 +617,9 @@ function check(name, ok, detail) {
   await u.p.click('#usbsend');
   await usbEnd(u.p);
   let st = await state(u.p), got = await prime(u.p);
-  check('cable, Chapters 1–3 to a G2: "Done. Your programs are on the calculator.", the bar full, each program ticked, Send ready again and Stop gone',
+  check('cable, Chapters 1–3 to a G2: "Done. Your Statisticles programs are on the calculator.", the bar full, each program ticked, Send ready again and Stop gone',
         st.done && !st.fail && st.cls === 'status ok' && st.status === ch12.length + ' programs on the calculator, each download verified.' && st.bar === '100' &&
+        (await u.p.textContent('#usbdone h3')) === 'Done. Your Statisticles programs are on the calculator.' && (await u.p.textContent('#usbdone h3 i')) === 'Statisticles' &&
         st.list.join() === ch12.map(n => 'ok:' + n).join() && !st.sendOff && st.stopHidden && st.unload, JSON.stringify([st.status, st.list, st.bar, st.sendOff]));
   check('... what the calculator holds is each program\'s source exactly as the pack\'s file holds it, character for character; and that is programs/ but for the blank space at its end',
         ch12.every(n => got.programs[n] === packSource(n)) && ch12.every(n => canon(got.programs[n]) === repoSource(n)) && Object.keys(got.programs).length === ch12.length,
@@ -617,12 +627,13 @@ function check(name, ok, detail) {
   check('... sent the way both calculators kept: "FD 01 00 00 00 01 03" once in the old framing, then every program not compressed in the newer framing, 1,024-byte reports, none sent twice',
         got.fds.length === 1 && got.fds[0].kind === 'long' && got.fds[0].framing === 'old' && got.arrived.length === ch12.length && got.arrived.every(a => a.layout === 'v1' && a.framing === 'new' && a.kept) &&
         got.last === 1024 && got.outOfTurn === 0 && got.nacks === 0 && !got.err && got.opens === 1 && got.closes === 1, JSON.stringify([got.fds, got.arrived.length, got.last, got.outOfTurn, got.err, got.opens, got.closes]));
-  check('... the page says what to do next (Shift, Program; tap, Run; Check if it says Syntax Error; unplug) and what happened (verified, character for character; the book\'s other programs taken off to make room, the student\'s own left)',
-        /Shift, then Program/.test(st.next[0]) && ch12.every(n => st.next[0].includes(n)) && /tap Run/.test(st.next[1]) && /Syntax Error/.test(st.next[2]) && /tap Check/.test(st.next[2]) && /unplug/.test(st.next[3]) &&
-        /went down the cable/.test(st.report[0]) && /Each download was then verified: the copy on the calculator is the same, character for character\./.test(st.report[0]) && /^To make room, the book's programs that are not in your choice were taken off first \(those that were there\)\. Programs of your own were left where they are\. To have another group, choose it in step 2 and click Send again\.$/.test(st.report[1]) && /^It took \d+(\.\d)? seconds\.$/.test(st.report[2]),
+  check('... the page says what to do next (unplug the cable first, because a calculator on its cable runs slowly: Roger\'s G1, 18 Nov; Shift, Program; tap, Run; Check if Run opens the program\'s text, as it did on his G2) and what happened (verified, character for character; the other Statisticles programs taken off to make room, the student\'s own left)',
+        st.next.length === 4 && st.next[0] === 'Unplug the cable from the calculator. A calculator runs slowly while it is plugged into a computer.' &&
+        /Shift, then Program/.test(st.next[1]) && ch12.every(n => st.next[1].includes(n)) && /tap Run/.test(st.next[2]) && /^If Run opens the program's text instead of starting it, says Syntax Error, or does nothing: tap Check \(from the Program Catalog: tap the program, tap Edit, then Check\)\. It says "No errors in the program"\. Tap OK, press Esc, then tap Run\.$/.test(st.next[3]) &&
+        /went down the cable/.test(st.report[0]) && /Each download was then verified: the copy on the calculator is the same, character for character\./.test(st.report[0]) && /^To make room, the Statisticles programs that are not in your choice were taken off first \(those that were there\)\. Programs of your own were left where they are\. To have another group, choose it in step 2 and click Send again\.$/.test(st.report[1]) && /^It took \d+(\.\d)? seconds\.$/.test(st.report[2]),
         JSON.stringify([st.next, st.report]));
   check('... the details name the page, the browser, the calculator and the choice; say who answered and what each program did; end in a RESULT line; and hold neither the serial number nor more than twelve bytes of any message',
-        /^HP Prime Loader, v2g, straight down the cable\. /.test(st.log) && /\nBrowser: Mozilla/.test(st.log) && /\nDevice: HP Prime G2 \(USB 03F0:2441\), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator\.\n/.test(st.log) &&
+        /^HP Prime Loader, v2h, straight down the cable\. /.test(st.log) && /\nBrowser: Mozilla/.test(st.log) && /\nDevice: HP Prime G2 \(USB 03F0:2441\), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator\.\n/.test(st.log) &&
         new RegExp('\\nChosen: Chapters 1–3; ' + ch12.length + ' programs, [\\d,]+ characters: ' + ch12.join(', ') + '\\.\\n').test(st.log) && /It answered: firmware build 15751, "V2\.060\.650", version 01\./.test(st.log) &&
         ch12.every(n => new RegExp('\\n +\\d+\\.\\d\\d  ' + n + ': [\\d,]+ characters\\.\\n').test(st.log)) && (st.log.match(/Read back the same: /g) || []).length === ch12.length &&
         new RegExp('RESULT: all ' + ch12.length + ' programs on the calculator, each read back the same\\. [\\d,]+ reports carried the programs there and back; \\d+\\.\\d s in all\\.').test(st.log) && !/SECRET|SERIAL/.test(st.log) &&
@@ -640,7 +651,8 @@ function check(name, ok, detail) {
   check('cable: choosing another group afterwards takes away what the page said of the finished load ("Done", the ticks, the bar), which was about other programs; the details stay',
         !after.done && !after.fail && after.list.length === 0 && after.barHidden && after.status === '' && /RESULT: all/.test(after.log), JSON.stringify([after.done, after.list, after.status]));
   check('... and the page says, before anything is sent, that the book\'s other programs are taken off first and the student\'s own stay', (await u.p.textContent('#effect')) ===
-        'To make room, the book\'s programs that are not in your choice are taken off the calculator first, and then these go on. Programs of your own stay. All the book\'s programs do not fit in a calculator\'s memory at one time.', await u.p.textContent('#effect'));
+        'To make room, the Statisticles programs that are not in your choice are taken off the calculator first, and then these go on. Programs of your own stay. All the Statisticles programs do not fit in a calculator\'s memory at one time.' &&
+        (await u.p.locator('#effect i').allTextContents()).join() === 'Statisticles,Statisticles', await u.p.textContent('#effect'));
   await u.p.click('#usbsend');
   await usbEnd(u.p);
   st = await state(u.p); got = await prime(u.p);
@@ -649,7 +661,37 @@ function check(name, ok, detail) {
         got.programs.MyOwn === 'EXPORT MyOwn()\nBEGIN\nEND;' && Object.keys(got.programs).length === ch5.length + 1 && got.opens === 2 && got.closes === 2 && got.asked === 1 &&
         !/Told that this page speaks/.test(st.log) && /version 03\. Its reports/.test(st.log) && new RegExp('Making room: taking off the book\'s programs that are not in this choice, if they are there \\(' + (30 - ch5.length) + '\\): ').test(st.log) &&
         /  Done: \d+ deletes sent\./.test(st.log), JSON.stringify([st.list, got.fds.length, Object.keys(got.programs), st.report]));
+  check('cable: Advanced 1 is EpiStats by itself, the longest program of all (sent to the author\'s G1 with two programs behind it, it would not run and the calculator reset; sent alone it ran: Roger, 18 Nov), the other ten advanced programs are five in Advanced 2 and five in Advanced 3, and the page explains the list of two names EpiStats shows when it is run',
+        ch5.join() === 'EpiStats' && CATALOG.groups.filter(g => g.programs.includes('EpiStats')).length === 1 && CATALOG.groups.find(g => g.id === 'a2').programs.length === 5 && CATALOG.groups.find(g => g.id === 'a3').programs.length === 5 &&
+        Object.keys(CATALOG.programs).every(n => packSource('EpiStats').length >= (CATALOG.programs[n].src ? packSource(n).length : 0)) &&
+        st.status === '1 program on the calculator, each download verified.' && st.next.length === 5 && /^Unplug the cable/.test(st.next[0]) && st.next[3] === 'EpiStats shows a list of two names when you run it. Choose the first, EpiStats.' && /^If Run opens/.test(st.next[4]) &&
+        /^EXPORT EpiStats\(\)/m.test(packSource('EpiStats')) && (packSource('EpiStats').match(/^EXPORT [A-Za-z0-9_]+\s*\(/mg) || []).length === 2,
+        JSON.stringify([ch5, st.status, st.next, (packSource('EpiStats').match(/^EXPORT [A-Za-z0-9_]+\s*\(/mg) || [])]));
   check('cable: no errors in the page', u.errs.length === 0, u.errs);
+
+  // the page as a student has it, with the rest after each program (the other cable tests here ask for no rest)
+  u = await usbPage({ rest: true });
+  await u.p.check('#t_real');
+  await u.p.selectOption('#group', 'c1');
+  await u.p.evaluate(() => { window.__says = []; const say = window.usbSay; window.usbSay = function (t, k) { window.__says.push(t); return say(t, k); }; });
+  let tRest = Date.now();
+  await u.p.click('#usbsend');
+  await usbEnd(u.p);
+  tRest = Date.now() - tRest;
+  st = await state(u.p); got = await prime(u.p);
+  {
+    const says = await u.p.evaluate(() => window.__says), want = ch12.map(n => 2000 + Math.ceil(500 * packSource(n).replace(/\r\n?/g, '\n').length / 100000));
+    const rests = says.filter(t => /^Giving the calculator/.test(t)), left = st.log.split('\n').filter(l => /was left alone for/.test(l));
+    check('cable, the page as a student has it: after each program but the last the calculator is left alone, once the download is verified, for 2 s and 0.5 s more for each 100,000 characters on a G2 (' + want.slice(0, -1).map(x => (x / 1000).toFixed(2)).join(', ') +
+          ' s for ' + ch12.slice(0, -1).join(', ') + '), the page says so while it waits, and the details say what each program was given (' + (tRest / 1000).toFixed(0) + ' s in all against the mock)',
+          st.done && st.list.join() === ch12.map(n => 'ok:' + n).join() && ch12.every(n => got.programs[n] === packSource(n)) &&
+          got.arrived.length === ch12.length && got.arrived.slice(0, -1).every((a, k) => a.quiet >= want[k] && a.quiet < want[k] + 4000) && got.arrived[ch12.length - 1].quiet === undefined &&
+          rests.length === ch12.length - 1 && rests.every((t, k) => new RegExp('^Giving the calculator [23] seconds to get ' + ch12[k] + ' ready \\(' + (k + 1) + ' of ' + ch12.length + '\\) \\.\\.\\.$').test(t)) &&
+          left.length === ch12.length - 1 && left.every((l, k) => new RegExp('\\(' + ch12[k] + ' was left alone for [23]\\.\\d\\d s after it was verified, \\d+\\.\\d\\d s after it arrived, before the next program began\\)').test(l)) &&
+          tRest >= want.slice(0, -1).reduce((a, b) => a + b, 0),
+          JSON.stringify([got.arrived.map(a => a.quiet), want, rests, left, tRest]));
+    check('cable: no errors in the page', u.errs.length === 0, u.errs);
+  }
 
   // every group in turn onto one pretend G2
   u = await usbPage({});

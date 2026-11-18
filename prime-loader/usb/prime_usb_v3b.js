@@ -1,13 +1,27 @@
 // prime_usb_v3b.js -- a real HP Prime on its USB cable, from a web page (WebHID).  Roger Metcalf & Claude, 17 Nov 2026.
 //
-// v3b (18 Nov 2026, 17:05): a lull between programs (opts.lull, 2 s).  Loader v2g sent Chapters 1-3 to the author's G2:
-// all four verified, and two of them, DataLoad and ScatterLab, would not run until they were Checked on the calculator
-// (Run opened the editor); NormExplorer and TestChooser ran at once, as ChiTable had at 15:33.  A GUESS, NOT PROVEN:
-// the calculator compiles a program a moment after it arrives, and the next program's arrival cut that short; the two
-// that needed Check had the shortest time before the next program began (under a second by the page's pace), and
-// ChiTable had had a second.  So the next program now waits until 2 s have passed since the last one arrived; the
-// time the verify takes counts towards it.  The log says how long each program was given.  If a calculator still wants
-// its Check after this, the guess is wrong.
+// v3b (18 Nov 2026, 17:45): a rest for the calculator after each program, before the next one is sent (lullFor).
+// What the author's calculators did with what Loader v2g sent them, every download verified (the logs of 16:54 and
+// 16:59, and Roger's word on what then ran from the Program Catalog):
+//     G2  DataLoad      40,856 characters   the next program began 0.54 s after it arrived   Run opened the editor
+//     G2  NormExplorer 185,782                                    0.99 s                      ran
+//     G2  ScatterLab   115,148                                    0.77 s                      Run opened the editor
+//     G2  TestChooser   80,946               the last one                                    ran
+//     G1  EpiStats     289,813                                    4.84 s                      the calculator RESET on Run
+//     G1  ErrorRate    115,298                                    1.94 s                      ran
+//     G1  TrendTest    105,568               the last one                                    ran
+// and at 17:28 EpiStats, sent to the G1 ALONE, ran without Check.  A program that needed its Check ran after it.
+// So: the last program of a send has always run, and a program with another close behind it sometimes has not.  WHY
+// IS NOT KNOWN.  hp-prime-kit measured that a G2 compiles a program that arrives this way, on programs of up to
+// 16,558 bytes sent one at a time (usb.send-program); the guess here is that a program sent close behind stops that
+// work, and that the G1 had most of EpiStats's 4.84 s taken by the page's own request to have it back (3.95 s of
+// compressing).  A fixed 2 s from arrival, v3b's first form (17:05, never on a calculator), would not have helped
+// EpiStats.  So the rest is counted from the moment the download is verified, when the calculator has nothing of
+// ours left to do, and it grows with the program and is longer on a G1: 2 s, and 0.5 s more for each 100,000
+// characters on a G2 (reports of 1,024 bytes) or 2 s more on a G1 (reports of 64).  THESE NUMBERS ARE CHOSEN, NOT
+// MEASURED: they are several times the longest time that was seen to fail on a G2, and nothing bounds them on a G1
+// but ErrorRate's 1.94 s.  The log says how long each program was given.  The Loader also sends EpiStats in a group
+// of its own (build_loader_v2h.py), the one arrangement seen to work for it on a G1.
 //
 // v3a (18 Nov 2026, 15:50): one outcome more, 'full'.  On 18 Nov at 15:41 the author's G1, sent all 30 programs by
 // Loader v2d, took 15 (2,104,376 characters), then acknowledged every report of NormExplorer and, asked for it back,
@@ -681,6 +695,9 @@ const PrimeUSB = (function () {
   // "where it stands" words keep coming every 0.6 s whether it is busy or not, so they say nothing here.  The cost:
   // a program the calculator did not keep is called missing that much later.
   function patienceFor(chars) { return 30000 + Math.ceil(0.1 * (chars || 0)); }
+  // The rest a program is given once its download is verified, before the next program is sent: see v3b, at the
+  // top.  Chosen, not measured.  reportSize: 64 on a G1, 1,024 on a G2.
+  function lullFor(chars, reportSize) { return 2000 + Math.ceil((reportSize && reportSize <= 64 ? 2000 : 500) * (chars || 0) / 100000); }
   // Open a session the way both calculators took it on 17 Nov [log]: who are you; "FD" if it speaks 01, and who are
   // you again; then the newer framing, and who are you in it, so that the framing is known to work before any program
   // goes.  The newer framing is asked for only of a calculator that now speaks 03 (what one that still speaks 01
@@ -775,7 +792,9 @@ const PrimeUSB = (function () {
   // counts as the same if it differs in nothing but its line ends and the empty lines at its end.
   // ui: {log(text), trace(text, at), item(k, state), stop() -> bool}; state is 'send', 'check', 'ok' or 'bad'.
   // opts: {first, settle, then, budget, keep, patience(chars) -> ms (patienceFor unless a test gives its own),
-  //        lull: ms a program is given, from its arrival, before the next one begins (2,000)}.
+  //        lull: ms, or (chars, reportSize) -> ms, a program is left alone once its download is verified, before the
+  //        next one begins (lullFor unless a test gives its own)}.
+  // ui.resting(k, ms), if given, is called when that rest begins for program k.
   // -> {ok, done: [name], failed: null | {name, why, text}, stopped, gone, info, told, reports, ms}
   //    why: 'silent'  no answer to "who are you" (nothing was sent)
   //         'version' it does not speak version 03 after being told (nothing was sent)
@@ -824,23 +843,31 @@ const PrimeUSB = (function () {
         res.removed = off.slice();
         log('  Done: ' + num(off.length) + ' delete' + (off.length === 1 ? '' : 's') + ' sent.');
       }
-      const lull = opts.lull === undefined ? 2000 : opts.lull;      // see v3b, at the top
-      let arrivedAt = 0;
+      const lull = opts.lull === undefined ? lullFor : opts.lull;      // see v3b, at the top
+      let arrivedAt = 0, verifiedAt = 0, lastChars = 0;
       for (let k = 0; k < programs.length; k++) {
         if (ui.stop && ui.stop()) { res.stopped = true; log('STOPPED by the Stop button, before ' + programs[k].name + '.'); break; }
         const p = programs[k], src = String(p.source).replace(/\r\n?/g, '\n');
         item(k, 'send');
         if (arrivedAt) {
-          const had = Date.now() - arrivedAt;
-          if (had < lull) await sleep(lull - had);
-          log('  (' + programs[k - 1].name + ' was given ' + secs2(Date.now() - arrivedAt) + ' before the next program began)');
+          const want = typeof lull === 'function' ? lull(lastChars, link.port.reportSize) : lull, had = Date.now() - verifiedAt;
+          if (had < want) {
+            if (ui.resting) ui.resting(k - 1, want - had);
+            // in short steps, so that Stop and a calculator that goes off the cable are noticed
+            for (let left = want - had; left > 0; left -= 100) {
+              if (ui.stop && ui.stop()) break;
+              await sleep(Math.min(100, left));
+            }
+          }
+          if (ui.stop && ui.stop()) { res.stopped = true; log('STOPPED by the Stop button, before ' + p.name + '.'); break; }
+          log('  (' + programs[k - 1].name + ' was left alone for ' + secs2(Date.now() - verifiedAt) + ' after it was verified, ' + secs2(Date.now() - arrivedAt) + ' after it arrived, before the next program began)');
         }
         log(p.name + ': ' + num(src.length) + ' characters.');
         let out, back;
         try { out = await link.sendProgram(p.name, src, { layout: 'v1' }); }
         catch (e) { if (isGone(e)) throw e; return fail(p.name, 'unsent', said(e), '  NOT SENT: ' + said(e) + '.', k); }
         res.reports += out.reports;
-        arrivedAt = Date.now();
+        arrivedAt = Date.now(); lastChars = src.length;
         log('  Sent ' + num(out.bytes) + ' bytes in ' + reportsText(out.reports) + ', ' + (out.ms / 1000).toFixed(2) + ' s. Acknowledged ' + num(out.acks.length) + ' time' + (out.acks.length === 1 ? '' : 's') +
             (out.backs ? '; ' + num(out.backs) + ' time' + (out.backs === 1 ? '' : 's') + ' a report was sent again' : '') +
             (out.slow.length ? '; the cable stood at ' + out.slow.map(function (x) { return 'report ' + num(x.report) + ' (' + secs(x.ms) + ')'; }).join(', ') : '') +
@@ -859,6 +886,7 @@ const PrimeUSB = (function () {
           return fail(p.name, 'differs', what, '  NOT THE SAME: ' + what + '; the first difference is at character ' + num(firstDifference(back.text, src) + 1) + '.', k);
         }
         res.done.push(p.name);
+        verifiedAt = Date.now();
         item(k, 'ok');
         log('  Read back the same: ' + reportsText(back.reports) + (back.compressed ? ', compressed' : ', not compressed') + ', ' + secs(Date.now() - tb) +
             (back.stalls && back.stalls.length ? '; the calculator stood until it was acknowledged after ' + back.stalls.map(num).join(', ') + ' reports' : '') +
@@ -978,7 +1006,7 @@ const PrimeUSB = (function () {
 
   return { VENDOR: VENDOR, MODELS: MODELS, FILTERS: FILTERS, MAX_MESSAGE: MAX_MESSAGE, OLD_MOST: OLD_MOST, WINDOW: WINDOW, V2_OPEN: V2_OPEN, RELEASE: RELEASE,
            cat: cat, u32be: u32be, u32le: u32le, rdU32be: rdU32be, rdU32le: rdU32le, utf16le: utf16le, fromUtf16le: fromUtf16le,
-           hex: hex, hex2: hex2, num: num, secs: secs, crc16: crc16, normalizeSource: normalizeSource, validName: validName, deflate: deflate, inflate: inflate,
+           hex: hex, hex2: hex2, num: num, secs: secs, crc16: crc16, normalizeSource: normalizeSource, validName: validName, deflate: deflate, inflate: inflate, lullFor: lullFor,
            innerV3: innerV3, programV3: programV3, programV1: programV1, requestMessage: requestMessage, deleteMessage: deleteMessage,
            maxVersionMessage: maxVersionMessage, framesLegacy: framesLegacy, framesV2: framesV2, roomAfter: roomAfter, reportsAt: reportsAt, ackV2: ackV2,
            parseInfo: parseInfo, parseFile: parseFile, describe: describe, runs: runs, patienceFor: patienceFor, firstDifference: firstDifference,

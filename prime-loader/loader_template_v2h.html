@@ -8,7 +8,19 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* PrimeLoader v2g (18 Nov 2026, 16:50).  Groups, because neither calculator held all 30 programs (the logs of 15:41,
+/* PrimeLoader v2h (18 Nov 2026, 17:45).  What two calculators did with what v2g sent them, every download verified:
+   the G2 would not run DataLoad or ScatterLab until each was Checked (Run opened the editor; the logs of 16:54 and
+   16:59 in usb/logs/, and prime_usb_v3b.js's table); the G1 ran ErrorRate and TrendTest, and reset when Run was tapped
+   on EpiStats; EpiStats sent alone ran (Roger, 17:30).  And the G1 was "very slow" on its cable and "went back to
+   normal speed" unplugged (17:30, 17:33).  So: (1) the cable rests the calculator after each program (prime_usb_v3b.js,
+   lullFor), and the page says so while it does; (2) Advanced 1 is EpiStats alone (the build; Roger, 17:25: "I wounder
+   if we maybe should handle EpiStats separately from the others?"); (3) the first thing to do when the programs are
+   on is to unplug the cable; (4) the cable's first step asks for a restart with a paper clip, if the student can
+   (Roger, 17:34: "if possible, they should do a paperclip reset first before anything else"); (5) EpiStats's list of
+   two names is explained; (6) the programs are called by the book's name for them where a sentence allows (Roger,
+   17:35: "we should refer to these as Statisticles when possible").  WHETHER THE REST CURES THE CHECK IS NOT KNOWN
+   until a calculator has run this page.
+   PrimeLoader v2g (18 Nov 2026, 16:50).  Groups, because neither calculator held all 30 programs (the logs of 15:41,
    15:50, 16:04 and 16:11 in usb/logs/).  Roger, 16:16 to 16:19: "for the Virtual Calculator: load all programs at once;
    then for a physical G1 or G2 choose 1) Ch 1-3, 2) Ch 4-6, 3) Ch 7--9. 4) Ch 10-12, 5) Ch 13-15, 6) Advanced 1, 7)
    Advanced 2, 8) Advanced 3" and "we should just make the choice of VIrtual Calculato automatically load all".  So:
@@ -209,7 +221,7 @@ ol.steps li > p { margin: 2px 0 0; }
 <main>
   <header>
     <h1>HP Prime Loader</h1>
-    <p>Puts the book's programs on your calculator. Answer two questions and click one button.</p>
+    <p>Puts <i>Statisticles</i>, the book's programs, on your calculator. Answer two questions and click one button.</p>
   </header>
 
   <section class="panel warn" id="platform" aria-labelledby="platformh" hidden>
@@ -347,8 +359,10 @@ ol.steps li > p { margin: 2px 0 0; }
     <p class="do" id="nocable" hidden><span class="brname2">This browser</span> cannot reach a calculator on its USB cable, so this page shows the official HP way, the Connectivity Kit, below. In Google Chrome or Microsoft Edge it can also send the programs straight down the cable, the <i>Statisticles</i> way.</p>
     <div id="cable" hidden>
       <h3 class="way" id="way1">1) The <i>Statisticles</i> way: straight down the USB cable</h3>
-      <p class="note" id="cabletested">Tried on the author's HP Prime G2 (in Chrome) and G1 (in Edge) on 18 November 2026: every download of Chapter 12 verified, and ChiTable ran at once, with no Check.</p>
+      <p class="note" id="cabletested">Tried on the author's HP Prime G2 (in Chrome) and G1 (in Edge) on 18 November 2026: every download verified. A program or two then had to be checked on the calculator before it would start; when your programs are on, the page says how.</p>
       <ol class="steps">
+        <li id="restart"><b>If you can, restart the calculator first.</b> With a straightened paper clip, press lightly on the Reset button in the small hole on its back.
+          <p class="why">A restart clears a calculator that has become slow or has stopped answering its cable. Your programs and data stay. No paper clip? Switch the calculator off and on instead: <kbd>Shift</kbd>, then <kbd>On</kbd>, and then <kbd>On</kbd> again.</p></li>
         <li><b>Plug the calculator into this computer with its USB cable, and switch it on.</b> Leave it at its Home screen.
           <p class="why">The Home screen is the one you calculate on. If the calculator shows anything else, press the <kbd>Home</kbd> key (the little house).</p></li>
         <li><b>If HP's Connectivity Kit is open, close it.</b>
@@ -361,7 +375,7 @@ ol.steps li > p { margin: 2px 0 0; }
       <div class="bar" id="usbbar" role="progressbar" aria-label="How much has been sent" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden><div id="usbfill"></div></div>
       <ul class="usblist" id="usblist" aria-label="The programs being sent"></ul>
       <div class="panel done" id="usbdone" hidden>
-        <h3>Done. Your programs are on the calculator.</h3>
+        <h3>Done. Your <i>Statisticles</i> programs are on the calculator.</h3>
         <ol id="usbnext"></ol>
         <p class="note" style="color:inherit"><b>What just happened:</b></p>
         <ul class="note" id="usbreport"></ul>
@@ -380,8 +394,8 @@ ol.steps li > p { margin: 2px 0 0; }
       <details class="opt">
         <summary>What Send does</summary>
         <p class="why" style="margin:10px 0 8px">Send asks the calculator who it is, sends each program down the cable, and then verifies the download: it reads the copy on the calculator and compares the two, character for character. A program counts as loaded only when the two are the same. The first one that does not stops the sending, and the page says which.</p>
-        <p class="why" style="margin:0 0 8px">For a group, the book's programs that are not in it are taken off the calculator first, to make room; a calculator holds about one group at a time. Programs of your own always stay. One with the same name as a program being sent is replaced by this page's copy.</p>
-        <p class="why" style="margin:0">A chapter takes seconds, a little longer on an older calculator (a G1), whose cable carries less at a time; the bar shows how far it is. <b>Stop</b> stops after the program being sent, never in the middle of one.</p>
+        <p class="why" style="margin:0 0 8px">For a group, the <i>Statisticles</i> programs that are not in it are taken off the calculator first, to make room; a calculator holds about one group at a time. Programs of your own always stay. One with the same name as a program being sent is replaced by this page's copy.</p>
+        <p class="why" style="margin:0">After each program the page gives the calculator a few seconds to get it ready before it sends the next one, longer for a long program and on an older calculator (a G1); so a group takes a minute or so, and the bar shows how far it is. <b>Stop</b> stops after the program being sent, never in the middle of one.</p>
       </details>
     </div>
 
@@ -442,13 +456,13 @@ ol.steps li > p { margin: 2px 0 0; }
     <details><summary>The page says the calculator looks open, but I closed it</summary><div>
       <p>Look at the taskbar at the bottom of the screen: if the calculator's icon is still there, it may be open on another screen or minimized. Close it there. If it really is closed, click <b>It is closed: load</b>.</p>
     </div></details>
-    <details><summary>A program says "Syntax Error", or Run does nothing</summary><div>
+    <details><summary>A program says "Syntax Error", or Run does nothing or opens the program's text</summary><div>
       <p>Press <kbd>Shift</kbd>, then <kbd>Program</kbd>. Tap the program, tap <b>Edit</b>, tap <b>Check</b> (bottom right). The calculator says "No errors in the program". Tap <b>OK</b>, press <kbd>Esc</kbd>, then tap <b>Run</b>. This rebuilds the program for your calculator; you only ever need to do it once per program.</p>
       <p>If you typed the program's name in the calculator's Home screen instead, type it exactly as listed, capitals included (for example <code>TTESTLABG</code>). Tapping it in the program list is easier.</p>
     </div></details>
     <details><summary>A program I had is gone, or I want an old one back</summary><div>
-      <p><b>On a real HP Prime:</b> to make room, <b>Send to the calculator</b> takes the book's programs that are not in the group you chose off the calculator before it sends the group. To get one back, choose its group in step 2 and send it again. A program of your own is never taken off.</p>
-      <p><b>On the Virtual Calculator:</b> Load never deletes a program. One that it replaced is in <code>Documents\HP Prime\Loader backups</code>, in a folder named with the date and time. To get the book's programs back, click <b>Load</b> again. To get back a file from the backup, close the calculator, copy it from there into <code>Documents\HP Prime\Calculators\Prime</code>, and start the calculator.</p>
+      <p><b>On a real HP Prime:</b> to make room, <b>Send to the calculator</b> takes the <i>Statisticles</i> programs that are not in the group you chose off the calculator before it sends the group. To get one back, choose its group in step 2 and send it again. A program of your own is never taken off.</p>
+      <p><b>On the Virtual Calculator:</b> Load never deletes a program. One that it replaced is in <code>Documents\HP Prime\Loader backups</code>, in a folder named with the date and time. To get the <i>Statisticles</i> programs back, click <b>Load</b> again. To get back a file from the backup, close the calculator, copy it from there into <code>Documents\HP Prime\Calculators\Prime</code>, and start the calculator.</p>
     </div></details>
     <details><summary>Can the Connectivity Kit load the Virtual Calculator too?</summary><div>
       <p>Yes. Choose <b>A real HP Prime</b> in step 1 and follow its steps, with one change: start the Virtual Calculator where the steps say to plug the calculator in. The Kit lists it as <b>Virtual Prime</b>.</p>
@@ -638,14 +652,14 @@ function refresh() {
   // what it will do to what is already there
   let e = '';
   if (sel.length || data.length) {
-    if (real && takeOff().length && usbOn) e = 'To make room, the book\'s programs that are not in your choice are taken off the calculator first, and then these go on. Programs of your own stay. All the book\'s programs do not fit in a calculator\'s memory at one time.';
-    else if (real && takeOff().length) e = 'All the book\'s programs do not fit in a calculator\'s memory at one time, so before these go on, take off the book\'s programs you are not using now: in the calculator\'s Program Catalog, tap a name, then More, then Delete. Programs of your own can stay.';
-    else if (real) e = 'Programs already on your calculator stay there. All the book\'s programs do not fit in a calculator\'s memory at one time, so tick only a few.';
+    if (real && takeOff().length && usbOn) e = 'To make room, the <i>Statisticles</i> programs that are not in your choice are taken off the calculator first, and then these go on. Programs of your own stay. All the <i>Statisticles</i> programs do not fit in a calculator\'s memory at one time.';
+    else if (real && takeOff().length) e = 'All the <i>Statisticles</i> programs do not fit in a calculator\'s memory at one time, so before these go on, take off the <i>Statisticles</i> programs you are not using now: in the calculator\'s Program Catalog, tap a name, then More, then Delete. Programs of your own can stay.';
+    else if (real) e = 'Programs already on your calculator stay there. All the <i>Statisticles</i> programs do not fit in a calculator\'s memory at one time, so tick only a few.';
     else if (!canWrite) e = 'Programs already on your calculator stay there.';
-    else if (movesBookOff()) e = 'The calculator will list this chapter\'s programs. The book\'s other programs are moved off into a backup folder; programs of your own stay.';
+    else if (movesBookOff()) e = 'The calculator will list this chapter\'s programs. The other <i>Statisticles</i> programs are moved off into a backup folder; programs of your own stay.';
     else e = 'They are added: programs already on the calculator stay.';
   }
-  $('effect').textContent = e;
+  $('effect').innerHTML = e;          // every e above is a sentence of this page's own, with no name or number in it
   // the route
   $('step3auto').hidden = real || !canWrite;
   $('step3manual').hidden = real || canWrite;
@@ -912,7 +926,8 @@ async function usbSend() {
     const off = takeOff();
     const res = await PrimeUSB.load(link, programs, {
       remove: off,
-      removing: (k, n) => usbSay('Making room: taking the book\'s other programs off the calculator (' + (k + 1) + ' of ' + n + ') ...'),
+      removing: (k, n) => usbSay('Making room on the calculator (' + (k + 1) + ' of ' + n + ') ...'),
+      resting: (k, ms) => usbSay('Giving the calculator ' + Math.max(1, Math.round(ms / 1000)) + ' seconds to get ' + programs[k].name + ' ready (' + (k + 1) + ' of ' + programs.length + ') ...'),
       log: text => usbLine(text),
       trace: (text, at) => usbLine('      . ' + text, at),
       stop: () => usbStopNow,
@@ -982,15 +997,16 @@ async function usbSend() {
 function usbDone(names, rest, res) {
   const ol = $('usbnext'); ol.innerHTML = '';
   const li = h => { const x = document.createElement('li'); x.innerHTML = h; ol.appendChild(x); };
+  li('<b>Unplug the cable from the calculator.</b> A calculator runs slowly while it is plugged into a computer.');
   li('On the calculator, press <kbd>Shift</kbd>, then <kbd>Program</kbd> (the <kbd>1</kbd> key). This opens the <b>Program Catalog</b>, the calculator\'s list of programs. ' +
      (names.length <= 8 ? 'Yours are: <b>' + esc(names.join(', ')) + '</b>.' : 'Your programs are all listed there.'));
   li('Tap one, then tap <b>Run</b>.');
-  li('<span class="note" style="color:inherit">If one says Syntax Error, or <b>Run</b> does nothing: tap it, tap <b>Edit</b>, tap <b>Check</b> (it says "No errors in the program"), tap <b>OK</b>, press <kbd>Esc</kbd>, then tap <b>Run</b>.</span>');
-  li('You can unplug the calculator now.');
+  if (names.indexOf('EpiStats') >= 0) li('EpiStats shows a list of two names when you run it. Choose the first, <b>EpiStats</b>.');
+  li('<span class="note" style="color:inherit">If <b>Run</b> opens the program\'s text instead of starting it, says Syntax Error, or does nothing: tap <b>Check</b> (from the Program Catalog: tap the program, tap <b>Edit</b>, then <b>Check</b>). It says "No errors in the program". Tap <b>OK</b>, press <kbd>Esc</kbd>, then tap <b>Run</b>.</span>');
   const ul = $('usbreport'); ul.innerHTML = '';
   const r = h => { const x = document.createElement('li'); x.innerHTML = h; ul.appendChild(x); };
   r(plural(names.length, 'program') + ' went down the cable' + (names.length <= 12 ? ': ' + esc(names.join(', ')) : '') + '. Each download was then verified: the copy on the calculator is the same, character for character.');
-  if (res.removed && res.removed.length) r('To make room, the book\'s programs that are not in your choice were taken off first (those that were there). Programs of your own were left where they are. To have another group, choose it in step 2 and click Send again.');
+  if (res.removed && res.removed.length) r('To make room, the <i>Statisticles</i> programs that are not in your choice were taken off first (those that were there). Programs of your own were left where they are. To have another group, choose it in step 2 and click Send again.');
   else r('The programs that were already on the calculator were left where they are. One with the same name as a program sent was replaced by it.');
   if (rest.length) r('<b>Not sent this way:</b> ' + esc(rest.join(', ')) + ' (an app or data). For ' + (rest.length === 1 ? 'it' : 'those') + ', use the official HP way (2, just below).');
   r('It took ' + (res.ms < 9950 ? (res.ms / 1000).toFixed(1) : Math.round(res.ms / 1000)) + ' seconds.');
