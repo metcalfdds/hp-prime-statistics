@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-"""build_loader_v2b.py -- assembles PrimeLoader_v2b.html: the page template, the loader's core, the Data Loader's core
+"""build_loader_v2c.py -- assembles PrimeLoader_v2c.html: the page template, the loader's core, the Data Loader's core
 (for its zip writer), the USB core, the chapter list, and every program file from a starter pack, embedded so the
 page works offline.
 
-    python3 build_loader_v2b.py PACK.zip [OUT.html] [--kit PATH]
+    python3 build_loader_v2c.py PACK.zip [OUT.html] [--kit PATH]
+v2c (18 Nov 2026): the page template's v2c, which names the step that offers the cable and the Connectivity Kit as Roger
+named it ("Two ways to load Statisticles onto a physical Prime G1 or G2 calculator") and the two ways as the first and
+the second.  The same pack (v23) and the same usb/prime_usb_v3.js.
 v2b (17 Nov 2026, late): the page template's v2b and usb/prime_usb_v3.js, on starter pack v23 as before (no program
 changed).  That evening the author's G2 and his G1 took test programs of every size down their cables by one route
 (usb/logs/); v2b's cable panel sends the chosen programs by that route and reads each back.  It shows only at the
@@ -151,7 +154,7 @@ KIT = os.environ.get('HPKIT', '/tmp/kit/hp-prime-kit-HEAD')
 if '--kit' in argv:
     i = argv.index('--kit'); KIT = argv[i + 1]; del argv[i:i + 2]
 PACK = argv[0]
-OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v2b.html')
+OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v2c.html')
 SITE = 'https://metcalfdds.github.io/hp-prime-statistics/'
 sys.path.insert(0, KIT)
 from hpkit import program as kitprog            # hp-prime-kit (MIT, JordiRigau/hp-prime-kit)
@@ -295,11 +298,11 @@ catalog = {
   'always': ALWAYS_OFFERED,
   'data': {k: {'file': v[1], 'what': v[2], 'bytes': len(packed[v[1]])} for k, v in DATA.items()},
   'pack': os.path.basename(PACK),
-  'loader': 'v2b',
+  'loader': 'v2c',
   'pack_sha256': hashlib.sha256(open(PACK, 'rb').read()).hexdigest()[:12],
 }
 
-t = open(os.path.join(HERE, 'loader_template_v2b.html'), encoding='utf-8').read()
+t = open(os.path.join(HERE, 'loader_template_v2c.html'), encoding='utf-8').read()
 import glob as _glob
 _dl = sorted(_glob.glob(os.path.join(HERE, '..', 'data-loader', 'DataLoader_v*.html')),
              key=lambda p: [int(x) if x.isdigit() else x for x in __import__('re').split(r'(\d+)', os.path.basename(p))])
@@ -333,7 +336,7 @@ redirect = ('<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n
             '<link rel="canonical" href="' + SITE + 'prime-loader/' + page + '">\n'
             '<style>body{font:16px/1.5 system-ui,sans-serif;margin:2rem;color:#172033;background:#f6f8fb}'
             '@media (prefers-color-scheme:dark){body{color:#e8edf6;background:#0f1420}a{color:#7d9cff}}</style>\n'
-            '</head>\n<body>\n<!-- Written by build_loader_v2b.py: sends the browser on to the current Prime Loader, so the '
+            '</head>\n<body>\n<!-- Written by build_loader_v2c.py: sends the browser on to the current Prime Loader, so the '
             'address .../prime-loader/ never changes. -->\n'
             '<p>Opening the HP Prime Loader&hellip; If nothing happens, <a href="' + page + '">click here</a>.</p>\n'
             '</body>\n</html>\n')

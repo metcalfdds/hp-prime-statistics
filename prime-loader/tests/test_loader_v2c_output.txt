@@ -100,10 +100,13 @@ PASS at a phone's width nothing runs off the side
 PASS opens as a local file without errors
 PASS cable: the test address opens on "A real HP Prime", since that is what it is for
 PASS cable: nothing of it shows while the Virtual Calculator is chosen
-PASS cable: for a real HP Prime it is the first way: step 3 is "Send them to your HP Prime, down its USB cable", three steps and one button
-PASS cable: it says it is being tested, what it has done on two calculators and what it has not, and where the other way is
+PASS two ways: where both show, step 3 is called what Roger called it, "Two ways to load Statisticles onto a physical Prime G1 or G2 calculator", with Statisticles in italics as the book writes it
+PASS two ways: a sentence under the title tells the two apart (the cable needs nothing installed; the Kit is the only way for CentralLimit and data), and each has its name: "The first way: straight down the USB cable", "The second way: HP's Connectivity Kit"
+PASS two ways: nowhere on the page is either still called "the other way"
+PASS cable: for a real HP Prime it is the first way: three steps and one button
+PASS cable: it says it is being tested, what it has done on two calculators and what it has not, and where the second way is
 PASS cable: its steps say to plug in and switch on at the Home screen, to close the Kit, and what the browser's small window is
-PASS cable: the Connectivity Kit's steps are kept whole as the second way, folded under "The other way: HP's Connectivity Kit"
+PASS cable: the Connectivity Kit's steps are kept whole as the second way, folded under "The second way: HP's Connectivity Kit"
 PASS ... one click opens them: the download button and the six steps
 PASS cable: all the programs: CentralLimit, an app, is named as not travelling this way before anything is sent; the Kit's steps stay folded until they are wanted
 PASS cable: Chapter 12 (ChiTable, FitCheck, TestChooser) has no app in it: nothing to say before sending
@@ -127,7 +130,7 @@ PASS slip: a calculator that does not answer (switched off at the wrong moment, 
 PASS slip, not the student's: a calculator that still says version 01 after the "FD" (other software than the two it was proved on): nothing is sent, nothing about the calculator is changed, and the page points to the Kit and asks for the details
 PASS a program the calculator acknowledges and does not keep (FitCheck): the load stops there; the one before it is ticked, this one crossed, the ones after never sent; the page does not say Done; it says to delete it if it is in the list and to use the Kit for it and the rest
 PASS a program damaged on the way: "What came back is not what was sent", nothing ticked, and the details say where the two part
-PASS slip: the cable pulled out in the middle of the second program, and the browser's write to it never comes back: the page says so within seconds (1.1 s here), counts the first program and no other, and is ready to send again
+PASS slip: the cable pulled out in the middle of the second program, and the browser's write to it never comes back: the page says so within seconds (1.2 s here), counts the first program and no other, and is ready to send again
 PASS ... no errors in the page
 PASS slip: the cable pulled out and the browser says so at once: the same words
 PASS while a load runs: Send is off and Stop is there; leaving the page would be asked about, because the calculator is in the middle of a program
@@ -138,8 +141,8 @@ PASS slip: only CentralLimit ticked, which is an app: Send is off, and the page 
 PASS ... with DataLoad ticked too and the sample data: Send is on for the one program, and the data is named with the app as going by the Kit
 PASS cable: at a phone's width nothing runs off the side
 PASS without the test address the page opens on the Virtual Calculator, as always
-PASS without the test address the cable is hidden, whatever the browser can do, and the Kit's steps are the main line
-PASS at the test address in a browser that cannot reach a USB device (Firefox, Safari): no cable, no dead button; the Kit's steps are the main line as before, and no error
+PASS without the test address the cable is hidden, whatever the browser can do: one way shows, the Kit's, under the Kit's own title, and nothing says "two ways"
+PASS at the test address in a browser that cannot reach a USB device (Firefox, Safari): no cable, no dead button, no "two ways"; the Kit's steps are the main line as before, and no error
 PASS no errors in the page
 
-143 PASS, 0 FAIL
+146 PASS, 0 FAIL
