@@ -17,6 +17,11 @@
    Then, at 15:41, the G1 sent all 30 filled up after 15 and kept NormExplorer empty (prime_usb_v3a.js, 'full'): the
    page now says "The calculator is full" and what to do, and the cable's first step tells a G1 to load one chapter
    at a time.
+   And at 15:53 Roger: "Let's forget the 'load all at once' and just put a note that all the programs won't fit the
+   memory at one time--just load three or four at a time" and "instead of saying 'asking for program back' say
+   'verifying download'", and two minutes later: "belay that last note--if the G2 can take them all at once, fine. but
+   we need a note for the G1".  So "All the programs" stays; for a real HP Prime it carries a note that a G1 cannot
+   hold them all at one time (and the cable's first step says the same); and the cable's words say "verifying".
    PrimeLoader v2e (18 Nov 2026, 12:30).  A student's slip of the kind the review of 17 November looked for: a real HP
    Prime, and a browser that cannot reach a USB device (Firefox, Safari).  Until now the page said nothing about the
    cable there and showed the Kit alone, so the student never learned that Chrome or Edge could do it in one click.
@@ -327,11 +332,11 @@ ol.steps li > p { margin: 2px 0 0; }
     <p class="do" id="nocable" hidden><span class="brname2">This browser</span> cannot reach a calculator on its USB cable, so this page shows the official HP way, the Connectivity Kit, below. In Google Chrome or Microsoft Edge it can also send the programs straight down the cable, the <i>Statisticles</i> way.</p>
     <div id="cable" hidden>
       <h3 class="way" id="way1">1) The <i>Statisticles</i> way: straight down the USB cable</h3>
-      <p class="note" id="cabletested">Tried on the author's HP Prime G2 (in Chrome) and G1 (in Edge) on 18 November 2026: each program of Chapter 12 came back from the calculator the same, and ChiTable ran at once, with no Check.</p>
+      <p class="note" id="cabletested">Tried on the author's HP Prime G2 (in Chrome) and G1 (in Edge) on 18 November 2026: every download of Chapter 12 verified, and ChiTable ran at once, with no Check.</p>
       <ol class="steps">
         <li><b>Plug the calculator into this computer with its USB cable, and switch it on.</b> Leave it at its Home screen.
           <p class="why">The Home screen is the one you calculate on. If the calculator shows anything else, press the <kbd>Home</kbd> key (the little house).</p>
-          <p class="why" id="g1room"><b>On an HP Prime G1, load one chapter at a time</b> (step 2, <b>One chapter</b>): a G1 has room for about half of the book's programs.</p></li>
+          <p class="why" id="g1room"><b>On an HP Prime G1, load three or four programs at a time</b> (step 2, <b>One chapter</b>): a G1 cannot hold all the book's programs at one time.</p></li>
         <li><b>If HP's Connectivity Kit is open, close it.</b>
           <p class="why">Only one program at a time can talk to the calculator. You do not need the Kit for this way at all.</p></li>
         <li><b>Click this button:</b>
@@ -360,9 +365,9 @@ ol.steps li > p { margin: 2px 0 0; }
       </details>
       <details class="opt">
         <summary>What Send does</summary>
-        <p class="why" style="margin:10px 0 8px">Send asks the calculator who it is, sends each program down the cable, and then asks the calculator for that program back and compares the two, character for character. A program counts as loaded only when it came back the same. The first one that does not stops the sending, and the page says which.</p>
+        <p class="why" style="margin:10px 0 8px">Send asks the calculator who it is, sends each program down the cable, and then verifies the download: it reads the copy on the calculator and compares the two, character for character. A program counts as loaded only when the two are the same. The first one that does not stops the sending, and the page says which.</p>
         <p class="why" style="margin:0 0 8px">The programs are <b>added</b>: programs already on your calculator stay, whichever choice you made in step 2. One with the same name as a program being sent is replaced by this page's copy.</p>
-        <p class="why" style="margin:0">A chapter takes seconds. All the programs take longer, most of all on an older calculator (a G1), whose cable carries less at a time; the bar shows how far it is. <b>Stop</b> stops after the program being sent, never in the middle of one.</p>
+        <p class="why" style="margin:0">A chapter takes seconds, a little longer on an older calculator (a G1), whose cable carries less at a time; the bar shows how far it is. <b>Stop</b> stops after the program being sent, never in the middle of one.</p>
       </details>
     </div>
 
@@ -2130,7 +2135,8 @@ function refresh() {
     if (real || !canWrite) e = 'Programs already on your calculator stay there.';
     else if (movesBookOff()) e = 'The calculator will list this chapter\'s programs. The book\'s other programs are moved off into a backup folder; programs of your own stay.';
     else e = 'They are added: programs already on the calculator stay.';
-    if (real && state.what === 'all') e += ' A real calculator has much less room than a computer; if yours runs short, load one chapter at a time.';
+    // 18 Nov 2026: the author's G1 was full after 15 of the 30 programs (Roger: "we need a note for the G1").
+    if (real && state.what === 'all') e += ' An HP Prime G1 cannot hold all the book\'s programs at one time: on a G1, load three or four at a time (one chapter).';
   }
   $('effect').textContent = e;
   // the route
@@ -2332,7 +2338,7 @@ function sourceOf(pf, name) {
   return PrimeUSB.fromUtf16le(b.subarray(p.src[0], p.src[1])).replace(/\u0000+$/, '');
 }
 const USB_MARK = { send: '→', check: '…', ok: '✓', bad: '✗', wait: '·' };
-const USB_WORD = { send: 'sending', check: 'checking', ok: 'on the calculator', bad: 'NOT loaded', wait: 'waiting' };
+const USB_WORD = { send: 'sending', check: 'verifying', ok: 'on the calculator', bad: 'NOT loaded', wait: 'waiting' };
 function usbFail(head, text, todo, openKit) {
   $('usbfailh').textContent = head; $('usbfailp').innerHTML = text;
   const ol = $('usbfaildo'); ol.innerHTML = '';
@@ -2402,7 +2408,7 @@ async function usbSend() {
       stop: () => usbStopNow,
       item: (k, st) => {
         if (st === 'send') { now = k; before = programs.slice(0, k).reduce((t, p) => t + p.source.length, 0); usbSay('Sending ' + programs[k].name + ' (' + (k + 1) + ' of ' + programs.length + ') ...'); }
-        if (st === 'check') { bar((before + programs[k].source.length) / total); usbSay('Checking ' + programs[k].name + ' (' + (k + 1) + ' of ' + programs.length + '): asking the calculator for it back ...'); }
+        if (st === 'check') { bar((before + programs[k].source.length) / total); usbSay('Verifying the download of ' + programs[k].name + ' (' + (k + 1) + ' of ' + programs.length + ') ...'); }
         phase = st;
         const li = lis[k]; li.className = st; li.querySelector('.mark').textContent = USB_MARK[st]; li.querySelector('.say').textContent = ' ' + USB_WORD[st];
       }
@@ -2417,7 +2423,7 @@ async function usbSend() {
     const marked = done ? 'The ' + (done === 1 ? 'program' : plural(done, 'program')) + ' marked ✓ ' + (done === 1 ? 'is' : 'are') + ' on the calculator, whole. ' : '';
     if (res.ok) {
       bar(1);
-      usbSay(plural(done, 'program') + ' on the calculator, each one read back and found the same.', 'ok');
+      usbSay(plural(done, 'program') + ' on the calculator, each download verified.', 'ok');
       usbDone(names, rest, res);
     } else if (res.gone) {
       usbFail('The calculator went off the cable', marked + (first ? esc(first) + ' and the programs after it are not.' : ''),
@@ -2433,14 +2439,14 @@ async function usbSend() {
     } else if (f.why === 'full') {
       usbFail('The calculator is full', 'It took ' + esc(f.name) + ' in and kept only its name, which is what a calculator with no room left does. ' + marked + esc(f.name) + ' and the programs after it are not.',
               ['On the calculator, press <kbd>Shift</kbd>, then <kbd>Program</kbd>. Tap <b>' + esc(f.name) + '</b> (it shows 0 KB), tap <b>More</b>, then <b>Delete</b>.',
-               'Load one chapter at a time: in step 2 choose <b>One chapter</b>. An HP Prime G1 has room for about half of the book\'s programs.',
+               'Load three or four programs at a time: in step 2 choose <b>One chapter</b>. An HP Prime G1 cannot hold all the book\'s programs at one time.',
                'To make room for a new chapter, take off the programs of a chapter you have finished, the same way.'], false);
     } else if (f.why === 'unsent') {
       usbFail(esc(f.name) + ' did not go through', marked + esc(f.name) + ' and the programs after it are not.',
               ['Pull the calculator\'s cable out, push it in again, and click <b>Send to the calculator</b> again.', 'If it stops at the same place, ' + kitWay + '.'], true);
     } else {
-      usbFail(esc(f.name) + ' did not come back the same',
-              'The page sent ' + esc(f.name) + ' and asked the calculator for it back. ' + (f.why === 'differs' ? 'What came back is not what was sent.' : f.why === 'missing' ? 'The calculator did not have it.' : 'The calculator did not give it back.') +
+      usbFail('The download of ' + esc(f.name) + ' did not verify',
+              'The page sent ' + esc(f.name) + ' and then verified the download. ' + (f.why === 'differs' ? 'What is on the calculator is not what was sent.' : f.why === 'missing' ? 'The calculator does not have it.' : 'The calculator could not be asked for it.') +
               ' So the page does not count it as loaded, and it stopped there. ' + marked,
               ['On the calculator, press <kbd>Shift</kbd>, then <kbd>Program</kbd>. If <b>' + esc(f.name) + '</b> is in the list, take it off: tap its name, tap <b>More</b>, then <b>Delete</b>.',
                'Then ' + kitWay + ', for ' + esc(f.name) + ' and the programs after it.', 'Please click <b>Save the details</b>, under "What passed on the cable", and send that file to your instructor.'], true);
@@ -2468,7 +2474,7 @@ function usbDone(names, rest, res) {
   li('You can unplug the calculator now.');
   const ul = $('usbreport'); ul.innerHTML = '';
   const r = h => { const x = document.createElement('li'); x.innerHTML = h; ul.appendChild(x); };
-  r(plural(names.length, 'program') + ' went down the cable' + (names.length <= 12 ? ': ' + esc(names.join(', ')) : '') + '. Each was then read back from the calculator and found the same, character for character.');
+  r(plural(names.length, 'program') + ' went down the cable' + (names.length <= 12 ? ': ' + esc(names.join(', ')) : '') + '. Each download was then verified: the copy on the calculator is the same, character for character.');
   r('The programs that were already on the calculator were left where they are. One with the same name as a program sent was replaced by it.');
   if (rest.length) r('<b>Not sent this way:</b> ' + esc(rest.join(', ')) + ' (an app or data). For ' + (rest.length === 1 ? 'it' : 'those') + ', use the official HP way (2, just below).');
   r('It took ' + (res.ms < 9950 ? (res.ms / 1000).toFixed(1) : Math.round(res.ms / 1000)) + ' seconds.');

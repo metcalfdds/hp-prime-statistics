@@ -384,7 +384,7 @@ function check(name, ok, detail) {
         JSON.stringify(await steps(page)) === JSON.stringify(['1Which calculator?', '2Which programs?', '3Put them on your HP Prime with HP\'s Connectivity Kit', 'Something not working?']) &&
         !(await page.isVisible('#load')) && await page.isVisible('#download3') && await page.locator('#kitroute ol.steps > li').count() === 6, JSON.stringify(await steps(page)));
   check('... it says programs on the calculator stay, and that a real calculator has less room', (await page.textContent('#effect')) ===
-        'Programs already on your calculator stay there. A real calculator has much less room than a computer; if yours runs short, load one chapter at a time.', await page.textContent('#effect'));
+        'Programs already on your calculator stay there. An HP Prime G1 cannot hold all the book\'s programs at one time: on a G1, load three or four at a time (one chapter).', await page.textContent('#effect'));
   check('... the steps: download, unpack, start the Kit and plug in, drag onto the calculator\'s name, close the Kit, run', /Extract All/.test(await page.textContent('#step3real')) &&
         /drop it on the calculator's name/.test(await page.textContent('#step3real')) && /not into the Content box/.test(await page.textContent('#step3real')) && /Close the Connectivity Kit/.test(await page.textContent('#step3real')));
   check('... the app\'s note shows for all the programs, and says it has not been tried on a real calculator; the last step says how to start an app', await page.isVisible('#realapp') && /has not been tried on a real calculator yet/.test(await page.textContent('#realapp')) && !(await page.isVisible('#realdata')) &&
@@ -565,7 +565,7 @@ function check(name, ok, detail) {
         (await u.p.textContent('#kitsum')) === '2) The official HP way: the Connectivity Kit' &&
         await u.p.evaluate(() => { const a = document.getElementById('twoways'), b = document.getElementById('way1'), c = document.getElementById('kitsum'); return a.getBoundingClientRect().top < b.getBoundingClientRect().top && b.getBoundingClientRect().top < c.getBoundingClientRect().top; }));
   check('two ways: right under 1) a line says what was tried (a G2 in Chrome, a G1 in Edge, 18 November 2026; Chapter 12 read back the same; ChiTable ran with no Check), and nothing the page shows still says it is being tested',
-        await u.p.isVisible('#cabletested') && (await u.p.textContent('#cabletested')) === 'Tried on the author\'s HP Prime G2 (in Chrome) and G1 (in Edge) on 18 November 2026: each program of Chapter 12 came back from the calculator the same, and ChiTable ran at once, with no Check.' &&
+        await u.p.isVisible('#cabletested') && (await u.p.textContent('#cabletested')) === 'Tried on the author\'s HP Prime G2 (in Chrome) and G1 (in Edge) on 18 November 2026: every download of Chapter 12 verified, and ChiTable ran at once, with no Check.' &&
         !/being tested|this is that test|test address/i.test(await u.p.evaluate(() => document.documentElement.outerHTML.replace(/<(script|style)[^>]*>[^]*?<\/\1>/g, m => m.replace(/\/\*[^]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')))));
   check('two ways: nowhere in what the page shows or can come to show (its comments aside, which keep the history) is either still called "the other way", "the first way" or "the second way"', !/other way|first way|second way/i.test(await u.p.evaluate(() => document.documentElement.outerHTML.replace(/<(script|style)[^>]*>[^]*?<\/\1>/g, m => m.replace(/\/\*[^]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')))) &&
         /The first way: straight down the USB cable/.test(await u.p.evaluate(() => document.documentElement.outerHTML)));   // the second half shows the first is not empty: the words are still in the page's history comment, and only there
@@ -591,7 +591,7 @@ function check(name, ok, detail) {
   await usbEnd(u.p);
   let st = await state(u.p), got = await prime(u.p);
   check('cable, Chapter 12 to a G2: "Done. Your programs are on the calculator.", the bar full, each program ticked, Send ready again and Stop gone',
-        st.done && !st.fail && st.cls === 'status ok' && st.status === ch12.length + ' programs on the calculator, each one read back and found the same.' && st.bar === '100' &&
+        st.done && !st.fail && st.cls === 'status ok' && st.status === ch12.length + ' programs on the calculator, each download verified.' && st.bar === '100' &&
         st.list.join() === ch12.map(n => 'ok:' + n).join() && !st.sendOff && st.stopHidden && st.unload, JSON.stringify([st.status, st.list, st.bar, st.sendOff]));
   check('... what the calculator holds is each program\'s source exactly as the pack\'s file holds it, character for character; and that is programs/ but for the blank space at its end',
         ch12.every(n => got.programs[n] === packSource(n)) && ch12.every(n => canon(got.programs[n]) === repoSource(n)) && Object.keys(got.programs).length === ch12.length,
@@ -601,7 +601,7 @@ function check(name, ok, detail) {
         got.last === 1024 && got.outOfTurn === 0 && got.nacks === 0 && !got.err && got.opens === 1 && got.closes === 1, JSON.stringify([got.fds, got.arrived.length, got.last, got.outOfTurn, got.err, got.opens, got.closes]));
   check('... the page says what to do next (Shift, Program; tap, Run; Check if it says Syntax Error; unplug) and what happened (read back, character for character; nothing taken off)',
         /Shift, then Program/.test(st.next[0]) && ch12.every(n => st.next[0].includes(n)) && /tap Run/.test(st.next[1]) && /Syntax Error/.test(st.next[2]) && /tap Check/.test(st.next[2]) && /unplug/.test(st.next[3]) &&
-        /went down the cable/.test(st.report[0]) && /read back from the calculator and found the same, character for character/.test(st.report[0]) && /left where they are/.test(st.report[1]) && /^It took \d+(\.\d)? seconds\.$/.test(st.report[2]),
+        /went down the cable/.test(st.report[0]) && /Each download was then verified: the copy on the calculator is the same, character for character\./.test(st.report[0]) && /left where they are/.test(st.report[1]) && /^It took \d+(\.\d)? seconds\.$/.test(st.report[2]),
         JSON.stringify([st.next, st.report]));
   check('... the details name the page, the browser, the calculator and the choice; say who answered and what each program did; end in a RESULT line; and hold neither the serial number nor more than twelve bytes of any message',
         /^HP Prime Loader, v2f, straight down the cable\. /.test(st.log) && /\nBrowser: Mozilla/.test(st.log) && /\nDevice: HP Prime G2 \(USB 03F0:2441\), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator\.\n/.test(st.log) &&
@@ -684,14 +684,14 @@ function check(name, ok, detail) {
   st = await state(u.p); got = await prime(u.p);
   check('a program the calculator acknowledges and does not keep (' + ch12[1] + '): the load stops there; the one before it is ticked, this one crossed, the ones after never sent; the page does not say Done; ' +
         'it says to delete it if it is in the list and to use the Kit for it and the rest',
-        st.fail && !st.done && st.failh === ch12[1] + ' did not come back the same' && /The calculator did not have it\./.test(st.failp) && /does not count it as loaded/.test(st.failp) && /marked ✓ is on the calculator, whole/.test(st.failp) &&
+        st.fail && !st.done && st.failh === 'The download of ' + ch12[1] + ' did not verify' && /then verified the download\. The calculator does not have it\./.test(st.failp) && /does not count it as loaded/.test(st.failp) && /marked ✓ is on the calculator, whole/.test(st.failp) &&
         st.list[0] === 'ok:' + ch12[0] && st.list[1] === 'bad:' + ch12[1] && st.list.slice(2).every(l => /^wait:/.test(l)) && got.arrived.length === 2 && /tap More, then Delete/.test(st.todo[0]) &&
         new RegExp('^Then use the official HP way \\(2, just below\\), for ' + ch12[1] + ' and the programs after it\\.$').test(st.todo[1]) && st.kitOpen && !st.sendOff, JSON.stringify([st.failh, st.failp, st.list, st.todo]));
   u = await usbPage({ cutAt: 5000 });
   await u.p.check('#t_real'); await u.p.selectOption('#chapter', '12');
   await u.p.click('#usbsend'); await usbEnd(u.p);
   st = await state(u.p);
-  check('a program damaged on the way: "What came back is not what was sent", nothing ticked, and the details say where the two part', st.fail && /What came back is not what was sent\./.test(st.failp) && st.list[0] === 'bad:' + ch12[0] &&
+  check('a program damaged on the way: "What is on the calculator is not what was sent", nothing ticked, and the details say where the two part', st.fail && /What is on the calculator is not what was sent\./.test(st.failp) && st.list[0] === 'bad:' + ch12[0] &&
         /NOT THE SAME: 5,000 characters came back against [\d,]+ sent; the first difference is at character 5,001\./.test(st.log) && !/marked ✓/.test(st.failp), JSON.stringify([st.failp, st.list]));
   // the cable pulled out in the middle of a program; the browser's write never comes back (17 Nov, on the G2)
   // (the reports that have come from the host by the middle of the second program: the six of the opening, the first
@@ -717,7 +717,7 @@ function check(name, ok, detail) {
   u = await usbPage({ lagMs: 900 });
   await u.p.check('#t_real'); await u.p.selectOption('#chapter', '12');
   await u.p.click('#usbsend');
-  await u.p.waitForFunction(() => /^Checking /.test(document.getElementById('usbstatus').textContent));
+  await u.p.waitForFunction(() => /^Verifying the download of /.test(document.getElementById('usbstatus').textContent));
   const mid = await state(u.p);
   await u.p.click('#usbsend', { force: true, timeout: 2000 }).catch(() => {});     // a second click on Send while it runs
   await u.p.click('#usbstop');
@@ -757,7 +757,7 @@ function check(name, ok, detail) {
   check('cable: at a phone\'s width nothing runs off the side', await u.p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
   // a G1 that fills up, as the author's did on 18 Nov at 15:41 (all 30 sent; full after 15; NormExplorer kept empty)
   u = await usbPage({ product: 0x1541, room: 2200000 });
-  check('a G1: the cable\'s first step tells it to load one chapter at a time', await u.p.isVisible('#g1room') && /On an HP Prime G1, load one chapter at a time/.test(await u.p.textContent('#g1room')));
+  check('a G1: the cable\'s first step tells it to load three or four programs at a time', await u.p.isVisible('#g1room') && (await u.p.textContent('#g1room')) === 'On an HP Prime G1, load three or four programs at a time (step 2, One chapter): a G1 cannot hold all the book\'s programs at one time.');
   await u.p.check('#w_all');
   await u.p.click('#usbsend');
   await usbEnd(u.p, 300000);
@@ -765,7 +765,7 @@ function check(name, ok, detail) {
     check('... and when it fills up (here after 15 programs, at NormExplorer, as the author\'s did): "The calculator is full", the 15 marked done, NormExplorer marked bad, and what to do: delete its empty entry, load one chapter at a time',
           st.fail && got.h === 'The calculator is full' && st.list.filter(x => /^ok:/.test(x)).length === 15 && st.list.indexOf('bad:NormExplorer') === 15 &&
           /It took NormExplorer in and kept only its name/.test(got.p) && /The 15 programs marked ✓ are on the calculator, whole\./.test(got.p) &&
-          /Tap NormExplorer \(it shows 0 KB\), tap More, then Delete\./.test(got.d) && /in step 2 choose One chapter/.test(got.d) && /NOT KEPT: the calculator took all of NormExplorer/.test(st.log), JSON.stringify([got, st.list.slice(13, 17)])); }
+          /Tap NormExplorer \(it shows 0 KB\), tap More, then Delete\./.test(got.d) && /Load three or four programs at a time: in step 2 choose One chapter\. An HP Prime G1 cannot hold all the book's programs at one time\./.test(got.d) && /NOT KEPT: the calculator took all of NormExplorer/.test(st.log), JSON.stringify([got, st.list.slice(13, 17)])); }
 
   // the plain address, as every student opens it (v2f: the cable for every student)
   u = await usbPage({}, '');
