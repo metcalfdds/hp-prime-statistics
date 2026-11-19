@@ -1,4 +1,8 @@
-// prime_usb_v3c.js -- a real HP Prime on its USB cable, from a web page (WebHID).  Roger Metcalf & Claude, 17 Nov 2026.
+// prime_usb_v3d.js -- a real HP Prime on its USB cable, from a web page (WebHID).  Roger Metcalf & Claude, 17 Nov 2026.
+//
+// v3d (18 Nov 2026, 18:30): the report "01" is NOT sent in the newer framing.  v3c sent it after DataLoad to the
+// author's G2 at 18:16 (usb/logs/, pasted): it went as "message 0, 0 bytes", and the G2 took nothing after it; the
+// first report of the next program stood.  It is kept behind opts.release === true, which nothing asks for.
 //
 // v3c (18 Nov 2026, 18:20): the report "01" after each verified program, in the newer framing too.  Loader v2h, with
 // v3b's rest, put Chapters 1-3 on the author's G2 at 18:02: DataLoad, ScatterLab and TestChooser ran, and NormExplorer,
@@ -78,7 +82,7 @@
 // before a request, which is how the G1's answer came to stand unacknowledged.
 // WHAT OF THIS VERSION HAS NOT RUN ON A CALCULATOR: its pacing (77 reports, the acknowledgement, 77 more, with
 // nothing between: the calculators were sent 77 at a time only with 0.7 s between), what it does at a "send again",
-// and load() with one of the book's programs.  The tests run it against tests/mock_prime_v3b.js, which is the two
+// and load() with one of the book's programs.  The tests run it against tests/mock_prime_v3c.js, which is the two
 // calculators as far as five logs go.
 //
 // WHERE EACH FACT NOT FROM THE LOGS COMES FROM (all four MIT; no code of theirs is here, only what they measured or read)
@@ -897,7 +901,7 @@ const PrimeUSB = (function () {
         // v3c: the report "01".  hp-prime-kit sent it 0.25 s after every program, and its programs compiled
         // (usb.send-program, a G2, the old framing); this page had sent it in the old framing only.  A guess to be
         // tried on a calculator: nothing here says what a calculator does with it in the newer framing.
-        if (link.v2 && opts.release !== false) {
+        if (link.v2 && opts.release === true) {            // v3d: never by default; it jammed a G2
           await sleep(link.pace.release);
           await link.release();
           log('  Sent the report "01" that hp-prime-kit sends after a program.');

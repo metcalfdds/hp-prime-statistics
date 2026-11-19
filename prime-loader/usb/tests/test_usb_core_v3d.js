@@ -1,8 +1,8 @@
-// test_usb_core_v3c.js -- prime_usb_v3c.js against hp-prime-kit's own code, against the numbers in the logs of two real
+// test_usb_core_v3d.js -- prime_usb_v3d.js against hp-prime-kit's own code, against the numbers in the logs of two real
 // calculators, and against the mock calculator.  Roger Metcalf & Claude, 17 Nov 2026.
 //
 //     python3 kit_reference_v1.py REF      (writes hp-prime-kit's message for every program in programs/)
-//     node test_usb_core_v3c.js REF
+//     node test_usb_core_v3d.js REF
 //
 // NOTHING HERE TOUCHES A CALCULATOR.  A pass says this and no more:
 //   A  the messages are, byte for byte, the ones hp-prime-kit builds and hp-prime-web's tests expect, and the requests
@@ -16,7 +16,7 @@
 //   F  the book's programs, every one, go onto a pretend G1 and a pretend G2 and come back the same;
 //   G  a log shows what passed, twelve bytes of a message at most, and never the serial number.
 const fs = require('fs'), path = require('path'), crypto = require('crypto'), zlib = require('zlib');
-const P = require('../prime_usb_v3c.js'), MockPrime = require('./mock_prime_v3b.js');
+const P = require('../prime_usb_v3d.js'), MockPrime = require('./mock_prime_v3c.js');
 
 const REF = path.resolve(process.argv[2]);
 const ref = JSON.parse(fs.readFileSync(path.join(REF, 'reference.json'), 'utf8'));
@@ -499,7 +499,13 @@ const G1 = 0x1541;
     const m2 = new MockPrime({ tickMs: 80 }), l2 = quick(new P.Link(m2.port()));
     await P.load(l2, three, {}, { settle: 10, lull: 0 });
     m2.stop();
-    check('E6k v3c: after each verified program the report "01" goes, as hp-prime-kit sends it after a program: three programs, three of them on the pretend G2, and the log says so each time', m2.releases === 3 && mock.releases === 3 && log.filter(l => /Sent the report "01"/.test(l)).length === 3, JSON.stringify([m2.releases, mock.releases]));
+    check('E6k v3d: the report "01" is not sent in the newer framing (v3c sent it to the author\'s G2 at 18:16 and the G2 took nothing more): three programs, none of it', m2.releases === 0 && mock.releases === 0 && log.filter(l => /Sent the report "01"/.test(l)).length === 0, JSON.stringify([m2.releases, mock.releases]));
+    {
+      const m5 = new MockPrime({ tickMs: 80 }), l5 = quick(new P.Link(m5.port()));
+      const r5 = await Promise.race([P.load(l5, three, {}, { settle: 10, lull: 0, release: true }), new Promise(r => setTimeout(() => r('stood'), 3000))]);
+      m5.stop();
+      check('E6l ... and the pretend G2 does what the real one did when it is sent: it takes the first program, and after the "01" nothing; the next program stands', r5 === 'stood' && m5.releases === 1 && m5.arrived.length === 1 && m5.jammed === true, JSON.stringify([r5, m5.releases, m5.arrived.length]));
+    }
     check('E6h ... and with no rest asked (as these tests ask, to be quick) the next program begins at once: the mock measures it', m2.arrived[0].quiet < 500 && m2.arrived[1].quiet < 500, JSON.stringify(m2.arrived.map(a => a.quiet)));
     const m3 = new MockPrime({ tickMs: 80, product: 0x1541 }), l3 = quick(new P.Link(m3.port())), log3 = [];
     const r3 = await P.load(l3, [three[0], three[2]], { log: t => log3.push(t) }, { settle: 10, lull: (chars, size) => size <= 64 ? 700 : 5 });

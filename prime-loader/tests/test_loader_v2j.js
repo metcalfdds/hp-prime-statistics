@@ -1,6 +1,6 @@
-// test_loader_v2i.js -- drives PrimeLoader_v2i.html in Chromium against a mock Virtual Calculator folder, and its
+// test_loader_v2j.js -- drives PrimeLoader_v2j.html in Chromium against a mock Virtual Calculator folder, and its
 // cable route (shown only at ?usb=1) against a pretend calculator that does what two real ones did on 17 Nov 2026.
-// Roger Metcalf & Claude, 18 Nov 2026.   node tests/test_loader_v2i.js PrimeLoader_v2i.html PACK.zip
+// Roger Metcalf & Claude, 18 Nov 2026.   node tests/test_loader_v2j.js PrimeLoader_v2j.html PACK.zip
 //
 // v2h (18 Nov 2026, 17:45): the cable rests the calculator after each program (these tests ask for no rest, to be
 // quick, but for the one that checks the page as it is); Advanced 1 is EpiStats alone; unplug first; a restart with
@@ -28,7 +28,7 @@
 // physical Prime G1 or G2 calculator" (Statisticles, in italics, being the book's name for its programs), and the
 // two called the first way and the second way: the same checks, with those words, and three more for the title, the
 // sentence under it and the two names.
-// v2b is v2a with the cable route written again (usb/prime_usb_v3c.js, usb/tests/mock_prime_v3b.js): parts 1 to 12
+// v2b is v2a with the cable route written again (usb/prime_usb_v3d.js, usb/tests/mock_prime_v3c.js): parts 1 to 12
 // are v2a's test, with the page's new names; part 13 is new.  NOTHING HERE TOUCHES A CALCULATOR.
 // v2a is a new page (two questions and one button), so this is a new test, on the scaffolding of test_loader_v1v.js:
 // the browser's folder picker is replaced by one that returns a folder in the browser's private file system (OPFS),
@@ -170,7 +170,7 @@ function check(name, ok, detail) {
   check('the page is two questions and one button: which calculator, which programs, Load',
         JSON.stringify(await steps(page)) === JSON.stringify(['1Which calculator?', '2Which programs?', '3Load', 'Something not working?']), JSON.stringify(await steps(page)));
   check('it opens on the Virtual Calculator and all ' + names.length + ' programs, with Load ready', names.length === 31 && await page.isChecked('#t_vc') && await page.isChecked('#w_all') &&
-        !(await page.isDisabled('#load')) && (await page.textContent('#summary')) === 'All 31 programs.' && /All 31 programs/.test(await page.textContent('.choice:has(#w_all)')));
+        !(await page.isDisabled('#load')) && (await page.textContent('#summary')) === 'The Population: all 31 Statisticles.' && /The Population: all 31 Statisticles/.test(await page.textContent('.choice:has(#w_all)')));
   check('it says what Load will do to what is there: added, and what is there stays', (await page.textContent('#effect')) === 'They are added: programs already on the calculator stay.');
   check('the Virtual Calculator is offered neither a chapter nor a group', !(await page.isVisible('#chapter')) && !(await page.isVisible('#group')) && !(await page.isVisible('#w_chapter')) && !(await page.isVisible('#w_group')));
   check('single programs and data are folded away: the 31 tick boxes exist and are not shown', !(await page.isVisible('#proglist')) && !(await page.isVisible('#rossi')) &&
@@ -240,7 +240,7 @@ function check(name, ok, detail) {
     const d = await (await (await r.getDirectoryHandle('HP Prime')).getDirectoryHandle('Calculators')).getDirectoryHandle('Prime');
     for (const n of names) await d.removeEntry(n, { recursive: true });
   }, names);
-  check('the Virtual Calculator loads all the programs with nothing to choose (Roger: "just make the choice of Virtual Calculator automatically load all"): step 2 shows "All 31 programs" alone, no chapter and no group, with single programs and data under "More choices"',
+  check('the Virtual Calculator loads all the programs with nothing to choose (Roger: "just make the choice of Virtual Calculator automatically load all"): step 2 shows "The Population: all 31 Statisticles" alone, no chapter and no group, with single programs and data under "More choices"',
         await page.isChecked('#w_all') && await page.isVisible('#w_all') && !(await page.isVisible('#w_chapter')) && !(await page.isVisible('#chapter')) && !(await page.isVisible('#w_group')) && !(await page.isVisible('#group')) &&
         (await page.locator('[aria-labelledby="s2"] > .choice:visible').count()) === 1 && /More choices: single programs, and data/.test(await page.textContent('#more > summary')) &&
         (await page.textContent('#effect')) === 'They are added: programs already on the calculator stay.', await page.textContent('#effect'));
@@ -257,7 +257,7 @@ function check(name, ok, detail) {
   await page.locator('#more > summary').click();
   await page.check('#rossi');
   let sum = await page.textContent('#summary');
-  check('all the programs with the sample data: the summary names the data', sum === 'All 31 programs, and the data M1.', sum);
+  check('all the programs with the sample data: the summary names the data', sum === 'The Population: all 31 Statisticles, and the data M1.', sum);
   await page.click('#load');
   t = await loaded();
   const f3 = folders(t).filter(f => !f1.includes(f) && !f2.includes(f));
@@ -389,7 +389,7 @@ function check(name, ok, detail) {
         names.every(n => GROUPS.some(g => g.programs.includes(n))) && GROUPS.every(g => g.programs.length >= (g.id === 'a1' ? 1 : 3) && g.programs.every(n => names.includes(n))) && GROUPS[5].programs.join() === 'EpiStats' &&
         GROUPS.slice(0, 5).every(g => g.programs.includes('TestChooser')) && GROUPS.slice(5).every((g, i) => GROUPS.slice(5).every((h, j) => i === j || !g.programs.some(n => h.programs.includes(n)))),
         JSON.stringify(GROUPS.map(g => [g.title, g.programs.length])));
-  check('... with no group chosen yet the page asks for one, and there is nothing to download', (await page.textContent('#summary')) === 'Choose a group in the list above.' && await page.isDisabled('#download3') && (await page.textContent('#effect')) === '',
+  check('... with no group chosen yet the page asks for one, and there is nothing to download', (await page.textContent('#summary')) === 'Choose a Sample in the list above.' && await page.isDisabled('#download3') && (await page.textContent('#effect')) === '',
         await page.textContent('#summary'));
   await page.selectOption('#group', 'c7');
   check('a real HP Prime: step 3 is the Connectivity Kit\'s steps, and there is no Load button to click',
@@ -435,7 +435,7 @@ function check(name, ok, detail) {
         !GROUPS.find(g => g.id === 'c4').programs.includes('DataLoad') && /DataLoad/.test(await page.textContent('#realprogs')) && /DataLoad is added because the data need it\./.test(await page.textContent('#summary')));
   await page.check('#t_vc');
   check('back to the Virtual Calculator: Load returns, the Kit steps and the groups go, and all the programs are chosen again, with the data', await page.isVisible('#load') && !(await page.isVisible('#step3real')) && await page.isChecked('#w_all') &&
-        !(await page.isVisible('#group')) && (await page.textContent('#summary')) === 'All 31 programs, and the data M1.', await page.textContent('#summary'));
+        !(await page.isVisible('#group')) && (await page.textContent('#summary')) === 'The Population: all 31 Statisticles, and the data M1.', await page.textContent('#summary'));
   check('the help has the Kit for the Virtual Calculator too, pointing at step 1', /Choose A real HP Prime in step 1/.test(await page.textContent('.help details:last-of-type')));
   check('the help says what became of a program that is gone: on a real HP Prime the book\'s other programs are taken off to make room and come back with their group; on the Virtual Calculator nothing is deleted',
         /On a real HP Prime: to make room, Send to the calculator takes the Statisticles programs that are not in the group you chose off the calculator/.test(await page.textContent('.help')) &&
@@ -465,8 +465,8 @@ function check(name, ok, detail) {
   await ipg.goto('file://' + path.join(path.dirname(PAGE), 'index.html') + '?data=1');
   await ipg.waitForFunction(() => !!document.getElementById('fromdl'), null, { timeout: 15000 }).catch(() => {});
   check('index.html carries ?data=1 on to the page, so the Data Loader\'s link to the folder\'s address opens it ready for the file',
-        /PrimeLoader_v2i\.html\?data=1$/.test(ipg.url()) && await ipg.isVisible('#fromdl'), ipg.url());
-  check('... and a browser with scripts off is still sent on, by the line in noscript', /<noscript><meta http-equiv="refresh" content="0; url=PrimeLoader_v2i\.html"><\/noscript>/.test(idx));
+        /PrimeLoader_v2j\.html\?data=1$/.test(ipg.url()) && await ipg.isVisible('#fromdl'), ipg.url());
+  check('... and a browser with scripts off is still sent on, by the line in noscript', /<noscript><meta http-equiv="refresh" content="0; url=PrimeLoader_v2j\.html"><\/noscript>/.test(idx));
 
   // ---- 10. Firefox: no folder API, Firefox's user-agent ----
   const fctx = await browser.newContext({ acceptDownloads: true,
@@ -535,11 +535,11 @@ function check(name, ok, detail) {
   const p3 = await ctx.newPage();
   const errs3 = []; p3.on('pageerror', e => errs3.push(String(e)));
   await p3.goto('file://' + PAGE);
-  check('opens as a local file without errors', errs3.length === 0 && (await p3.textContent('#summary')) === 'All 31 programs.', errs3);
+  check('opens as a local file without errors', errs3.length === 0 && (await p3.textContent('#summary')) === 'The Population: all 31 Statisticles.', errs3);
 
   // ---- 13. the cable, at the page's test address, against a pretend calculator ----
-  // (usb/tests/mock_prime_v3b.js: by default it does what the author's G2 and G1 did on 17 Nov 2026.  Not a calculator.)
-  const MOCK = fs.readFileSync(path.join(__dirname, '..', 'usb', 'tests', 'mock_prime_v3b.js'), 'utf8');
+  // (usb/tests/mock_prime_v3c.js: by default it does what the author's G2 and G1 did on 17 Nov 2026.  Not a calculator.)
+  const MOCK = fs.readFileSync(path.join(__dirname, '..', 'usb', 'tests', 'mock_prime_v3c.js'), 'utf8');
   const PROGRAMS = path.join(__dirname, '..', '..', 'programs');
   const canon = s => s.replace(/\r\n?/g, '\n').replace(/\s+$/, '');
   const repoSource = n => { const f = fs.readdirSync(PROGRAMS).find(x => x.startsWith(n + '_')); return canon(fs.readFileSync(path.join(PROGRAMS, f), 'utf8')); };
@@ -554,7 +554,7 @@ function check(name, ok, detail) {
     if (hid !== false) await p.addInitScript({ content: MOCK + '\n;MockPrime.install(' + JSON.stringify(mopts || {}) + ');\n' });
     else await p.addInitScript(() => { Object.defineProperty(navigator, 'hid', { value: undefined, configurable: true }); });
     await p.goto('http://localhost:8766/' + (query === undefined ? '?usb=1' : query));
-    // the page rests the calculator after each program (prime_usb_v3c.js, lullFor: 2 s and more); these tests ask for
+    // the page rests the calculator after each program (prime_usb_v3d.js, lullFor: 2 s and more); these tests ask for
     // none, to be quick, but for the one that passes rest: true and so drives the page as a student has it
     if (!(mopts && mopts.rest)) await p.evaluate(() => { if (typeof PrimeUSB !== 'object') return; const load = PrimeUSB.load; PrimeUSB.load = (l, pr, ui, o) => load(l, pr, ui, Object.assign({ lull: 0 }, o || {})); });
     return { p, errs };
@@ -606,7 +606,7 @@ function check(name, ok, detail) {
   await u.p.click('#kitsum');
   check('... one click opens them: the download button and the six steps', await u.p.isVisible('#download3') && await u.p.isVisible('#kitroute ol.steps'));
   await u.p.click('#kitsum');
-  check('cable: with no group chosen yet, the page asks for one and Send is off', (await u.p.textContent('#summary')) === 'Choose a group in the list above.' && await u.p.isDisabled('#usbsend') && (await u.p.textContent('#usbstatus')) === '', await u.p.textContent('#usbstatus'));
+  check('cable: with no group chosen yet, the page asks for one and Send is off', (await u.p.textContent('#summary')) === 'Choose a Sample in the list above.' && await u.p.isDisabled('#usbsend') && (await u.p.textContent('#usbstatus')) === '', await u.p.textContent('#usbstatus'));
   await u.p.selectOption('#group', 'c7');
   check('cable: a group with the app in it (Chapters 7–9): CentralLimit is named as not travelling this way before anything is sent; the Kit\'s steps stay folded until they are wanted',
         /^Ready to send 10 programs\. CentralLimit \(an app or data\) does not travel the Statisticles way: it goes by the official HP way, 2\) below\.$/.test(await u.p.textContent('#usbstatus')) && !(await u.p.evaluate(() => document.getElementById('kitfold').open)),
@@ -633,7 +633,7 @@ function check(name, ok, detail) {
         /went down the cable/.test(st.report[0]) && /Each download was then verified: the copy on the calculator is the same, character for character\./.test(st.report[0]) && /^To make room, the Statisticles programs that are not in your choice were taken off first \(those that were there\)\. Programs of your own were left where they are\. To have another group, choose it in step 2 and click Send again\.$/.test(st.report[1]) && /^It took \d+(\.\d)? seconds\.$/.test(st.report[2]),
         JSON.stringify([st.next, st.report]));
   check('... the details name the page, the browser, the calculator and the choice; say who answered and what each program did; end in a RESULT line; and hold neither the serial number nor more than twelve bytes of any message',
-        /^HP Prime Loader, v2i, straight down the cable\. /.test(st.log) && /\nBrowser: Mozilla/.test(st.log) && /\nDevice: HP Prime G2 \(USB 03F0:2441\), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator\.\n/.test(st.log) &&
+        /^HP Prime Loader, v2j, straight down the cable\. /.test(st.log) && /\nBrowser: Mozilla/.test(st.log) && /\nDevice: HP Prime G2 \(USB 03F0:2441\), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator\.\n/.test(st.log) &&
         new RegExp('\\nChosen: Chapters 1–3; ' + ch12.length + ' programs, [\\d,]+ characters: ' + ch12.join(', ') + '\\.\\n').test(st.log) && /It answered: firmware build 15751, "V2\.060\.650", version 01\./.test(st.log) &&
         ch12.every(n => new RegExp('\\n +\\d+\\.\\d\\d  ' + n + ': [\\d,]+ characters\\.\\n').test(st.log)) && (st.log.match(/Read back the same: /g) || []).length === ch12.length &&
         new RegExp('RESULT: all ' + ch12.length + ' programs on the calculator, each read back the same\\. [\\d,]+ reports carried the programs there and back; \\d+\\.\\d s in all\\.').test(st.log) && !/SECRET|SERIAL/.test(st.log) &&
@@ -819,9 +819,11 @@ function check(name, ok, detail) {
   const mid = await state(u.p);
   await u.p.click('#usbsend', { force: true, timeout: 2000 }).catch(() => {});     // a second click on Send while it runs
   await u.p.click('#usbstop');
+  const saveMid = await u.p.isDisabled('#usbsave');
   const stopping = await u.p.textContent('#usbstop');
   await usbEnd(u.p);
   st = await state(u.p); got = await prime(u.p);
+  check('while a load runs, Save the details can be clicked (Roger, 18 Nov, with a send that stood: "The \'Save the details\' button doesn\'t work")', saveMid === false, saveMid);
   check('while a load runs: Send is off and Stop is there; leaving the page would be asked about, because the calculator is in the middle of a program',
         mid.sendOff && !mid.stopHidden && !mid.unload && !mid.done && !mid.fail && /^check:/.test(mid.list[0]), JSON.stringify([mid.sendOff, mid.stopHidden, mid.unload, mid.list]));
   check('slip: Stop, and a second click on Send, while the first program is being checked: the button says it stops after this program; that program is finished and ticked, the next is never begun; ' +
@@ -840,7 +842,7 @@ function check(name, ok, detail) {
   // nothing chosen yet
   u = await usbPage({});
   await u.p.check('#t_real');
-  check('slip: a real HP Prime with no group picked: Send is off, and the page says to choose a group', await u.p.isDisabled('#usbsend') && (await u.p.textContent('#summary')) === 'Choose a group in the list above.' && (await u.p.textContent('#usbstatus')) === '');
+  check('slip: a real HP Prime with no group picked: Send is off, and the page says to choose a group', await u.p.isDisabled('#usbsend') && (await u.p.textContent('#summary')) === 'Choose a Sample in the list above.' && (await u.p.textContent('#usbstatus')) === '');
   // nothing in the choice that the cable carries
   u = await usbPage({});
   await u.p.check('#t_real');
