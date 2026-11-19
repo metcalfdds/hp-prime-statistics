@@ -8,7 +8,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* PrimeLoader v2h (18 Nov 2026, 17:45).  What two calculators did with what v2g sent them, every download verified:
+/* PrimeLoader v2i (18 Nov 2026, 18:20).  v2h on the author's G2 at 18:02 (usb/logs/): Chapters 1-3 verified, three
+   ran, and NormExplorer opened the editor after a rest of 3.29 s.  So the rest is not the cure.  v2i is v2h with
+   prime_usb_v3c.js, which sends the report "01" after each verified program as hp-prime-kit does (a guess to be tried
+   on a calculator), and with Roger's words for the log (18:03: don't say "What passed on the cable", say "What was
+   transferred to calculator").
+   PrimeLoader v2h (18 Nov 2026, 17:45).  What two calculators did with what v2g sent them, every download verified:
    the G2 would not run DataLoad or ScatterLab until each was Checked (Run opened the editor; the logs of 16:54 and
    16:59 in usb/logs/, and prime_usb_v3b.js's table); the G1 ran ErrorRate and TrendTest, and reset when Run was tapped
    on EpiStats; EpiStats sent alone ran (Roger, 17:30).  And the G1 was "very slow" on its cable and "went back to
@@ -386,7 +391,7 @@ ol.steps li > p { margin: 2px 0 0; }
         <ol id="usbfaildo"></ol>
       </div>
       <details class="opt" id="usbdetails">
-        <summary>What passed on the cable (for your instructor)</summary>
+        <summary>What was transferred to calculator (for your instructor)</summary>
         <p class="why" style="margin:10px 0 0">Every message between this page and the calculator, in short. It holds nothing about you and not the calculator's serial number. If something went wrong, click <b>Save the details</b> and send the file to your instructor.</p>
         <pre id="usblog" tabindex="0" aria-label="The messages that passed on the cable"></pre>
         <div class="row"><button type="button" id="usbsave" disabled>Save the details</button><span class="status" id="usbsaved" role="status"></span></div>
@@ -965,7 +970,7 @@ async function usbSend() {
               ['Is the calculator switched on, and at its Home screen? Press its <kbd>Home</kbd> key.', 'Pull its cable out, push it in again, and click <b>Send to the calculator</b> again.', 'If it still does not answer, ' + kitWay + '.'], true);
     } else if (f.why === 'version') {
       usbFail('This calculator answers differently from the two this way was proved on', 'So nothing was sent to it. That is no fault of the calculator; its software may be older or newer.',
-              ['Use the official HP way, the Connectivity Kit: its steps are under 2), just below.', 'Please click <b>Save the details</b>, under "What passed on the cable", and send that file to your instructor.'], true);
+              ['Use the official HP way, the Connectivity Kit: its steps are under 2), just below.', 'Please click <b>Save the details</b>, under "What was transferred to calculator", and send that file to your instructor.'], true);
     } else if (f.why === 'full') {
       usbFail('The calculator is full', 'It took ' + esc(f.name) + ' in and kept only its name, which is what a calculator with no room left does. ' + marked + esc(f.name) + ' and the programs after it are not.',
               ['On the calculator, press <kbd>Shift</kbd>, then <kbd>Program</kbd>. Tap <b>' + esc(f.name) + '</b> (it shows 0 KB), tap <b>More</b>, then <b>Delete</b>.',
@@ -979,7 +984,7 @@ async function usbSend() {
               'The page sent ' + esc(f.name) + ' and then verified the download. ' + (f.why === 'differs' ? 'What is on the calculator is not what was sent.' : f.why === 'missing' ? 'The calculator does not have it.' : 'The calculator could not be asked for it.') +
               ' So the page does not count it as loaded, and it stopped there. ' + marked,
               ['On the calculator, press <kbd>Shift</kbd>, then <kbd>Program</kbd>. If <b>' + esc(f.name) + '</b> is in the list, take it off: tap its name, tap <b>More</b>, then <b>Delete</b>.',
-               'Then ' + kitWay + ', for ' + esc(f.name) + ' and the programs after it.', 'Please click <b>Save the details</b>, under "What passed on the cable", and send that file to your instructor.'], true);
+               'Then ' + kitWay + ', for ' + esc(f.name) + ' and the programs after it.', 'Please click <b>Save the details</b>, under "What was transferred to calculator", and send that file to your instructor.'], true);
     }
   } catch (e) {
     usbLine('THE PAGE STOPPED: ' + why(e) + '.');

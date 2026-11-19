@@ -1,6 +1,6 @@
-// test_loader_v2h.js -- drives PrimeLoader_v2h.html in Chromium against a mock Virtual Calculator folder, and its
+// test_loader_v2i.js -- drives PrimeLoader_v2i.html in Chromium against a mock Virtual Calculator folder, and its
 // cable route (shown only at ?usb=1) against a pretend calculator that does what two real ones did on 17 Nov 2026.
-// Roger Metcalf & Claude, 18 Nov 2026.   node tests/test_loader_v2h.js PrimeLoader_v2h.html PACK.zip
+// Roger Metcalf & Claude, 18 Nov 2026.   node tests/test_loader_v2i.js PrimeLoader_v2i.html PACK.zip
 //
 // v2h (18 Nov 2026, 17:45): the cable rests the calculator after each program (these tests ask for no rest, to be
 // quick, but for the one that checks the page as it is); Advanced 1 is EpiStats alone; unplug first; a restart with
@@ -28,7 +28,7 @@
 // physical Prime G1 or G2 calculator" (Statisticles, in italics, being the book's name for its programs), and the
 // two called the first way and the second way: the same checks, with those words, and three more for the title, the
 // sentence under it and the two names.
-// v2b is v2a with the cable route written again (usb/prime_usb_v3b.js, usb/tests/mock_prime_v3b.js): parts 1 to 12
+// v2b is v2a with the cable route written again (usb/prime_usb_v3c.js, usb/tests/mock_prime_v3b.js): parts 1 to 12
 // are v2a's test, with the page's new names; part 13 is new.  NOTHING HERE TOUCHES A CALCULATOR.
 // v2a is a new page (two questions and one button), so this is a new test, on the scaffolding of test_loader_v1v.js:
 // the browser's folder picker is replaced by one that returns a folder in the browser's private file system (OPFS),
@@ -465,8 +465,8 @@ function check(name, ok, detail) {
   await ipg.goto('file://' + path.join(path.dirname(PAGE), 'index.html') + '?data=1');
   await ipg.waitForFunction(() => !!document.getElementById('fromdl'), null, { timeout: 15000 }).catch(() => {});
   check('index.html carries ?data=1 on to the page, so the Data Loader\'s link to the folder\'s address opens it ready for the file',
-        /PrimeLoader_v2h\.html\?data=1$/.test(ipg.url()) && await ipg.isVisible('#fromdl'), ipg.url());
-  check('... and a browser with scripts off is still sent on, by the line in noscript', /<noscript><meta http-equiv="refresh" content="0; url=PrimeLoader_v2h\.html"><\/noscript>/.test(idx));
+        /PrimeLoader_v2i\.html\?data=1$/.test(ipg.url()) && await ipg.isVisible('#fromdl'), ipg.url());
+  check('... and a browser with scripts off is still sent on, by the line in noscript', /<noscript><meta http-equiv="refresh" content="0; url=PrimeLoader_v2i\.html"><\/noscript>/.test(idx));
 
   // ---- 10. Firefox: no folder API, Firefox's user-agent ----
   const fctx = await browser.newContext({ acceptDownloads: true,
@@ -554,7 +554,7 @@ function check(name, ok, detail) {
     if (hid !== false) await p.addInitScript({ content: MOCK + '\n;MockPrime.install(' + JSON.stringify(mopts || {}) + ');\n' });
     else await p.addInitScript(() => { Object.defineProperty(navigator, 'hid', { value: undefined, configurable: true }); });
     await p.goto('http://localhost:8766/' + (query === undefined ? '?usb=1' : query));
-    // the page rests the calculator after each program (prime_usb_v3b.js, lullFor: 2 s and more); these tests ask for
+    // the page rests the calculator after each program (prime_usb_v3c.js, lullFor: 2 s and more); these tests ask for
     // none, to be quick, but for the one that passes rest: true and so drives the page as a student has it
     if (!(mopts && mopts.rest)) await p.evaluate(() => { if (typeof PrimeUSB !== 'object') return; const load = PrimeUSB.load; PrimeUSB.load = (l, pr, ui, o) => load(l, pr, ui, Object.assign({ lull: 0 }, o || {})); });
     return { p, errs };
@@ -633,7 +633,7 @@ function check(name, ok, detail) {
         /went down the cable/.test(st.report[0]) && /Each download was then verified: the copy on the calculator is the same, character for character\./.test(st.report[0]) && /^To make room, the Statisticles programs that are not in your choice were taken off first \(those that were there\)\. Programs of your own were left where they are\. To have another group, choose it in step 2 and click Send again\.$/.test(st.report[1]) && /^It took \d+(\.\d)? seconds\.$/.test(st.report[2]),
         JSON.stringify([st.next, st.report]));
   check('... the details name the page, the browser, the calculator and the choice; say who answered and what each program did; end in a RESULT line; and hold neither the serial number nor more than twelve bytes of any message',
-        /^HP Prime Loader, v2h, straight down the cable\. /.test(st.log) && /\nBrowser: Mozilla/.test(st.log) && /\nDevice: HP Prime G2 \(USB 03F0:2441\), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator\.\n/.test(st.log) &&
+        /^HP Prime Loader, v2i, straight down the cable\. /.test(st.log) && /\nBrowser: Mozilla/.test(st.log) && /\nDevice: HP Prime G2 \(USB 03F0:2441\), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator\.\n/.test(st.log) &&
         new RegExp('\\nChosen: Chapters 1–3; ' + ch12.length + ' programs, [\\d,]+ characters: ' + ch12.join(', ') + '\\.\\n').test(st.log) && /It answered: firmware build 15751, "V2\.060\.650", version 01\./.test(st.log) &&
         ch12.every(n => new RegExp('\\n +\\d+\\.\\d\\d  ' + n + ': [\\d,]+ characters\\.\\n').test(st.log)) && (st.log.match(/Read back the same: /g) || []).length === ch12.length &&
         new RegExp('RESULT: all ' + ch12.length + ' programs on the calculator, each read back the same\\. [\\d,]+ reports carried the programs there and back; \\d+\\.\\d s in all\\.').test(st.log) && !/SECRET|SERIAL/.test(st.log) &&

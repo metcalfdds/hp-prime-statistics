@@ -1,10 +1,10 @@
-// mock_prime_v3b.js -- a pretend HP Prime on a pretend cable, for the tests of prime_usb_v3b.js and of the Loader that
+// mock_prime_v3b.js -- a pretend HP Prime on a pretend cable, for the tests of prime_usb_v3c.js and of the Loader that
 // uses it.  Roger Metcalf & Claude, 17 Nov 2026.
 //
 // IT IS NOT A CALCULATOR.  By default it does what the author's G2 and G1 did on 17 Nov 2026, as far as the five logs
 // of ../logs/ go (both on firmware build 15751); each line below marked [log] is something one of those logs shows.
 // What the logs do not show has a switch and a default that says so.  Its byte work is written apart from
-// prime_usb_v3b.js (its own checksum, its own framing), so that a slip in one is not hidden by the same slip in the other.
+// prime_usb_v3c.js (its own checksum, its own framing), so that a slip in one is not hidden by the same slip in the other.
 //
 // THE OLD FRAMING [log]
 //   fmt 1           "who are you" (FA) is answered with version 01

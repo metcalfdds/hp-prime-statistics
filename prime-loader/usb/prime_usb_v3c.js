@@ -1,4 +1,12 @@
-// prime_usb_v3b.js -- a real HP Prime on its USB cable, from a web page (WebHID).  Roger Metcalf & Claude, 17 Nov 2026.
+// prime_usb_v3c.js -- a real HP Prime on its USB cable, from a web page (WebHID).  Roger Metcalf & Claude, 17 Nov 2026.
+//
+// v3c (18 Nov 2026, 18:20): the report "01" after each verified program, in the newer framing too.  Loader v2h, with
+// v3b's rest, put Chapters 1-3 on the author's G2 at 18:02: DataLoad, ScatterLab and TestChooser ran, and NormExplorer,
+// left alone for 3.29 s, opened the editor until it was Checked (it had run at 16:46 with 0.98 s).  So the rest is not
+// the cure.  The one route measured to leave a program compiled is hp-prime-kit's (usb.send-program), and it ends each
+// program with the report "01" after 0.25 s; a key, too, acts only when a "01" arrives (usb.keys).  This page sent
+// that report in the old framing only.  NOT KNOWN: what a calculator makes of it in the newer framing, where "01"
+// also begins a message.  The rest stays.
 //
 // v3b (18 Nov 2026, 17:45): a rest for the calculator after each program, before the next one is sent (lullFor).
 // What the author's calculators did with what Loader v2g sent them, every download verified (the logs of 16:54 and
@@ -886,6 +894,14 @@ const PrimeUSB = (function () {
           return fail(p.name, 'differs', what, '  NOT THE SAME: ' + what + '; the first difference is at character ' + num(firstDifference(back.text, src) + 1) + '.', k);
         }
         res.done.push(p.name);
+        // v3c: the report "01".  hp-prime-kit sent it 0.25 s after every program, and its programs compiled
+        // (usb.send-program, a G2, the old framing); this page had sent it in the old framing only.  A guess to be
+        // tried on a calculator: nothing here says what a calculator does with it in the newer framing.
+        if (link.v2 && opts.release !== false) {
+          await sleep(link.pace.release);
+          await link.release();
+          log('  Sent the report "01" that hp-prime-kit sends after a program.');
+        }
         verifiedAt = Date.now();
         item(k, 'ok');
         log('  Read back the same: ' + reportsText(back.reports) + (back.compressed ? ', compressed' : ', not compressed') + ', ' + secs(Date.now() - tb) +

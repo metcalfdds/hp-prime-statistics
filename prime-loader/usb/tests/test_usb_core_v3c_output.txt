@@ -77,6 +77,7 @@ PASS E6d making room on a G1 (ui.remove): the names given are taken off before a
 PASS E6e Stop while making room: the load ends there, nothing is sent, and the log says where
 PASS E6f the rest is 2 s and 0.5 s more for each 100,000 characters on a G2, 2 s more on a G1: 2.0 s for nothing, 2.93 s for NormExplorer on a G2 (185,782 characters), 4.31 s for ErrorRate on a G1 (115,298), 7.8 s for EpiStats on a G1 (289,813)
 PASS E6g a rest between programs, as the page has it (on 18 Nov a G2 would not run the two programs that had 0.54 s and 0.77 s before the next one began, and a G1 reset on the one whose 4.84 s it had spent answering the page): on a pretend G2 each program but the last is left alone for its rest after it is verified, the page is told when each rest begins, and the log says what each program was given
+PASS E6k v3c: after each verified program the report "01" goes, as hp-prime-kit sends it after a program: three programs, three of them on the pretend G2, and the log says so each time
 PASS E6h ... and with no rest asked (as these tests ask, to be quick) the next program begins at once: the mock measures it
 PASS E6i ... a pretend G1 is known for one by its reports of 64 bytes, and gets the G1's rest
 PASS E6j Stop during a rest: the load ends there within a moment, the program that was resting counts as loaded, and the next is not sent
@@ -88,10 +89,10 @@ PASS E11 a calculator that hands a program back with CRLF and a last line end: s
 PASS E12 a name the calculator would not take is refused before anything of it is sent: "unsent", with the name
 PASS E13 the log of a load: a "send again" is always in it, however long the message; the ordinary lines beyond the first forty are counted and left out
 PASS E14 ... and when a load fails, the last reports that the log had left out are written after the failure, since those are the ones wanted
-PASS F1 all 31 programs onto a pretend G1: each read back the same; 131,683 reports of programs, none sent twice, no word of the clock needed (2.1 s against the mock, which takes a report at once)
-PASS F2 all 31 programs onto a pretend G2: each read back the same; 8,125 reports of programs, none sent twice, no word of the clock needed (1.8 s against the mock, which takes a report at once)
+PASS F1 all 31 programs onto a pretend G1: each read back the same; 131,683 reports of programs, none sent twice, no word of the clock needed (9.8 s against the mock, which takes a report at once)
+PASS F2 all 31 programs onto a pretend G2: each read back the same; 8,125 reports of programs, none sent twice, no word of the clock needed (9.6 s against the mock, which takes a report at once)
 PASS G1 the log of reports: a message's start with its number, size and first twelve bytes; the reports after it only counted, with their numbers; three of a run of one kind and then their count
 PASS G2 after its budget of ordinary lines the rest are counted, and said at the next line of the caller's; a "send again" is written all the same; and the last ones left out can be had
-PASS G3 in 141 lines of two loads' logs: no line shows more than twelve bytes of a message, and the serial number, which the mock sends in its answer to "who are you", is in none, as text or as bytes
+PASS G3 in 153 lines of two loads' logs: no line shows more than twelve bytes of a message, and the serial number, which the mock sends in its answer to "who are you", is in none, as text or as bytes
 
-93 PASS, 0 FAIL
+94 PASS, 0 FAIL

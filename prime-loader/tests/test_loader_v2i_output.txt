@@ -121,11 +121,11 @@ PASS ... and the page says, before anything is sent, that the book's other progr
 PASS cable: a second group without unplugging (Advanced 1: EpiStats): the browser's small window is not shown again, the calculator is not told "FD" again, the list starts afresh; the first group's programs are taken off to make room, and a program of the student's own stays
 PASS cable: Advanced 1 is EpiStats by itself, the longest program of all (sent to the author's G1 with two programs behind it, it would not run and the calculator reset; sent alone it ran: Roger, 18 Nov), the other ten advanced programs are five in Advanced 2 and five in Advanced 3, and the page explains the list of two names EpiStats shows when it is run
 PASS cable: no errors in the page
-PASS cable, the page as a student has it: after each program but the last the calculator is left alone, once the download is verified, for 2 s and 0.5 s more for each 100,000 characters on a G2 (2.21, 2.93, 2.58 s for DataLoad, NormExplorer, ScatterLab), the page says so while it waits, and the details say what each program was given (18 s in all against the mock)
+PASS cable, the page as a student has it: after each program but the last the calculator is left alone, once the download is verified, for 2 s and 0.5 s more for each 100,000 characters on a G2 (2.21, 2.93, 2.58 s for DataLoad, NormExplorer, ScatterLab), the page says so while it waits, and the details say what each program was given (19 s in all against the mock)
 PASS cable: no errors in the page
 PASS cable, the eight groups one after another onto one G2: after each, the calculator holds that group's programs, each the pack's source character for character, with the student's own program, and none of the book's others
 PASS cable: no errors in the page
-PASS cable, the largest group (Chapters 7–9, 10 programs by cable) to a G1 (11 s against the mock): each arrives the pack's source character for character, in 38,121 reports of 64 bytes, none sent twice; the mock, which stands at 240 reports' worth of an answer, never stood long
+PASS cable, the largest group (Chapters 7–9, 10 programs by cable) to a G1 (14 s against the mock): each arrives the pack's source character for character, in 38,121 reports of 64 bytes, none sent twice; the mock, which stands at 240 reports' worth of an answer, never stood long
 PASS ... counted, because the page's notes say it: the 30 programs that travel by cable are 4,028,362 characters, which would be 127,913 reports of a G1 and 7,892 of a G2; none has a CR in it; and no group is over 1,300,000 characters (both calculators gave out near 2,000,000)
 PASS ... CentralLimit is said not to have been sent this way, and the Kit's steps are opened for it
 PASS ... and the details stay readable: the page shows at most 1,500 lines of them
@@ -136,7 +136,7 @@ PASS slip: a calculator that does not answer (switched off at the wrong moment, 
 PASS slip, not the student's: a calculator that still says version 01 after the "FD" (other software than the two it was proved on): nothing is sent, nothing about the calculator is changed, and the page points to the Kit and asks for the details
 PASS a program the calculator acknowledges and does not keep (NormExplorer): the load stops there; the one before it is ticked, this one crossed, the ones after never sent; the page does not say Done; it says to delete it if it is in the list and to use the Kit for it and the rest
 PASS a program damaged on the way: "What is on the calculator is not what was sent", nothing ticked, and the details say where the two part
-PASS slip: the cable pulled out in the middle of the second program, and the browser's write to it never comes back: the page says so within seconds (8.9 s here), counts the first program and no other, and is ready to send again
+PASS slip: the cable pulled out in the middle of the second program, and the browser's write to it never comes back: the page says so within seconds (9.1 s here), counts the first program and no other, and is ready to send again
 PASS ... no errors in the page
 PASS slip: the cable pulled out and the browser says so at once: the same words
 PASS slip: a calculator still on its cable that takes nothing more, as a nearly full G2 did: "The calculator stopped responding", not "went off the cable"; the first program is marked done; what to do: unplug, off and on, send again, and make room if it happens again
