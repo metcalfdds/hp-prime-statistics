@@ -1,8 +1,8 @@
-// test_usb_core_v3.js -- prime_usb_v3.js against hp-prime-kit's own code, against the numbers in the logs of two real
+// test_usb_core_v3d.js -- prime_usb_v3d.js against hp-prime-kit's own code, against the numbers in the logs of two real
 // calculators, and against the mock calculator.  Roger Metcalf & Claude, 17 Nov 2026.
 //
 //     python3 kit_reference_v1.py REF      (writes hp-prime-kit's message for every program in programs/)
-//     node test_usb_core_v3.js REF
+//     node test_usb_core_v3d.js REF
 //
 // NOTHING HERE TOUCHES A CALCULATOR.  A pass says this and no more:
 //   A  the messages are, byte for byte, the ones hp-prime-kit builds and hp-prime-web's tests expect, and the requests
@@ -16,7 +16,7 @@
 //   F  the book's programs, every one, go onto a pretend G1 and a pretend G2 and come back the same;
 //   G  a log shows what passed, twelve bytes of a message at most, and never the serial number.
 const fs = require('fs'), path = require('path'), crypto = require('crypto'), zlib = require('zlib');
-const P = require('../prime_usb_v3.js'), MockPrime = require('./mock_prime_v3.js');
+const P = require('../prime_usb_v3d.js'), MockPrime = require('./mock_prime_v3c.js');
 
 const REF = path.resolve(process.argv[2]);
 const ref = JSON.parse(fs.readFileSync(path.join(REF, 'reference.json'), 'utf8'));
@@ -33,7 +33,7 @@ function check(name, ok, detail) {
   if (ok) { pass++; console.log('PASS', name); } else { fail++; console.log('FAIL', name, detail === undefined ? '' : detail); }
 }
 // The waits of a test: the mock's clock every 80 ms, and the Link's patience to match.
-const quick = link => { Object.assign(link.pace, { release: 5, stall: 40, ack: 500, back: 25, quiet: 40 }); return link; };
+const quick = link => { Object.assign(link.pace, { release: 5, stall: 40, ack: 500, back: 25, quiet: 40, erase: 5 }); return link; };
 const G1 = 0x1541;
 
 (async () => {
@@ -140,7 +140,7 @@ const G1 = 0x1541;
   const e63 = P.framesV2(new Uint8Array(579648), 16, 63), e1023 = P.framesV2(new Uint8Array(579648), 16, 1023);
   check('B12 the 579,648 bytes of the largest test program: 9,201 reports of a G1, the 77th numbered 4D and the last 81; 567 of a G2, the last 3F; as the two logs number them',
         e63.length === 9201 && e63[76][0] === 0x4D && e63[9200][0] === 0x81 && e1023.length === 567 && e1023[76][0] === 0x4D && e1023[566][0] === 0x3F, [e63.length, P.hex2(e63[9200][0]), e1023.length, P.hex2(e1023[566][0])].join(' '));
-  check('B13 the time allowed for an answer to begin: 3 s for a short program, and for the largest four times the 3.1 s a G1 took', P.patienceFor(0) === 3000 && P.patienceFor(300) < 3100 && P.patienceFor(289813) >= 4 * 3100 && P.patienceFor(289813) < 20000, P.patienceFor(289813));
+  check('B13 the time allowed for an answer to begin (v3a, after the G2 of 18 Nov, 15:49, whose answers came later as the load went on and outlasted 14.6 s for EpiStats): 30 s for a short program, and 59 s for EpiStats, the largest', P.patienceFor(0) === 30000 && P.patienceFor(300) === 30030 && P.patienceFor(289813) === 58982, P.patienceFor(289813));
   const d = (hexs, v2, ex) => P.describe(bytes(hexs + ' 00 00 00 00 00 00 00 00 00 00 00 00'), v2, ex);
   check('B14 a report is named for the log: an acknowledgement, a "send again" (always written), the last acknowledgement again (FF), a message\'s start',
         /^acknowledgement: report 4E, position 78,763, message 16$/.test(d('FE 01 4E 00 AB 33 01 00 10 00 00 00', true).text) && d('FE 00 02 00 F7 03 00 00 10 00 00 00', true).loud === true &&
@@ -416,7 +416,7 @@ const G1 = 0x1541;
     const mock = new MockPrime(Object.assign({ tickMs: 80 }, opts || {})), link = quick(new P.Link(mock.port()));
     const log = [], items = [];
     const ui = Object.assign({ log: t => log.push(t), trace: (t, at) => log.push('    . ' + t), item: (k, st) => items.push(k + st) }, more || {});
-    const res = await P.load(link, programs, ui, { settle: 10, first: 600 });
+    const res = await P.load(link, programs, ui, { settle: 10, first: 600, lull: 0, patience: c => 3000 + Math.ceil(0.04 * c) });   // v3's wait, so a missing program shows in seconds
     mock.stop();
     return { mock, res, log, items, text: log.join('\n') };
   };
@@ -439,13 +439,85 @@ const G1 = 0x1541;
   {
     const mock = new MockPrime({ tickMs: 80, drop: ['DataLoad'] }), link = quick(new P.Link(mock.port())), log = [];
     mock.programs.DataLoad = 'EXPORT DataLoad()\nBEGIN\n// the version of last term\nEND;';
-    const res = await P.load(link, three, { log: t => log.push(t) }, { settle: 10 });
+    const res = await P.load(link, three, { log: t => log.push(t) }, { settle: 10, lull: 0, patience: c => 3000 + Math.ceil(0.04 * c) });
     mock.stop();
     check('E5 ... and when an older DataLoad is on the calculator and the new one is not kept, the old one comes back: "differs", with both lengths and where they part',
           !res.ok && res.failed.name === 'DataLoad' && res.failed.why === 'differs' && /NOT THE SAME: \d\d characters came back against 40,857 sent; the first difference is at character \d+\./.test(log.join('\n')), JSON.stringify(res.failed));
   }
   L = await run({ cutAt: 30000 }, three);
   check('E6 a calculator that keeps only the first 30,000 characters: "differs", the first difference at character 30,001', L.res.failed.why === 'differs' && L.res.failed.name === 'DataLoad' && /first difference is at character 30,001\./.test(L.text), L.text.slice(-300));
+  L = await run({ room: 30000, product: 0x1541 }, three);
+  check('E6a a calculator with no room left, as the author\'s G1 on 18 Nov: it takes all of DataLoad and keeps the name only; the page reads it back EMPTY and says "full", AAA is done, CCC is never sent',
+        !L.res.ok && L.res.failed.name === 'DataLoad' && L.res.failed.why === 'full' && L.res.done.join() === 'AAA' && L.mock.programs.DataLoad === '' && L.mock.arrived.length === 2 &&
+        /NOT KEPT: the calculator took all of DataLoad and gave it back empty, as a calculator with no room left does\./.test(L.text), JSON.stringify(L.res.failed) + L.text.slice(-600));
+  {
+    const mock = new MockPrime({ tickMs: 600, lagMs: 20000 }), link = quick(new P.Link(mock.port())), log = [];
+    const res = await P.load(link, three.slice(0, 1), { log: t => log.push(t) }, { settle: 10, lull: 0 });
+    mock.stop();
+    check('E6b a calculator that begins its answer only after 20 s, saying where it stands every 0.6 s meanwhile (the G2 of 18 Nov, 15:49, took 8.0 s for DNAMixLR and more than 14.6 s for EpiStats): with the default wait the program is read back and found the same',
+          res.ok && res.done.join() === 'AAA', JSON.stringify(res.failed) + log.join('\n').slice(-400));
+  }
+  {
+    const mock = new MockPrime({ tickMs: 0 }), port = mock.port(), send = port.send.bind(port), log = [];
+    let n = 0;
+    port.send = async f => { if (++n > 40) throw new P.Gone('the calculator did not take a report within 60 s'); return send(f); };
+    const link = quick(new P.Link(port)), res = await P.load(link, three, { log: t => log.push(t) }, { settle: 10, lull: 0 });
+    mock.stop();
+    check('E6c a calculator still on its cable that takes nothing for a minute (the G2 of 18 Nov, 16:11, at its 14th program): "stuck", and the log says it stopped responding, not that it went off the cable',
+          !res.ok && res.gone && res.stuck && /THE CALCULATOR STOPPED RESPONDING: the calculator did not take a report within 60 s\./.test(log.join('\n')) && !/WENT OFF THE CABLE/.test(log.join('\n')), JSON.stringify(res) + log.slice(-3).join('|'));
+  }
+  for (const prod of [0x2441, 0x1541]) {
+    const mock = new MockPrime({ tickMs: 80, product: prod }), link = quick(new P.Link(mock.port())), log = [], seen = [];
+    mock.programs.ChiTable = 'EXPORT ChiTable()\nBEGIN\nEND;'; mock.programs.Norm3 = 'EXPORT Norm3()\nBEGIN\nEND;'; mock.programs.MyOwn = 'EXPORT MyOwn()\nBEGIN\nEND;'; mock.programs.AAA = 'old';
+    const res = await P.load(link, three, { log: t => log.push(t), remove: ['ChiTable', 'Norm3', 'NotThere'], removing: (k, n) => seen.push(k + '/' + n) }, { settle: 10, lull: 0 });
+    mock.stop();
+    check('E6d making room on a ' + (prod === 0x2441 ? 'G2' : 'G1') + ' (ui.remove): the names given are taken off before anything is sent, one that is not there costs nothing, a program of the student\'s own stays, and the three then go on and verify',
+          res.ok && res.removed.join() === 'ChiTable,Norm3,NotThere' && seen.join() === '0/3,1/3,2/3' && !('ChiTable' in mock.programs) && !('Norm3' in mock.programs) && mock.programs.MyOwn === 'EXPORT MyOwn()\nBEGIN\nEND;' &&
+          mock.programs.AAA === tiny && Object.keys(mock.programs).sort().join() === 'AAA,CCC,DataLoad,MyOwn' &&
+          /Making room: taking off the book's programs that are not in this choice, if they are there \(3\): ChiTable, Norm3, NotThere\.\n(.*\n)*?  Done: 3 deletes sent\.\n(.*\n)*?AAA: /.test(log.join('\n') + '\n'), JSON.stringify(res.failed) + Object.keys(mock.programs) + log.slice(0, 8).join('|'));
+  }
+  {
+    let n = 0;
+    const L2 = await run({}, three, { remove: ['ChiTable', 'Norm3'], stop: () => n++ >= 1 });
+    check('E6e Stop while making room: the load ends there, nothing is sent, and the log says where', !L2.res.ok && L2.res.stopped && L2.res.done.length === 0 && L2.mock.arrived.length === 0 && /STOPPED by the Stop button, while making room\./.test(L2.text), JSON.stringify(L2.res));
+  }
+  {
+    // v3b: the rest a program is given once its download is verified, before the next one is sent
+    check('E6f the rest is 2 s and 0.5 s more for each 100,000 characters on a G2, 2 s more on a G1: 2.0 s for nothing, 2.93 s for NormExplorer on a G2 (185,782 characters), 4.31 s for ErrorRate on a G1 (115,298), 7.8 s for EpiStats on a G1 (289,813)',
+          P.lullFor(0, 1024) === 2000 && P.lullFor(185782, 1024) === 2929 && P.lullFor(115298, 64) === 4306 && P.lullFor(289813, 64) === 7797 && P.lullFor(289813, 1024) === 3450 && P.lullFor(100000) === 2500,
+          [P.lullFor(0, 1024), P.lullFor(185782, 1024), P.lullFor(115298, 64), P.lullFor(289813, 64), P.lullFor(289813, 1024), P.lullFor(100000)].join(' '));
+    const mock = new MockPrime({ tickMs: 80 }), link = quick(new P.Link(mock.port())), log = [], rests = [];
+    const t0 = Date.now(), res = await P.load(link, three, { log: t => log.push(t), resting: (k, ms) => rests.push([k, ms]) }, { settle: 10 });      // the rest as the page has it
+    mock.stop();
+    const quiet = mock.arrived.map(a => a.quiet), text = log.join('\n'), dlRest = P.lullFor(three[1].source.replace(/\r\n?/g, '\n').length, 1024);
+    check('E6g a rest between programs, as the page has it (on 18 Nov a G2 would not run the two programs that had 0.54 s and 0.77 s before the next one began, and a G1 reset on the one whose 4.84 s it had spent answering the page): on a pretend G2 each program but the last is left alone for its rest after it is verified, the page is told when each rest begins, and the log says what each program was given',
+          res.ok && quiet.length === 3 && quiet[0] >= 2000 && quiet[0] < 3500 && quiet[1] >= dlRest && quiet[1] < dlRest + 1500 && quiet[2] === undefined && Date.now() - t0 >= 2000 + dlRest &&
+          rests.length === 2 && rests[0][0] === 0 && rests[1][0] === 1 && rests[0][1] > 1900 && rests[0][1] <= 2001 && rests[1][1] > dlRest - 100 && rests[1][1] <= dlRest &&
+          /\(AAA was left alone for 2\.\d\d s after it was verified, \d\.\d\d s after it arrived, before the next program began\)\nDataLoad: /.test(text) &&
+          /\(DataLoad was left alone for 2\.\d\d s after it was verified, \d\.\d\d s after it arrived, before the next program began\)\nCCC: /.test(text) && !/CCC was left alone/.test(text),
+          JSON.stringify([quiet, rests, dlRest]) + log.filter(l => /left alone/.test(l)).join('|'));
+    const m2 = new MockPrime({ tickMs: 80 }), l2 = quick(new P.Link(m2.port()));
+    await P.load(l2, three, {}, { settle: 10, lull: 0 });
+    m2.stop();
+    check('E6k v3d: the report "01" is not sent in the newer framing (v3c sent it to the author\'s G2 at 18:16 and the G2 took nothing more): three programs, none of it', m2.releases === 0 && mock.releases === 0 && log.filter(l => /Sent the report "01"/.test(l)).length === 0, JSON.stringify([m2.releases, mock.releases]));
+    {
+      const m5 = new MockPrime({ tickMs: 80 }), l5 = quick(new P.Link(m5.port()));
+      const r5 = await Promise.race([P.load(l5, three, {}, { settle: 10, lull: 0, release: true }), new Promise(r => setTimeout(() => r('stood'), 3000))]);
+      m5.stop();
+      check('E6l ... and the pretend G2 does what the real one did when it is sent: it takes the first program, and after the "01" nothing; the next program stands', r5 === 'stood' && m5.releases === 1 && m5.arrived.length === 1 && m5.jammed === true, JSON.stringify([r5, m5.releases, m5.arrived.length]));
+    }
+    check('E6h ... and with no rest asked (as these tests ask, to be quick) the next program begins at once: the mock measures it', m2.arrived[0].quiet < 500 && m2.arrived[1].quiet < 500, JSON.stringify(m2.arrived.map(a => a.quiet)));
+    const m3 = new MockPrime({ tickMs: 80, product: 0x1541 }), l3 = quick(new P.Link(m3.port())), log3 = [];
+    const r3 = await P.load(l3, [three[0], three[2]], { log: t => log3.push(t) }, { settle: 10, lull: (chars, size) => size <= 64 ? 700 : 5 });
+    m3.stop();
+    check('E6i ... a pretend G1 is known for one by its reports of 64 bytes, and gets the G1\'s rest', r3.ok && m3.arrived[0].quiet >= 700 && m3.arrived[0].quiet < 2000 && /AAA was left alone for 0\.7\d s/.test(log3.join('\n')), JSON.stringify(m3.arrived.map(a => a.quiet)));
+    const m4 = new MockPrime({ tickMs: 80 }), l4 = quick(new P.Link(m4.port())), log4 = [];
+    let stopNow = false;
+    const t4 = Date.now(), r4 = await P.load(l4, three, { log: t => log4.push(t), stop: () => stopNow, resting: () => { setTimeout(() => { stopNow = true; }, 300); } }, { settle: 10, lull: 60000 });
+    m4.stop();
+    check('E6j Stop during a rest: the load ends there within a moment, the program that was resting counts as loaded, and the next is not sent',
+          !r4.ok && r4.stopped && r4.done.join() === 'AAA' && m4.arrived.length === 1 && Date.now() - t4 < 5000 && /STOPPED by the Stop button, before DataLoad\./.test(log4.join('\n')), JSON.stringify(r4) + (Date.now() - t4));
+  }
   L = await run({ fdOld: null }, three);
   check('E7 a calculator that still says version 01 after the "FD": "version"; no program is sent and the newer framing is not asked for',
         L.res.failed.why === 'version' && L.res.failed.name === null && L.res.done.length === 0 && L.mock.arrived.length === 0 && !L.mock.v2open && L.items.length === 0 && /IT DOES NOT SPEAK VERSION 03/.test(L.text), JSON.stringify(L.res));
@@ -473,7 +545,7 @@ const G1 = 0x1541;
     const mock = new MockPrime({ product, tickMs: 600 }), link = new P.Link(mock.port());
     let have = 0;
     link.progress = () => { have++; };
-    const t = Date.now(), res = await P.load(link, fleet, {}, { settle: 0 });
+    const t = Date.now(), res = await P.load(link, fleet, {}, { settle: 0, lull: 0 });
     mock.stop();
     const whole = fleet.every(p => mock.programs[p.name] === p.source), sent = mock.arrived.reduce((s, a) => s + a.reports, 0), want = product === G1 ? 131683 : 8125;
     check('F' + (product === G1 ? 1 : 2) + ' all ' + fleet.length + ' programs onto a pretend ' + (product === G1 ? 'G1' : 'G2') + ': each read back the same; ' + num(sent) + ' reports of programs, none sent twice, no word of the clock needed (' +

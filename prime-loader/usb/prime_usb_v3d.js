@@ -1,4 +1,48 @@
-// prime_usb_v3.js -- a real HP Prime on its USB cable, from a web page (WebHID).  Roger Metcalf & Claude, 17 Nov 2026.
+// prime_usb_v3d.js -- a real HP Prime on its USB cable, from a web page (WebHID).  Roger Metcalf & Claude, 17 Nov 2026.
+//
+// v3d (18 Nov 2026, 18:30): the report "01" is NOT sent in the newer framing.  v3c sent it after DataLoad to the
+// author's G2 at 18:16 (usb/logs/, pasted): it went as "message 0, 0 bytes", and the G2 took nothing after it; the
+// first report of the next program stood.  It is kept behind opts.release === true, which nothing asks for.
+//
+// v3c (18 Nov 2026, 18:20): the report "01" after each verified program, in the newer framing too.  Loader v2h, with
+// v3b's rest, put Chapters 1-3 on the author's G2 at 18:02: DataLoad, ScatterLab and TestChooser ran, and NormExplorer,
+// left alone for 3.29 s, opened the editor until it was Checked (it had run at 16:46 with 0.98 s).  So the rest is not
+// the cure.  The one route measured to leave a program compiled is hp-prime-kit's (usb.send-program), and it ends each
+// program with the report "01" after 0.25 s; a key, too, acts only when a "01" arrives (usb.keys).  This page sent
+// that report in the old framing only.  NOT KNOWN: what a calculator makes of it in the newer framing, where "01"
+// also begins a message.  The rest stays.
+//
+// v3b (18 Nov 2026, 17:45): a rest for the calculator after each program, before the next one is sent (lullFor).
+// What the author's calculators did with what Loader v2g sent them, every download verified (the logs of 16:54 and
+// 16:59, and Roger's word on what then ran from the Program Catalog):
+//     G2  DataLoad      40,856 characters   the next program began 0.54 s after it arrived   Run opened the editor
+//     G2  NormExplorer 185,782                                    0.99 s                      ran
+//     G2  ScatterLab   115,148                                    0.77 s                      Run opened the editor
+//     G2  TestChooser   80,946               the last one                                    ran
+//     G1  EpiStats     289,813                                    4.84 s                      the calculator RESET on Run
+//     G1  ErrorRate    115,298                                    1.94 s                      ran
+//     G1  TrendTest    105,568               the last one                                    ran
+// and at 17:28 EpiStats, sent to the G1 ALONE, ran without Check.  A program that needed its Check ran after it.
+// So: the last program of a send has always run, and a program with another close behind it sometimes has not.  WHY
+// IS NOT KNOWN.  hp-prime-kit measured that a G2 compiles a program that arrives this way, on programs of up to
+// 16,558 bytes sent one at a time (usb.send-program); the guess here is that a program sent close behind stops that
+// work, and that the G1 had most of EpiStats's 4.84 s taken by the page's own request to have it back (3.95 s of
+// compressing).  A fixed 2 s from arrival, v3b's first form (17:05, never on a calculator), would not have helped
+// EpiStats.  So the rest is counted from the moment the download is verified, when the calculator has nothing of
+// ours left to do, and it grows with the program and is longer on a G1: 2 s, and 0.5 s more for each 100,000
+// characters on a G2 (reports of 1,024 bytes) or 2 s more on a G1 (reports of 64).  THESE NUMBERS ARE CHOSEN, NOT
+// MEASURED: they are several times the longest time that was seen to fail on a G2, and nothing bounds them on a G1
+// but ErrorRate's 1.94 s.  The log says how long each program was given.  The Loader also sends EpiStats in a group
+// of its own (build_loader_v2h.py), the one arrangement seen to work for it on a G1.
+//
+// v3a (18 Nov 2026, 15:50): one outcome more, 'full'.  On 18 Nov at 15:41 the author's G1, sent all 30 programs by
+// Loader v2d, took 15 (2,104,376 characters), then acknowledged every report of NormExplorer and, asked for it back,
+// sent it EMPTY: 36 bytes, its head and its name, not compressed.  Its Program Catalog showed NormExplorer at 0 KB
+// and 4.35 MB of programs (Roger: "I think we're out of memory").  [log] usb/logs/PrimeLoader_v2d_G1_Chrome_2026-11-18_1541.txt
+// A send that stands for a minute is "stuck", not "gone" (res.stuck): the G2 of 16:11 the same day, still on its cable,
+// took one report of the 14th program and then nothing for 60 s.  And one wait longer: the time given the calculator to begin giving a program back (patienceFor, below), after the
+// G2's log of 15:49 the same day, in which that time grew as the load went on and EpiStats outlasted it.  Nothing
+// else changed: the route and the pacing are v3's.
 //
 // WHAT HAS RUN ON A CALCULATOR (logs/, 17 Nov 2026: the author's G2 and his G1, both on firmware build 15751, from
 // Chrome and Edge 157 on Windows; the first three logs with prime_usb_v1.js, the two of 21:43 and 21:47 with v2).
@@ -38,7 +82,7 @@
 // before a request, which is how the G1's answer came to stand unacknowledged.
 // WHAT OF THIS VERSION HAS NOT RUN ON A CALCULATOR: its pacing (77 reports, the acknowledgement, 77 more, with
 // nothing between: the calculators were sent 77 at a time only with 0.7 s between), what it does at a "send again",
-// and load() with one of the book's programs.  The tests run it against tests/mock_prime_v3.js, which is the two
+// and load() with one of the book's programs.  The tests run it against tests/mock_prime_v3c.js, which is the two
 // calculators as far as five logs go.
 //
 // WHERE EACH FACT NOT FROM THE LOGS COMES FROM (all four MIT; no code of theirs is here, only what they measured or read)
@@ -368,7 +412,7 @@ const PrimeUSB = (function () {
     // for us.  ack: how long the calculator may leave a message where it stands before the message is given up.
     // back: after one report is sent again, how long to listen for what the calculator says to it.  quiet: a word
     // that comes this long after our last report was sent knows of every report we sent.
-    this.pace = { release: 250, stall: 300, ack: 5000, back: 40, quiet: 100 };
+    this.pace = { release: 250, stall: 300, ack: 5000, back: 40, quiet: 100, erase: 300 };
     this.last = null;
   }
 
@@ -654,9 +698,18 @@ const PrimeUSB = (function () {
     catch (e) { if (!(e instanceof Silent)) throw e; }
     return { reports: out.reports, acks: out.acks || null, reply: reply };
   };
-  // How long to give a calculator to BEGIN sending a program of so many characters back.  [log]: it compresses the
-  // program first, and a G1 took 3.1 s over 289,813 characters, a G2 0.9 s.  This allows 3 s and four times that rate.
-  function patienceFor(chars) { return 3000 + Math.ceil(0.04 * (chars || 0)); }
+  // How long to give a calculator to BEGIN sending a program of so many characters back.  [log] 17 Nov: it compresses
+  // the program first, and a G1 took 3.1 s over 289,813 characters, a G2 0.9 s; v3 allowed 3 s and 0.04 ms a
+  // character (14.6 s for EpiStats).  [log] 18 Nov, 15:49, the G2 sent all 30 by Loader v2d: the time before each
+  // answer GREW as the load went on, though the programs did not (ChiTable 4.4 s where it had taken 0.6 s by itself
+  // at 15:31; DataLoad, 40,856 characters, 2.2 s; DNAMixLR 8.0 s), and EpiStats did not begin within its 14.6 s.
+  // Why it grew is not known.  So v3a allows 30 s and 0.1 ms a character (59 s for EpiStats).  The calculator's
+  // "where it stands" words keep coming every 0.6 s whether it is busy or not, so they say nothing here.  The cost:
+  // a program the calculator did not keep is called missing that much later.
+  function patienceFor(chars) { return 30000 + Math.ceil(0.1 * (chars || 0)); }
+  // The rest a program is given once its download is verified, before the next program is sent: see v3b, at the
+  // top.  Chosen, not measured.  reportSize: 64 on a G1, 1,024 on a G2.
+  function lullFor(chars, reportSize) { return 2000 + Math.ceil((reportSize && reportSize <= 64 ? 2000 : 500) * (chars || 0) / 100000); }
   // Open a session the way both calculators took it on 17 Nov [log]: who are you; "FD" if it speaks 01, and who are
   // you again; then the newer framing, and who are you in it, so that the framing is known to work before any program
   // goes.  The newer framing is asked for only of a calculator that now speaks 03 (what one that still speaks 01
@@ -731,7 +784,7 @@ const PrimeUSB = (function () {
   // [web], [log]: EB has no answer; ask for the file afterwards, and silence means it is gone.
   Link.prototype.deleteProgram = async function (name, ver) {
     await this.send(deleteMessage(name, ver || 1));
-    await sleep(300);
+    await sleep(this.pace.erase);          // [log] 17 Nov: deletes 0.3 s apart were taken by both calculators; nothing shorter was tried
   };
 
   // ---------------------------------------------------------------- a load: programs onto a calculator, each read back
@@ -750,17 +803,22 @@ const PrimeUSB = (function () {
   // also drops one newline at the end of a text file, and that is for the caller to do or not.  What comes back
   // counts as the same if it differs in nothing but its line ends and the empty lines at its end.
   // ui: {log(text), trace(text, at), item(k, state), stop() -> bool}; state is 'send', 'check', 'ok' or 'bad'.
-  // opts: {first, settle, then, budget, keep}.
+  // opts: {first, settle, then, budget, keep, patience(chars) -> ms (patienceFor unless a test gives its own),
+  //        lull: ms, or (chars, reportSize) -> ms, a program is left alone once its download is verified, before the
+  //        next one begins (lullFor unless a test gives its own)}.
+  // ui.resting(k, ms), if given, is called when that rest begins for program k.
   // -> {ok, done: [name], failed: null | {name, why, text}, stopped, gone, info, told, reports, ms}
   //    why: 'silent'  no answer to "who are you" (nothing was sent)
   //         'version' it does not speak version 03 after being told (nothing was sent)
   //         'unsent'  the program did not go through (a program in pieces is not kept by the calculator)
   //         'unread'  it went, and the request for it back failed, so the page cannot tell
   //         'missing' it went, was acknowledged, and the calculator does not have it
+  //         'full'    it went, was acknowledged, and came back EMPTY: the calculator had no room left and kept the
+  //                   name only (a G1, 18 Nov 2026, after 15 of the book's 30 programs: its log in usb/logs/)
   //         'differs' what came back is not what was sent
   async function load(link, programs, ui, opts) {
     ui = ui || {}; opts = opts || {};
-    const t0 = Date.now(), res = { ok: false, done: [], failed: null, stopped: false, gone: false, info: null, told: false, reports: 0, ms: 0 };
+    const t0 = Date.now(), res = { ok: false, done: [], failed: null, stopped: false, gone: false, stuck: false, removed: [], info: null, told: false, reports: 0, ms: 0 };
     const tracer = ui.trace ? new Tracer(ui.trace, { budget: opts.budget, keep: opts.keep }) : null;
     const log = function (text) { if (tracer) tracer.mark(); if (ui.log) ui.log(text); };
     const item = function (k, state) { if (ui.item) ui.item(k, state); };
@@ -782,15 +840,46 @@ const PrimeUSB = (function () {
       catch (e) { if (isGone(e)) throw e; return fail(null, 'silent', said(e), 'NO ANSWER: ' + said(e) + '.'); }
       res.info = b.info; res.told = b.told;
       if (b.ver !== 3) return fail(null, 'version', 'version ' + hex2(b.ver), 'IT DOES NOT SPEAK VERSION 03, which the two calculators this route was proved on did once they were told. Nothing was sent.');
+      // Room first (ui.remove: names to take off, the book's programs not in this choice).  A delete has no answer
+      // [web].  [log] 17 Nov: the G2 deleted a program so in the newer framing, the G1 in the OLD framing only; a
+      // delete in the newer framing has NOT yet been seen to work on a G1 (the next log shows it: a G1 that keeps
+      // what should have gone fills up, and the page then says so).  A name that is not there costs nothing.
+      const off = ui.remove || [];
+      if (off.length) {
+        log('Making room: taking off the book\'s programs that are not in this choice, if they are there (' + num(off.length) + '): ' + off.join(', ') + '.');
+        for (let k = 0; k < off.length; k++) {
+          if (ui.stop && ui.stop()) { res.stopped = true; log('STOPPED by the Stop button, while making room.'); return res; }
+          if (ui.removing) ui.removing(k, off.length);
+          await link.deleteProgram(off[k], 3);
+        }
+        res.removed = off.slice();
+        log('  Done: ' + num(off.length) + ' delete' + (off.length === 1 ? '' : 's') + ' sent.');
+      }
+      const lull = opts.lull === undefined ? lullFor : opts.lull;      // see v3b, at the top
+      let arrivedAt = 0, verifiedAt = 0, lastChars = 0;
       for (let k = 0; k < programs.length; k++) {
         if (ui.stop && ui.stop()) { res.stopped = true; log('STOPPED by the Stop button, before ' + programs[k].name + '.'); break; }
         const p = programs[k], src = String(p.source).replace(/\r\n?/g, '\n');
         item(k, 'send');
+        if (arrivedAt) {
+          const want = typeof lull === 'function' ? lull(lastChars, link.port.reportSize) : lull, had = Date.now() - verifiedAt;
+          if (had < want) {
+            if (ui.resting) ui.resting(k - 1, want - had);
+            // in short steps, so that Stop and a calculator that goes off the cable are noticed
+            for (let left = want - had; left > 0; left -= 100) {
+              if (ui.stop && ui.stop()) break;
+              await sleep(Math.min(100, left));
+            }
+          }
+          if (ui.stop && ui.stop()) { res.stopped = true; log('STOPPED by the Stop button, before ' + p.name + '.'); break; }
+          log('  (' + programs[k - 1].name + ' was left alone for ' + secs2(Date.now() - verifiedAt) + ' after it was verified, ' + secs2(Date.now() - arrivedAt) + ' after it arrived, before the next program began)');
+        }
         log(p.name + ': ' + num(src.length) + ' characters.');
         let out, back;
         try { out = await link.sendProgram(p.name, src, { layout: 'v1' }); }
         catch (e) { if (isGone(e)) throw e; return fail(p.name, 'unsent', said(e), '  NOT SENT: ' + said(e) + '.', k); }
         res.reports += out.reports;
+        arrivedAt = Date.now(); lastChars = src.length;
         log('  Sent ' + num(out.bytes) + ' bytes in ' + reportsText(out.reports) + ', ' + (out.ms / 1000).toFixed(2) + ' s. Acknowledged ' + num(out.acks.length) + ' time' + (out.acks.length === 1 ? '' : 's') +
             (out.backs ? '; ' + num(out.backs) + ' time' + (out.backs === 1 ? '' : 's') + ' a report was sent again' : '') +
             (out.slow.length ? '; the cable stood at ' + out.slow.map(function (x) { return 'report ' + num(x.report) + ' (' + secs(x.ms) + ')'; }).join(', ') : '') +
@@ -798,15 +887,26 @@ const PrimeUSB = (function () {
         item(k, 'check');
         await sleep(opts.settle === undefined ? 400 : opts.settle);
         const tb = Date.now();
-        try { back = await link.readProgram(p.name, { ver: 3, nul: true, first: patienceFor(src.length), then: opts.then || 2500 }); }
+        try { back = await link.readProgram(p.name, { ver: 3, nul: true, first: (opts.patience || patienceFor)(src.length), then: opts.then || 2500 }); }
         catch (e) { if (isGone(e)) throw e; return fail(p.name, 'unread', said(e), '  NOT READ BACK: ' + said(e) + '.', k); }
         if (!back) return fail(p.name, 'missing', 'no answer in ' + secs(Date.now() - tb), '  NOT ON THE CALCULATOR: it acknowledged the request for ' + p.name + ' and sent nothing in ' + secs(Date.now() - tb) + '.', k);
         res.reports += back.reports;
+        if (back.text.length === 0 && src.length > 0)
+          return fail(p.name, 'full', 'it came back empty', '  NOT KEPT: the calculator took all of ' + p.name + ' and gave it back empty, as a calculator with no room left does.', k);
         if (back.text !== src && sameBut(back.text) !== sameBut(src)) {
           const what = num(back.text.length) + ' characters came back against ' + num(src.length) + ' sent';
           return fail(p.name, 'differs', what, '  NOT THE SAME: ' + what + '; the first difference is at character ' + num(firstDifference(back.text, src) + 1) + '.', k);
         }
         res.done.push(p.name);
+        // v3c: the report "01".  hp-prime-kit sent it 0.25 s after every program, and its programs compiled
+        // (usb.send-program, a G2, the old framing); this page had sent it in the old framing only.  A guess to be
+        // tried on a calculator: nothing here says what a calculator does with it in the newer framing.
+        if (link.v2 && opts.release === true) {            // v3d: never by default; it jammed a G2
+          await sleep(link.pace.release);
+          await link.release();
+          log('  Sent the report "01" that hp-prime-kit sends after a program.');
+        }
+        verifiedAt = Date.now();
         item(k, 'ok');
         log('  Read back the same: ' + reportsText(back.reports) + (back.compressed ? ', compressed' : ', not compressed') + ', ' + secs(Date.now() - tb) +
             (back.stalls && back.stalls.length ? '; the calculator stood until it was acknowledged after ' + back.stalls.map(num).join(', ') + ' reports' : '') +
@@ -818,7 +918,8 @@ const PrimeUSB = (function () {
     } catch (e) {
       if (!isGone(e)) throw e;
       res.gone = true;
-      log('THE CALCULATOR WENT OFF THE CABLE: ' + said(e) + '.');
+      res.stuck = /did not take a report within/.test(said(e));      // [log] G2, 18 Nov, 16:11: it was still on the cable
+      log((res.stuck ? 'THE CALCULATOR STOPPED RESPONDING: ' : 'THE CALCULATOR WENT OFF THE CABLE: ') + said(e) + '.');
       return res;
     } finally {
       res.ms = Date.now() - t0;
@@ -925,7 +1026,7 @@ const PrimeUSB = (function () {
 
   return { VENDOR: VENDOR, MODELS: MODELS, FILTERS: FILTERS, MAX_MESSAGE: MAX_MESSAGE, OLD_MOST: OLD_MOST, WINDOW: WINDOW, V2_OPEN: V2_OPEN, RELEASE: RELEASE,
            cat: cat, u32be: u32be, u32le: u32le, rdU32be: rdU32be, rdU32le: rdU32le, utf16le: utf16le, fromUtf16le: fromUtf16le,
-           hex: hex, hex2: hex2, num: num, secs: secs, crc16: crc16, normalizeSource: normalizeSource, validName: validName, deflate: deflate, inflate: inflate,
+           hex: hex, hex2: hex2, num: num, secs: secs, crc16: crc16, normalizeSource: normalizeSource, validName: validName, deflate: deflate, inflate: inflate, lullFor: lullFor,
            innerV3: innerV3, programV3: programV3, programV1: programV1, requestMessage: requestMessage, deleteMessage: deleteMessage,
            maxVersionMessage: maxVersionMessage, framesLegacy: framesLegacy, framesV2: framesV2, roomAfter: roomAfter, reportsAt: reportsAt, ackV2: ackV2,
            parseInfo: parseInfo, parseFile: parseFile, describe: describe, runs: runs, patienceFor: patienceFor, firstDifference: firstDifference,

@@ -30,7 +30,7 @@ PASS B9 "the newest version I speak": PrimeDev's seven bytes, and the two of its
 PASS B10 the window is 77 reports, the calculator's own stand is at 240 reports' worth, and the old framing's most is 255
 PASS B11 the positions in the logs are the room of the reports: G2 78,763 (77), 157,534 (154), 132,982 (130), 580,033 (567); G1 4,843 (77), 14,545 (231), 15,112 (240), 15,175 (241), 132,481 (2,103), 579,655 (9,201)
 PASS B12 the 579,648 bytes of the largest test program: 9,201 reports of a G1, the 77th numbered 4D and the last 81; 567 of a G2, the last 3F; as the two logs number them
-PASS B13 the time allowed for an answer to begin: 3 s for a short program, and for the largest four times the 3.1 s a G1 took
+PASS B13 the time allowed for an answer to begin (v3a, after the G2 of 18 Nov, 15:49, whose answers came later as the load went on and outlasted 14.6 s for EpiStats): 30 s for a short program, and 59 s for EpiStats, the largest
 PASS B14 a report is named for the log: an acknowledgement, a "send again" (always written), the last acknowledgement again (FF), a message's start
 PASS B15 in the old framing a report that carries a message on is counted as that whatever its number: FE is not an acknowledgement, 00 after FE not a new message (both were misread in a log of 17 Nov)
 PASS C1 a session begins as it did on both calculators: version 01; "FD 01 00 00 00 01 03" in the old framing, answered with the same bytes; version 03; then "FF EC", which has no answer; then "who are you" in the newer framing, answered in it and acknowledged with the room of its one report: six reports from the host in all
@@ -69,6 +69,19 @@ PASS E3 Stop is looked at between two programs and never inside one: after the f
 PASS E4 a program the calculator acknowledges and does not keep, as both did with a compressed one: "missing"; the first program is done, the third is never sent, and the load is not called good
 PASS E5 ... and when an older DataLoad is on the calculator and the new one is not kept, the old one comes back: "differs", with both lengths and where they part
 PASS E6 a calculator that keeps only the first 30,000 characters: "differs", the first difference at character 30,001
+PASS E6a a calculator with no room left, as the author's G1 on 18 Nov: it takes all of DataLoad and keeps the name only; the page reads it back EMPTY and says "full", AAA is done, CCC is never sent
+PASS E6b a calculator that begins its answer only after 20 s, saying where it stands every 0.6 s meanwhile (the G2 of 18 Nov, 15:49, took 8.0 s for DNAMixLR and more than 14.6 s for EpiStats): with the default wait the program is read back and found the same
+PASS E6c a calculator still on its cable that takes nothing for a minute (the G2 of 18 Nov, 16:11, at its 14th program): "stuck", and the log says it stopped responding, not that it went off the cable
+PASS E6d making room on a G2 (ui.remove): the names given are taken off before anything is sent, one that is not there costs nothing, a program of the student's own stays, and the three then go on and verify
+PASS E6d making room on a G1 (ui.remove): the names given are taken off before anything is sent, one that is not there costs nothing, a program of the student's own stays, and the three then go on and verify
+PASS E6e Stop while making room: the load ends there, nothing is sent, and the log says where
+PASS E6f the rest is 2 s and 0.5 s more for each 100,000 characters on a G2, 2 s more on a G1: 2.0 s for nothing, 2.93 s for NormExplorer on a G2 (185,782 characters), 4.31 s for ErrorRate on a G1 (115,298), 7.8 s for EpiStats on a G1 (289,813)
+PASS E6g a rest between programs, as the page has it (on 18 Nov a G2 would not run the two programs that had 0.54 s and 0.77 s before the next one began, and a G1 reset on the one whose 4.84 s it had spent answering the page): on a pretend G2 each program but the last is left alone for its rest after it is verified, the page is told when each rest begins, and the log says what each program was given
+PASS E6k v3d: the report "01" is not sent in the newer framing (v3c sent it to the author's G2 at 18:16 and the G2 took nothing more): three programs, none of it
+PASS E6l ... and the pretend G2 does what the real one did when it is sent: it takes the first program, and after the "01" nothing; the next program stands
+PASS E6h ... and with no rest asked (as these tests ask, to be quick) the next program begins at once: the mock measures it
+PASS E6i ... a pretend G1 is known for one by its reports of 64 bytes, and gets the G1's rest
+PASS E6j Stop during a rest: the load ends there within a moment, the program that was resting counts as loaded, and the next is not sent
 PASS E7 a calculator that still says version 01 after the "FD": "version"; no program is sent and the newer framing is not asked for
 PASS E8 a calculator that answers nothing: "silent", after the 0.6 s allowed; nothing was sent but the question
 PASS E9 the cable pulled in the middle of the second program: the load ends at once, "gone", with the first program done and no failure invented for the second
@@ -77,10 +90,10 @@ PASS E11 a calculator that hands a program back with CRLF and a last line end: s
 PASS E12 a name the calculator would not take is refused before anything of it is sent: "unsent", with the name
 PASS E13 the log of a load: a "send again" is always in it, however long the message; the ordinary lines beyond the first forty are counted and left out
 PASS E14 ... and when a load fails, the last reports that the log had left out are written after the failure, since those are the ones wanted
-PASS F1 all 31 programs onto a pretend G1: each read back the same; 131,683 reports of programs, none sent twice, no word of the clock needed (1.7 s against the mock, which takes a report at once)
-PASS F2 all 31 programs onto a pretend G2: each read back the same; 8,125 reports of programs, none sent twice, no word of the clock needed (1.3 s against the mock, which takes a report at once)
+PASS F1 all 31 programs onto a pretend G1: each read back the same; 131,683 reports of programs, none sent twice, no word of the clock needed (2.0 s against the mock, which takes a report at once)
+PASS F2 all 31 programs onto a pretend G2: each read back the same; 8,125 reports of programs, none sent twice, no word of the clock needed (1.6 s against the mock, which takes a report at once)
 PASS G1 the log of reports: a message's start with its number, size and first twelve bytes; the reports after it only counted, with their numbers; three of a run of one kind and then their count
 PASS G2 after its budget of ordinary lines the rest are counted, and said at the next line of the caller's; a "send again" is written all the same; and the last ones left out can be had
-PASS G3 in 137 lines of two loads' logs: no line shows more than twelve bytes of a message, and the serial number, which the mock sends in its answer to "who are you", is in none, as text or as bytes
+PASS G3 in 141 lines of two loads' logs: no line shows more than twelve bytes of a message, and the serial number, which the mock sends in its answer to "who are you", is in none, as text or as bytes
 
-82 PASS, 0 FAIL
+95 PASS, 0 FAIL

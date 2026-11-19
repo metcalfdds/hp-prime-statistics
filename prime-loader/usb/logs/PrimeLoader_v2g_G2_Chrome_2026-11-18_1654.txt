@@ -1,0 +1,159 @@
+HP Prime Loader, v2g, straight down the cable. Wed Nov 18 2026 16:46:00 GMT-0600 (Central Standard Time)
+Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36
+Device: HP Prime G2 (USB 03F0:2441), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator.
+Chosen: Chapters 1–3; 4 programs, 422,732 characters: DataLoad, NormExplorer, ScatterLab, TestChooser.
+
+    0.00  Asking the calculator who it is ("00 FA") ...
+    0.00        . > message begins FA
+    0.00        . < message begins FA 03 00 00 00 6C
+    0.00  It answered: firmware build 15751, "V2.060.650", version 03. Its reports carry 1,023 bytes each.
+    0.00        . > a control report: FF EC 00 00 00 00 00 00
+    0.17        . > message 1, 1 bytes, begins FA
+    0.17        . < acknowledgement: report 01, position 1,015, message 1
+    0.17        . < message 2, 114 bytes, begins FA 03 00 00 00 6C
+    0.17        . > acknowledgement: report 01, position 1,015, message 2
+    0.17  Asked for the newer framing ("FF EC"), and who it is in that framing: it answers, with version 03.
+    0.17  Making room: taking off the book's programs that are not in this choice, if they are there (26): AgreeLab, AnovaLab, BayesTree, BiNorm3D, BurrLab, ChiTable, CICatcher, DNAMixLR, EpiStats, ErrorRate, ExhibitLab, FitCheck, GaltonBoard, Norm3, PowerViz, RankLab, ResampLab, RiskLab, SampDist, StatDist, StudRange, SurvLab, TDist3D, TrendTest, TTestLab, TTestLabG.
+    0.17        . > message 2, 26 bytes, begins EB 03 00 00 00 14 06 10 DC D0 41 00
+    0.18        . < acknowledgement: report 01, position 1,015, message 2
+    0.48        . < "SEND AGAIN": report 02, position 1,015, message 28
+    0.48        . > message 3, 26 bytes, begins EB 03 00 00 00 14 06 10 AD 91 41 00
+    0.49        . < acknowledgement: report 01, position 1,015, message 3
+    0.80        . > message 4, 28 bytes, begins EB 03 00 00 00 16 06 12 01 2D 42 00
+    0.80        . < acknowledgement: report 01, position 1,015, message 4
+    1.10        . < "SEND AGAIN": report 02, position 1,015, message 28
+    1.10        . > message 5, 26 bytes, begins EB 03 00 00 00 14 06 10 22 29 42 00
+    1.10        . < acknowledgement: report 01, position 1,015, message 5
+    1.42        . < "SEND AGAIN": report 02, position 1,015, message 28
+    1.42        . > message 6, 24 bytes, begins EB 03 00 00 00 12 06 0E 9F 53 42 00
+    1.42        . < acknowledgement: report 01, position 1,015, message 6
+    1.74        . > message 7, 26 bytes, begins EB 03 00 00 00 14 06 10 2B 98 43 00
+    1.74        . < acknowledgement: report 01, position 1,015, message 7
+    2.04        . < "SEND AGAIN": report 02, position 1,015, message 28
+    2.04        . > message 8, 28 bytes, begins EB 03 00 00 00 16 06 12 1C 41 43 00
+    2.05        . < acknowledgement: report 01, position 1,015, message 8
+    2.35        . > message 9, 26 bytes, begins EB 03 00 00 00 14 06 10 41 26 44 00
+    2.36        . < acknowledgement: report 01, position 1,015, message 9
+    2.66        . < "SEND AGAIN": report 02, position 1,015, message 28
+    2.66        . > message 10, 26 bytes, begins EB 03 00 00 00 14 06 10 51 65 45 00
+    2.66        . < acknowledgement: report 01, position 1,015, message 10
+    2.96        . < "SEND AGAIN": report 02, position 1,015, message 28
+    2.96        . > message 11, 28 bytes, begins EB 03 00 00 00 16 06 12 AC 8C 45 00
+    2.97        . < acknowledgement: report 01, position 1,015, message 11
+    3.28        . > message 12, 30 bytes, begins EB 03 00 00 00 18 06 14 D0 4D 45 00
+    3.28        . < acknowledgement: report 01, position 1,015, message 12
+    3.60        . < "SEND AGAIN": report 02, position 1,015, message 28
+    3.60        . > message 13, 26 bytes, begins EB 03 00 00 00 14 06 10 5D B9 46 00
+    3.60        . < acknowledgement: report 01, position 1,015, message 13
+    3.91        . < "SEND AGAIN": report 02, position 1,015, message 28
+    3.91        . > message 14, 32 bytes, begins EB 03 00 00 00 1A 06 16 93 2E 47 00
+    3.91        . < acknowledgement: report 01, position 1,015, message 14
+    4.23        . > message 15, 20 bytes, begins EB 03 00 00 00 0E 06 0A 43 9F 4E 00
+    4.23        . < acknowledgement: report 01, position 1,015, message 15
+    4.54        . < "SEND AGAIN": report 02, position 1,015, message 28
+    4.54        . > message 16, 26 bytes, begins EB 03 00 00 00 14 06 10 30 EC 50 00
+    4.55        . < acknowledgement: report 01, position 1,015, message 16
+    4.86        . < "SEND AGAIN": report 02, position 1,015, message 28
+    4.86        . > message 17, 24 bytes, begins EB 03 00 00 00 12 06 0E 70 9F 52 00
+    4.87        . < acknowledgement: report 01, position 1,015, message 17
+    5.18        . > message 18, 28 bytes, begins EB 03 00 00 00 16 06 12 66 53 52 00
+    5.18        . < acknowledgement: report 01, position 1,015, message 18
+    5.50        . < "SEND AGAIN": report 02, position 1,015, message 28
+    5.50        . > message 19, 24 bytes, begins EB 03 00 00 00 12 06 0E 13 B0 52 00
+    5.50        . < acknowledgement: report 01, position 1,015, message 19
+    5.80        . < "SEND AGAIN": report 02, position 1,015, message 28
+    5.80        . > message 20, 26 bytes, begins EB 03 00 00 00 14 06 10 B9 57 53 00
+    5.81        . < acknowledgement: report 01, position 1,015, message 20
+    6.11        . > message 21, 26 bytes, begins EB 03 00 00 00 14 06 10 A1 E3 53 00
+    6.12        . < acknowledgement: report 01, position 1,015, message 21
+    6.43        . < "SEND AGAIN": report 02, position 1,015, message 28
+    7.06        . < "SEND AGAIN": report 02, position 1,015, message 28
+    7.37        . < "SEND AGAIN": report 02, position 1,015, message 28
+    8.00        . < "SEND AGAIN": report 02, position 1,015, message 28
+    8.32        . (12 more lines of this kind left out)
+    8.32    Done: 26 deletes sent.
+    8.32  DataLoad: 40,856 characters.
+    8.33        . < "SEND AGAIN": report 02, position 1,015, message 28
+    8.33        . > message 28, 81,738 bytes, begins F7 01 00 01 3F 44 06 10 91 CF 44 00
+    8.33        . > 76 more reports of it, numbered 02-4D
+    8.40        . < acknowledgement: report 4E, position 78,763, message 28
+    8.40        . > 3 more reports of it, numbered 4E-50
+    8.41        . < acknowledgement: report 50, position 81,832, message 28
+    8.41    Sent 81,738 bytes in 80 reports, 0.08 s. Acknowledged 2 times.
+    8.81        . < "SEND AGAIN": report 02, position 1,015, message 28
+    8.81        . > message 29, 28 bytes, begins F8 03 00 00 00 16 06 12 BC 5C 44 00
+    8.82        . < acknowledgement: report 01, position 1,015, message 29
+    8.91        . < message 3, 16,758 bytes, begins F7 03 00 00 41 70 46 3F 01 00 78 01
+    8.91        . < 16 more reports of it, numbered 02-11
+    8.93        . > acknowledgement: report 11, position 17,383, message 3
+    8.94    Read back the same: 17 reports, compressed, 0.1 s.
+    8.94  NormExplorer: 185,782 characters.
+    8.95        . > message 30, 371,598 bytes, begins F7 01 00 05 AB 88 06 18 D6 E4 4E 00
+    8.95        . > 76 more reports of it, numbered 02-4D
+    9.03        . < acknowledgement: report 4E, position 78,763, message 30
+    9.03        . > 6 more reports of it, numbered 4E-53
+    9.03        . < "SEND AGAIN": report 50, position 80,809, message 30
+    9.03    (0.08 s into message 30 the calculator said "send again": it has 79 of the 364 reports; 83 had been sent)
+    9.03        . > 76 more reports of it, numbered 50-9B, over 0.1 s
+    9.16        . < acknowledgement: report 9B, position 157,534, message 30
+    9.16        . > 76 more reports of it, numbered 9C-E7
+    9.23        . < acknowledgement: report E8, position 236,305, message 30
+    9.23        . > 9 more reports of it, numbered E8-F0
+    9.24        . < "SEND AGAIN": report 02, position 1,015, message 28
+    9.24        . > 68 more reports of it, numbered F1-FD,02-38
+    9.31        . < acknowledgement: report 39, position 315,076, message 30
+    9.31        . > 53 more reports of it, numbered 39-6D
+    9.37        . < "SEND AGAIN": report 6A, position 365,203, message 30
+    9.37    (0.42 s into message 30 the calculator said "send again": it has 357 of the 364 reports; 361 had been sent)
+    9.37        . > 7 more reports of it, numbered 6A-70
+    9.44        . < acknowledgement: report 70, position 372,364, message 30
+    9.44    Sent 371,598 bytes in 364 reports, 0.48 s. Acknowledged 7 times; 2 times a report was sent again.
+    9.85        . < "SEND AGAIN": report 02, position 1,015, message 28
+    9.85        . > message 31, 36 bytes, begins F8 03 00 00 00 1E 06 1A 75 09 4E 00
+    9.85        . < acknowledgement: report 01, position 1,015, message 31
+   10.23        . < "SEND AGAIN": report 02, position 1,015, message 28
+   10.34        . < message 4, 71,113 bytes, begins F7 03 00 01 15 C3 8A AB 05 00 78 01
+   10.34        . < 1 more report of it, numbered 02
+   10.34        . < the last acknowledgement again (FF), position 1,015, message 31
+   10.34        . < 68 more reports of it, numbered 03-46
+   10.41        . > acknowledgement: report 46, position 71,602, message 4
+   10.42    Read back the same: 70 reports, compressed, 0.6 s.
+   10.42  ScatterLab: 115,148 characters.
+   10.43        . > message 32, 230,326 bytes, begins F7 01 00 03 83 B0 06 14 9B 8A 53 00
+   10.43        . > 76 more reports of it, numbered 02-4D
+   10.51        . < acknowledgement: report 4E, position 78,763, message 32
+   10.51        . > 26 more reports of it, numbered 4E-67
+   10.53        . < "SEND AGAIN": report 64, position 101,269, message 32
+   10.53    (0.10 s into message 32 the calculator said "send again": it has 99 of the 226 reports; 103 had been sent)
+   10.53        . > 56 more reports of it, numbered 64-9B
+   10.63        . < acknowledgement: report 9B, position 157,534, message 32
+   10.63        . > 71 more reports of it, numbered 9C-E2
+   10.71        . < acknowledgement: report E2, position 231,190, message 32
+   10.71    Sent 230,326 bytes in 226 reports, 0.28 s. Acknowledged 4 times; 1 time a report was sent again.
+   11.12        . < "SEND AGAIN": report 02, position 1,015, message 28
+   11.12        . > message 33, 32 bytes, begins F8 03 00 00 00 1A 06 16 BD BA 53 00
+   11.12        . < acknowledgement: report 01, position 1,015, message 33
+   11.21        . < "SEND AGAIN": report 02, position 1,015, message 28
+   11.41        . < message 5, 46,454 bytes, begins F7 03 00 00 B5 70 B2 83 03 00 78 01
+   11.41        . < 45 more reports of it, numbered 02-2E
+   11.46        . > acknowledgement: report 2E, position 47,050, message 5
+   11.47    Read back the same: 46 reports, compressed, 0.4 s.
+   11.47  TestChooser: 80,946 characters.
+   11.48        . > message 34, 161,924 bytes, begins F7 01 00 02 78 7E 06 16 7F 9A 54 00
+   11.48        . > 76 more reports of it, numbered 02-4D
+   11.55        . < acknowledgement: report 4E, position 78,763, message 34
+   11.55        . > 77 more reports of it, numbered 4E-9A
+   11.63        . < acknowledgement: report 9B, position 157,534, message 34
+   11.63        . > 5 more reports of it, numbered 9B-9F
+   11.64        . < acknowledgement: report 9F, position 162,649, message 34
+   11.64    Sent 161,924 bytes in 159 reports, 0.16 s. Acknowledged 3 times.
+   12.05        . < "SEND AGAIN": report 02, position 1,015, message 28
+   12.05        . > message 35, 34 bytes, begins F8 03 00 00 00 1C 06 18 AA 98 54 00
+   12.05        . < acknowledgement: report 01, position 1,015, message 35
+   12.20        . < "SEND AGAIN": report 02, position 1,015, message 28
+   12.25        . < message 6, 30,710 bytes, begins F7 03 00 00 77 F0 80 78 02 00 78 01
+   12.25        . < 30 more reports of it, numbered 02-1F
+   12.28        . > acknowledgement: report 1F, position 31,705, message 6
+   12.29    Read back the same: 31 reports, compressed, 0.2 s.
+
+   12.29  RESULT: all 4 programs on the calculator, each read back the same. 993 reports carried the programs there and back; 12.3 s in all.

@@ -1,0 +1,350 @@
+HP Prime Loader, v2j, straight down the cable. Wed Nov 18 2026 18:45:59 GMT-0600 (Central Standard Time)
+Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36 Edg/157.0.0.0
+Device: HP Prime G1 (USB 03F0:1541), "Prime Graphing Calculator"; reports of 64 bytes in and 64 out, by the calculator.
+Chosen: Advanced 2; 5 programs, 657,791 characters: AgreeLab, BurrLab, ErrorRate, SurvLab, TTestLab.
+
+    0.00  Asking the calculator who it is ("00 FA") ...
+    0.00        . > message begins FA
+    0.01        . < message begins FA 03 00 00 00 6C
+    0.01        . < 1 more report of it, numbered 01
+    0.01  It answered: firmware build 15751, "V0.050.640", version 03. Its reports carry 63 bytes each.
+    0.01        . > a control report: FF EC 00 00 00 00 00 00
+    0.16        . > message 1, 1 bytes, begins FA
+    0.16        . < acknowledgement: report 01, position 55, message 1
+    0.16        . < message 2, 114 bytes, begins FA 03 00 00 00 6C
+    0.16        . < 1 more report of it, numbered 02
+    0.16        . > acknowledgement: report 02, position 118, message 2
+    0.16  Asked for the newer framing ("FF EC"), and who it is in that framing: it answers, with version 03.
+    0.16  Making room: taking off the book's programs that are not in this choice, if they are there (25): AnovaLab, BayesTree, BiNorm3D, ChiTable, CICatcher, DataLoad, DNAMixLR, EpiStats, ExhibitLab, FitCheck, GaltonBoard, Norm3, NormExplorer, PowerViz, RankLab, ResampLab, RiskLab, SampDist, ScatterLab, StatDist, StudRange, TDist3D, TestChooser, TrendTest, TTestLabG.
+    0.16        . > message 2, 26 bytes, begins EB 03 00 00 00 14 06 10 AD 91 41 00
+    0.17        . < acknowledgement: report 01, position 55, message 2
+    0.48        . > message 3, 28 bytes, begins EB 03 00 00 00 16 06 12 01 2D 42 00
+    0.49        . < acknowledgement: report 01, position 55, message 3
+    0.80        . > message 4, 26 bytes, begins EB 03 00 00 00 14 06 10 22 29 42 00
+    0.80        . < acknowledgement: report 01, position 55, message 4
+    1.12        . > message 5, 26 bytes, begins EB 03 00 00 00 14 06 10 2B 98 43 00
+    1.12        . < acknowledgement: report 01, position 55, message 5
+    1.43        . > message 6, 28 bytes, begins EB 03 00 00 00 16 06 12 1C 41 43 00
+    1.44        . < acknowledgement: report 01, position 55, message 6
+    1.75        . > message 7, 26 bytes, begins EB 03 00 00 00 14 06 10 09 69 44 00
+    1.75        . < acknowledgement: report 01, position 55, message 7
+    2.07        . > message 8, 26 bytes, begins EB 03 00 00 00 14 06 10 41 26 44 00
+    2.07        . < acknowledgement: report 01, position 55, message 8
+    2.38        . > message 9, 26 bytes, begins EB 03 00 00 00 14 06 10 51 65 45 00
+    2.39        . < acknowledgement: report 01, position 55, message 9
+    2.70        . > message 10, 30 bytes, begins EB 03 00 00 00 18 06 14 D0 4D 45 00
+    2.71        . < acknowledgement: report 01, position 55, message 10
+    3.02        . > message 11, 26 bytes, begins EB 03 00 00 00 14 06 10 5D B9 46 00
+    3.02        . < acknowledgement: report 01, position 55, message 11
+    3.33        . > message 12, 32 bytes, begins EB 03 00 00 00 1A 06 16 93 2E 47 00
+    3.34        . < acknowledgement: report 01, position 55, message 12
+    3.65        . > message 13, 20 bytes, begins EB 03 00 00 00 0E 06 0A 43 9F 4E 00
+    3.66        . < acknowledgement: report 01, position 55, message 13
+    3.97        . > message 14, 34 bytes, begins EB 03 00 00 00 1C 06 18 89 26 4E 00
+    3.97        . < acknowledgement: report 01, position 55, message 14
+    4.29        . > message 15, 26 bytes, begins EB 03 00 00 00 14 06 10 30 EC 50 00
+    4.29        . < acknowledgement: report 01, position 55, message 15
+    4.60        . > message 16, 24 bytes, begins EB 03 00 00 00 12 06 0E 70 9F 52 00
+    4.61        . < acknowledgement: report 01, position 55, message 16
+    4.92        . > message 17, 28 bytes, begins EB 03 00 00 00 16 06 12 66 53 52 00
+    4.92        . < acknowledgement: report 01, position 55, message 17
+    5.24        . > message 18, 24 bytes, begins EB 03 00 00 00 12 06 0E 13 B0 52 00
+    5.24        . < acknowledgement: report 01, position 55, message 18
+    5.55        . > message 19, 26 bytes, begins EB 03 00 00 00 14 06 10 B9 57 53 00
+    5.55        . < acknowledgement: report 01, position 55, message 19
+    5.87        . > message 20, 30 bytes, begins EB 03 00 00 00 18 06 14 08 95 53 00
+    5.87        . < acknowledgement: report 01, position 55, message 20
+    6.19        . > message 21, 26 bytes, begins EB 03 00 00 00 14 06 10 A1 E3 53 00
+    6.19        . < acknowledgement: report 01, position 55, message 21
+    8.07        . (10 more lines of this kind left out)
+    8.07    Done: 25 deletes sent.
+    8.07  AgreeLab: 128,553 characters.
+    8.08        . > message 27, 257,132 bytes, begins F7 01 00 03 EC 66 06 10 2E 2D 41 00
+    8.09        . > 76 more reports of it, numbered 02-4D
+    8.10        . < acknowledgement: report 4E, position 4,843, message 27
+    8.10        . > 77 more reports of it, numbered 4E-9A
+    8.12        . < acknowledgement: report 9B, position 9,694, message 27
+    8.12        . > 77 more reports of it, numbered 9B-E7
+    8.13        . < acknowledgement: report E8, position 14,545, message 27
+    8.13        . > 77 more reports of it, numbered E8-FD,02-38
+    8.15        . < acknowledgement: report 39, position 19,396, message 27
+    8.15        . > 77 more reports of it, numbered 39-85
+    8.16        . < acknowledgement: report 86, position 24,247, message 27
+    8.16        . > 77 more reports of it, numbered 86-D2
+    8.18        . < acknowledgement: report D3, position 29,098, message 27
+    8.18        . > 77 more reports of it, numbered D3-FD,02-23
+    8.19        . < acknowledgement: report 24, position 33,949, message 27
+    8.19        . > 77 more reports of it, numbered 24-70
+    8.21        . < acknowledgement: report 71, position 38,800, message 27
+    8.21        . > 77 more reports of it, numbered 71-BD
+    8.22        . < acknowledgement: report BE, position 43,651, message 27
+    8.22        . > 77 more reports of it, numbered BE-FD,02-0E
+    8.24        . < acknowledgement: report 0F, position 48,502, message 27
+    8.24        . > 77 more reports of it, numbered 0F-5B
+    8.25        . < acknowledgement: report 5C, position 53,353, message 27
+    8.25        . > 77 more reports of it, numbered 5C-A8
+    8.27        . < acknowledgement: report A9, position 58,204, message 27
+    8.27        . > 77 more reports of it, numbered A9-F5
+    8.28        . < acknowledgement: report F6, position 63,055, message 27
+    8.28        . > 77 more reports of it, numbered F6-FD,02-46
+    8.29        . < acknowledgement: report 47, position 67,906, message 27
+    8.29        . > 77 more reports of it, numbered 47-93
+    8.31        . < acknowledgement: report 94, position 72,757, message 27
+    8.31        . > 77 more reports of it, numbered 94-E0
+    8.32        . < acknowledgement: report E1, position 77,608, message 27
+    8.32        . > 77 more reports of it, numbered E1-FD,02-31
+    8.34        . < acknowledgement: report 32, position 82,459, message 27
+    8.34        . > 77 more reports of it, numbered 32-7E
+    8.35        . < acknowledgement: report 7F, position 87,310, message 27
+    8.35        . > 77 more reports of it, numbered 7F-CB
+    8.37        . < acknowledgement: report CC, position 92,161, message 27
+    8.37        . > 77 more reports of it, numbered CC-FD,02-1C
+    8.88        . (69 more lines of this kind left out)
+    8.88    Sent 257,132 bytes in 4,082 reports, 0.80 s. Acknowledged 54 times.
+    9.29        . > message 28, 28 bytes, begins F8 03 00 00 00 16 06 12 44 30 41 00
+    9.29        . < acknowledgement: report 01, position 55, message 28
+   10.24        . < the last acknowledgement again (FF), position 55, message 28
+   10.90        . < the last acknowledgement again (FF), position 55, message 28
+   10.90        . < message 3, 50,133 bytes, begins F7 03 00 00 C3 CF 68 EC 03 00 78 01
+   10.90        . < 240 more reports of it, numbered 02-F1
+   10.96        . > acknowledgement: report F1, position 15,175, message 3
+   10.97        . < 240 more reports of it, numbered F2-FD,02-E5, over 0.1 s
+   11.07        . > acknowledgement: report E5, position 30,295, message 3
+   11.07        . < 240 more reports of it, numbered E6-FD,02-D9
+   11.13        . > acknowledgement: report D9, position 45,415, message 3
+   11.14        . < 75 more reports of it, numbered DA-FD,02-28
+   11.16        . > acknowledgement: report 28, position 50,140, message 3
+   11.17    Read back the same: 796 reports, compressed, 1.9 s.
+   16.30    (AgreeLab was left alone for 5.12 s after it was verified, 7.41 s after it arrived, before the next program began)
+   16.30  BurrLab: 203,106 characters.
+   16.31        . < the last acknowledgement again (FF), position 55, message 28
+   16.31        . < the last acknowledgement again (FF), position 55, message 28
+   16.31        . < the last acknowledgement again (FF), position 55, message 28
+   16.31        . < ... and 2 more of that kind; the last: the last acknowledgement again (FF), position 55, message 28
+   16.31        . > message 29, 406,236 bytes, begins F7 01 00 06 32 D6 06 0E 5E 3D 42 00
+   16.32        . > 76 more reports of it, numbered 02-4D
+   16.33        . < acknowledgement: report 4E, position 4,843, message 29
+   16.33        . > 77 more reports of it, numbered 4E-9A
+   16.34        . < acknowledgement: report 9B, position 9,694, message 29
+   16.34        . > 77 more reports of it, numbered 9B-E7
+   16.36        . < acknowledgement: report E8, position 14,545, message 29
+   16.36        . > 77 more reports of it, numbered E8-FD,02-38
+   16.38        . < acknowledgement: report 39, position 19,396, message 29
+   16.38        . > 77 more reports of it, numbered 39-85
+   16.39        . < acknowledgement: report 86, position 24,247, message 29
+   16.39        . > 77 more reports of it, numbered 86-D2
+   16.40        . < acknowledgement: report D3, position 29,098, message 29
+   16.40        . > 77 more reports of it, numbered D3-FD,02-23
+   16.42        . < acknowledgement: report 24, position 33,949, message 29
+   16.42        . > 77 more reports of it, numbered 24-70
+   16.43        . < acknowledgement: report 71, position 38,800, message 29
+   16.43        . > 77 more reports of it, numbered 71-BD
+   16.45        . < acknowledgement: report BE, position 43,651, message 29
+   16.45        . > 77 more reports of it, numbered BE-FD,02-0E
+   16.46        . < acknowledgement: report 0F, position 48,502, message 29
+   16.46        . > 77 more reports of it, numbered 0F-5B
+   16.47        . < acknowledgement: report 5C, position 53,353, message 29
+   16.47        . > 77 more reports of it, numbered 5C-A8
+   16.49        . < acknowledgement: report A9, position 58,204, message 29
+   16.49        . > 77 more reports of it, numbered A9-F5
+   16.50        . < acknowledgement: report F6, position 63,055, message 29
+   16.50        . > 77 more reports of it, numbered F6-FD,02-46
+   16.52        . < acknowledgement: report 47, position 67,906, message 29
+   16.52        . > 77 more reports of it, numbered 47-93
+   16.53        . < acknowledgement: report 94, position 72,757, message 29
+   16.53        . > 77 more reports of it, numbered 94-E0
+   16.55        . < acknowledgement: report E1, position 77,608, message 29
+   16.55        . > 77 more reports of it, numbered E1-FD,02-31
+   16.56        . < acknowledgement: report 32, position 82,459, message 29
+   16.56        . > 77 more reports of it, numbered 32-7E
+   17.54        . (133 more lines of this kind left out)
+   17.54    Sent 406,236 bytes in 6,449 reports, 1.23 s. Acknowledged 84 times.
+   17.94        . > message 30, 26 bytes, begins F8 03 00 00 00 14 06 10 73 10 42 00
+   17.95        . < acknowledgement: report 01, position 55, message 30
+   19.22        . < the last acknowledgement again (FF), position 55, message 30
+   20.22        . < the last acknowledgement again (FF), position 55, message 30
+   20.60        . < message 4, 79,171 bytes, begins F7 03 00 01 35 3D D8 32 06 00 78 01
+   20.60        . < 240 more reports of it, numbered 02-F1
+   20.66        . > acknowledgement: report F1, position 15,175, message 4
+   20.66        . < 159 more reports of it, numbered F2-FD,02-94
+   20.74        . < the last acknowledgement again (FF), position 55, message 30
+   20.74        . < 81 more reports of it, numbered 95-E5
+   20.76        . > acknowledgement: report E5, position 30,295, message 4
+   20.77        . < 240 more reports of it, numbered E6-FD,02-D9
+   20.83        . > acknowledgement: report D9, position 45,415, message 4
+   20.83        . < 240 more reports of it, numbered DA-FD,02-CD
+   20.89        . > acknowledgement: report CD, position 60,535, message 4
+   20.90        . < 240 more reports of it, numbered CE-FD,02-C1
+   20.96        . > acknowledgement: report C1, position 75,655, message 4
+   20.96        . < 56 more reports of it, numbered C2-F9
+   20.98        . > acknowledgement: report F9, position 79,183, message 4
+   20.99    Read back the same: 1,257 reports, compressed, 3.0 s.
+   27.75    (BurrLab was left alone for 6.76 s after it was verified, 10.21 s after it arrived, before the next program began)
+   27.75  ErrorRate: 115,298 characters.
+   27.76        . < the last acknowledgement again (FF), position 55, message 30
+   27.76        . < the last acknowledgement again (FF), position 55, message 30
+   27.76        . < the last acknowledgement again (FF), position 55, message 30
+   27.76        . < ... and 3 more of that kind; the last: the last acknowledgement again (FF), position 55, message 30
+   27.76        . > message 31, 230,624 bytes, begins F7 01 00 03 84 DA 06 12 B0 08 45 00
+   27.76        . > 76 more reports of it, numbered 02-4D
+   27.78        . < acknowledgement: report 4E, position 4,843, message 31
+   27.78        . > 77 more reports of it, numbered 4E-9A
+   27.79        . < acknowledgement: report 9B, position 9,694, message 31
+   27.79        . > 77 more reports of it, numbered 9B-E7
+   27.81        . < acknowledgement: report E8, position 14,545, message 31
+   27.81        . > 77 more reports of it, numbered E8-FD,02-38
+   27.82        . < acknowledgement: report 39, position 19,396, message 31
+   27.82        . > 77 more reports of it, numbered 39-85
+   27.84        . < acknowledgement: report 86, position 24,247, message 31
+   27.84        . > 77 more reports of it, numbered 86-D2
+   27.85        . < acknowledgement: report D3, position 29,098, message 31
+   27.85        . > 77 more reports of it, numbered D3-FD,02-23
+   27.86        . < acknowledgement: report 24, position 33,949, message 31
+   27.86        . > 77 more reports of it, numbered 24-70
+   27.88        . < acknowledgement: report 71, position 38,800, message 31
+   27.88        . > 77 more reports of it, numbered 71-BD
+   27.89        . < acknowledgement: report BE, position 43,651, message 31
+   27.89        . > 77 more reports of it, numbered BE-FD,02-0E
+   27.91        . < acknowledgement: report 0F, position 48,502, message 31
+   27.91        . > 77 more reports of it, numbered 0F-5B
+   27.92        . < acknowledgement: report 5C, position 53,353, message 31
+   27.92        . > 77 more reports of it, numbered 5C-A8
+   27.93        . < acknowledgement: report A9, position 58,204, message 31
+   27.93        . > 77 more reports of it, numbered A9-F5
+   27.95        . < acknowledgement: report F6, position 63,055, message 31
+   27.95        . > 77 more reports of it, numbered F6-FD,02-46
+   27.96        . < acknowledgement: report 47, position 67,906, message 31
+   27.96        . > 77 more reports of it, numbered 47-93
+   27.98        . < acknowledgement: report 94, position 72,757, message 31
+   27.98        . > 77 more reports of it, numbered 94-E0
+   27.99        . < acknowledgement: report E1, position 77,608, message 31
+   27.99        . > 77 more reports of it, numbered E1-FD,02-31
+   28.01        . < acknowledgement: report 32, position 82,459, message 31
+   28.01        . > 77 more reports of it, numbered 32-7E
+   28.44        . (61 more lines of this kind left out)
+   28.44    Sent 230,624 bytes in 3,661 reports, 0.68 s. Acknowledged 48 times.
+   28.85        . > message 32, 30 bytes, begins F8 03 00 00 00 18 06 14 AC 1D 45 00
+   28.85        . < acknowledgement: report 01, position 55, message 32
+   30.04        . < the last acknowledgement again (FF), position 55, message 32
+   30.11        . < message 5, 46,768 bytes, begins F7 03 00 00 B6 AA DC 84 03 00 78 01
+   30.11        . < 240 more reports of it, numbered 02-F1
+   30.18        . > acknowledgement: report F1, position 15,175, message 5
+   30.18        . < 240 more reports of it, numbered F2-FD,02-E5, over 0.1 s
+   30.28        . > acknowledgement: report E5, position 30,295, message 5
+   30.28        . < 240 more reports of it, numbered E6-FD,02-D9
+   30.34        . > acknowledgement: report D9, position 45,415, message 5
+   30.35        . < 22 more reports of it, numbered DA-EF
+   30.35        . > acknowledgement: report EF, position 46,801, message 5
+   30.36    Read back the same: 743 reports, compressed, 1.5 s.
+   35.16    (ErrorRate was left alone for 4.80 s after it was verified, 6.72 s after it arrived, before the next program began)
+   35.16  SurvLab: 112,704 characters.
+   35.17        . < the last acknowledgement again (FF), position 55, message 32
+   35.17        . < the last acknowledgement again (FF), position 55, message 32
+   35.17        . < the last acknowledgement again (FF), position 55, message 32
+   35.17        . < ... and 1 more of that kind; the last: the last acknowledgement again (FF), position 55, message 32
+   35.18        . > message 33, 225,432 bytes, begins F7 01 00 03 70 92 06 0E 3C FB 53 00
+   35.18        . > 76 more reports of it, numbered 02-4D
+   35.19        . < acknowledgement: report 4E, position 4,843, message 33
+   35.19        . > 77 more reports of it, numbered 4E-9A
+   35.21        . < acknowledgement: report 9B, position 9,694, message 33
+   35.21        . > 77 more reports of it, numbered 9B-E7
+   35.22        . < acknowledgement: report E8, position 14,545, message 33
+   35.22        . > 77 more reports of it, numbered E8-FD,02-38
+   35.24        . < acknowledgement: report 39, position 19,396, message 33
+   35.24        . > 77 more reports of it, numbered 39-85
+   35.25        . < acknowledgement: report 86, position 24,247, message 33
+   35.25        . > 77 more reports of it, numbered 86-D2
+   35.27        . < acknowledgement: report D3, position 29,098, message 33
+   35.27        . > 77 more reports of it, numbered D3-FD,02-23
+   35.28        . < acknowledgement: report 24, position 33,949, message 33
+   35.28        . > 77 more reports of it, numbered 24-70
+   35.30        . < acknowledgement: report 71, position 38,800, message 33
+   35.30        . > 77 more reports of it, numbered 71-BD
+   35.31        . < acknowledgement: report BE, position 43,651, message 33
+   35.31        . > 77 more reports of it, numbered BE-FD,02-0E
+   35.33        . < acknowledgement: report 0F, position 48,502, message 33
+   35.33        . > 77 more reports of it, numbered 0F-5B
+   35.34        . < acknowledgement: report 5C, position 53,353, message 33
+   35.34        . > 77 more reports of it, numbered 5C-A8
+   35.35        . < acknowledgement: report A9, position 58,204, message 33
+   35.35        . > 77 more reports of it, numbered A9-F5
+   35.37        . < acknowledgement: report F6, position 63,055, message 33
+   35.37        . > 77 more reports of it, numbered F6-FD,02-46
+   35.38        . < acknowledgement: report 47, position 67,906, message 33
+   35.38        . > 77 more reports of it, numbered 47-93
+   35.40        . < acknowledgement: report 94, position 72,757, message 33
+   35.40        . > 77 more reports of it, numbered 94-E0
+   35.41        . < acknowledgement: report E1, position 77,608, message 33
+   35.41        . > 77 more reports of it, numbered E1-FD,02-31
+   35.43        . < acknowledgement: report 32, position 82,459, message 33
+   35.43        . > 77 more reports of it, numbered 32-7E
+   35.85        . (59 more lines of this kind left out)
+   35.85    Sent 225,432 bytes in 3,579 reports, 0.68 s. Acknowledged 47 times.
+   36.26        . > message 34, 26 bytes, begins F8 03 00 00 00 14 06 10 51 21 53 00
+   36.27        . < acknowledgement: report 01, position 55, message 34
+   37.41        . < the last acknowledgement again (FF), position 55, message 34
+   37.50        . < message 6, 42,525 bytes, begins F7 03 00 00 A6 17 94 70 03 00 78 01
+   37.50        . < 240 more reports of it, numbered 02-F1
+   37.56        . > acknowledgement: report F1, position 15,175, message 6
+   37.56        . < 240 more reports of it, numbered F2-FD,02-E5, over 0.1 s
+   37.67        . > acknowledgement: report E5, position 30,295, message 6
+   37.67        . < 195 more reports of it, numbered E6-FD,02-AC
+   37.72        . > acknowledgement: report AC, position 42,580, message 6
+   37.73    Read back the same: 676 reports, compressed, 1.5 s.
+   42.49    (SurvLab was left alone for 4.76 s after it was verified, 6.63 s after it arrived, before the next program began)
+   42.49  TTestLab: 98,130 characters.
+   42.50        . < the last acknowledgement again (FF), position 55, message 34
+   42.50        . < the last acknowledgement again (FF), position 55, message 34
+   42.50        . < the last acknowledgement again (FF), position 55, message 34
+   42.50        . < ... and 1 more of that kind; the last: the last acknowledgement again (FF), position 55, message 34
+   42.50        . > message 35, 196,286 bytes, begins F7 01 00 02 FE B8 06 10 51 E9 54 00
+   42.50        . > 76 more reports of it, numbered 02-4D
+   42.51        . < acknowledgement: report 4E, position 4,843, message 35
+   42.51        . > 77 more reports of it, numbered 4E-9A
+   42.53        . < acknowledgement: report 9B, position 9,694, message 35
+   42.53        . > 77 more reports of it, numbered 9B-E7
+   42.54        . < acknowledgement: report E8, position 14,545, message 35
+   42.54        . > 77 more reports of it, numbered E8-FD,02-38
+   42.56        . < acknowledgement: report 39, position 19,396, message 35
+   42.56        . > 77 more reports of it, numbered 39-85
+   42.57        . < acknowledgement: report 86, position 24,247, message 35
+   42.57        . > 77 more reports of it, numbered 86-D2
+   42.59        . < acknowledgement: report D3, position 29,098, message 35
+   42.59        . > 77 more reports of it, numbered D3-FD,02-23
+   42.60        . < acknowledgement: report 24, position 33,949, message 35
+   42.60        . > 77 more reports of it, numbered 24-70
+   42.62        . < acknowledgement: report 71, position 38,800, message 35
+   42.62        . > 77 more reports of it, numbered 71-BD
+   42.63        . < acknowledgement: report BE, position 43,651, message 35
+   42.63        . > 77 more reports of it, numbered BE-FD,02-0E
+   42.65        . < acknowledgement: report 0F, position 48,502, message 35
+   42.65        . > 77 more reports of it, numbered 0F-5B
+   42.66        . < acknowledgement: report 5C, position 53,353, message 35
+   42.66        . > 77 more reports of it, numbered 5C-A8
+   42.68        . < acknowledgement: report A9, position 58,204, message 35
+   42.68        . > 77 more reports of it, numbered A9-F5
+   42.70        . < acknowledgement: report F6, position 63,055, message 35
+   42.70        . > 77 more reports of it, numbered F6-FD,02-46
+   42.71        . < acknowledgement: report 47, position 67,906, message 35
+   42.71        . > 77 more reports of it, numbered 47-93
+   42.73        . < acknowledgement: report 94, position 72,757, message 35
+   42.73        . > 77 more reports of it, numbered 94-E0
+   42.74        . < acknowledgement: report E1, position 77,608, message 35
+   42.74        . > 77 more reports of it, numbered E1-FD,02-31
+   42.76        . < acknowledgement: report 32, position 82,459, message 35
+   42.76        . > 77 more reports of it, numbered 32-7E
+   43.10        . (47 more lines of this kind left out)
+   43.10    Sent 196,286 bytes in 3,116 reports, 0.60 s. Acknowledged 41 times.
+   43.51        . > message 36, 28 bytes, begins F8 03 00 00 00 16 06 12 3B 15 54 00
+   43.52        . < acknowledgement: report 01, position 55, message 36
+   44.48        . < the last acknowledgement again (FF), position 55, message 36
+   44.48        . < message 7, 35,471 bytes, begins F7 03 00 00 8A 89 BA FE 02 00 78 01
+   44.48        . < 240 more reports of it, numbered 02-F1
+   44.54        . > acknowledgement: report F1, position 15,175, message 7
+   44.54        . < 240 more reports of it, numbered F2-FD,02-E5, over 0.1 s
+   44.65        . > acknowledgement: report E5, position 30,295, message 7
+   44.65        . < 83 more reports of it, numbered E6-FD,02-3C
+   44.67        . > acknowledgement: report 3C, position 35,524, message 7
+   44.68    Read back the same: 564 reports, compressed, 1.2 s.
+
+   44.68  RESULT: all 5 programs on the calculator, each read back the same. 24,923 reports carried the programs there and back; 44.7 s in all.

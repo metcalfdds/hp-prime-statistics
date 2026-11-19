@@ -1,0 +1,150 @@
+HP Prime Loader, v2j, straight down the cable. Wed Nov 18 2026 18:42:04 GMT-0600 (Central Standard Time)
+Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36
+Device: HP Prime G2 (USB 03F0:2441), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator.
+Chosen: Chapters 1–3; 4 programs, 422,732 characters: DataLoad, NormExplorer, ScatterLab, TestChooser.
+
+    0.00  Asking the calculator who it is ("00 FA") ...
+    0.00        . > message begins FA
+    0.00        . < message begins FA 01 00 00 00 6C
+    0.00  It answered: firmware build 15751, "V2.060.650", version 01. Its reports carry 1,023 bytes each.
+    0.00        . > message begins FD 01 00 00 00 01 03
+    0.01        . < message begins FD 01 00 00 00 01 03 00 6F 00 67 00
+    0.01        . > message begins FA
+    0.01        . < message begins FA 03 00 00 00 6C
+    0.01  Told that this page speaks version 03 ("FD 01 00 00 00 01 03"), it answered FD 01 00 00 00 01 03, and it now answers with version 03.
+    0.01        . > a control report: FF EC 00 00 00 00 00 00
+    0.16        . > message 1, 1 bytes, begins FA
+    0.16        . < acknowledgement: report 01, position 1,015, message 1
+    0.16        . < message 4, 114 bytes, begins FA 03 00 00 00 6C
+    0.16        . > acknowledgement: report 01, position 1,015, message 4
+    0.16  Asked for the newer framing ("FF EC"), and who it is in that framing: it answers, with version 03.
+    0.16  Making room: taking off the book's programs that are not in this choice, if they are there (26): AgreeLab, AnovaLab, BayesTree, BiNorm3D, BurrLab, ChiTable, CICatcher, DNAMixLR, EpiStats, ErrorRate, ExhibitLab, FitCheck, GaltonBoard, Norm3, PowerViz, RankLab, ResampLab, RiskLab, SampDist, StatDist, StudRange, SurvLab, TDist3D, TrendTest, TTestLab, TTestLabG.
+    0.16        . > message 2, 26 bytes, begins EB 03 00 00 00 14 06 10 DC D0 41 00
+    0.17        . < acknowledgement: report 01, position 1,015, message 2
+    0.48        . > message 3, 26 bytes, begins EB 03 00 00 00 14 06 10 AD 91 41 00
+    0.48        . < acknowledgement: report 01, position 1,015, message 3
+    0.78        . > message 4, 28 bytes, begins EB 03 00 00 00 16 06 12 01 2D 42 00
+    0.79        . < acknowledgement: report 01, position 1,015, message 4
+    1.09        . > message 5, 26 bytes, begins EB 03 00 00 00 14 06 10 22 29 42 00
+    1.09        . < acknowledgement: report 01, position 1,015, message 5
+    1.39        . > message 6, 24 bytes, begins EB 03 00 00 00 12 06 0E 9F 53 42 00
+    1.40        . < acknowledgement: report 01, position 1,015, message 6
+    1.71        . > message 7, 26 bytes, begins EB 03 00 00 00 14 06 10 2B 98 43 00
+    1.71        . < acknowledgement: report 01, position 1,015, message 7
+    2.02        . > message 8, 28 bytes, begins EB 03 00 00 00 16 06 12 1C 41 43 00
+    2.02        . < acknowledgement: report 01, position 1,015, message 8
+    2.33        . > message 9, 26 bytes, begins EB 03 00 00 00 14 06 10 41 26 44 00
+    2.33        . < acknowledgement: report 01, position 1,015, message 9
+    2.64        . > message 10, 26 bytes, begins EB 03 00 00 00 14 06 10 51 65 45 00
+    2.64        . < acknowledgement: report 01, position 1,015, message 10
+    2.95        . > message 11, 28 bytes, begins EB 03 00 00 00 16 06 12 AC 8C 45 00
+    2.95        . < acknowledgement: report 01, position 1,015, message 11
+    3.27        . > message 12, 30 bytes, begins EB 03 00 00 00 18 06 14 D0 4D 45 00
+    3.27        . < acknowledgement: report 01, position 1,015, message 12
+    3.58        . > message 13, 26 bytes, begins EB 03 00 00 00 14 06 10 5D B9 46 00
+    3.58        . < acknowledgement: report 01, position 1,015, message 13
+    3.89        . > message 14, 32 bytes, begins EB 03 00 00 00 1A 06 16 93 2E 47 00
+    3.89        . < acknowledgement: report 01, position 1,015, message 14
+    4.20        . > message 15, 20 bytes, begins EB 03 00 00 00 0E 06 0A 43 9F 4E 00
+    4.20        . < acknowledgement: report 01, position 1,015, message 15
+    4.51        . > message 16, 26 bytes, begins EB 03 00 00 00 14 06 10 30 EC 50 00
+    4.52        . < acknowledgement: report 01, position 1,015, message 16
+    4.83        . > message 17, 24 bytes, begins EB 03 00 00 00 12 06 0E 70 9F 52 00
+    4.83        . < acknowledgement: report 01, position 1,015, message 17
+    5.14        . > message 18, 28 bytes, begins EB 03 00 00 00 16 06 12 66 53 52 00
+    5.14        . < acknowledgement: report 01, position 1,015, message 18
+    5.45        . > message 19, 24 bytes, begins EB 03 00 00 00 12 06 0E 13 B0 52 00
+    5.45        . < acknowledgement: report 01, position 1,015, message 19
+    5.76        . > message 20, 26 bytes, begins EB 03 00 00 00 14 06 10 B9 57 53 00
+    5.76        . < acknowledgement: report 01, position 1,015, message 20
+    6.07        . > message 21, 26 bytes, begins EB 03 00 00 00 14 06 10 A1 E3 53 00
+    6.08        . < acknowledgement: report 01, position 1,015, message 21
+    8.25        . (12 more lines of this kind left out)
+    8.25    Done: 26 deletes sent.
+    8.25  DataLoad: 40,856 characters.
+    8.26        . > message 28, 81,738 bytes, begins F7 01 00 01 3F 44 06 10 91 CF 44 00
+    8.26        . > 76 more reports of it, numbered 02-4D
+    8.34        . < acknowledgement: report 4E, position 78,763, message 28
+    8.34        . > 3 more reports of it, numbered 4E-50
+    8.34        . < acknowledgement: report 50, position 81,832, message 28
+    8.34    Sent 81,738 bytes in 80 reports, 0.08 s. Acknowledged 2 times.
+    8.75        . > message 29, 28 bytes, begins F8 03 00 00 00 16 06 12 BC 5C 44 00
+    8.75        . < acknowledgement: report 01, position 1,015, message 29
+    8.85        . < message 5, 16,758 bytes, begins F7 03 00 00 41 70 46 3F 01 00 78 01
+    8.85        . < 16 more reports of it, numbered 02-11
+    8.87        . > acknowledgement: report 11, position 17,383, message 5
+    8.87    Read back the same: 17 reports, compressed, 0.1 s.
+   11.28    (DataLoad was left alone for 2.41 s after it was verified, 2.94 s after it arrived, before the next program began)
+   11.28  NormExplorer: 185,782 characters.
+   11.30        . < the last acknowledgement again (FF), position 1,015, message 29
+   11.30        . < the last acknowledgement again (FF), position 1,015, message 29
+   11.30        . < the last acknowledgement again (FF), position 1,015, message 29
+   11.30        . < ... and 1 more of that kind; the last: the last acknowledgement again (FF), position 1,015, message 29
+   11.30        . > message 30, 371,598 bytes, begins F7 01 00 05 AB 88 06 18 D6 E4 4E 00
+   11.30        . > 76 more reports of it, numbered 02-4D
+   11.38        . < acknowledgement: report 4E, position 78,763, message 30
+   11.38        . > 77 more reports of it, numbered 4E-9A
+   11.46        . < acknowledgement: report 9B, position 157,534, message 30
+   11.46        . > 77 more reports of it, numbered 9B-E7
+   11.53        . < acknowledgement: report E8, position 236,305, message 30
+   11.54        . > 77 more reports of it, numbered E8-FD,02-38
+   11.61        . < acknowledgement: report 39, position 315,076, message 30
+   11.61        . > 56 more reports of it, numbered 39-70
+   11.67        . < acknowledgement: report 70, position 372,364, message 30
+   11.67    Sent 371,598 bytes in 364 reports, 0.37 s. Acknowledged 5 times.
+   12.08        . > message 31, 36 bytes, begins F8 03 00 00 00 1E 06 1A 75 09 4E 00
+   12.08        . < acknowledgement: report 01, position 1,015, message 31
+   12.57        . < message 6, 71,113 bytes, begins F7 03 00 01 15 C3 8A AB 05 00 78 01
+   12.57        . < 1 more report of it, numbered 02
+   12.57        . < the last acknowledgement again (FF), position 1,015, message 31
+   12.57        . < 68 more reports of it, numbered 03-46
+   12.64        . > acknowledgement: report 46, position 71,602, message 6
+   12.65    Read back the same: 70 reports, compressed, 0.6 s.
+   15.85    (NormExplorer was left alone for 3.20 s after it was verified, 4.18 s after it arrived, before the next program began)
+   15.85  ScatterLab: 115,148 characters.
+   15.86        . < the last acknowledgement again (FF), position 1,015, message 31
+   15.86        . < the last acknowledgement again (FF), position 1,015, message 31
+   15.86        . < the last acknowledgement again (FF), position 1,015, message 31
+   15.86        . < ... and 2 more of that kind; the last: the last acknowledgement again (FF), position 1,015, message 31
+   15.86        . > message 32, 230,326 bytes, begins F7 01 00 03 83 B0 06 14 9B 8A 53 00
+   15.86        . > 8 more reports of it, numbered 02-09
+   15.87        . < "SEND AGAIN": report 08, position 7,153, message 32
+   15.87    (0.01 s into message 32 the calculator said "send again": it has 7 of the 226 reports; 9 had been sent)
+   15.87        . > 1 more report of it, numbered 08
+   15.87        . < "SEND AGAIN": report 0A, position 9,199, message 32
+   15.87    (0.01 s into message 32 the calculator said "send again": it has 9 of the 226 reports; 8 had been sent)
+   15.87        . > 70 more reports of it, numbered 0A-4F
+   15.94        . < acknowledgement: report 4E, position 78,763, message 32
+   15.94        . > 75 more reports of it, numbered 50-9A
+   16.02        . < acknowledgement: report 9B, position 157,534, message 32
+   16.02        . > 72 more reports of it, numbered 9B-E2
+   16.09        . < acknowledgement: report E2, position 231,190, message 32
+   16.09    Sent 230,326 bytes in 226 reports, 0.23 s. Acknowledged 5 times; 1 time a report was sent again.
+   16.49        . > message 33, 32 bytes, begins F8 03 00 00 00 1A 06 16 BD BA 53 00
+   16.49        . < acknowledgement: report 01, position 1,015, message 33
+   16.79        . < message 7, 46,454 bytes, begins F7 03 00 00 B5 70 B2 83 03 00 78 01
+   16.79        . < 45 more reports of it, numbered 02-2E
+   16.83        . > acknowledgement: report 2E, position 47,050, message 7
+   16.84    Read back the same: 46 reports, compressed, 0.4 s.
+   19.65    (ScatterLab was left alone for 2.81 s after it was verified, 3.56 s after it arrived, before the next program began)
+   19.65  TestChooser: 80,946 characters.
+   19.66        . < the last acknowledgement again (FF), position 1,015, message 33
+   19.66        . < the last acknowledgement again (FF), position 1,015, message 33
+   19.66        . < the last acknowledgement again (FF), position 1,015, message 33
+   19.66        . < ... and 2 more of that kind; the last: the last acknowledgement again (FF), position 1,015, message 33
+   19.66        . > message 34, 161,924 bytes, begins F7 01 00 02 78 7E 06 16 7F 9A 54 00
+   19.66        . > 76 more reports of it, numbered 02-4D
+   19.74        . < acknowledgement: report 4E, position 78,763, message 34
+   19.74        . > 77 more reports of it, numbered 4E-9A
+   19.82        . < acknowledgement: report 9B, position 157,534, message 34
+   19.82        . > 5 more reports of it, numbered 9B-9F
+   19.82        . < acknowledgement: report 9F, position 162,649, message 34
+   19.82    Sent 161,924 bytes in 159 reports, 0.16 s. Acknowledged 3 times.
+   20.23        . > message 35, 34 bytes, begins F8 03 00 00 00 1C 06 18 AA 98 54 00
+   20.24        . < acknowledgement: report 01, position 1,015, message 35
+   20.43        . < message 8, 30,710 bytes, begins F7 03 00 00 77 F0 80 78 02 00 78 01
+   20.43        . < 30 more reports of it, numbered 02-1F
+   20.46        . > acknowledgement: report 1F, position 31,705, message 8
+   20.47    Read back the same: 31 reports, compressed, 0.2 s.
+
+   20.47  RESULT: all 4 programs on the calculator, each read back the same. 993 reports carried the programs there and back; 20.5 s in all.

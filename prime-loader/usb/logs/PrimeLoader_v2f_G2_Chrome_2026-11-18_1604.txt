@@ -1,0 +1,579 @@
+HP Prime Loader, v2f, straight down the cable. Wed Nov 18 2026 16:03:45 GMT-0600 (Central Standard Time)
+Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36
+Device: HP Prime G2 (USB 03F0:2441), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator.
+Chosen: all the programs; 30 programs, 4,028,362 characters: AgreeLab, AnovaLab, BayesTree, BiNorm3D, BurrLab, ChiTable, CICatcher, DataLoad, DNAMixLR, EpiStats, ErrorRate, ExhibitLab, FitCheck, GaltonBoard, Norm3, NormExplorer, PowerViz, RankLab, ResampLab, RiskLab, SampDist, ScatterLab, StatDist, StudRange, SurvLab, TDist3D, TestChooser, TrendTest, TTestLab, TTestLabG. Not sent this way: CentralLimit.
+
+    0.00  Asking the calculator who it is ("00 FA") ...
+    0.00        . < "SEND AGAIN": report 02, position 1,015, message 12
+    0.00        . > message begins FA
+    0.01        . < 1 more report of it, numbered 4F
+    0.10        . < message begins F7 03 00 01 35 3D D8 32 06 00 78 01
+    0.11        . < 77 more reports of it, numbered 01-4D
+    0.28        . < message begins F7 03 00 01 35 3D D8 32 06 00 78 01
+    0.28        . < 77 more reports of it, numbered 01-4D
+    0.42        . < "SEND AGAIN": report 02, position 1,015, message 12
+    0.46        . < message begins F7 03 00 01 35 3D D8 32 06 00 78 01
+    0.46        . < 77 more reports of it, numbered 01-4D
+    0.63        . < message begins F7 03 00 01 35 3D D8 32 06 00 78 01
+    0.63        . < 77 more reports of it, numbered 01-4D
+    0.80        . < message begins F7 03 00 01 35 3D D8 32 06 00 78 01
+    0.81        . < 77 more reports of it, numbered 01-4D
+    0.91        . < "SEND AGAIN": report 02, position 1,015, message 12
+    0.98        . < message begins F7 03 00 01 35 3D D8 32 06 00 78 01
+    0.98        . < 77 more reports of it, numbered 01-4D
+    1.15        . < message begins F7 03 00 01 35 3D D8 32 06 00 78 01
+    1.16        . < 77 more reports of it, numbered 01-4D
+    1.33        . < message begins FA 03 00 00 00 6C
+    1.33  It answered: firmware build 15751, "V2.060.650", version 03. Its reports carry 1,023 bytes each.
+    1.33        . > a control report: FF EC 00 00 00 00 00 00
+    1.40        . < "SEND AGAIN": report 02, position 1,015, message 12
+    1.50        . > message 1, 1 bytes, begins FA
+    1.50        . < acknowledgement: report 01, position 1,015, message 1
+    1.50        . < message 17, 114 bytes, begins FA 03 00 00 00 6C
+    1.50        . > acknowledgement: report 01, position 1,015, message 17
+    1.51  Asked for the newer framing ("FF EC"), and who it is in that framing: it answers, with version 03.
+    1.51  AgreeLab: 128,553 characters.
+    1.52        . > message 2, 257,132 bytes, begins F7 01 00 03 EC 66 06 10 2E 2D 41 00
+    1.52        . > 76 more reports of it, numbered 02-4D
+    1.60        . < acknowledgement: report 4E, position 78,763, message 2
+    1.60        . > 77 more reports of it, numbered 4E-9A
+    1.68        . < acknowledgement: report 9B, position 157,534, message 2
+    1.68        . > 77 more reports of it, numbered 9B-E7
+    1.76        . < acknowledgement: report E8, position 236,305, message 2
+    1.76        . > 21 more reports of it, numbered E8-FC
+    1.78        . < acknowledgement: report FC, position 257,788, message 2
+    1.78    Sent 257,132 bytes in 252 reports, 0.26 s. Acknowledged 4 times.
+    2.19        . < "SEND AGAIN": report 02, position 1,015, message 12
+    2.19        . > message 3, 28 bytes, begins F8 03 00 00 00 16 06 12 44 30 41 00
+    2.19        . < acknowledgement: report 01, position 1,015, message 3
+    2.39        . < "SEND AGAIN": report 02, position 1,015, message 12
+    2.48        . < message 18, 50,133 bytes, begins F7 03 00 00 C3 CF 68 EC 03 00 78 01
+    2.48        . < 49 more reports of it, numbered 02-32
+    2.53        . > acknowledgement: report 32, position 51,142, message 18
+    2.54    Read back the same: 50 reports, compressed, 0.4 s.
+    2.54  AnovaLab: 197,539 characters.
+    2.55        . > message 4, 395,104 bytes, begins F7 01 00 06 07 5A 06 10 C1 4C 41 00
+    2.56        . > 76 more reports of it, numbered 02-4D
+    2.63        . < acknowledgement: report 4E, position 78,763, message 4
+    2.63        . > 77 more reports of it, numbered 4E-9A
+    2.71        . < acknowledgement: report 9B, position 157,534, message 4
+    2.71        . > 77 more reports of it, numbered 9B-E7
+    2.79        . < acknowledgement: report E8, position 236,305, message 4
+    2.79        . > 77 more reports of it, numbered E8-FD,02-38
+    2.87        . < acknowledgement: report 39, position 315,076, message 4
+    2.87        . > 9 more reports of it, numbered 39-41
+    2.88        . < "SEND AGAIN": report 02, position 1,015, message 12
+    2.88        . > 2 more reports of it, numbered 42-43
+    2.88        . < "SEND AGAIN": report 40, position 322,237, message 4
+    2.88    (0.33 s into message 4 the calculator said "send again": it has 315 of the 387 reports; 319 had been sent)
+    2.88        . > 36 more reports of it, numbered 40-63
+    2.96        . < "SEND AGAIN": report 63, position 358,042, message 4
+    2.96    (0.41 s into message 4 the calculator said "send again": it has 350 of the 387 reports; 351 had been sent)
+    2.96        . > 1 more report of it, numbered 63
+    2.96        . < "SEND AGAIN": report 64, position 359,065, message 4
+    2.96    (0.41 s into message 4 the calculator said "send again": it has 351 of the 387 reports; 351 had been sent)
+    2.96        . > 3 more reports of it, numbered 64-66
+    2.97        . < "SEND AGAIN": report 65, position 360,088, message 4
+    2.97    (0.41 s into message 4 the calculator said "send again": it has 352 of the 387 reports; 354 had been sent)
+    2.97        . > 1 more report of it, numbered 65
+    2.97        . < "SEND AGAIN": report 67, position 362,134, message 4
+    2.97        . > 33 more reports of it, numbered 67-87
+    3.00        . < acknowledgement: report 86, position 393,847, message 4
+    3.00        . < acknowledgement: report 87, position 395,893, message 4
+    3.00    Sent 395,104 bytes in 387 reports, 0.45 s. Acknowledged 11 times; 3 times a report was sent again.
+    3.41        . < "SEND AGAIN": report 02, position 1,015, message 12
+    3.41        . > message 5, 28 bytes, begins F8 03 00 00 00 16 06 12 0F 60 41 00
+    3.42        . < acknowledgement: report 01, position 1,015, message 5
+    3.86        . < "SEND AGAIN": report 02, position 1,015, message 12
+    4.00        . < the last acknowledgement again (FF), position 1,015, message 5
+    4.35        . < "SEND AGAIN": report 02, position 1,015, message 12
+    4.59        . < the last acknowledgement again (FF), position 1,015, message 5
+    4.84        . < "SEND AGAIN": report 02, position 1,015, message 12
+    5.08        . < the last acknowledgement again (FF), position 1,015, message 5
+    5.34        . < "SEND AGAIN": report 02, position 1,015, message 12
+    5.37        . < message 19, 75,166 bytes, begins F7 03 00 01 25 98 5C 07 06 00 78 01
+    5.37        . < 73 more reports of it, numbered 02-4A
+    5.44        . > acknowledgement: report 4A, position 75,694, message 19
+    5.46    Read back the same: 74 reports, compressed, 2.0 s.
+    5.46  BayesTree: 164,800 characters.
+    5.47        . > message 6, 329,628 bytes, begins F7 01 00 05 07 96 06 12 43 20 42 00
+    5.47        . > 76 more reports of it, numbered 02-4D
+    5.55        . < acknowledgement: report 4E, position 78,763, message 6
+    5.55        . > 77 more reports of it, numbered 4E-9A
+    5.63        . < acknowledgement: report 9B, position 157,534, message 6
+    5.63        . > 77 more reports of it, numbered 9B-E7
+    5.70        . < acknowledgement: report E8, position 236,305, message 6
+    5.70        . > 77 more reports of it, numbered E8-FD,02-38
+    5.78        . < acknowledgement: report 39, position 315,076, message 6
+    5.78        . > 15 more reports of it, numbered 39-47
+    5.80        . < acknowledgement: report 47, position 330,421, message 6
+    5.80    Sent 329,628 bytes in 323 reports, 0.33 s. Acknowledged 5 times.
+    6.21        . < "SEND AGAIN": report 02, position 1,015, message 12
+    6.21        . > message 7, 30 bytes, begins F8 03 00 00 00 18 06 14 84 01 42 00
+    6.21        . < acknowledgement: report 01, position 1,015, message 7
+    6.32        . < "SEND AGAIN": report 02, position 1,015, message 12
+    6.80        . < the last acknowledgement again (FF), position 1,015, message 7
+    6.81        . < "SEND AGAIN": report 02, position 1,015, message 12
+    7.30        . < "SEND AGAIN": report 02, position 1,015, message 12
+    7.38        . < the last acknowledgement again (FF), position 1,015, message 7
+    7.79        . < "SEND AGAIN": report 02, position 1,015, message 12
+    7.88        . < message 20, 63,952 bytes, begins F7 03 00 00 F9 CA 98 07 05 00 78 01
+    7.88        . < 1 more report of it, numbered 02
+    7.88        . < the last acknowledgement again (FF), position 1,015, message 7
+    7.88        . < 61 more reports of it, numbered 03-3F
+    7.94        . > acknowledgement: report 3F, position 64,441, message 20
+    7.95    Read back the same: 63 reports, compressed, 1.7 s.
+    7.95  BiNorm3D: 71,203 characters.
+    7.96        . > message 8, 142,432 bytes, begins F7 01 00 02 2C 5A 06 10 03 2C 42 00
+    7.96        . > 76 more reports of it, numbered 02-4D
+    8.04        . < acknowledgement: report 4E, position 78,763, message 8
+    8.04        . > 51 more reports of it, numbered 4E-80
+    8.09        . < "SEND AGAIN": report 7D, position 126,844, message 8
+    8.09    (0.13 s into message 8 the calculator said "send again": it has 124 of the 140 reports; 128 had been sent)
+    8.09        . > 16 more reports of it, numbered 7D-8C
+    8.17        . < acknowledgement: report 8C, position 143,212, message 8
+    8.17    Sent 142,432 bytes in 140 reports, 0.21 s. Acknowledged 3 times; 1 time a report was sent again.
+    8.58        . < "SEND AGAIN": report 02, position 1,015, message 12
+    8.58        . > message 9, 28 bytes, begins F8 03 00 00 00 16 06 12 1B A2 42 00
+    8.58        . < acknowledgement: report 01, position 1,015, message 9
+    8.78        . < "SEND AGAIN": report 02, position 1,015, message 12
+    9.17        . < the last acknowledgement again (FF), position 1,015, message 9
+    9.26        . < "SEND AGAIN": report 02, position 1,015, message 12
+    9.27        . < message 21, 28,155 bytes, begins F7 03 00 00 6D F5 5C 2C 02 00 78 01
+    9.27        . < 27 more reports of it, numbered 02-1C
+    9.29        . > acknowledgement: report 1C, position 28,636, message 21
+    9.30    Read back the same: 28 reports, compressed, 0.7 s.
+    9.30  BurrLab: 203,106 characters.
+    9.31        . > message 10, 406,236 bytes, begins F7 01 00 06 32 D6 06 0E 5E 3D 42 00
+    9.32        . > 62 more reports of it, numbered 02-3F
+    9.38        . < "SEND AGAIN": report 3E, position 62,395, message 10
+    9.38    (0.06 s into message 10 the calculator said "send again": it has 61 of the 398 reports; 63 had been sent)
+    9.38        . > 1 more report of it, numbered 3E
+    9.38        . < "SEND AGAIN": report 3F, position 63,418, message 10
+    9.38    (0.07 s into message 10 the calculator said "send again": it has 62 of the 398 reports; 62 had been sent)
+    9.38        . < "SEND AGAIN": report 40, position 64,441, message 10
+    9.38    (0.07 s into message 10 the calculator said "send again": it has 63 of the 398 reports; 62 had been sent)
+    9.38        . > 3 more reports of it, numbered 40-42
+    9.38        . < "SEND AGAIN": report 41, position 65,464, message 10
+    9.38    (0.07 s into message 10 the calculator said "send again": it has 64 of the 398 reports; 66 had been sent)
+    9.38        . > 1 more report of it, numbered 41
+    9.38        . < "SEND AGAIN": report 42, position 66,487, message 10
+    9.38        . > 2 more reports of it, numbered 42-43
+    9.39        . < "SEND AGAIN": report 43, position 67,510, message 10
+    9.39        . > 1 more report of it, numbered 43
+    9.39        . < "SEND AGAIN": report 44, position 68,533, message 10
+    9.39        . > 11 more reports of it, numbered 44-4E
+    9.40        . < acknowledgement: report 4E, position 78,763, message 10
+    9.40        . > 76 more reports of it, numbered 4F-9A
+    9.48        . < acknowledgement: report 9B, position 157,534, message 10
+    9.48        . > 25 more reports of it, numbered 9B-B3
+    9.50        . < "SEND AGAIN": report B3, position 182,086, message 10
+    9.50        . > 1 more report of it, numbered B3
+    9.50        . < "SEND AGAIN": report B4, position 183,109, message 10
+    9.50        . > 2 more reports of it, numbered B4-B5
+    9.51        . < "SEND AGAIN": report B5, position 184,132, message 10
+    9.51        . > 1 more report of it, numbered B5
+    9.51        . < "SEND AGAIN": report B6, position 185,155, message 10
+    9.51        . > 2 more reports of it, numbered B6-B7
+    9.51        . < "SEND AGAIN": report B7, position 186,178, message 10
+    9.51        . > 1 more report of it, numbered B7
+    9.51        . < "SEND AGAIN": report B8, position 187,201, message 10
+    9.51        . > 49 more reports of it, numbered B8-E8
+    9.56        . < acknowledgement: report E8, position 236,305, message 10
+    9.56        . > 76 more reports of it, numbered E9-FD,02-38
+    9.64        . < acknowledgement: report 39, position 315,076, message 10
+    9.64        . > 77 more reports of it, numbered 39-85
+    9.72        . < acknowledgement: report 86, position 393,847, message 10
+    9.72        . > 13 more reports of it, numbered 86-92
+    9.73        . < acknowledgement: report 92, position 407,146, message 10
+    9.73    Sent 406,236 bytes in 398 reports, 0.42 s. Acknowledged 19 times; 6 times a report was sent again.
+   10.13        . < "SEND AGAIN": report 02, position 1,015, message 12
+   10.13        . > message 11, 26 bytes, begins F8 03 00 00 00 14 06 10 73 10 42 00
+   10.14        . < acknowledgement: report 01, position 1,015, message 11
+   10.25        . < "SEND AGAIN": report 02, position 1,015, message 12
+   10.72        . < the last acknowledgement again (FF), position 1,015, message 11
+   10.74        . < "SEND AGAIN": report 02, position 1,015, message 12
+   11.23        . < "SEND AGAIN": report 02, position 1,015, message 12
+   11.31        . < the last acknowledgement again (FF), position 1,015, message 11
+   11.72        . < "SEND AGAIN": report 02, position 1,015, message 12
+   11.90        . < the last acknowledgement again (FF), position 1,015, message 11
+   12.22        . < "SEND AGAIN": report 02, position 1,015, message 12
+   12.48        . < the last acknowledgement again (FF), position 1,015, message 11
+   12.71        . < "SEND AGAIN": report 02, position 1,015, message 12
+   13.07        . < the last acknowledgement again (FF), position 1,015, message 11
+   13.17        . < message 22, 79,171 bytes, begins F7 03 00 01 35 3D D8 32 06 00 78 01
+   13.17        . < 77 more reports of it, numbered 02-4E
+   13.24        . > acknowledgement: report 4E, position 79,786, message 22
+   13.27    Read back the same: 78 reports, compressed, 3.1 s.
+   13.27  ChiTable: 182,459 characters.
+   13.28        . < "SEND AGAIN": report 02, position 1,015, message 12
+   13.28        . > message 12, 364,944 bytes, begins F7 01 00 05 91 8A 06 10 AD 9A 43 00
+   13.28        . > 76 more reports of it, numbered 02-4D
+   13.35        . < acknowledgement: report 4E, position 78,763, message 12
+   13.35        . > 64 more reports of it, numbered 4E-8D
+   13.42        . < "SEND AGAIN": report 8D, position 143,212, message 12
+   13.42    (0.14 s into message 12 the calculator said "send again": it has 140 of the 357 reports; 141 had been sent)
+   13.42        . > 1 more report of it, numbered 8D
+   13.42        . < "SEND AGAIN": report 8E, position 144,235, message 12
+   13.42    (0.14 s into message 12 the calculator said "send again": it has 141 of the 357 reports; 141 had been sent)
+   13.42        . > 3 more reports of it, numbered 8E-90
+   13.42        . < "SEND AGAIN": report 8F, position 145,258, message 12
+   13.42    (0.15 s into message 12 the calculator said "send again": it has 142 of the 357 reports; 144 had been sent)
+   13.42        . < "SEND AGAIN": report 90, position 146,281, message 12
+   13.42    (0.15 s into message 12 the calculator said "send again": it has 143 of the 357 reports; 142 had been sent)
+   13.42        . > 1 more report of it, numbered 90
+   13.43        . < "SEND AGAIN": report 91, position 147,304, message 12
+   13.43        . > 11 more reports of it, numbered 91-9B
+   13.44        . < acknowledgement: report 9B, position 157,534, message 12
+   13.44        . > 76 more reports of it, numbered 9C-E7
+   13.51        . < acknowledgement: report E8, position 236,305, message 12
+   13.51        . > 77 more reports of it, numbered E8-FD,02-38
+   13.59        . < acknowledgement: report 39, position 315,076, message 12
+   13.59        . > 49 more reports of it, numbered 39-69
+   13.64        . < acknowledgement: report 69, position 365,203, message 12
+   13.64    Sent 364,944 bytes in 357 reports, 0.36 s. Acknowledged 10 times; 2 times a report was sent again.
+   14.05        . < "SEND AGAIN": report 02, position 1,015, message 12
+   14.05        . > message 13, 28 bytes, begins F8 03 00 00 00 16 06 12 30 0E 43 00
+   14.06        . < acknowledgement: report 01, position 1,015, message 13
+   14.22        . < "SEND AGAIN": report 02, position 1,015, message 12
+   14.64        . < the last acknowledgement again (FF), position 1,015, message 13
+   14.71        . < "SEND AGAIN": report 02, position 1,015, message 12
+   15.21        . < "SEND AGAIN": report 02, position 1,015, message 12
+   15.23        . < the last acknowledgement again (FF), position 1,015, message 13
+   15.70        . < "SEND AGAIN": report 02, position 1,015, message 12
+   15.81        . < the last acknowledgement again (FF), position 1,015, message 13
+   16.19        . < "SEND AGAIN": report 02, position 1,015, message 12
+   16.40        . < the last acknowledgement again (FF), position 1,015, message 13
+   16.68        . < "SEND AGAIN": report 02, position 1,015, message 12
+   16.99        . < the last acknowledgement again (FF), position 1,015, message 13
+   17.18        . < "SEND AGAIN": report 02, position 1,015, message 12
+   17.57        . < the last acknowledgement again (FF), position 1,015, message 13
+   17.67        . < "SEND AGAIN": report 02, position 1,015, message 12
+   18.16        . < the last acknowledgement again (FF), position 1,015, message 13
+   18.16        . < "SEND AGAIN": report 02, position 1,015, message 12
+   18.65        . < "SEND AGAIN": report 02, position 1,015, message 12
+   18.74        . < the last acknowledgement again (FF), position 1,015, message 13
+   19.14        . < "SEND AGAIN": report 02, position 1,015, message 12
+   19.33        . < the last acknowledgement again (FF), position 1,015, message 13
+   19.64        . < "SEND AGAIN": report 02, position 1,015, message 12
+   19.82        . < message 23, 69,901 bytes, begins F7 03 00 01 11 07 8C 91 05 00 78 01
+   19.82        . < 1 more report of it, numbered 02
+   19.82        . < the last acknowledgement again (FF), position 1,015, message 13
+   19.82        . < 67 more reports of it, numbered 03-45
+   19.89        . > acknowledgement: report 45, position 70,579, message 23
+   19.91    Read back the same: 69 reports, compressed, 5.9 s.
+   19.91  CICatcher: 100,298 characters.
+   19.91        . > message 14, 200,624 bytes, begins F7 01 00 03 0F AA 06 12 52 18 43 00
+   19.91        . > 47 more reports of it, numbered 02-30
+   19.96        . < "SEND AGAIN": report 2F, position 47,050, message 14
+   19.96    (0.05 s into message 14 the calculator said "send again": it has 46 of the 197 reports; 48 had been sent)
+   19.96        . > 1 more report of it, numbered 2F
+   19.96        . < "SEND AGAIN": report 30, position 48,073, message 14
+   19.96    (0.05 s into message 14 the calculator said "send again": it has 47 of the 197 reports; 47 had been sent)
+   19.96        . > 1 more report of it, numbered 30
+   19.96        . < "SEND AGAIN": report 31, position 49,096, message 14
+   19.96    (0.05 s into message 14 the calculator said "send again": it has 48 of the 197 reports; 48 had been sent)
+   19.96        . > 3 more reports of it, numbered 31-33
+   19.97        . < "SEND AGAIN": report 32, position 50,119, message 14
+   19.97    (0.05 s into message 14 the calculator said "send again": it has 49 of the 197 reports; 51 had been sent)
+   19.97        . > 1 more report of it, numbered 32
+   19.97        . < "SEND AGAIN": report 33, position 51,142, message 14
+   19.97        . > 2 more reports of it, numbered 33-34
+   19.97        . < "SEND AGAIN": report 34, position 52,165, message 14
+   19.97        . > 1 more report of it, numbered 34
+   19.97        . < "SEND AGAIN": report 35, position 53,188, message 14
+   19.97        . > 27 more reports of it, numbered 35-4F
+   20.00        . < acknowledgement: report 4E, position 78,763, message 14
+   20.00        . > 75 more reports of it, numbered 50-9A
+   20.07        . < acknowledgement: report 9B, position 157,534, message 14
+   20.07        . > 43 more reports of it, numbered 9B-C5
+   20.12        . < acknowledgement: report C5, position 201,523, message 14
+   20.12    Sent 200,624 bytes in 197 reports, 0.21 s. Acknowledged 10 times; 3 times a report was sent again.
+   20.52        . < "SEND AGAIN": report 02, position 1,015, message 12
+   20.52        . > message 15, 30 bytes, begins F8 03 00 00 00 18 06 14 E7 60 43 00
+   20.52        . < acknowledgement: report 01, position 1,015, message 15
+   20.62        . < "SEND AGAIN": report 02, position 1,015, message 12
+   21.11        . < "SEND AGAIN": report 02, position 1,015, message 12
+   21.11        . < the last acknowledgement again (FF), position 1,015, message 15
+   21.60        . < "SEND AGAIN": report 02, position 1,015, message 12
+   21.70        . < the last acknowledgement again (FF), position 1,015, message 15
+   22.09        . < "SEND AGAIN": report 02, position 1,015, message 12
+   22.28        . < the last acknowledgement again (FF), position 1,015, message 15
+   22.59        . < "SEND AGAIN": report 02, position 1,015, message 12
+   22.87        . < the last acknowledgement again (FF), position 1,015, message 15
+   23.06        . < message 24, 41,598 bytes, begins F7 03 00 00 A2 78 AC 0F 03 00 78 01
+   23.06        . < 40 more reports of it, numbered 02-29
+   23.10        . > acknowledgement: report 29, position 41,935, message 24
+   23.11    Read back the same: 41 reports, compressed, 2.6 s.
+   23.11  DataLoad: 40,856 characters.
+   23.12        . > message 16, 81,738 bytes, begins F7 01 00 01 3F 44 06 10 91 CF 44 00
+   23.12        . < "SEND AGAIN": report 02, position 1,015, message 12
+   23.12        . > 53 more reports of it, numbered 02-36
+   23.17        . < "SEND AGAIN": report 36, position 54,211, message 16
+   23.17    (0.05 s into message 16 the calculator said "send again": it has 53 of the 80 reports; 54 had been sent)
+   23.17        . > 1 more report of it, numbered 36
+   23.17        . < "SEND AGAIN": report 37, position 55,234, message 16
+   23.17    (0.06 s into message 16 the calculator said "send again": it has 54 of the 80 reports; 54 had been sent)
+   23.17        . > 2 more reports of it, numbered 37-38
+   23.17        . < "SEND AGAIN": report 38, position 56,257, message 16
+   23.17    (0.06 s into message 16 the calculator said "send again": it has 55 of the 80 reports; 56 had been sent)
+   23.17        . > 1 more report of it, numbered 38
+   23.17        . < "SEND AGAIN": report 39, position 57,280, message 16
+   23.17    (0.06 s into message 16 the calculator said "send again": it has 56 of the 80 reports; 56 had been sent)
+   23.17        . > 2 more reports of it, numbered 39-3A
+   23.18        . < "SEND AGAIN": report 3A, position 58,303, message 16
+   23.18        . > 1 more report of it, numbered 3A
+   23.18        . < "SEND AGAIN": report 3B, position 59,326, message 16
+   23.18        . > 20 more reports of it, numbered 3B-4E
+   23.20        . < acknowledgement: report 4E, position 78,763, message 16
+   23.20        . > 2 more reports of it, numbered 4F-50
+   23.20        . < acknowledgement: report 50, position 81,832, message 16
+   23.20    Sent 81,738 bytes in 80 reports, 0.08 s. Acknowledged 8 times; 3 times a report was sent again.
+   23.60        . < "SEND AGAIN": report 02, position 1,015, message 12
+   23.60        . > message 17, 28 bytes, begins F8 03 00 00 00 16 06 12 BC 5C 44 00
+   23.60        . < acknowledgement: report 01, position 1,015, message 17
+   24.09        . < "SEND AGAIN": report 02, position 1,015, message 12
+   24.19        . < the last acknowledgement again (FF), position 1,015, message 17
+   24.58        . < "SEND AGAIN": report 02, position 1,015, message 12
+   24.78        . < the last acknowledgement again (FF), position 1,015, message 17
+   25.07        . < "SEND AGAIN": report 02, position 1,015, message 12
+   25.17        . < message 25, 16,758 bytes, begins F7 03 00 00 41 70 46 3F 01 00 78 01
+   25.17        . < 16 more reports of it, numbered 02-11
+   25.18        . > acknowledgement: report 11, position 17,383, message 25
+   25.19    Read back the same: 17 reports, compressed, 1.6 s.
+   25.19  DNAMixLR: 154,898 characters.
+   25.20        . > message 18, 309,822 bytes, begins F7 01 00 04 BA 38 06 10 9F 1D 44 00
+   25.20        . > 65 more reports of it, numbered 02-42
+   25.27        . < "SEND AGAIN": report 42, position 66,487, message 18
+   25.27    (0.07 s into message 18 the calculator said "send again": it has 65 of the 303 reports; 66 had been sent)
+   25.27        . > 1 more report of it, numbered 42
+   25.27        . < "SEND AGAIN": report 43, position 67,510, message 18
+   25.27    (0.07 s into message 18 the calculator said "send again": it has 66 of the 303 reports; 66 had been sent)
+   25.27        . > 12 more reports of it, numbered 43-4E
+   25.28        . < acknowledgement: report 4E, position 78,763, message 18
+   25.28        . > 18 more reports of it, numbered 4F-60
+   25.30        . < "SEND AGAIN": report 5E, position 95,131, message 18
+   25.30    (0.10 s into message 18 the calculator said "send again": it has 93 of the 303 reports; 96 had been sent)
+   25.30        . > 62 more reports of it, numbered 5E-9B, over 0.1 s
+   25.41        . < acknowledgement: report 9B, position 157,534, message 18
+   25.41        . > 76 more reports of it, numbered 9C-E7
+   25.49        . < acknowledgement: report E8, position 236,305, message 18
+   25.49        . > 56 more reports of it, numbered E8-FD,02-23
+   25.55        . < "SEND AGAIN": report 21, position 290,524, message 18
+   25.55    (0.35 s into message 18 the calculator said "send again": it has 284 of the 303 reports; 287 had been sent)
+   25.55        . > 1 more report of it, numbered 21
+   25.56        . < "SEND AGAIN": report 02, position 1,015, message 12
+   25.56        . > 18 more reports of it, numbered 22-33
+   25.58        . < acknowledgement: report 33, position 309,961, message 18
+   25.58    Sent 309,822 bytes in 303 reports, 0.38 s. Acknowledged 8 times; 3 times a report was sent again.
+   25.99        . > message 19, 28 bytes, begins F8 03 00 00 00 16 06 12 66 12 44 00
+   25.99        . < acknowledgement: report 01, position 1,015, message 19
+   26.05        . < "SEND AGAIN": report 02, position 1,015, message 12
+   26.54        . < "SEND AGAIN": report 02, position 1,015, message 12
+   26.58        . < the last acknowledgement again (FF), position 1,015, message 19
+   27.04        . < "SEND AGAIN": report 02, position 1,015, message 12
+   27.17        . < the last acknowledgement again (FF), position 1,015, message 19
+   27.53        . < "SEND AGAIN": report 02, position 1,015, message 12
+   27.75        . < the last acknowledgement again (FF), position 1,015, message 19
+   28.02        . < "SEND AGAIN": report 02, position 1,015, message 12
+   28.34        . < the last acknowledgement again (FF), position 1,015, message 19
+   28.51        . < "SEND AGAIN": report 02, position 1,015, message 12
+   28.83        . < the last acknowledgement again (FF), position 1,015, message 19
+   29.00        . < "SEND AGAIN": report 02, position 1,015, message 12
+   29.41        . < the last acknowledgement again (FF), position 1,015, message 19
+   29.49        . < "SEND AGAIN": report 02, position 1,015, message 12
+   29.98        . < "SEND AGAIN": report 02, position 1,015, message 12
+   30.00        . < the last acknowledgement again (FF), position 1,015, message 19
+   30.48        . < "SEND AGAIN": report 02, position 1,015, message 12
+   30.59        . < the last acknowledgement again (FF), position 1,015, message 19
+   30.97        . < "SEND AGAIN": report 02, position 1,015, message 12
+   31.17        . < the last acknowledgement again (FF), position 1,015, message 19
+   31.46        . < "SEND AGAIN": report 02, position 1,015, message 12
+   31.66        . < the last acknowledgement again (FF), position 1,015, message 19
+   31.95        . < "SEND AGAIN": report 02, position 1,015, message 12
+   32.25        . < the last acknowledgement again (FF), position 1,015, message 19
+   32.44        . < "SEND AGAIN": report 02, position 1,015, message 12
+   32.83        . < the last acknowledgement again (FF), position 1,015, message 19
+   32.94        . < "SEND AGAIN": report 02, position 1,015, message 12
+   33.22        . < message 26, 59,480 bytes, begins F7 03 00 00 E8 52 3A BA 04 00 78 01
+   33.22        . < 58 more reports of it, numbered 02-3B
+   33.28        . > acknowledgement: report 3B, position 60,349, message 26
+   33.29    Read back the same: 59 reports, compressed, 7.3 s.
+   33.29  EpiStats: 289,813 characters.
+   33.31        . > message 20, 579,652 bytes, begins F7 01 00 08 D8 3E 06 10 07 91 45 00
+   33.31        . > 10 more reports of it, numbered 02-0B
+   33.32        . < "SEND AGAIN": report 0A, position 9,199, message 20
+   33.32    (0.01 s into message 20 the calculator said "send again": it has 9 of the 567 reports; 11 had been sent)
+   33.32        . > 1 more report of it, numbered 0A
+   33.32        . < "SEND AGAIN": report 0C, position 11,245, message 20
+   33.32    (0.01 s into message 20 the calculator said "send again": it has 11 of the 567 reports; 10 had been sent)
+   33.32        . > 15 more reports of it, numbered 0C-1A
+   33.34        . < "SEND AGAIN": report 19, position 24,544, message 20
+   33.34    (0.03 s into message 20 the calculator said "send again": it has 24 of the 567 reports; 26 had been sent)
+   33.34        . > 1 more report of it, numbered 19
+   33.34        . < acknowledgement: report 01, position 1,015, message 19
+   33.34        . > 1 more report of it, numbered 1A
+   33.34        . < "SEND AGAIN": report 0C, position 11,245, message 20
+   33.34    (0.03 s into message 20 the calculator said "send again": it has 11 of the 567 reports; 26 had been sent)
+   33.34        . > 1 more report of it, numbered 0C
+   33.34        . < "SEND AGAIN": report 1B, position 26,590, message 20
+   33.34        . > 1 more report of it, numbered 1B
+   33.34        . < acknowledgement: report 01, position 1,015, message 19
+   33.34        . > 1 more report of it, numbered 1C
+   33.34        . < "SEND AGAIN": report 0C, position 11,245, message 20
+   33.34        . > 1 more report of it, numbered 1D
+   33.34        . < "SEND AGAIN": report 1B, position 26,590, message 20
+   33.34        . < "SEND AGAIN": report 02, position 1,015, message 20
+   33.34        . > 1 more report of it, numbered 02
+   33.35        . < "SEND AGAIN": report 0C, position 11,245, message 20
+   33.35        . > 2 more reports of it, numbered 0C-0D
+   33.35        . < "SEND AGAIN": report 1B, position 26,590, message 20
+   33.35        . > 1 more report of it, numbered 1B
+   33.35        . < "SEND AGAIN": report 1E, position 29,659, message 20
+   33.35        . > 1 more report of it, numbered 1E
+   33.35        . < "SEND AGAIN": report 03, position 2,038, message 12
+   33.35        . > 49 more reports of it, numbered 1F-4F
+   33.40        . < acknowledgement: report 4E, position 78,763, message 20
+   33.40        . > 23 more reports of it, numbered 50-66
+   33.42        . < "SEND AGAIN": report 65, position 102,292, message 20
+   33.42        . > 1 more report of it, numbered 65
+   33.42        . < "SEND AGAIN": report 66, position 103,315, message 20
+   33.42        . > 1 more report of it, numbered 66
+   33.42        . < "SEND AGAIN": report 67, position 104,338, message 20
+   33.42        . > 3 more reports of it, numbered 67-69
+   33.43        . < "SEND AGAIN": report 68, position 105,361, message 20
+   33.43        . > 1 more report of it, numbered 68
+   33.43        . < "SEND AGAIN": report 69, position 106,384, message 20
+   33.43        . > 2 more reports of it, numbered 69-6A
+   33.43        . < "SEND AGAIN": report 6A, position 107,407, message 20
+   33.43        . > 1 more report of it, numbered 6A
+   33.43        . < "SEND AGAIN": report 6B, position 108,430, message 20
+   33.43        . > 50 more reports of it, numbered 6B-9C
+   33.48        . < acknowledgement: report 9B, position 157,534, message 20
+   33.48        . > 64 more reports of it, numbered 9D-DC
+   33.55        . < "SEND AGAIN": report DB, position 223,006, message 20
+   33.55        . < "SEND AGAIN": report DC, position 224,029, message 20
+   33.55        . > 1 more report of it, numbered DC
+   33.55        . < "SEND AGAIN": report DD, position 225,052, message 20
+   33.55        . > 3 more reports of it, numbered DD-DF
+   33.55        . < "SEND AGAIN": report DE, position 226,075, message 20
+   33.55        . < "SEND AGAIN": report DF, position 227,098, message 20
+   33.55        . > 1 more report of it, numbered DF
+   33.55        . < "SEND AGAIN": report E0, position 228,121, message 20
+   33.55        . > 10 more reports of it, numbered E0-E9
+   33.56        . < acknowledgement: report E8, position 236,305, message 20
+   33.56        . > 75 more reports of it, numbered EA-FD,02-38
+   33.64        . < acknowledgement: report 39, position 315,076, message 20
+   33.64        . > 33 more reports of it, numbered 39-59
+   33.67        . < "SEND AGAIN": report 58, position 346,789, message 20
+   33.67        . > 1 more report of it, numbered 58
+   33.67        . < "SEND AGAIN": report 59, position 347,812, message 20
+   33.67        . > 1 more report of it, numbered 59
+   33.67        . < "SEND AGAIN": report 5A, position 348,835, message 20
+   33.67        . > 3 more reports of it, numbered 5A-5C
+   33.68        . < "SEND AGAIN": report 5B, position 349,858, message 20
+   33.68        . > 1 more report of it, numbered 5B
+   33.68        . < "SEND AGAIN": report 5C, position 350,881, message 20
+   33.68        . > 2 more reports of it, numbered 5C-5D
+   33.68        . < "SEND AGAIN": report 5D, position 351,904, message 20
+   33.68        . > 1 more report of it, numbered 5D
+   33.68        . < "SEND AGAIN": report 5E, position 352,927, message 20
+   33.68        . > 42 more reports of it, numbered 5E-87
+   33.72        . < acknowledgement: report 86, position 393,847, message 20
+   33.73        . > 25 more reports of it, numbered 88-A0
+   33.75        . < message 27, 59,480 bytes, begins F7 03 00 00 E8 52 3A BA 04 00 78 01
+   33.75        . < 1 more report of it, numbered 02
+   33.76        . < "SEND AGAIN": report A0, position 420,445, message 20
+   33.84        . < "SEND AGAIN": report 03, position 2,038, message 12
+   33.84        . < "SEND AGAIN": report B9, position 446,020, message 20
+   34.33        . < "SEND AGAIN": report 03, position 2,038, message 12
+   34.34        . < "SEND AGAIN": report B9, position 446,020, message 20
+   34.53        . < "SEND AGAIN": report 04, position 3,061, message 12
+   34.83        . < "SEND AGAIN": report B9, position 446,020, message 20
+   35.02        . < "SEND AGAIN": report 04, position 3,061, message 12
+   35.32        . < "SEND AGAIN": report B9, position 446,020, message 20
+   35.52        . < "SEND AGAIN": report 04, position 3,061, message 12
+   35.81        . < "SEND AGAIN": report B9, position 446,020, message 20
+   36.00        . < "SEND AGAIN": report 05, position 4,084, message 12
+   36.30        . < "SEND AGAIN": report B9, position 446,020, message 20
+   36.50        . < "SEND AGAIN": report 05, position 4,084, message 12
+   36.80        . < "SEND AGAIN": report B9, position 446,020, message 20
+   36.86        . < "SEND AGAIN": report BB, position 448,066, message 20
+   36.99        . < "SEND AGAIN": report 05, position 4,084, message 12
+   37.06        . < "SEND AGAIN": report 06, position 5,107, message 12
+   37.35        . < "SEND AGAIN": report BB, position 448,066, message 20
+   37.41        . < "SEND AGAIN": report BC, position 449,089, message 20
+   37.47        . < "SEND AGAIN": report BD, position 450,112, message 20
+   37.55        . < "SEND AGAIN": report 06, position 5,107, message 12
+   37.96        . < "SEND AGAIN": report BD, position 450,112, message 20
+   38.02        . < "SEND AGAIN": report C0, position 453,181, message 20
+   38.05        . < "SEND AGAIN": report 06, position 5,107, message 12
+   38.51        . < "SEND AGAIN": report C0, position 453,181, message 20
+   38.54        . < "SEND AGAIN": report 06, position 5,107, message 12
+   38.55        . < "SEND AGAIN": report C3, position 456,250, message 20
+   39.03        . < "SEND AGAIN": report 24, position 35,797, message 12
+   39.16        . < "SEND AGAIN": report 24, position 35,797, message 12
+   39.65        . < "SEND AGAIN": report 24, position 35,797, message 12
+   40.14        . < "SEND AGAIN": report 24, position 35,797, message 12
+   40.63        . < "SEND AGAIN": report 24, position 35,797, message 12
+   40.64        . < "SEND AGAIN": report D3, position 472,618, message 20
+   41.13        . < "SEND AGAIN": report 24, position 35,797, message 12
+   41.13        . < "SEND AGAIN": report D3, position 472,618, message 20
+   41.19        . < "SEND AGAIN": report D4, position 473,641, message 20
+   41.25        . < "SEND AGAIN": report D5, position 474,664, message 20
+   41.62        . < "SEND AGAIN": report 25, position 36,820, message 12
+   41.74        . < "SEND AGAIN": report D5, position 474,664, message 20
+   41.80        . < "SEND AGAIN": report 25, position 36,820, message 12
+   41.80        . < "SEND AGAIN": report D6, position 475,687, message 20
+   42.29        . < "SEND AGAIN": report 26, position 37,843, message 12
+   42.29        . < "SEND AGAIN": report D6, position 475,687, message 20
+   42.35        . < "SEND AGAIN": report 26, position 37,843, message 12
+   42.35        . < "SEND AGAIN": report D7, position 476,710, message 20
+   42.84        . < "SEND AGAIN": report 27, position 38,866, message 12
+   42.84        . < "SEND AGAIN": report D7, position 476,710, message 20
+   43.17        . < "SEND AGAIN": report 27, position 38,866, message 12
+   43.66        . < "SEND AGAIN": report 40, position 64,441, message 12
+   44.16        . < "SEND AGAIN": report 40, position 64,441, message 12
+   44.65        . < "SEND AGAIN": report 40, position 64,441, message 12
+   45.14        . < "SEND AGAIN": report 40, position 64,441, message 12
+   45.63        . < "SEND AGAIN": report 40, position 64,441, message 12
+   46.12        . < "SEND AGAIN": report 40, position 64,441, message 12
+   46.61        . < "SEND AGAIN": report 40, position 64,441, message 12
+   47.10        . < "SEND AGAIN": report 40, position 64,441, message 12
+   47.60        . < "SEND AGAIN": report 40, position 64,441, message 12
+   48.09        . < "SEND AGAIN": report 40, position 64,441, message 12
+   48.28        . (113 more lines of this kind left out)
+   48.28    NOT SENT: message 20 stood for 5.0 s with 539 of its 567 reports acknowledged; the calculator last said report 24, position 551,389.
+   48.28    The last reports before that, which the log had left out:
+   43.66        . < acknowledgement: report 24, position 551,389, message 20
+   43.66        . > 1 more report of it, numbered 24
+   43.66        . > 27 more reports of it, numbered 25-3F
+   44.15        . < acknowledgement: report 24, position 551,389, message 20
+   44.15        . > 1 more report of it, numbered 24
+   44.16        . > 27 more reports of it, numbered 25-3F
+   44.64        . < acknowledgement: report 24, position 551,389, message 20
+   44.64        . > 1 more report of it, numbered 24
+   44.65        . > 27 more reports of it, numbered 25-3F
+   45.13        . < acknowledgement: report 24, position 551,389, message 20
+   45.13        . > 1 more report of it, numbered 24
+   45.14        . > 27 more reports of it, numbered 25-3F
+   45.63        . < acknowledgement: report 24, position 551,389, message 20
+   45.63        . > 1 more report of it, numbered 24
+   45.63        . > 27 more reports of it, numbered 25-3F
+   46.12        . < acknowledgement: report 24, position 551,389, message 20
+   46.12        . > 1 more report of it, numbered 24
+   46.12        . > 27 more reports of it, numbered 25-3F
+   46.61        . < acknowledgement: report 24, position 551,389, message 20
+   46.61        . > 1 more report of it, numbered 24
+   46.61        . > 27 more reports of it, numbered 25-3F
+   47.10        . < acknowledgement: report 24, position 551,389, message 20
+   47.10        . > 1 more report of it, numbered 24
+   47.10        . > 27 more reports of it, numbered 25-3F
+   47.59        . < acknowledgement: report 24, position 551,389, message 20
+   47.59        . > 1 more report of it, numbered 24
+   47.60        . > 27 more reports of it, numbered 25-3F
+   48.09        . < acknowledgement: report 24, position 551,389, message 20
+   48.09        . > 1 more report of it, numbered 24
+   48.09        . > 27 more reports of it, numbered 25-3F
+
+   48.28  RESULT: 9 programs of 30 on the calculator and read back the same; EpiStats: unsent (message 20 stood for 5.0 s with 539 of its 567 reports acknowledged; the calculator last said report 24, position 551,389). 2,916 reports carried the programs there and back; 48.3 s in all.

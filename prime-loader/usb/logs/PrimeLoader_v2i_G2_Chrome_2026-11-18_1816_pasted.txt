@@ -1,0 +1,77 @@
+HP Prime Loader, v2i, straight down the cable. Wed Nov 18 2026 18:16:05 GMT-0600 (Central Standard Time)
+Browser: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36
+Device: HP Prime G2 (USB 03F0:2441), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator.
+Chosen: Chapters 1–3; 4 programs, 422,732 characters: DataLoad, NormExplorer, ScatterLab, TestChooser.
+
+    0.00  Asking the calculator who it is ("00 FA") ...
+    0.00        . > message begins FA
+    0.00        . < message begins FA 03 00 00 00 6C
+    0.00  It answered: firmware build 15751, "V2.060.650", version 03. Its reports carry 1,023 bytes each.
+    0.00        . > a control report: FF EC 00 00 00 00 00 00
+    0.16        . > message 1, 1 bytes, begins FA
+    0.17        . < acknowledgement: report 01, position 1,015, message 1
+    0.17        . < message 2, 114 bytes, begins FA 03 00 00 00 6C
+    0.17        . > acknowledgement: report 01, position 1,015, message 2
+    0.17  Asked for the newer framing ("FF EC"), and who it is in that framing: it answers, with version 03.
+    0.17  Making room: taking off the book's programs that are not in this choice, if they are there (26): AgreeLab, AnovaLab, BayesTree, BiNorm3D, BurrLab, ChiTable, CICatcher, DNAMixLR, EpiStats, ErrorRate, ExhibitLab, FitCheck, GaltonBoard, Norm3, PowerViz, RankLab, ResampLab, RiskLab, SampDist, StatDist, StudRange, SurvLab, TDist3D, TrendTest, TTestLab, TTestLabG.
+    0.17        . > message 2, 26 bytes, begins EB 03 00 00 00 14 06 10 DC D0 41 00
+    0.17        . < acknowledgement: report 01, position 1,015, message 2
+    0.48        . > message 3, 26 bytes, begins EB 03 00 00 00 14 06 10 AD 91 41 00
+    0.48        . < acknowledgement: report 01, position 1,015, message 3
+    0.80        . > message 4, 28 bytes, begins EB 03 00 00 00 16 06 12 01 2D 42 00
+    0.80        . < acknowledgement: report 01, position 1,015, message 4
+    1.11        . > message 5, 26 bytes, begins EB 03 00 00 00 14 06 10 22 29 42 00
+    1.11        . < acknowledgement: report 01, position 1,015, message 5
+    1.42        . > message 6, 24 bytes, begins EB 03 00 00 00 12 06 0E 9F 53 42 00
+    1.42        . < acknowledgement: report 01, position 1,015, message 6
+    1.73        . > message 7, 26 bytes, begins EB 03 00 00 00 14 06 10 2B 98 43 00
+    1.73        . < acknowledgement: report 01, position 1,015, message 7
+    2.04        . > message 8, 28 bytes, begins EB 03 00 00 00 16 06 12 1C 41 43 00
+    2.04        . < acknowledgement: report 01, position 1,015, message 8
+    2.35        . > message 9, 26 bytes, begins EB 03 00 00 00 14 06 10 41 26 44 00
+    2.35        . < acknowledgement: report 01, position 1,015, message 9
+    2.66        . > message 10, 26 bytes, begins EB 03 00 00 00 14 06 10 51 65 45 00
+    2.66        . < acknowledgement: report 01, position 1,015, message 10
+    2.96        . > message 11, 28 bytes, begins EB 03 00 00 00 16 06 12 AC 8C 45 00
+    2.96        . < acknowledgement: report 01, position 1,015, message 11
+    3.27        . > message 12, 30 bytes, begins EB 03 00 00 00 18 06 14 D0 4D 45 00
+    3.27        . < acknowledgement: report 01, position 1,015, message 12
+    3.57        . > message 13, 26 bytes, begins EB 03 00 00 00 14 06 10 5D B9 46 00
+    3.58        . < acknowledgement: report 01, position 1,015, message 13
+    3.88        . > message 14, 32 bytes, begins EB 03 00 00 00 1A 06 16 93 2E 47 00
+    3.88        . < acknowledgement: report 01, position 1,015, message 14
+    4.19        . > message 15, 20 bytes, begins EB 03 00 00 00 0E 06 0A 43 9F 4E 00
+    4.19        . < acknowledgement: report 01, position 1,015, message 15
+    4.50        . > message 16, 26 bytes, begins EB 03 00 00 00 14 06 10 30 EC 50 00
+    4.50        . < acknowledgement: report 01, position 1,015, message 16
+    4.81        . > message 17, 24 bytes, begins EB 03 00 00 00 12 06 0E 70 9F 52 00
+    4.81        . < acknowledgement: report 01, position 1,015, message 17
+    5.12        . > message 18, 28 bytes, begins EB 03 00 00 00 16 06 12 66 53 52 00
+    5.12        . < acknowledgement: report 01, position 1,015, message 18
+    5.43        . > message 19, 24 bytes, begins EB 03 00 00 00 12 06 0E 13 B0 52 00
+    5.44        . < acknowledgement: report 01, position 1,015, message 19
+    5.74        . > message 20, 26 bytes, begins EB 03 00 00 00 14 06 10 B9 57 53 00
+    5.74        . < acknowledgement: report 01, position 1,015, message 20
+    6.05        . > message 21, 26 bytes, begins EB 03 00 00 00 14 06 10 A1 E3 53 00
+    6.05        . < acknowledgement: report 01, position 1,015, message 21
+    8.21        . (12 more lines of this kind left out)
+    8.21    Done: 26 deletes sent.
+    8.21  DataLoad: 40,856 characters.
+    8.22        . > message 28, 81,738 bytes, begins F7 01 00 01 3F 44 06 10 91 CF 44 00
+    8.22        . > 76 more reports of it, numbered 02-4D
+    8.29        . < acknowledgement: report 4E, position 78,763, message 28
+    8.29        . > 3 more reports of it, numbered 4E-50
+    8.30        . < acknowledgement: report 50, position 81,832, message 28
+    8.30    Sent 81,738 bytes in 80 reports, 0.08 s. Acknowledged 2 times.
+    8.70        . > message 29, 28 bytes, begins F8 03 00 00 00 16 06 12 BC 5C 44 00
+    8.70        . < acknowledgement: report 01, position 1,015, message 29
+    8.80        . < message 3, 16,758 bytes, begins F7 03 00 00 41 70 46 3F 01 00 78 01
+    8.80        . < 16 more reports of it, numbered 02-11
+    8.82        . > acknowledgement: report 11, position 17,383, message 3
+    9.09        . > message 0, 0 bytes, begins 
+    9.09    Sent the report "01" that hp-prime-kit sends after a program.
+    9.09    Read back the same: 17 reports, compressed, 0.4 s.
+   11.52    (DataLoad was left alone for 2.43 s after it was verified, 3.23 s after it arrived, before the next program began)
+   11.52  NormExplorer: 185,782 characters.
+   11.54        . > message 30, 371,598 bytes, begins F7 01 00 05 AB 88 06 18 D6 E4 4E 00
+Save the details
