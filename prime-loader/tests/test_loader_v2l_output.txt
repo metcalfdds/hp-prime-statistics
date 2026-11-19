@@ -66,7 +66,7 @@ PASS Chapters 10–12 download as HP_Prime_Chapters_10-12.zip, holding its eight
 PASS ... with data: the data note shows, names the file, and says it has not been tried on a real calculator; DataLoad joins a group that has not got it
 PASS back to the Virtual Calculator: Load returns, the Kit steps and the groups go, and all the programs are chosen again, with the data
 PASS the help has the Kit for the Virtual Calculator too, pointing at step 1
-PASS the help says what became of a program that is gone: on a real HP Prime the book's other programs are taken off to make room and come back with their group; on the Virtual Calculator nothing is deleted
+PASS the help says what became of a program that is gone: on a real HP Prime the book's other programs are taken off to make room and come back with their Sample; on the Virtual Calculator nothing is deleted
 PASS from the Data Loader: a notice says what to click, no program is chosen, the data button is in sight, the list of 31 is not, and Load is off
 PASS ... a file added: Load comes on, and the page says the data and DataLoad are all that go
 PASS ... loaded: M2 and DataLoad byte for byte, and every program that was there is still there

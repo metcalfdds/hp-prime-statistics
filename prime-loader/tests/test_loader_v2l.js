@@ -1,6 +1,6 @@
-// test_loader_v2k.js -- drives PrimeLoader_v2k.html in Chromium against a mock Virtual Calculator folder, and its
+// test_loader_v2l.js -- drives PrimeLoader_v2l.html in Chromium against a mock Virtual Calculator folder, and its
 // cable route (shown only at ?usb=1) against a pretend calculator that does what two real ones did on 17 Nov 2026.
-// Roger Metcalf & Claude, 18 Nov 2026.   node tests/test_loader_v2k.js PrimeLoader_v2k.html PACK.zip
+// Roger Metcalf & Claude, 18 Nov 2026.   node tests/test_loader_v2l.js PrimeLoader_v2l.html PACK.zip
 //
 // v2h (18 Nov 2026, 17:45): the cable rests the calculator after each program (these tests ask for no rest, to be
 // quick, but for the one that checks the page as it is); Advanced 1 is EpiStats alone; unplug first; a restart with
@@ -226,7 +226,7 @@ function check(name, ok, detail) {
   const allChecked = await page.evaluate(() => CAT.all_checked);
   check('next steps: the Program Catalog, and CentralLimit as an app', /Your programs are all listed there/.test(nx) && /CentralLimit is an app/.test(nx), nx);
   check(allChecked ? 'checked pack: tap and Run, Check only as a fallback' : 'unchecked pack: the Check step',
-        allChecked ? (/Tap one, then tap Run at the bottom right\. That is all\./.test(nx) && /If one ever says Syntax Error/.test(nx) && !/The first time you run each one/.test(nx))
+        allChecked ? (/Tap the one you want, then tap Run at the bottom right, and that is all there is to it\./.test(nx) && /If one ever says Syntax Error/.test(nx) && !/The first time you run each one/.test(nx))
                    : /The first time you run each one/.test(nx), nx);
   check('the report: 33 files, the programs already there left, the replaced files in the backup and not deleted', /^33 files went onto the calculator, and each was read back and checked\./.test(rep) &&
         /already on the calculator were left where they are/.test(rep) && /The files that were replaced are in Documents\\HP Prime\\Loader backups\\/.test(rep) && /not deleted/.test(rep), rep);
@@ -397,7 +397,7 @@ function check(name, ok, detail) {
         !(await page.isVisible('#load')) && await page.isVisible('#download3') && await page.locator('#kitroute ol.steps > li').count() === 6, JSON.stringify(await steps(page)));
   check('... the summary names the group and its programs', (await page.textContent('#summary')) === 'Chapters 7–9: AnovaLab, CentralLimit, CICatcher, FitCheck, GaltonBoard, PowerViz, ResampLab, SampDist, TDist3D, TestChooser, TTestLabG.', await page.textContent('#summary'));
   check('... by the Kit the page takes nothing off a calculator, so it tells the student to make room by hand, and why', (await page.textContent('#effect')) ===
-        'All the Statisticles programs do not fit in a calculator\'s memory at one time, so before these go on, take off the Statisticles programs you are not using now: in the calculator\'s Program Catalog, tap a name, then More, then Delete. Programs of your own can stay.', await page.textContent('#effect'));
+        'All the Statisticles programs do not fit in a calculator\'s memory at one time, so before these go on, take off the Statisticles programs you are not using now: in the calculator\'s Program Catalog, tap a name, then More, then Delete. You can leave any programs of your own right where they are.', await page.textContent('#effect'));
   check('... the steps: download, unpack, start the Kit and plug in, drag onto the calculator\'s name, close the Kit, run', /Extract All/.test(await page.textContent('#step3real')) &&
         /drop it on the calculator's name/.test(await page.textContent('#step3real')) && /not into the Content box/.test(await page.textContent('#step3real')) && /Close the Connectivity Kit/.test(await page.textContent('#step3real')));
   check('... the app\'s note shows for a group that has the app, and says it has not been tried on a real calculator; the last step says how to start an app', await page.isVisible('#realapp') && /has not been tried on a real calculator yet/.test(await page.textContent('#realapp')) && !(await page.isVisible('#realdata')) &&
@@ -437,8 +437,8 @@ function check(name, ok, detail) {
   check('back to the Virtual Calculator: Load returns, the Kit steps and the groups go, and all the programs are chosen again, with the data', await page.isVisible('#load') && !(await page.isVisible('#step3real')) && await page.isChecked('#w_all') &&
         !(await page.isVisible('#group')) && (await page.textContent('#summary')) === 'The Population: all 31 Statisticles, and the data M1.', await page.textContent('#summary'));
   check('the help has the Kit for the Virtual Calculator too, pointing at step 1', /Choose A real HP Prime in step 1/.test(await page.textContent('.help details:last-of-type')));
-  check('the help says what became of a program that is gone: on a real HP Prime the book\'s other programs are taken off to make room and come back with their group; on the Virtual Calculator nothing is deleted',
-        /On a real HP Prime: to make room, Send to the calculator takes the Statisticles programs that are not in the group you chose off the calculator/.test(await page.textContent('.help')) &&
+  check('the help says what became of a program that is gone: on a real HP Prime the book\'s other programs are taken off to make room and come back with their Sample; on the Virtual Calculator nothing is deleted',
+        /On a real HP Prime: to make room, Send to the calculator takes the Statisticles programs that are not in the Sample you chose off the calculator/.test(await page.textContent('.help')) &&
         /On the Virtual Calculator: Load never deletes a program\./.test(await page.textContent('.help')) && !/One chapter/.test(await page.evaluate(() => document.querySelector('main').innerText)));
 
   // ---- 9b. from the Data Loader (?data=1): the page opens ready for a data file ----
@@ -465,8 +465,8 @@ function check(name, ok, detail) {
   await ipg.goto('file://' + path.join(path.dirname(PAGE), 'index.html') + '?data=1');
   await ipg.waitForFunction(() => !!document.getElementById('fromdl'), null, { timeout: 15000 }).catch(() => {});
   check('index.html carries ?data=1 on to the page, so the Data Loader\'s link to the folder\'s address opens it ready for the file',
-        /PrimeLoader_v2k\.html\?data=1$/.test(ipg.url()) && await ipg.isVisible('#fromdl'), ipg.url());
-  check('... and a browser with scripts off is still sent on, by the line in noscript', /<noscript><meta http-equiv="refresh" content="0; url=PrimeLoader_v2k\.html"><\/noscript>/.test(idx));
+        /PrimeLoader_v2l\.html\?data=1$/.test(ipg.url()) && await ipg.isVisible('#fromdl'), ipg.url());
+  check('... and a browser with scripts off is still sent on, by the line in noscript', /<noscript><meta http-equiv="refresh" content="0; url=PrimeLoader_v2l\.html"><\/noscript>/.test(idx));
 
   // ---- 10. Firefox: no folder API, Firefox's user-agent ----
   const fctx = await browser.newContext({ acceptDownloads: true,
@@ -596,7 +596,7 @@ function check(name, ok, detail) {
         await u.p.isVisible('#usbsend') && await u.p.isDisabled('#usbsend') && !(await u.p.isVisible('#usbstop')) && !(await u.p.isVisible('#load')));
   check('cable: the first step asks for a restart, if the student can (Roger, 18 Nov: "if possible, they should do a paperclip reset first before anything else"): the paper clip and the hole on the back, that programs and data stay, and what to do with no paper clip',
         /^If you can, restart the calculator first\. With a straightened paper clip, press lightly on the Reset button in the small hole on its back\./.test((await u.p.textContent('#cable ol.steps > li:first-child')).trim()) &&
-        /Your programs and data stay\. No paper clip\? Switch the calculator off and on instead: Shift, then On, and then On again\./.test(await u.p.textContent('#restart')) && await u.p.isVisible('#restart'));
+        /on our own calculators, the programs that were there before the restart were all still there afterward\. If you don't have a paper clip handy, you can switch the calculator off and on instead: Shift, then On, and then On again\./.test(await u.p.textContent('#restart')) && await u.p.isVisible('#restart'));
   check('cable: its steps say to plug in and switch on at the Home screen, to close the Kit, and what the browser\'s small window is',
         /switch it on/.test(await u.p.textContent('#cable ol.steps')) && /Home screen/.test(await u.p.textContent('#cable ol.steps')) && /Connectivity Kit is open, close it/.test(await u.p.textContent('#cable ol.steps')) &&
         /^The first time, the browser opens a small window/.test(await u.p.textContent('#usbfirst')) && /Click its name, then click Connect/.test(await u.p.textContent('#usbfirst')));
@@ -628,12 +628,12 @@ function check(name, ok, detail) {
         got.fds.length === 1 && got.fds[0].kind === 'long' && got.fds[0].framing === 'old' && got.arrived.length === ch12.length && got.arrived.every(a => a.layout === 'v1' && a.framing === 'new' && a.kept) &&
         got.last === 1024 && got.outOfTurn === 0 && got.nacks === 0 && !got.err && got.opens === 1 && got.closes === 1, JSON.stringify([got.fds, got.arrived.length, got.last, got.outOfTurn, got.err, got.opens, got.closes]));
   check('... the page says what to do next (unplug the cable first, because a calculator on its cable runs slowly: Roger\'s G1, 18 Nov; Shift, Program; tap, Run; Check if Run opens the program\'s text, as it did on his G2) and what happened (verified, character for character; the other Statisticles programs taken off to make room, the student\'s own left)',
-        st.next.length === 4 && st.next[0] === 'Unplug the cable from the calculator. A calculator runs slowly while it is plugged into a computer.' &&
+        st.next.length === 4 && st.next[0] === 'Unplug the cable from the calculator, because a calculator runs slowly while it is plugged into a computer.' &&
         /Shift, then Program/.test(st.next[1]) && ch12.every(n => st.next[1].includes(n)) && /tap Run/.test(st.next[2]) && /^Occasionally a program will start on the Check screen, showing its text, instead of running\. Tap Check; when that is finished \(it says "No errors in the program"\), tap OK, press Esc, and tap Run: it will run normally from then on\. Right now we're not sure why it does that, but we're working on it\.$/.test(st.next[3]) &&
-        /went down the cable/.test(st.report[0]) && /Each download was then verified: the copy on the calculator is the same, character for character\./.test(st.report[0]) && /^To make room, the Statisticles programs that are not in your choice were taken off first \(those that were there\)\. Programs of your own were left where they are\. To have another group, choose it in step 2 and click Send again\.$/.test(st.report[1]) && /^It took \d+(\.\d)? seconds\.$/.test(st.report[2]),
+        /went down the cable/.test(st.report[0]) && /Each download was then verified: the copy on the calculator is the same, character for character\./.test(st.report[0]) && /^To make room, the Statisticles programs that are not in your choice were taken off first \(those that were there\), and programs of your own were left where they are\. To load another Sample, choose that Sample in step 2 and click Send again\.$/.test(st.report[1]) && /^It took \d+(\.\d)? seconds\.$/.test(st.report[2]),
         JSON.stringify([st.next, st.report]));
   check('... the details name the page, the browser, the calculator and the choice; say who answered and what each program did; end in a RESULT line; and hold neither the serial number nor more than twelve bytes of any message',
-        /^HP Prime Loader, v2k, straight down the cable\. /.test(st.log) && /\nBrowser: Mozilla/.test(st.log) && /\nDevice: HP Prime G2 \(USB 03F0:2441\), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator\.\n/.test(st.log) &&
+        /^HP Prime Loader, v2l, straight down the cable\. /.test(st.log) && /\nBrowser: Mozilla/.test(st.log) && /\nDevice: HP Prime G2 \(USB 03F0:2441\), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator\.\n/.test(st.log) &&
         new RegExp('\\nChosen: Chapters 1–3; ' + ch12.length + ' programs, [\\d,]+ characters: ' + ch12.join(', ') + '\\.\\n').test(st.log) && /It answered: firmware build 15751, "V2\.060\.650", version 01\./.test(st.log) &&
         ch12.every(n => new RegExp('\\n +\\d+\\.\\d\\d  ' + n + ': [\\d,]+ characters\\.\\n').test(st.log)) && (st.log.match(/Read back the same: /g) || []).length === ch12.length &&
         new RegExp('RESULT: all ' + ch12.length + ' programs on the calculator, each read back the same\\. [\\d,]+ reports carried the programs there and back; \\d+\\.\\d s in all\\.').test(st.log) && !/SECRET|SERIAL/.test(st.log) &&
@@ -651,7 +651,7 @@ function check(name, ok, detail) {
   check('cable: choosing another group afterwards takes away what the page said of the finished load ("Done", the ticks, the bar), which was about other programs; the details stay',
         !after.done && !after.fail && after.list.length === 0 && after.barHidden && after.status === '' && /RESULT: all/.test(after.log), JSON.stringify([after.done, after.list, after.status]));
   check('... and the page says, before anything is sent, that the book\'s other programs are taken off first and the student\'s own stay', (await u.p.textContent('#effect')) ===
-        'To make room, the Statisticles programs that are not in your choice are taken off the calculator first, and then these go on. Programs of your own stay. All the Statisticles programs do not fit in a calculator\'s memory at one time.' &&
+        'To make room, the Statisticles programs that are not in your choice are taken off the calculator first, and then these go on, because all the Statisticles programs do not fit in a calculator\'s memory at one time. Any programs of your own are left right where they are.' &&
         (await u.p.locator('#effect i').allTextContents()).join() === 'Statisticles,Statisticles', await u.p.textContent('#effect'));
   await u.p.click('#usbsend');
   await usbEnd(u.p);
@@ -664,7 +664,7 @@ function check(name, ok, detail) {
   check('cable: Advanced 1 is EpiStats by itself, the longest program of all (sent to the author\'s G1 with two programs behind it, it would not run and the calculator reset; sent alone it ran: Roger, 18 Nov), the other ten advanced programs are five in Advanced 2 and five in Advanced 3, and the page explains the list of two names EpiStats shows when it is run',
         ch5.join() === 'EpiStats' && CATALOG.groups.filter(g => g.programs.includes('EpiStats')).length === 1 && CATALOG.groups.find(g => g.id === 'a2').programs.length === 5 && CATALOG.groups.find(g => g.id === 'a3').programs.length === 5 &&
         Object.keys(CATALOG.programs).every(n => packSource('EpiStats').length >= (CATALOG.programs[n].src ? packSource(n).length : 0)) &&
-        st.status === '1 program on the calculator, each download verified.' && st.next.length === 5 && /^Unplug the cable/.test(st.next[0]) && st.next[3] === 'EpiStats shows a list of two names when you run it. Choose the first, EpiStats.' && /^Occasionally a program will start on the Check screen/.test(st.next[4]) &&
+        st.status === '1 program on the calculator, each download verified.' && st.next.length === 5 && /^Unplug the cable/.test(st.next[0]) && st.next[3] === 'EpiStats shows a list of two names when you run it, and the one to choose is the first, EpiStats.' && /^Occasionally a program will start on the Check screen/.test(st.next[4]) &&
         /^EXPORT EpiStats\(\)/m.test(packSource('EpiStats')) && (packSource('EpiStats').match(/^EXPORT [A-Za-z0-9_]+\s*\(/mg) || []).length === 2,
         JSON.stringify([ch5, st.status, st.next, (packSource('EpiStats').match(/^EXPORT [A-Za-z0-9_]+\s*\(/mg) || [])]));
   check('cable: no errors in the page', u.errs.length === 0, u.errs);
@@ -743,7 +743,7 @@ function check(name, ok, detail) {
   await u.p.click('#usbsend'); await usbEnd(u.p);
   st = await state(u.p);
   check('slip: the browser\'s window closed with no calculator picked (or its list empty): "No calculator was chosen", what to look at (switched on, the cable, a cable that only charges), and Send ready again',
-        st.fail && !st.done && st.failh === 'No calculator was chosen' && /Nothing was sent/.test(st.failp) && /switched on/.test(st.todo[0]) && /only charge/.test(st.todo[1]) && /then click Connect/.test(st.todo[2]) && !st.sendOff && st.barHidden && st.list.length === 0,
+        st.fail && !st.done && st.failh === 'No calculator was chosen' && /so nothing was sent to the calculator\.$/.test(st.failp) && /switched on/.test(st.todo[0]) && /only charge/.test(st.todo[1]) && /then click Connect/.test(st.todo[2]) && !st.sendOff && st.barHidden && st.list.length === 0,
         JSON.stringify([st.failh, st.todo]));
   u = await usbPage({ busy: true });
   await u.p.check('#t_real'); await u.p.selectOption('#group', 'c1');
@@ -756,7 +756,7 @@ function check(name, ok, detail) {
   await u.p.click('#usbsend'); await usbEnd(u.p);
   st = await state(u.p); got = await prime(u.p);
   check('slip: a calculator that does not answer (switched off at the wrong moment, or not at Home): said after 3 s, "Nothing was sent", press Home, pull the cable and push it in again; the Kit\'s steps open; one report went, the question',
-        st.fail && st.failh === 'The calculator did not answer' && st.failp === 'Nothing was sent.' && /Home/.test(st.todo[0]) && /Pull its cable out/.test(st.todo[1]) && st.kitOpen && got.reportsIn === 1 && got.arrived.length === 0 &&
+        st.fail && st.failh === 'The calculator did not answer' && st.failp === 'The page asked the calculator who it is and waited, and no answer came back, so nothing was sent to it.' && /Home/.test(st.todo[0]) && /Pull its cable out/.test(st.todo[1]) && st.kitOpen && got.reportsIn === 1 && got.arrived.length === 0 &&
         Date.now() - tS < 6000 && !st.sendOff && /NO ANSWER: no answer within 3\.0 s\./.test(st.log), JSON.stringify([st.failh, st.todo, got.reportsIn, Date.now() - tS]));
   u = await usbPage({ fdOld: null });
   await u.p.check('#t_real'); await u.p.selectOption('#group', 'c1');
@@ -771,7 +771,7 @@ function check(name, ok, detail) {
   st = await state(u.p); got = await prime(u.p);
   check('a program the calculator acknowledges and does not keep (' + ch12[1] + '): the load stops there; the one before it is ticked, this one crossed, the ones after never sent; the page does not say Done; ' +
         'it says to delete it if it is in the list and to use the Kit for it and the rest',
-        st.fail && !st.done && st.failh === 'The download of ' + ch12[1] + ' did not verify' && /then verified the download\. The calculator does not have it\./.test(st.failp) && /does not count it as loaded/.test(st.failp) && /marked ✓ is on the calculator, whole/.test(st.failp) &&
+        st.fail && !st.done && st.failh === 'The download of ' + ch12[1] + ' did not verify' && /then verified the download\. The calculator does not have that program\./.test(st.failp) && /does not count it as loaded/.test(st.failp) && /marked ✓ is on the calculator, whole/.test(st.failp) &&
         st.list[0] === 'ok:' + ch12[0] && st.list[1] === 'bad:' + ch12[1] && st.list.slice(2).every(l => /^wait:/.test(l)) && got.arrived.length === 2 && /tap More, then Delete/.test(st.todo[0]) &&
         new RegExp('^Then use the official HP way \\(2, just below\\), for ' + ch12[1] + ' and the programs after it\\.$').test(st.todo[1]) && st.kitOpen && !st.sendOff, JSON.stringify([st.failh, st.failp, st.list, st.todo]));
   u = await usbPage({ cutAt: 5000 });

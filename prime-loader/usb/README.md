@@ -163,7 +163,7 @@ The two test pages, their ladders, the first two versions of this code and their
 
 ## The Loader's cable route
 
-`../PrimeLoader_v2k.html` shows it to every student in a browser that has WebHID, for "A real HP Prime". There the step is called "Two ways to load *Statisticles* onto a physical Prime G1 or G2 calculator", and its two ways are "1) The *Statisticles* way: straight down the USB cable" and "2) The official HP way: the Connectivity Kit", whose steps are folded below the first (Roger's names, 18 November 2026; [../README.md](../README.md) has his words and the sentence the page puts under the title).
+`../PrimeLoader_v2l.html` shows it to every student in a browser that has WebHID, for "A real HP Prime". There the step is called "Two ways to load *Statisticles* onto a physical Prime G1 or G2 calculator", and its two ways are "1) The *Statisticles* way: straight down the USB cable" and "2) The official HP way: the Connectivity Kit", whose steps are folded below the first (Roger's names, 18 November 2026; [../README.md](../README.md) has his words and the sentence the page puts under the title).
 
 - **A restart first, if the student can** (Roger, 18 November: "if possible, they should do a paperclip reset first before anything else"): the Reset button in the hole on the back, with a paper clip; or off and on.
 - **A group first.** Step 2 offers eight groups of programs, none over about 1.2 million characters; Advanced 1 is EpiStats alone. **Making room:** before the group goes, the page sends a delete (`EB`, the name, no answer) for each of the book's programs that is not in it, 0.3 s apart. It never names a program that is not the book's.
@@ -193,7 +193,7 @@ This says the test programs are programs to HP's own compiler, the largest inclu
 ```
 python3 tests/kit_reference_v1.py REF          # hp-prime-kit's messages, into a scratch folder
 node tests/test_usb_core_v3d.js REF             # 95 PASS, 0 FAIL   (about two minutes)
-node ../tests/test_loader_v2k.js ../PrimeLoader_v2k.html ../../starter-pack/HP_Prime_Statistics_Starter_Pack_v23.zip     # the cable is its part 13
+node ../tests/test_loader_v2l.js ../PrimeLoader_v2l.html ../../starter-pack/HP_Prime_Statistics_Starter_Pack_v23.zip     # the cable is its part 13
 ```
 
 What a pass means: the messages are the ones hp-prime-kit builds, byte for byte, for all 31 programs, and the ones hp-prime-web's tests expect; the requests and the deletes begin with the bytes the two calculators answered; the positions and the reports' numbers are the ones in the logs; the code and the mock, which were written apart, agree on the route; the calculator's clock speaking in the middle of a message, a report lost on the way, an answer that takes 3.3 s to begin, an answer left standing and a calculator left standing by an earlier page are each survived; no wait is without an end; and every one of the book's programs goes onto a pretend G1 (131,683 reports for the 31 texts in `programs/`; 127,913 for the 30 that the Loader sends, CentralLimit being an app) and a pretend G2 (8,125; 7,892) and comes back the same. What a pass does not mean: that a calculator agrees. The mock is the two calculators as far as five logs go.
