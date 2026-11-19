@@ -1,5 +1,7 @@
 # A real HP Prime on its USB cable, from a web page
 
+**Status, 18 November 2026, 19:00.** The cable code is `prime_usb_v3d.js`: v3b's rest after each program, and NOT the report `01` (v3c sent it at 18:16 and the G2 took nothing after it). With the rest, 11 of 13 programs started with no Check over three runs on the two calculators (18:02, 18:43, 18:48); before it, 4 of 7. The program that needs a Check has been the first, a middle one and the last one sent; why is not known, and "the last program of a send has always run", written below at 18:00, stopped being true at 18:48. Twelve logs of the day are in `logs/`.
+
 **Status, 18 November 2026, 18:00.** The Prime Loader's own cable code has run on the author's G2 and G1, and its logs are in `logs/` (the nine of 18 November; the table below and `PrimeLoader_v2h_G2_Chrome_2026-11-18_1802.txt`). **What works:** a group of programs goes down the cable in seconds, every download verified, on both calculators; and "making room" takes the book's other programs off both (after Advanced 1 went to the G1, its Program Catalog held only the three). **What does not, yet:** a verified program does not always RUN. On the G2, two of four programs opened the editor at Run and ran after a Check; on the G1, EpiStats, with two programs sent behind it, reset the calculator at Run, and sent alone it ran. The last program of a send has always run ("What ran afterwards", below). Why is not known. So `prime_usb_v3d.js` now rests the calculator after each program, and the Loader (`../PrimeLoader_v2k.html`) sends EpiStats in a group of its own, asks for a restart first, and says to unplug the cable when the programs are on, because the G1 was very slow on its cable. **Not yet seen on a calculator:** v2h and the rest; whether the rest cures the Check is not known until one has run it. All 30 programs at once did not go on either calculator (the G1 full after 15, the G2 stopped at the 14th), which is why there are groups. The Connectivity Kit's steps stay on the page as way 2), "The official HP way".
 
 **Before that, 17 November 2026, late.** The author's G2 and his G1 took test programs of every size the book has straight down their cables from a test page, with no Connectivity Kit, by one route, and each one the test page read back was the same: every size on the G2, and up to 140,000 characters on the G1, whose largest (289,813 characters, the size of EpiStats) went in and was acknowledged and was not read back, because the page stopped waiting too soon (the table below).
@@ -38,8 +40,11 @@ Every program here was verified, character for character. "Before the next" is t
 | G2, 18:02, v2h | NormExplorer | 185,782 | 4.28 s (3.29 s after it was verified) | Run opened the editor; the first one tried |
 | G2, 18:02, v2h | ScatterLab | 115,148 | 3.65 s (2.89 s after it was verified) | Ran |
 | G2, 18:02, v2h | TestChooser | 80,946 | the last | Ran |
+| G2, 18:43, v2j | DataLoad, NormExplorer, ScatterLab, TestChooser | | rests of 2.41, 3.20 and 2.81 s after each was verified | All four ran |
+| G1, 18:48, v2j | AgreeLab, BurrLab, ErrorRate, SurvLab | | rests of 5.12, 6.76, 4.80 and 4.76 s | All four ran |
+| G1, 18:48, v2j | TTestLab | 98,130 | the last | Started on the Check screen; ran normally after Check |
 
-**18:02: the rest is not the cure.** With v3b's rest, NormExplorer was left alone longer than any program before it and would not run; at 16:46, with 0.98 s, it had. Which program is left unready changes from run to run. `prime_usb_v3d.js` therefore tries the one thing hp-prime-kit's measured route has that this page's did not: the report `01`, 0.25 s after each program (kit: `usb.send-program`; a key, too, acts only when a `01` arrives, `usb.keys`). In the newer framing `01` also begins a message, and what a calculator makes of a bare one there is not known. Not yet run on a calculator.
+**18:02: the rest is not the cure.** With v3b's rest, NormExplorer was left alone longer than any program before it and would not run; at 16:46, with 0.98 s, it had. Which program is left unready changes from run to run. `prime_usb_v3d.js` therefore tries the one thing hp-prime-kit's measured route has that this page's did not: the report `01`, 0.25 s after each program (kit: `usb.send-program`; a key, too, acts only when a `01` arrives, `usb.keys`). In the newer framing `01` also begins a message, and what a calculator makes of a bare one there is not known. **It was run at 18:16 (v2i, log pasted by Roger): the G2 took DataLoad, then the `01` as "message 0, 0 bytes", and then nothing; the next program's first report stood.** v3d does not send it, and `tests/mock_prime_v3c.js` jams as the G2 did.
 
 What this shows and what it does not: **the last program of a send has always run** (four of four), and a program with another close behind it sometimes has not (three of six). hp-prime-kit measured that a G2 compiles a program that arrives this way, on programs of up to 16,558 bytes sent one at a time (`usb.send-program`). The guess is that a program sent close behind stops that work. It is a guess: nothing here separates it from other causes, and the times alone do not order the cases (a G1 ran ErrorRate after 1.94 s and not EpiStats after 4.84 s). What `prime_usb_v3d.js` does about it is under "The Loader's cable route".
 
@@ -187,7 +192,7 @@ This says the test programs are programs to HP's own compiler, the largest inclu
 
 ```
 python3 tests/kit_reference_v1.py REF          # hp-prime-kit's messages, into a scratch folder
-node tests/test_usb_core_v3d.js REF             # 94 PASS, 0 FAIL   (about two minutes)
+node tests/test_usb_core_v3d.js REF             # 95 PASS, 0 FAIL   (about two minutes)
 node ../tests/test_loader_v2k.js ../PrimeLoader_v2k.html ../../starter-pack/HP_Prime_Statistics_Starter_Pack_v23.zip     # the cable is its part 13
 ```
 
