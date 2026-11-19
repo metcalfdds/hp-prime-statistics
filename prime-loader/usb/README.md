@@ -1,5 +1,7 @@
 # A real HP Prime on its USB cable, from a web page
 
+**Status, 19 November 2026, 14:30.** Loader v2l (the same cable code, `prime_usb_v3d.js`; v2k and v2l changed words only) has now run on the author's G1, in Edge: Chapters 10–12, eight programs, all verified (`logs/PrimeLoader_v2l_G1_Edge_2026-11-19_1423.txt`; the section "Loader v2l on the G1", below). Whether the eight then ran at Run with no Check is not yet reported, so the counts of "What ran afterwards" stand as they were.
+
 **Status, 18 November 2026, 19:00.** The cable code is `prime_usb_v3d.js`: v3b's rest after each program, and NOT the report `01` (v3c sent it at 18:16 and the G2 took nothing after it). With the rest, 11 of 13 programs started with no Check over three runs on the two calculators (18:02, 18:43, 18:48); before it, 4 of 7. The program that needs a Check has been the first, a middle one and the last one sent; why is not known, and "the last program of a send has always run", written below at 18:00, stopped being true at 18:48. Twelve logs of the day are in `logs/`.
 
 **Status, 18 November 2026, 18:00.** The Prime Loader's own cable code has run on the author's G2 and G1, and its logs are in `logs/` (the nine of 18 November; the table below and `PrimeLoader_v2h_G2_Chrome_2026-11-18_1802.txt`). **What works:** a group of programs goes down the cable in seconds, every download verified, on both calculators; and "making room" takes the book's other programs off both (after Advanced 1 went to the G1, its Program Catalog held only the three). **What does not, yet:** a verified program does not always RUN. On the G2, two of four programs opened the editor at Run and ran after a Check; on the G1, EpiStats, with two programs sent behind it, reset the calculator at Run, and sent alone it ran. The last program of a send has always run ("What ran afterwards", below). Why is not known. So `prime_usb_v3d.js` now rests the calculator after each program, and the Loader (`../PrimeLoader_v2k.html`) sends EpiStats in a group of its own, asks for a restart first, and says to unplug the cable when the programs are on, because the G1 was very slow on its cable. **Not yet seen on a calculator:** v2h and the rest; whether the rest cures the Check is not known until one has run it. All 30 programs at once did not go on either calculator (the G1 full after 15, the G2 stopped at the 14th), which is why there are groups. The Connectivity Kit's steps stay on the page as way 2), "The official HP way".
@@ -58,6 +60,16 @@ Roger, 17 November 2026: "we do need to make some sort of very simple loader to 
 The Virtual Calculator keeps its programs as files in a folder, which is why the [Prime Loader](../README.md) can load it with one click. A real HP Prime keeps its programs inside the calculator, and they travel down its USB cable. Until now that has meant HP's Connectivity Kit: start the Kit, plug the calculator in, and drag each file onto the calculator's name.
 
 Chrome and Edge let a web page talk to a USB device of the HID class when the user picks the device from the browser's own list (WebHID). An HP Prime is such a device. So a page can send the programs itself.
+
+## Loader v2l on the G1 (the log of 19 November 2026)
+
+Firmware build 15751, Edge 157. Roger: "i just plugged in the cable and ran the download--I did not delete old programs or do the paperclip--seemed to work ok". So this run began on a calculator that had not been restarted and still held what earlier runs had left on it.
+
+| Log | Calculator, browser | Sent | What happened |
+|---|---|---|---|
+| `PrimeLoader_v2l_G1_Edge_2026-11-19_1423.txt` | G1, Edge | Chapters 10–12: ChiTable, DataLoad, FitCheck, PowerViz, ResampLab, TDist3D, TestChooser, TTestLabG (934,498 characters) | 22 deletes sent, 0.3 s apart (6.9 s; the log prints the first 20, each acknowledged, and counts the rest). All eight verified: 35,597 reports there and back, 63.0 s in all. The G1 took 2.6, 0.4, 2.7, 2.7, 1.8, 0.5, 0.8 and 1.2 s to hand each program back. Once, at the start of TDist3D, it said "send again" twice within 0.02 s (it had 51, then 55, of the reports); one report was sent again and the load went on. The rests after the first seven programs were 6.28, 3.15, 6.17, 6.31, 5.01, 3.36 and 4.04 s. While it rested, the G1 repeated its last acknowledgement (`FF`) up to six times, which the page reads and passes over. |
+
+**Not yet reported from the calculator:** whether each of the eight started at Run with no Check, and whether the Program Catalog then held only these eight. Until Roger says, this run is a verified download and nothing more (a verified program does not always run: "What ran afterwards", above).
 
 ## What the calculators did with the test pages (the five logs of 17 November 2026)
 

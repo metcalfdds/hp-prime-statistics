@@ -65,7 +65,7 @@ CentralLimit, which is an app of three files, and data files do not travel this 
 - **The G1 was very slow while it was on its cable**, and normal once unplugged (Roger).
 - **v2h, v2j with the rest after each program:** G2 18:02 three of four ran; G2 18:43 four of four; G1 18:48 four of five (the last one sent went to Check). 11 of 13.
 - **v2i jammed the G2** (the report `01`); it was never published.
-- **Not run on a calculator: v2k and v2l**, which differ from v2j in words only (v2k in two sentences, v2l in the places listed above). EpiStats alone as Advanced 1 has not been sent by a group (it ran when sent alone by tick, 17:28). The G2 did take its deletes: Roger looked at its Program Catalog (18 Nov, 19:28: "On the G2 it did clear the other Statisticles"), as he had looked at the G1's.
+- **v2l has run on the G1** (19 Nov, 14:23, Edge: Chapters 10–12, eight programs, all verified; `usb/logs/PrimeLoader_v2l_G1_Edge_2026-11-19_1423.txt`; whether they then ran with no Check is not yet reported). **Not run on a G2: v2k and v2l**, and v2k on no calculator; they differ from v2j in words only (v2k in two sentences, v2l in the places listed above). EpiStats alone as Advanced 1 has not been sent by a group (it ran when sent alone by tick, 17:28). The G2 did take its deletes: Roger looked at its Program Catalog (18 Nov, 19:28: "On the G2 it did clear the other Statisticles"), as he had looked at the G1's.
 
 ### What v2l was tested with
 
