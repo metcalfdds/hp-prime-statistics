@@ -1,6 +1,6 @@
-// test_loader_v2j.js -- drives PrimeLoader_v2j.html in Chromium against a mock Virtual Calculator folder, and its
+// test_loader_v2k.js -- drives PrimeLoader_v2k.html in Chromium against a mock Virtual Calculator folder, and its
 // cable route (shown only at ?usb=1) against a pretend calculator that does what two real ones did on 17 Nov 2026.
-// Roger Metcalf & Claude, 18 Nov 2026.   node tests/test_loader_v2j.js PrimeLoader_v2j.html PACK.zip
+// Roger Metcalf & Claude, 18 Nov 2026.   node tests/test_loader_v2k.js PrimeLoader_v2k.html PACK.zip
 //
 // v2h (18 Nov 2026, 17:45): the cable rests the calculator after each program (these tests ask for no rest, to be
 // quick, but for the one that checks the page as it is); Advanced 1 is EpiStats alone; unplug first; a restart with
@@ -465,8 +465,8 @@ function check(name, ok, detail) {
   await ipg.goto('file://' + path.join(path.dirname(PAGE), 'index.html') + '?data=1');
   await ipg.waitForFunction(() => !!document.getElementById('fromdl'), null, { timeout: 15000 }).catch(() => {});
   check('index.html carries ?data=1 on to the page, so the Data Loader\'s link to the folder\'s address opens it ready for the file',
-        /PrimeLoader_v2j\.html\?data=1$/.test(ipg.url()) && await ipg.isVisible('#fromdl'), ipg.url());
-  check('... and a browser with scripts off is still sent on, by the line in noscript', /<noscript><meta http-equiv="refresh" content="0; url=PrimeLoader_v2j\.html"><\/noscript>/.test(idx));
+        /PrimeLoader_v2k\.html\?data=1$/.test(ipg.url()) && await ipg.isVisible('#fromdl'), ipg.url());
+  check('... and a browser with scripts off is still sent on, by the line in noscript', /<noscript><meta http-equiv="refresh" content="0; url=PrimeLoader_v2k\.html"><\/noscript>/.test(idx));
 
   // ---- 10. Firefox: no folder API, Firefox's user-agent ----
   const fctx = await browser.newContext({ acceptDownloads: true,
@@ -587,7 +587,7 @@ function check(name, ok, detail) {
         (await u.p.textContent('#kitsum')) === '2) The official HP way: the Connectivity Kit' &&
         await u.p.evaluate(() => { const a = document.getElementById('twoways'), b = document.getElementById('way1'), c = document.getElementById('kitsum'); return a.getBoundingClientRect().top < b.getBoundingClientRect().top && b.getBoundingClientRect().top < c.getBoundingClientRect().top; }));
   check('two ways: right under 1) a line says what was tried and what it showed (a G2 in Chrome, a G1 in Edge, 18 November 2026; every download verified; a program or two then had to be checked before it would start, and the page says how), and nothing the page shows still says it is being tested',
-        await u.p.isVisible('#cabletested') && (await u.p.textContent('#cabletested')) === 'Tried on the author\'s HP Prime G2 (in Chrome) and G1 (in Edge) on 18 November 2026: every download verified. A program or two then had to be checked on the calculator before it would start; when your programs are on, the page says how.' &&
+        await u.p.isVisible('#cabletested') && (await u.p.textContent('#cabletested')) === 'Tried on the author\'s HP Prime G2 (in Chrome) and G1 (in Edge) on 18 November 2026: every download verified. Occasionally a program starts on the Check screen the first time; when your programs are on, the page says what to do.' &&
         !/being tested|this is that test|test address/i.test(await u.p.evaluate(() => document.documentElement.outerHTML.replace(/<(script|style)[^>]*>[^]*?<\/\1>/g, m => m.replace(/\/\*[^]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')))));
   check('two ways: nowhere in what the page shows or can come to show (its comments aside, which keep the history) is either still called "the other way", "the first way" or "the second way"', !/other way|first way|second way/i.test(await u.p.evaluate(() => document.documentElement.outerHTML.replace(/<(script|style)[^>]*>[^]*?<\/\1>/g, m => m.replace(/\/\*[^]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')))) &&
         /The first way: straight down the USB cable/.test(await u.p.evaluate(() => document.documentElement.outerHTML)));   // the second half shows the first is not empty: the words are still in the page's history comment, and only there
@@ -629,11 +629,11 @@ function check(name, ok, detail) {
         got.last === 1024 && got.outOfTurn === 0 && got.nacks === 0 && !got.err && got.opens === 1 && got.closes === 1, JSON.stringify([got.fds, got.arrived.length, got.last, got.outOfTurn, got.err, got.opens, got.closes]));
   check('... the page says what to do next (unplug the cable first, because a calculator on its cable runs slowly: Roger\'s G1, 18 Nov; Shift, Program; tap, Run; Check if Run opens the program\'s text, as it did on his G2) and what happened (verified, character for character; the other Statisticles programs taken off to make room, the student\'s own left)',
         st.next.length === 4 && st.next[0] === 'Unplug the cable from the calculator. A calculator runs slowly while it is plugged into a computer.' &&
-        /Shift, then Program/.test(st.next[1]) && ch12.every(n => st.next[1].includes(n)) && /tap Run/.test(st.next[2]) && /^If Run opens the program's text instead of starting it, says Syntax Error, or does nothing: tap Check \(from the Program Catalog: tap the program, tap Edit, then Check\)\. It says "No errors in the program"\. Tap OK, press Esc, then tap Run\.$/.test(st.next[3]) &&
+        /Shift, then Program/.test(st.next[1]) && ch12.every(n => st.next[1].includes(n)) && /tap Run/.test(st.next[2]) && /^Occasionally a program will start on the Check screen, showing its text, instead of running\. Tap Check; when that is finished \(it says "No errors in the program"\), tap OK, press Esc, and tap Run: it will run normally from then on\. Right now we're not sure why it does that, but we're working on it\.$/.test(st.next[3]) &&
         /went down the cable/.test(st.report[0]) && /Each download was then verified: the copy on the calculator is the same, character for character\./.test(st.report[0]) && /^To make room, the Statisticles programs that are not in your choice were taken off first \(those that were there\)\. Programs of your own were left where they are\. To have another group, choose it in step 2 and click Send again\.$/.test(st.report[1]) && /^It took \d+(\.\d)? seconds\.$/.test(st.report[2]),
         JSON.stringify([st.next, st.report]));
   check('... the details name the page, the browser, the calculator and the choice; say who answered and what each program did; end in a RESULT line; and hold neither the serial number nor more than twelve bytes of any message',
-        /^HP Prime Loader, v2j, straight down the cable\. /.test(st.log) && /\nBrowser: Mozilla/.test(st.log) && /\nDevice: HP Prime G2 \(USB 03F0:2441\), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator\.\n/.test(st.log) &&
+        /^HP Prime Loader, v2k, straight down the cable\. /.test(st.log) && /\nBrowser: Mozilla/.test(st.log) && /\nDevice: HP Prime G2 \(USB 03F0:2441\), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator\.\n/.test(st.log) &&
         new RegExp('\\nChosen: Chapters 1–3; ' + ch12.length + ' programs, [\\d,]+ characters: ' + ch12.join(', ') + '\\.\\n').test(st.log) && /It answered: firmware build 15751, "V2\.060\.650", version 01\./.test(st.log) &&
         ch12.every(n => new RegExp('\\n +\\d+\\.\\d\\d  ' + n + ': [\\d,]+ characters\\.\\n').test(st.log)) && (st.log.match(/Read back the same: /g) || []).length === ch12.length &&
         new RegExp('RESULT: all ' + ch12.length + ' programs on the calculator, each read back the same\\. [\\d,]+ reports carried the programs there and back; \\d+\\.\\d s in all\\.').test(st.log) && !/SECRET|SERIAL/.test(st.log) &&
@@ -664,7 +664,7 @@ function check(name, ok, detail) {
   check('cable: Advanced 1 is EpiStats by itself, the longest program of all (sent to the author\'s G1 with two programs behind it, it would not run and the calculator reset; sent alone it ran: Roger, 18 Nov), the other ten advanced programs are five in Advanced 2 and five in Advanced 3, and the page explains the list of two names EpiStats shows when it is run',
         ch5.join() === 'EpiStats' && CATALOG.groups.filter(g => g.programs.includes('EpiStats')).length === 1 && CATALOG.groups.find(g => g.id === 'a2').programs.length === 5 && CATALOG.groups.find(g => g.id === 'a3').programs.length === 5 &&
         Object.keys(CATALOG.programs).every(n => packSource('EpiStats').length >= (CATALOG.programs[n].src ? packSource(n).length : 0)) &&
-        st.status === '1 program on the calculator, each download verified.' && st.next.length === 5 && /^Unplug the cable/.test(st.next[0]) && st.next[3] === 'EpiStats shows a list of two names when you run it. Choose the first, EpiStats.' && /^If Run opens/.test(st.next[4]) &&
+        st.status === '1 program on the calculator, each download verified.' && st.next.length === 5 && /^Unplug the cable/.test(st.next[0]) && st.next[3] === 'EpiStats shows a list of two names when you run it. Choose the first, EpiStats.' && /^Occasionally a program will start on the Check screen/.test(st.next[4]) &&
         /^EXPORT EpiStats\(\)/m.test(packSource('EpiStats')) && (packSource('EpiStats').match(/^EXPORT [A-Za-z0-9_]+\s*\(/mg) || []).length === 2,
         JSON.stringify([ch5, st.status, st.next, (packSource('EpiStats').match(/^EXPORT [A-Za-z0-9_]+\s*\(/mg) || [])]));
   check('cable: no errors in the page', u.errs.length === 0, u.errs);

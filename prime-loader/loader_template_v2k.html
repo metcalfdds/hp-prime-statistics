@@ -8,7 +8,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* PrimeLoader v2j (18 Nov 2026, 18:30).  v2i jammed the author's G2 at 18:16: after the report "01" it took nothing
+/* PrimeLoader v2k (18 Nov 2026, 19:00).  v2j ran on both calculators (logs of 18:43, G2, and 18:48, G1): every
+   download verified; all four ran on the G2, and on the G1 four of five, TTestLab, the LAST one sent, going to Check.
+   Roger, 18:53: "yes add a line that occasionally a program will start on the Check screen and when that is finished
+   it will run normally and right now we're not sure why it does that, but we're working on it".  That line, and the
+   note under way 1), are all that v2k changes.
+   PrimeLoader v2j (18 Nov 2026, 18:30).  v2i jammed the author's G2 at 18:16: after the report "01" it took nothing
    ("Seems stuck here"), and "The 'Save the details' button doesn't work", because the button waited for the send to
    end.  v2j: prime_usb_v3d.js (no "01"); Save the details can be clicked as soon as there is a line to save; and
    Roger's names (17:41): "we should refer to all the Statisticles as the Population and the groups as Samples of
@@ -369,7 +374,7 @@ ol.steps li > p { margin: 2px 0 0; }
     <p class="do" id="nocable" hidden><span class="brname2">This browser</span> cannot reach a calculator on its USB cable, so this page shows the official HP way, the Connectivity Kit, below. In Google Chrome or Microsoft Edge it can also send the programs straight down the cable, the <i>Statisticles</i> way.</p>
     <div id="cable" hidden>
       <h3 class="way" id="way1">1) The <i>Statisticles</i> way: straight down the USB cable</h3>
-      <p class="note" id="cabletested">Tried on the author's HP Prime G2 (in Chrome) and G1 (in Edge) on 18 November 2026: every download verified. A program or two then had to be checked on the calculator before it would start; when your programs are on, the page says how.</p>
+      <p class="note" id="cabletested">Tried on the author's HP Prime G2 (in Chrome) and G1 (in Edge) on 18 November 2026: every download verified. Occasionally a program starts on the Check screen the first time; when your programs are on, the page says what to do.</p>
       <ol class="steps">
         <li id="restart"><b>If you can, restart the calculator first.</b> With a straightened paper clip, press lightly on the Reset button in the small hole on its back.
           <p class="why">A restart clears a calculator that has become slow or has stopped answering its cable. Your programs and data stay. No paper clip? Switch the calculator off and on instead: <kbd>Shift</kbd>, then <kbd>On</kbd>, and then <kbd>On</kbd> again.</p></li>
@@ -1013,7 +1018,7 @@ function usbDone(names, rest, res) {
      (names.length <= 8 ? 'Yours are: <b>' + esc(names.join(', ')) + '</b>.' : 'Your programs are all listed there.'));
   li('Tap one, then tap <b>Run</b>.');
   if (names.indexOf('EpiStats') >= 0) li('EpiStats shows a list of two names when you run it. Choose the first, <b>EpiStats</b>.');
-  li('<span class="note" style="color:inherit">If <b>Run</b> opens the program\'s text instead of starting it, says Syntax Error, or does nothing: tap <b>Check</b> (from the Program Catalog: tap the program, tap <b>Edit</b>, then <b>Check</b>). It says "No errors in the program". Tap <b>OK</b>, press <kbd>Esc</kbd>, then tap <b>Run</b>.</span>');
+  li('<span class="note" style="color:inherit">Occasionally a program will start on the Check screen, showing its text, instead of running. Tap <b>Check</b>; when that is finished (it says "No errors in the program"), tap <b>OK</b>, press <kbd>Esc</kbd>, and tap <b>Run</b>: it will run normally from then on. Right now we\'re not sure why it does that, but we\'re working on it.</span>');
   const ul = $('usbreport'); ul.innerHTML = '';
   const r = h => { const x = document.createElement('li'); x.innerHTML = h; ul.appendChild(x); };
   r(plural(names.length, 'program') + ' went down the cable' + (names.length <= 12 ? ': ' + esc(names.join(', ')) : '') + '. Each download was then verified: the copy on the calculator is the same, character for character.');
