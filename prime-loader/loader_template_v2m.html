@@ -8,7 +8,17 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* PrimeLoader v2l (18 Nov 2026, 21:45).  Words only.  Roger, 21:36, of the restart step: '"Your programs and data stay." is
+/* PrimeLoader v2m (21 Nov 2026).  Accessibility only (WCAG 2.1 AA; tools/pages_a11y_v1.js; docs/dev/pages-accessibility-2026-11-21.md).
+   No word a student reads and no step has changed.  (1) The orange and the green used for text are a shade deeper:
+   #c03700 and #007a35, 5.5 to 1 on white, where v2l's #e04000 and #008c3c were 4.3 and 4.4 (1.4.3 asks 4.5).  The chapter
+   tags beside the programs, the error lines and the 'verified' lines are the text that was too pale.  (2) The log's box
+   had a name (aria-label) and no role, which a screen reader may not announce (4.1.2); it is now a region, and its name
+   is the name the page shows, 'What was transferred to calculator' (the hidden name still said 'The messages that passed
+   on the cable', which Roger had taken off the page on 18 Nov).  (3) The note for a computer that is not Windows was a
+   heading of level 3 straight under the page's title; it is level 2 now, with the same look.
+   (4) With 'tick the programs yourself' open, a window 320 px wide scrolled sideways by 24 px, because the list's columns
+   were at least 290 px wide; they are min(290px, 100%) now (1.4.10).
+   PrimeLoader v2l (18 Nov 2026, 21:45).  Words only.  Roger, 21:36, of the restart step: '"Your programs and data stay." is
    too curt, ends too abruptly--almost like there's part of the sentence is missing, and I've asked you repeatedly to adopt
    my style of being a little more verbose'.  So the page's clipped sentences are joined to their reasons (27 places in the
    steps and notes, 13 in the messages), the restart step says what he saw (the programs that were on his calculators before
@@ -112,7 +122,7 @@
    Loader's, which echo the fleet's screens (curve blue, frame orange, mean green). */
 :root {
   --paper: #f6f8fb; --surface: #ffffff; --ink: #172033; --muted: #5a6478; --line: #d9dfea;
-  --accent: #003cc8; --frame: #e04000; --good: #008c3c; --warn-bg: #fff3e8; --good-bg: #e9f7ef;
+  --accent: #003cc8; --frame: #c03700; --good: #007a35; --warn-bg: #fff3e8; --good-bg: #e9f7ef;
   --accent-soft: #e6edff;
   --display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
   --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -160,7 +170,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 .summary b { font-family: var(--mono); font-weight: 500; }
 details { border-top: 1px solid var(--line); padding-top: 10px; }
 summary { cursor: pointer; color: var(--accent); font-weight: 500; }
-.proglist { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 6px 14px; }
+.proglist { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr)); gap: 6px 14px; }   /* v2m: min(), so a 320 px window does not scroll sideways */
 .prog { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: start; padding: 8px 10px; cursor: pointer;
         border: 1.5px solid var(--line); border-radius: 8px; background: var(--surface); }
 .prog:hover { border-color: var(--accent); }
@@ -179,7 +189,7 @@ select { font: 500 0.95rem var(--body); border-radius: 8px; padding: 8px 10px; b
 .panel { border-radius: 8px; padding: 12px 14px; margin: 0; display: grid; gap: 8px; }
 .panel.warn { background: var(--warn-bg); }
 .panel.done { background: var(--good-bg); }
-.panel h3 { margin: 0; font: 600 1.05rem var(--display); }
+.panel h3, .panel h2#platformh { margin: 0; font: 600 1.05rem var(--display); }
 .panel ol, .panel ul { margin: 0; padding-left: 1.3em; display: grid; gap: 4px; }
 kbd { font: 500 0.85em var(--mono); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px;
       padding: 0 5px; background: var(--surface); }
@@ -246,7 +256,7 @@ ol.steps li > p { margin: 2px 0 0; }
   </header>
 
   <section class="panel warn" id="platform" aria-labelledby="platformh" hidden>
-    <h3 id="platformh"></h3>
+    <h2 id="platformh"></h2>
     <p id="platformp" style="margin:0"></p>
   </section>
 
@@ -409,7 +419,7 @@ ol.steps li > p { margin: 2px 0 0; }
       <details class="opt" id="usbdetails">
         <summary>What was transferred to calculator (for your instructor)</summary>
         <p class="why" style="margin:10px 0 0">Every message between this page and the calculator, in short. It holds nothing about you and not the calculator's serial number. If something went wrong, click <b>Save the details</b> and send the file to your instructor.</p>
-        <pre id="usblog" tabindex="0" aria-label="The messages that passed on the cable"></pre>
+        <pre id="usblog" tabindex="0" role="region" aria-label="What was transferred to calculator"></pre>
         <div class="row"><button type="button" id="usbsave" disabled>Save the details</button><span class="status" id="usbsaved" role="status"></span></div>
       </details>
       <details class="opt">
