@@ -1,4 +1,8 @@
-// page_check_v5.js -- DataLoader_v5.html in Chromium (Playwright).  Run: node tests/page_check_v5.js   (17 Nov 2026)
+// page_check_v6.js -- DataLoader_v6.html in Chromium (Playwright).  Run: node tests/page_check_v6.js   (21 Nov 2026)
+// v6: v5's checks, and three from the accessibility check of 21 Nov 2026 (WCAG 2.1 AA): the page does not scroll sideways in
+// a window 320 px wide (1.4.10), the green and the orange used for text have a contrast of 4.5 to 1 or more on every
+// surface they stand on (1.4.3), and the list of warnings is a live region with no role (4.1.2).  The automated rules of
+// axe-core are run by tools/pages_a11y_v1.js, which needs axe-core installed; this test needs Playwright only.
 // v5: v4's checks; step 4's link now opens the Prime Loader ready for a data file (?data=1) and names its step 2.
 // v3's checks (the example downloads as the file that ran on the Virtual Calculator; a text-coded paste), and the
 // review's: the box starts empty, a paste replaces nothing it should not, every silent change of v3 now has a
@@ -15,7 +19,7 @@ function check(name, ok, detail) { if (ok) { pass++; console.log('PASS', name); 
   const errs = [];
   p.on('pageerror', e => errs.push(String(e)));
   p.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
-  await p.goto('file://' + path.join(__dirname, '..', 'DataLoader_v5.html'));
+  await p.goto('file://' + path.join(__dirname, '..', 'DataLoader_v6.html'));
   await p.waitForTimeout(500);
   const settle = () => p.waitForTimeout(450);
   const warn = async () => (await p.isVisible('#warnings')) ? await p.$$eval('#warnings li', l => l.map(x => x.textContent)) : [];
@@ -40,7 +44,7 @@ function check(name, ok, detail) { if (ok) { pass++; console.log('PASS', name); 
   await p.click('#example'); await settle();
   check('the example: 432 rows and 5 columns, with a row of names', /^432 rows and 5 columns read, with a row of names\. 5 columns will go/.test(await p.textContent('#readout')), await p.textContent('#readout'));
   const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#save')]);
-  const dlPath = path.join(os.tmpdir(), 'page_v5_M1.hpmat'); await dl.saveAs(dlPath);
+  const dlPath = path.join(os.tmpdir(), 'page_v6_M1.hpmat'); await dl.saveAs(dlPath);
   check('the example downloads as M1.hpmat, identical to the file tested on the calculator', dl.suggestedFilename() === 'M1.hpmat' &&
         Buffer.compare(fs.readFileSync(dlPath), fs.readFileSync(path.join(__dirname, '..', 'examples', 'M1.hpmat'))) === 0);
   check('... the status sends the student on to step 4', /Now go on to step 4/.test(await p.textContent('#savestatus')));
@@ -108,7 +112,29 @@ function check(name, ok, detail) { if (ok) { pass++; console.log('PASS', name); 
   await p.selectOption('#mat', '3'); await settle();
   check('choosing M3 names M3.hpmat on the button and in step 4', /M3\.hpmat/.test(await p.textContent('#save')) && (await p.textContent('#fname1')) === 'M3.hpmat' &&
         (await p.textContent('#fname5')) === 'M3 (1).hpmat');
-  await p.screenshot({ path: path.join(os.tmpdir(), 'dl_page_v5.png'), fullPage: true });
+  // ---- v6: accessibility (WCAG 2.1 AA) ----
+  {
+    const narrow = await b.newContext({ viewport: { width: 320, height: 800 } }); const q = await narrow.newPage();
+    await q.goto('file://' + path.join(__dirname, '..', 'DataLoader_v6.html'));
+    const wide = () => q.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    check('in a window 320 px wide the opened page does not scroll sideways', (await wide()) <= 0, await wide());
+    await q.click('#example'); await q.waitForTimeout(300);
+    check('... nor with the example loaded (the table of columns scrolls inside its own frame)', (await wide()) <= 0, await wide());
+    await q.evaluate(() => document.querySelectorAll('details').forEach(d => d.open = true));
+    check('... nor with every fold opened', (await wide()) <= 0, await wide());
+    await narrow.close();
+    const cr = await p.evaluate(() => {
+      const lum = c => { const v = c.match(/\d+/g).slice(0, 3).map(x => x / 255).map(x => x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4)); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };
+      const probe = document.createElement('span'); document.body.appendChild(probe); const out = {};
+      for (const fg of ['--good', '--frame', '--muted', '--accent', '--code']) for (const bg of ['--surface', '--paper', '--warn-bg', '--accent-soft']) {
+        probe.style.color = 'var(' + fg + ')'; probe.style.backgroundColor = 'var(' + bg + ')'; const cs = getComputedStyle(probe);
+        const a = lum(cs.color), c = lum(cs.backgroundColor); out[fg + ' on ' + bg] = Math.round(100 * (Math.max(a, c) + 0.05) / (Math.min(a, c) + 0.05)) / 100; }
+      probe.remove(); return out; });
+    const low = Object.entries(cr).filter(([k, v]) => v < 4.5);
+    check('every text color has a contrast of 4.5 to 1 or more on every surface of the page (light)', low.length === 0, low);
+    check('the list of warnings is a live region and carries no role', await p.$eval('#warnings', e => e.getAttribute('aria-live') === 'polite' && !e.hasAttribute('role')));
+  }
+  await p.screenshot({ path: path.join(os.tmpdir(), 'dl_page_v6.png'), fullPage: true });
   check('no errors in the page', errs.length === 0, errs);
   console.log('\n' + pass + ' PASS, ' + fail + ' FAIL');
   await b.close();
