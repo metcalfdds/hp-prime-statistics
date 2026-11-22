@@ -44,6 +44,11 @@ THE FACTS (Virtual Calculator 2.4.2, build 2026-09-09, Rogers-HP, typed in Home,
      and showed 1.234,5.  NOT PATCHED: the harness has no Home setting for the mark and always writes a period, so a
      verify script or the monkey says nothing about a calculator set to a comma.  (Lessons Learned v7zy.)
 
+  6. A program reads and assigns Home's settings (the same calculator, 22 Nov 2026; diagnostics/SetProbe_beta1.txt,
+     SetOdd_beta1.txt, SetBook_beta1.txt): HSeparator, HAngle, HFormat, HDigits and Entry.  A change acts at once
+     (HAngle:=1 made SIN(90) 1; HFormat:=1 with HDigits:=2 made STRING(0.046) "0.05") and stays after the program ends
+     unless the program puts it back.  The book's settings are all code 0.  NOT PATCHED: the harness has none of the five.
+
 USE.  import prime_facts_v1; prime_facts_v1.apply()      -- once, before the first Harness is made.
       It returns the harness module.  Applying it twice does nothing more.
 """
@@ -54,7 +59,9 @@ FACTS = ['STRING(x, 2, d): "Invalid input" for d >= 13 (Virtual Calculator, 1 No
          'CHOOSE: a title shows 31 characters; longer ones are listed in Harness.cut_titles (Virtual Calculator, '
          '15 Nov 2026)',
          'STRING writes the decimal mark of Home\'s Digit Grouping, "1234,5678" with 123.456,789: recorded, not '
-         'patched (Virtual Calculator, 22 Nov 2026)']
+         'patched (Virtual Calculator, 22 Nov 2026)',
+         'a program reads and assigns HSeparator, HAngle, HFormat, HDigits and Entry: recorded, not patched '
+         '(Virtual Calculator, 22 Nov 2026)']
 TITLE_MAX = 31
 
 

@@ -1,0 +1,9 @@
+#pragma mode( separator(.,;) integer(h32) )
+// SetBook beta 1 (22 Nov 2026).  Sets the four settings the book's examples assume
+// (Entry Textbook, Digit Grouping 123,456.789, Number Format Standard, Angle Measure
+// Radians) and leaves them set.
+EXPORT SetBook()
+BEGIN
+  Entry := 0; HSeparator := 0; HFormat := 0; HAngle := 0;
+  RETURN "SetBook: done";
+END;
