@@ -1,6 +1,6 @@
 #pragma mode( separator(.,;) integer(h32) )
 // ============================================================
-// EPISTATS - v1.7n
+// EPISTATS - v1.7o
 // ============================================================
 // Author: Roger Metcalf, 2026.  Written with AI assistance
 //   (Anthropic Claude); concept, direction and all hardware
@@ -28,6 +28,12 @@
 //   there, so the fallback fixed in v1.7b has run only in the PC
 //   harness (ppl_run_v3d).
 //
+// v1.7o (23 Nov 2026): Round 19: in the stratified rates grid a person-time is 0, or from 1 to 100,000.  Round 18's monkey
+//   typed a person-time of 1E-300, and the Mantel-Haenszel rate ratio divided by zero; 0.001 made its
+//   interval overflow.  A value between 0 and 1 is refused with a sentence that gives the range, in the
+//   four-value form (es_AskAll) and in the one-cell form (es_Grid), and the two forms' help lines give
+//   the range.  Roger, 23 Nov 2026: "EpiStats--change the smallest number it asccepts".  No other
+//   statement, number or word on a page changed, only the version.
 // v1.7n (22 Nov 2026): Round 18: the program sets the four Home settings that the book's examples assume when it starts,
 //   and leaves them set: HSeparator := 0 (Digit Grouping 123,456.789, the period as the decimal point),
 //   HFormat := 0 (Number Format Standard), HAngle := 0 (Radians) and Entry := 0 (Textbook).  Roger, 22
@@ -758,7 +764,7 @@ BEGIN
         choice := 0;   // v1.2: CHOOSE leaves its index unchanged on cancel
         // v1.4: no numbers in the item strings -- the Prime numbers
         // its CHOOSE items itself (1-9, then A, B, C).
-        CHOOSE(choice, "EpiStats v1.7n ══════════",
+        CHOOSE(choice, "EpiStats v1.7o ══════════",
             "2×2 Table Analysis",
             "Risk Analysis (RR, OR, NNT)",
             "Sensitivity & Specificity",
@@ -1841,7 +1847,7 @@ BEGIN
                 "Stratified Rates: one stratum",
                 {avS1, avS2, avS3, avS4},
                 {"Cases exposed", "Cases unexposed",
-                 "Person-time exposed", "Person-time unexposed"},
+                 "Person-time exposed, 0 or 1 to 100,000", "Person-time unexposed, 0 or 1 to 100,000"},
                 {0, 0, 0, 0}
             );
         END;
@@ -1870,6 +1876,14 @@ BEGIN
         ELSE
             MSGBOX("A count can be at most 100,000.");
         END;
+        RETURN 0;
+    END;
+    // v1.7o (round 19): a person-time is 0, or from 1 to 100,000.  A person-time of 1E-300 made
+    // the stratified rate ratio divide by zero (its variance's denominator underflowed), and one
+    // of 0.001 next to 100,000 made its interval overflow; at 1 no interval leaves the Prime's
+    // range (verify/round19/floor_sweep_r19.py).  The form's fields C and D are the person-times.
+    IF esMod == 7 AND ((avC > 0 AND avC < 1) OR (avD > 0 AND avD < 1)) THEN
+        MSGBOX("A person-time can be 0, or from 1 to 100,000, so give one of less than 1 in smaller units (person-months instead of person-years, say).");
         RETURN 0;
     END;
     // the four grid cells, row by row, from what the form held
@@ -2054,7 +2068,7 @@ BEGIN
             gdV := esCel(esSel);
             gdLbl := es_CellName(esSel) + ":";
             gdHlp := gdRows(gdR) + " and " + gdCols(gdC) + ": a whole number, 0 to 100,000";
-            IF esMod == 7 AND gdC == 2 THEN gdHlp := gdRows(gdR) + " person-time, 0 to 100,000"; END;
+            IF esMod == 7 AND gdC == 2 THEN gdHlp := gdRows(gdR) + " person-time, 0 or 1 to 100,000"; END;
             gdOK := INPUT({{gdV,[0]}}, "Count for one cell", {gdLbl}, {gdHlp});
             IF gdOK == 1 THEN
                 IF gdV < 0 THEN
@@ -2065,7 +2079,12 @@ BEGIN
                     MSGBOX("A value can be at most 100,000.");
                   ELSE
                     IF esMod == 7 AND gdC == 2 THEN
+                      // v1.7o (round 19): a person-time is 0, or from 1 to 100,000, as in es_AskAll
+                      IF gdV > 0 AND gdV < 1 THEN
+                        MSGBOX("A person-time can be 0, or from 1 to 100,000, so give one of less than 1 in smaller units (person-months instead of person-years, say).");
+                      ELSE
                         esCel(esSel) := gdV;          // v1.6: person-time, as typed
+                      END;
                     ELSE
                         IF FP(gdV) <> 0 THEN
                             MSGBOX("Counts are whole numbers: " + es_Cm(STRING(ROUND(gdV, 2), 2, 2)) + " was rounded to the nearest one.");
@@ -5945,7 +5964,7 @@ END;
 es_Help_About()
 BEGIN
     es_HelpPage("EpiStats help 1/15: About EpiStats",
-        {"EpiStats v1.7n",
+        {"EpiStats v1.7o",
          "",
          "Comprehensive biostatistics and epidemiology calculator.",
          "",

@@ -1,0 +1,45 @@
+Round 19, the Virtual Calculator: HP Prime Virtual Calculator 2.4.2 (build 2026-09-09) under Wine 11.21 in the cloud
+workspace (tools/vc_cloud_v1/), 23 November 2026, the workspace's clock (CST).  Driven by vc_fm.py (StatDist's Formula
+page, timed), vc_back.py (back to the Program Catalog) and tools/vc_cloud_v1/vcdrive.py; screens/ has the captures named
+below, each 320 x 240 as the calculator drew it.  A time "in N s or less" was read every 2 s from the key that asked for
+the page to the first screen without "Asking the CAS".
+
+STATDIST v2.7o, THE VERSION BEFORE (starter pack v24's checked file), Student t, F and Burr XII with the parameters
+round 19's probes found slow in Giac on the PC (probe_fm_families.py, probe_fm_params.py):
+  t, df 17.83          the page within 5 s, and in 2 s or less on a fresh calculator: E[X] and E[X^2] "no closed
+                       form shown", the program's values 0.000000 and 1.126342 (old1783_fm_005s.png)
+  t, df 206.3          the page in 4.8 s, the same way (timed by the screen standing still 4 s, the first method)
+  F, df1 7, df2 17.83  asked at about 08:54:45; still "Asking the CAS... exact arithmetic: it can take a few seconds,
+                       once" at 09:09:01, fourteen minutes on.  On pressed for 0.6 s and then for 2 s did nothing.  The
+                       calculator was stopped from outside (wineserver -k).
+  Burr XII, C 2.37, K 3, S 1
+                       the calculator's screen went black and its program ended about 14 s after the page was asked,
+                       at 09:11 and again at 09:13 (old_B237b_fm.png, black)
+
+STATDIST v2.7p AS FIRST BUILT FOR THE CALCULATOR (Checked "No errors in the program" at 09:19:52), whose t and F rules
+and lines are the final ones and whose Burr XII rule took halves too:
+  t 17.83 (the gray line, 3 s or less: new_t1783_fm.png), F 7 and 17.83 (the line, 2 s), Burr XII 2.37, 3, 1 (the line,
+  3 s); asked, as before: t 17.5 (E[X] = 0, "agree", 2 s), F 7 and 18 (E[X] = 9/8, 2 s: new_F7_18_fm.png), Burr XII
+  2, 3, 1 (E[X] = 3 pi/16, 3 s: new_B2_3_fm.png), t 2.5 (2 s), Burr XII 3, 4, 1 (E[X] = 80 pi sqrt 3/729, 2 s), Burr
+  XII 2, 3, 1.83 (E[X] = 549 pi/1,600, 2 s).
+  Burr XII 2.5, 3.5, 1.5, asked under that rule: still "Asking the CAS" at 180 s; the calculator was stopped from
+  outside.  So the rule became C and K whole numbers (Giac on the PC had answered these halves in under a second).
+
+STATDIST v2.7p, FINAL (the file in starter pack v25): Checked "No errors in the program" at 09:33:42
+(check_StatDist_final.png), copied out before anything ran.  Then, in a new session:
+  Burr XII 2.5, 3.5, 1.5   the gray line, "The CAS is asked here only when C and K are whole numbers, because other
+                           values can keep it working for minutes, or stop the calculator.", the page in 3 s or less
+                           (final_B25_35_fm.png)
+  F 7 and 17.83            the gray line, 3 s or less (final_F7_1783_fm.png)
+
+EPISTATS v1.7o: Checked "No errors in the program" at 09:20:10 (check_EpiStats.png), copied out before anything ran.
+Then, in the final session: Stratified Analysis (M-H), Incidence Rates (IRR_MH), stratum 1's grid:
+  Right, Enter: the one-cell form, its help line "Exposed+ person-time, 0 or 1 to 100,000" (es_cellform.png)
+  0.5 typed, Enter: the box "A person-time can be 0, or from 1 to 100,000, so give one of less than 1 in smaller units
+                    (person-months instead of person-years, say).", five lines, nothing cut (es_refused.png)
+  OK: the grid, its person-time still 0 (es_after.png)
+  Values: the four-value form; at PT(exp) the help line "Person-time exposed, 0 or 1 to 100,000" (es_values_pt.png)
+  0.5 typed at PT(exp), OK: the same box (es_values_refused.png); OK: the grid unchanged
+
+NOT DONE: no G1 or G2.  How long a G1's CAS takes with the guarded values was not tried, and neither was F at halves on
+the calculator (Giac on the PC took 24 s; the rule keeps F to whole numbers anyway).

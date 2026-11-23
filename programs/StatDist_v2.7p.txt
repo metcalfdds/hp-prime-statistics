@@ -1,7 +1,7 @@
 #pragma mode(separator(.,;) integer(h32))
 
 // ============================================================
-// STATDIST - v2.7o
+// STATDIST - v2.7p
 // Probabilities, densities and moments for 27 distributions,
 // each drawn as a plot you can touch
 // ============================================================
@@ -42,6 +42,14 @@
 //   Written for the 2026-09-09 firmware (2.4.2); none of its commands
 //   is new in 2.4.x, so older firmware should also work.
 //
+// v2.7p (23 Nov 2026): Round 19: the Formula page (CAS) asks the CAS for its integrals only with parameters that keep it
+//   quick: Student's t when 2 df is a whole number, Fisher F when df1 and df2 are whole, Burr XII when C
+//   and K are whole.  Round 18's monkey found the page waiting for t at df = 206.3; Giac on a PC had not
+//   finished at df = 17.83 in ten minutes, and round 19's probes found F (df 7 and 17.83) and Burr XII
+//   (C = 2.37) waiting too.  On the Virtual Calculator v2.7o was still asking after 14 minutes with that
+//   F, and with that Burr XII the calculator stopped.  Otherwise a gray line says when the CAS is asked,
+//   and the page shows "no closed form shown" and the program's own values.  Roger, 23 Nov 2026:
+//   "StatDist--fix as you suggest".  Only st_FmCont changed, and the version.
 // v2.7o (22 Nov 2026): Round 18: the program sets the four Home settings that the book's examples assume when it starts,
 //   and leaves them set: HSeparator := 0 (Digit Grouping 123,456.789, the period as the decimal point),
 //   HFormat := 0 (Number Format Standard), HAngle := 0 (Radians) and Entry := 0 (Textbook).  Roger, 22
@@ -4486,17 +4494,41 @@ END;
 st_FmCont(fcP)
 BEGIN
   LOCAL fcD, fcN, fcM, fcE, fcSf;
-  LOCAL fcLim, fcV, fcX, fcH, fcR;
+  LOCAL fcLim, fcV, fcX, fcH, fcR, fcQ;
   fcSf := st_FmAsm();
   fcD := st_FmDens(stId, fcP, "stqx");
   fcN := IP(SIZE(fcD)/3);
   IF fcN < 1 THEN st_FmNone(stMu); RETURN 0; END;
   fcLim := "x from " + st_FmLimS(fcD(2)) + " to " + st_FmLimS(fcD(3*fcN)) + ":";
+  // v2.7p (round 19): the CAS is asked for these integrals only with parameters that keep it
+  // quick.  Giac on a PC had not finished in 60 s with Student's t at df = 17.83 or 206.3 (at
+  // 17.83, not in ten minutes), Fisher F at df1 = 7 and df2 = 17.83, or Burr XII at C = 2.37,
+  // and F at df 7.5 and 17.5 took 24 s; whole numbers took under a second, and so did halves
+  // for t (verify/round19/probe_fm_families.py, probe_fm_params.py).  On the Virtual Calculator
+  // v2.7o was still "Asking the CAS" after 14 minutes with F at 7 and 17.83, and with Burr XII
+  // at C = 2.37 the calculator itself stopped, twice; Burr XII at C = 2.5 and K = 3.5 was still
+  // asking after 3 minutes, while t at df 2.5, 17.5, 17.83 and 206.3, F at 7 and 18 and Burr XII
+  // at whole C and K took 5 s at most (verify/round19/vc_record.txt).  Otherwise
+  // the page says so and goes straight to "no closed form shown" and the program's own
+  // values, as it did when the CAS gave an integral back undone.
+  fcQ := 1;
+  IF stId == 7 AND FP(2 * stPar(1)) <> 0 THEN
+    fcQ := 0;
+    st_FmWrap("The CAS is asked here only when df is a whole number or a half.", stGRY);
+  END;
+  IF stId == 9 AND (FP(stPar(1)) <> 0 OR FP(stPar(2)) <> 0) THEN
+    fcQ := 0;
+    st_FmWrap("The CAS is asked here only when df1 and df2 are whole numbers, because other values can keep it working for many minutes.", stGRY);
+  END;
+  IF stId == 10 AND (FP(stPar(1)) <> 0 OR FP(stPar(2)) <> 0) THEN
+    fcQ := 0;
+    st_FmWrap("The CAS is asked here only when C and K are whole numbers, because other values can keep it working for minutes, or stop the calculator.", stGRY);
+  END;
   // ---- E[X] ----
   st_FmWrap("Mean: E[X] = integral of x f(x) dx, " + st_Cm(fcLim), #000000h);
   fcM := "";
   IF TYPE(stMu) == 0 THEN
-    fcM := st_FmAsk("simplify(" + st_FmInt(fcD, 1, "stqx") + ")" + fcSf, stMu);
+    IF fcQ == 1 THEN fcM := st_FmAsk("simplify(" + st_FmInt(fcD, 1, "stqx") + ")" + fcSf, stMu); END;
     IF DIM(fcM) > 0 THEN st_FmRes(fcM, stMu); ELSE st_FmNone(stMu); END;
   ELSE
     // no mean: the CAS should find the integral infinite.  For the
@@ -4505,7 +4537,8 @@ BEGIN
     IF stId == 7 THEN fcH(2) := "0"; END;
     IF stId == 19 THEN fcH(2) := fcP(1); END;
     // v2.7a: asked as exp(-(integral)), which is 0 when it is infinite
-    fcR := st_Cas("exp(-(simplify(" + st_FmInt(fcH, 1, "stqx") + ")" + fcSf + "))");
+    fcR := "";
+    IF fcQ == 1 THEN fcR := st_Cas("exp(-(simplify(" + st_FmInt(fcH, 1, "stqx") + ")" + fcSf + "))"); END;
     IF st_FmInf(fcR) THEN
       IF stId == 7 OR stId == 19 THEN
         st_FmAdd("  from the center up alone: ∞ (CAS).", stMAG);
@@ -4523,11 +4556,12 @@ BEGIN
   fcE := "";
   IF TYPE(stMu) == 0 AND TYPE(stVr) == 0 THEN
     fcV := stVr + stMu^2;
-    fcE := st_FmAsk("simplify(" + st_FmInt(fcD, 2, "stqx") + ")" + fcSf, fcV);
+    IF fcQ == 1 THEN fcE := st_FmAsk("simplify(" + st_FmInt(fcD, 2, "stqx") + ")" + fcSf, fcV); END;
     IF DIM(fcE) > 0 THEN st_FmRes(fcE, fcV); ELSE st_FmNone(fcV); END;
   ELSE
     // v2.7a: asked as exp(-(integral)), which is 0 when it is infinite
-    fcR := st_Cas("exp(-(simplify(" + st_FmInt(fcD, 2, "stqx") + ")" + fcSf + "))");
+    fcR := "";
+    IF fcQ == 1 THEN fcR := st_Cas("exp(-(simplify(" + st_FmInt(fcD, 2, "stqx") + ")" + fcSf + "))"); END;
     IF st_FmInf(fcR) THEN
       st_FmAdd("  = ∞ (CAS): there is NO variance", stMAG);
       st_FmAdd("  (the program: undef).", stGRN);

@@ -1,0 +1,11 @@
+{
+ "EpiStats": [],
+ "StatDist": [
+  {
+   "seed": 19000955,
+   "verdict": "HARNESS",
+   "detail": "^ between a number and a number is not covered",
+   "also_before": true
+  }
+ ]
+}

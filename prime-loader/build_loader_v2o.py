@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
-"""build_loader_v2n.py -- assembles PrimeLoader_v2n.html: the page template, the loader's core, the Data Loader's core
+"""build_loader_v2o.py -- assembles PrimeLoader_v2o.html: the page template, the loader's core, the Data Loader's core
 (for its zip writer), the USB core, the chapter list, and every program file from a starter pack, embedded so the
 page works offline.
 
-    python3 build_loader_v2n.py PACK.zip [OUT.html] [--kit PATH]
+    python3 build_loader_v2o.py PACK.zip [OUT.html] [--kit PATH]
+v2o (23 Nov 2026): v2n's page, word for word, built from starter pack v25, whose StatDist v2.7p and EpiStats v1.7o carry
+round 19 (verify/round19/README.md): StatDist's Formula page asks the CAS only with parameters that keep it quick, and
+EpiStats' stratified rates grid takes a person-time of 0, or from 1 to 100,000.  The template is v2n's with its name
+changed; the same loader core and usb/prime_usb_v3d.js.  Not sent to a calculator.
 v2n (22 Nov 2026): v2m's page, word for word, built from starter pack v24, whose 31 programs carry round 18: each sets
 the book's four Home settings when it starts and leaves them set (Digit Grouping 123,456.789, Number Format Standard,
 Radians, Textbook entry), and NormExplorer and StudRange have the pragma line (verify/round18/README.md).  The template
@@ -174,7 +178,7 @@ KIT = os.environ.get('HPKIT', '/tmp/kit/hp-prime-kit-HEAD')
 if '--kit' in argv:
     i = argv.index('--kit'); KIT = argv[i + 1]; del argv[i:i + 2]
 PACK = argv[0]
-OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v2n.html')
+OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v2o.html')
 SITE = 'https://metcalfdds.github.io/hp-prime-statistics/'
 sys.path.insert(0, KIT)
 from hpkit import program as kitprog            # hp-prime-kit (MIT, JordiRigau/hp-prime-kit)
@@ -359,11 +363,11 @@ catalog = {
   'groups': GROUPS,
   'data': {k: {'file': v[1], 'what': v[2], 'bytes': len(packed[v[1]])} for k, v in DATA.items()},
   'pack': os.path.basename(PACK),
-  'loader': 'v2n',
+  'loader': 'v2o',
   'pack_sha256': hashlib.sha256(open(PACK, 'rb').read()).hexdigest()[:12],
 }
 
-t = open(os.path.join(HERE, 'loader_template_v2n.html'), encoding='utf-8').read()
+t = open(os.path.join(HERE, 'loader_template_v2o.html'), encoding='utf-8').read()
 import glob as _glob
 _dl = sorted(_glob.glob(os.path.join(HERE, '..', 'data-loader', 'DataLoader_v*.html')),
              key=lambda p: [int(x) if x.isdigit() else x for x in __import__('re').split(r'(\d+)', os.path.basename(p))])
@@ -397,7 +401,7 @@ redirect = ('<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n
             '<link rel="canonical" href="' + SITE + 'prime-loader/' + page + '">\n'
             '<style>body{font:16px/1.5 system-ui,sans-serif;margin:2rem;color:#172033;background:#f6f8fb}'
             '@media (prefers-color-scheme:dark){body{color:#e8edf6;background:#0f1420}a{color:#7d9cff}}</style>\n'
-            '</head>\n<body>\n<!-- Written by build_loader_v2n.py: sends the browser on to the current Prime Loader, so the '
+            '</head>\n<body>\n<!-- Written by build_loader_v2o.py: sends the browser on to the current Prime Loader, so the '
             'address .../prime-loader/ never changes. -->\n'
             '<p>Opening the HP Prime Loader&hellip; If nothing happens, <a href="' + page + '">click here</a>.</p>\n'
             '</body>\n</html>\n')

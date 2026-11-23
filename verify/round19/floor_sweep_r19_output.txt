@@ -1,0 +1,5 @@
+floor 0.001  12,960,000 tables: divisions by zero 0; widest end e^27718; past the harness 83,004; past the Prime 64,460
+floor 0.1    12,960,000 tables: divisions by zero 0; widest end e^2772; past the harness 14,574; past the Prime 5,730
+floor 0.5    12,960,000 tables: divisions by zero 0; widest end e^1240; past the harness 1,886; past the Prime 2
+floor 1      12,960,000 tables: divisions by zero 0; widest end e^877; past the harness 20; past the Prime 0
+floor 2      12,960,000 tables: divisions by zero 0; widest end e^620; past the harness 0; past the Prime 0
