@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// POWERVIZ - v2.5u
+// POWERVIZ - v2.5v
 // ============================================================
 // FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
 //   the file and credit the author if you pass it on.  Not for
@@ -32,6 +32,12 @@
 //   its call form (v2.5a) is the one CASProbe beta 1b found on the
 //   emulator, see pv_Cas below.
 //
+// v2.5v (23 Nov 2026): Round 19: Cohen's h is in radians whatever unit the calculator's trigonometry is in.  v2.5u
+//   converted ASIN's answer by HAngle, but the current app's own Angle Measure, when it is not System,
+//   decides the unit and HAngle does not: with the Solve app set to Degrees the Virtual Calculator
+//   showed "h = 11.54, large" for p0 0.5 and p1 0.6 (0.20, small, is right).  pv_AngU measures the unit
+//   as 1.5707963267949/ASIN(1), and pv_AsinR and pv_SinR use it.  Found by the book's Solve example
+//   (Draft 74), 23 Nov 2026.  No word on a page changed, only the version.
 // v2.5u (22 Nov 2026): Round 18: the program sets the four Home settings that the book's examples assume when it starts,
 //   and leaves them set: HSeparator := 0 (Digit Grouping 123,456.789, the period as the decimal point),
 //   HFormat := 0 (Number Format Standard), HAngle := 0 (Radians) and Entry := 0 (Textbook).  Roger, 22
@@ -1223,24 +1229,33 @@ BEGIN
  RETURN muD;
 END;
 
-// arcsin in RADIANS whatever the Home angle mode (HAngle:
-// 0 radians, 1 degrees, 2 gradians).  Needed for Cohen's h.
-LOCAL pv_AsinR(av)
+// The unit the calculator's trigonometry is in, as a number of
+// radians: 1 in radians, pi/180 in degrees, pi/200 in grads.
+// v2.5v: measured, not read from HAngle.  The current app's own
+// Angle Measure, when it is not System, decides the unit, and
+// HAngle (which this program sets to 0 at its start) does not:
+// with the Solve app set to Degrees, ASIN(1) is 90 in Home and in
+// a program, and v2.5u showed h = 11.54 for p0 0.5 and p1 0.6
+// (Virtual Calculator, 23 Nov 2026).  BiNorm3D and TDist3D
+// measure the unit the same way.
+LOCAL pv_AngU()
 BEGIN
- LOCAL ar;
- ar := ASIN(av);
- IF HAngle==1 THEN ar := ar*3.14159265358979/180; END;
- IF HAngle==2 THEN ar := ar*3.14159265358979/200; END;
- RETURN ar;
+ RETURN 1.5707963267949/ASIN(1);
 END;
 
-// sine of an angle given in RADIANS whatever the Home angle mode
-// (v2.4; the power-vs-effect view turns h back into p with it).
+// arcsin in RADIANS whatever unit the calculator is in.  Needed
+// for Cohen's h.
+LOCAL pv_AsinR(av)
+BEGIN
+ RETURN ASIN(av)*pv_AngU();
+END;
+
+// sine of an angle given in RADIANS whatever unit the calculator
+// is in (v2.4; the power-vs-effect view turns h back into p with
+// it).
 LOCAL pv_SinR(srad)
 BEGIN
- IF HAngle==1 THEN RETURN SIN(srad*180/3.14159265358979); END;
- IF HAngle==2 THEN RETURN SIN(srad*200/3.14159265358979); END;
- RETURN SIN(srad);
+ RETURN SIN(srad/pv_AngU());
 END;
 
 // Standardized effect size: Cohen's d (means) or h (proportions)

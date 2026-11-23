@@ -10,14 +10,14 @@ PASS A9 all 31: the message's two lengths are right and its stream unpacks to th
 PASS A10 all 31: hp-prime-kit's message is cut into hp-prime-kit's reports, byte for byte
 PASS A11 all 31: hp-prime-kit's message reads back to the program's name and source, checksum good
 PASS A12 all 31: the older layout reads back to the same name and source
-     reports a program of a G2: compressed by this browser's zlib 17 to 101 (hp-prime-kit's level 1: 21 to 129); not compressed 82 to 569; not compressed, 12 of the 31 take more than 255 reports (AnovaLab, BayesTree, BurrLab, ChiTable, DNAMixLR, EpiStats, FitCheck, NormExplorer, PowerViz, RankLab, RiskLab, StatDist), and the largest of the other 19 takes 253
+     reports a program of a G2: compressed by this browser's zlib 17 to 102 (hp-prime-kit's level 1: 21 to 130); not compressed 82 to 572; not compressed, 12 of the 31 take more than 255 reports (AnovaLab, BayesTree, BurrLab, ChiTable, DNAMixLR, EpiStats, FitCheck, NormExplorer, PowerViz, RankLab, RiskLab, StatDist), and the largest of the other 19 takes 253
 PASS A13 no program needs more than 255 reports of a G2 compressed, so compressed every one fits the old framing
 PASS A14 not compressed, 19 of the 31 fit 255 reports of a G2 and 12 do not; none fits 255 reports of a G1 (63 bytes each)
 PASS A15 normalizeSource: CRLF and CR become LF, and one newline at the end is dropped (hp-prime-kit's rule)
 PASS A16 names: letters, digits and "_", a letter or "_" first
 PASS A17 the requests and the deletes for ZZUSBE begin with the bytes in the logs of 17 Nov: the two with a NUL were answered with the program, the deletes took it off
-     the 31 programs: 4,173,176 characters; not compressed in the newer framing 132,514 reports of a G1 and 8,172 of a G2; the largest is EpiStats (290,760 characters, 9,232 and 569 reports), the smallest DataLoad (41,670)
-PASS A18 the book's 31 programs are 4,173,176 characters: 132,514 reports of a G1 and 8,172 of a G2, not compressed in the newer framing; the largest, EpiStats, is 290,760 characters (9,232 and 569 reports)
+     the 31 programs: 4,178,387 characters; not compressed in the newer framing 132,680 reports of a G1 and 8,183 of a G2; the largest is EpiStats (292,430 characters, 9,285 and 572 reports), the smallest DataLoad (41,670)
+PASS A18 the book's 31 programs are 4,178,387 characters: 132,680 reports of a G1 and 8,183 of a G2, not compressed in the newer framing; the largest, EpiStats, is 292,430 characters (9,285 and 572 reports)
 PASS B1 old framing: 301 reports, numbered 00 to FE and then 00 again, never FF
 PASS B2 old framing: the pieces put together are the message
 PASS B3 old framing: a one-byte message is one report of two bytes
@@ -42,15 +42,15 @@ PASS C6 "EB 03" takes a program off, and a request for it is then met with silen
 PASS C7 a calculator that speaks 03 already (a second load without unplugging) is not told again
 PASS C8 a calculator that does not take the "FD" still says 01, and the newer framing is then NOT asked for: nothing about it is changed
 PASS C9 programs of exactly 2, 76, 77, 78, 153, 154, 155, 231, 232 and 480 reports, of a G2 and of a G1: each acknowledged at every 77th report and at its end and nowhere else, no report sent twice, and never a wait for the calculator's clock (v2 waited 0.7 s at every 76th)
-PASS C10 EpiStats to a G1: 9,232 reports, the last numbered A0; 120 acknowledgements (119 at every 77th report, and the whole); no report twice; progress is told at each
-PASS C11 ... and it comes back the same in 1,639 reports: the Link acknowledges at 241 reports and every 240 after, with the number of the last report that came, and the whole, so the calculator, which stands at 240 reports' worth unacknowledged, never stood for longer than a moment
+PASS C10 EpiStats to a G1: 9,285 reports, the last numbered D5; 121 acknowledgements (120 at every 77th report, and the whole); no report twice; progress is told at each
+PASS C11 ... and it comes back the same in 1,646 reports: the Link acknowledges at 241 reports and every 240 after, with the number of the last report that came, and the whole, so the calculator, which stands at 240 reports' worth unacknowledged, never stood for longer than a moment
 PASS C12 the calculator's clock says "send again" for a report that is on its way, as the G2's did after the first report of its longest message: ONE report is sent a second time, the calculator says what it has, and the sending goes on from there (v2 went back seven times); a word that is an acknowledgement, or is up to date, costs nothing
 PASS C13 a report lost on the way (the 5th, the 77th, the 78th, the 300th, a G1's 200th, a message's last): with the calculator's "send again", or without it on the word of its clock, the sending goes back once and the program arrives whole
 PASS C14 a stray acknowledgement that claims more reports than have been sent is passed over: the message is not taken for finished, and arrives whole
 PASS C15 an answer that begins 3.3 s after the request, where v2 gave up at 3.0: with the wait that the largest program is given, it is read back the same
 PASS C16 the reader gives up, the answer comes late and the calculator stands after 241 reports; before the next request the Link takes the answer to its end and acknowledges it, so the calculator answers again (on 17 Nov the G1's answer was thrown away, and it answered nothing more)
 PASS C17 ... and the program is then read back the same
-PASS C18 the G1 of 17 Nov at 210 s: asked "who are you" in the old framing while an answer stands, the mock sends the rest of that answer numbered in the old way (1,398 reports) and then answers; the new page reads its answer among them and begins as usual
+PASS C18 the G1 of 17 Nov at 210 s: asked "who are you" in the old framing while an answer stands, the mock sends the rest of that answer numbered in the old way (1,405 reports) and then answers; the new page reads its answer among them and begins as usual
 PASS C19 ... and loads and reads back a program
 PASS C20 among the reports of an older answer, one numbered 00 that goes on "FA 99 88 77 66" is not taken for the answer to "who are you": the real one after it is
 PASS C21 reports of an answer that come a second time are dropped and counted, and the answer is whole
@@ -90,8 +90,8 @@ PASS E11 a calculator that hands a program back with CRLF and a last line end: s
 PASS E12 a name the calculator would not take is refused before anything of it is sent: "unsent", with the name
 PASS E13 the log of a load: a "send again" is always in it, however long the message; the ordinary lines beyond the first forty are counted and left out
 PASS E14 ... and when a load fails, the last reports that the log had left out are written after the failure, since those are the ones wanted
-PASS F1 all 31 programs onto a pretend G1: each read back the same; 132,514 reports of programs, none sent twice, no word of the clock needed (1.6 s against the mock, which takes a report at once)
-PASS F2 all 31 programs onto a pretend G2: each read back the same; 8,172 reports of programs, none sent twice, no word of the clock needed (1.3 s against the mock, which takes a report at once)
+PASS F1 all 31 programs onto a pretend G1: each read back the same; 132,680 reports of programs, none sent twice, no word of the clock needed (2.1 s against the mock, which takes a report at once)
+PASS F2 all 31 programs onto a pretend G2: each read back the same; 8,183 reports of programs, none sent twice, no word of the clock needed (1.6 s against the mock, which takes a report at once)
 PASS G1 the log of reports: a message's start with its number, size and first twelve bytes; the reports after it only counted, with their numbers; three of a run of one kind and then their count
 PASS G2 after its budget of ordinary lines the rest are counted, and said at the next line of the caller's; a "send again" is written all the same; and the last ones left out can be had
 PASS G3 in 143 lines of two loads' logs: no line shows more than twelve bytes of a message, and the serial number, which the mock sends in its answer to "who are you", is in none, as text or as bytes

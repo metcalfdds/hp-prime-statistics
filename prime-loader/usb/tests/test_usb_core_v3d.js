@@ -7,6 +7,9 @@
 // 22 Nov 2026 (round 18): every program grew by the round's lines, so the numbers this test counts from programs/ are the
 // new ones (A14, A18, C10, C14, D6, E2, E4, E5, E14, F1, F2: the fleet's and EpiStats's and DataLoad's characters and reports).
 // The numbers that come from the two calculators' logs stand as they were.
+// 23 Nov 2026 (round 19): StatDist v2.7p and EpiStats v1.7o grew, so A18, C10, C14, E14, F1 and F2 count the new numbers:
+// the fleet's and EpiStats's characters and reports, and the number of EpiStats's last acknowledgement.  PowerViz v2.5v
+// (the same round, later that day) grew by 939 characters, so A18, F1 and F2 count 30 more reports of a G1 and 2 of a G2.
 //
 // NOTHING HERE TOUCHES A CALCULATOR.  A pass says this and no more:
 //   A  the messages are, byte for byte, the ones hp-prime-kit builds and hp-prime-web's tests expect, and the requests
@@ -110,8 +113,8 @@ const G1 = 0x1541;
   const biggest = rawAll.reduce((m, x) => x.chars > m.chars ? x : m), smallest = rawAll.reduce((m, x) => x.chars < m.chars ? x : m);
   console.log('     the ' + rawAll.length + ' programs: ' + num(chars) + ' characters; not compressed in the newer framing ' + num(g1Reports) + ' reports of a G1 and ' + num(g2Reports) + ' of a G2; the largest is ' +
               biggest.name + ' (' + num(biggest.chars) + ' characters, ' + num(reportsOf(biggest, 63)) + ' and ' + num(reportsOf(biggest, 1023)) + ' reports), the smallest ' + smallest.name + ' (' + num(smallest.chars) + ')');
-  check('A18 the book\'s ' + rawAll.length + ' programs are 4,173,176 characters: 132,514 reports of a G1 and 8,172 of a G2, not compressed in the newer framing; the largest, EpiStats, is 290,760 characters (9,232 and 569 reports)',
-        rawAll.length === 31 && chars === 4173176 && g1Reports === 132514 && g2Reports === 8172 && biggest.name === 'EpiStats' && biggest.chars === 290760 && reportsOf(biggest, 63) === 9232 && reportsOf(biggest, 1023) === 569,
+  check('A18 the book\'s ' + rawAll.length + ' programs are 4,178,387 characters: 132,680 reports of a G1 and 8,183 of a G2, not compressed in the newer framing; the largest, EpiStats, is 292,430 characters (9,285 and 572 reports)',
+        rawAll.length === 31 && chars === 4178387 && g1Reports === 132680 && g2Reports === 8183 && biggest.name === 'EpiStats' && biggest.chars === 292430 && reportsOf(biggest, 63) === 9285 && reportsOf(biggest, 1023) === 572,
         [rawAll.length, chars, g1Reports, g2Reports, biggest.name, biggest.chars].join(' '));
 
   // ---------------------------------------------------------------- B. the framing
@@ -228,9 +231,9 @@ const G1 = 0x1541;
   out = await link.sendProgram('EpiStats', EPI);
   f = await link.readProgram('EpiStats', { ver: 3 });
   const ha = mock.hostAcks.filter(a => a.id === f.id);
-  check('C10 EpiStats to a G1: 9,232 reports, the last numbered A0; 120 acknowledgements (119 at every 77th report, and the whole); no report twice; progress is told at each',
-        out.reports === 9232 && out.acks.length === 120 && multiples(out.acks, 63, 9232) && out.acks[119].seq === 0xA0 && out.acks[119].pos === 581608 + 0 && out.backs === 0 && mock.outOfTurn === 0 &&
-        mock.programs.EpiStats === EPI && seenG1.filter(x => /\/9232$/.test(x)).length === 120 && seenG1[0] === '77/9232' && seenG1[119] === '9232/9232', JSON.stringify([out.reports, out.acks.length, out.acks[119], seenG1.length]));
+  check('C10 EpiStats to a G1: 9,285 reports, the last numbered D5; 121 acknowledgements (120 at every 77th report, and the whole); no report twice; progress is told at each',
+        out.reports === 9285 && out.acks.length === 121 && multiples(out.acks, 63, 9285) && out.acks[120].seq === 0xD5 && out.acks[120].pos === 584947 && out.backs === 0 && mock.outOfTurn === 0 &&
+        mock.programs.EpiStats === EPI && seenG1.filter(x => /\/9285$/.test(x)).length === 121 && seenG1[0] === '77/9285' && seenG1[120] === '9285/9285', JSON.stringify([out.reports, out.acks.length, out.acks[120], seenG1.length]));
   const at = ha.map(a => P.reportsAt(a.pos, 63));
   check('C11 ... and it comes back the same in ' + num(f.reports) + ' reports: the Link acknowledges at 241 reports and every 240 after, with the number of the last report that came, and the whole, ' +
         'so the calculator, which stands at 240 reports\' worth unacknowledged, never stood for longer than a moment',
@@ -280,7 +283,7 @@ const G1 = 0x1541;
     out = await link.sendProgram('EpiStats', EPI);
     port.send = send0;
   }
-  check('C14 a stray acknowledgement that claims more reports than have been sent is passed over: the message is not taken for finished, and arrives whole', out.reports === 569 && mock.programs.EpiStats === EPI && mock.outOfTurn === 0 && out.acks.length === 8, out.acks.length);
+  check('C14 a stray acknowledgement that claims more reports than have been sent is passed over: the message is not taken for finished, and arrives whole', out.reports === 572 && mock.programs.EpiStats === EPI && mock.outOfTurn === 0 && out.acks.length === 8, out.acks.length);
   mock.stop();
 
   // an answer that takes its time (a G1 took 3.1 s to begin sending 289,813 characters back; v2 waited 3.0)
@@ -541,7 +544,7 @@ const G1 = 0x1541;
         L.res.ok && /"SEND AGAIN": report 09, position 496, message 2/.test(L.text) && /1 time a report was sent again/.test(L.text) && /\(\d+ more lines of this kind left out\)/.test(L.text) && L.log.length < 200, L.log.length);
   L = await run({ product: G1, muteAt: 5000, tickMs: 0 }, [{ name: 'EpiStats', source: EPI }, { name: 'ZZZ', source: tiny }]);
   check('E14 ... and when a load fails, the last reports that the log had left out are written after the failure, since those are the ones wanted',
-        L.res.failed.why === 'unsent' && /\(\d+ more lines of this kind left out\)\n  NOT SENT: message 2 stood for 0\.5 s with 4,\d\d\d of its 9,232 reports acknowledged[^\n]*\n  The last reports before that, which the log had left out:\n(    \. [<>] [^\n]*\n){29}    \. [<>] [^\n]*$/.test(L.text), L.text.slice(-900));
+        L.res.failed.why === 'unsent' && /\(\d+ more lines of this kind left out\)\n  NOT SENT: message 2 stood for 0\.5 s with 4,\d\d\d of its 9,285 reports acknowledged[^\n]*\n  The last reports before that, which the log had left out:\n(    \. [<>] [^\n]*\n){29}    \. [<>] [^\n]*$/.test(L.text), L.text.slice(-900));
 
   // ---------------------------------------------------------------- F. the book's programs, every one
   const fleet = progs.map(r => ({ name: r.name, source: src(r) }));
@@ -551,7 +554,7 @@ const G1 = 0x1541;
     link.progress = () => { have++; };
     const t = Date.now(), res = await P.load(link, fleet, {}, { settle: 0, lull: 0 });
     mock.stop();
-    const whole = fleet.every(p => mock.programs[p.name] === p.source), sent = mock.arrived.reduce((s, a) => s + a.reports, 0), want = product === G1 ? 132514 : 8172;
+    const whole = fleet.every(p => mock.programs[p.name] === p.source), sent = mock.arrived.reduce((s, a) => s + a.reports, 0), want = product === G1 ? 132680 : 8183;
     check('F' + (product === G1 ? 1 : 2) + ' all ' + fleet.length + ' programs onto a pretend ' + (product === G1 ? 'G1' : 'G2') + ': each read back the same; ' + num(sent) + ' reports of programs, none sent twice, no word of the clock needed (' +
           ((Date.now() - t) / 1000).toFixed(1) + ' s against the mock, which takes a report at once)',
           res.ok && res.done.length === 31 && whole && sent === want && mock.outOfTurn === 0 && mock.nacks === 0 && mock.arrived.every(a => a.kept && a.layout === 'v1' && a.framing === 'new') &&
