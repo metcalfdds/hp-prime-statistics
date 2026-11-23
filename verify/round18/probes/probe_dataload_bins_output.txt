@@ -1,0 +1,4 @@
+harness: 437 columns, 28 stopped: ['index 0 out of range in hc (1..0)']
+binary doubles: 28 columns with no bin; 12-digit decimals: 0
+the same columns as the harness stopped on: True
+the smallest |v| with no bin in binary: 1004.18169
