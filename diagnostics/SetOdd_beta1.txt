@@ -1,0 +1,8 @@
+#pragma mode( separator(.,;) integer(h32) )
+// SetOdd beta 1 (22 Nov 2026).  Leaves the calculator set the way the book warns about:
+// RPN entry, a comma as the decimal point, Fixed 2, Degrees.  It puts nothing back.
+EXPORT SetOdd()
+BEGIN
+  Entry := 2; HSeparator := 4; HFormat := 1; HDigits := 2; HAngle := 1;
+  RETURN "SetOdd: done";
+END;

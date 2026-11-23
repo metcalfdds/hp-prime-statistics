@@ -1,0 +1,33 @@
+#pragma mode( separator(.,;) integer(h32) )
+// SetProbe beta 1 (22 Nov 2026).  Can a program change Home's settings, and put them back?
+// It reads five settings, changes three of them one at a time, writes down what each
+// change did, puts every one back, and prints the lot.  Code is ASCII; names carry sp.
+EXPORT SetProbe()
+BEGIN
+  LOCAL spS, spA, spF, spD, spE;
+  LOCAL spT1, spT2, spT3, spT4, spT5, spT6;
+  spS := HSeparator; spA := HAngle; spF := HFormat; spD := HDigits; spE := Entry;
+  HSeparator := 0;  spT1 := STRING(1234.5678);
+  HSeparator := 4;  spT2 := STRING(1234.5678);
+  HSeparator := spS;
+  HAngle := 1;      spT3 := SIN(90);
+  HAngle := 0;      spT4 := SIN(90);
+  HAngle := spA;
+  HFormat := 1; HDigits := 2;  spT5 := STRING(0.046);
+  HFormat := 0;                spT6 := STRING(0.046);
+  HFormat := spF; HDigits := spD;
+  PRINT();
+  PRINT("SetProbe beta 1");
+  PRINT("At start: HSeparator " + spS + "  HAngle " + spA);
+  PRINT("          HFormat " + spF + "  HDigits " + spD + "  Entry " + spE);
+  PRINT("HSeparator:=0 gives " + spT1);
+  PRINT("HSeparator:=4 gives " + spT2);
+  PRINT("HAngle:=1, SIN(90) = " + spT3);
+  PRINT("HAngle:=0, SIN(90) = " + spT4);
+  PRINT("HFormat:=1, HDigits:=2 gives " + spT5);
+  PRINT("HFormat:=0 gives " + spT6);
+  PRINT("At end:   HSeparator " + HSeparator + "  HAngle " + HAngle);
+  PRINT("          HFormat " + HFormat + "  HDigits " + HDigits + "  Entry " + Entry);
+  WAIT(-1);
+  RETURN "SetProbe: done";
+END;
