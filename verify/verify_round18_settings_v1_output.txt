@@ -1,0 +1,226 @@
+B  AgreeLab     OK    verify/round18/make_round18.py makes the filed beta1j byte for byte
+B  AnovaLab     OK    verify/round18/make_round18.py makes the filed beta1k byte for byte
+B  BayesTree    OK    verify/round18/make_round18.py makes the filed beta8l byte for byte
+B  BiNorm3D     OK    verify/round18/make_round18.py makes the filed beta1h byte for byte
+B  BurrLab      OK    verify/round18/make_round18.py makes the filed beta1s byte for byte
+B  CICatcher    OK    verify/round18/make_round18.py makes the filed beta2n byte for byte
+B  CentralLimit OK    verify/round18/make_round18.py makes the filed beta3h byte for byte
+B  ChiTable     OK    verify/round18/make_round18.py makes the filed beta3n byte for byte
+B  DNAMixLR     OK    verify/round18/make_round18.py makes the filed beta3k byte for byte
+B  DataLoad     OK    verify/round18/make_round18.py makes the filed beta1h byte for byte
+B  EpiStats     OK    verify/round18/make_round18.py makes the filed v1.7n byte for byte
+B  ErrorRate    OK    verify/round18/make_round18.py makes the filed beta1k byte for byte
+B  ExhibitLab   OK    verify/round18/make_round18.py makes the filed beta1j byte for byte
+B  FitCheck     OK    verify/round18/make_round18.py makes the filed beta1k byte for byte
+B  GaltonBoard  OK    verify/round18/make_round18.py makes the filed beta3j byte for byte
+B  Norm3        OK    verify/round18/make_round18.py makes the filed v2.4h byte for byte
+B  NormExplorer OK    verify/round18/make_round18.py makes the filed beta42k byte for byte
+B  PowerViz     OK    verify/round18/make_round18.py makes the filed v2.5u byte for byte
+B  RankLab      OK    verify/round18/make_round18.py makes the filed beta1l byte for byte
+B  ResampLab    OK    verify/round18/make_round18.py makes the filed beta1k byte for byte
+B  RiskLab      OK    verify/round18/make_round18.py makes the filed beta1i byte for byte
+B  SampDist     OK    verify/round18/make_round18.py makes the filed v2.3l byte for byte
+B  ScatterLab   OK    verify/round18/make_round18.py makes the filed beta2n byte for byte
+B  StatDist     OK    verify/round18/make_round18.py makes the filed v2.7o byte for byte
+B  StudRange    OK    verify/round18/make_round18.py makes the filed beta15o byte for byte
+B  SurvLab      OK    verify/round18/make_round18.py makes the filed beta1h byte for byte
+B  TDist3D      OK    verify/round18/make_round18.py makes the filed beta1c byte for byte
+B  TTestLab     OK    verify/round18/make_round18.py makes the filed beta1m byte for byte
+B  TTestLabG    OK    verify/round18/make_round18.py makes the filed beta1j byte for byte
+B  TestChooser  OK    verify/round18/make_round18.py makes the filed beta2i byte for byte
+B  TrendTest    OK    verify/round18/make_round18.py makes the filed beta3o byte for byte
+T1 AgreeLab     OK    beta1i -> beta1j: 1 settings line(s), a history note of 7 lines; 2 other line(s) differ, all by the version
+T2 AgreeLab     OK    the first statement of each start routine
+T3 AgreeLab     OK    the first line is the pragma line
+T1 AnovaLab     OK    beta1j -> beta1k: 1 settings line(s), a history note of 7 lines; 2 other line(s) differ, all by the version
+T2 AnovaLab     OK    the first statement of each start routine
+T3 AnovaLab     OK    the first line is the pragma line
+T1 BayesTree    OK    beta8k -> beta8l: 1 settings line(s), a history note of 7 lines; 1 other line(s) differ, all by the version
+T2 BayesTree    OK    the first statement of each start routine
+T3 BayesTree    OK    the first line is the pragma line
+T1 BiNorm3D     OK    beta1g -> beta1h: 1 settings line(s), a history note of 7 lines; 1 other line(s) differ, all by the version
+T2 BiNorm3D     OK    the first statement of each start routine
+T3 BiNorm3D     OK    the first line is the pragma line
+T1 BurrLab      OK    beta1r -> beta1s: 1 settings line(s), a history note of 7 lines; 2 other line(s) differ, all by the version
+T2 BurrLab      OK    the first statement of each start routine
+T3 BurrLab      OK    the first line is the pragma line
+T1 CICatcher    OK    beta2m -> beta2n: 1 settings line(s), a history note of 7 lines; 1 other line(s) differ, all by the version
+T2 CICatcher    OK    the first statement of each start routine
+T3 CICatcher    OK    the first line is the pragma line
+T1 CentralLimit OK    beta3g -> beta3h: 2 settings line(s), a history note of 7 lines; 1 other line(s) differ, all by the version
+T2 CentralLimit OK    the first statement of each start routine
+T3 CentralLimit OK    the first line is the pragma line
+T1 ChiTable     OK    beta3m -> beta3n: 1 settings line(s), a history note of 7 lines; 1 other line(s) differ, all by the version
+T2 ChiTable     OK    the first statement of each start routine
+T3 ChiTable     OK    the first line is the pragma line
+T1 DNAMixLR     OK    beta3j -> beta3k: 1 settings line(s), a history note of 7 lines; 1 other line(s) differ, all by the version
+T2 DNAMixLR     OK    the first statement of each start routine
+T3 DNAMixLR     OK    the first line is the pragma line
+T1 DataLoad     OK    beta1g -> beta1h: 1 settings line(s), a history note of 7 lines; 1 other line(s) differ, all by the version
+T2 DataLoad     OK    the first statement of each start routine
+T3 DataLoad     OK    the first line is the pragma line
+T1 EpiStats     OK    v1.7m -> v1.7n: 2 settings line(s), a history note of 7 lines; 3 other line(s) differ, all by the version
+T2 EpiStats     OK    the first statement of each start routine
+T3 EpiStats     OK    the first line is the pragma line
+T1 ErrorRate    OK    beta1j -> beta1k: 1 settings line(s), a history note of 7 lines; 1 other line(s) differ, all by the version
+T2 ErrorRate    OK    the first statement of each start routine
+T3 ErrorRate    OK    the first line is the pragma line
+T1 ExhibitLab   OK    beta1i -> beta1j: 1 settings line(s), a history note of 7 lines; 1 other line(s) differ, all by the version
+T2 ExhibitLab   OK    the first statement of each start routine
+T3 ExhibitLab   OK    the first line is the pragma line
+T1 FitCheck     OK    beta1j -> beta1k: 1 settings line(s), a history note of 7 lines; 2 other line(s) differ, all by the version
+T2 FitCheck     OK    the first statement of each start routine
+T3 FitCheck     OK    the first line is the pragma line
+T1 GaltonBoard  OK    beta3i -> beta3j: 1 settings line(s), a history note of 7 lines; 1 other line(s) differ, all by the version
+T2 GaltonBoard  OK    the first statement of each start routine
+T3 GaltonBoard  OK    the first line is the pragma line
+T1 Norm3        OK    v2.4g -> v2.4h: 1 settings line(s), a history note of 7 lines; 1 other line(s) differ, all by the version
+T2 Norm3        OK    the first statement of each start routine
+T3 Norm3        OK    the first line is the pragma line
+T1 NormExplorer OK    beta42j -> beta42k: 1 settings line(s), a history note of 9 lines, the new first line; 1 other line(s) differ, all by the version
+T2 NormExplorer OK    the first statement of each start routine
+T3 NormExplorer OK    the first line is the pragma line
+T1 PowerViz     OK    v2.5t -> v2.5u: 1 settings line(s), a history note of 7 lines; 1 other line(s) differ, all by the version
+T2 PowerViz     OK    the first statement of each start routine
+T3 PowerViz     OK    the first line is the pragma line
+T1 RankLab      OK    beta1k -> beta1l: 1 settings line(s), a history note of 7 lines; 2 other line(s) differ, all by the version
+T2 RankLab      OK    the first statement of each start routine
+T3 RankLab      OK    the first line is the pragma line
+T1 ResampLab    OK    beta1j -> beta1k: 1 settings line(s), a history note of 7 lines; 2 other line(s) differ, all by the version
+T2 ResampLab    OK    the first statement of each start routine
+T3 ResampLab    OK    the first line is the pragma line
+T1 RiskLab      OK    beta1h -> beta1i: 1 settings line(s), a history note of 7 lines; 2 other line(s) differ, all by the version
+T2 RiskLab      OK    the first statement of each start routine
+T3 RiskLab      OK    the first line is the pragma line
+T1 SampDist     OK    v2.3k -> v2.3l: 1 settings line(s), a history note of 7 lines; 0 other line(s) differ, all by the version
+T2 SampDist     OK    the first statement of each start routine
+T3 SampDist     OK    the first line is the pragma line
+T1 ScatterLab   OK    beta2m -> beta2n: 1 settings line(s), a history note of 7 lines; 1 other line(s) differ, all by the version
+T2 ScatterLab   OK    the first statement of each start routine
+T3 ScatterLab   OK    the first line is the pragma line
+T1 StatDist     OK    v2.7n -> v2.7o: 1 settings line(s), a history note of 7 lines; 1 other line(s) differ, all by the version
+T2 StatDist     OK    the first statement of each start routine
+T3 StatDist     OK    the first line is the pragma line
+T1 StudRange    OK    beta15n -> beta15o: 1 settings line(s), a history note of 9 lines, the new first line; 1 other line(s) differ, all by the version
+T2 StudRange    OK    the first statement of each start routine
+T3 StudRange    OK    the first line is the pragma line
+T1 SurvLab      OK    beta1g -> beta1h: 1 settings line(s), a history note of 7 lines; 1 other line(s) differ, all by the version
+T2 SurvLab      OK    the first statement of each start routine
+T3 SurvLab      OK    the first line is the pragma line
+T1 TDist3D      OK    beta1b -> beta1c: 1 settings line(s), a history note of 7 lines; 1 other line(s) differ, all by the version
+T2 TDist3D      OK    the first statement of each start routine
+T3 TDist3D      OK    the first line is the pragma line
+T1 TTestLab     OK    beta1l -> beta1m: 1 settings line(s), a history note of 7 lines; 1 other line(s) differ, all by the version
+T2 TTestLab     OK    the first statement of each start routine
+T3 TTestLab     OK    the first line is the pragma line
+T1 TTestLabG    OK    beta1i -> beta1j: 1 settings line(s), a history note of 8 lines; 1 other line(s) differ, all by the version
+T2 TTestLabG    OK    the first statement of each start routine
+T3 TTestLabG    OK    the first line is the pragma line
+T1 TestChooser  OK    beta2h -> beta2i: 1 settings line(s), a history note of 7 lines; 1 other line(s) differ, all by the version
+T2 TestChooser  OK    the first statement of each start routine
+T3 TestChooser  OK    the first line is the pragma line
+T1 TrendTest    OK    beta3n -> beta3o: 1 settings line(s), a history note of 7 lines; 1 other line(s) differ, all by the version
+T2 TrendTest    OK    the first statement of each start routine
+T3 TrendTest    OK    the first line is the pragma line
+T4 the line     OK    HSeparator := 0; HFormat := 0; HAngle := 0; Entry := 0;
+G  AgreeLab     OK    the gate against beta1i
+G  AnovaLab     OK    the gate against beta1j
+G  BayesTree    OK    the gate against beta8k
+G  BiNorm3D     OK    the gate against beta1g
+G  BurrLab      OK    the gate against beta1r
+G  CICatcher    OK    the gate against beta2m
+G  CentralLimit OK    the gate against beta3g
+G  ChiTable     OK    the gate against beta3m
+G  DNAMixLR     OK    the gate against beta3j
+G  DataLoad     OK    the gate against beta1g
+G  EpiStats     OK    the gate against v1.7m
+G  ErrorRate    OK    the gate against beta1j
+G  ExhibitLab   OK    the gate against beta1i
+G  FitCheck     OK    the gate against beta1j
+G  GaltonBoard  OK    the gate against beta3i
+G  Norm3        OK    the gate against v2.4g
+G  NormExplorer OK    the gate against beta42j
+G  PowerViz     OK    the gate against v2.5t
+G  RankLab      OK    the gate against beta1k
+G  ResampLab    OK    the gate against beta1j
+G  RiskLab      OK    the gate against beta1h
+G  SampDist     OK    the gate against v2.3k
+G  ScatterLab   OK    the gate against beta2m
+G  StatDist     OK    the gate against v2.7n
+G  StudRange    OK    the gate against beta15n
+G  SurvLab      OK    the gate against beta1g
+G  TDist3D      OK    the gate against beta1b
+G  TTestLab     OK    the gate against beta1l
+G  TTestLabG    OK    the gate against beta1i
+G  TestChooser  OK    the gate against beta2h
+G  TrendTest    OK    the gate against beta3n
+S  AgreeLab     OK    AgreeLab(): warnings 0 (old 0)
+H  AgreeLab     OK    AgreeLab(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  AnovaLab     OK    AnovaLab(): warnings 0 (old 0)
+H  AnovaLab     OK    AnovaLab(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  BayesTree    OK    BayesTree(): warnings 0 (old 0)
+H  BayesTree    OK    BayesTree(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  BiNorm3D     OK    BiNorm3D(): warnings 0 (old 0)
+H  BiNorm3D     OK    BiNorm3D(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  BurrLab      OK    BurrLab(): warnings 0 (old 0)
+H  BurrLab      OK    BurrLab(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  CICatcher    OK    CICatcher(): warnings 0 (old 0)
+H  CICatcher    OK    CICatcher(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  CentralLimit OK    START(): warnings 0 (old 0)
+H  CentralLimit OK    START(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  CentralLimit OK    Plot(): warnings 0 (old 0)
+H  CentralLimit OK    Plot(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  ChiTable     OK    ChiTable(): warnings 0 (old 0)
+H  ChiTable     OK    ChiTable(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  DNAMixLR     OK    DNAMixLR(): warnings 0 (old 0)
+H  DNAMixLR     OK    DNAMixLR(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  DataLoad     OK    DATALOAD(): warnings 0 (old 0); ends PPLError: undefined variable: M1
+H  DataLoad     OK    DATALOAD(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  EpiStats     OK    EpiStats(): warnings 0 (old 0)
+H  EpiStats     OK    EpiStats(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  EpiStats     OK    EpiStats2x2(10,20,30,40): warnings 0 (old 0)
+H  EpiStats     OK    EpiStats2x2(10,20,30,40): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  ErrorRate    OK    ErrorRate(): warnings 0 (old 0)
+H  ErrorRate    OK    ErrorRate(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  ExhibitLab   OK    ExhibitLab(): warnings 0 (old 0)
+H  ExhibitLab   OK    ExhibitLab(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  FitCheck     OK    FitCheck(): warnings 0 (old 0)
+H  FitCheck     OK    FitCheck(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  GaltonBoard  OK    GaltonBoard(): warnings 0 (old 0)
+H  GaltonBoard  OK    GaltonBoard(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  Norm3        OK    Norm3(100,15,130): warnings 0 (old 0)
+H  Norm3        OK    Norm3(100,15,130): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  NormExplorer OK    NormExp(): warnings 0 (old 0)
+H  NormExplorer OK    NormExp(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  PowerViz     OK    POWERVIZ(): warnings 0 (old 0)
+H  PowerViz     OK    POWERVIZ(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  RankLab      OK    RankLab(): warnings 0 (old 0)
+H  RankLab      OK    RankLab(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  ResampLab    OK    ResampLab(): warnings 0 (old 0)
+H  ResampLab    OK    ResampLab(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  RiskLab      OK    RiskLab(): warnings 0 (old 0)
+H  RiskLab      OK    RiskLab(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  SampDist     OK    SampDist(): warnings 0 (old 0)
+H  SampDist     OK    SampDist(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  ScatterLab   OK    ScatterLab(): warnings 0 (old 0)
+H  ScatterLab   OK    ScatterLab(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  StatDist     OK    StatDist(): warnings 0 (old 0)
+H  StatDist     OK    StatDist(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  StudRange    OK    StudRange(): warnings 0 (old 0)
+H  StudRange    OK    StudRange(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  SurvLab      OK    SurvLab(): warnings 0 (old 0)
+H  SurvLab      OK    SurvLab(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  TDist3D      OK    TDist3D(): warnings 0 (old 0)
+H  TDist3D      OK    TDist3D(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  TTestLab     OK    TTESTLAB(): warnings 0 (old 0)
+H  TTestLab     OK    TTESTLAB(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  TTestLabG    OK    TTESTLABG(): warnings 0 (old 0)
+H  TTestLabG    OK    TTESTLABG(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  TestChooser  OK    TestChooser(): warnings 0 (old 0)
+H  TestChooser  OK    TestChooser(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+S  TrendTest    OK    TrendTest(): warnings 0 (old 0)
+H  TrendTest    OK    TrendTest(): HSeparator, HFormat, HAngle, Entry from 4, 1, 1, 2 to 0, 0, 0, 0
+N  fleet names  OK    31 files, 2480 routine names, 0 collisions, 0 untagged, 0 mixed-tag files, 0 built-in matches
+N  screen text  OK    31 programs, 17596 strings read; places against the rules: 0 in 0 programs; left alone: 1
+
+225 checks, 0 failed
