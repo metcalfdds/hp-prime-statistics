@@ -729,8 +729,8 @@ function check(name, ok, detail) {
         got.outOfTurn === 0 && got.waits.every(w => w < 250) && !got.err, JSON.stringify([st.status, st.failh, sentBig, bigWant, got.outOfTurn, Math.max(0, ...got.waits), got.err]));
   const names30 = Object.keys(CATALOG.programs).filter(n => CATALOG.programs[n].src).sort((a, b) => a.localeCompare(b));
   const chars30 = names30.reduce((s, n) => s + packSource(n).length, 0);
-  check('... counted, because the page\'s notes say it: the 30 programs that travel by cable are 4,053,536 characters, which would be 128,715 reports of a G1 and 7,938 of a G2; none has a CR in it; and no group is over 1,300,000 characters (both calculators gave out near 2,000,000)',
-        chars30 === 4053536 && reportsOf(names30, 55, 63) === 128715 && reportsOf(names30, 1015, 1023) === 7938 && names30.length === 30 && names30.every(n => !/\r/.test(packSource(n))) &&
+  check('... counted, because the page\'s notes say it: the 30 programs that travel by cable are 4,058,747 characters, which would be 128,881 reports of a G1 and 7,949 of a G2; none has a CR in it; and no group is over 1,300,000 characters (both calculators gave out near 2,000,000)',
+        chars30 === 4058747 && reportsOf(names30, 55, 63) === 128881 && reportsOf(names30, 1015, 1023) === 7949 && names30.length === 30 && names30.every(n => !/\r/.test(packSource(n))) &&
         CATALOG.groups.every(g => g.chars === g.programs.reduce((s, n) => s + (CATALOG.programs[n].src ? packSource(n).length : 0), 0) && g.chars < 1300000), [chars30, CATALOG.groups.map(g => g.chars)].join(' '));
   check('... CentralLimit is said not to have been sent this way, and the Kit\'s steps are opened for it', st.report.some(l => /^Not sent this way: CentralLimit \(an app or data\)\. For it, use the official HP way \(2, just below\)\.$/.test(l)) && st.kitOpen && /Device: HP Prime G1 \(USB 03F0:1541\)/.test(st.log) &&
         /reports of 64 bytes in and 64 out/.test(st.log), JSON.stringify(st.report));

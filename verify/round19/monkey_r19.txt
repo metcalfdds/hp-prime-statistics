@@ -1,4 +1,5 @@
 Round 19, the monkey: tools/monkey_chunks_v1.py, base 19, --lists, 1,000 runs a program (verify/round19/monkey_r19.py).
 
 EpiStats     v1.7o: 1000 runs; OK 1000
+PowerViz     v2.5v: 1000 runs; OK 1000
 StatDist     v2.7p: 1000 runs; OK 999, HARNESS 1; every one that was not OK did the same on v2.7o

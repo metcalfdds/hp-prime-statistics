@@ -49,6 +49,15 @@ THE FACTS (Virtual Calculator 2.4.2, build 2026-09-09, Rogers-HP, typed in Home,
      (HAngle:=1 made SIN(90) 1; HFormat:=1 with HDigits:=2 made STRING(0.046) "0.05") and stays after the program ends
      unless the program puts it back.  The book's settings are all code 0.  NOT PATCHED: the harness has none of the five.
 
+  7. The current app's own Angle Measure, when it is not System, is the unit of SIN, ASIN and the rest, in Home and in a
+     running program, whatever HAngle says (the same calculator, 23 Nov 2026, round 19; verify/round19/vc_record.txt).
+     With the Solve app current and its Symbolic Setup's Angle Measure at Degrees, Home Settings read "Angle Measure:
+     See Symbolic Setup" with no choice, ASIN(1) in Home gave 90 before and after HAngle:=0, and PowerViz v2.5u, which
+     sets HAngle := 0 at its start and converted ASIN's answer by HAngle, showed Cohen's h = 11.54 for p0 0.5 and p1 0.6
+     (0.2014 is right); the setting stayed through Calculator > Exit and a new start.  MODELLED as an attribute,
+     Harness.app_angle: None (the default, an app at System: the harness as before) or 'rad', 'deg' or 'grad', which
+     then decides the unit and HAngle does not.  Set it on a harness to test a program against an app set to Degrees.
+
 USE.  import prime_facts_v1; prime_facts_v1.apply()      -- once, before the first Harness is made.
       It returns the harness module.  Applying it twice does nothing more.
 """
@@ -61,7 +70,9 @@ FACTS = ['STRING(x, 2, d): "Invalid input" for d >= 13 (Virtual Calculator, 1 No
          'STRING writes the decimal mark of Home\'s Digit Grouping, "1234,5678" with 123.456,789: recorded, not '
          'patched (Virtual Calculator, 22 Nov 2026)',
          'a program reads and assigns HSeparator, HAngle, HFormat, HDigits and Entry: recorded, not patched '
-         '(Virtual Calculator, 22 Nov 2026)']
+         '(Virtual Calculator, 22 Nov 2026)',
+         'the current app\'s own Angle Measure, when not System, is the unit of SIN and ASIN whatever HAngle says: '
+         'Harness.app_angle (Virtual Calculator, 23 Nov 2026)']
 TITLE_MAX = 31
 
 
@@ -121,6 +132,17 @@ def apply():
                     if len(c.title) > TITLE_MAX:
                         R.Harness.cut_titles.append((c.title, c.title[:TITLE_MAX], c.func, fn))
     R.Harness._choose = _choose
+    # fact 7: the current app's own Angle Measure decides the unit of the trigonometric functions when it is set
+    R.Harness.app_angle = None
+    oau = R.Harness._angle_unit
+
+    def _angle_unit(self):
+        import math
+        aa = getattr(self, 'app_angle', None)
+        if aa is not None:
+            return {'rad': 1.0, 'deg': math.pi / 180, 'grad': math.pi / 200}[aa]
+        return oau(self)
+    R.Harness._angle_unit = _angle_unit
     R.Harness._prime_facts_v1 = True
     return R
 

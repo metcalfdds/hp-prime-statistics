@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""verify_round19_v1.py -- Round 19 (23 Nov 2026): StatDist v2.7p and EpiStats v1.7o.
+"""verify_round19_v1.py -- Round 19 (23 Nov 2026): StatDist v2.7p, EpiStats v1.7o and PowerViz v2.5v.
 
   B   THE BUILD (verify/round19/make_round19.py) makes each filed program byte for byte.
   T1  Only the round's lines changed: every line that differs from the old version is the build's (a replacement, the
@@ -26,11 +26,20 @@
         E4  es_MHCalc, the rate ratio, on every pair of strata of the floor sweep's grid at the floor (cases 0, 1 and
             100,000; person-times 0, 1 and 100,000) that stays inside the harness's EXP: the same E and interval as
             the formula worked in Python, to 1E-9 relative.  The 1E-300 table of round 18 is now refused at entry.
+  P   POWERVIZ'S COHEN'S h under each unit the calculator's trigonometry can be in, with tools/prime_facts_v1.py's fact 7
+      (Harness.app_angle: None for an app at System, then 'deg' and 'grad' for an app such as Solve set to Degrees or
+      Gradians; the program sets HAngle := 0 itself):
+        P1  pv_EffSz for tests 3 and 4 at every p0 and p1 from 0.01 to 0.99 in steps of 0.07: v2.5v gives
+            2 asin(sqrt p1) - 2 asin(sqrt p0), in radians, to 1E-12 under all three; v2.5u does only at System.
+        P2  pv_SinR at 25 angles in radians from -3 to 3: v2.5v gives sin x to 1E-12 under all three.
+        P3  The pages a student sees (One Proportion and Two Proportions: the plot, "Power vs effect size", "Power vs n
+            curve", "Sample-size formula"), driven: v2.5v draws every text under Degrees and Gradians as under System;
+            v2.5u under Degrees draws "h = 11.54, large", as the Virtual Calculator showed (23 Nov 2026).
   R   The two runs of round 18's monkey that stopped, replayed with their own seeds on the new versions: both end OK.
   M   The start routines in the harness (idle key Esc): no error, and no more warnings than the old versions.
   N   tools/fleet_names_v2.py and tools/screen_text_v1.py over the 31 newest programs.
 
-Run from the repository's root:   python3 verify/verify_round19_v1.py        (about five minutes; its output is beside it)
+Run from the repository's root:   python3 verify/verify_round19_v1.py        (about six minutes; its output is beside it)
 """
 import difflib, io, json, os, re, shutil, subprocess, sys, tempfile, time
 
@@ -279,6 +288,52 @@ for t in itertools.product(Cs, Ps, Cs, Ps, Cs, Ps, Cs, Ps):
 say('E4', ES, n > 0 and agree == n, 'es_MHCalc on %s tables at the floor: E and the interval as worked in Python, %s of %s; %d tables with an end past the '
     'harness\'s EXP (e^709) left out, which the Prime holds (floor_sweep_r19.py: none past 1E499)' % ('{:,}'.format(n), '{:,}'.format(agree), '{:,}'.format(n), skipped))
 
+# ------------------------------------------------------------------ P, PowerViz's h under each angle unit
+import math  # noqa: E402
+import prime_facts_v1  # noqa: E402
+PF = prime_facts_v1.apply()
+from ppl_run_v3e import ACCEPT  # noqa: E402
+PV = 'PowerViz'
+grid = [round(0.01 + 0.07 * i, 2) for i in range(15)]
+for f, tag_ in ((newf[PV], 'v2.5v'), (oldf[PV], 'v2.5u')):
+    for aa in (None, 'deg', 'grad'):
+        worst, n_ = 0.0, 0
+        for tt in (3.0, 4.0):
+            hh = PF.Harness(f, idle_key=4); hh.app_angle = aa
+            for p0 in grid:
+                for p1 in grid:
+                    hh.globals_.update({'TT': tt, 'PP0': p0, 'PP1': p1})
+                    want = 2 * math.asin(math.sqrt(p1)) - 2 * math.asin(math.sqrt(p0))
+                    worst = max(worst, abs(hh.execute('pv_EffSz()') - want)); n_ += 1
+        good = worst < 1E-12
+        say('P1', PV, good == (tag_ == 'v2.5v' or aa is None),
+            '%s, app at %s: h on %d (p0, p1) pairs, largest difference from the formula %.3g%s'
+            % (tag_, aa or 'System', n_, worst, '' if good else ' (wrong, as expected of v2.5u)' if tag_ == 'v2.5u' else ''))
+for aa in (None, 'deg', 'grad'):
+    hh = PF.Harness(newf[PV], idle_key=4); hh.app_angle = aa
+    xs = [-3 + 0.25 * i for i in range(25)]
+    worst = max(abs(hh.execute('pv_SinR(%r)' % x) - math.sin(x)) for x in xs)
+    say('P2', PV, worst < 1E-12, 'v2.5v, app at %s: pv_SinR at %d angles, largest difference from sin x %.3g' % (aa or 'System', len(xs), worst))
+
+
+def pv_pages(f, aa, test):
+    hh = PF.Harness(f, idle_key=4); hh.app_angle = aa
+    hh.choose(test); hh.answer(ACCEPT)
+    for item in (5, 4, 6):                        # Power vs effect size, Power vs n curve, Sample-size formula
+        hh.press('Enter'); hh.choose(item)
+    hh.execute('POWERVIZ()')
+    return [t.text for t in hh.texts]
+
+
+for test, name_ in ((4, 'One Proportion'), (5, 'Two Proportions')):
+    base = pv_pages(newf[PV], None, test)
+    for aa in ('deg', 'grad'):
+        t = pv_pages(newf[PV], aa, test)
+        say('P3', PV, t == base and len(base) > 100, 'v2.5v, %s, app at %s: the %d texts of four pages are those at System'
+            % (name_, aa, len(base)))
+t = pv_pages(oldf[PV], 'deg', 4)
+say('P3', PV, 'h = 11.54, large' in t, 'v2.5u, One Proportion, app at deg: draws "h = 11.54, large", as the Virtual Calculator did')
+
 # ------------------------------------------------------------------ R, round 18's two stopped runs, replayed
 for n, seed, opts in (('StatDist', 18000984, ['--lists', '--seconds', '240']), ('EpiStats', 18000612, ['--lists', '--seconds', '30'])):
     call = 'EpiStats()' if n == 'EpiStats' else 'StatDist()'
@@ -292,7 +347,7 @@ for n, seed, opts in (('StatDist', 18000984, ['--lists', '--seconds', '240']), (
     say('R', n, v == 'OK', 'round 18\'s seed %d, replayed: %s %s' % (seed, v, det[:80]))
 
 # ------------------------------------------------------------------ M, the start routines
-for n, calls in (('StatDist', ['StatDist()']), ('EpiStats', ['EpiStats()', 'EpiStats2x2(10,20,30,40)'])):
+for n, calls in (('StatDist', ['StatDist()']), ('EpiStats', ['EpiStats()', 'EpiStats2x2(10,20,30,40)']), ('PowerViz', ['POWERVIZ()'])):
     for call in calls:
         res = []
         for f in (newf[n], oldf[n]):

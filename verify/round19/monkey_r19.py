@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """monkey_r19.py -- Round 19's monkey runs: 1,000 runs of random keys, taps, menu picks and typed values for each of the
-two programs round 19 changed, StatDist v2.7p and EpiStats v1.7o (a copy of verify/round18/monkey_r18.py with base 19).
+three programs round 19 changed, StatDist v2.7p, EpiStats v1.7o and PowerViz v2.5v (a copy of verify/round18/monkey_r18.py with base 19).
 
 Each program goes to tools/monkey_chunks_v1.py with base 19 and --lists (seed = 19 x 1000003 + k, so --replay repeats any
 run), two programs at a time; the runs are written to mk/<Name>.jsonl as they end, so a stopped job resumes where it was.

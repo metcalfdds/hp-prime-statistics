@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Round 19 (23 Nov 2026): the two faults round 18's monkey left open, fixed the way Roger chose.
+"""Round 19 (23 Nov 2026): the two faults round 18's monkey left open, fixed the way Roger chose, and a third that the
+book's Solve example found the same day.
 
 WHY.  Round 18's monkey (verify/round18/README.md, "What the monkey found") left two faults for the author:
   * StatDist v2.7o's Formula page (CAS) for Student's t asks the CAS for E[X^2], and with a df such as 17.83 or 206.3
@@ -22,7 +23,13 @@ WHAT.
     two forms give the range.  Why 1: verify/round19/floor_sweep_r19.py, which works the Mantel-Haenszel interval for
     every pair of strata built from a grid of cases and person-times.  At a floor of 1 no interval leaves the Prime's
     range (1E499); at 0.5, 0.1 and 0.001 some do.  Zero stays, because an empty cell is what the grid starts with.
-  * Round 11's bump on both: the header line, a history note, and the version wherever a quoted string holds it.
+  * PowerViz v2.5v: Cohen's h in radians whatever unit the calculator's trigonometry is in.  v2.5u converted ASIN's
+    answer by HAngle, but the current app's own Angle Measure, when it is not System, decides the unit and HAngle does
+    not: with the Solve app set to Degrees (the book's bloodstain example, Draft 74) the Virtual Calculator showed
+    "h = 11.54, large" for p0 0.5 and p1 0.6, where 0.20, small, is right.  pv_AsinR and pv_SinR now measure the unit
+    as the fleet's other trigonometric programs do, by ASIN(1) against pi/2 (BiNorm3D, TDist3D).  Roger's rule:
+    "when you find a problem like that that needs to be fixed--FIX IT".
+  * Round 11's bump on all three: the header line, a history note, and the version wherever a quoted string holds it.
 
 Each program is built from the version before (read from git, BASE) by exact replacements: each old text must be found
 exactly once, or the build stops.
@@ -39,7 +46,7 @@ BASE = 'b8a2c4d'                     # main before round 19 (PR 33 merged)
 DATE = '23 Nov 2026'
 R18.DATE = DATE
 OUT = sys.argv[1] if len(sys.argv) > 1 else 'r19_programs'
-OLD = {'StatDist': 'v2.7o', 'EpiStats': 'v1.7n'}
+OLD = {'StatDist': 'v2.7o', 'EpiStats': 'v1.7n', 'PowerViz': 'v2.5u'}
 
 PT_MSG = ('A person-time can be 0, or from 1 to 100,000, so give one of less than 1 in smaller units '
           '(person-months instead of person-years, say).')
@@ -124,6 +131,10 @@ REPL = {
          '                      END;\n'
          '                    ELSE\n'),
     ],
+    'PowerViz': [
+        ("// arcsin in RADIANS whatever the Home angle mode (HAngle:\n// 0 radians, 1 degrees, 2 gradians).  Needed for Cohen's h.\nLOCAL pv_AsinR(av)\nBEGIN\n LOCAL ar;\n ar := ASIN(av);\n IF HAngle==1 THEN ar := ar*3.14159265358979/180; END;\n IF HAngle==2 THEN ar := ar*3.14159265358979/200; END;\n RETURN ar;\nEND;\n\n// sine of an angle given in RADIANS whatever the Home angle mode\n// (v2.4; the power-vs-effect view turns h back into p with it).\nLOCAL pv_SinR(srad)\nBEGIN\n IF HAngle==1 THEN RETURN SIN(srad*180/3.14159265358979); END;\n IF HAngle==2 THEN RETURN SIN(srad*200/3.14159265358979); END;\n RETURN SIN(srad);\nEND;\n",
+         "// The unit the calculator's trigonometry is in, as a number of\n// radians: 1 in radians, pi/180 in degrees, pi/200 in grads.\n// v2.5v: measured, not read from HAngle.  The current app's own\n// Angle Measure, when it is not System, decides the unit, and\n// HAngle (which this program sets to 0 at its start) does not:\n// with the Solve app set to Degrees, ASIN(1) is 90 in Home and in\n// a program, and v2.5u showed h = 11.54 for p0 0.5 and p1 0.6\n// (Virtual Calculator, 23 Nov 2026).  BiNorm3D and TDist3D\n// measure the unit the same way.\nLOCAL pv_AngU()\nBEGIN\n RETURN 1.5707963267949/ASIN(1);\nEND;\n\n// arcsin in RADIANS whatever unit the calculator is in.  Needed\n// for Cohen's h.\nLOCAL pv_AsinR(av)\nBEGIN\n RETURN ASIN(av)*pv_AngU();\nEND;\n\n// sine of an angle given in RADIANS whatever unit the calculator\n// is in (v2.4; the power-vs-effect view turns h back into p with\n// it).\nLOCAL pv_SinR(srad)\nBEGIN\n RETURN SIN(srad/pv_AngU());\nEND;\n"),
+    ],
 }
 
 NOTES = {
@@ -141,6 +152,12 @@ NOTES = {
                  'and in the one-cell form (es_Grid), and the two forms\' help lines give the range.  Roger, 23 Nov 2026: '
                  '"EpiStats--change the smallest number it asccepts".  No other statement, number or word on a page changed, '
                  'only the version.'),
+    'PowerViz': ('Round 19: Cohen\'s h is in radians whatever unit the calculator\'s trigonometry is in.  v2.5u '
+                 'converted ASIN\'s answer by HAngle, but the current app\'s own Angle Measure, when it is not System, '
+                 'decides the unit and HAngle does not: with the Solve app set to Degrees the Virtual Calculator showed '
+                 '"h = 11.54, large" for p0 0.5 and p1 0.6 (0.20, small, is right).  pv_AngU measures the unit as '
+                 '1.5707963267949/ASIN(1), and pv_AsinR and pv_SinR use it.  Found by the book\'s Solve example '
+                 '(Draft 74), 23 Nov 2026.  No word on a page changed, only the version.'),
 }
 
 

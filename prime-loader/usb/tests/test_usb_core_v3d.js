@@ -8,7 +8,8 @@
 // new ones (A14, A18, C10, C14, D6, E2, E4, E5, E14, F1, F2: the fleet's and EpiStats's and DataLoad's characters and reports).
 // The numbers that come from the two calculators' logs stand as they were.
 // 23 Nov 2026 (round 19): StatDist v2.7p and EpiStats v1.7o grew, so A18, C10, C14, E14, F1 and F2 count the new numbers:
-// the fleet's and EpiStats's characters and reports, and the number of EpiStats's last acknowledgement.
+// the fleet's and EpiStats's characters and reports, and the number of EpiStats's last acknowledgement.  PowerViz v2.5v
+// (the same round, later that day) grew by 939 characters, so A18, F1 and F2 count 30 more reports of a G1 and 2 of a G2.
 //
 // NOTHING HERE TOUCHES A CALCULATOR.  A pass says this and no more:
 //   A  the messages are, byte for byte, the ones hp-prime-kit builds and hp-prime-web's tests expect, and the requests
@@ -112,8 +113,8 @@ const G1 = 0x1541;
   const biggest = rawAll.reduce((m, x) => x.chars > m.chars ? x : m), smallest = rawAll.reduce((m, x) => x.chars < m.chars ? x : m);
   console.log('     the ' + rawAll.length + ' programs: ' + num(chars) + ' characters; not compressed in the newer framing ' + num(g1Reports) + ' reports of a G1 and ' + num(g2Reports) + ' of a G2; the largest is ' +
               biggest.name + ' (' + num(biggest.chars) + ' characters, ' + num(reportsOf(biggest, 63)) + ' and ' + num(reportsOf(biggest, 1023)) + ' reports), the smallest ' + smallest.name + ' (' + num(smallest.chars) + ')');
-  check('A18 the book\'s ' + rawAll.length + ' programs are 4,177,448 characters: 132,650 reports of a G1 and 8,181 of a G2, not compressed in the newer framing; the largest, EpiStats, is 292,430 characters (9,285 and 572 reports)',
-        rawAll.length === 31 && chars === 4177448 && g1Reports === 132650 && g2Reports === 8181 && biggest.name === 'EpiStats' && biggest.chars === 292430 && reportsOf(biggest, 63) === 9285 && reportsOf(biggest, 1023) === 572,
+  check('A18 the book\'s ' + rawAll.length + ' programs are 4,178,387 characters: 132,680 reports of a G1 and 8,183 of a G2, not compressed in the newer framing; the largest, EpiStats, is 292,430 characters (9,285 and 572 reports)',
+        rawAll.length === 31 && chars === 4178387 && g1Reports === 132680 && g2Reports === 8183 && biggest.name === 'EpiStats' && biggest.chars === 292430 && reportsOf(biggest, 63) === 9285 && reportsOf(biggest, 1023) === 572,
         [rawAll.length, chars, g1Reports, g2Reports, biggest.name, biggest.chars].join(' '));
 
   // ---------------------------------------------------------------- B. the framing
@@ -553,7 +554,7 @@ const G1 = 0x1541;
     link.progress = () => { have++; };
     const t = Date.now(), res = await P.load(link, fleet, {}, { settle: 0, lull: 0 });
     mock.stop();
-    const whole = fleet.every(p => mock.programs[p.name] === p.source), sent = mock.arrived.reduce((s, a) => s + a.reports, 0), want = product === G1 ? 132650 : 8181;
+    const whole = fleet.every(p => mock.programs[p.name] === p.source), sent = mock.arrived.reduce((s, a) => s + a.reports, 0), want = product === G1 ? 132680 : 8183;
     check('F' + (product === G1 ? 1 : 2) + ' all ' + fleet.length + ' programs onto a pretend ' + (product === G1 ? 'G1' : 'G2') + ': each read back the same; ' + num(sent) + ' reports of programs, none sent twice, no word of the clock needed (' +
           ((Date.now() - t) / 1000).toFixed(1) + ' s against the mock, which takes a report at once)',
           res.ok && res.done.length === 31 && whole && sent === want && mock.outOfTurn === 0 && mock.nacks === 0 && mock.arrived.every(a => a.kept && a.layout === 'v1' && a.framing === 'new') &&

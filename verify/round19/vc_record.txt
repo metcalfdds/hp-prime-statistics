@@ -41,5 +41,22 @@ Then, in the final session: Stratified Analysis (M-H), Incidence Rates (IRR_MH),
   Values: the four-value form; at PT(exp) the help line "Person-time exposed, 0 or 1 to 100,000" (es_values_pt.png)
   0.5 typed at PT(exp), OK: the same box (es_values_refused.png); OK: the grid unchanged
 
+THE SOLVE APP'S OWN ANGLE MEASURE, AND POWERVIZ (12:25 to 12:58; the book's bloodstain example, Draft 74).
+  Apps, Solve; E1 = SIN(A)=W/L; Shift, Symb ("Solve Symbolic Setup"): Angle Measure System, Radians, Degrees, Gradians;
+  Degrees chosen.  Num: W 3, L 5, A highlighted, Solve: 36.8698976459 (at System, Home at Radians: 0.643501108793).
+  Home, with Solve the current app at Degrees: Home Settings reads "Angle Measure: See Symbolic Setup", no choice
+  (solve_degrees_home_settings.png); ASIN(1) gave 90, HAngle:=0 gave 0, ASIN(1) gave 90 again
+  (solve_degrees_home_asin.png).
+  PowerViz v2.5u (starter pack v25's checked file, copied in while the calculator was closed; 12:42), the Solve app still
+  at Degrees after Calculator > Exit and a new start: Select Test 4, One Proportion, the form's p0 0.5, p1 0.6, n 100,
+  alpha 0.05, OK: "h = 11.54, large" twice on the plot, power 0.641, n80 153 (pv_h_degrees_v2.5u.png); Esc returned a
+  line with "h=11.537".  ASIN(1) in Home after that run: 90.
+  PowerViz v2.5v: Checked "No errors in the program" at 12:54:52 (check_PowerViz.png) and copied out before anything ran
+  (the second pass of starter pack v25 read it back).  Then, in a new session, the Solve app still at Degrees: One
+  Proportion, the same values: "h = 0.20, small" (pv_h_degrees_v2.5v.png); Menu, Power vs effect size: "at h = 0.20:
+  power = 0.641" (pv_effsize_degrees_v2.5v.png).  Solve set back to System (Shift, Symb, Choose, System): ASIN(1) in
+  Home 1.57079632679 (solve_system_home_asin.png); the same two PowerViz pages at System are pixel for pixel the pages
+  at Degrees (pv_h_system_v2.5v.png, pv_effsize_system_v2.5v.png).  The calculator was left at System.
+
 NOT DONE: no G1 or G2.  How long a G1's CAS takes with the guarded values was not tried, and neither was F at halves on
 the calculator (Giac on the PC took 24 s; the rule keeps F to whole numbers anyway).

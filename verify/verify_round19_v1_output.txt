@@ -1,9 +1,12 @@
 B   StatDist  OK   the build makes StatDist v2.7p byte for byte (5,146 lines)
 B   EpiStats  OK   the build makes EpiStats v1.7o byte for byte (6,313 lines)
+B   PowerViz  OK   the build makes PowerViz v2.5v byte for byte (4,219 lines)
 T1  StatDist  OK   every changed line is the build's; the history note is lines 45 to 52
 T1  EpiStats  OK   every changed line is the build's; the history note is lines 31 to 36
+T1  PowerViz  OK   every changed line is the build's; the history note is lines 35 to 40
 G   StatDist  OK   the gate against v2.7o
 G   EpiStats  OK   the gate against v1.7n
+G   PowerViz  OK   the gate against v2.5u
 S1  StatDist  OK   Student t {df: 17.83, x_val: 1}: 0 integral(s) asked, the note shown, "no closed form shown" shown
 S1  StatDist  OK   Student t {df: 206.3, x_val: 1}: 0 integral(s) asked, the note shown, "no closed form shown" shown
 S1  StatDist  OK   Student t {df: 30.1, x_val: 1}: 0 integral(s) asked, the note shown, "no closed form shown" shown
@@ -12,7 +15,7 @@ S1  StatDist  OK   Fisher F {df1: 7, df2: 17.83, x_val: 1}: 0 integral(s) asked,
 S1  StatDist  OK   Fisher F {df1: 7.5, df2: 17.5, x_val: 1}: 0 integral(s) asked, the note shown, "no closed form shown" shown
 S1  StatDist  OK   Burr Type XII {stC: 2.37, stK: 3, stS: 1, x_val: 1}: 0 integral(s) asked, the note shown, "no closed form shown" shown
 S1  StatDist  OK   Burr Type XII {stC: 2.5, stK: 3.5, stS: 1.5, x_val: 1}: 0 integral(s) asked, the note shown, "no closed form shown" shown
-S1  StatDist  OK   the old version at df 17.83, for comparison: TimeoutExpired: Command '['/usr/bin/icas', '/tmp/tmpjvmvgvrb.giac']' timed out after 60 seconds
+S1  StatDist  OK   the old version at df 17.83, for comparison: TimeoutExpired: Command '['/usr/bin/icas', '/tmp/tmp1vrb1wh6.giac']' timed out after 60 seconds
 S2  StatDist  OK   Student t {df: 24, x_val: 1}: 2 integral(s) asked, the longest call 0.1 s; the page is the old version's line for line: yes
 S2  StatDist  OK   Student t {df: 17.5, x_val: 1}: 2 integral(s) asked, the longest call 0.2 s; the page is the old version's line for line: yes
 S2  StatDist  OK   Student t {df: 1, x_val: 1}: 2 integral(s) asked, the longest call 0.0 s; the page is the old version's line for line: yes
@@ -35,11 +38,26 @@ E2  EpiStats  OK   one cell, 0.5 typed as person-time: refused, the cell keeps 0
 E2  EpiStats  OK   then 1: taken, the cell holds 1.0
 E3  EpiStats  OK   the help lines give the range: 2 in the four-value form (the longest 40 characters), 1 in the one-cell form (39 with its row)
 E4  EpiStats  OK   es_MHCalc on 3,134 tables at the floor: E and the interval as worked in Python, 3,134 of 3,134; 2 tables with an end past the harness's EXP (e^709) left out, which the Prime holds (floor_sweep_r19.py: none past 1E499)
+P1  PowerViz  OK   v2.5v, app at System: h on 450 (p0, p1) pairs, largest difference from the formula 6.22e-15
+P1  PowerViz  OK   v2.5v, app at deg: h on 450 (p0, p1) pairs, largest difference from the formula 6.22e-15
+P1  PowerViz  OK   v2.5v, app at grad: h on 450 (p0, p1) pairs, largest difference from the formula 6.22e-15
+P1  PowerViz  OK   v2.5u, app at System: h on 450 (p0, p1) pairs, largest difference from the formula 0
+P1  PowerViz  OK   v2.5u, app at deg: h on 450 (p0, p1) pairs, largest difference from the formula 154 (wrong, as expected of v2.5u)
+P1  PowerViz  OK   v2.5u, app at grad: h on 450 (p0, p1) pairs, largest difference from the formula 172 (wrong, as expected of v2.5u)
+P2  PowerViz  OK   v2.5v, app at System: pv_SinR at 25 angles, largest difference from sin x 6.61e-15
+P2  PowerViz  OK   v2.5v, app at deg: pv_SinR at 25 angles, largest difference from sin x 6.16e-15
+P2  PowerViz  OK   v2.5v, app at grad: pv_SinR at 25 angles, largest difference from sin x 6.61e-15
+P3  PowerViz  OK   v2.5v, One Proportion, app at deg: the 127 texts of four pages are those at System
+P3  PowerViz  OK   v2.5v, One Proportion, app at grad: the 127 texts of four pages are those at System
+P3  PowerViz  OK   v2.5v, Two Proportions, app at deg: the 126 texts of four pages are those at System
+P3  PowerViz  OK   v2.5v, Two Proportions, app at grad: the 126 texts of four pages are those at System
+P3  PowerViz  OK   v2.5u, One Proportion, app at deg: draws "h = 11.54, large", as the Virtual Calculator did
 R   StatDist  OK   round 18's seed 18000984, replayed: OK 
 R   EpiStats  OK   round 18's seed 18000612, replayed: OK 
 M   StatDist  OK   StatDist(): 0 warnings (the old version 0)
 M   EpiStats  OK   EpiStats(): 0 warnings (the old version 0)
 M   EpiStats  OK   EpiStats2x2(10,20,30,40): 0 warnings (the old version 0)
-N   fleet     OK   fleet_names_v2 over 31 programs: 31 files, 2480 routine names, 0 collisions, 0 untagged, 0 mixed-tag files, 0 built-in matc
+M   PowerViz  OK   POWERVIZ(): 0 warnings (the old version 0)
+N   fleet     OK   fleet_names_v2 over 31 programs: 31 files, 2481 routine names, 0 collisions, 0 untagged, 0 mixed-tag files, 0 built-in matc
 N   fleet     OK   screen_text_v1 over 31 programs: 31 programs, 17603 strings read; places against the rules: 0 in 0 programs; left alone: 1
-44 checks, 0 failed
+62 checks, 0 failed

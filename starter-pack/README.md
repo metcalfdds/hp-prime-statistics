@@ -53,7 +53,7 @@ All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** o
 | GaltonBoard | beta 3j | 2,541 | `GaltonBoard` | MicroPython | `7173586c8ea5` |
 | Norm3 | v2.4h | 1,133 | `Norm3` |  | `0a644261e6c6` |
 | NormExplorer | beta 42k | 4,239 | `NormExp` | MicroPython | `48a4573263bf` |
-| PowerViz | v2.5u | 4,204 | `POWERVIZ` |  | `32e953bc2c65` |
+| PowerViz | v2.5v | 4,219 | `POWERVIZ` |  | `d1ceb40f1d2d` |
 | RankLab | beta 1l | 5,108 | `RankLab` |  | `cd906c514ab4` |
 | ResampLab | beta 1k | 3,068 | `ResampLab` |  | `5074256911d9` |
 | RiskLab | beta 1i | 3,177 | `RiskLab` |  | `448d57749b73` |
