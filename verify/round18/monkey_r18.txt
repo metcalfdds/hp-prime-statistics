@@ -1,0 +1,33 @@
+Round 18, the monkey: tools/monkey_chunks_v1.py, base 18, --lists, 1,000 runs a program (verify/round18/monkey_r18.py).
+CentralLimit is an app, out of the PC harness's reach, and was not run.
+
+AgreeLab     beta1j: 1000 runs; OK 1000
+AnovaLab     beta1k: 1000 runs; OK 1000
+BayesTree    beta8l: 1000 runs; OK 1000
+BiNorm3D     beta1h: 1000 runs; OK 1000
+BurrLab      beta1s: 1000 runs; OK 1000
+CICatcher    beta2n: 1000 runs; OK 1000
+ChiTable     beta3n: 1000 runs; OK 1000
+DNAMixLR     beta3k: 1000 runs; OK 1000
+DataLoad     beta1h: 1000 runs; OK 999, CRASH 1; every one that was not OK did the same on beta1g
+EpiStats     v1.7n: 1000 runs; OK 999, CRASH 1; every one that was not OK did the same on v1.7m
+ErrorRate    beta1k: 1000 runs; OK 1000
+ExhibitLab   beta1j: 1000 runs; OK 1000
+FitCheck     beta1k: 1000 runs; OK 1000
+GaltonBoard  beta3j: 1000 runs; OK 1000
+Norm3        v2.4h: 1000 runs; OK 1000
+NormExplorer beta42k: 1000 runs; OK 1000
+PowerViz     v2.5u: 1000 runs; OK 1000
+RankLab      beta1l: 1000 runs; OK 1000
+ResampLab    beta1k: 1000 runs; OK 1000
+RiskLab      beta1i: 1000 runs; OK 1000
+SampDist     v2.3l: 1000 runs; OK 1000
+ScatterLab   beta2n: 1000 runs; OK 1000
+StatDist     v2.7o: 1000 runs; OK 999, FREEZE 1; every one that was not OK did the same on v2.7n
+StudRange    beta15o: 1000 runs; OK 957, FREEZE 43; every one that was not OK did the same on beta15n
+SurvLab      beta1h: 1000 runs; OK 1000
+TDist3D      beta1c: 1000 runs; OK 1000
+TTestLab     beta1m: 1000 runs; OK 1000
+TTestLabG    beta1j: 1000 runs; OK 1000
+TestChooser  beta2i: 1000 runs; OK 1000
+TrendTest    beta3o: 1000 runs; OK 1000
