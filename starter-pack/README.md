@@ -1,10 +1,10 @@
 # Starter pack for the Virtual Calculator
 
-*v25, 2026-11-23. Built by `tools/make_starter_pack_v4.py` from `programs/`; do not edit this page by hand.*
+*v26, 2026-11-26. Built by `tools/make_starter_pack_v5.py` from `programs/` and `extras/sudoku/`; do not edit this page by hand.*
 
-All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** on a Windows PC: no Connectivity Kit, no copying and pasting. Download **[HP_Prime_Statistics_Starter_Pack_v25.zip](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v25.zip)** (one file).
+All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** on a Windows PC: no Connectivity Kit, no copying and pasting. Download **[HP_Prime_Statistics_Starter_Pack_v26.zip](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v26.zip)** (one file).
 
-*How this pack was tested on the Virtual Calculator: [docs/changes/StarterPack_v25_NOTES.md](../docs/changes/StarterPack_v25_NOTES.md).*
+*How this pack was tested on the Virtual Calculator: [docs/changes/StarterPack_v26_NOTES.md](../docs/changes/StarterPack_v26_NOTES.md).*
 
 ### What you need
 - A Windows PC with the HP Prime Virtual Calculator (64-bit). It is a free download from hpcalc.org, which lists Hewlett-Packard as its author. The pack was tested on the Virtual Calculator 2.4.2 (build 2026-09-09), 64-bit.
@@ -26,6 +26,9 @@ All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** o
 - Open the Statistics 1Var app once (Apps) before the first load: its lists do not exist until then.
 - If DataLoad says lists after the new ones hold data from before, choose clear. AnovaLab, RankLab and AgreeLab read every list that holds data as one more group (or rater).
 - `Sample data (optional)` holds `M1.hpmat`: the Rossi re-arrest data (432 rows x 5 columns: week of first re-arrest, arrest 1/0, financial aid 1/0, age, prior convictions). Copy it too if you want data to try: it becomes the calculator's matrix M1 and replaces what M1 held. Then DataLoad, Scores by group, scores in column 1, groups in column 3, puts the weeks without and with financial aid in D1 and D2, ready for TTestLab.
+
+### Just for fun: the bonus
+- The folder `Bonus (optional)` holds `Sudoku.hpprgm`, a bonus that is not one of the 31 *Statisticles*: Sudoku beta 2a, a Sudoku puzzle game that keeps a record of the games you finish for a class experiment. Copy it into the Prime folder too if you want it, in the same way (calculator closed). The book tells about it in Appendix G, "Just for fun: Sudoku, and the statistics hiding in it".
 
 ### Good to know
 - Windows asks before it replaces a file of the same name. Replacing it replaces that program on the calculator.
@@ -67,11 +70,12 @@ All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** o
 | TTestLab | beta 1m | 2,229 | `TTESTLAB` |  | `734cf93a6dbd` |
 | TestChooser | beta 2i | 1,929 | `TestChooser` |  | `6fc473d7b3c8` |
 | TrendTest | beta 3o | 2,304 | `TrendTest` |  | `afeff2d82379` |
+| Sudoku | beta 2a | 1,962 | `Sudoku` | bonus, in `Bonus (optional)` (not one of the *Statisticles*) | `33b00ac430c8` |
 
-*The checksum is the first 12 hex digits of SHA-256 over the program's source (line endings made LF, trailing blank lines dropped): the file in `programs/` it was built from. Every file in the zip was read back and matched its source before the zip was written.*
+*The checksum is the first 12 hex digits of SHA-256 over the program's source (line endings made LF, trailing blank lines dropped): the file in `programs/` (or, for the bonus, `extras/sudoku/`) it was built from. Every file in the zip was read back and matched its source before the zip was written.*
 
 ## Building it again
 
-`python3 tools/make_starter_pack_v4.py v6 --kit PATH_TO_hp-prime-kit --checked FOLDER` after a program changes. The tool names each file, checks the names, builds with hp-prime-kit (MIT, [JordiRigau/hp-prime-kit](https://github.com/JordiRigau/hp-prime-kit)), builds the sample matrix from `data-loader/examples/rossi.csv`, reads every file back, and writes the zip and this page. With `--checked` it carries each program as the Virtual Calculator wrote it back after one Check there (the same source plus its compiled block), so students never Check; it stops if a checked file's source differs from `programs/`. Build without `--checked` first, load that pack on the Virtual Calculator, Check each changed program, close it, and copy those files into FOLDER. Move the older zip out of this folder.
+`python3 tools/make_starter_pack_v5.py v27 --kit PATH_TO_hp-prime-kit --checked FOLDER` after a program changes. The tool names each file, checks the names, builds with hp-prime-kit (MIT, [JordiRigau/hp-prime-kit](https://github.com/JordiRigau/hp-prime-kit)), builds the sample matrix from `data-loader/examples/rossi.csv`, reads every file back, and writes the zip and this page. With `--checked` it carries each program as the Virtual Calculator wrote it back after one Check there (the same source plus its compiled block), so students never Check; it stops if a checked file's source differs from `programs/`. Build without `--checked` first, load that pack on the Virtual Calculator, Check each changed program, close it, and copy those files into FOLDER. Move the older zip out of this folder.
 
 *Free for educational and personal use. © 2026 Roger Metcalf.*

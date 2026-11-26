@@ -125,7 +125,7 @@ PASS cable, the page as a student has it: after each program but the last the ca
 PASS cable: no errors in the page
 PASS cable, the eight groups one after another onto one G2: after each, the calculator holds that group's programs, each the pack's source character for character, with the student's own program, and none of the book's others
 PASS cable: no errors in the page
-PASS cable, the largest group (Chapters 7–9, 10 programs by cable) to a G1 (12 s against the mock): each arrives the pack's source character for character, in 38,413 reports of 64 bytes, none sent twice; the mock, which stands at 240 reports' worth of an answer, never stood long
+PASS cable, the largest group (Chapters 7–9, 10 programs by cable) to a G1 (11 s against the mock): each arrives the pack's source character for character, in 38,413 reports of 64 bytes, none sent twice; the mock, which stands at 240 reports' worth of an answer, never stood long
 PASS ... counted, because the page's notes say it: the 30 programs that travel by cable are 4,058,747 characters, which would be 128,881 reports of a G1 and 7,949 of a G2; none has a CR in it; and no group is over 1,300,000 characters (both calculators gave out near 2,000,000)
 PASS ... CentralLimit is said not to have been sent this way, and the Kit's steps are opened for it
 PASS ... and the details stay readable: the page shows at most 1,500 lines of them
@@ -136,7 +136,7 @@ PASS slip: a calculator that does not answer (switched off at the wrong moment, 
 PASS slip, not the student's: a calculator that still says version 01 after the "FD" (other software than the two it was proved on): nothing is sent, nothing about the calculator is changed, and the page points to the Kit and asks for the details
 PASS a program the calculator acknowledges and does not keep (NormExplorer): the load stops there; the one before it is ticked, this one crossed, the ones after never sent; the page does not say Done; it says to delete it if it is in the list and to use the Kit for it and the rest
 PASS a program damaged on the way: "What is on the calculator is not what was sent", nothing ticked, and the details say where the two part
-PASS slip: the cable pulled out in the middle of the second program, and the browser's write to it never comes back: the page says so within seconds (9.0 s here), counts the first program and no other, and is ready to send again
+PASS slip: the cable pulled out in the middle of the second program, and the browser's write to it never comes back: the page says so within seconds (8.9 s here), counts the first program and no other, and is ready to send again
 PASS ... no errors in the page
 PASS slip: the cable pulled out and the browser says so at once: the same words
 PASS slip: a calculator still on its cable that takes nothing more, as a nearly full G2 did: "The calculator stopped responding", not "went off the cable"; the first program is marked done; what to do: unplug, off and on, send again, and make room if it happens again
@@ -158,6 +158,19 @@ PASS ... and it is not shown for the Virtual Calculator, which needs no cable
 PASS ... in Firefox the sentence names Firefox
 PASS ... and it is not shown where the cable works (Chrome or Edge): there the two ways show
 PASS ... and at the plain address, in a browser that cannot reach a USB device, the sentence shows too, above the Kit's steps
+PASS bonus: the catalog has Sudoku as a bonus, checked, its source in the pack the same as extras/sudoku/'s but for the blank space at its end; it is not one of the 31 and in no Sample
+PASS bonus: under "More choices", one box of its own, not ticked, with its words; the list to tick still has 31 programs, and the Population is still the 31
+PASS bonus: ticked beside the Population, the summary names it after the 31
+PASS bonus, Virtual Calculator, the Population and Sudoku: 34 files went on, Sudoku.hpprgm byte for byte as the pack's bonus file, and the 30 program files too
+PASS bonus alone: the summary says only that, and Load is on
+PASS bonus alone: 1 file went on, Sudoku.hpprgm, byte for byte (the box and the label are two blocks, so their words meet without a space in textContent)
+PASS bonus: no errors on its page
+PASS bonus, cable: the summary names Chapters 1–3 and the bonus
+PASS bonus, cable: every program and Sudoku on the calculator, each download verified; Sudoku's source is the pack's, character for character, and extras/sudoku/'s but for the blank space at its end
+PASS bonus, cable: the log's "Chosen:" line names the bonus
+PASS bonus, cable: a later Sample without it leaves Sudoku on the calculator (the page never takes it off), while the Statisticles not in that Sample are taken off
+PASS bonus, cable: no errors on its page
 PASS no errors in the page
 
-161 PASS, 0 FAIL
+173 PASS, 0 FAIL
+exit 0

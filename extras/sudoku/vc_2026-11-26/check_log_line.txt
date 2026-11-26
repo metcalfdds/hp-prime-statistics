@@ -1,0 +1,1 @@
+Sudoku     | editor title 'Sudoku:Main(PPL)' | box '@ No errors in the program' | 09:48 | 2 s

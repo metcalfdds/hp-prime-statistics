@@ -1,0 +1,1973 @@
+#pragma mode( separator(.,;) integer(h32) )
+// =====================================================================
+// Sudoku beta 2a  -  play Sudoku, learn how a square is worked out, and
+// watch a computer solve the puzzle, on the HP Prime (HP PPL, Home)
+//
+// Copyright 2026 Roger Metcalf. Written with AI assistance: the idea
+// and all testing on the calculator are the author's; the code and its
+// checking were done with Claude Opus 5.5 (Anthropic), November 2026.
+// Free for educational and personal use. Keep this header with the
+// file and credit the author. Not for sale or commercial redistribution.
+// Provided as is, with no warranty.
+// DISCLAIMER: a teaching and demonstration aid. Not validated for
+// forensic, clinical or legal use; do not rely on its results for legal
+// purposes.
+// Firmware tested on: none yet. Not yet run on a G1, a G2 or the
+// Virtual Calculator; checked in the PC harness, ppl_run_v3e (see
+// Sudoku_beta2a_CHANGES.md).
+//
+// CREDITS: written new; none of anyone else's code is in it. Ideas were
+// seen in three Sudoku programs in the hpcalc.org library and written
+// here from scratch: Lennart Börjeson's Sudoku editor/solver (2015: a
+// square chosen by a tap, a menu strip, an undo list, the digits a
+// square can still take), chromos's Sudoku solver (2024: the two
+// simplest steps, "naked single" and "hidden single", and counting how
+// many squares each one filled), and HPleak's Sudoku solver in Python
+// (2023: the search drawn on the screen while it runs).
+//
+// Run from Home:  Sudoku   (or from the Program Catalog)
+//
+// WHAT CHANGED
+// beta 2a (26 Nov 2026): My games, for the book's solving-time
+//   experiment (Roger: "we could do an experiment to see how long it
+//   takes people to solve a puzzle compared to the number of initial
+//   clues"). Each puzzle that you finish yourself becomes one game:
+//   its level, its clues, your minutes, and the Hints and Checks you
+//   used (suLogGame; at most 200 games). My games, the last item
+//   of the first menu and an item of the Enter menu, plots minutes
+//   against clues, one dot a game in its level's color, with the
+//   least-squares line and r (suGamesDraw), and copies the games into
+//   the Statistics 2Var app, C1 to C5, asking first when those
+//   columns hold data (suTo2Var). The clock now runs only while the
+//   board is on the screen: a menu, a question or a help page no
+//   longer counts (suDrain starts it again), and one wait counts for
+//   two minutes at most (suTick). The Enter menu's Help and Exit
+//   Sudoku move down one place, below My games; two help pages, on My
+//   games, come before Credits.
+// beta 2 (26 Nov 2026): written again so that a student can PLAY, not
+//   only watch. Beta 1 solved a puzzle typed into M9 and showed the
+//   answer; beta 2 adds
+//   * puzzles at four levels, made from 24 puzzles built for this
+//     program (Sudoku_beta2_build.py) and shuffled so that each game
+//     looks new (see suNew);
+//   * play by touch: tap a square, then a digit on the pad; the keys
+//     work too (arrows, digits, Enter for a menu of everything);
+//   * pencil marks (Notes), Undo, Check, Restart, a clock, a count of
+//     how many of each digit are still to place, red for a digit that
+//     repeats, and a flash when a row, column or box is finished;
+//   * a Hint that says WHY a square can be filled, and fills it on a
+//     second press;
+//   * Watch: the solver fills the grid while you look, colored by the
+//     kind of step, with a bar chart of the steps at the end;
+//   * a puzzle typed in by touch, checked for exactly one answer and
+//     kept in M9 (M9 can still be filled by hand, as in beta 1);
+//   * the game is kept when you leave, and Continue picks it up;
+//   * the fleet's opening line (#pragma) and Home settings (round 18),
+//     and its comma routine word for word.
+//   The search is beta 1's ("the tightest spot first"), now kept up to
+//   date as digits go in and out, so a step costs a few hundred
+//   statements instead of thousands.
+// beta 1 (25 Nov 2026): the solver alone (Sudoku_beta1_CHANGES.md).
+//
+// HOW THE SOLVER WORKS (Watch, Solve, the hints, and the check of a
+// typed puzzle). A depth-first search. Before every move it looks for
+// the tightest spot on the board: an empty square with the fewest
+// digits that fit, or a row, column or box whose missing digit fits in
+// the fewest squares. One choice: the move is forced. None: an earlier
+// guess was wrong, so it backs up and tries that guess's next digit.
+// The counts it needs are kept up to date as digits go in and come out
+// (suEPut, suETake).
+// =====================================================================
+
+// ---- tables, written by Sudoku_beta2_build.py (never typed) ----
+// suUnit((u-1)*9 + n): the n-th square of unit u (units 1-9 are rows,
+// 10-18 columns, 19-27 boxes; squares are numbered 1-81 by rows)
+LOCAL suUnit := {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 1, 10, 19, 28, 37, 46, 55, 64, 73, 2, 11, 20, 29, 38, 47, 56, 65, 74, 3, 12, 21, 30, 39, 48, 57, 66, 75, 4, 13, 22, 31, 40, 49, 58, 67, 76, 5, 14, 23, 32, 41, 50, 59, 68, 77, 6, 15, 24, 33, 42, 51, 60, 69, 78, 7, 16, 25, 34, 43, 52, 61, 70, 79, 8, 17, 26, 35, 44, 53, 62, 71, 80, 9, 18, 27, 36, 45, 54, 63, 72, 81, 1, 2, 3, 10, 11, 12, 19, 20, 21, 4, 5, 6, 13, 14, 15, 22, 23, 24, 7, 8, 9, 16, 17, 18, 25, 26, 27, 28, 29, 30, 37, 38, 39, 46, 47, 48, 31, 32, 33, 40, 41, 42, 49, 50, 51, 34, 35, 36, 43, 44, 45, 52, 53, 54, 55, 56, 57, 64, 65, 66, 73, 74, 75, 58, 59, 60, 67, 68, 69, 76, 77, 78, 61, 62, 63, 70, 71, 72, 79, 80, 81};
+// suPeer((k-1)*20 + j): the 20 squares that share a row, column or box with square k
+LOCAL suPeer := {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 19, 20, 21, 28, 37, 46, 55, 64, 73, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 19, 20, 21, 29, 38, 47, 56, 65, 74, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 19, 20, 21, 30, 39, 48, 57, 66, 75, 1, 2, 3, 5, 6, 7, 8, 9, 13, 14, 15, 22, 23, 24, 31, 40, 49, 58, 67, 76, 1, 2, 3, 4, 6, 7, 8, 9, 13, 14, 15, 22, 23, 24, 32, 41, 50, 59, 68, 77, 1, 2, 3, 4, 5, 7, 8, 9, 13, 14, 15, 22, 23, 24, 33, 42, 51, 60, 69, 78, 1, 2, 3, 4, 5, 6, 8, 9, 16, 17, 18, 25, 26, 27, 34, 43, 52, 61, 70, 79, 1, 2, 3, 4, 5, 6, 7, 9, 16, 17, 18, 25, 26, 27, 35, 44, 53, 62, 71, 80, 1, 2, 3, 4, 5, 6, 7, 8, 16, 17, 18, 25, 26, 27, 36, 45, 54, 63, 72, 81, 1, 2, 3, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 28, 37, 46, 55, 64, 73, 1, 2, 3, 10, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 29, 38, 47, 56, 65, 74, 1, 2, 3, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 30, 39, 48, 57, 66, 75, 4, 5, 6, 10, 11, 12, 14, 15, 16, 17, 18, 22, 23, 24, 31, 40, 49, 58, 67, 76, 4, 5, 6, 10, 11, 12, 13, 15, 16, 17, 18, 22, 23, 24, 32, 41, 50, 59, 68, 77, 4, 5, 6, 10, 11, 12, 13, 14, 16, 17, 18, 22, 23, 24, 33, 42, 51, 60, 69, 78, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 18, 25, 26, 27, 34, 43, 52, 61, 70, 79, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 25, 26, 27, 35, 44, 53, 62, 71, 80, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 25, 26, 27, 36, 45, 54, 63, 72, 81, 1, 2, 3, 10, 11, 12, 20, 21, 22, 23, 24, 25, 26, 27, 28, 37, 46, 55, 64, 73, 1, 2, 3, 10, 11, 12, 19, 21, 22, 23, 24, 25, 26, 27, 29, 38, 47, 56, 65, 74, 1, 2, 3, 10, 11, 12, 19, 20, 22, 23, 24, 25, 26, 27, 30, 39, 48, 57, 66, 75, 4, 5, 6, 13, 14, 15, 19, 20, 21, 23, 24, 25, 26, 27, 31, 40, 49, 58, 67, 76, 4, 5, 6, 13, 14, 15, 19, 20, 21, 22, 24, 25, 26, 27, 32, 41, 50, 59, 68, 77, 4, 5, 6, 13, 14, 15, 19, 20, 21, 22, 23, 25, 26, 27, 33, 42, 51, 60, 69, 78, 7, 8, 9, 16, 17, 18, 19, 20, 21, 22, 23, 24, 26, 27, 34, 43, 52, 61, 70, 79, 7, 8, 9, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 27, 35, 44, 53, 62, 71, 80, 7, 8, 9, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 36, 45, 54, 63, 72, 81, 1, 10, 19, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 46, 47, 48, 55, 64, 73, 2, 11, 20, 28, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 46, 47, 48, 56, 65, 74, 3, 12, 21, 28, 29, 31, 32, 33, 34, 35, 36, 37, 38, 39, 46, 47, 48, 57, 66, 75, 4, 13, 22, 28, 29, 30, 32, 33, 34, 35, 36, 40, 41, 42, 49, 50, 51, 58, 67, 76, 5, 14, 23, 28, 29, 30, 31, 33, 34, 35, 36, 40, 41, 42, 49, 50, 51, 59, 68, 77, 6, 15, 24, 28, 29, 30, 31, 32, 34, 35, 36, 40, 41, 42, 49, 50, 51, 60, 69, 78, 7, 16, 25, 28, 29, 30, 31, 32, 33, 35, 36, 43, 44, 45, 52, 53, 54, 61, 70, 79, 8, 17, 26, 28, 29, 30, 31, 32, 33, 34, 36, 43, 44, 45, 52, 53, 54, 62, 71, 80, 9, 18, 27, 28, 29, 30, 31, 32, 33, 34, 35, 43, 44, 45, 52, 53, 54, 63, 72, 81, 1, 10, 19, 28, 29, 30, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 55, 64, 73, 2, 11, 20, 28, 29, 30, 37, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 56, 65, 74, 3, 12, 21, 28, 29, 30, 37, 38, 40, 41, 42, 43, 44, 45, 46, 47, 48, 57, 66, 75, 4, 13, 22, 31, 32, 33, 37, 38, 39, 41, 42, 43, 44, 45, 49, 50, 51, 58, 67, 76, 5, 14, 23, 31, 32, 33, 37, 38, 39, 40, 42, 43, 44, 45, 49, 50, 51, 59, 68, 77, 6, 15, 24, 31, 32, 33, 37, 38, 39, 40, 41, 43, 44, 45, 49, 50, 51, 60, 69, 78, 7, 16, 25, 34, 35, 36, 37, 38, 39, 40, 41, 42, 44, 45, 52, 53, 54, 61, 70, 79, 8, 17, 26, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 45, 52, 53, 54, 62, 71, 80, 9, 18, 27, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 52, 53, 54, 63, 72, 81, 1, 10, 19, 28, 29, 30, 37, 38, 39, 47, 48, 49, 50, 51, 52, 53, 54, 55, 64, 73, 2, 11, 20, 28, 29, 30, 37, 38, 39, 46, 48, 49, 50, 51, 52, 53, 54, 56, 65, 74, 3, 12, 21, 28, 29, 30, 37, 38, 39, 46, 47, 49, 50, 51, 52, 53, 54, 57, 66, 75, 4, 13, 22, 31, 32, 33, 40, 41, 42, 46, 47, 48, 50, 51, 52, 53, 54, 58, 67, 76, 5, 14, 23, 31, 32, 33, 40, 41, 42, 46, 47, 48, 49, 51, 52, 53, 54, 59, 68, 77, 6, 15, 24, 31, 32, 33, 40, 41, 42, 46, 47, 48, 49, 50, 52, 53, 54, 60, 69, 78, 7, 16, 25, 34, 35, 36, 43, 44, 45, 46, 47, 48, 49, 50, 51, 53, 54, 61, 70, 79, 8, 17, 26, 34, 35, 36, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 54, 62, 71, 80, 9, 18, 27, 34, 35, 36, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 63, 72, 81, 1, 10, 19, 28, 37, 46, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 73, 74, 75, 2, 11, 20, 29, 38, 47, 55, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 73, 74, 75, 3, 12, 21, 30, 39, 48, 55, 56, 58, 59, 60, 61, 62, 63, 64, 65, 66, 73, 74, 75, 4, 13, 22, 31, 40, 49, 55, 56, 57, 59, 60, 61, 62, 63, 67, 68, 69, 76, 77, 78, 5, 14, 23, 32, 41, 50, 55, 56, 57, 58, 60, 61, 62, 63, 67, 68, 69, 76, 77, 78, 6, 15, 24, 33, 42, 51, 55, 56, 57, 58, 59, 61, 62, 63, 67, 68, 69, 76, 77, 78, 7, 16, 25, 34, 43, 52, 55, 56, 57, 58, 59, 60, 62, 63, 70, 71, 72, 79, 80, 81, 8, 17, 26, 35, 44, 53, 55, 56, 57, 58, 59, 60, 61, 63, 70, 71, 72, 79, 80, 81, 9, 18, 27, 36, 45, 54, 55, 56, 57, 58, 59, 60, 61, 62, 70, 71, 72, 79, 80, 81, 1, 10, 19, 28, 37, 46, 55, 56, 57, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 2, 11, 20, 29, 38, 47, 55, 56, 57, 64, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 3, 12, 21, 30, 39, 48, 55, 56, 57, 64, 65, 67, 68, 69, 70, 71, 72, 73, 74, 75, 4, 13, 22, 31, 40, 49, 58, 59, 60, 64, 65, 66, 68, 69, 70, 71, 72, 76, 77, 78, 5, 14, 23, 32, 41, 50, 58, 59, 60, 64, 65, 66, 67, 69, 70, 71, 72, 76, 77, 78, 6, 15, 24, 33, 42, 51, 58, 59, 60, 64, 65, 66, 67, 68, 70, 71, 72, 76, 77, 78, 7, 16, 25, 34, 43, 52, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71, 72, 79, 80, 81, 8, 17, 26, 35, 44, 53, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 72, 79, 80, 81, 9, 18, 27, 36, 45, 54, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 79, 80, 81, 1, 10, 19, 28, 37, 46, 55, 56, 57, 64, 65, 66, 74, 75, 76, 77, 78, 79, 80, 81, 2, 11, 20, 29, 38, 47, 55, 56, 57, 64, 65, 66, 73, 75, 76, 77, 78, 79, 80, 81, 3, 12, 21, 30, 39, 48, 55, 56, 57, 64, 65, 66, 73, 74, 76, 77, 78, 79, 80, 81, 4, 13, 22, 31, 40, 49, 58, 59, 60, 67, 68, 69, 73, 74, 75, 77, 78, 79, 80, 81, 5, 14, 23, 32, 41, 50, 58, 59, 60, 67, 68, 69, 73, 74, 75, 76, 78, 79, 80, 81, 6, 15, 24, 33, 42, 51, 58, 59, 60, 67, 68, 69, 73, 74, 75, 76, 77, 79, 80, 81, 7, 16, 25, 34, 43, 52, 61, 62, 63, 70, 71, 72, 73, 74, 75, 76, 77, 78, 80, 81, 8, 17, 26, 35, 44, 53, 61, 62, 63, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 81, 9, 18, 27, 36, 45, 54, 61, 62, 63, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80};
+// the base puzzles and their answers, 81 digits each, 0 = a blank
+// square; 6 Easy, then 6 Medium, 6 Hard and 6 Expert
+LOCAL suBP := {"042100638000408590000920704000080305001205400508090000103049000029703000756002940", "040001590000093000659420001915000860820000079074000152500049213000670000092300080", "005420080600003070289017630020050809050000020908060040063870492090100008040039100", "507230060063050207001080350000800005628000439700003000079060500302070190050042803", "150709462000008007497000805700000000635010798000000004806000379500600000321904086", "000032570543810006008095004000960047300000009790058000900540700400023695035780000", "004000000000150020500420306006800002005276900800001400907014003050093000000000700", "006005200000098060408030007080003410200000003031600090100060509060940000004300700", "005300008002080001800020039580009300600000002009100086350090007200030600100006800", "004009706960007000008600400820010003000050000300070095007003500000500067206700300", "100500007500000240020086500000050096240000081670040000002830070098000002300002004", "703100000000900740090008300309050020607000908050090107005300080038001000000006203", "050040270700003000000270048000600400040000060008009000310052000000300005089010030", "067010800080049200000300047000001402000000000209400000570006000003270010006090730", "004206301000001700050700060300600000805000407000002003080003070001400000207908100", "000001030030200048000040070054719003000000000100623450040090000370005090060800000", "010000540000900006000085300030050970407000805051030020005410000700006000026000080", "080300000000002047043007005300060050008109700020070009800900470130200000000005010", "050004006700060000300500090030000740501000603078000050090002007000070004800300020", "002100007005207000060050003610070000000506000000030091400090070000704200500001400", "074009000900500000060010078000040050700308006030090000290030060000004002000100380", "050008000000000536006090010080703004000020000700806020040050200593000000000400070", "410000020020800053000004000001600002090507040600009800000300000380005070070000014", "008003900000400500230060000003089010080000070020640800000070092004008000002900300"};
+LOCAL suBS := {"942157638617438592835926714294681375361275489578394126183549267429763851756812943", "243761598781593426659428731915237864826154379374986152567849213138672945492315687", "735426981614983275289517634326754819451398726978261543163875492597142368842639157", "587234961463159287291687354934826715628715439715493628879361542342578196156942873", "158739462263548917497126835714895623635412798982367154846251379579683241321974586", "169432578543817926278695134852961347316274859794358261921546783487123695635789412", "214368597763159824589427316396845172145276938872931465927514683658793241431682759", "976415238352798164418236957689573412245189673731624895123867549567942381894351726", "965314278732985461841627539587269314613748952429153786356892147278431695194576823", "534189726962437158718625439825914673679358241341276895497863512183542967256791384", "183524967567319248924786513831257496245693781679148325452831679798465132316972854", "723145869186932745594768312319857624647213958852694137265379481938421576471586293", "853146279724893156691275348235687491947521863168439527316952784472368915589714632", "467512893385749261192368547638951472754623189219487356571836924943275618826194735", "794286351628531749153794862312647598865319427479852613586123974931475286247968135", "428971635739256148516348972654719283293584716187623459845192367372465891961837524", "219763548583942716674185392832654971467291835951837624395418267748326159126579483", "785394621916852347243617985379468152568129734421573869852931476137246598694785213", "952814376784963512316527498639285741521749683478631259193452867265178934847396125", "982163547135247986764859123613972854849516732257438691421695378396784215578321469", "174689235928573641563412978819246753742358196635791824291835467387964512456127389", "451638792928174536376592418289713654634925187715846923847351269593267841162489375", "415736928726891453938254167851643792293587641647129835164372589389415276572968314", "548713926167492538239865147753289614486531279921647853815376492394128765672954381"};
+// the little digits of the pencil marks, 3 px wide and 5 tall, drawn
+// as strokes: suGlyO holds x1,y1,x2,y2 for each stroke; digit d's
+// strokes start at suGlyO(suGlyS(d)), and there are suGlyN(d) of them
+LOCAL suGlyO := {1, 0, 1, 4, 0, 1, 0, 1, 0, 4, 2, 4, 0, 0, 2, 0, 2, 0, 2, 2, 0, 2, 2, 2, 0, 2, 0, 4, 0, 4, 2, 4, 0, 0, 2, 0, 0, 2, 2, 2, 0, 4, 2, 4, 2, 0, 2, 4, 0, 0, 0, 2, 0, 2, 2, 2, 2, 0, 2, 4, 0, 0, 2, 0, 0, 0, 0, 2, 0, 2, 2, 2, 2, 2, 2, 4, 0, 4, 2, 4, 0, 0, 2, 0, 0, 0, 0, 4, 0, 2, 2, 2, 2, 2, 2, 4, 0, 4, 2, 4, 0, 0, 2, 0, 2, 0, 2, 4, 0, 0, 2, 0, 0, 2, 2, 2, 0, 4, 2, 4, 0, 0, 0, 4, 2, 0, 2, 4, 0, 0, 2, 0, 0, 0, 0, 2, 0, 2, 2, 2, 2, 0, 2, 4, 0, 4, 2, 4};
+LOCAL suGlyS := {1, 13, 33, 49, 61, 81, 101, 109, 129};
+LOCAL suGlyN := {3, 5, 4, 3, 5, 5, 2, 5, 5};
+// the help pages: their titles, and their lines (wrapped by the build
+// at the calculator's measured glyph widths)
+LOCAL suHelpH := {"How to play", "What the colors mean", "Notes, Undo and Check", "Hints", "Watch the solver", "Your own puzzles", "Keeping your game", "My games", "The My games plot", "My games in Statistics 2Var", "A class experiment", "Credits"};
+LOCAL suHelpT := {{"Fill the grid so that every row, every column", "and every 3 x 3 box holds each of the digits 1", "to 9 exactly once. The black digits are the", "clues: they are part of the puzzle, and they", "cannot be changed.", "", "Tap a square to choose it, and then tap a digit", "on the pad at the right (or press a digit key),", "and your digit appears in blue. Tapping the", "same digit again erases it, and so do Erase,", "the 0 key and Del. The arrow keys move the", "chosen square too."}, {"The row, column and box of the chosen square", "are shaded blue, and so is every square that", "holds the same digit, which makes it easy to", "see where that digit can still go. A digit of", "yours that repeats one in its row, column or", "box turns red at once.", "", "The small number on each key of the pad counts", "how many of that digit are still to be placed,", "and a key turns gray when all nine are in. The", "thin bar at the top fills as the grid does, and", "a row, column or box flashes gold when you", "finish it."}, {"Pencil marks are small digits that remind you", "which digits could still go in a square. Turn", "Notes on (the soft key, or the Notes button),", "and the digits you tap become pencil marks; tap", "one again to take it away. When you place a", "digit, that digit's pencil marks leave its row,", "column and box. The Enter menu can also fill in", "every pencil mark at once, or clear them all.", "", "Undo takes back your changes one at a time.", "Check turns your wrong digits red, so that you", "can find your mistakes without being shown the", "answer."}, {"Hint finds a square that can be worked out now,", "and tells you why. Either only one digit fits", "the square, because its row, column and box", "already hold the other eight (a naked single),", "or a row, column or box has only one square", "left where some digit can go (a hidden single).", "The square turns dark green, and the row,", "column or box light green.", "", "Press Hint again and the digit is filled in for", "you. A wrong digit of yours is shown first, and", "when no square can be worked out in one step,", "Hint shows the square with the fewest choices."}, {"Watch (after More) shows how a computer solves", "the puzzle. Before every move it looks for the", "tightest spot: a square where only one digit", "fits (green), or a row, column or box where a", "digit fits in only one square (magenta). When", "no move is forced it guesses (orange), and when", "a guess leads to a square where nothing fits,", "it takes the guess back (a red flash) and tries", "the next digit; this is called backtracking.", "", "A key or a tap skips to the end. The digits", "keep the color of the step that put them there,", "and a bar chart counts the steps of each kind."}, {"Type (after More) lets you enter a puzzle from", "a newspaper or a book. Tap a square and then a", "digit for each clue, and the next square is", "chosen for you, so a row goes in quickly; Erase", "leaves a square blank. Tap Play when every clue", "is in, and the program checks that your puzzle", "has exactly one answer before you start. A very", "hard puzzle can take a while, and Esc stops the", "check.", "", "The puzzle is then kept in matrix M9. You can", "also fill M9 yourself, with 0 for each blank", "square, and choose Use the puzzle in M9."}, {"When you leave with Esc your game is kept, and", "the first menu offers Continue the next time", "you run Sudoku. Solve fills in the whole", "answer, Restart erases your digits, and New", "starts another puzzle; each of them asks first.", "The answer of the last puzzle you finish is", "kept in SU_SOLVED."}, {"Every puzzle that you finish yourself is kept", "in My games, with its level, its number of", "clues, your time in minutes, and how many times", "you used Hint and Check. Up to 200 games are", "kept, and Clear empties My games.", "", "The clock runs only while the board is on the", "screen, so the menus, questions and help pages", "do not count. A game that Solve or Watch", "finished is not kept, because then the program", "did the work."}, {"The plot shows your minutes against the clues,", "one dot for each game in its level's color, and", "each level's median time at the right. The", "median is the middle time, which a few very", "slow games cannot pull up the way they pull up", "a mean.", "", "Once three games have two different numbers of", "clues, the plot adds the least-squares line and", "r, the correlation, which tells how closely the", "dots follow the line."}, {"2Var copies My games into the Statistics 2Var", "app: the clues go to C1, the minutes to C2, the", "level to C3 (1 Easy, 2 Medium, 3 Hard, 4", "Expert, 5 typed), the Hints to C4 and the", "Checks to C5. When any of those columns already", "holds data, Sudoku asks first.", "", "Open the app from the Apps key. Its first", "analysis, S1, reads C1 and C2 unless it has", "been changed, so its Plot view shows your", "minutes against the clues, and Num, then Stats,", "gives r."}, {"A class can pool its games to ask whether fewer", "clues take longer. One or two players tell us", "little about all players, because people differ", "so much, so the more players, the better.", "", "Our levels and their clues go together (an Easy", "puzzle has more clues than an Expert one), so a", "slower time may come from harder logic rather", "than from fewer clues. Practice makes everyone", "faster, too, so the order in which the levels", "are played should be drawn at random."}, {"Written new for the HP Prime by Roger Metcalf,", "with Claude (Anthropic), in November 2026; none", "of anyone else's code is in it. Ideas came from", "three Sudoku programs in the hpcalc.org", "library: Lennart Borjeson's (2015), chromos's", "(2024) and HPleak's (2023)."}};
+LOCAL suGames0 := {"Finish a puzzle yourself, and it is kept here:", "its level, its number of clues, your time in", "minutes, and how many times you used Hint and", "Check.", "", "Solve and Watch do not count, because then the", "program did the work. Help explains the plot", "that you will see here."};     // My games with no games yet (beta 2a)
+LOCAL suSent2V := {"C1 holds the clues, C2 the minutes, C3 the", "level (1 Easy, 2 Medium, 3 Hard, 4 Expert, 5", "typed), C4 the Hints and C5 the Checks.", "", "Open the app from the Apps key. Its first", "analysis, S1, reads C1 and C2 unless it has", "been changed, so its Plot view shows your", "minutes against the clues, and Num, then Stats,", "gives r."};     // after the copy into Statistics 2Var (beta 2a)
+
+// ---- made when the program first runs (suSetup) ----
+LOCAL suReady, suRowOf, suColOf, suBoxOf, suRB, suCB;
+LOCAL suXB, suCX, suCY, suFX, suFY, suPow;
+
+// ---- the engine ----
+LOCAL suEV, suEH, suEC, suEP;
+LOCAL suBK, suBW, suBN, suBF;
+LOCAL suSN, suSH, suSG, suSU, suSS, suSols;
+LOCAL suSol1, suLK, suLW, suLN, suLO, suLC;
+LOCAL suLD, suLF, suAbort, suWK;
+
+// ---- the game (file-level values stay between runs: Continue) ----
+LOCAL suGame, suLevel, suClue, suSol, suUsr, suNote;
+LOCAL suSel, suNoteOn, suPage, suMode, suTEl, suTLast;
+LOCAL suHints, suChecks, suWrongOn, suHintK, suHintD, suHintArm;
+LOCAL suHintKind, suHintU, suMsg, suMsgC, suUK, suUO;
+LOCAL suUN, suUM, suUL, suStale, suWatched, suPanel;
+LOCAL suFlash;
+LOCAL suGLv, suGCl, suGMn, suGHn, suGCk, suGNew;   // My games (beta 2a)
+
+// the answer of the last puzzle finished, as a 9 x 9 matrix (as in beta 1)
+EXPORT SU_SOLVED;
+
+// ---------------------------------------------------------------------
+// suCm: commas in a number's digits ("3823" -> "3,823"); the fleet's
+// routine, word for word (tools/comma_helper_reference_v1.txt)
+// ---------------------------------------------------------------------
+suCm(cmS)
+BEGIN
+  LOCAL cmO, cmI, cmJ, cmN, cmR, cmK;
+  cmN := DIM(cmS);
+  IF cmN < 4 THEN RETURN cmS; END;
+  cmO := ""; cmI := 1;
+  WHILE cmI <= cmN DO
+    IF INSTRING("0123456789", MID(cmS, cmI, 1)) > 0 THEN
+      // a run of digits from cmI to cmJ
+      cmJ := cmI;
+      WHILE cmJ < cmN AND INSTRING("0123456789", MID(cmS, cmJ + 1, 1)) > 0 DO cmJ := cmJ + 1; END;
+      cmR := MID(cmS, cmI, cmJ - cmI + 1);
+      IF DIM(cmR) >= 4 AND (cmI == 1 OR MID(cmS, MAX(1, cmI - 1), 1) <> ".") THEN
+        // the first group takes 1 to 3 digits, then a comma before every three
+        cmK := DIM(cmR) MOD 3;
+        IF cmK == 0 THEN cmK := 3; END;
+        cmO := cmO + LEFT(cmR, cmK);
+        WHILE cmK < DIM(cmR) DO
+          cmO := cmO + "," + MID(cmR, cmK + 1, 3);
+          cmK := cmK + 3;
+        END;
+      ELSE
+        cmO := cmO + cmR;
+      END;
+      cmI := cmJ + 1;
+    ELSE
+      cmO := cmO + MID(cmS, cmI, 1);
+      cmI := cmI + 1;
+    END;
+  END;
+  RETURN cmO;
+END;
+
+// suNs: a whole number as text, with commas, whatever Home's number
+// format (adding 0.0 makes an integer from WAIT(-1) a real first)
+suNs(suNsV)
+BEGIN
+  RETURN suCm(STRING(ROUND(suNsV + 0.0, 0), 2, 0));
+END;
+
+// suTime: milliseconds as m:ss, or h:mm:ss after an hour
+suTime(suTmMs)
+BEGIN
+  LOCAL suTmS, suTmM, suTmH, suTmT;
+  suTmS := IP((suTmMs + 0.0) / 1000);
+  suTmH := IP(suTmS / 3600);
+  suTmM := IP((suTmS MOD 3600) / 60);
+  suTmS := suTmS MOD 60;
+  suTmT := STRING(suTmS, 2, 0);
+  IF suTmS < 10 THEN suTmT := "0" + suTmT; END;
+  IF suTmH > 0 THEN
+    IF suTmM < 10 THEN RETURN STRING(suTmH, 2, 0) + ":0" + STRING(suTmM, 2, 0) + ":" + suTmT; END;
+    RETURN STRING(suTmH, 2, 0) + ":" + STRING(suTmM, 2, 0) + ":" + suTmT;
+  END;
+  RETURN STRING(suTmM, 2, 0) + ":" + suTmT;
+END;
+
+// suDrain: throw away waiting key presses, then wait (at most one
+// second, Lessons Learned 7) for the finger to leave the screen. After
+// every CHOOSE and MSGBOX, and around every page held by suWaitAny.
+suDrain()
+BEGIN
+  LOCAL suDrK, suDrT;
+  REPEAT suDrK := GETKEY; UNTIL suDrK == -1;
+  suDrT := TICKS;                         // milliseconds
+  REPEAT UNTIL MOUSE(1) == -1 OR TICKS - suDrT > 1000;
+  suStale := 1;      // a dialog's own tap may still reach the board's WAIT(-1) (see suPlay)
+  suTLast := TICKS;  // beta 2a: the time spent in a dialog or a held page is not the game's
+END;
+
+// suWaitAny: hold a page until a key or a touch, the fleet's way
+// (Lessons Learned 7): drain, poll GETKEY and MOUSE together, drain
+// again. Returns the key's code, or -2 for a touch.
+suWaitAny()
+BEGIN
+  LOCAL suWk, suWm;
+  suDrain();
+  REPEAT
+    suWk := GETKEY; suWm := MOUSE;
+  UNTIL suWk > -1 OR SIZE(suWm(1)) > 0;
+  suDrain();
+  IF suWk > -1 THEN RETURN suWk; END;
+  RETURN -2;
+END;
+
+// suLvName: the name of a level (5 = a puzzle typed in)
+suLvName(suLnI)
+BEGIN
+  LOCAL suLnL;
+  suLnL := {"Easy", "Medium", "Hard", "Expert", "Typed"};
+  RETURN suLnL(suLnI);
+END;
+
+// suSetup: the tables that need no build, made once (file-level
+// values stay until the program is checked or sent again)
+suSetup()
+BEGIN
+  LOCAL suSk;
+  suRowOf := MAKELIST(IP((suSk - 1) / 9) + 1, suSk, 1, 81, 1);
+  suColOf := MAKELIST(((suSk - 1) MOD 9) + 1, suSk, 1, 81, 1);
+  suBoxOf := MAKELIST(3 * IP((suSk - 1) / 27) + IP(((suSk - 1) MOD 9) / 3) + 1, suSk, 1, 81, 1);
+  // where a square's row, column and box start in the 243-entry lists
+  // (unit u starts at (u-1)*9; rows are units 1-9, columns 10-18, boxes 19-27)
+  suRB := MAKELIST((suRowOf(suSk) - 1) * 9, suSk, 1, 81, 1);
+  suCB := MAKELIST((8 + suColOf(suSk)) * 9, suSk, 1, 81, 1);
+  suXB := MAKELIST((17 + suBoxOf(suSk)) * 9, suSk, 1, 81, 1);
+  // a square's top-left corner on the screen (24 px squares from (2, 2)),
+  // and where its color starts: one pixel further in after a heavy line
+  suCX := MAKELIST(2 + (suColOf(suSk) - 1) * 24, suSk, 1, 81, 1);
+  suCY := MAKELIST(2 + (suRowOf(suSk) - 1) * 24, suSk, 1, 81, 1);
+  suFX := MAKELIST(suCX(suSk) + IFTE(((suColOf(suSk) - 1) MOD 3) == 0, 2, 1), suSk, 1, 81, 1);
+  suFY := MAKELIST(suCY(suSk) + IFTE(((suRowOf(suSk) - 1) MOD 3) == 0, 2, 1), suSk, 1, 81, 1);
+  // the pencil mark of digit d is bit d of a square's number: suPow(d) = 2^(d-1)
+  suPow := {1, 2, 4, 8, 16, 32, 64, 128, 256};
+  // My games starts empty (beta 2a)
+  suGLv := {}; suGCl := {}; suGMn := {}; suGHn := {}; suGCk := {}; suGNew := 0;
+  suReady := 1;
+END;
+
+// =====================================================================
+// THE ENGINE. suEV(k) is the digit in square k (0 = empty); suEH(i) is
+// 1 when unit u holds digit d (i = (u-1)*9 + d); suEC(k) counts the
+// digits that fit empty square k; suEP(i) counts the empty squares of
+// unit u where d fits. A digit d "fits" square k when none of k's row,
+// column and box holds it.
+// =====================================================================
+
+// suEInit: build suEH, suEC and suEP from suEV. Returns 0, or the first
+// square whose clue repeats an earlier one in its row, column or box.
+suEInit()
+BEGIN
+  LOCAL suIk, suId, suIr, suIc, suIb, suIn;
+  suEH := MAKELIST(0, suIk, 1, 243, 1);
+  suEC := MAKELIST(0, suIk, 1, 81, 1);
+  suEP := MAKELIST(0, suIk, 1, 243, 1);
+  FOR suIk FROM 1 TO 81 DO
+    suId := suEV(suIk);
+    IF suId > 0 THEN
+      suIr := suRB(suIk) + suId; suIc := suCB(suIk) + suId; suIb := suXB(suIk) + suId;
+      IF suEH(suIr) == 1 OR suEH(suIc) == 1 OR suEH(suIb) == 1 THEN RETURN suIk; END;
+      suEH(suIr) := 1; suEH(suIc) := 1; suEH(suIb) := 1;
+    END;
+  END;
+  FOR suIk FROM 1 TO 81 DO
+    IF suEV(suIk) == 0 THEN
+      suIr := suRB(suIk); suIc := suCB(suIk); suIb := suXB(suIk);
+      suIn := 0;
+      FOR suId FROM 1 TO 9 DO
+        IF suEH(suIr + suId) == 0 AND suEH(suIc + suId) == 0 AND suEH(suIb + suId) == 0 THEN
+          suIn := suIn + 1;
+          suEP(suIr + suId) := suEP(suIr + suId) + 1;
+          suEP(suIc + suId) := suEP(suIc + suId) + 1;
+          suEP(suIb + suId) := suEP(suIb + suId) + 1;
+        END;
+      END;
+      suEC(suIk) := suIn;
+    END;
+  END;
+  RETURN 0;
+END;
+
+// suEPut: write digit suPd into empty square suPk (it must fit),
+// keeping the counts right
+suEPut(suPk, suPd)
+BEGIN
+  LOCAL suQr, suQc, suQb, suQe, suQj, suQp;
+  LOCAL suQs;
+  suQr := suRB(suPk); suQc := suCB(suPk); suQb := suXB(suPk);
+  // the square leaves the empty squares of its three units
+  FOR suQe FROM 1 TO 9 DO
+    IF suEH(suQr + suQe) == 0 AND suEH(suQc + suQe) == 0 AND suEH(suQb + suQe) == 0 THEN
+      suEP(suQr + suQe) := suEP(suQr + suQe) - 1;
+      suEP(suQc + suQe) := suEP(suQc + suQe) - 1;
+      suEP(suQb + suQe) := suEP(suQb + suQe) - 1;
+    END;
+  END;
+  // each empty peer where the digit fitted loses it
+  suQs := (suPk - 1) * 20;
+  FOR suQj FROM 1 TO 20 DO
+    suQp := suPeer(suQs + suQj);
+    IF suEV(suQp) == 0 THEN
+      IF suEH(suRB(suQp) + suPd) == 0 AND suEH(suCB(suQp) + suPd) == 0 AND suEH(suXB(suQp) + suPd) == 0 THEN
+        suEC(suQp) := suEC(suQp) - 1;
+        suEP(suRB(suQp) + suPd) := suEP(suRB(suQp) + suPd) - 1;
+        suEP(suCB(suQp) + suPd) := suEP(suCB(suQp) + suPd) - 1;
+        suEP(suXB(suQp) + suPd) := suEP(suXB(suQp) + suPd) - 1;
+      END;
+    END;
+  END;
+  suEH(suQr + suPd) := 1; suEH(suQc + suPd) := 1; suEH(suQb + suPd) := 1;
+  suEV(suPk) := suPd;
+END;
+
+// suETake: take digit suPd out of square suPk again: suEPut backwards
+suETake(suPk, suPd)
+BEGIN
+  LOCAL suQr, suQc, suQb, suQe, suQj, suQp;
+  LOCAL suQs, suQn;
+  suQr := suRB(suPk); suQc := suCB(suPk); suQb := suXB(suPk);
+  suEV(suPk) := 0;
+  suEH(suQr + suPd) := 0; suEH(suQc + suPd) := 0; suEH(suQb + suPd) := 0;
+  suQs := (suPk - 1) * 20;
+  FOR suQj FROM 1 TO 20 DO
+    suQp := suPeer(suQs + suQj);
+    IF suEV(suQp) == 0 THEN
+      IF suEH(suRB(suQp) + suPd) == 0 AND suEH(suCB(suQp) + suPd) == 0 AND suEH(suXB(suQp) + suPd) == 0 THEN
+        suEC(suQp) := suEC(suQp) + 1;
+        suEP(suRB(suQp) + suPd) := suEP(suRB(suQp) + suPd) + 1;
+        suEP(suCB(suQp) + suPd) := suEP(suCB(suQp) + suPd) + 1;
+        suEP(suXB(suQp) + suPd) := suEP(suXB(suQp) + suPd) + 1;
+      END;
+    END;
+  END;
+  suQn := 0;
+  FOR suQe FROM 1 TO 9 DO
+    IF suEH(suQr + suQe) == 0 AND suEH(suQc + suQe) == 0 AND suEH(suQb + suQe) == 0 THEN
+      suQn := suQn + 1;
+      suEP(suQr + suQe) := suEP(suQr + suQe) + 1;
+      suEP(suQc + suQe) := suEP(suQc + suQe) + 1;
+      suEP(suQb + suQe) := suEP(suQb + suQe) + 1;
+    END;
+  END;
+  suEC(suPk) := suQn;
+END;
+
+// suEBest: the tightest spot. suBK = 0 (no empty square: solved), 1 (a
+// square: suBW, with suBF digits that fit) or 2 (unit suBW's missing
+// digit suBN, which fits in suBF squares). Stops at the first spot with
+// 0 or 1 choices.
+suEBest()
+BEGIN
+  LOCAL suTk, suTu, suTd, suTi;
+  suBF := 10; suBK := 0; suBW := 0; suBN := 0;
+  suTk := 1;
+  WHILE suTk <= 81 AND suBF > 1 DO
+    IF suEV(suTk) == 0 THEN
+      IF suEC(suTk) < suBF THEN suBF := suEC(suTk); suBK := 1; suBW := suTk; END;
+    END;
+    suTk := suTk + 1;
+  END;
+  suTu := 0;
+  WHILE suTu < 243 AND suBF > 1 DO
+    suTd := 1;
+    WHILE suTd <= 9 AND suBF > 1 DO
+      suTi := suTu + suTd;
+      IF suEH(suTi) == 0 THEN
+        IF suEP(suTi) < suBF THEN suBF := suEP(suTi); suBK := 2; suBW := suTu / 9 + 1; suBN := suTd; END;
+      END;
+      suTd := suTd + 1;
+    END;
+    suTu := suTu + 9;
+  END;
+END;
+
+// suPaintCell: one square drawn straight to the screen (Watch)
+suPaintCell(suPCk, suPCd, suPCink, suPCbg)
+BEGIN
+  RECT_P(G0, suFX(suPCk), suFY(suPCk), suCX(suPCk) + 23, suCY(suPCk) + 23, suPCbg, suPCbg);
+  IF suPCd > 0 THEN
+    TEXTOUT_P(CHAR(48 + suPCd), G0, suCX(suPCk) + 8, suCY(suPCk) + 3, 4, suPCink);
+  END;
+END;
+
+// suESolve: the depth-first search, from the position in suEV after
+// suEInit. suWant = 1: stop at the first answer; 2: look for a second
+// (a puzzle must have exactly one). suAnim = 1: paint every step
+// (Watch); a key or a tap then stops the painting. Without painting,
+// Esc stops the search (checked every 250 steps). Returns how many
+// answers it found (0, 1 or 2), or -1 when stopped; the first answer is
+// kept in suSol1, and suSols says how many were found before a stop.
+suESolve(suWant, suAnim)
+BEGIN
+  LOCAL suDep, suPl, suOpt, suFd, suKk, suDd;
+  LOCAL suT0, suGo, suKy, suMs, suInk;
+  suLK := MAKELIST(0, suKk, 1, 81, 1); suLW := suLK; suLN := suLK;
+  suLO := suLK; suLC := suLK; suLD := suLK; suLF := suLK;
+  suDep := 0; suSols := 0; suSol1 := {}; suAbort := 0;
+  suWK := MAKELIST(0, suKk, 1, 81, 1);    // how each square was last filled: 1 only digit, 2 only square, 3 a guess
+  suSN := 0; suSH := 0; suSG := 0; suSU := 0; suSS := 0;
+  suGo := 1;
+  WHILE suGo == 1 DO
+    suEBest();
+    IF suBK == 0 THEN
+      suSols := suSols + 1;
+      IF suSols == 1 THEN suSol1 := suEV; END;
+      IF suSols >= suWant THEN RETURN suSols; END;
+      suBF := 0;                          // look further: treat the answer as a dead end
+    END;
+    IF suBK > 0 AND suBF > 0 THEN         // a new level for this spot
+      suDep := suDep + 1;
+      suLK(suDep) := suBK; suLW(suDep) := suBW; suLN(suDep) := suBN;
+      suLO(suDep) := 0; suLF(suDep) := suBF;
+    END;
+    // move the top level on to its next option; back up when a level runs out
+    suPl := 0;
+    WHILE suPl == 0 AND suDep > 0 DO
+      suOpt := suLO(suDep);
+      IF suOpt > 0 THEN                   // take back what this level wrote last time
+        suETake(suLC(suDep), suLD(suDep));
+        suSU := suSU + 1;
+        IF suAnim == 1 THEN               // a red flash where a guess is taken back
+          suT0 := TICKS;
+          suPaintCell(suLC(suDep), 0, RGB(0,0,0), RGB(255,120,120));
+          REPEAT UNTIL TICKS - suT0 > 40;
+          suPaintCell(suLC(suDep), 0, RGB(0,0,0), RGB(255,255,255));
+        END;
+      END;
+      suFd := 0;
+      WHILE suFd == 0 AND suOpt < 9 DO
+        suOpt := suOpt + 1;
+        IF suLK(suDep) == 1 THEN
+          suKk := suLW(suDep); suDd := suOpt;           // a square: the option is a digit
+        ELSE
+          suKk := suUnit((suLW(suDep) - 1) * 9 + suOpt); suDd := suLN(suDep);   // a unit: the option is a square
+        END;
+        IF suEV(suKk) == 0 THEN
+          IF suEH(suRB(suKk) + suDd) == 0 AND suEH(suCB(suKk) + suDd) == 0 AND suEH(suXB(suKk) + suDd) == 0 THEN suFd := 1; END;
+        END;
+      END;
+      IF suFd == 1 THEN
+        suEPut(suKk, suDd);
+        suLO(suDep) := suOpt; suLC(suDep) := suKk; suLD(suDep) := suDd;
+        suSS := suSS + 1; suPl := 1;
+        IF suLF(suDep) >= 2 THEN
+          suSG := suSG + 1; suInk := RGB(255,69,0); suWK(suKk) := 3;     // a guess: orange
+        ELSE
+          IF suLK(suDep) == 1 THEN
+            suSN := suSN + 1; suInk := RGB(0,140,60); suWK(suKk) := 1;   // the only digit that fits a square: green
+          ELSE
+            suSH := suSH + 1; suInk := RGB(200,0,200); suWK(suKk) := 2;  // the only square a digit fits: magenta
+          END;
+        END;
+      ELSE
+        suDep := suDep - 1;               // nothing left to try here: back up one level
+      END;
+    END;
+    IF suPl == 0 THEN
+      suGo := 0;                          // backed up past the first level: no more answers
+    ELSE
+      // the digit just written: painted (Watch), or counted, and the keys read once a step
+      IF suAnim == 1 THEN
+        suT0 := TICKS;
+        suPaintCell(suKk, suDd, suInk, RGB(255,255,255));
+        suKy := GETKEY; suMs := MOUSE;
+        IF suKy > -1 OR SIZE(suMs(1)) > 0 THEN suAnim := 0; END;    // stop painting: go to the end
+        REPEAT UNTIL TICKS - suT0 > 60;
+      ELSE
+        IF (suSS MOD 250) == 0 THEN      // a step count, so that a long search shows it is working
+          RECT_P(G0, 222, 194, 319, 217, RGB(255,255,255), RGB(255,255,255));
+          TEXTOUT_P("Steps " + suNs(suSS), G0, 224, 195, 1, RGB(90,90,90));
+          TEXTOUT_P("Esc stops it.", G0, 224, 207, 1, RGB(90,90,90));
+          IF GETKEY == 4 THEN suAbort := 1; RETURN -1; END;
+        END;
+      END;
+    END;
+  END;
+  RETURN suSols;
+END;
+
+// =====================================================================
+// THE GAME
+// suClue(k): the puzzle's clue in square k (0 = blank); suSol: its
+// answer; suUsr: the player's digits (0 where there is a clue);
+// suNote(k): square k's pencil marks, digit d as bit d (suPow(d)).
+// =====================================================================
+
+// suDigits: an 81-character text of digits as a list of 81 numbers
+// ("0" is not in "123456789", so INSTRING gives 0 for it)
+suDigits(suDgS)
+BEGIN
+  LOCAL suDgK;
+  RETURN MAKELIST(INSTRING("123456789", MID(suDgS, suDgK, 1)), suDgK, 1, 81, 1);
+END;
+
+// suShuffle: 1 to n in a random order
+suShuffle(suShN)
+BEGIN
+  LOCAL suShL, suShI, suShJ, suShT, suShK;
+  suShL := MAKELIST(suShK, suShK, 1, suShN, 1);
+  FOR suShI FROM suShN DOWNTO 2 DO
+    suShJ := IP(RANDOM * suShI) + 1;
+    suShT := suShL(suShI); suShL(suShI) := suShL(suShJ); suShL(suShJ) := suShT;
+  END;
+  RETURN suShL;
+END;
+
+// suLineMap: a random order of the 9 rows (or columns) that keeps every
+// band of three rows (or stack of three columns) together
+suLineMap()
+BEGIN
+  LOCAL suLmB, suLmW, suLmL, suLmI, suLmJ;
+  suLmB := suShuffle(3);
+  suLmL := {};
+  FOR suLmI FROM 1 TO 3 DO
+    suLmW := suShuffle(3);
+    FOR suLmJ FROM 1 TO 3 DO
+      suLmL(SIZE(suLmL) + 1) := 3 * (suLmB(suLmI) - 1) + suLmW(suLmJ);
+    END;
+  END;
+  RETURN suLmL;
+END;
+
+// suMsgSet: the lines of the message at the right (up to 9, 17
+// characters each), and their color (one color, or a list of them)
+suMsgSet(suMsL, suMsCol)
+BEGIN
+  suMsg := suMsL; suMsgC := suMsCol; suPanel := 0;
+END;
+
+// suClearHint: a hint, and the red of Check, end when the board changes
+suClearHint()
+BEGIN
+  suHintKind := 0; suHintK := 0; suHintD := 0; suHintArm := 0; suHintU := 0;
+  suWrongOn := 0;
+END;
+
+// suCountClues: how many clues the board holds
+suCountClues()
+BEGIN
+  LOCAL suCcK, suCcN;
+  suCcN := 0;
+  FOR suCcK FROM 1 TO 81 DO
+    IF suClue(suCcK) > 0 THEN suCcN := suCcN + 1; END;
+  END;
+  RETURN suCcN;
+END;
+
+// suResetPlay: a fresh board for the puzzle in suClue and suSol
+suResetPlay()
+BEGIN
+  LOCAL suRk;
+  suUsr := MAKELIST(0, suRk, 1, 81, 1);
+  suNote := suUsr;
+  suUK := {}; suUO := {}; suUN := {}; suUM := {}; suUL := 0;
+  suSel := 41; suNoteOn := 0; suPage := 1; suMode := 1;
+  suTEl := 0; suTLast := TICKS;
+  suHints := 0; suChecks := 0; suFlash := {}; suGNew := 0;
+  suClearHint();
+  suWatched := 0; suPanel := 0;
+  suGame := 1;
+END;
+
+// suNew: a new puzzle at level suNwL (1 Easy ... 4 Expert): one of the
+// base puzzles, shuffled in ways that keep its single answer: the
+// digits renamed, the rows swapped inside each band of three and the
+// bands swapped, the columns and stacks the same way, and half the
+// time the grid turned over on its diagonal. The answer is shuffled
+// the same way, so it is known at once.
+suNew(suNwL)
+BEGIN
+  LOCAL suNwI, suNwP, suNwS, suNwD, suNwR, suNwC;
+  LOCAL suNwT, suNwK, suNwR0, suNwC0, suNwO, suNwX;
+  suNwI := (suNwL - 1) * 6 + IP(RANDOM * 6) + 1;
+  suNwP := suDigits(suBP(suNwI));
+  suNwS := suDigits(suBS(suNwI));
+  suNwD := suShuffle(9);                  // digit d becomes suNwD(d)
+  suNwR := suLineMap(); suNwC := suLineMap();
+  suNwT := IP(RANDOM * 2);                // 1 = turn the grid over on its diagonal
+  suClue := MAKELIST(0, suNwK, 1, 81, 1); suSol := suClue;
+  FOR suNwK FROM 1 TO 81 DO
+    suNwR0 := suNwR(suRowOf(suNwK)); suNwC0 := suNwC(suColOf(suNwK));
+    IF suNwT == 1 THEN suNwX := suNwR0; suNwR0 := suNwC0; suNwC0 := suNwX; END;
+    suNwO := (suNwR0 - 1) * 9 + suNwC0;   // the base square that lands on square k
+    IF suNwP(suNwO) > 0 THEN suClue(suNwK) := suNwD(suNwP(suNwO)); END;
+    suSol(suNwK) := suNwD(suNwS(suNwO));
+  END;
+  suLevel := suNwL;
+  suResetPlay();
+  suMsgSet({"Tap a square, and", "then tap a digit", "on the pad above.", "", "Notes, Hint and", "Check are on the", "keys below, and", "More shows the", "rest."}, RGB(90,90,90));
+END;
+
+// suHasMark: 1 when square k has pencil mark d
+suHasMark(suHmK, suHmD)
+BEGIN
+  RETURN (IP(suNote(suHmK) / suPow(suHmD)) MOD 2);
+END;
+
+// suGlyph: pencil mark d, 3 x 5 pixels, its corner at (x, y) in G1
+suGlyph(suGlD, suGlX, suGlY, suGlC)
+BEGIN
+  LOCAL suGlI, suGlJ;
+  FOR suGlI FROM 0 TO suGlyN(suGlD) - 1 DO
+    suGlJ := suGlyS(suGlD) + 4 * suGlI;
+    LINE_P(G1, suGlX + suGlyO(suGlJ), suGlY + suGlyO(suGlJ + 1), suGlX + suGlyO(suGlJ + 2), suGlY + suGlyO(suGlJ + 3), suGlC);
+  END;
+END;
+
+// suDraw: the playing screen, made in G1 and shown at once
+//  left: the grid, 9 x 9 squares of 24 px from (2, 2)
+//  right, from x = 222: the level and the clock (y 1), the progress
+//  bar (y 13-15), the digit pad (y 18-84), Erase and Notes (y 88-105),
+//  and the message (9 lines from y 110)
+suDraw()
+BEGIN
+  LOCAL suDk, suDx, suDy, suDv, suDbg, suDink;
+  LOCAL suDn, suDi, suDcnt, suDrem, suDsv, suDd;
+  LOCAL suDsr, suDsc, suDsb, suDval, suDm, suDhr;
+  LOCAL suDhc, suDhb, suDfl, suDcol, suDbad, suDfil;
+  // the digits on the board: a clue or the player's
+  suDval := MAKELIST(suClue(suDk) + suUsr(suDk), suDk, 1, 81, 1);
+  // how often each digit stands in each row, column and box, and on the board
+  suDcnt := MAKELIST(0, suDk, 1, 243, 1);
+  suDrem := {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  suDfil := 0;
+  FOR suDk FROM 1 TO 81 DO
+    suDv := suDval(suDk);
+    IF suDv > 0 THEN
+      suDcnt(suRB(suDk) + suDv) := suDcnt(suRB(suDk) + suDv) + 1;
+      suDcnt(suCB(suDk) + suDv) := suDcnt(suCB(suDk) + suDv) + 1;
+      suDcnt(suXB(suDk) + suDv) := suDcnt(suXB(suDk) + suDv) + 1;
+      suDrem(suDv) := suDrem(suDv) + 1;
+      suDfil := suDfil + 1;
+    END;
+  END;
+  // the selected square's row, column, box and digit
+  suDsr := 0; suDsc := 0; suDsb := 0; suDsv := 0;
+  IF suSel > 0 THEN suDsr := suRowOf(suSel); suDsc := suColOf(suSel); suDsb := suBoxOf(suSel); suDsv := suDval(suSel); END;
+  // the hint's row, column or box (a unit, kind 2), or its square's three units (kind 1)
+  suDhr := 0; suDhc := 0; suDhb := 0;
+  IF suHintKind == 1 THEN suDhr := suRowOf(suHintK); suDhc := suColOf(suHintK); suDhb := suBoxOf(suHintK); END;
+  IF suHintKind == 2 THEN
+    IF suHintU <= 9 THEN suDhr := suHintU; END;
+    IF suHintU > 9 AND suHintU <= 18 THEN suDhc := suHintU - 9; END;
+    IF suHintU > 18 THEN suDhb := suHintU - 18; END;
+  END;
+  DIMGROB_P(G1, 320, 240, RGB(255,255,255));
+  FOR suDk FROM 1 TO 81 DO
+    suDv := suDval(suDk);
+    // the color of the square, the weakest first (Lessons Learned 6: deep enough for the G1)
+    suDbg := RGB(255,255,255);
+    IF suHintKind == 0 THEN               // while a hint shows, only its own row, column or box is shaded
+      IF suRowOf(suDk) == suDsr OR suColOf(suDk) == suDsc OR suBoxOf(suDk) == suDsb THEN suDbg := RGB(200,222,255); END;
+      IF suDsv > 0 AND suDv == suDsv THEN suDbg := RGB(150,195,255); END;
+    END;
+    IF suHintKind > 0 THEN
+      IF suRowOf(suDk) == suDhr OR suColOf(suDk) == suDhc OR suBoxOf(suDk) == suDhb THEN suDbg := RGB(190,235,195); END;
+    END;
+    IF SIZE(suFlash) > 0 THEN             // a row, column or box just finished
+      FOR suDi FROM 1 TO SIZE(suFlash) DO
+        suDfl := suFlash(suDi);
+        IF (suDfl <= 9 AND suRowOf(suDk) == suDfl) OR (suDfl > 9 AND suDfl <= 18 AND suColOf(suDk) == suDfl - 9) OR (suDfl > 18 AND suBoxOf(suDk) == suDfl - 18) THEN suDbg := RGB(255,215,0); END;
+      END;
+    END;
+    IF suDk == suSel THEN suDbg := RGB(255,190,100); END;
+    IF suHintKind > 0 AND suDk == suHintK THEN suDbg := RGB(110,210,120); END;
+    suDink := RGB(0,0,0);
+    IF suClue(suDk) == 0 THEN suDink := RGB(0,60,200); END;
+    IF suPanel == 1 AND suClue(suDk) == 0 THEN      // after Watch: the color of the step that put the digit there
+      IF suWK(suDk) == 1 THEN suDink := RGB(0,140,60); END;
+      IF suWK(suDk) == 2 THEN suDink := RGB(200,0,200); END;
+      IF suWK(suDk) == 3 THEN suDink := RGB(255,69,0); END;
+    END;
+    // red: the player's digit that repeats one in its row, column or box,
+    // or (after Check or a hint) a wrong one; while typing, a repeated clue
+    IF suDv > 0 AND (suClue(suDk) == 0 OR suMode == 2) THEN
+      suDbad := 0;
+      IF suDcnt(suRB(suDk) + suDv) > 1 OR suDcnt(suCB(suDk) + suDv) > 1 OR suDcnt(suXB(suDk) + suDv) > 1 THEN suDbad := 1; END;
+      IF suWrongOn == 1 AND suMode == 1 THEN
+        IF suDv <> suSol(suDk) THEN suDbad := 1; END;
+      END;
+      IF suDbad == 1 THEN suDink := RGB(210,0,0); suDbg := RGB(255,170,170); END;
+    END;
+    RECT_P(G1, suFX(suDk), suFY(suDk), suCX(suDk) + 23, suCY(suDk) + 23, suDbg, suDbg);
+    IF suDv > 0 THEN
+      TEXTOUT_P(CHAR(48 + suDv), G1, suCX(suDk) + 8, suCY(suDk) + 3, 4, suDink);
+    ELSE
+      suDm := suNote(suDk);
+      IF suDm > 0 THEN                    // pencil marks: digit d at its place in a 3 x 3 grid
+        FOR suDd FROM 1 TO 9 DO
+          IF (suDm MOD 2) == 1 THEN
+            suGlyph(suDd, suCX(suDk) + 4 + 7 * ((suDd - 1) MOD 3), suCY(suDk) + 3 + 7 * IP((suDd - 1) / 3), RGB(70,70,70));
+          END;
+          suDm := IP(suDm / 2);
+        END;
+      END;
+    END;
+  END;
+  // the lines: thin gray between squares, two pixels of black around the boxes
+  FOR suDn FROM 0 TO 9 DO
+    LINE_P(G1, 2 + 24 * suDn, 2, 2 + 24 * suDn, 218, RGB(150,150,150));
+    LINE_P(G1, 2, 2 + 24 * suDn, 218, 2 + 24 * suDn, RGB(150,150,150));
+  END;
+  FOR suDn FROM 0 TO 9 STEP 3 DO
+    LINE_P(G1, 2 + 24 * suDn, 2, 2 + 24 * suDn, 219, RGB(0,0,0));
+    LINE_P(G1, 3 + 24 * suDn, 2, 3 + 24 * suDn, 219, RGB(0,0,0));
+    LINE_P(G1, 2, 2 + 24 * suDn, 219, 2 + 24 * suDn, RGB(0,0,0));
+    LINE_P(G1, 2, 3 + 24 * suDn, 219, 3 + 24 * suDn, RGB(0,0,0));
+  END;
+  // the panel: the level and the clock, or while typing, the count of clues
+  suDcol := {RGB(0,140,60), RGB(30,144,255), RGB(255,69,0), RGB(200,0,200), RGB(90,90,90)};
+  IF suMode == 2 THEN
+    TEXTOUT_P("Typing", G1, 222, 1, 1, RGB(255,69,0));
+    TEXTOUT_P(suNs(suDfil) + " clues", G1, 264, 1, 1, RGB(90,90,90));
+  ELSE
+    TEXTOUT_P(suLvName(suLevel), G1, 222, 1, 1, suDcol(suLevel));
+    TEXTOUT_P(suTime(suTEl), G1, 274, 1, 1, RGB(90,90,90));
+  END;
+  // the progress bar: how much of the board is filled
+  RECT_P(G1, 222, 13, 317, 15, RGB(215,215,215), RGB(215,215,215));
+  IF suDfil > 0 THEN RECT_P(G1, 222, 13, 222 + IP(95 * suDfil / 81), 15, RGB(0,140,60), RGB(0,140,60)); END;
+  // the digit pad: 3 x 3 buttons; the small number is how many of that
+  // digit are still to place, and a digit placed 9 times turns gray
+  FOR suDd FROM 1 TO 9 DO
+    suDx := 222 + 33 * ((suDd - 1) MOD 3); suDy := 18 + 23 * IP((suDd - 1) / 3);
+    IF suMode == 2 THEN                   // typing: clues are black
+      RECT_P(G1, suDx, suDy, suDx + 29, suDy + 20, RGB(255,69,0), RGB(255,223,180));
+      TEXTOUT_P(CHAR(48 + suDd), G1, suDx + 10, suDy + 1, 4, RGB(0,0,0));
+    ELSE
+      IF suNoteOn == 1 THEN               // notes: a small gray digit, as a pencil mark
+        RECT_P(G1, suDx, suDy, suDx + 29, suDy + 20, RGB(0,140,60), RGB(200,235,210));
+        TEXTOUT_P(CHAR(48 + suDd), G1, suDx + 11, suDy + 4, 2, RGB(70,70,70));
+      ELSE
+        IF suDrem(suDd) >= 9 THEN
+          RECT_P(G1, suDx, suDy, suDx + 29, suDy + 20, RGB(160,160,160), RGB(215,215,215));
+          TEXTOUT_P(CHAR(48 + suDd), G1, suDx + 10, suDy + 1, 4, RGB(140,140,140));
+        ELSE
+          RECT_P(G1, suDx, suDy, suDx + 29, suDy + 20, RGB(30,144,255), RGB(205,225,255));
+          TEXTOUT_P(CHAR(48 + suDd), G1, suDx + 10, suDy + 1, 4, RGB(0,60,200));
+          TEXTOUT_P(CHAR(48 + 9 - suDrem(suDd)), G1, suDx + 22, suDy + 1, 1, RGB(90,90,90));
+        END;
+      END;
+    END;
+  END;
+  // Erase, and Notes (green while it is on)
+  RECT_P(G1, 222, 88, 262, 105, RGB(255,69,0), RGB(255,223,180));
+  TEXTOUT_P("Erase", G1, 227, 92, 1, RGB(0,0,0));
+  IF suMode == 1 THEN
+    IF suNoteOn == 1 THEN
+      RECT_P(G1, 266, 88, 317, 105, RGB(0,140,60), RGB(120,210,140));
+    ELSE
+      RECT_P(G1, 266, 88, 317, 105, RGB(90,90,90), RGB(225,225,225));
+    END;
+    TEXTOUT_P("Notes", G1, 275, 92, 1, RGB(0,0,0));
+  END;
+  // the message, or after Watch the bar chart of the solver's steps
+  IF suPanel == 1 THEN
+    suDi := MAX(1, MAX(suSN, MAX(suSH, MAX(suSG, suSU))));
+    TEXTOUT_P("Only digit " + suNs(suSN), G1, 222, 110, 1, RGB(0,140,60));
+    RECT_P(G1, 222, 122, 222 + IP(95 * suSN / suDi), 127, RGB(0,140,60), RGB(0,140,60));
+    TEXTOUT_P("Only square " + suNs(suSH), G1, 222, 130, 1, RGB(200,0,200));
+    RECT_P(G1, 222, 142, 222 + IP(95 * suSH / suDi), 147, RGB(200,0,200), RGB(200,0,200));
+    TEXTOUT_P("Guesses " + suNs(suSG), G1, 222, 150, 1, RGB(255,69,0));
+    RECT_P(G1, 222, 162, 222 + IP(95 * suSG / suDi), 167, RGB(255,69,0), RGB(255,69,0));
+    TEXTOUT_P("Taken back " + suNs(suSU), G1, 222, 170, 1, RGB(255,0,0));
+    RECT_P(G1, 222, 182, 222 + IP(95 * suSU / suDi), 187, RGB(255,0,0), RGB(255,0,0));
+    TEXTOUT_P("All steps " + suNs(suSS), G1, 222, 192, 1, RGB(90,90,90));
+    TEXTOUT_P("Tap New to play.", G1, 222, 205, 1, RGB(30,144,255));
+  ELSE
+    FOR suDi FROM 1 TO SIZE(suMsg) DO
+      IF TYPE(suMsgC) == 6 THEN
+        TEXTOUT_P(suMsg(suDi), G1, 222, 110 + 12 * (suDi - 1), 1, suMsgC(suDi));
+      ELSE
+        TEXTOUT_P(suMsg(suDi), G1, 222, 110 + 12 * (suDi - 1), 1, suMsgC);
+      END;
+    END;
+  END;
+  BLIT_P(G0, 0, 0, G1);
+  IF suMode == 2 THEN
+    DRAWMENU({"Play", "Clear", "", "Undo", "Help", "Back"});
+  ELSE
+    IF suPage == 1 THEN
+      DRAWMENU({"New", "Notes", "Hint", "Undo", "Check", "More"});
+    ELSE
+      DRAWMENU({"Watch", "Solve", "Type", "Restart", "Help", "More"});
+    END;
+  END;
+END;
+
+// suSolved: every square holds its answer
+suSolved()
+BEGIN
+  LOCAL suSvK;
+  FOR suSvK FROM 1 TO 81 DO
+    IF suClue(suSvK) + suUsr(suSvK) <> suSol(suSvK) THEN RETURN 0; END;
+  END;
+  RETURN 1;
+END;
+
+// suPush: remember a change for Undo. A record is (square, old digit,
+// new digit, peers): a digit, with the peers whose pencil mark of the
+// new digit it cleared (bit j = peer j); (k, -d, -d, 0): pencil mark d
+// turned on or off; (k, -10, -10, marks): square k's marks erased;
+// (0, -11, -11, list): every mark changed at once (the old 81 marks).
+suPush(suPsK, suPsO, suPsN, suPsM)
+BEGIN
+  IF suUL >= 300 THEN                     // keep the last 200 changes
+    suUK := SUB(suUK, 101, 300); suUO := SUB(suUO, 101, 300);
+    suUN := SUB(suUN, 101, 300); suUM := SUB(suUM, 101, 300);
+    suUL := 200;
+  END;
+  suUL := suUL + 1;
+  suUK(suUL) := suPsK; suUO(suUL) := suPsO; suUN(suUL) := suPsN; suUM(suUL) := suPsM;
+END;
+
+// suFinished: the rows, columns and boxes of square k that are now
+// full with no digit twice (they flash, in suPlay)
+suFinished(suFnK)
+BEGIN
+  LOCAL suFnU, suFnL, suFnN, suFnS, suFnV, suFnM;
+  suFnL := {};
+  FOR suFnU FROM 1 TO 3 DO
+    IF suFnU == 1 THEN suFnN := suRowOf(suFnK); END;
+    IF suFnU == 2 THEN suFnN := 9 + suColOf(suFnK); END;
+    IF suFnU == 3 THEN suFnN := 18 + suBoxOf(suFnK); END;
+    suFnM := 0;                           // the digits seen, as bits
+    FOR suFnS FROM 1 TO 9 DO
+      suFnV := suClue(suUnit((suFnN - 1) * 9 + suFnS)) + suUsr(suUnit((suFnN - 1) * 9 + suFnS));
+      IF suFnV > 0 THEN
+        IF (IP(suFnM / suPow(suFnV)) MOD 2) == 0 THEN suFnM := suFnM + suPow(suFnV); END;
+      END;
+    END;
+    IF suFnM == 511 THEN suFnL(SIZE(suFnL) + 1) := suFnN; END;
+  END;
+  RETURN suFnL;
+END;
+
+// suPlace: the player writes digit d in the selected square (with Notes
+// on, a pencil mark instead). The same digit again erases it. While
+// typing a puzzle, the digit is a clue and the next square is chosen.
+suPlace(suPlD)
+BEGIN
+  LOCAL suPlK, suPlO, suPlM, suPlJ, suPlP, suPlB;
+  suPlK := suSel;
+  IF suPlK < 1 THEN
+    suMsgSet({"Tap a square", "first, and then", "tap a digit."}, RGB(90,90,90));
+    RETURN 0;
+  END;
+  IF suMode == 2 THEN
+    suPlO := suClue(suPlK);
+    IF suPlO == suPlD THEN suPlD := 0; END;
+    suPush(suPlK, suPlO, suPlD, 0);
+    suClue(suPlK) := suPlD;
+    IF suSel < 81 THEN suSel := suSel + 1; END;
+    RETURN 1;
+  END;
+  IF suGame <> 1 THEN
+    suMsgSet({"This puzzle is", "finished. Tap New", "for another one."}, RGB(90,90,90));
+    RETURN 0;
+  END;
+  IF suClue(suPlK) > 0 THEN
+    suMsgSet({"That black digit", "is a clue, and", "clues cannot be", "changed."}, RGB(90,90,90));
+    RETURN 0;
+  END;
+  IF suNoteOn == 1 THEN
+    IF suUsr(suPlK) > 0 THEN
+      suMsgSet({"Pencil marks go", "only in empty", "squares."}, RGB(90,90,90));
+      RETURN 0;
+    END;
+    suPush(suPlK, -suPlD, -suPlD, 0);
+    IF suHasMark(suPlK, suPlD) == 1 THEN suNote(suPlK) := suNote(suPlK) - suPow(suPlD); ELSE suNote(suPlK) := suNote(suPlK) + suPow(suPlD); END;
+    suClearHint();
+    RETURN 1;
+  END;
+  suPlO := suUsr(suPlK);
+  IF suPlO == suPlD THEN suPlD := 0; END;   // the same digit again: erase it
+  // the peers' pencil marks of the new digit go (and Undo puts them back)
+  suPlM := 0; suPlB := 1;
+  IF suPlD > 0 THEN
+    FOR suPlJ FROM 1 TO 20 DO
+      suPlP := suPeer((suPlK - 1) * 20 + suPlJ);
+      IF suHasMark(suPlP, suPlD) == 1 THEN
+        suNote(suPlP) := suNote(suPlP) - suPow(suPlD);
+        suPlM := suPlM + suPlB;
+      END;
+      suPlB := suPlB * 2;
+    END;
+  END;
+  suPush(suPlK, suPlO, suPlD, suPlM);
+  suUsr(suPlK) := suPlD;
+  suClearHint();
+  suMsgSet({}, RGB(0,0,0));
+  IF suPlD > 0 THEN suFlash := suFinished(suPlK); END;
+  RETURN 1;
+END;
+
+// suErase: empty the selected square, or erase its pencil marks
+suErase()
+BEGIN
+  LOCAL suErK;
+  suErK := suSel;
+  IF suErK < 1 THEN RETURN 0; END;
+  IF suMode == 2 THEN                     // typing: a blank square, and on to the next
+    IF suClue(suErK) > 0 THEN
+      suPush(suErK, suClue(suErK), 0, 0);
+      suClue(suErK) := 0;
+    END;
+    IF suSel < 81 THEN suSel := suSel + 1; END;
+    RETURN 1;
+  END;
+  IF suGame <> 1 OR suClue(suErK) > 0 THEN RETURN 0; END;
+  IF suUsr(suErK) > 0 THEN suPlace(suUsr(suErK)); RETURN 1; END;
+  IF suNote(suErK) > 0 THEN
+    suPush(suErK, -10, -10, suNote(suErK));
+    suNote(suErK) := 0;
+    suClearHint();
+  END;
+  RETURN 1;
+END;
+
+// suUndo: take back the last change
+suUndo()
+BEGIN
+  LOCAL suUdK, suUdO, suUdN, suUdM, suUdJ, suUdP;
+  IF suUL < 1 THEN
+    suMsgSet({"There is nothing", "left to undo."}, RGB(90,90,90));
+    RETURN 0;
+  END;
+  suUdK := suUK(suUL); suUdO := suUO(suUL); suUdN := suUN(suUL); suUdM := suUM(suUL);
+  suUL := suUL - 1;
+  suUK := SUB(suUK, 1, suUL); suUO := SUB(suUO, 1, suUL); suUN := SUB(suUN, 1, suUL); suUM := SUB(suUM, 1, suUL);
+  IF suMode == 2 THEN                     // typing: a clue back as it was
+    suClue(suUdK) := suUdO;
+    suSel := suUdK;
+    RETURN 1;
+  END;
+  IF suUdN == -11 THEN                    // every pencil mark as it was
+    suNote := suUdM;
+  ELSE
+    IF suUdN == -10 THEN                  // a square's pencil marks back
+      suNote(suUdK) := suUdM;
+    ELSE
+      IF suUdN < 0 THEN                   // one pencil mark turned back
+        IF suHasMark(suUdK, -suUdN) == 1 THEN suNote(suUdK) := suNote(suUdK) - suPow(-suUdN); ELSE suNote(suUdK) := suNote(suUdK) + suPow(-suUdN); END;
+      ELSE                                // a digit: the old one back, and the peers' marks it cleared
+        suUsr(suUdK) := suUdO;
+        FOR suUdJ FROM 1 TO 20 DO
+          IF (IP(suUdM / 2^(suUdJ - 1)) MOD 2) == 1 THEN
+            suUdP := suPeer((suUdK - 1) * 20 + suUdJ);
+            IF suHasMark(suUdP, suUdN) == 0 THEN suNote(suUdP) := suNote(suUdP) + suPow(suUdN); END;
+          END;
+        END;
+      END;
+    END;
+  END;
+  IF suUdK > 0 THEN suSel := suUdK; END;
+  suClearHint();
+  suMsgSet({"Undone: your last", "change is taken", "back."}, RGB(90,90,90));
+  RETURN 1;
+END;
+
+// suPosition: the board as the player has it (clues and digits) into suEV
+suPosition()
+BEGIN
+  LOCAL suPoK;
+  suEV := MAKELIST(suClue(suPoK) + suUsr(suPoK), suPoK, 1, 81, 1);
+END;
+
+// suHint: show a square that can be worked out now, and why; pressed
+// again, fill it in. A wrong digit is shown first.
+suHint()
+BEGIN
+  LOCAL suHk, suHd, suHu, suHn, suHc;
+  IF suHintArm == 1 AND suHintK > 0 AND suSel == suHintK THEN   // the second press: fill it in
+    IF suUsr(suHintK) == 0 AND suClue(suHintK) == 0 THEN
+      suHd := suHintD;
+      suNoteOn := 0;
+      suPlace(suHd);
+      suMsgSet({"The " + CHAR(48 + suHd) + " is filled", "in for you."}, RGB(0,140,60));
+      RETURN 1;
+    END;
+  END;
+  suClearHint();
+  suHints := suHints + 1;
+  // a wrong digit first: the answer is known
+  FOR suHk FROM 1 TO 81 DO
+    IF suUsr(suHk) > 0 THEN
+      IF suUsr(suHk) <> suSol(suHk) THEN
+        suSel := suHk; suWrongOn := 1;
+        suMsgSet({"Hint: the red " + CHAR(48 + suUsr(suHk)), "in this square is", "wrong. Erase it", "(Erase, 0 or Del)", "or press Undo."}, RGB(210,0,0));
+        RETURN 1;
+      END;
+    END;
+  END;
+  suPosition();
+  IF suEInit() > 0 THEN RETURN 0; END;
+  suEBest();
+  IF suBK == 0 THEN RETURN 0; END;
+  IF suBF == 1 AND suBK == 1 THEN         // a square with one digit that fits (a naked single)
+    suHk := suBW; suHc := 0;
+    FOR suHd FROM 1 TO 9 DO
+      IF suEH(suRB(suHk) + suHd) == 0 AND suEH(suCB(suHk) + suHd) == 0 AND suEH(suXB(suHk) + suHd) == 0 THEN suHc := suHd; END;
+    END;
+    suHintKind := 1; suHintK := suHk; suHintD := suHc; suHintArm := 1; suSel := suHk;
+    suMsgSet({"Hint: only a " + CHAR(48 + suHc), "fits the green", "square, because", "its row, column", "and box hold the", "other 8 digits.", "", "Press Hint again", "to fill it in."}, RGB(0,110,40));
+    RETURN 1;
+  END;
+  IF suBF == 1 AND suBK == 2 THEN         // a row, column or box with one place for a digit (a hidden single)
+    suHu := suBW; suHd := suBN; suHc := 0;
+    FOR suHn FROM 1 TO 9 DO
+      suHk := suUnit((suHu - 1) * 9 + suHn);
+      IF suEV(suHk) == 0 THEN
+        IF suEH(suRB(suHk) + suHd) == 0 AND suEH(suCB(suHk) + suHd) == 0 AND suEH(suXB(suHk) + suHd) == 0 THEN suHc := suHk; END;
+      END;
+    END;
+    suHintKind := 2; suHintU := suHu; suHintK := suHc; suHintD := suHd; suHintArm := 1; suSel := suHc;
+    IF suHu <= 9 THEN
+      suMsgSet({"Hint: in row " + suNs(suHu) + ",", "a " + CHAR(48 + suHd) + " fits in only", "one square, the", "dark green one;", "the others have a", CHAR(48 + suHd) + " in their column", "or box.", "Press Hint again", "to fill it in."}, RGB(0,110,40));
+    ELSE
+      IF suHu <= 18 THEN
+        suMsgSet({"Hint: in column " + suNs(suHu - 9), "a " + CHAR(48 + suHd) + " fits in only", "one square, the", "dark green one;", "the others have a", CHAR(48 + suHd) + " in their row or", "box.", "Press Hint again", "to fill it in."}, RGB(0,110,40));
+      ELSE
+        suMsgSet({"Hint: in this box", "a " + CHAR(48 + suHd) + " fits in only", "one square, the", "dark green one;", "the others have a", CHAR(48 + suHd) + " in their row or", "column.", "Press Hint again", "to fill it in."}, RGB(0,110,40));
+      END;
+    END;
+    RETURN 1;
+  END;
+  // nothing is forced: offer the square with the fewest choices
+  suHk := 0; suHn := 10;
+  FOR suHd FROM 1 TO 81 DO
+    IF suEV(suHd) == 0 THEN
+      IF suEC(suHd) < suHn THEN suHn := suEC(suHd); suHk := suHd; END;
+    END;
+  END;
+  suHintKind := 1; suHintK := suHk; suHintD := suSol(suHk); suHintArm := 1; suSel := suHk;
+  suMsgSet({"No square can be", "worked out by one", "simple step now.", "The green square", "has just " + suNs(suHn), "choices.", "", "Press Hint again", "to fill it in."}, RGB(200,0,200));
+  RETURN 1;
+END;
+
+// suCheck: turn the player's wrong digits red
+suCheck()
+BEGIN
+  LOCAL suCkK, suCkN, suCkP;
+  suClearHint();
+  suCkN := 0; suCkP := 0;
+  FOR suCkK FROM 1 TO 81 DO
+    IF suUsr(suCkK) > 0 THEN
+      suCkP := suCkP + 1;
+      IF suUsr(suCkK) <> suSol(suCkK) THEN suCkN := suCkN + 1; END;
+    END;
+  END;
+  suChecks := suChecks + 1;
+  IF suCkP == 0 THEN
+    suMsgSet({"Check: you have", "not placed any", "digits yet."}, RGB(90,90,90));
+    RETURN 0;
+  END;
+  IF suCkN == 0 THEN
+    suMsgSet({"Check: all of", "your digits are", "right so far."}, RGB(0,140,60));
+  ELSE
+    suWrongOn := 1;
+    IF suCkN == 1 THEN
+      suMsgSet({"Check: 1 of your", "digits is wrong,", "and it is red.", "Erase it, or", "press Undo."}, RGB(210,0,0));
+    ELSE
+      suMsgSet({"Check: " + suNs(suCkN) + " of your", "digits are wrong,", "and they are red.", "Erase them, or", "press Undo."}, RGB(210,0,0));
+    END;
+  END;
+  RETURN 1;
+END;
+
+// suFillNotes: pencil marks for every digit that fits each empty square
+// (suFnOn = 1), or none at all (0); one Undo puts the old marks back
+suFillNotes(suFnOn)
+BEGIN
+  LOCAL suFnK, suFnD, suFnM;
+  suPush(0, -11, -11, suNote);
+  IF suFnOn == 1 THEN
+    suPosition();
+    IF suEInit() > 0 THEN RETURN 0; END;
+  END;
+  FOR suFnK FROM 1 TO 81 DO
+    suFnM := 0;
+    IF suFnOn == 1 AND suClue(suFnK) + suUsr(suFnK) == 0 THEN
+      FOR suFnD FROM 1 TO 9 DO
+        IF suEH(suRB(suFnK) + suFnD) == 0 AND suEH(suCB(suFnK) + suFnD) == 0 AND suEH(suXB(suFnK) + suFnD) == 0 THEN
+          suFnM := suFnM + suPow(suFnD);
+        END;
+      END;
+    END;
+    suNote(suFnK) := suFnM;
+  END;
+  suClearHint();
+  RETURN 1;
+END;
+
+// suBurst: fireworks over the finished board (G2 keeps the board)
+suBurst()
+BEGIN
+  LOCAL suFwF, suFwB, suFwP, suFwX, suFwY, suFwR;
+  LOCAL suFwCx, suFwCy, suFwDx, suFwDy, suFwCol, suFwT;
+  LOCAL suFwC;
+  // twelve directions, as 100 cos and 100 sin of 0, 30, ... 330 degrees
+  suFwDx := {100, 87, 50, 0, -50, -87, -100, -87, -50, 0, 50, 87};
+  suFwDy := {0, 50, 87, 100, 87, 50, 0, -50, -87, -100, -87, -50};
+  suFwCol := {RGB(255,0,0), RGB(255,140,0), RGB(255,200,0), RGB(0,170,60), RGB(0,140,220), RGB(30,90,255), RGB(200,0,200)};
+  DIMGROB_P(G2, 320, 240, RGB(255,255,255));
+  BLIT_P(G2, 0, 0, G1);
+  FOR suFwB FROM 1 TO 3 DO
+    suFwCx := 40 + IP(RANDOM * 140); suFwCy := 40 + IP(RANDOM * 120);
+    FOR suFwF FROM 1 TO 10 DO
+      suFwT := TICKS;
+      BLIT_P(G1, 0, 0, G2);
+      suFwR := 6 * suFwF;
+      FOR suFwP FROM 1 TO 12 DO
+        suFwX := suFwCx + IP(suFwR * suFwDx(suFwP) / 100);
+        suFwY := suFwCy + IP(suFwR * suFwDy(suFwP) / 100);
+        suFwC := suFwCol(1 + ((suFwP + suFwB) MOD 7));
+        RECT_P(G1, suFwX - 2, suFwY - 2, suFwX + 2, suFwY + 2, suFwC, suFwC);
+      END;
+      BLIT_P(G0, 0, 0, G1);
+      REPEAT UNTIL TICKS - suFwT > 50;
+    END;
+  END;
+  BLIT_P(G1, 0, 0, G2);
+END;
+
+// suLogGame: a puzzle that the player finished becomes one game of My
+// games (beta 2a): its level, its clues, the minutes on the clock, and
+// the Hints and Checks used. Returns the game's number, or 0 when My
+// games already holds 200 games.
+suLogGame()
+BEGIN
+  LOCAL suLgN;
+  suLgN := SIZE(suGLv);
+  IF suLgN >= 200 THEN RETURN 0; END;
+  suLgN := suLgN + 1;
+  suGLv(suLgN) := suLevel;
+  suGCl(suLgN) := suCountClues();
+  suGMn(suLgN) := ROUND(suTEl / 60000, 2);
+  suGHn(suLgN) := suHints;
+  suGCk(suLgN) := suChecks;
+  RETURN suLgN;
+END;
+
+// suCelebrate: the puzzle is done
+suCelebrate()
+BEGIN
+  LOCAL suCeT;
+  suGame := 2;
+  suGNew := suLogGame();
+  SU_SOLVED := MAKEMAT(0, 9, 9);
+  FOR suCeT FROM 1 TO 81 DO
+    SU_SOLVED(suRowOf(suCeT), suColOf(suCeT)) := suSol(suCeT);
+  END;
+  suSel := 0; suFlash := {};
+  suMsgSet({"Solved! Your time", "was " + suTime(suTEl) + ".", "", "New starts", "another puzzle."}, RGB(0,140,60));
+  suDraw();
+  suBurst();
+  RECT_P(G1, 30, 66, 290, 172, RGB(255,69,0), RGB(255,240,220));
+  TEXTOUT_P("Solved!", G1, 112, 74, 5, RGB(0,140,60));
+  TEXTOUT_P("Your time: " + suTime(suTEl), G1, 46, 104, 2, RGB(0,0,0));
+  TEXTOUT_P("Hints " + suNs(suHints) + "    Checks " + suNs(suChecks), G1, 46, 122, 2, RGB(0,0,0));
+  IF suGNew > 0 THEN
+    TEXTOUT_P("Kept as game " + suNs(suGNew) + " of My games.", G1, 46, 142, 1, RGB(0,0,0));
+  ELSE
+    TEXTOUT_P("My games is full: 200 games.", G1, 46, 142, 1, RGB(0,0,0));
+  END;
+  TEXTOUT_P("Press a key or tap to go on.", G1, 46, 156, 1, RGB(30,144,255));
+  BLIT_P(G0, 0, 0, G1);
+  suWaitAny();
+END;
+
+// suWatch: the solver fills the grid from the clues while you watch
+suWatch()
+BEGIN
+  LOCAL suWaK, suWaN;
+  suClearHint();
+  suUsr := MAKELIST(0, suWaK, 1, 81, 1);
+  suNote := suUsr;
+  suSel := 0; suFlash := {};
+  suMsgSet({"The solver at", "work:", "only digit fits", "only square fits", "a guess", "a guess taken", "back", "A key or a tap", "skips ahead."}, {RGB(90,90,90), RGB(90,90,90), RGB(0,140,60), RGB(200,0,200), RGB(255,69,0), RGB(255,0,0), RGB(255,0,0), RGB(90,90,90), RGB(90,90,90)});
+  suDraw();
+  suEV := suClue;
+  IF suEInit() > 0 THEN RETURN 0; END;
+  suWaN := suESolve(1, 1);
+  // the answer goes in, whether the search ran to the end or was stopped
+  FOR suWaK FROM 1 TO 81 DO
+    IF suClue(suWaK) == 0 THEN suUsr(suWaK) := suSol(suWaK); END;
+  END;
+  suUK := {}; suUO := {}; suUN := {}; suUM := {}; suUL := 0;
+  suGame := 2; suWatched := 1;
+  IF suWaN < 0 THEN
+    suMsgSet({"Watch stopped", "after " + suNs(suSS), "steps, and the", "answer is filled", "in for you.", "", "New starts", "another puzzle."}, RGB(90,90,90));
+  ELSE
+    suPanel := 1;                         // the bar chart of the steps
+  END;
+  RETURN 1;
+END;
+
+// suReveal: fill in the whole answer
+suReveal()
+BEGIN
+  LOCAL suRvK;
+  suClearHint();
+  FOR suRvK FROM 1 TO 81 DO
+    IF suClue(suRvK) == 0 THEN suUsr(suRvK) := suSol(suRvK); END;
+  END;
+  suUK := {}; suUO := {}; suUN := {}; suUM := {}; suUL := 0;
+  suGame := 2; suWatched := 1; suFlash := {};
+  SU_SOLVED := MAKEMAT(0, 9, 9);
+  FOR suRvK FROM 1 TO 81 DO
+    SU_SOLVED(suRowOf(suRvK), suColOf(suRvK)) := suSol(suRvK);
+  END;
+  suMsgSet({"The answer is", "filled in, and", "New starts", "another puzzle."}, RGB(90,90,90));
+END;
+
+// suStartTyping0: typing a puzzle, on the clues already in suClue
+suStartTyping0()
+BEGIN
+  LOCAL suSzK;
+  suSol := MAKELIST(0, suSzK, 1, 81, 1);
+  suUsr := suSol; suNote := suSol;
+  suUK := {}; suUO := {}; suUN := {}; suUM := {}; suUL := 0;
+  suMode := 2; suSel := 1; suNoteOn := 0; suGame := 0; suFlash := {};
+  suClearHint();
+  suMsgSet({"Type the clues:", "tap a square and", "then a digit, and", "the next square", "is chosen for", "you. Erase leaves", "a square blank.", "Tap Play when all", "the clues are in."}, RGB(90,90,90));
+END;
+
+// suStartTyping: an empty board for typing a puzzle in
+suStartTyping()
+BEGIN
+  LOCAL suStK;
+  suClue := MAKELIST(0, suStK, 1, 81, 1);
+  suStartTyping0();
+END;
+
+// suAsk: a question with two answers; returns 1 for the first
+suAsk(suAkT, suAkY, suAkN)
+BEGIN
+  LOCAL suAkP;
+  suAkP := 0;
+  CHOOSE(suAkP, suAkT, {suAkY, suAkN});
+  suDrain();
+  IF suAkP == 1 THEN RETURN 1; END;
+  RETURN 0;
+END;
+
+// suAccept: the clues in suClue become a game, if they have exactly one
+// answer. Returns 1 when the game starts; otherwise says why and
+// returns 0. A long check can be stopped with Esc.
+suAccept()
+BEGIN
+  LOCAL suAcN, suAcK, suAcR, suAcGo;
+  suAcN := suCountClues();
+  IF suAcN < 17 THEN
+    MSGBOX("Only " + suNs(suAcN) + " clues are in. A Sudoku needs at least 17 clues to have just one answer, so please add more.");
+    suDrain();
+    RETURN 0;
+  END;
+  suEV := suClue;
+  suAcR := suEInit();
+  IF suAcR > 0 THEN
+    MSGBOX("The " + CHAR(48 + suClue(suAcR)) + " in row " + suNs(suRowOf(suAcR)) + ", column " + suNs(suColOf(suAcR)) + " repeats a clue in its row, column or box, so one of the two is mistyped.");
+    suDrain();
+    suSel := suAcR;
+    RETURN 0;
+  END;
+  RECT_P(G0, 222, 108, 319, 216, RGB(255,255,255), RGB(255,255,255));
+  TEXTOUT_P("Checking that", G0, 222, 110, 1, RGB(90,90,90));
+  TEXTOUT_P("this puzzle has", G0, 222, 122, 1, RGB(90,90,90));
+  TEXTOUT_P("exactly one", G0, 222, 134, 1, RGB(90,90,90));
+  TEXTOUT_P("answer...", G0, 222, 146, 1, RGB(90,90,90));
+  suAcN := suESolve(2, 0);
+  suAcGo := 0;
+  IF suAcN < 0 THEN                       // stopped with Esc
+    IF suSols >= 1 THEN
+      IF suAsk("Play without the check?", "Play (not checked)", "Back to the clues") == 1 THEN suAcGo := 1; END;
+    END;
+    IF suAcGo == 0 THEN
+      suMsgSet({"The check was", "stopped. Tap Play", "to try again."}, RGB(90,90,90));
+      RETURN 0;
+    END;
+  END;
+  IF suAcN == 0 THEN
+    MSGBOX("These clues have no answer: they cannot all be kept at once. Please check them against the paper.");
+    suDrain();
+    RETURN 0;
+  END;
+  IF suAcN >= 2 THEN
+    MSGBOX("These clues have more than one answer, so a clue may be missing. Please check them against the paper.");
+    suDrain();
+    RETURN 0;
+  END;
+  suSol := suSol1;
+  M9 := MAKEMAT(0, 9, 9);                 // the typed puzzle is kept in M9
+  FOR suAcK FROM 1 TO 81 DO
+    M9(suRowOf(suAcK), suColOf(suAcK)) := suClue(suAcK);
+  END;
+  suLevel := 5;
+  suResetPlay();
+  IF suAcGo == 1 THEN
+    suMsgSet({"Not checked for a", "second answer, so", "the first answer", "found is used,", "and the puzzle is", "kept in M9.", "Good luck!"}, RGB(90,90,90));
+  ELSE
+    suMsgSet({"Your puzzle has", "exactly one", "answer, and it is", "kept in M9.", "Good luck!"}, RGB(0,140,60));
+  END;
+  RETURN 1;
+END;
+
+// suFromM9: the puzzle in matrix M9 (9 x 9, 0 = a blank square) into
+// suClue. Returns 1, or 0 with a sentence that says what is wrong.
+suFromM9()
+BEGIN
+  LOCAL suMOk, suMDims, suMK, suMV, suMC;
+  suMOk := 0;
+  IFERR
+    suMDims := SIZE(M9);
+    IF SIZE(suMDims) == 2 THEN
+      IF suMDims(1) == 9 AND suMDims(2) == 9 THEN suMOk := 1; END;
+    END;
+  THEN
+    suMOk := 0;
+  END;
+  IF suMOk == 0 THEN
+    MSGBOX("M9 must hold 9 rows and 9 columns, with 0 for each blank square. Type the puzzle in instead, or fill M9 first.");
+    suDrain();
+    RETURN 0;
+  END;
+  suMC := MAKELIST(0, suMK, 1, 81, 1);
+  FOR suMK FROM 1 TO 81 DO
+    suMV := M9(suRowOf(suMK), suColOf(suMK));
+    IF suMV < 0 OR suMV > 9 OR suMV <> IP(suMV) THEN
+      MSGBOX("Row " + suNs(suRowOf(suMK)) + ", column " + suNs(suColOf(suMK)) + " of M9 holds a number that is not a whole number from 0 to 9.");
+      suDrain();
+      RETURN 0;
+    END;
+    suMC(suMK) := suMV;
+  END;
+  suClue := suMC;
+  RETURN 1;
+END;
+
+// suHelpFrom: the help pages, from page suHfP on. A key or a tap turns
+// the page, Left goes back, Esc leaves.
+suHelpFrom(suHfP)
+BEGIN
+  LOCAL suHpP, suHpI, suHpK, suHpN, suHpT;
+  suHpN := SIZE(suHelpT);
+  suHpP := suHfP;
+  WHILE suHpP >= 1 AND suHpP <= suHpN DO
+    DIMGROB_P(G1, 320, 240, RGB(255,255,255));
+    RECT_P(G1, 0, 0, 319, 20, RGB(0,60,200), RGB(0,60,200));
+    TEXTOUT_P(suHelpH(suHpP), G1, 8, 3, 2, RGB(255,255,255));
+    TEXTOUT_P(suNs(suHpP) + "/" + suNs(suHpN), G1, 288, 5, 1, RGB(255,255,255));
+    suHpT := suHelpT(suHpP);
+    FOR suHpI FROM 1 TO SIZE(suHpT) DO
+      TEXTOUT_P(suHpT(suHpI), G1, 8, 26 + 15 * (suHpI - 1), 2, RGB(0,0,0));
+    END;
+    TEXTOUT_P("A key or a tap: next    Left: back    Esc: done", G1, 8, 226, 1, RGB(30,144,255));
+    BLIT_P(G0, 0, 0, G1);
+    suHpK := suWaitAny();
+    IF suHpK == 4 THEN
+      suHpP := 0;
+    ELSE
+      IF suHpK == 7 OR suHpK == 2 THEN suHpP := MAX(1, suHpP - 1); ELSE suHpP := suHpP + 1; END;
+    END;
+  END;
+END;
+
+// suHelp: the help pages from the first
+suHelp()
+BEGIN
+  suHelpFrom(1);
+END;
+
+// suBusy: 1 when a game has digits, marks or clues that would be lost
+suBusy()
+BEGIN
+  IF suMode == 2 THEN
+    IF suCountClues() > 0 THEN RETURN 1; END;
+    RETURN 0;
+  END;
+  IF suGame == 1 AND suUL > 0 THEN RETURN 1; END;
+  RETURN 0;
+END;
+
+// suPickNew: choose a level, or typing, or M9; a game in progress is
+// left only after a question
+suPickNew()
+BEGIN
+  LOCAL suPnI;
+  suPnI := 0;
+  CHOOSE(suPnI, "New puzzle", {"Easy", "Medium", "Hard", "Expert", "Type in a puzzle", "Use the puzzle in M9"});
+  suDrain();
+  IF suPnI == 0 THEN RETURN 0; END;
+  IF suBusy() == 1 THEN
+    IF suAsk("Leave this puzzle?", "Yes, start the new one", "No, keep this one") == 0 THEN RETURN 0; END;
+  END;
+  IF suPnI <= 4 THEN suNew(suPnI); RETURN 1; END;
+  IF suPnI == 5 THEN suStartTyping(); RETURN 1; END;
+  IF suFromM9() == 1 THEN
+    IF suAccept() == 0 THEN suStartTyping0(); END;
+  END;
+  RETURN 1;
+END;
+
+// =====================================================================
+// MY GAMES (beta 2a). Game i of My games is suGLv(i), the level (1 Easy
+// ... 4 Expert, 5 typed); suGCl(i), its clues; suGMn(i), the minutes on
+// the clock; suGHn(i) and suGCk(i), the Hints and Checks used. Kept like
+// the game: file-level values stay until the program is checked or sent
+// again.
+// =====================================================================
+
+// suNice: a round step for an axis suNcR long, in about four parts: 1,
+// 2 or 5 times a power of ten (Heckbert's nice numbers)
+suNice(suNcR)
+BEGIN
+  LOCAL suNcE, suNcF;
+  IF suNcR <= 0 THEN RETURN 1; END;
+  suNcE := FLOOR(LOG(suNcR / 4));
+  suNcF := (suNcR / 4) / (10 ^ suNcE);
+  IF suNcF <= 1 THEN RETURN 10 ^ suNcE; END;
+  IF suNcF <= 2 THEN RETURN 2 * 10 ^ suNcE; END;
+  IF suNcF <= 5 THEN RETURN 5 * 10 ^ suNcE; END;
+  RETURN 10 * 10 ^ suNcE;
+END;
+
+// suTickTxt: a tick's number as text: whole when the step is whole, else
+// with one decimal; commas either way (the fleet's rule)
+suTickTxt(suTtV, suTtS)
+BEGIN
+  IF suTtS >= 1 THEN RETURN suNs(suTtV); END;
+  RETURN suCm(STRING(ROUND(suTtV, 1) + 0.0, 2, 1));
+END;
+
+// suTxtW: the width of a number's text in font 1, in pixels, from the
+// widths measured on the Virtual Calculator: 3 for a period or a comma,
+// 6 for a digit or a minus sign
+suTxtW(suTwS)
+BEGIN
+  LOCAL suTwI, suTwW, suTwC;
+  suTwW := 0;
+  FOR suTwI FROM 1 TO DIM(suTwS) DO
+    suTwC := MID(suTwS, suTwI, 1);
+    IF suTwC == "." OR suTwC == "," THEN suTwW := suTwW + 3; ELSE suTwW := suTwW + 6; END;
+  END;
+  RETURN suTwW;
+END;
+
+// suMedian: the middle value of a list of numbers (the mean of the two
+// middle values when the count is even)
+suMedian(suMdL)
+BEGIN
+  LOCAL suMdS, suMdN;
+  suMdN := SIZE(suMdL);
+  IF suMdN == 0 THEN RETURN 0; END;
+  suMdS := SORT(suMdL);
+  IF (suMdN MOD 2) == 1 THEN RETURN suMdS((suMdN + 1) / 2); END;
+  RETURN (suMdS(suMdN / 2) + suMdS(suMdN / 2 + 1)) / 2;
+END;
+
+// suGamesDraw: the My games page, made in G1. The plot: minutes up the
+// left (x = 40, from y = 186 up to y = 42) against clues across (to
+// x = 246), one square dot a game in its level's color (the board's
+// colors), and, with at least 3 games and 2 different clue counts, the
+// least-squares line and r, both from the deviations from the means in
+// a second pass. At the right, each level's color, its count, and its
+// median minutes, because a few very slow games pull a mean up.
+suGamesDraw()
+BEGIN
+  LOCAL suGdN, suGdI, suGdK, suGdC, suGdL, suGdM;
+  LOCAL suGdX0, suGdX1, suGdYm, suGdS, suGdT, suGdV;
+  LOCAL suGdP, suGdQ, suGdU, suGdMx, suGdMy, suGdB;
+  LOCAL suGdQx, suGdQy, suGdQxy, suGdA, suGdXa, suGdXb;
+  LOCAL suGdYa, suGdYb, suGdTx;
+  suGdC := {RGB(0,140,60), RGB(30,144,255), RGB(255,69,0), RGB(200,0,200), RGB(90,90,90)};
+  suGdN := SIZE(suGLv);
+  DIMGROB_P(G1, 320, 240, RGB(255,255,255));
+  RECT_P(G1, 0, 0, 319, 20, RGB(0,60,200), RGB(0,60,200));
+  TEXTOUT_P("My games: minutes against clues", G1, 8, 3, 2, RGB(255,255,255));
+  IF suGdN == 0 THEN
+    TEXTOUT_P("No games yet.", G1, 8, 28, 3, RGB(0,60,200));
+    FOR suGdI FROM 1 TO SIZE(suGames0) DO
+      TEXTOUT_P(suGames0(suGdI), G1, 8, 54 + 16 * (suGdI - 1), 2, RGB(0,0,0));
+    END;
+    RETURN 0;
+  END;
+  // the ranges: clues from one below the fewest to one above the most
+  // (at least 4 wide), minutes from 0 to a round number above the most
+  suGdX0 := suGCl(1); suGdX1 := suGCl(1); suGdYm := 1;
+  FOR suGdI FROM 1 TO suGdN DO
+    suGdX0 := MIN(suGdX0, suGCl(suGdI)); suGdX1 := MAX(suGdX1, suGCl(suGdI));
+    suGdYm := MAX(suGdYm, suGMn(suGdI));
+  END;
+  suGdX0 := suGdX0 - 1; suGdX1 := suGdX1 + 1;
+  IF suGdX1 - suGdX0 < 4 THEN suGdX0 := suGdX0 - 1; suGdX1 := suGdX1 + 1; END;
+  suGdS := suNice(suGdYm * 1.05);
+  suGdT := suGdS * CEILING(suGdYm * 1.05 / suGdS);
+  // the minutes: light grid lines, ticks and their numbers
+  suGdV := 0;
+  WHILE suGdV <= suGdT + suGdS / 1000 DO
+    suGdQ := IP(186 - suGdV * 144 / suGdT + 0.5);
+    IF suGdV > 0 THEN LINE_P(G1, 41, suGdQ, 246, suGdQ, RGB(225,225,225)); END;
+    LINE_P(G1, 37, suGdQ, 40, suGdQ, RGB(0,0,0));
+    suGdL := suTickTxt(suGdV, suGdS);
+    TEXTOUT_P(suGdL, G1, 35 - suTxtW(suGdL), suGdQ - 5, 1, RGB(0,0,0));
+    suGdV := suGdV + suGdS;
+  END;
+  // the clues: ticks and their numbers
+  suGdU := suNice(suGdX1 - suGdX0);
+  suGdV := CEILING(suGdX0 / suGdU) * suGdU;
+  WHILE suGdV <= suGdX1 DO
+    suGdP := IP(40 + (suGdV - suGdX0) * 206 / (suGdX1 - suGdX0) + 0.5);
+    LINE_P(G1, suGdP, 186, suGdP, 189, RGB(0,0,0));
+    suGdL := suNs(suGdV);
+    // a number at the corner would run into the minutes' 0, so it is left out
+    IF suGdP - IP(suTxtW(suGdL) / 2) >= 38 THEN TEXTOUT_P(suGdL, G1, suGdP - IP(suTxtW(suGdL) / 2), 190, 1, RGB(0,0,0)); END;
+    suGdV := suGdV + suGdU;
+  END;
+  LINE_P(G1, 40, 42, 40, 186, RGB(0,0,0));
+  LINE_P(G1, 40, 186, 246, 186, RGB(0,0,0));
+  TEXTOUT_P("minutes", G1, 4, 23, 1, RGB(0,0,0));
+  TEXTOUT_P("clues", G1, 131, 202, 1, RGB(0,0,0));
+  // the least-squares line and r: the means first, then the deviations
+  suGdMx := 0; suGdMy := 0;
+  FOR suGdI FROM 1 TO suGdN DO
+    suGdMx := suGdMx + suGCl(suGdI); suGdMy := suGdMy + suGMn(suGdI);
+  END;
+  suGdMx := suGdMx / suGdN; suGdMy := suGdMy / suGdN;
+  suGdQx := 0; suGdQy := 0; suGdQxy := 0;
+  FOR suGdI FROM 1 TO suGdN DO
+    suGdQx := suGdQx + (suGCl(suGdI) - suGdMx) ^ 2;
+    suGdQy := suGdQy + (suGMn(suGdI) - suGdMy) ^ 2;
+    suGdQxy := suGdQxy + (suGCl(suGdI) - suGdMx) * (suGMn(suGdI) - suGdMy);
+  END;
+  IF suGdN >= 3 AND suGdQx > 0 THEN
+    suGdB := suGdQxy / suGdQx; suGdA := suGdMy - suGdB * suGdMx;
+    // the line from the left edge to the right edge, cut where it would
+    // leave the plot at the top or the bottom
+    suGdXa := suGdX0; suGdYa := suGdA + suGdB * suGdX0;
+    suGdXb := suGdX1; suGdYb := suGdA + suGdB * suGdX1;
+    IF suGdYa < 0 THEN suGdXa := (0 - suGdA) / suGdB; suGdYa := 0; END;
+    IF suGdYa > suGdT THEN suGdXa := (suGdT - suGdA) / suGdB; suGdYa := suGdT; END;
+    IF suGdYb < 0 THEN suGdXb := (0 - suGdA) / suGdB; suGdYb := 0; END;
+    IF suGdYb > suGdT THEN suGdXb := (suGdT - suGdA) / suGdB; suGdYb := suGdT; END;
+    LINE_P(G1, IP(40 + (suGdXa - suGdX0) * 206 / (suGdX1 - suGdX0) + 0.5), IP(186 - suGdYa * 144 / suGdT + 0.5), IP(40 + (suGdXb - suGdX0) * 206 / (suGdX1 - suGdX0) + 0.5), IP(186 - suGdYb * 144 / suGdT + 0.5), RGB(90,90,90));
+    IF suGdQy > 0 THEN
+      suGdTx := "n = " + suNs(suGdN) + "      r = " + STRING(ROUND(suGdQxy / (suGdQx * suGdQy) ^ 0.5, 2) + 0.0, 2, 2);
+    ELSE
+      suGdTx := "n = " + suNs(suGdN) + "; every time is the same";
+    END;
+  ELSE
+    IF suGdN < 3 THEN
+      suGdTx := "n = " + suNs(suGdN) + "; the line and r need 3 games";
+    ELSE
+      suGdTx := "n = " + suNs(suGdN) + ", all with " + suNs(suGCl(1)) + " clues: no line";
+    END;
+  END;
+  TEXTOUT_P(suGdTx, G1, 60, 23, 1, RGB(0,0,0));
+  // the dots, over the grid and the line
+  FOR suGdI FROM 1 TO suGdN DO
+    suGdP := IP(40 + (suGCl(suGdI) - suGdX0) * 206 / (suGdX1 - suGdX0) + 0.5);
+    suGdQ := IP(186 - suGMn(suGdI) * 144 / suGdT + 0.5);
+    RECT_P(G1, suGdP - 3, suGdQ - 3, suGdP + 3, suGdQ + 3, RGB(0,0,0), suGdC(suGLv(suGdI)));
+  END;
+  // the levels: color, count, and median minutes
+  TEXTOUT_P("Median min", G1, 252, 110, 1, RGB(0,60,200));
+  suGdU := 0;
+  FOR suGdK FROM 1 TO 5 DO
+    suGdM := {};
+    FOR suGdI FROM 1 TO suGdN DO
+      IF suGLv(suGdI) == suGdK THEN suGdM(SIZE(suGdM) + 1) := suGMn(suGdI); END;
+    END;
+    RECT_P(G1, 252, 42 + 13 * (suGdK - 1), 258, 48 + 13 * (suGdK - 1), RGB(0,0,0), suGdC(suGdK));
+    TEXTOUT_P(suLvName(suGdK) + " " + suNs(SIZE(suGdM)), G1, 262, 40 + 13 * (suGdK - 1), 1, RGB(0,0,0));
+    IF SIZE(suGdM) > 0 THEN
+      suGdU := suGdU + 1;
+      TEXTOUT_P(suLvName(suGdK) + " " + suCm(STRING(ROUND(suMedian(suGdM), 1) + 0.0, 2, 1)), G1, 252, 110 + 13 * suGdU, 1, RGB(0,0,0));
+    END;
+  END;
+  RETURN suGdN;
+END;
+
+// suTo2Var: copy My games into the Statistics 2Var app: the clues to C1,
+// the minutes to C2, the level to C3, the Hints to C4 and the Checks to
+// C5. The columns are global (Lessons Learned 10), but a column does not
+// exist until the app has been opened once, so each reach goes in IFERR.
+// Asks first when any of C1 to C5 already holds data.
+suTo2Var()
+BEGIN
+  LOCAL suTvF, suTvI, suTvN;
+  suTvN := SIZE(suGLv);
+  IF suTvN == 0 THEN RETURN 0; END;
+  suTvF := 0;
+  IFERR
+    IF SIZE(C1) > 0 OR SIZE(C2) > 0 OR SIZE(C3) > 0 OR SIZE(C4) > 0 OR SIZE(C5) > 0 THEN suTvF := 1; END;
+  THEN
+    suTvF := 0;
+  END;
+  IF suTvF == 1 THEN
+    IF suAsk("Replace C1 to C5?", "Yes, put my games there", "No, keep what is there") == 0 THEN RETURN 0; END;
+  END;
+  IFERR
+    C1 := suGCl; C2 := suGMn; C3 := suGLv; C4 := suGHn; C5 := suGCk;
+  THEN
+    MSGBOX("Statistics 2Var could not take the games. Open the app once from the Apps key, and then try again.");
+    suDrain();
+    RETURN 0;
+  END;
+  DIMGROB_P(G1, 320, 240, RGB(255,255,255));
+  RECT_P(G1, 0, 0, 319, 20, RGB(0,140,60), RGB(0,140,60));
+  TEXTOUT_P("Sent to Statistics 2Var", G1, 8, 3, 2, RGB(255,255,255));
+  IF suTvN == 1 THEN
+    TEXTOUT_P("1 game is now in C1 to C5.", G1, 8, 28, 2, RGB(0,0,0));
+  ELSE
+    TEXTOUT_P(suNs(suTvN) + " games are now in C1 to C5.", G1, 8, 28, 2, RGB(0,0,0));
+  END;
+  FOR suTvI FROM 1 TO SIZE(suSent2V) DO
+    TEXTOUT_P(suSent2V(suTvI), G1, 8, 50 + 15 * (suTvI - 1), 2, RGB(0,0,0));
+  END;
+  TEXTOUT_P("Press a key or tap to go on.", G1, 8, 226, 1, RGB(30,144,255));
+  BLIT_P(G0, 0, 0, G1);
+  suWaitAny();
+  RETURN 1;
+END;
+
+// suClearGames: empty My games, after a question
+suClearGames()
+BEGIN
+  IF SIZE(suGLv) == 0 THEN RETURN 0; END;
+  IF suAsk("Clear My games?", "Yes, clear all " + suNs(SIZE(suGLv)) + " games", "No, keep them") == 1 THEN
+    suGLv := {}; suGCl := {}; suGMn := {}; suGHn := {}; suGCk := {};
+    RETURN 1;
+  END;
+  RETURN 0;
+END;
+
+// suGames: the My games page. 2Var copies the games into Statistics 2Var,
+// Clear empties My games, Help opens its help page, Back or Esc leaves.
+// With DRAWMENU on the screen a tap on its strip comes only as a click
+// (y >= 218), and a click handed over at once after a dialog is that
+// dialog's own tap (Lessons Learned 7), so it is skipped, as on the board.
+suGames()
+BEGIN
+  LOCAL suGmE, suGmW, suGmS, suGmGo;
+  suGmGo := 1;
+  WHILE suGmGo == 1 DO
+    suGamesDraw();
+    BLIT_P(G0, 0, 0, G1);
+    IF SIZE(suGLv) > 0 THEN
+      DRAWMENU({"2Var", "Clear", "", "", "Help", "Back"});
+    ELSE
+      DRAWMENU({"", "", "", "", "Help", "Back"});
+    END;
+    suGmW := TICKS;
+    suGmE := WAIT(-1);
+    suGmW := TICKS - suGmW;
+    IF TYPE(suGmE) == 6 THEN
+      IF SIZE(suGmE) >= 3 THEN
+        IF suGmE(1) == 3 AND suGmE(3) + 0.0 >= 218 THEN
+          suGmS := MIN(6, IP((suGmE(2) + 0.0) / 53.4) + 1);
+          IF suStale == 1 AND suGmW < 100 THEN suGmS := 0; END;
+          suStale := 0;
+          IF suGmS == 1 THEN suTo2Var(); END;
+          IF suGmS == 2 THEN suClearGames(); END;
+          IF suGmS == 5 THEN suHelpFrom(8); END;
+          IF suGmS == 6 THEN suGmGo := 0; END;
+        END;
+      END;
+    ELSE
+      IF suGmE == 4 THEN suGmGo := 0; END;
+      IF suGmE == 3 THEN suHelpFrom(8); END;
+    END;
+  END;
+END;
+
+// suAction: carry out one action by number (the soft keys and the
+// Enter menu share these)
+//  1 New  2 Notes  3 Hint  4 Undo  5 Check  6 More  7 Watch  8 Solve
+//  9 Type  10 Restart  11 Help  12 Fill pencil marks  13 Clear pencil
+//  marks  14 Play (typing)  15 Clear (typing)  16 Back (typing)  17 Exit
+//  18 My games (beta 2a)
+// Returns 0 to go on, 2 to leave the program.
+suAction(suAcA)
+BEGIN
+  IF suAcA == 1 THEN suPickNew(); RETURN 0; END;
+  IF suAcA == 2 THEN
+    IF suMode == 1 THEN
+      suNoteOn := 1 - suNoteOn;
+      IF suNoteOn == 1 THEN
+        suMsgSet({"Notes on: the", "digits you tap", "become pencil", "marks."}, RGB(0,110,40));
+      ELSE
+        suMsgSet({"Notes off: the", "digits you tap go", "in the square."}, RGB(90,90,90));
+      END;
+    END;
+    RETURN 0;
+  END;
+  IF suAcA == 3 THEN IF suGame == 1 THEN suHint(); END; RETURN 0; END;
+  IF suAcA == 4 THEN suUndo(); RETURN 0; END;
+  IF suAcA == 5 THEN IF suGame == 1 THEN suCheck(); END; RETURN 0; END;
+  IF suAcA == 6 THEN suPage := 3 - suPage; RETURN 0; END;
+  IF suAcA == 7 THEN
+    IF suGame == 1 THEN
+      IF suAsk("Watch the solver?", "Watch (ends this game)", "Keep playing") == 1 THEN suWatch(); END;
+    ELSE
+      IF suGame == 2 THEN suWatch(); END;
+    END;
+    RETURN 0;
+  END;
+  IF suAcA == 8 THEN
+    IF suGame == 1 THEN
+      IF suAsk("Show the answer?", "Show it (ends the game)", "Keep playing") == 1 THEN suReveal(); END;
+    END;
+    RETURN 0;
+  END;
+  IF suAcA == 9 THEN
+    IF suBusy() == 1 THEN
+      IF suAsk("Leave this puzzle?", "Yes, type a new one", "No, keep this one") == 0 THEN RETURN 0; END;
+    END;
+    suStartTyping();
+    RETURN 0;
+  END;
+  IF suAcA == 10 THEN
+    IF suGame >= 1 THEN
+      IF suAsk("Start this puzzle again?", "Erase my digits", "Keep playing") == 1 THEN
+        suResetPlay();
+        suMsgSet({"Back to the start", "of this puzzle,", "and the clock", "starts again."}, RGB(90,90,90));
+      END;
+    END;
+    RETURN 0;
+  END;
+  IF suAcA == 11 THEN suHelp(); RETURN 0; END;
+  IF suAcA == 12 THEN
+    IF suGame == 1 THEN
+      suFillNotes(1);
+      suMsgSet({"Pencil marks now", "show every digit", "that fits each", "empty square."}, RGB(90,90,90));
+    END;
+    RETURN 0;
+  END;
+  IF suAcA == 13 THEN
+    IF suGame == 1 THEN
+      suFillNotes(0);
+      suMsgSet({"All pencil marks", "are cleared."}, RGB(90,90,90));
+    END;
+    RETURN 0;
+  END;
+  IF suAcA == 14 THEN suAccept(); RETURN 0; END;
+  IF suAcA == 15 THEN
+    IF suCountClues() > 0 THEN
+      IF suAsk("Clear every clue?", "Clear the board", "Keep the clues") == 1 THEN suStartTyping(); END;
+    END;
+    RETURN 0;
+  END;
+  IF suAcA == 16 THEN suPickNew(); RETURN 0; END;
+  IF suAcA == 17 THEN RETURN 2; END;
+  IF suAcA == 18 THEN suGames(); RETURN 0; END;
+  RETURN 0;
+END;
+
+// suMenu: Enter opens every action in one list (keys other than the
+// verified ones go through Enter, Lessons Learned 6)
+suMenu()
+BEGIN
+  LOCAL suMnI, suMnA;
+  suMnI := 0;
+  IF suMode == 2 THEN
+    CHOOSE(suMnI, "Typing a puzzle", {"Play this puzzle", "Clear the board", "Undo", "Help", "Back to the puzzles", "Exit Sudoku"});
+    suDrain();
+    suMnA := {14, 15, 4, 11, 16, 17};
+  ELSE
+    CHOOSE(suMnI, "Sudoku", {"Hint", "Check my digits", "Undo", "Notes on or off", "Fill in all pencil marks", "Clear all pencil marks", "Watch the solver", "Solve it for me", "Start this puzzle again", "New puzzle", "Type in a puzzle", "My games", "Help", "Exit Sudoku"});
+    suDrain();
+    suMnA := {3, 5, 4, 2, 12, 13, 7, 8, 10, 1, 9, 18, 11, 17};
+  END;
+  IF suMnI == 0 THEN RETURN 0; END;
+  RETURN suAction(suMnA(suMnI));
+END;
+
+// suTick: add the time since the last event to the game's clock. One
+// wait counts for two minutes at most (beta 2a): WAIT(-1) gives up after
+// about a minute, so a longer gap means that the calculator was off
+suTick()
+BEGIN
+  LOCAL suTkN, suTkD;
+  suTkN := TICKS;
+  IF suGame == 1 AND suMode == 1 THEN
+    suTkD := suTkN - suTLast;
+    IF suTkD > 120000 THEN suTkD := 120000; END;
+    IF suTkD > 0 THEN suTEl := suTEl + suTkD; END;
+  END;
+  suTLast := suTkN;
+END;
+
+// suPlay: the board. WAIT(-1) brings a key code, or a list for a touch
+// (WAIT(-1)'s own table: {0,x,y} down, {1,x,y} move, {2} up, {3,x,y}
+// click). With DRAWMENU on the screen a tap on its strip (y >= 218)
+// comes only as a click, and a tap above it as {0}, {2}, {3}: the press
+// is read, its click ignored (Lessons Learned 7). WAIT(-1) gives up
+// after about a minute and answers -1: the clock is then redrawn.
+// Returns 1 for Esc (back to the first menu), 2 to leave the program.
+suPlay()
+BEGIN
+  LOCAL suPE, suPT, suPX, suPY, suPK, suPD;
+  LOCAL suPSlot, suPOut, suPDig, suPW0, suPDirty, suPIdx;
+  LOCAL suPOld;
+  suPDig := {42, 43, 44, 37, 38, 39, 32, 33, 34};   // the keys 1 to 9 (not yet verified: see the change note)
+  suPOut := 0; suPDirty := 1;
+  WHILE suPOut == 0 DO
+    suTick();
+    IF suPDirty == 1 THEN
+      suDraw();
+      IF SIZE(suFlash) > 0 THEN           // a finished row, column or box shines for a moment
+        suPW0 := TICKS;
+        REPEAT UNTIL TICKS - suPW0 > 300;
+        suFlash := {};
+        suDraw();
+      END;
+    END;
+    suPDirty := 0;
+    suPW0 := TICKS;
+    suPE := WAIT(-1);
+    suPW0 := TICKS - suPW0;               // how long the wait took (ms)
+    suTick();
+    suPOld := suSel;
+    IF TYPE(suPE) == 6 THEN
+      suPT := -1; suPX := -1; suPY := -1;
+      IF SIZE(suPE) >= 3 THEN suPT := suPE(1); suPX := suPE(2) + 0.0; suPY := suPE(3) + 0.0; END;
+      IF suPT == 3 AND suPY >= 218 THEN   // a soft key
+        suPSlot := MIN(6, IP(suPX / 53.4) + 1);
+        // a click handed over at once, just after a dialog or a held page,
+        // is that dialog's own tap, still queued (Lessons Learned 7): skip it
+        IF suStale == 1 AND suPW0 < 100 THEN suPSlot := 0; END;
+        suStale := 0;
+        IF suPSlot > 0 THEN
+          IF suMode == 2 THEN
+            suPIdx := {14, 15, 0, 4, 11, 16};
+          ELSE
+            IF suPage == 1 THEN suPIdx := {1, 2, 3, 4, 5, 6}; ELSE suPIdx := {7, 8, 9, 10, 11, 6}; END;
+          END;
+          IF suPIdx(suPSlot) > 0 THEN suPOut := suAction(suPIdx(suPSlot)); END;
+          suPDirty := 1;
+        END;
+      END;
+      IF suPT == 0 AND suPY < 218 THEN    // a press above the strip
+        suStale := 0;
+        IF suPX >= 2 AND suPX < 218 AND suPY >= 2 AND suPY < 218 THEN   // a square
+          suSel := IP((suPY - 2) / 24) * 9 + IP((suPX - 2) / 24) + 1;
+        END;
+        IF suPX >= 222 AND suPX <= 317 AND suPY >= 18 AND suPY <= 84 THEN   // the pad
+          suPD := MIN(2, IP((suPY - 18) / 23)) * 3 + MIN(2, IP((suPX - 222) / 33)) + 1;
+          suPlace(suPD);
+        END;
+        IF suPX >= 222 AND suPX <= 262 AND suPY >= 88 AND suPY <= 105 THEN suErase(); END;
+        IF suPX >= 266 AND suPX <= 317 AND suPY >= 88 AND suPY <= 105 THEN suAction(2); END;
+        suPDirty := 1;
+      END;
+    ELSE
+      IF suPE >= 0 THEN                   // a key
+        suStale := 0;
+        suPK := suPE;
+        IF suPK == 4 THEN suPOut := 1; END;                       // Esc: back to the first menu
+        IF suPK == 3 THEN suHelp(); END;                          // Help
+        IF suPK == 30 THEN suPOut := suMenu(); END;               // Enter: the menu of everything
+        IF suSel == 0 AND (suPK == 2 OR suPK == 12 OR suPK == 7 OR suPK == 8) THEN
+          suSel := 41;
+        ELSE
+          IF suPK == 2 AND suSel > 9 THEN suSel := suSel - 9; END;  // the arrows move the square
+          IF suPK == 12 AND suSel <= 72 THEN suSel := suSel + 9; END;
+          IF suPK == 7 AND (suSel MOD 9) <> 1 THEN suSel := suSel - 1; END;
+          IF suPK == 8 AND (suSel MOD 9) <> 0 THEN suSel := suSel + 1; END;
+        END;
+        IF suPK == 47 OR suPK == 19 THEN suErase(); END;          // 0 or Del: erase
+        FOR suPD FROM 1 TO 9 DO
+          IF suPK == suPDig(suPD) THEN suPlace(suPD); END;
+        END;
+      END;
+      suPDirty := 1;                      // a key, or WAIT(-1) giving up: draw again
+    END;
+    IF suSel <> suPOld AND suHintArm == 1 AND suSel <> suHintK THEN suClearHint(); END;
+    IF suPDirty == 1 AND suGame == 1 AND suMode == 1 AND suWatched == 0 THEN
+      IF suSolved() == 1 THEN suCelebrate(); END;
+    END;
+  END;
+  RETURN suPOut;
+END;
+
+// suTitle: a colorful title behind the first menu
+suTitle()
+BEGIN
+  LOCAL suTiI, suTiC, suTiL;
+  suTiC := {RGB(255,0,0), RGB(255,140,0), RGB(230,180,0), RGB(0,170,60), RGB(0,140,220), RGB(200,0,200)};
+  suTiL := {"S", "U", "D", "O", "K", "U"};
+  DIMGROB_P(G1, 320, 240, RGB(255,255,255));
+  FOR suTiI FROM 1 TO 6 DO
+    RECT_P(G1, 14 + 50 * (suTiI - 1), 6, 54 + 50 * (suTiI - 1), 46, suTiC(suTiI), suTiC(suTiI));
+    TEXTOUT_P(suTiL(suTiI), G1, 26 + 50 * (suTiI - 1), 12, 7, RGB(255,255,255));
+  END;
+  TEXTOUT_P("Play, learn, and watch a solver think", G1, 30, 54, 2, RGB(0,60,200));
+  BLIT_P(G0, 0, 0, G1);
+END;
+
+// =====================================================================
+// The program
+// =====================================================================
+EXPORT Sudoku()
+BEGIN
+  LOCAL suMain, suItems, suActs, suGo, suOut, suGmT;
+  HSeparator := 0; HFormat := 0; HAngle := 0; Entry := 0;   // Round 18: the book's four Home settings, left on
+  IF suReady <> 1 THEN suSetup(); END;
+  suStale := 0;
+  suGo := 1; suOut := 0;
+  WHILE suGo == 1 DO
+    suTitle();
+    suItems := {}; suActs := {};
+    IF suGame == 1 AND suMode == 1 THEN
+      suItems := {"Continue (" + suLvName(suLevel) + ", " + suTime(suTEl) + ")"}; suActs := {8};
+    END;
+    IF suMode == 2 THEN
+      suItems := {"Continue typing (" + suNs(suCountClues()) + " clues)"}; suActs := {8};
+    END;
+    IF SIZE(suGLv) == 0 THEN suGmT := "My games (none yet)"; ELSE suGmT := "My games (" + suNs(SIZE(suGLv)) + " so far)"; END;
+    suItems := CONCAT(suItems, {"New puzzle: Easy", "New puzzle: Medium", "New puzzle: Hard", "New puzzle: Expert", "Type in a puzzle", "Use the puzzle in M9", "How to play (Help)", suGmT});
+    suActs := CONCAT(suActs, {1, 2, 3, 4, 5, 6, 7, 9});
+    suMain := 0;
+    CHOOSE(suMain, "Sudoku", suItems);
+    suDrain();
+    IF suMain == 0 THEN
+      suGo := 0;
+    ELSE
+      suMain := suActs(suMain);
+      IF suMain == 7 THEN suHelp(); END;
+      IF suMain == 9 THEN suGames(); END;
+      IF suMain >= 1 AND suMain <= 4 THEN suNew(suMain); END;
+      IF suMain == 5 THEN suStartTyping(); END;
+      IF suMain == 6 THEN
+        IF suFromM9() == 1 THEN
+          IF suAccept() == 0 THEN suStartTyping0(); END;
+        END;
+      END;
+      IF suMain <> 7 AND suMain <> 9 AND (suGame >= 1 OR suMode == 2) THEN
+        suTLast := TICKS;                 // the clock goes on from where it stopped
+        suOut := suPlay();
+        IF suOut == 2 THEN suGo := 0; END;
+      END;
+    END;
+  END;
+  IF suGame == 1 AND suMode == 1 THEN RETURN "Sudoku: your game is kept; run Sudoku again and choose Continue to go on."; END;
+  IF suMode == 2 THEN RETURN "Sudoku: the clues you typed are kept; run Sudoku again and choose Continue."; END;
+  IF suGame == 2 AND suWatched == 0 AND suGNew > 0 THEN RETURN "Sudoku: solved in " + suTime(suTEl) + ", game " + suNs(suGNew) + " of My games. The answer is in SU_SOLVED."; END;
+  IF suGame == 2 AND suWatched == 0 THEN RETURN "Sudoku: solved in " + suTime(suTEl) + ". The answer is in SU_SOLVED."; END;
+  RETURN "Sudoku: thanks for playing.";
+END;
+
+
+// TEST ONLY (not shipped): My games with 13 games, for the directed random-use runs
+EXPORT SuMyGamesTest()
+BEGIN
+  IF suReady <> 1 THEN suSetup(); END;
+  suGLv := {1,3,4,2,4,1,2,4,4,2,3,4,5}; suGCl := {38,27,26,30,25,37,29,26,25,30,28,26,31};
+  suGMn := {11.12,18.4,21.75,14.5,23.0,10.95,13.33,20.2,22.9,15.05,17.8,26.4,14.5};
+  suGHn := {0,1,2,0,3,0,1,2,4,0,1,2,0}; suGCk := {0,0,1,1,2,0,0,1,1,0,0,3,1};
+  suGames();
+  RETURN "done";
+END;

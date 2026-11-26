@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
-"""make_starter_pack_v4.py -- builds the Virtual Calculator starter pack from programs/ (1 Nov 2026).
+"""make_starter_pack_v5.py -- builds the Virtual Calculator starter pack from programs/ (1 Nov 2026), and the bonus.
+
+v5 (26 Nov 2026): THE BONUS.  The pack also carries the programs of BONUS (below), folders of extras/ that each hold
+one <Name>_beta*.txt or <Name>_v*.txt, in a folder of their own, "Bonus (optional)/<Name>.hpprgm", beside the
+sample data: Sudoku, the book's just-for-fun program of Appendix G (Roger, 26 Nov 2026: "maybe add this as a
+bonus--"just for fun""; his choice of the Prime Loader's "More choices" for it, with the 31 Statisticles staying
+the Population).  A bonus program is built, read back and, with --checked, taken checked exactly as a program is
+(its checked file is <Name>.hpprgm in DIR beside the others), and its names join the pool that the name check
+reads, so that it can never clash with a Statisticle on the calculator; it is not in "Copy these into Prime",
+which stays the 31.  The instructions say what the folder is.
 
 v4 (1 Nov 2026): CHECKED FILES.  With --checked DIR the pack carries, for each program, the file the Virtual
 Calculator itself wrote back after the program was Checked once there: the same source plus the calculator's compiled
@@ -42,7 +51,7 @@ HOW EACH FILE IS BUILT
     of another program (all programs on a Prime share one pool of names), ignoring case as the Prime does.
 
 RUN
-  python3 tools/make_starter_pack_v4.py VER [--kit PATH] [--repo PATH] [--out PATH] [--sample CSV] [--checked DIR]
+  python3 tools/make_starter_pack_v5.py VER [--kit PATH] [--repo PATH] [--out PATH] [--sample CSV] [--checked DIR]
       VER   the pack's version, e.g. v2 (every new build of the pack gets the next number)
       --kit hp-prime-kit's folder (default: $HPKIT, then /tmp/kit/hp-prime-kit-HEAD)
       --checked  a folder of files copied back from the Virtual Calculator after each program was Checked
@@ -65,6 +74,8 @@ import zipfile
 TOOLS = os.path.dirname(os.path.abspath(__file__))
 ZIP_FOLDER = 'Copy these into Prime'
 SAMPLE_FOLDER = 'Sample data (optional)'
+BONUS_FOLDER = 'Bonus (optional)'                  # v5: the bonus programs, beside the sample data
+BONUS = ['extras/sudoku']                          # v5: each folder holds one <Name>_beta*.txt or <Name>_v*.txt
 RAW = 'https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack'
 APP_MARK = 'THIS IS AN APP'
 BASE_HPAPP = os.path.join(TOOLS, 'CentralLimit_app_base_v1.hpapp')
@@ -165,6 +176,13 @@ def main():
     progs = sorted(glob.glob(os.path.join(opt['repo'], 'programs', '*.txt')))
     if not progs:
         sys.exit('no programs in %s/programs' % opt['repo'])
+    bonus = []                                          # v5: the bonus programs, one file in each BONUS folder
+    for b in BONUS:
+        f = [p for p in glob.glob(os.path.join(opt['repo'], b, '*.txt'))
+             if re.match(r'^[A-Za-z][A-Za-z0-9]*_(beta|v)\d[^_]*\.txt$', os.path.basename(p))]
+        if len(f) != 1:
+            sys.exit('%s must hold one program file (<Name>_beta*.txt or <Name>_v*.txt); it holds %d' % (b, len(f)))
+        bonus.append(f[0])
     builtins = set()
     bfile = os.path.join(TOOLS, 'HP_Prime_Builtin_Names.txt')
     if os.path.exists(bfile):
@@ -175,7 +193,7 @@ def main():
 
     # ---- names: one per program, none clashing ----
     table, pool = [], {}
-    for p in progs:
+    for p in progs + bonus:
         stem = os.path.basename(p)[:-4]
         m = re.match(r'^(.+?)_(beta\d.*|v\d.*)$', stem)
         if not m:
@@ -184,7 +202,7 @@ def main():
         name, ver = m.group(1), m.group(2).replace('beta', 'beta ').replace('_', ' ')
         table.append({'file': p, 'stem': stem, 'name': name, 'ver': ver, 'src': src,
                       'app': APP_MARK in src[:30000], 'py': bool(re.search(r'^#PYTHON', src, re.M)),
-                      'lines': src.count('\n') + 1, 'run': main_export(src, name)})
+                      'lines': src.count('\n') + 1, 'run': main_export(src, name), 'bonus': p in bonus})
         for n in names_in(src):
             pool.setdefault(n.lower(), set()).add(name)
     seen, bad = {}, []
@@ -205,6 +223,7 @@ def main():
     work = tempfile.mkdtemp()
     dest = os.path.join(work, ZIP_FOLDER)
     os.makedirs(dest)
+    os.makedirs(os.path.join(work, BONUS_FOLDER))
     for t in table:
         if t['app']:
             if not os.path.exists(BASE_HPAPP):
@@ -217,7 +236,7 @@ def main():
             t['bytes'] = sum(os.path.getsize(os.path.join(folder, f)) for f in files)
             t['out'] = t['name'] + '.hpappdir (%s)' % ', '.join(files)
         else:
-            out = os.path.join(dest, t['name'] + '.hpprgm')
+            out = os.path.join(os.path.join(work, BONUS_FOLDER) if t['bonus'] else dest, t['name'] + '.hpprgm')
             kit(opt, 'write', t['file'], '-o', out)
             back = os.path.join(work, t['name'] + '_back.txt')
             kit(opt, 'read', out, '-o', back)
@@ -248,7 +267,7 @@ def main():
             t['checked'] = True
         t['sha'] = hashlib.sha256(norm(t['src']).encode('utf-8')).hexdigest()[:12]
         print('%-13s %-11s %6d lines  %8d bytes  %s%s  read back: same%s' % (
-            t['name'], t['ver'], t['lines'], t['bytes'], 'app' if t['app'] else 'program',
+            t['name'], t['ver'], t['lines'], t['bytes'], 'app' if t['app'] else 'bonus program' if t['bonus'] else 'program',
             ' + MicroPython' if t['py'] else '', ('  checked (+%d)' % t['block']) if t['checked'] else ''))
 
     # ---- the sample matrix (v2) ----
@@ -301,8 +320,9 @@ def main():
     open(os.path.join(opt['out'], 'README.md'), 'w', encoding='utf-8').write(
         instructions(opt['ver'], today, table, zname, plain=False, sample=sample))
     shutil.rmtree(work)
-    print('%s: %d programs and %d app, %.2f MB' % (zname, sum(1 for t in table if not t['app']),
-                                                  sum(1 for t in table if t['app']), os.path.getsize(zpath) / 1e6))
+    print('%s: %d programs and %d app, and %d bonus program, %.2f MB' % (
+        zname, sum(1 for t in table if not t['app'] and not t['bonus']), sum(1 for t in table if t['app']),
+        sum(1 for t in table if t['bonus']), os.path.getsize(zpath) / 1e6))
     print('README.md written in %s' % opt['out'])
 
 
@@ -310,6 +330,8 @@ def instructions(ver, today, table, zname, plain, sample=None):
     """The student's instructions: READ_ME_FIRST.txt (plain) or starter-pack/README.md (Markdown)."""
     hd = (lambda s: s.upper()) if plain else (lambda s: '### ' + s)
     c = (lambda s: s) if plain else (lambda s: '`' + s + '`')
+    bon = [t for t in table if t.get('bonus')]                 # v5: the bonus programs, told apart from the 31
+    table = [t for t in table if not t.get('bonus')]
     app = [t for t in table if t['app']]
     py = [t['name'] for t in table if t['py']]
     L = []
@@ -319,7 +341,7 @@ def instructions(ver, today, table, zname, plain, sample=None):
               'https://github.com/metcalfdds/hp-prime-statistics', '']
     else:
         L += ['# Starter pack for the Virtual Calculator', '',
-              '*%s, %s. Built by `tools/make_starter_pack_v4.py` from `programs/`; do not edit this page by hand.*'
+              '*%s, %s. Built by `tools/make_starter_pack_v5.py` from `programs/` and `extras/sudoku/`; do not edit this page by hand.*'
               % (ver, today), '',
               'All %d programs in one zip, ready for the free **HP Prime Virtual Calculator** on a Windows PC: '
               'no Connectivity Kit, no copying and pasting. Download **[%s](%s/%s)** (one file).'
@@ -336,7 +358,7 @@ def instructions(ver, today, table, zname, plain, sample=None):
           '2. Open the unzipped folder %s and copy everything in it into that Prime folder.' % c(ZIP_FOLDER)
           + ' The calculator must be closed while you copy: it reads its folder only when it starts.',
           '3. Start the Virtual Calculator. Shift, then Program (the Program Catalog) lists the programs.', '']
-    if all(t.get('checked') for t in table):
+    if all(t.get('checked') for t in table + bon):
         L += [hd('Run a program'),
               '- In the Program Catalog, tap the program, then tap Run. Or type its name in Home (the list below)'
               ' and press Enter. Nothing to check or compile first: every file in this pack was checked on the'
@@ -359,6 +381,7 @@ def instructions(ver, today, table, zname, plain, sample=None):
     L += ['- %s and %s carry MicroPython. They work the same way: the Virtual Calculator has the'
           ' calculator\'s own MicroPython.' % (', '.join(py[:-1]), py[-1]), '',
           ] + (dataload_lines(hd, c, sample, plain) if any(t['name'] == 'DataLoad' for t in table) else []) + [
+          ] + bonus_lines(hd, c, bon) + [
           hd('Good to know'),
           '- Windows asks before it replaces a file of the same name. Replacing it replaces that program on the'
           ' calculator.',
@@ -372,6 +395,8 @@ def instructions(ver, today, table, zname, plain, sample=None):
         for t in table:
             L += ['  %-13s %-11s %s%s' % (t['name'], t['ver'], t['run'] if not t['app'] else 'Apps > ' + t['name'],
                                           '  (MicroPython)' if t['py'] else '')]
+        for t in bon:
+            L += ['  %-13s %-11s %s  (bonus, in %s)' % (t['name'], t['ver'], t['run'], BONUS_FOLDER)]
         L += ['', 'Free for educational and personal use. (C) 2026 Roger Metcalf.']
     else:
         L += ['## What is in the pack', '',
@@ -381,11 +406,14 @@ def instructions(ver, today, table, zname, plain, sample=None):
                 t['name'], t['ver'], format(t['lines'], ','), ('`%s`' % t['run']) if not t['app'] else '(an app)',
                 '; '.join(x for x in ('app on Statistics 1Var' if t['app'] else '',
                                       'MicroPython' if t['py'] else '') if x), t['sha'])]
+        for t in bon:
+            L += ['| %s | %s | %s | `%s` | bonus, in `%s` (not one of the *Statisticles*) | `%s` |' % (
+                t['name'], t['ver'], format(t['lines'], ','), t['run'], BONUS_FOLDER, t['sha'])]
         L += ['', '*The checksum is the first 12 hex digits of SHA-256 over the program\'s source (line endings '
-              'made LF, trailing blank lines dropped): the file in `programs/` it was built from. Every file in the '
+              'made LF, trailing blank lines dropped): the file in `programs/` (or, for the bonus, `extras/sudoku/`) it was built from. Every file in the '
               'zip was read back and matched its source before the zip was written.*', '',
               '## Building it again', '',
-              '`python3 tools/make_starter_pack_v4.py v6 --kit PATH_TO_hp-prime-kit --checked FOLDER` after a '
+              '`python3 tools/make_starter_pack_v5.py v27 --kit PATH_TO_hp-prime-kit --checked FOLDER` after a '
               'program changes. The tool names each file, checks the names, builds with hp-prime-kit (MIT, '
               '[JordiRigau/hp-prime-kit](https://github.com/JordiRigau/hp-prime-kit)), builds the sample matrix '
               'from `data-loader/examples/rossi.csv`, reads every file back, and writes the zip and this page. With '
@@ -396,6 +424,21 @@ def instructions(ver, today, table, zname, plain, sample=None):
               'zip out of this folder.', '',
               '*Free for educational and personal use. © 2026 Roger Metcalf.*', '']
     return '\n'.join(L)
+
+
+def bonus_lines(hd, c, bon):
+    """v5: what the bonus folder is."""
+    if not bon:
+        return []
+    return [hd('Just for fun: the bonus'),
+            '- The folder %s holds %s, a bonus that is not one of the 31 %s: %s. Copy it into the Prime'
+            ' folder too if you want it, in the same way (calculator closed). The book tells about it in Appendix G,'
+            ' "Just for fun: Sudoku, and the statistics hiding in it".' % (
+                c(BONUS_FOLDER), ', '.join(c(t['name'] + '.hpprgm') for t in bon),
+                'Statisticles' if c('x') == 'x' else '*Statisticles*',
+                '; '.join('%s %s, a Sudoku puzzle game that keeps a record of the games you finish for a class'
+                          ' experiment' % (t['name'], t['ver']) if t['name'] == 'Sudoku' else t['name'] for t in bon)),
+            '']
 
 
 def dataload_lines(hd, c, sample, plain):

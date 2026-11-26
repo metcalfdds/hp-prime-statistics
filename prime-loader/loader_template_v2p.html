@@ -8,6 +8,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+/* PrimeLoader v2p (26 Nov 2026).  v2o's page with the bonus: under "More choices", a box for Sudoku, the book's
+   just-for-fun program (Appendix G), from starter pack v26's folder "Bonus (optional)".  Ticked, it goes with whatever
+   else is chosen (by the cable as a program goes, its source verified; on the Virtual Calculator as a file); it is in
+   no Sample and not in the Population, and the page never takes it off a calculator.  The summary under step 2 names
+   it, and the log's "Chosen:" line too.  Every other word and step is v2o's. */
 /* PrimeLoader v2o (23 Nov 2026).  v2n's page, word for word, with starter pack v25 (round 19: StatDist v2.7p and EpiStats v1.7o). */
 /* PrimeLoader v2n (22 Nov 2026).  v2m's page, word for word, with starter pack v24 (round 18: the programs set the book's four Home settings). */
 /* PrimeLoader v2m (21 Nov 2026).  Accessibility only (WCAG 2.1 AA; tools/pages_a11y_v1.js; docs/dev/pages-accessibility-2026-11-21.md).
@@ -296,7 +301,7 @@ ol.steps li > p { margin: 2px 0 0; }
     <p class="summary" id="summary" role="status"></p>
     <p class="effect why" id="effect"></p>
     <details id="more">
-      <summary>More choices: single programs, and data</summary>
+      <summary>More choices: single programs, data, and the bonus</summary>
       <div>
         <div class="choice small"><label><input type="radio" name="what" id="w_pick" value="pick">
           <span class="ctitle">Only the programs I tick</span>
@@ -313,6 +318,7 @@ ol.steps li > p { margin: 2px 0 0; }
           </div>
           <p class="why" style="margin-top:6px">Use this only if your instructor gave you a data file, or you made one with the <a href="__DATALOADER_URL__">Data Loader</a>. Its name must be M0.hpmat to M9.hpmat.</p>
         </div>
+        <div id="bonuslist"></div>
       </div>
     </details>
   </section>
@@ -557,6 +563,12 @@ async function pack() {
 // ---------- step 2: what to load ----------
 const DATAPROG = 'DataLoad';             // the program that moves a matrix into the lists: it goes wherever data goes
 const NAMES = Object.keys(CAT.programs).sort((a, b) => a.localeCompare(b));
+// v2p: the bonus (Sudoku): not one of the Statisticles, so not in NAMES (the Population, the Samples, the ticked list, or
+// the names the page may take off a calculator); it goes only when its own box is ticked.
+const BONUS = CAT.bonus || {};
+const PROGS = Object.assign({}, CAT.programs, BONUS);                      // every program the page can send
+const CHECKED = Object.assign({}, CAT.checked, CAT.bonus_checked || {});
+function bonusChosen() { return Object.keys(BONUS).filter(k => $('b_' + k) && $('b_' + k).checked); }
 const BOOKTOPS = NAMES.map(p => CAT.programs[p].file);       // every file or folder name the page can load
 function ownSample() { return state.own.some(o => o.name.toLowerCase() === CAT.data.rossi.file.toLowerCase()); }
 function dataChosen() {                  // the student's own M1 wins over the sample data set, which is M1 too
@@ -579,7 +591,7 @@ function chosen() {
 function selection() {                   // what goes on the calculator: the choice, and DataLoad when data go
   const s = new Set(chosen());
   if (dataNeedsProg()) s.add(DATAPROG);
-  return NAMES.filter(p => s.has(p));
+  return NAMES.filter(p => s.has(p)).concat(bonusChosen());
 }
 // "One chapter" on the Virtual Calculator leaves it with that chapter's programs: the book's others are moved off.
 function movesBookOff() { return state.target === 'vc' && canWrite && state.what === 'chapter' && !!chapter(); }
@@ -657,6 +669,7 @@ function refresh() {
   // either calculator (its code stays, unused, for the day it is wanted again).
   if (state.what === 'chapter') { state.what = realNow ? 'group' : 'all'; $(realNow ? 'w_group' : 'w_all').checked = true; }
   const sel = selection(), base = chosen(), data = dataChosen(), auto = dataNeedsProg(), c = chapter(), real = state.target === 'real';
+  const bon = bonusChosen();               // v2p
   // step 2's own parts
   $('proglist').hidden = state.what !== 'pick' || (fromDataLoader && state.picked.size === 0 && !listAsked);
   if (state.what === 'pick' || data.length) $('more').open = true;
@@ -672,10 +685,11 @@ function refresh() {
   else if (state.what === 'chapter') h = c ? 'Chapter ' + c.num + ', ' + esc(c.title) + ': <b>' + esc(base.join(', ')) + '</b>' : '';
   else if (state.what === 'group') h = group() ? esc(group().title) + ': <b>' + esc(base.join(', ')) + '</b>' : '';
   else h = base.length ? plural(base.length, 'program') + ' ticked' + (base.length <= 8 ? ': <b>' + esc(base.join(', ')) + '</b>' : '') : '';
-  if (!h && !data.length) h = state.what === 'chapter' ? 'Choose your chapter in the list above.' : state.what === 'group' ? 'Choose a Sample in the list above.' : (fromDataLoader && $('proglist').hidden) ? 'No data file added yet.' : 'Nothing ticked yet: tick the programs you want below.';
+  if (!h && !data.length && !bon.length) h = state.what === 'chapter' ? 'Choose your chapter in the list above.' : state.what === 'group' ? 'Choose a Sample in the list above.' : (fromDataLoader && $('proglist').hidden) ? 'No data file added yet.' : 'Nothing ticked yet: tick the programs you want below.';
   else {
-    if (!h) h = 'No program chosen';
+    if (!h) h = bon.length && !data.length ? '' : 'No program chosen';
     if (data.length) h += ', and the data <b>' + dnames + '</b>';
+    if (bon.length) h += (h ? ', and ' : '') + '<b>' + esc(bon.join(', ')) + '</b>, the bonus';
     h += '.';
     if (state.what === 'chapter' && c && CAT.always && !c.programs.includes(CAT.always)) h += ' ' + esc(CAT.always) + ', the which-test flowchart, goes with every chapter.';
     if (extra) h += ' ' + DATAPROG + ' is added because the data need it.';
@@ -704,7 +718,7 @@ function refresh() {
   $('download2').disabled = !any || !canUnpack;
   $('download3').disabled = !any || !canUnpack;
   // the cable carries programs; an app (three files) and data go by the Kit
-  const cableProgs = sel.filter(p => CAT.programs[p].src), cableRest = sel.filter(p => !CAT.programs[p].src).concat(data.map(d => d.path.replace('.hpmat', '')));
+  const cableProgs = sel.filter(p => PROGS[p].src), cableRest = sel.filter(p => !PROGS[p].src).concat(data.map(d => d.path.replace('.hpmat', '')));
   $('usbsend').disabled = cableProgs.length === 0 || !canUnpack || usbBusy;
   if (usbOn && !usbBusy) {
     $('s3rtitle').innerHTML = 'Two ways to load <i>Statisticles</i> onto a physical Prime G1 or G2 calculator';
@@ -715,14 +729,14 @@ function refresh() {
              : cableRest.length ? 'Ready to send ' + plural(cableProgs.length, 'program') + '. ' + cableRest.join(', ') + ' (an app or data) does not travel the Statisticles way: it goes by the official HP way, 2) below.' : '');
     if (cableProgs.length === 0 && any) $('kitfold').open = true;       // the Kit is then the only way
   }
-  const progs = sel.filter(p => CAT.programs[p].home);
+  const progs = sel.filter(p => PROGS[p].home);
   const listed = progs.length ? progs.join(', ') : '(choose your programs in step 2)';
   $('manualprogs').textContent = listed; $('realprogs').textContent = listed;
   $('zipname').textContent = zipName(); $('zipname3').textContent = zipName();
   $('manualapp').hidden = !sel.includes('CentralLimit'); $('realapp').hidden = !sel.includes('CentralLimit'); $('realapp2').hidden = !sel.includes('CentralLimit');
   $('manualdata').hidden = data.length === 0; $('realdata').hidden = data.length === 0;
   $('realdatanames').textContent = data.map(d => d.path).join(', ');
-  if (!progs.every(p => CAT.checked[p]))
+  if (!progs.every(p => CHECKED[p]))
     $('manualcheck').innerHTML = '<b>The first time you run each one:</b> tap its name, tap <b>Edit</b>, tap <b>Check</b> (it says "No errors in the program"), tap <b>OK</b>, press <kbd>Esc</kbd>, then tap <b>Run</b>. After that, just tap it and tap <b>Run</b>.';
 }
 
@@ -799,7 +813,7 @@ async function load(force, forcePick) {
     say('Unpacking ...');
     const pf = await pack();
     const files = [];
-    for (const p of sel) for (const f of CAT.programs[p].files) files.push({ path: f, data: pf.get(f) });
+    for (const p of sel) for (const f of PROGS[p].files) files.push({ path: f, data: pf.get(f) });
     for (const d of data) files.push({ path: d.path, data: d.src ? pf.get(d.src) : d.bytes });
     say(off ? 'Moving the book\'s other programs to the backup ...' : 'Putting aside the files about to be replaced ...');
     const paths = files.map(f => f.path);
@@ -824,9 +838,9 @@ function showDone(sel, data, b, written, off) {
   const ol = $('nextsteps'); ol.innerHTML = '';
   const li = h => { const x = document.createElement('li'); x.innerHTML = h; ol.appendChild(x); };
   li('Start the <b>HP Prime Virtual Calculator</b> (from the Start menu, or its icon on your desktop or taskbar).');
-  const progs = sel.filter(p => CAT.programs[p].home);
+  const progs = sel.filter(p => PROGS[p].home);
   if (progs.length) {
-    const ready = progs.every(p => CAT.checked[p]);
+    const ready = progs.every(p => CHECKED[p]);
     li('Press <kbd>Shift</kbd>, then <kbd>Program</kbd> (the <kbd>1</kbd> key). This opens the <b>Program Catalog</b>, the calculator\'s list of programs. ' +
        (progs.length <= 8 ? 'Yours are: <b>' + esc(progs.join(', ')) + '</b>.' : 'Your programs are all listed there.') +
        (ready ? ' Tap the one you want, then tap <b>Run</b> at the bottom right, and that is all there is to it.' : ''));
@@ -859,7 +873,7 @@ async function download(statusId) {
   st.textContent = 'Making the file ...';
   try {
     const pf = await pack(), files = [];
-    for (const p of selection()) for (const f of CAT.programs[p].files) files.push({ name: f, data: pf.get(f) });
+    for (const p of selection()) for (const f of PROGS[p].files) files.push({ name: f, data: pf.get(f) });
     for (const d of dataChosen()) files.push({ name: d.path, data: d.src ? pf.get(d.src) : d.bytes });
     const z = DLCore.zip(files), name = zipName();
     const a = document.createElement('a');
@@ -889,7 +903,7 @@ function usbLine(text, at) {              // one line of the details, with the s
 }
 // The program's text, exactly as its file in the pack holds it: where it lies in the file was found when the page was built.
 function sourceOf(pf, name) {
-  const p = CAT.programs[name], b = pf.get(p.files[0]);
+  const p = PROGS[name], b = pf.get(p.files[0]);
   return PrimeUSB.fromUtf16le(b.subarray(p.src[0], p.src[1])).replace(/\u0000+$/, '');
 }
 const USB_MARK = { send: '→', check: '…', ok: '✓', bad: '✗', wait: '·' };
@@ -911,7 +925,7 @@ async function usbSend() {
   let port = null, lost = null;
   try {
     const sel = selection(), data = dataChosen();
-    const names = sel.filter(p => CAT.programs[p].src), rest = sel.filter(p => !CAT.programs[p].src).concat(data.map(x => x.path.replace('.hpmat', '')));
+    const names = sel.filter(p => PROGS[p].src), rest = sel.filter(p => !PROGS[p].src).concat(data.map(x => x.path.replace('.hpmat', '')));
     if (names.length === 0) { usbSay('There is no program in your choice that can go down the cable.', 'bad'); return; }
     usbShown = names.join();
     usbSay('Looking for the calculator ... If the browser shows a small window, click the calculator\'s name in it, then Connect.');
@@ -952,7 +966,7 @@ async function usbSend() {
     usbLog.push('Browser: ' + navigator.userAgent);
     usbLog.push('Device: ' + (PrimeUSB.MODELS[d.productId] || 'not a model this page knows') + ' (USB ' + ('000' + d.vendorId.toString(16)).slice(-4).toUpperCase() + ':' + ('000' + d.productId.toString(16)).slice(-4).toUpperCase() +
                 '), "' + (d.productName || '') + '"; reports of ' + port.inSize + ' bytes in and ' + port.outSize + ' out, by ' + port.sizeFrom + '.');
-    usbLog.push('Chosen: ' + (state.what === 'all' ? 'all the programs' : state.what === 'chapter' ? 'Chapter ' + chapter().num : state.what === 'group' ? group().title : 'programs ticked one by one') + '; ' + plural(programs.length, 'program') + ', ' + PrimeUSB.num(total) + ' characters: ' + names.join(', ') + '.' + (rest.length ? ' Not sent this way: ' + rest.join(', ') + '.' : ''));
+    usbLog.push('Chosen: ' + (state.what === 'all' ? 'all the programs' : state.what === 'chapter' ? 'Chapter ' + chapter().num : state.what === 'group' ? group().title : 'programs ticked one by one') + (bonusChosen().length ? ', and the bonus ' + bonusChosen().join(', ') : '') + '; ' + plural(programs.length, 'program') + ', ' + PrimeUSB.num(total) + ' characters: ' + names.join(', ') + '.' + (rest.length ? ' Not sent this way: ' + rest.join(', ') + '.' : ''));
     usbLog.push('');
     $('usblog').textContent = usbLog.join('\n') + '\n';
     const link = new PrimeUSB.Link(port);
@@ -1084,6 +1098,16 @@ const mobile = /Android|iPhone|iPad|iPod/i.test(ua) || !!(uad && uad.mobile) || 
   if (h) { $('platformh').textContent = h; $('platformp').innerHTML = p; $('platform').hidden = false; }
 })();
 buildList();
+for (const k of Object.keys(BONUS)) {          // v2p: one box for each bonus program, under the data in "More choices"
+  const row = document.createElement('div'); row.className = 'datarow'; row.style.marginTop = '12px';
+  const l = document.createElement('label'), cb = document.createElement('input'), sp = document.createElement('span');
+  cb.type = 'checkbox'; cb.id = 'b_' + k; cb.addEventListener('change', refresh);
+  sp.innerHTML = 'Add <b>' + esc(k) + '</b>, just for fun: ' + esc(BONUS[k].what) + '.';
+  l.appendChild(cb); l.appendChild(document.createTextNode(' ')); l.appendChild(sp); row.appendChild(l);
+  const p = document.createElement('p'); p.className = 'why'; p.style.marginTop = '4px';
+  p.innerHTML = esc(k) + ' is a bonus, and not one of the <i>Statisticles</i>, so it goes onto the calculator only when this box is ticked, together with whatever else you choose, and this page never takes it off a calculator.';
+  row.appendChild(p); $('bonuslist').appendChild(row);
+}
 $('rossiwhat').textContent = CAT.data.rossi.what;
 $('packline').textContent = 'Program files from ' + CAT.pack + ' (' + CAT.pack_sha256 + ').';
 $('brname').textContent = browserName === 'this browser' ? 'a browser that cannot write to folders' : browserName;

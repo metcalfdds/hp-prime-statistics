@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
-"""build_loader_v2o.py -- assembles PrimeLoader_v2o.html: the page template, the loader's core, the Data Loader's core
+"""build_loader_v2p.py -- assembles PrimeLoader_v2p.html: the page template, the loader's core, the Data Loader's core
 (for its zip writer), the USB core, the chapter list, and every program file from a starter pack, embedded so the
 page works offline.
 
-    python3 build_loader_v2o.py PACK.zip [OUT.html] [--kit PATH]
+    python3 build_loader_v2p.py PACK.zip [OUT.html] [--kit PATH]
+v2p (26 Nov 2026): the bonus.  Starter pack v26 (tools/make_starter_pack_v5.py) carries Sudoku beta 2a, the book's
+just-for-fun program (Appendix G), in a folder of its own, "Bonus (optional)", checked on the Virtual Calculator.
+The page offers it under "More choices" as a box of its own (BONUS below; Roger, 26 Nov 2026, chose the Loader's
+"More choices" for it, with the 31 Statisticles staying the Population): ticked, it goes onto the calculator with
+whatever else is chosen, by the cable as a program goes (its source, verified), and on the Virtual Calculator as a
+file; it is in no Sample and not in the Population, and the page never takes it off a calculator.  Its source in
+the pack must be extras/sudoku/Sudoku_*.txt character for character, as a program's must be programs/'s.
 v2o (23 Nov 2026): v2n's page, word for word, built from starter pack v25, whose StatDist v2.7p and EpiStats v1.7o carry
 round 19 (verify/round19/README.md): StatDist's Formula page asks the CAS only with parameters that keep it quick, and
 EpiStats' stratified rates grid takes a person-time of 0, or from 1 to 100,000.  The template is v2n's with its name
@@ -178,7 +185,7 @@ KIT = os.environ.get('HPKIT', '/tmp/kit/hp-prime-kit-HEAD')
 if '--kit' in argv:
     i = argv.index('--kit'); KIT = argv[i + 1]; del argv[i:i + 2]
 PACK = argv[0]
-OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v2o.html')
+OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v2p.html')
 SITE = 'https://metcalfdds.github.io/hp-prime-statistics/'
 sys.path.insert(0, KIT)
 from hpkit import program as kitprog            # hp-prime-kit (MIT, JordiRigau/hp-prime-kit)
@@ -254,6 +261,21 @@ DATA = {
             'financial aid, age, prior convictions)'),
 }
 
+# v2p: the bonus (not one of the 31): name: (file in the pack, name on the calculator, what it is, the name to type in Home,
+# its folder in the repository).  Its version is read from that folder's file name, as a program's is from programs/.
+BONUS = {
+  'Sudoku': ('Bonus (optional)/Sudoku.hpprgm', 'Sudoku.hpprgm', 'a Sudoku puzzle game, the book\'s Appendix G', 'Sudoku',
+             'extras/sudoku'),
+}
+BONUS_VER = {}
+for _k, _v in BONUS.items():
+    _m = [re.match('^' + re.escape(_k) + r'_(beta|v)([^_]+)\.txt$', os.path.basename(_p))
+          for _p in glob.glob(os.path.join(os.path.dirname(HERE), _v[4], _k + '_*.txt'))]
+    _m = [_x for _x in _m if _x]
+    if len(_m) != 1: sys.exit('STOP: %s holds %d files for %s' % (_v[4], len(_m), _k))
+    BONUS_VER[_k] = ('beta ' + _m[0].group(2)) if _m[0].group(1) == 'beta' else 'v' + _m[0].group(2)
+    assert _k not in PROGRAMS, _k
+
 for num, title, progs, _ in CHAPTERS:
     for p in progs:
         assert p in PROGRAMS, (num, p)
@@ -284,6 +306,11 @@ if missing or extra:
     sys.exit(f'STOP: catalog and pack differ. Missing from pack: {sorted(missing)}; not in catalog: {sorted(extra)}')
 for key, (src, dst, _) in DATA.items():
     packed[dst] = zin.read(src)
+for key, v in BONUS.items():                     # v2p: the bonus, from its own folder of the pack
+    if v[0] not in zin.namelist():
+        sys.exit('STOP: the pack has no %s' % v[0])
+    assert v[1] not in packed, v[1]
+    packed[v[1]] = zin.read(v[0])
 
 def checked_file(data):
     _, _, start, _ = kitprog.read(data)
@@ -305,7 +332,7 @@ for k, v in PROGRAMS.items():
         continue
     text, _, start, end = kitprog.read(packed[v[0]])
     mine = glob.glob(os.path.join(os.path.dirname(HERE), 'programs', k + '_*.txt'))
-    # (blank space after a program's last line does not count: make_starter_pack_v4.py compares the same way, and
+    # (blank space after a program's last line does not count: make_starter_pack_v5.py compares the same way, and
     # programs/ResampLab_beta1j.txt ends in one blank line more than its checked file)
     want = kitprog.normalize_source(open(mine[0], encoding='utf-8').read()).rstrip()
     if kitprog.normalize_source(text).rstrip() != want:
@@ -314,6 +341,21 @@ for k, v in PROGRAMS.items():
         sys.exit('STOP: the offsets of %s do not give its source' % v[0])
     src_at[k] = [start, end]
     src_len[k] = len(text)
+
+# v2p: the bonus's source must be the repository's, and it travels down the cable the same way.
+bonus_src, bonus_len, bonus_checked = {}, {}, {}
+for k, v in BONUS.items():
+    text, _, start, end = kitprog.read(packed[v[1]])
+    mine = glob.glob(os.path.join(os.path.dirname(HERE), v[4], k + '_*.txt'))
+    mine = [p for p in mine if re.match('^' + re.escape(k) + r'_(beta|v)[^_]+\.txt$', os.path.basename(p))]
+    want = kitprog.normalize_source(open(mine[0], encoding='utf-8').read()).rstrip()
+    if kitprog.normalize_source(text).rstrip() != want:
+        sys.exit('STOP: the source inside %s is not %s/%s' % (v[0], v[4], os.path.basename(mine[0])))
+    if packed[v[1]][start:end].decode('utf-16-le').rstrip('\0') != text:
+        sys.exit('STOP: the offsets of %s do not give its source' % v[1])
+    bonus_src[k] = [start, end]
+    bonus_len[k] = len(text)
+    bonus_checked[k] = bool(checked_file(packed[v[1]]))
 
 # The groups (see CHAPTER_GROUPS), sized by the characters each program sends down the cable.
 def _chars(k):
@@ -362,12 +404,15 @@ catalog = {
   'always': ALWAYS_OFFERED,
   'groups': GROUPS,
   'data': {k: {'file': v[1], 'what': v[2], 'bytes': len(packed[v[1]])} for k, v in DATA.items()},
+  'bonus': {k: {'file': v[1], 'version': BONUS_VER[k], 'what': v[2], 'home': v[3], 'files': [v[1]],
+                'bytes': len(packed[v[1]]), 'src': bonus_src[k]} for k, v in BONUS.items()},
+  'bonus_checked': bonus_checked,
   'pack': os.path.basename(PACK),
-  'loader': 'v2o',
+  'loader': 'v2p',
   'pack_sha256': hashlib.sha256(open(PACK, 'rb').read()).hexdigest()[:12],
 }
 
-t = open(os.path.join(HERE, 'loader_template_v2o.html'), encoding='utf-8').read()
+t = open(os.path.join(HERE, 'loader_template_v2p.html'), encoding='utf-8').read()
 import glob as _glob
 _dl = sorted(_glob.glob(os.path.join(HERE, '..', 'data-loader', 'DataLoader_v*.html')),
              key=lambda p: [int(x) if x.isdigit() else x for x in __import__('re').split(r'(\d+)', os.path.basename(p))])
@@ -401,12 +446,14 @@ redirect = ('<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n
             '<link rel="canonical" href="' + SITE + 'prime-loader/' + page + '">\n'
             '<style>body{font:16px/1.5 system-ui,sans-serif;margin:2rem;color:#172033;background:#f6f8fb}'
             '@media (prefers-color-scheme:dark){body{color:#e8edf6;background:#0f1420}a{color:#7d9cff}}</style>\n'
-            '</head>\n<body>\n<!-- Written by build_loader_v2o.py: sends the browser on to the current Prime Loader, so the '
+            '</head>\n<body>\n<!-- Written by build_loader_v2p.py: sends the browser on to the current Prime Loader, so the '
             'address .../prime-loader/ never changes. -->\n'
             '<p>Opening the HP Prime Loader&hellip; If nothing happens, <a href="' + page + '">click here</a>.</p>\n'
             '</body>\n</html>\n')
 open(os.path.join(os.path.dirname(os.path.abspath(OUT)), 'index.html'), 'w', encoding='utf-8').write(redirect)
 print('index.html -> ' + page + '; Data Loader link: ' + DL_URL)
+print('bonus: ' + ', '.join('%s %s (%s, %d characters by the cable)' % (k, BONUS_VER[k], 'checked' if bonus_checked[k] else
+      'NOT checked', bonus_len[k]) for k in BONUS))
 print(f'checked files: {sum(checked.values())} of {len(checked)}' + ('' if all(checked.values()) else
       '  (unchecked: ' + ', '.join(k for k, c in checked.items() if not c) + ')'))
 print(f'{os.path.basename(OUT)}: {len(t.encode("utf-8")):,} bytes; {len(packed)} files embedded '
