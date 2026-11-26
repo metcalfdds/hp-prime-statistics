@@ -210,7 +210,7 @@ This says the test programs are programs to HP's own compiler, the largest inclu
 ```
 python3 tests/kit_reference_v1.py REF          # hp-prime-kit's messages, into a scratch folder
 node tests/test_usb_core_v3d.js REF             # 95 PASS, 0 FAIL   (about two minutes)
-node ../tests/test_loader_v2n.js ../PrimeLoader_v2n.html ../../starter-pack/HP_Prime_Statistics_Starter_Pack_v24.zip     # the cable is its part 13
+node ../tests/test_loader_v2p.js ../PrimeLoader_v2p.html ../../starter-pack/HP_Prime_Statistics_Starter_Pack_v26.zip     # the cable is its part 13, the bonus by cable part of 14
 ```
 
 What a pass means: the messages are the ones hp-prime-kit builds, byte for byte, for all 31 programs, and the ones hp-prime-web's tests expect; the requests and the deletes begin with the bytes the two calculators answered; the positions and the reports' numbers are the ones in the logs; the code and the mock, which were written apart, agree on the route; the calculator's clock speaking in the middle of a message, a report lost on the way, an answer that takes 3.3 s to begin, an answer left standing and a calculator left standing by an earlier page are each survived; no wait is without an end; and every one of the book's programs goes onto a pretend G1 (132,514 reports for the 31 texts in `programs/`; 128,715 for the 30 that the Loader sends, CentralLimit being an app) and a pretend G2 (8,172; 7,938) and comes back the same. What a pass does not mean: that a calculator agrees. The mock is the two calculators as far as five logs go.

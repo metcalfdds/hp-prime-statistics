@@ -1,0 +1,170 @@
+== A  the file
+PASS A1 the first line is the fleet pragma                      
+PASS A2 Home settings first in Sudoku()                         
+PASS A3 executable code is ASCII                                []
+PASS A4 suUnit = the 27 units                                   
+PASS A5 suPeer = the 20 peers of each square                    
+PASS A6 suBP and suBS = the 24 base puzzles, by level           24 puzzles
+PASS A7 no != in the code (on the Prime it is a factorial)      
+PASS A8 no string holds a quotation mark                        
+== B  the engine
+PASS B1 PPL engine = Python copy (answer, count, 5 counts)      64 of 64 runs, 30 s 
+PASS B2 answer counts = an independent brute-force solver       32 of 32
+PASS B3 sample: one answer, the published one, 51 steps, 0 undos (beta 1) (51, 0, 0, 0, 51)
+PASS B4 Easter Monster: 3823 steps, 3763 undos as in beta 1     (3238, 275, 310, 3763, 3823)
+PASS B4 Inkala 2012: 2080 steps, 2020 undos as in beta 1        (1532, 376, 172, 2020, 2080)
+PASS B4 17 clues (Royle): 64 steps, 0 undos as in beta 1        (36, 28, 0, 0, 64)
+PASS B4 anti-brute-force (Norvig): 64 steps, 0 undos as in beta 1 (40, 24, 0, 0, 64)
+PASS B5 a puzzle with two answers: 2                            28 clues
+PASS B6 a puzzle with no answer: 0                              
+PASS B7 clashing clues: the square of the second 5              ('clash', 2)
+PASS B8 counts kept by suEPut/suETake = counts made afresh      288 random moves
+== C  new puzzles
+PASS C1 400 new puzzles: a grid, its clues, one answer, the level kept []
+PASS C2 every level shows several different base puzzles        {'Easy': 11, 'Medium': 9, 'Hard': 10, 'Expert': 9}
+PASS C3 each new Easy puzzle traced back to a base puzzle       {True: 60}
+PASS C4 the grid is turned over on its diagonal in some games and not in others {1: 36, 0: 24}
+== D  the board
+PASS D1 a whole Easy game by taps: solved                       
+PASS D1 SU_SOLVED holds the answer                              
+PASS D1 the fireworks page and its lines were shown             
+PASS D1 the line returned after a solved game                   Sudoku: solved in 12:34. The answer is in SU_SOLVED.
+PASS D2 a finished row flashes gold, then the flash goes        [False, False, False, False, False, True, False, False]
+PASS D3 a digit clears its peers' marks of that digit           128
+PASS D3 Undo puts the digit's cleared marks back                
+PASS D3 Undo takes back a pencil mark                           
+PASS D3 Erase clears a square's marks                           
+PASS D3 Undo puts a square's erased marks back                  
+PASS D3 Fill in all pencil marks = every digit that fits        
+PASS D3 one Undo puts the old marks back                        
+PASS D3 Clear all pencil marks                                  
+PASS D3 one Undo puts them back                                 
+PASS D3 Undo with nothing left says so                          
+PASS D4 Hint shows a wrong digit first                          
+PASS D4 Hint on an Easy board: the only digit of the tightest square 
+PASS D4 Hint again fills it in                                  
+PASS D4 a hidden single in a row: the square, the digit, the words ['Hint: in row 2,', 'a 4 fits in only']
+PASS D4 a hidden single in a column: the square, the digit, the words ['Hint: in column 4', 'a 3 fits in only']
+PASS D4 a hidden single in a box: the square, the digit, the words ['Hint: in this box', 'a 6 fits in only']
+PASS D4 no single: Hint shows the square with the fewest choices 
+PASS D4 ...and Hint again fills in its answer                   
+PASS D4 moving the square ends the hint                         
+PASS D5 Check with no digits placed                             
+PASS D5 Check, all right                                        
+PASS D5 Check, 1 wrong                                          
+PASS D5 Check, 2 wrong                                          
+PASS D5 a clue cannot be changed                                
+PASS D5 a digit with no square chosen                           
+PASS D6 Watch Easy: the counts = the engine's, the answer in, the chart shown (43, 0, 0, 0, 43)
+PASS D6 Watch Expert: the counts = the engine's, the answer in, the chart shown (99, 21, 10, 75, 130)
+PASS D6 the chart's labels                                      
+PASS D6 Watch, Keep playing: nothing changes                    
+PASS D6 Watch, Cancel: nothing changes                          
+PASS D6 Watch: a key stops the painting, Esc then stops the search 500
+PASS D7 Solve, Keep playing: nothing changes                    
+PASS D7 Solve: the answer is filled in                          
+PASS D7 Restart, Keep playing: the digit stays                  
+PASS D7 Restart, Cancel: the digit stays                        
+PASS D7 Restart: the board is back to the clues                 
+PASS D8 Type: typing mode, square 1 chosen                      
+PASS D8 typed by taps with auto-advance and Erase: the clues    81
+PASS D8 Play: one answer, the game starts, the puzzle kept in M9 
+PASS D8 Play with 9 clues: refused with a sentence              
+PASS D8 clashing clues: refused, the square chosen              
+PASS D8 two answers: refused                                    
+PASS D8 no answer: refused                                      
+PASS D8 Esc during the check: an answer found, then Back to the clues 
+PASS D8 Esc during the check: an answer found, then Play (not checked) 
+PASS D8 Esc during the check: no answer found yet               
+PASS D8 Clear, Keep the clues                                   
+PASS D8 Clear the board                                         
+PASS D8 Undo while typing                                       
+PASS D8 Back, then Cancel: still typing                         
+PASS D8 Back, Easy, No: still typing                            
+PASS D8 Back, Easy, Yes: a new Easy game                        
+PASS D9 Use the puzzle in M9: the game starts                   
+PASS D9 M9 8 x 9: refused with a sentence                       M9 must hold 9 rows and 9 columns, with 
+PASS D9 M9 2.5: refused with a sentence                         Row 1, column 1 of M9 holds a number tha
+PASS D9 M9 10: refused with a sentence                          Row 1, column 1 of M9 holds a number tha
+PASS D10 Cancel at the first menu                               Sudoku: thanks for playing.
+PASS D10 Esc keeps the game                                     Sudoku: your game is kept; run Sudoku again and choose Continue to go on.
+PASS D10 Continue is offered first, with the level and the time ['Continue (Easy, 0:00)']
+PASS D10 the clock goes on after Continue                       
+PASS D10 leaving while typing                                   Sudoku: the clues you typed are kept; run Sudoku again and choose Continue.
+PASS D10 Continue typing is offered                             Continue typing (0 clues)
+PASS D11 Help: every page shown in turn                         12 pages
+PASS D11 Help from the board: Next, Left back, Esc              
+PASS D12 the Enter menu, Cancel                                 
+PASS D12 Notes on or off                                        
+PASS D12 Hint, Check my digits, Undo                            
+PASS D12 My games (beta 2a): the page, and Esc back to the board 
+PASS D12 Help                                                   
+PASS D12 New puzzle, Cancel                                     
+PASS D12 Exit Sudoku: suPlay answers 2                          2.0
+PASS D12 typing menu: Exit Sudoku                               
+PASS D12 typing menu: Cancel, Help                              
+PASS D13 Up and Left at square 1 stay                           
+PASS D13 Down and Right at square 81 stay                       
+PASS D13 an arrow with no square chosen picks the middle        
+PASS D13 a digit key places its digit                           
+PASS D13 the 0 key erases                                       
+PASS D13 Del erases                                             
+PASS D13 WAIT(-1) giving up (-1): a redraw, nothing else        
+PASS D14 a click queued behind a dialog is skipped              
+PASS D14 the same click 200 ms later is the student's           
+PASS D15 New, Medium, No: the game stays                        
+PASS D15 New, Medium, Cancel: the game stays                    
+PASS D15 New, Medium, Yes: a Medium game                        
+PASS D15 Type on a fresh game: no question                      
+PASS D15 Type, No: the game stays                               
+PASS D15 the Notes button turns Notes on                        
+PASS D15 a pencil mark in a filled square is refused            
+PASS D15 a digit on a finished board                            
+== D16  My games and the clock (beta 2a)
+PASS D16 a finished game is kept: level, clues, minutes, Hints, Checks ([1], [38], 0.97, 57962.0)
+PASS D16 the fireworks page says where the game went            
+PASS D16 Hints and Checks are counted into the game             ([1], [1])
+PASS D16 Solve: the game is not kept                            
+PASS D16 Watch: the game is not kept                            
+PASS D16 a typed puzzle, finished: level 5 (typed)              [5]
+PASS D16 My games full (200): the game is not kept, and the page says so 
+PASS D16 the clock leaves out the time spent in two menus (30 s each) 612.0
+PASS D16 one wait counts for two minutes at most                120613.0
+PASS D16 the first menu ends with My games (none yet), and Back returns to it My games (none yet)
+PASS D16 no games: the page says so                             
+PASS D16 Help from the page opens at the page "My games", by soft key and by key ['My games: minutes against clues', 'My games: minutes against clues', 'My games: minutes against clues', 'My games: minutes against clues', 'My games', 'My games: minutes against clues', 'My games: minutes against clues', 'My games', 'My games: minutes against clues', 'My games: minutes against clues']
+PASS D16 13 games: n and r as Python computes them              ['n = 13      r = -0.86']
+PASS D16 the least-squares line, cut at the plot's top or bottom, ends where Python puts it ([40.0, 77.0, 246.0, 149.0], [40, 77, 246, 149])
+PASS D16 13 dots, each at its game and in its level's color     (13, [(54, 76, 13107400.0), (54, 76, 13107400.0)], [(54, 76, 13107400.0), (54, 76, 13107400.0)])
+PASS D16 the counts of each level                               []
+PASS D16 the median minutes of each level                       []
+PASS D16 1 game: no line, and the page says why                 ['My games: minutes against clues', '0', '5', '10']
+PASS D16 2 games: no line, and the page says why                ['My games: minutes against clues', '0', '5', '10']
+PASS D16 four games with the same clues: no line                
+PASS D16 three games, every time the same: a flat line and no r 
+PASS D16 2Var, the columns empty: no question, and C1 to C5 hold the games 
+PASS D16 2Var: the page after the copy says what went where     
+PASS D16 2Var over data, No: the question, and C1 is kept       
+PASS D16 2Var over data, Cancel: the question, and C1 is kept   
+PASS D16 2Var over data, Yes: the games replace the columns     
+PASS D16 2Var with one game: "1 game is now in C1 to C5."       
+PASS D16 Clear, No: the games are kept                          
+PASS D16 Clear, Cancel: the games are kept                      
+PASS D16 Clear, Yes: My games is empty, and the page says so    
+PASS D16 the stale-click guard on My games: a click handed over at once after a dialog is skipped 
+PASS D16 with a game kept, My games is the 9th item, with its count ['My games (2 so far)']
+PASS D16 the line returned after a logged game                  Sudoku: solved in 12:34, game 7 of My games. The answer is in SU_SOLVED.
+== E  the text
+PASS E1 text_overlap: no firm overlap, straddle or overrun      110 distinct screens; firm {}; marginal {'overrun': 283} []
+PASS E2 every message line at most 17 characters                []
+PASS E3 every message at most 9 lines                           9
+PASS E8 every message line at most 96 px at the measured font-1 widths (x 222 to 318) 85 px: 'worked out by one'
+PASS E4 CHOOSE titles at most 31 characters, items at most 30   []
+PASS E4 beta 2a: the longest Clear item and My games item fit   
+PASS E4 the longest Continue item fits                          
+PASS E5 every MSGBOX in at most 5 lines of 30 characters        11 boxes; longest 4 lines
+PASS E6 every returned line at most 100 characters              77: Sudoku: solved in 23:59:59, game 200 of My games. The answer is in SU_SOLVED.
+PASS E7 the help pages hold at most 13 lines                    
+
+161 checks, 161 PASS, 0 FAIL
+exit 0

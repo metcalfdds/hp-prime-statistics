@@ -1,0 +1,9 @@
+Sudoku_beta2a.txt  Sudoku(): 1000 runs, 120 events each, 496 s
+  OK       1000
+EXIT 0
+
+Directed: Sudoku_beta2a_mygamestest.txt  SuMyGamesTest(), 300 runs started on My games with 13 games:
+Sudoku_beta2a_mygamestest.txt  directed runs 0..299: {'OK': 300}; the page was on the screen in 300 of them
+
+Reach: Sudoku_beta2a.txt  Sudoku(), 300 ordinary sessions:
+Sudoku_beta2a.txt  runs 0..299  verdicts {'OK': 300}  reached: mygames in 108 runs (8008 screens); nogames in 108 runs (8008 screens); kept in 0 runs (0 screens)   (162 s)

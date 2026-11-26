@@ -1,6 +1,13 @@
-// test_loader_v2o.js -- drives PrimeLoader_v2o.html in Chromium against a mock Virtual Calculator folder, and its
+// test_loader_v2p.js -- drives PrimeLoader_v2p.html in Chromium against a mock Virtual Calculator folder, and its
 // cable route (shown only at ?usb=1) against a pretend calculator that does what two real ones did on 17 Nov 2026.
-// Roger Metcalf & Claude, 18 Nov 2026.   node tests/test_loader_v2o.js PrimeLoader_v2o.html PACK.zip
+// Roger Metcalf & Claude, 18 Nov 2026.   node tests/test_loader_v2p.js PrimeLoader_v2p.html PACK.zip
+//
+// v2p (26 Nov 2026): test_loader_v2o.js with the page's new name and the new name of "More choices", and part 14, the
+// bonus: Sudoku, from starter pack v26's "Bonus (optional)", is in the catalog as a bonus and not among the 31, in no
+// Sample; under More choices it has a box of its own; ticked, it is named in the summary and goes onto the Virtual
+// Calculator with the Population (34 files) or alone (1 file), byte for byte as the pack holds it, and down the cable
+// with a Sample, its source as the pack's and as extras/sudoku/'s; the log's "Chosen:" line names it; and a later
+// Sample that does not tick it leaves it on the calculator.
 //
 // v2h (18 Nov 2026, 17:45): the cable rests the calculator after each program (these tests ask for no rest, to be
 // quick, but for the one that checks the page as it is); Advanced 1 is EpiStats alone; unplug first; a restart with
@@ -174,7 +181,7 @@ function check(name, ok, detail) {
   check('it says what Load will do to what is there: added, and what is there stays', (await page.textContent('#effect')) === 'They are added: programs already on the calculator stay.');
   check('the Virtual Calculator is offered neither a chapter nor a group', !(await page.isVisible('#chapter')) && !(await page.isVisible('#group')) && !(await page.isVisible('#w_chapter')) && !(await page.isVisible('#w_group')));
   check('single programs and data are folded away: the 31 tick boxes exist and are not shown', !(await page.isVisible('#proglist')) && !(await page.isVisible('#rossi')) &&
-        await page.locator('#proglist .prog input').count() === 31 && /More choices: single programs, and data/.test(await page.textContent('#more > summary')));
+        await page.locator('#proglist .prog input').count() === 31 && /More choices: single programs, data, and the bonus/.test(await page.textContent('#more > summary')));
   check('on Windows there is no notice at the top', !(await page.isVisible('#platform')));
   const dlHref = await page.locator('a', { hasText: 'Data Loader' }).first().getAttribute('href');
   check('the Data Loader link is the Data Loader page on GitHub Pages',
@@ -242,7 +249,7 @@ function check(name, ok, detail) {
   }, names);
   check('the Virtual Calculator loads all the programs with nothing to choose (Roger: "just make the choice of Virtual Calculator automatically load all"): step 2 shows "The Population: all 31 Statisticles" alone, no chapter and no group, with single programs and data under "More choices"',
         await page.isChecked('#w_all') && await page.isVisible('#w_all') && !(await page.isVisible('#w_chapter')) && !(await page.isVisible('#chapter')) && !(await page.isVisible('#w_group')) && !(await page.isVisible('#group')) &&
-        (await page.locator('[aria-labelledby="s2"] > .choice:visible').count()) === 1 && /More choices: single programs, and data/.test(await page.textContent('#more > summary')) &&
+        (await page.locator('[aria-labelledby="s2"] > .choice:visible').count()) === 1 && /More choices: single programs, data, and the bonus/.test(await page.textContent('#more > summary')) &&
         (await page.textContent('#effect')) === 'They are added: programs already on the calculator stay.', await page.textContent('#effect'));
   await page.click('#load');
   t = await loaded();
@@ -465,8 +472,8 @@ function check(name, ok, detail) {
   await ipg.goto('file://' + path.join(path.dirname(PAGE), 'index.html') + '?data=1');
   await ipg.waitForFunction(() => !!document.getElementById('fromdl'), null, { timeout: 15000 }).catch(() => {});
   check('index.html carries ?data=1 on to the page, so the Data Loader\'s link to the folder\'s address opens it ready for the file',
-        /PrimeLoader_v2o\.html\?data=1$/.test(ipg.url()) && await ipg.isVisible('#fromdl'), ipg.url());
-  check('... and a browser with scripts off is still sent on, by the line in noscript', /<noscript><meta http-equiv="refresh" content="0; url=PrimeLoader_v2o\.html"><\/noscript>/.test(idx));
+        /PrimeLoader_v2p\.html\?data=1$/.test(ipg.url()) && await ipg.isVisible('#fromdl'), ipg.url());
+  check('... and a browser with scripts off is still sent on, by the line in noscript', /<noscript><meta http-equiv="refresh" content="0; url=PrimeLoader_v2p\.html"><\/noscript>/.test(idx));
 
   // ---- 10. Firefox: no folder API, Firefox's user-agent ----
   const fctx = await browser.newContext({ acceptDownloads: true,
@@ -633,7 +640,7 @@ function check(name, ok, detail) {
         /went down the cable/.test(st.report[0]) && /Each download was then verified: the copy on the calculator is the same, character for character\./.test(st.report[0]) && /^To make room, the Statisticles programs that are not in your choice were taken off first \(those that were there\), and programs of your own were left where they are\. To load another Sample, choose that Sample in step 2 and click Send again\.$/.test(st.report[1]) && /^It took \d+(\.\d)? seconds\.$/.test(st.report[2]),
         JSON.stringify([st.next, st.report]));
   check('... the details name the page, the browser, the calculator and the choice; say who answered and what each program did; end in a RESULT line; and hold neither the serial number nor more than twelve bytes of any message',
-        /^HP Prime Loader, v2o, straight down the cable\. /.test(st.log) && /\nBrowser: Mozilla/.test(st.log) && /\nDevice: HP Prime G2 \(USB 03F0:2441\), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator\.\n/.test(st.log) &&
+        /^HP Prime Loader, v2p, straight down the cable\. /.test(st.log) && /\nBrowser: Mozilla/.test(st.log) && /\nDevice: HP Prime G2 \(USB 03F0:2441\), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator\.\n/.test(st.log) &&
         new RegExp('\\nChosen: Chapters 1–3; ' + ch12.length + ' programs, [\\d,]+ characters: ' + ch12.join(', ') + '\\.\\n').test(st.log) && /It answered: firmware build 15751, "V2\.060\.650", version 01\./.test(st.log) &&
         ch12.every(n => new RegExp('\\n +\\d+\\.\\d\\d  ' + n + ': [\\d,]+ characters\\.\\n').test(st.log)) && (st.log.match(/Read back the same: /g) || []).length === ch12.length &&
         new RegExp('RESULT: all ' + ch12.length + ' programs on the calculator, each read back the same\\. [\\d,]+ reports carried the programs there and back; \\d+\\.\\d s in all\\.').test(st.log) && !/SECRET|SERIAL/.test(st.log) &&
@@ -909,6 +916,79 @@ function check(name, ok, detail) {
   await u.p.check('#t_real');
   check('... and at the plain address, in a browser that cannot reach a USB device, the sentence shows too, above the Kit\'s steps',
         await u.p.isVisible('#nocable') && !(await u.p.isVisible('#cable')) && await u.p.isVisible('#download3') && u.errs.length === 0, u.errs);
+
+  // ---- 14 (v2p). the bonus, Sudoku, under "More choices" ----
+  {
+    const bonusFile = fs.readFileSync(path.join(tmp, 'Bonus (optional)', 'Sudoku.hpprgm'));
+    const B = CATALOG.bonus && CATALOG.bonus.Sudoku;
+    const bsrc = B ? bonusFile.subarray(B.src[0], B.src[1]).toString('utf16le').replace(/\0+$/, '') : '';
+    const EX = path.join(__dirname, '..', '..', 'extras', 'sudoku');
+    const exSrc = canon(fs.readFileSync(path.join(EX, fs.readdirSync(EX).find(x => /^Sudoku_beta[^_]+\.txt$/.test(x))), 'utf8'));
+    check('bonus: the catalog has Sudoku as a bonus, checked, its source in the pack the same as extras/sudoku/\'s but for the blank space at its end; it is not one of the 31 and in no Sample',
+          !!B && CATALOG.bonus_checked.Sudoku === true && B.files.length === 1 && B.files[0] === 'Sudoku.hpprgm' && canon(bsrc) === exSrc && !('Sudoku' in CATALOG.programs) &&
+          Object.keys(CATALOG.programs).length === 31 && !CATALOG.groups.some(g => g.programs.includes('Sudoku')), JSON.stringify(B && [B.version, B.src, B.bytes]));
+    const bp = await ctx.newPage(), berrs = [];
+    bp.on('pageerror', e => berrs.push(String(e)));
+    await bp.goto('http://localhost:8766/');
+    await bp.evaluate(async () => {           // the calculator is closed for this part: no lock
+      const t = await (await (await navigator.storage.getDirectory()).getDirectoryHandle('HP Prime')).getDirectoryHandle('Temp');
+      try { await t.removeEntry('HPEmuInstance.lock'); } catch (e) { }
+    });
+    await bp.click('#more > summary');
+    check('bonus: under "More choices", one box of its own, not ticked, with its words; the list to tick still has 31 programs, and the Population is still the 31',
+          await bp.locator('#bonuslist input[type=checkbox]').count() === 1 && !(await bp.isChecked('#b_Sudoku')) &&
+          /^Add Sudoku, just for fun: a Sudoku puzzle game, the book's Appendix G\.\s?Sudoku is a bonus, and not one of the Statisticles, so it goes onto the calculator only when this box is ticked, together with whatever else you choose, and this page never takes it off a calculator\.$/.test((await bp.textContent('#bonuslist')).replace(/\s+/g, ' ').trim()) &&
+          await bp.locator('#proglist .prog input').count() === 31 && (await bp.textContent('#summary')) === 'The Population: all 31 Statisticles.', (await bp.textContent('#bonuslist')).replace(/\s+/g, ' '));
+    await bp.check('#b_Sudoku');
+    check('bonus: ticked beside the Population, the summary names it after the 31', (await bp.textContent('#summary')) === 'The Population: all 31 Statisticles, and Sudoku, the bonus.', await bp.textContent('#summary'));
+    const had = (await readTree())[C + 'Sudoku.hpprgm'];
+    await bp.click('#load');
+    await bp.waitForFunction(() => /every file read back and checked/.test(document.getElementById('status').textContent) || !document.getElementById('running').hidden);
+    await bp.waitForSelector('#done:not([hidden])', { timeout: 60000 });
+    let bt = await readTree(), brep = await bp.textContent('#report');
+    check('bonus, Virtual Calculator, the Population and Sudoku: 34 files went on, Sudoku.hpprgm byte for byte as the pack\'s bonus file, and the 30 program files too',
+          had === undefined && same(bt[C + 'Sudoku.hpprgm'], bonusFile) && /^34 files went onto the calculator, and each was read back and checked\./.test(brep) &&
+          packPrg.every(n => same(bt[C + n], packFile(n))), brep);
+    // Sudoku alone: "Only the programs I tick", none ticked, and the bonus's box
+    await bp.reload();
+    await bp.click('#more > summary');
+    await bp.check('#w_pick');
+    await bp.check('#b_Sudoku');
+    check('bonus alone: the summary says only that, and Load is on', (await bp.textContent('#summary')) === 'Sudoku, the bonus.' && !(await bp.isDisabled('#load')), await bp.textContent('#summary'));
+    await bp.click('#load');
+    await bp.waitForSelector('#done:not([hidden])', { timeout: 60000 });
+    bt = await readTree(); brep = await bp.textContent('#report');
+    check('bonus alone: 1 file went on, Sudoku.hpprgm, byte for byte (the box and the label are two blocks, so their words meet without a space in textContent)', /^1 file went onto the calculator, and it was read back and checked\.|^1 file went onto the calculator/.test(brep) &&
+          same(bt[C + 'Sudoku.hpprgm'], bonusFile), brep);
+    check('bonus: no errors on its page', berrs.length === 0, berrs);
+    await bp.close();
+    // the cable: Chapters 1-3 and Sudoku, then Chapters 4-6 without it
+    const ub = await usbPage({});
+    await ub.p.check('#t_real');
+    await ub.p.selectOption('#group', 'c1');
+    await ub.p.click('#more > summary');
+    await ub.p.check('#b_Sudoku');
+    const c1 = CATALOG.groups.find(g => g.id === 'c1').programs.slice().sort((a, b) => a.localeCompare(b));
+    check('bonus, cable: the summary names Chapters 1–3 and the bonus', (await ub.p.textContent('#summary')) === 'Chapters 1–3: ' + c1.join(', ') + ', and Sudoku, the bonus.', await ub.p.textContent('#summary'));
+    await ub.p.click('#usbsend');
+    await usbEnd(ub.p);
+    let bst = await state(ub.p), bgot = await prime(ub.p);
+    check('bonus, cable: every program and Sudoku on the calculator, each download verified; Sudoku\'s source is the pack\'s, character for character, and extras/sudoku/\'s but for the blank space at its end',
+          bst.done && !bst.fail && bst.status === (c1.length + 1) + ' programs on the calculator, each download verified.' && bgot.programs.Sudoku === bsrc && canon(bgot.programs.Sudoku) === exSrc &&
+          c1.every(n => bgot.programs[n] === packSource(n)) && Object.keys(bgot.programs).length === c1.length + 1, JSON.stringify([bst.status, Object.keys(bgot.programs)]));
+    check('bonus, cable: the log\'s "Chosen:" line names the bonus', new RegExp('\\nChosen: Chapters 1–3, and the bonus Sudoku; ' + (c1.length + 1) + ' programs, ').test(bst.log), bst.log.split('\n').find(l => /^Chosen/.test(l)));
+    await ub.p.check('#b_Sudoku', { force: true });
+    await ub.p.uncheck('#b_Sudoku');
+    await ub.p.selectOption('#group', 'c4');
+    await ub.p.click('#usbsend');
+    await usbEnd(ub.p);
+    bst = await state(ub.p); bgot = await prime(ub.p);
+    const c4 = CATALOG.groups.find(g => g.id === 'c4').programs;
+    check('bonus, cable: a later Sample without it leaves Sudoku on the calculator (the page never takes it off), while the Statisticles not in that Sample are taken off',
+          bst.done && bgot.programs.Sudoku === bsrc && c4.every(n => bgot.programs[n] === packSource(n)) &&
+          Object.keys(bgot.programs).filter(n => n !== 'Sudoku').every(n => c4.includes(n)), JSON.stringify(Object.keys(bgot.programs)));
+    check('bonus, cable: no errors on its page', ub.errs.length === 0, ub.errs);
+  }
 
   check('no errors in the page', errors.length === 0, errors);
   console.log(`\n${pass} PASS, ${fail} FAIL`);

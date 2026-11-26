@@ -1,0 +1,21 @@
+base puzzles: 24 (6 a level), each with one answer, the stored one
+pencil-mark digits (37 strokes):
+   .#.  ###  ###  #.#  ###  ###  ###  ###  ###
+   ##.  ..#  ..#  #.#  #..  #..  ..#  #.#  #.#
+   .#.  ###  ###  ###  ###  ###  ..#  ###  ###
+   .#.  #..  ..#  ..#  ..#  #.#  ..#  #.#  ..#
+   ###  ###  ###  ..#  ###  ###  ..#  ###  ###
+help How to play                12 lines, widest 240 px
+help What the colors mean       13 lines, widest 258 px
+help Notes, Undo and Check      13 lines, widest 254 px
+help Hints                      13 lines, widest 254 px
+help Watch the solver           13 lines, widest 263 px
+help Your own puzzles           13 lines, widest 253 px
+help Keeping your game           7 lines, widest 253 px
+help My games                   11 lines, widest 261 px
+help The My games plot          11 lines, widest 261 px
+help My games in Statistics 2Var 12 lines, widest 264 px
+help A class experiment         11 lines, widest 255 px
+help Credits                     6 lines, widest 266 px
+My games, no games: 8 lines; after the copy: 9 lines; help page "My games" is page 8
+wrote /home/claude/sudoku2a/Sudoku_beta2a.txt: 1961 lines, 97348 characters
