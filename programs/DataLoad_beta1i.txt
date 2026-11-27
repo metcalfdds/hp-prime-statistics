@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// DATALOAD - beta 1h
+// DATALOAD - beta 1i
 // ============================================================
 // FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
 //   the file and credit the author if you pass it on.  Not for
@@ -9,8 +9,11 @@
 // DISCLAIMER: a teaching and demonstration aid. Not validated for
 //   forensic, clinical or legal use; do not rely on its results for
 //   legal purposes.
-// (C) 2026 Roger D. Metcalf.  Written with AI assistance (Anthropic
-//   Claude).
+// (C) 2026 Roger D. Metcalf.
+// Written with AI assistance. The concept, direction, decisions and all
+// hardware testing are Roger D. Metcalf's; the code, drafting and
+// source-checking were done with Claude (Anthropic); beta 1i with
+// Claude Opus 5.5, November 2026.
 // Firmware: written for the HP Prime G2 and G1 on the 2026-09-09
 //   firmware.  beta 1 ran on the Virtual Calculator 2.4.2 (31 Oct
 //   2026): both loads, the summary, the histograms, a text-coded
@@ -18,6 +21,16 @@
 //   fixes) ran there too, the same evening.  beta 1b changes one line
 //   (below) and has run in the PC harness.  See its CHANGES file.
 //
+// beta 1i (27 Nov 2026): Round 20: blank cells inside paired columns.  beta 1h left the blanks out of each
+//   column separately, which is right for separate groups of unequal size and wrong for paired columns
+//   (before and after, x and y, raters): one blank in the middle of a column made the rest of that column
+//   slide up a row, so the lists no longer matched row for row (found 27 Nov 2026, when the book's Draft 119
+//   was checked against a reviewer's question).  Now, when two or more columns are to be loaded and any of
+//   them has a blank ABOVE a value, DataLoad asks how they go together: "Pairs: keep complete rows" keeps only the rows
+//   with a value in every column (dd_Full, dd_Pick), and "Separate groups: drop blanks" is beta 1h's way
+//   (dd_Column).  Blanks only at the foot of a column ask nothing, as before.  Help is four pages: page 3,
+//   "Blank cells", says all this; pages 2 and 4 were 2 and 3, word for word.  Scores by group is unchanged
+//   (it always kept only the rows with both cells).
 // beta 1h (22 Nov 2026): Round 18: the program sets the four Home settings that the book's examples assume when it starts,
 //   and leaves them set: HSeparator := 0 (Digit Grouping 123,456.789, the period as the decimal point),
 //   HFormat := 0 (Number Format Standard), HAngle := 0 (Radians) and Entry := 0 (Textbook).  Roger, 22
@@ -110,7 +123,11 @@
 // BLANK CELLS: a column shorter than the others is padded by the web
 //   page with 9.99999999999E499, the Prime's largest real (a number no
 //   data set can hold).  DataLoad leaves out any cell at 1E499 or
-//   above, so each list gets only its own values.
+//   above, so each list gets only its own values.  A blank ABOVE a
+//   value (beta 1i) is different: in paired columns it would make the
+//   rest of its column slide up a row, so DataLoad asks first whether
+//   the columns are pairs (keep the complete rows only) or separate
+//   groups (leave each blank out of its own column).
 //
 // QUARTILES: the Prime's own rule (HP Prime User Guide, Statistics
 //   1Var, Computed statistics): Q1 is the median of the values to the
@@ -399,6 +416,93 @@ BEGIN
  RETURN kl;
 END;
 
+// beta 1i: is there a blank ABOVE a value in columns 1 .. hk?  Such a
+// blank is not the web page's padding at the foot of a short column; it
+// is a cell missing in the middle of the data.  Each column is read from
+// the top: once a blank has been seen, a value below it means a hole.
+// Returns {how many columns have a hole, the first such column}.
+LOCAL dd_Holes(hm, hk)
+BEGIN
+ LOCAL hoS, hoV, hoR, hoJ, hoB, hoN;
+ LOCAL hoF, hoH;
+ hoS := dd_Shape(hm);
+ hoV := dd_IsVec(hm);
+ hoN := 0; hoF := 0;
+ FOR hoJ FROM 1 TO hk DO
+  hoB := 0; hoH := 0;
+  FOR hoR FROM 1 TO hoS(1) DO
+   IF dd_Real(dd_Cell(hm, hoR, hoJ, hoV)) THEN
+    // a value: below a blank, that blank was a hole
+    IF hoB THEN hoH := 1; END;
+   ELSE
+    hoB := 1;
+   END;
+  END;
+  IF hoH THEN
+   hoN := hoN + 1;
+   IF hoF == 0 THEN hoF := hoJ; END;
+  END;
+ END;
+ RETURN {hoN, hoF};
+END;
+
+// beta 1i: the rows in which every one of columns 1 .. fk holds a value
+// (no blank).  For paired columns these are the complete pairs: a row
+// with a blank anywhere is left out of EVERY list, so the lists still
+// match row for row.  Returns the row numbers as a list.
+LOCAL dd_Full(fm, fk)
+BEGIN
+ LOCAL fuS, fuR, fuJ, fuV, fuOK, fuL;
+ fuS := dd_Shape(fm);
+ fuV := dd_IsVec(fm);
+ fuL := {};
+ FOR fuR FROM 1 TO fuS(1) DO
+  fuOK := 1;
+  FOR fuJ FROM 1 TO fk DO
+   IF fuOK THEN
+    IF dd_Real(dd_Cell(fm, fuR, fuJ, fuV)) == 0 THEN fuOK := 0; END;
+   END;
+  END;
+  IF fuOK THEN fuL := CONCAT(fuL, {fuR}); END;
+ END;
+ RETURN fuL;
+END;
+
+// beta 1i: column dj of the matrix, only at the rows listed in dr (the
+// complete rows that dd_Full found), as a list.
+LOCAL dd_Pick(dm, dj, dr)
+BEGIN
+ LOCAL dpL, dpI, dpV;
+ dpV := dd_IsVec(dm);
+ dpL := {};
+ FOR dpI FROM 1 TO SIZE(dr) DO
+  dpL := CONCAT(dpL, {dd_Cell(dm, dr(dpI), dj, dpV)});
+ END;
+ RETURN dpL;
+END;
+
+// beta 1i: blanks above values.  Ask how the columns go together.
+// Pairs keep only the complete rows (dd_Full); separate groups leave
+// each blank out of its own column (dd_Column, beta 1h's way).
+// Returns 0 to stop (Cancel or Esc), 1 for separate groups, 2 for pairs.
+LOCAL dd_AskHoles(ahH)
+BEGIN
+ LOCAL ahC, ahT;
+ IF ahH(1) == 1 THEN
+  ahT := "Column " + dd_Cm(STRING(ahH(2), 2, 0)) + " has a blank inside";
+ ELSE
+  ahT := dd_Cm(STRING(ahH(1), 2, 0)) + " columns have blanks inside";
+ END;
+ // CHOOSE's own return value is never tested (Lessons Learned): ahC is
+ // set to 0 first, and only ahC is tested afterwards (0 = Esc).
+ ahC := 0;
+ CHOOSE(ahC, ahT, {"Pairs: keep complete rows", "Separate groups: drop blanks", "Cancel"});
+ dd_Settle();
+ IF ahC == 1 THEN RETURN 2; END;
+ IF ahC == 2 THEN RETURN 1; END;
+ RETURN 0;
+END;
+
 // A short description of a matrix for the menus: "432 × 5" or "empty".
 LOCAL dd_Desc(dk)
 BEGIN
@@ -601,10 +705,14 @@ BEGIN
 END;
 
 // 1. COLUMNS: column j to list j, j = 1 .. at most 9.  Returns the
-// number of lists filled (0 = nothing done).
+// number of lists filled (0 = nothing done).  beta 1i: when two or more
+// columns are to be loaded and any of them has a blank above a value,
+// it asks first whether they are pairs (complete rows only) or
+// separate groups (dd_AskHoles).
 LOCAL dd_LoadCols()
 BEGIN
  LOCAL lm, ls, lk, lj, ll, lrc;
+ LOCAL lmo, lho, lfu;
  lm := dd_Get(ddSRC);
  IF dd_Empty(lm) THEN
   MSGBOX("M" + dd_Cm(STRING(ddSRC, 2, 0)) + " is empty. Put your data in it first (Help says how), or choose another matrix.");
@@ -617,18 +725,46 @@ BEGIN
   MSGBOX("M" + dd_Cm(STRING(ddSRC, 2, 0)) + " has " + dd_Cm(STRING(ls(2), 2, 0)) + " columns; " + dd_L() + "1-" + dd_L() + "9 take the first 9.");
   dd_Settle();
  END;
+ // beta 1i: lmo = 1 leaves each blank out of its own column (separate
+ // groups, and every load with no blank above a value); lmo = 2 keeps
+ // only the complete rows (pairs).  One column has no partner to match,
+ // so it is never asked about.
+ lmo := 1; lfu := {};
+ IF lk >= 2 THEN
+  lho := dd_Holes(lm, lk);
+  IF lho(1) > 0 THEN
+   lmo := dd_AskHoles(lho);
+   IF lmo == 0 THEN RETURN 0; END;
+  END;
+ END;
+ IF lmo == 2 THEN
+  lfu := dd_Full(lm, lk);
+  IF SIZE(lfu) == 0 THEN
+   MSGBOX("Every row of M" + dd_Cm(STRING(ddSRC, 2, 0)) + " has a blank in at least one of its columns, so there is no complete row, and nothing was loaded.");
+   dd_Settle();
+   RETURN 0;
+  END;
+ END;
  lrc := dd_Confirm(lk);
  IF lrc == 0 THEN RETURN 0; END;
  dd_Busy("Loading " + dd_Cm(STRING(ls(1), 2, 0)) + " rows ...");
  FOR lj FROM 1 TO lk DO
-  ll := dd_Column(lm, lj);
+  IF lmo == 2 THEN
+   ll := dd_Pick(lm, lj, lfu);
+  ELSE
+   ll := dd_Column(lm, lj);
+  END;
   // a column of blanks only gives an empty list (beta 1 left the old
   // values in it)
   IF dd_Write(lj, ll) == 0 THEN dd_NoWrite(); RETURN 0; END;
   ddDSC(lj) := IFTE(SIZE(ll) == 0, "", "M" + dd_Cm(STRING(ddSRC, 2, 0)) + " col " + dd_Cm(STRING(lj, 2, 0)));
  END;
  ddLAST := "M" + dd_Cm(STRING(ddSRC, 2, 0)) + " " + CHAR(8594) + " " + dd_Span(lk);
- ddLAST := ddLAST + " (" + dd_Cm(STRING(ls(1), 2, 0)) + " rows)" + dd_ClearRest(lrc);
+ IF lmo == 2 THEN
+  ddLAST := ddLAST + " (" + dd_Cm(STRING(ls(1), 2, 0)) + " rows, " + dd_Cm(STRING(SIZE(lfu), 2, 0)) + " complete)" + dd_ClearRest(lrc);
+ ELSE
+  ddLAST := ddLAST + " (" + dd_Cm(STRING(ls(1), 2, 0)) + " rows)" + dd_ClearRest(lrc);
+ END;
  RETURN lk;
 END;
 
@@ -997,7 +1133,7 @@ END;
 // ---------------- help ----------------
 LOCAL dd_Help()
 BEGIN
- dd_Frame("DataLoad help 1/3: What it does");
+ dd_Frame("DataLoad help 1/4: What it does");
  TEXTOUT_P("COLUMNS: column 1 to D1, column 2 to D2, ...", G1, 8, 74, 1, ddCOL(1));
  TEXTOUT_P("SCORES BY GROUP: a column of scores and one of", G1, 8, 92, 1, ddCOL(2));
  TEXTOUT_P("group codes, as SPSS keeps them; each group's", G1, 8, 105, 1, ddCOL(2));
@@ -1005,14 +1141,14 @@ BEGIN
  TEXTOUT_P("Copies the columns of a matrix (M0-M9) into the lists our", G1, 8, 30, 1, ddBLK);
  TEXTOUT_P("programs read: D1-D9 of Statistics 1Var, or C1-C9 of", G1, 8, 43, 1, ddBLK);
  TEXTOUT_P("Statistics 2Var.", G1, 8, 56, 1, ddBLK);
- TEXTOUT_P("Blank cells (9.99999999999E499) are left out.", G1, 8, 136, 1, ddBLK);
+ TEXTOUT_P("Blank cells (9.99999999999E499) are left out: see page 3.", G1, 8, 136, 1, ddBLK);
  TEXTOUT_P("Then the lists: tap a row for its histogram.", G1, 8, 154, 1, ddBLK);
  TEXTOUT_P("Quartiles as the Prime's Statistics 1Var: the median of each half", G1, 8, 172, 1, ddGRAY);
  TEXTOUT_P("(odd n: median left out).", G1, 8, 185, 1, ddGRAY);
  TEXTOUT_P("any key or tap = next page", G1, 8, 222, 1, ddFOOT);
  BLIT_P(G0, 0, 0, G1);
  dd_WaitAny();
- dd_Frame("DataLoad help 2/3: Getting data in");
+ dd_Frame("DataLoad help 2/4: Getting data in");
  TEXTOUT_P("VIRTUAL CALCULATOR: the Data Loader web page", G1, 8, 30, 1, ddCOL(1));
  TEXTOUT_P("(hp-prime-statistics on GitHub) turns columns", G1, 8, 43, 1, ddBLK);
  TEXTOUT_P("pasted from Excel, SPSS or a CSV file into a", G1, 8, 56, 1, ddBLK);
@@ -1028,7 +1164,24 @@ BEGIN
  TEXTOUT_P("any key or tap = next page", G1, 8, 222, 1, ddFOOT);
  BLIT_P(G0, 0, 0, G1);
  dd_WaitAny();
- dd_Frame("DataLoad help 3/3: Then run");
+ // beta 1i: the page on blank cells (Round 20)
+ dd_Frame("DataLoad help 3/4: Blank cells");
+ TEXTOUT_P("The Data Loader page writes an empty cell (or NA, N/A,", G1, 8, 30, 1, ddBLK);
+ TEXTOUT_P("a dot) as 9.99999999999E499, the Prime's largest number,", G1, 8, 43, 1, ddBLK);
+ TEXTOUT_P("which no data set can hold, and DataLoad leaves it out.", G1, 8, 56, 1, ddBLK);
+ TEXTOUT_P("AT THE FOOT OF A COLUMN (groups of unequal sizes):", G1, 8, 74, 1, ddCOL(1));
+ TEXTOUT_P("the column simply ends there, so its list is shorter.", G1, 8, 87, 1, ddBLK);
+ TEXTOUT_P("ABOVE A VALUE, with two or more columns to load:", G1, 8, 105, 1, ddCOL(2));
+ TEXTOUT_P("DataLoad asks first how the columns go together.", G1, 8, 118, 1, ddBLK);
+ TEXTOUT_P("PAIRS (before and after, x and y, raters): only the", G1, 8, 136, 1, ddCOL(3));
+ TEXTOUT_P("rows with a value in every column are kept, so each", G1, 8, 149, 1, ddBLK);
+ TEXTOUT_P("pair stays a pair and the lists match row for row.", G1, 8, 162, 1, ddBLK);
+ TEXTOUT_P("SEPARATE GROUPS: each column keeps all of its own", G1, 8, 180, 1, ddCOL(4));
+ TEXTOUT_P("values, and its blanks are simply left out.", G1, 8, 193, 1, ddBLK);
+ TEXTOUT_P("any key or tap = next page", G1, 8, 222, 1, ddFOOT);
+ BLIT_P(G0, 0, 0, G1);
+ dd_WaitAny();
+ dd_Frame("DataLoad help 4/4: Then run");
  TEXTOUT_P("D1, D2 (two groups or pairs): TTestLab,", G1, 8, 28, 1, ddCOL(1));
  TEXTOUT_P("PowerViz, ResampLab, RankLab", G1, 8, 41, 1, ddCOL(1));
  TEXTOUT_P("D1-D9 (groups): AnovaLab, RankLab", G1, 8, 57, 1, ddCOL(2));

@@ -121,12 +121,12 @@ PASS ... and the page says, before anything is sent, that the book's other progr
 PASS cable: a second group without unplugging (Advanced 1: EpiStats): the browser's small window is not shown again, the calculator is not told "FD" again, the list starts afresh; the first group's programs are taken off to make room, and a program of the student's own stays
 PASS cable: Advanced 1 is EpiStats by itself, the longest program of all (sent to the author's G1 with two programs behind it, it would not run and the calculator reset; sent alone it ran: Roger, 18 Nov), the other ten advanced programs are five in Advanced 2 and five in Advanced 3, and the page explains the list of two names EpiStats shows when it is run
 PASS cable: no errors in the page
-PASS cable, the page as a student has it: after each program but the last the calculator is left alone, once the download is verified, for 2 s and 0.5 s more for each 100,000 characters on a G2 (2.21, 2.94, 2.58 s for DataLoad, NormExplorer, ScatterLab), the page says so while it waits, and the details say what each program was given (18 s in all against the mock)
+PASS cable, the page as a student has it: after each program but the last the calculator is left alone, once the download is verified, for 2 s and 0.5 s more for each 100,000 characters on a G2 (2.24, 2.94, 2.58 s for DataLoad, NormExplorer, ScatterLab), the page says so while it waits, and the details say what each program was given (18 s in all against the mock)
 PASS cable: no errors in the page
 PASS cable, the eight groups one after another onto one G2: after each, the calculator holds that group's programs, each the pack's source character for character, with the student's own program, and none of the book's others
 PASS cable: no errors in the page
-PASS cable, the largest group (Chapters 7–9, 10 programs by cable) to a G1 (12 s against the mock): each arrives the pack's source character for character, in 38,413 reports of 64 bytes, none sent twice; the mock, which stands at 240 reports' worth of an answer, never stood long
-PASS ... counted, because the page's notes say it: the 30 programs that travel by cable are 4,058,747 characters, which would be 128,881 reports of a G1 and 7,949 of a G2; none has a CR in it; and no group is over 1,300,000 characters (both calculators gave out near 2,000,000)
+PASS cable, the largest group (Chapters 7–9, 10 programs by cable) to a G1 (11 s against the mock): each arrives the pack's source character for character, in 38,413 reports of 64 bytes, none sent twice; the mock, which stands at 240 reports' worth of an answer, never stood long
+PASS ... counted, because the page's notes say it: the 30 programs that travel by cable are 4,065,308 characters, which would be 129,089 reports of a G1 and 7,962 of a G2; none has a CR in it; and no group is over 1,300,000 characters (both calculators gave out near 2,000,000)
 PASS ... CentralLimit is said not to have been sent this way, and the Kit's steps are opened for it
 PASS ... and the details stay readable: the page shows at most 1,500 lines of them
 PASS cable: no errors in the page
@@ -173,4 +173,3 @@ PASS bonus, cable: no errors on its page
 PASS no errors in the page
 
 173 PASS, 0 FAIL
-exit 0

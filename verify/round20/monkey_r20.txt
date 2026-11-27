@@ -1,0 +1,5 @@
+monkey_r20.py on DataLoad beta 1i (27 Nov 2026): python3 verify/round20/monkey_r20.py 0 1000 OUT.jsonl
+the same random runs as monkey_v1b.py (--lists --writes D,C), with an M1 that always has blank cells (seed = 20 x 1000003 + k)
+verdicts: {'OK': 1000}
+M1 by kind: {'onecol': 123, 'pairs': 387, 'wide': 105, 'foot': 139, 'row': 115, 'nofull': 131}
+runs in which the question was put, by kind: {'wide': 24, 'pairs': 90, 'nofull': 32} (146 in all; never for blanks only at the foot, one column or one row, as it should be)

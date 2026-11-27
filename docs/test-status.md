@@ -2,6 +2,10 @@
 
 *Moved here from the top of the README on 27 October 2026. The newest entry is first.*
 
+**Test status, 27 November 2026.**
+
+- **27 November 2026: round 20. DataLoad beta 1i, the Data Loader page v7, starter pack v28 and the Prime Loader v2r (`verify/round20/README.md`).** When DataLoad loads two or more columns and a blank cell stands above a value in any of them, it now asks whether the columns are pairs (keep the complete rows only) or separate groups (each blank out of its own column), because beta 1h left each blank out of its own column and paired columns slid out of step. In the PC harness: `verify/verify_DataLoad_beta1i.py` 37 PASS, 0 FAIL; the gate PASS; 1,000 random runs OK, and 1,000 more with blanks always in M1, OK (the question put in 146). The Data Loader page: 44 PASS; the accessibility check 32 PASS; the cable core 95 PASS; the Prime Loader v2r 173 PASS, 0 FAIL. On the Virtual Calculator 2.4.2 in the cloud workspace: Check, then Student's sleep data with two blanks: the question, Pairs (the 8 complete patients, row for row), Separate groups, Cancel, and the four help pages. Not yet on a G1 or a G2.
+
 **Test status, 26 November 2026 (evening).**
 
 - **26 November 2026, evening: no Appendix G; starter pack v27 and the Prime Loader v2q.** The book's Draft 106 (the refocus) has no Appendix G, so the pack's READ_ME_FIRST.txt and the Loader's bonus box no longer name one. Starter pack v27 is v26 byte for byte but for READ_ME_FIRST.txt (its first line and that sentence), so every program in it is the one v26 tested (`docs/changes/StarterPack_v27_NOTES.md`); the Prime Loader v2q, built from it, gave 173 PASS, 0 FAIL in Chromium (`prime-loader/tests/test_loader_v2q_output.txt`), and the accessibility check of the pages 32 PASS, 0 FAIL (`tools/pages_a11y_v1_output.txt`). Not sent to a calculator.

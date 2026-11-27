@@ -1,4 +1,8 @@
-// page_check_v6.js -- DataLoader_v6.html in Chromium (Playwright).  Run: node tests/page_check_v6.js   (21 Nov 2026)
+// page_check_v7.js -- DataLoader_v7.html in Chromium (Playwright).  Run: node tests/page_check_v7.js   (27 Nov 2026)
+// v7: v6's checks, and the note on a blank cell above a value (DataLoad beta 1i asks how the columns go together): it is
+// there for paired columns with a blank in the middle, names the columns and the two answers, and is not there for blanks only
+// at the foot, for one column, or for a blank only past the ninth column; a student's slip (a cell left empty in the middle
+// of a column) gets it too, and a wholly empty row is left out as before; the note that goes into the zip has its sixth step.
 // v6: v5's checks, and three from the accessibility check of 21 Nov 2026 (WCAG 2.1 AA): the page does not scroll sideways in
 // a window 320 px wide (1.4.10), the green and the orange used for text have a contrast of 4.5 to 1 or more on every
 // surface they stand on (1.4.3), and the list of warnings is a live region with no role (4.1.2).  The automated rules of
@@ -19,7 +23,7 @@ function check(name, ok, detail) { if (ok) { pass++; console.log('PASS', name); 
   const errs = [];
   p.on('pageerror', e => errs.push(String(e)));
   p.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
-  await p.goto('file://' + path.join(__dirname, '..', 'DataLoader_v6.html'));
+  await p.goto('file://' + path.join(__dirname, '..', 'DataLoader_v7.html'));
   await p.waitForTimeout(500);
   const settle = () => p.waitForTimeout(450);
   const warn = async () => (await p.isVisible('#warnings')) ? await p.$$eval('#warnings li', l => l.map(x => x.textContent)) : [];
@@ -112,10 +116,42 @@ function check(name, ok, detail) { if (ok) { pass++; console.log('PASS', name); 
   await p.selectOption('#mat', '3'); await settle();
   check('choosing M3 names M3.hpmat on the button and in step 4', /M3\.hpmat/.test(await p.textContent('#save')) && (await p.textContent('#fname1')) === 'M3.hpmat' &&
         (await p.textContent('#fname5')) === 'M3 (1).hpmat');
+  // ---- v7: a blank cell above a value (DataLoad beta 1i asks how the columns go together) ----
+  const pad = async () => (await p.isVisible('#padnote')) ? await p.textContent('#padnote') : '';
+  await p.click('#clear'); await settle();
+  await setText('before\tafter\n10\t12\n11\tNA\n13\t15\n');
+  let pn = await pad();
+  check('v7 paired columns with a blank in the middle: the note names the column and both answers',
+        /after has a blank cell above a value, so when DataLoad loads these as Columns, it will ask/.test(pn) &&
+        /"Pairs: keep complete rows"/.test(pn) && /"Separate groups: drop blanks"/.test(pn) && /Scores by group always keeps only the rows/.test(pn), pn);
+  await setText('a\tb\n1\t2\n3\tNA\n5\tNA\n');
+  pn = await pad();
+  check('v7 blanks only at the foot of a column: the note of v6, with no question', /DataLoad leaves them out, so each list gets only its own values/.test(pn) && !/Pairs/.test(pn), pn);
+  await setText('x\n1\nNA\n3\n');
+  pn = await pad();
+  check('v7 one column with a blank in the middle: no question (one column has no partner)', /each list gets only its own values/.test(pn) && !/Pairs/.test(pn), pn);
+  const head = Array.from({ length: 12 }, (_, j) => 'c' + (j + 1)).join('\t');
+  const rowsW = [1, 2, 3].map(r => Array.from({ length: 12 }, (_, j) => (r === 2 && j === 10) ? 'NA' : String(r * 100 + j + 1)).join('\t'));
+  await setText(head + '\n' + rowsW.join('\n') + '\n');
+  pn = await pad();
+  check('v7 a blank in the middle of the 11th column only (DataLoad takes the first 9): no question', /each list gets only its own values/.test(pn) && !/Pairs/.test(pn), pn);
+  await setText('x\ty\n1\t2\n3\t\n5\t6\n');
+  pn = await pad();
+  check('v7 a slip, a cell left empty (nothing typed) in the middle of a column: it is a blank above a value, and y is named',
+        /y has a blank cell above a value/.test(pn), [pn, await p.textContent('#readout')]);
+  await setText('x\ty\n1\t2\n\t\n3\t4\n');
+  pn = await pad();
+  check('v7 a wholly empty row in the middle of a paste is left out by the page (as in v6), so nothing is asked',
+        /^2 rows and 2 columns read/.test(await p.textContent('#readout')) && !/Pairs/.test(pn), [pn, await p.textContent('#readout')]);
+  const rm = await p.evaluate(() => readme('M1'));
+  check('v7 the note in the zip has the sixth step, with both answers', /6\. If DataLoad says a column has a blank inside, choose "Pairs: keep complete rows"/.test(rm) &&
+        /"Separate groups: drop blanks" when the columns are groups\./.test(rm), rm);
+  await p.click('#clear'); await settle();
+
   // ---- v6: accessibility (WCAG 2.1 AA) ----
   {
     const narrow = await b.newContext({ viewport: { width: 320, height: 800 } }); const q = await narrow.newPage();
-    await q.goto('file://' + path.join(__dirname, '..', 'DataLoader_v6.html'));
+    await q.goto('file://' + path.join(__dirname, '..', 'DataLoader_v7.html'));
     const wide = () => q.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     check('in a window 320 px wide the opened page does not scroll sideways', (await wide()) <= 0, await wide());
     await q.click('#example'); await q.waitForTimeout(300);

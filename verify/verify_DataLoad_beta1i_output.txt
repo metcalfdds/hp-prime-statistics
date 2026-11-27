@@ -1,0 +1,57 @@
+=== DataLoad beta 1i (programs/DataLoad_beta1i.txt) against beta 1h (found)
+=== N. the new question
+PASS N1 a blank above a value in column 2 asks, before anything is written: "Column 2 has a blank inside"
+PASS N2 its items: "Pairs: keep complete rows", "Separate groups: drop blanks", "Cancel"
+PASS N3 pairs: only the complete rows, so D1 = {1, 3, 4} and D2 = {10, 30, 40} still match row for row
+PASS N4 the line DataLoad returns says so: "DataLoad: M1 -> D1-D2 (4 rows, 3 complete)"
+PASS N5 no harness warnings
+PASS N6 separate groups: beta 1h's way, each blank left out of its own column (D1 4 values, D2 3)
+PASS N7 Cancel at the question: nothing written (D1 as it was, D2 never written), "nothing loaded"
+PASS N7 Esc at the question: nothing written (D1 as it was, D2 never written), "nothing loaded"
+PASS N8 holes in two columns: "2 columns have blanks inside"; pairs keep rows 1 and 4 only
+PASS N9 blanks only at the foot of the columns (groups of unequal size): no question, lengths 4, 2 and 1 as before
+PASS N10 one column with a blank inside: no question (a single column has no partner), the blank left out
+PASS N11 a hole only in a column past the ninth (not loaded) asks nothing, and the nine lists are whole
+PASS N12 a hole in column 3 of 12: pairs drop row 4 only; the blank in column 11 (not loaded) drops nothing
+PASS N13 pairs with no complete row: a box says so and nothing is written
+PASS N14 the Rossi data from SurvLab: 432 rows of 5
+PASS N15 Rossi with 6 blanks in 6 rows: pairs give 426 rows, each a whole row of the original, in file order
+PASS N16 the line: "DataLoad: M1 -> D1-D5 (432 rows, 426 complete)"
+PASS N17 the same data as separate groups: each column loses only its own blanks (431, 430, 431, 431, 431 values; column 2 has two, one of them in the last row)
+PASS N18 Statistics 2Var (x, y for ScatterLab): C1 = {1, 3, 4}, C2 = {10, 30, 40}; no D list written
+PASS N19 lists that hold data, "clear": the question comes first, then the lists' own; D3, D5, D7, D9 emptied
+PASS N19 lists that hold data, "keep": the question comes first, then the lists' own; D3, D5, D7, D9 kept
+   the longest return line (73 characters) in the Program Catalog's box:
+     | DATALOAD "DataLoad: M9 →
+     | D1-D2 (9,999 rows, 9,998
+     | complete), D3, D5, D7, D9
+     | cleared"
+PASS N20 the longest line DataLoad can return after a pairs load is under 100 characters and fits the box's 5 lines
+PASS N21 every title the question can have is 31 characters or fewer, and each item 30 or fewer
+=== P. the help
+PASS P1 four pages: "DataLoad help 1/4: What it does", "2/4: Getting data in", "3/4: Blank cells", "4/4: Then run"
+PASS P2 page 3 says what the program does: a blank at the foot ends its column; a blank above a value asks; pairs keep the complete rows; separate groups keep their own values
+PASS P3 pages 1, 2 and 4 are beta 1h's pages 1, 2 and 3 word for word, but for the titles and page 1's line on blanks
+PASS P4 the help was drawn to its end in the harness: its four pages, in order, and no warnings
+=== S. static
+PASS S1 beta 1h's routines are in beta 1i word for word but dd_LoadCols and dd_Help; none is gone
+PASS S2 the four new routines are dd_Holes, dd_Full, dd_Pick and dd_AskHoles, all tagged dd_
+PASS S3 no LOCAL statement holds more than 6 names
+PASS S4 every CHOOSE sets its index to 0 first (its own return value is never tested)
+PASS S5 no "!=", and the code is ASCII outside its strings
+PASS S6 the header names beta 1i and keeps the disclaimer
+PASS S7 dd_Column (each blank out of its own column) is beta 1h's, word for word, and dd_LoadGroups too
+=== R. regression: the beta 1b script on beta 1i
+   beta 1b's script on beta 1i: 54 PASS, 2 FAIL
+     FAIL G6 help: three pages   ['DataLoad help 1/4: What it does', 'DataLoad help 2/4: Getting data in', 'DataLoad help 3/4: Blank cells', 'DataLoad help 4/4: Then
+     FAIL L1 no firm overlap, frame straddle or overrun on any DataLoad screen drawn ([])   []
+PASS R1 every check of the beta 1b script passes on beta 1i but G6 (it reads beta 1h's three help titles) and L1 (it reads the layout records under its own program's file name; L below reads them for beta 1i)
+=== L. layout (text_overlap_v1 over every screen above, against beta 1h's same pages)
+   DataLoad_beta1i.txt: screens 16 distinct of 16; firm findings 3
+   DataLoad_beta1h.txt: screens 4 distinct of 4; firm findings 2
+     new firm finding at the average glyph width: overrun 'Blank cells (9.99999999999E499) are left out: see page 3.' -> 265 px at the measured widths
+PASS L1 no firm overlap or frame straddle on any screen; every firm overrun is either one that beta 1h's same page already had (its lines were measured with the calculator's glyphs in round 17) or a new line that fits by the Virtual Calculator's measured glyph widths (x = 8 plus the line, at most 312 px)
+   the help's new lines at the measured widths: widest 281 px of 320
+PASS L2 every new help line (page 3's twelve and page 1's line on blanks) fits by the measured glyph widths, 312 px or less
+
+37 PASS, 0 FAIL

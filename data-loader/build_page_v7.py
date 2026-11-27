@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""build_page_v6.py -- assembles DataLoader_v6.html from page_template_v6.html, dl_core_v2.js and the Rossi example.
+"""build_page_v7.py -- assembles DataLoader_v7.html from page_template_v7.html, dl_core_v2.js and the Rossi example.
+
+v7 (27 Nov 2026, round 20): the template's v7, for DataLoad beta 1i, which asks how the columns go together when it loads two or
+more columns and a blank cell stands above a value in any of them (beta 1h left each blank out of its own column, and paired
+columns slid out of step).  The note under step 3 says so, with the two answers, when the paste has such a blank in any of the
+first 9 columns; the note that goes into the zip has a sixth step with the same two answers.  Nothing the page computes or
+writes into the .hpmat file has changed: the core is still v2.
 
 v6 (21 Nov 2026): the template's v6, after the accessibility check of the two loader pages (tools/pages_a11y_v1.js;
 docs/dev/pages-accessibility-2026-11-21.md).  Three things under WCAG 2.1 AA: the orange and the green used for text
@@ -22,17 +28,17 @@ v2 (31 Oct 2026): the template's v2.  The example is read from examples/rossi.cs
 import json, os
 HERE = os.path.dirname(os.path.abspath(__file__))
 PRIMELOADER_URL = 'https://metcalfdds.github.io/hp-prime-statistics/prime-loader/'   # its index.html sends the browser on
-t = open(os.path.join(HERE, 'page_template_v6.html'), encoding='utf-8').read()
+t = open(os.path.join(HERE, 'page_template_v7.html'), encoding='utf-8').read()
 core = open(os.path.join(HERE, 'dl_core_v2.js'), encoding='utf-8').read()
 ex = open(os.path.join(HERE, 'examples', 'rossi.csv'), encoding='utf-8').read()
 assert t.count('/*CORE*/') == 1 and t.count('/*EXAMPLE*/') == 1 and t.count('__PRIMELOADER_URL__') == 2
 t = t.replace('/*CORE*/', core).replace('/*EXAMPLE*/', json.dumps(ex)).replace('__PRIMELOADER_URL__', PRIMELOADER_URL)
-open(os.path.join(HERE, 'DataLoader_v6.html'), 'w', encoding='utf-8').write(t)
-print('DataLoader_v6.html', len(t), 'bytes')
+open(os.path.join(HERE, 'DataLoader_v7.html'), 'w', encoding='utf-8').write(t)
+print('DataLoader_v7.html', len(t), 'bytes')
 # index.html beside the page sends a browser on to the current version, as prime-loader/index.html does, so the
 # address .../data-loader/ never changes and the front page need not be edited when the version does.
 SITE = 'https://metcalfdds.github.io/hp-prime-statistics/'
-page = 'DataLoader_v6.html'
+page = 'DataLoader_v7.html'
 open(os.path.join(HERE, 'index.html'), 'w', encoding='utf-8').write(
     '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
     '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
@@ -41,7 +47,7 @@ open(os.path.join(HERE, 'index.html'), 'w', encoding='utf-8').write(
     '<link rel="canonical" href="' + SITE + 'data-loader/' + page + '">\n'
     '<style>body{font:16px/1.5 system-ui,sans-serif;margin:2rem;color:#172033;background:#f6f8fb}'
     '@media (prefers-color-scheme:dark){body{color:#e8edf6;background:#0f1420}a{color:#7d9cff}}</style>\n'
-    '</head>\n<body>\n<!-- Written by build_page_v6.py: sends the browser on to the current Data Loader, so the '
+    '</head>\n<body>\n<!-- Written by build_page_v7.py: sends the browser on to the current Data Loader, so the '
     'address .../data-loader/ never changes. -->\n'
     '<p>Opening the HP Prime Data Loader&hellip; If nothing happens, <a href="' + page + '">click here</a>.</p>\n'
     '</body>\n</html>\n')

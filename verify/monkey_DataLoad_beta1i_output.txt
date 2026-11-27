@@ -1,0 +1,2 @@
+monkey on DataLoad beta 1i (27 Nov 2026, round 20): python3 tools/monkey_chunks_v1.py programs/DataLoad_beta1i.txt "DATALOAD()" 1 0 1000 OUT.jsonl --lists --writes D,C --seconds 30
+done 0..999: {'OK': 1000}

@@ -1,0 +1,32 @@
+Round 20 on the HP Prime Virtual Calculator 2.4.2 (build 2026-09-09), in the cloud workspace (tools/vc_cloud_v1, Wine 11.21),
+27 November 2026, 14:21 to 14:26 (the calculator's clock).  Roger allowed HP's licence to be accepted on the first start (he was
+asked in the conversation, and answered "Yes, accept it").  The first start asked nothing else (no "Slide to unlock", no language, no initial configuration): it had
+been stopped once at the licence when the workspace restarted, and the calculator's folder was kept.
+
+THE CHECK (for starter pack v28's second pass), before anything was run
+14:21  DataLoad.hpprgm (pack v28's first pass, DataLoad beta 1i, not checked, 97,624 bytes) copied into the closed calculator's
+       folder; started; Program Catalog > DataLoad > Edit > Check: "No errors in the program" (check_all.py; editor title
+       "DataLoad:Main(PPL)").  Left by Calculator > Exit; the calculator wrote DataLoad.hpprgm back, 103,626 bytes, and that
+       file went into the checked folder.  make_starter_pack_v6.py v28 --checked: "checked files 31 of 31"; pack v28 against
+       v27: DataLoad.hpprgm and READ_ME_FIRST.txt's two lines (the pack's number, DataLoad's version) differ, nothing else.
+
+THE RUN (after the checked file was collected)
+14:23  M1.hpmat: Student's sleep data, 10 patients by 2 drugs, drug 2 of patient 3 and drug 1 of patient 7 left blank, written
+       by the Data Loader's own core (make_sleep_holes.js), copied into the closed calculator's folder.
+14:23  Apps > Statistics 1Var opened once (00_stats1var.png), then Home.
+14:24  Program Catalog > DataLoad > Run.  The menu, "DataLoad: M1, 10 × 2" (01_menu.png).
+       1 Columns -> "2 columns have blanks inside": 1 Pairs: keep complete rows / 2 Separate groups: drop blanks / 3 Cancel;
+       the title and the three items whole, in a box of their own (02_question.png).
+       1 Pairs -> the lists page: D1 "M1 col 1" n 8, D2 "M1 col 2" n 8 (03_lists_pairs.png).
+       Esc, 6 Help: pages 1/4 to 4/4 (04_help1 to 07_help4.png), every line inside the screen; page 1 "Blank cells
+       (9.99999999999E499) are left out: see page 3."; page 3 "Blank cells" as written.
+       7 Quit: the box reads DataLoad "DataLoad: M1 -> D1-D2 (10 rows, 8 complete)" (08_home_return.png).
+14:25  Num (Statistics 1Var's Numeric view, 09_num_pairs.png): D1 0.7, -1.6, -1.2, -0.1, 3.4, 0.8, 0, 2 and D2 1.9, 0.8, 0.1,
+       -0.1, 4.4, 1.6, 4.6, 3.4: patients 1, 2, 4, 5, 6, 8, 9 and 10, row for row (patients 3 and 7 left out of both).
+14:26  DataLoad again: 1 Columns -> the same question (11_question2.png) -> 2 Separate groups -> "D1, D2 hold data":
+       1 Replace D1-D2 / 2 Cancel (12_replace.png) -> 1 -> D1 n 9, D2 n 9 (13_lists_groups.png).
+       Esc, 1 Columns -> the question -> 3 Cancel: back at the menu (14_after_cancel.png); 3 Look at the D lists: still 9 and 9
+       (15_lists_after_cancel.png).  Esc, 7 Quit: "DataLoad: M1 -> D1-D2 (10 rows)" (16_home_return2.png).
+       Left by Calculator > Exit.
+
+Not seen here: a G1 or a G2; a held key; the time a large matrix takes on a G1.

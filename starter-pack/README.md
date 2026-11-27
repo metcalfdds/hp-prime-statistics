@@ -1,10 +1,10 @@
 # Starter pack for the Virtual Calculator
 
-*v27, 2026-11-26. Built by `tools/make_starter_pack_v6.py` from `programs/` and `extras/sudoku/`; do not edit this page by hand.*
+*v28, 2026-11-27. Built by `tools/make_starter_pack_v6.py` from `programs/` and `extras/sudoku/`; do not edit this page by hand.*
 
-All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** on a Windows PC: no Connectivity Kit, no copying and pasting. Download **[HP_Prime_Statistics_Starter_Pack_v27.zip](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v27.zip)** (one file).
+All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** on a Windows PC: no Connectivity Kit, no copying and pasting. Download **[HP_Prime_Statistics_Starter_Pack_v28.zip](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v28.zip)** (one file).
 
-*How this pack was tested on the Virtual Calculator: [docs/changes/StarterPack_v27_NOTES.md](../docs/changes/StarterPack_v27_NOTES.md).*
+*How this pack was tested on the Virtual Calculator: [docs/changes/StarterPack_v28_NOTES.md](../docs/changes/StarterPack_v28_NOTES.md).*
 
 ### What you need
 - A Windows PC with the HP Prime Virtual Calculator (64-bit). It is a free download from hpcalc.org, which lists Hewlett-Packard as its author. The pack was tested on the Virtual Calculator 2.4.2 (build 2026-09-09), 64-bit.
@@ -48,7 +48,7 @@ All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** o
 | CentralLimit | beta 3h | 2,797 | (an app) | app on Statistics 1Var | `24949ed87538` |
 | ChiTable | beta 3n | 3,871 | `ChiTable` |  | `946dce50fc6b` |
 | DNAMixLR | beta 3k | 3,479 | `DNAMixLR` |  | `ed9460f9c0a1` |
-| DataLoad | beta 1h | 1,102 | `DATALOAD` |  | `fcbe268d3202` |
+| DataLoad | beta 1i | 1,255 | `DATALOAD` |  | `6f83fb5d4970` |
 | EpiStats | v1.7o | 6,313 | `EpiStats` |  | `2be69e1b6486` |
 | ErrorRate | beta 1k | 2,865 | `ErrorRate` | MicroPython | `53037de83357` |
 | ExhibitLab | beta 1j | 2,911 | `ExhibitLab` |  | `6471fb20f894` |
