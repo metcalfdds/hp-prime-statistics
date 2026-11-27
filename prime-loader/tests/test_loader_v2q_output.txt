@@ -125,7 +125,7 @@ PASS cable, the page as a student has it: after each program but the last the ca
 PASS cable: no errors in the page
 PASS cable, the eight groups one after another onto one G2: after each, the calculator holds that group's programs, each the pack's source character for character, with the student's own program, and none of the book's others
 PASS cable: no errors in the page
-PASS cable, the largest group (Chapters 7–9, 10 programs by cable) to a G1 (11 s against the mock): each arrives the pack's source character for character, in 38,413 reports of 64 bytes, none sent twice; the mock, which stands at 240 reports' worth of an answer, never stood long
+PASS cable, the largest group (Chapters 7–9, 10 programs by cable) to a G1 (12 s against the mock): each arrives the pack's source character for character, in 38,413 reports of 64 bytes, none sent twice; the mock, which stands at 240 reports' worth of an answer, never stood long
 PASS ... counted, because the page's notes say it: the 30 programs that travel by cable are 4,058,747 characters, which would be 128,881 reports of a G1 and 7,949 of a G2; none has a CR in it; and no group is over 1,300,000 characters (both calculators gave out near 2,000,000)
 PASS ... CentralLimit is said not to have been sent this way, and the Kit's steps are opened for it
 PASS ... and the details stay readable: the page shows at most 1,500 lines of them

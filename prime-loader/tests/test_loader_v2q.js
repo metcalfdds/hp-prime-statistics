@@ -1,6 +1,9 @@
-// test_loader_v2p.js -- drives PrimeLoader_v2p.html in Chromium against a mock Virtual Calculator folder, and its
+// test_loader_v2q.js -- drives PrimeLoader_v2q.html in Chromium against a mock Virtual Calculator folder, and its
 // cable route (shown only at ?usb=1) against a pretend calculator that does what two real ones did on 17 Nov 2026.
-// Roger Metcalf & Claude, 18 Nov 2026.   node tests/test_loader_v2p.js PrimeLoader_v2p.html PACK.zip
+// Roger Metcalf & Claude, 18 Nov 2026.   node tests/test_loader_v2q.js PrimeLoader_v2q.html PACK.zip
+//
+// v2q (26 Nov 2026, evening): test_loader_v2p.js with the page's new name, starter pack v27, and the bonus's box in
+// its new words (the book's Draft 106 has no Appendix G).  Every check is v2p's.
 //
 // v2p (26 Nov 2026): test_loader_v2o.js with the page's new name and the new name of "More choices", and part 14, the
 // bonus: Sudoku, from starter pack v26's "Bonus (optional)", is in the catalog as a bonus and not among the 31, in no
@@ -472,8 +475,8 @@ function check(name, ok, detail) {
   await ipg.goto('file://' + path.join(path.dirname(PAGE), 'index.html') + '?data=1');
   await ipg.waitForFunction(() => !!document.getElementById('fromdl'), null, { timeout: 15000 }).catch(() => {});
   check('index.html carries ?data=1 on to the page, so the Data Loader\'s link to the folder\'s address opens it ready for the file',
-        /PrimeLoader_v2p\.html\?data=1$/.test(ipg.url()) && await ipg.isVisible('#fromdl'), ipg.url());
-  check('... and a browser with scripts off is still sent on, by the line in noscript', /<noscript><meta http-equiv="refresh" content="0; url=PrimeLoader_v2p\.html"><\/noscript>/.test(idx));
+        /PrimeLoader_v2q\.html\?data=1$/.test(ipg.url()) && await ipg.isVisible('#fromdl'), ipg.url());
+  check('... and a browser with scripts off is still sent on, by the line in noscript', /<noscript><meta http-equiv="refresh" content="0; url=PrimeLoader_v2q\.html"><\/noscript>/.test(idx));
 
   // ---- 10. Firefox: no folder API, Firefox's user-agent ----
   const fctx = await browser.newContext({ acceptDownloads: true,
@@ -640,7 +643,7 @@ function check(name, ok, detail) {
         /went down the cable/.test(st.report[0]) && /Each download was then verified: the copy on the calculator is the same, character for character\./.test(st.report[0]) && /^To make room, the Statisticles programs that are not in your choice were taken off first \(those that were there\), and programs of your own were left where they are\. To load another Sample, choose that Sample in step 2 and click Send again\.$/.test(st.report[1]) && /^It took \d+(\.\d)? seconds\.$/.test(st.report[2]),
         JSON.stringify([st.next, st.report]));
   check('... the details name the page, the browser, the calculator and the choice; say who answered and what each program did; end in a RESULT line; and hold neither the serial number nor more than twelve bytes of any message',
-        /^HP Prime Loader, v2p, straight down the cable\. /.test(st.log) && /\nBrowser: Mozilla/.test(st.log) && /\nDevice: HP Prime G2 \(USB 03F0:2441\), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator\.\n/.test(st.log) &&
+        /^HP Prime Loader, v2q, straight down the cable\. /.test(st.log) && /\nBrowser: Mozilla/.test(st.log) && /\nDevice: HP Prime G2 \(USB 03F0:2441\), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator\.\n/.test(st.log) &&
         new RegExp('\\nChosen: Chapters 1–3; ' + ch12.length + ' programs, [\\d,]+ characters: ' + ch12.join(', ') + '\\.\\n').test(st.log) && /It answered: firmware build 15751, "V2\.060\.650", version 01\./.test(st.log) &&
         ch12.every(n => new RegExp('\\n +\\d+\\.\\d\\d  ' + n + ': [\\d,]+ characters\\.\\n').test(st.log)) && (st.log.match(/Read back the same: /g) || []).length === ch12.length &&
         new RegExp('RESULT: all ' + ch12.length + ' programs on the calculator, each read back the same\\. [\\d,]+ reports carried the programs there and back; \\d+\\.\\d s in all\\.').test(st.log) && !/SECRET|SERIAL/.test(st.log) &&
@@ -937,7 +940,7 @@ function check(name, ok, detail) {
     await bp.click('#more > summary');
     check('bonus: under "More choices", one box of its own, not ticked, with its words; the list to tick still has 31 programs, and the Population is still the 31',
           await bp.locator('#bonuslist input[type=checkbox]').count() === 1 && !(await bp.isChecked('#b_Sudoku')) &&
-          /^Add Sudoku, just for fun: a Sudoku puzzle game, the book's Appendix G\.\s?Sudoku is a bonus, and not one of the Statisticles, so it goes onto the calculator only when this box is ticked, together with whatever else you choose, and this page never takes it off a calculator\.$/.test((await bp.textContent('#bonuslist')).replace(/\s+/g, ' ').trim()) &&
+          /^Add Sudoku, just for fun: a Sudoku puzzle game that keeps a record of the games you finish\.\s?Sudoku is a bonus, and not one of the Statisticles, so it goes onto the calculator only when this box is ticked, together with whatever else you choose, and this page never takes it off a calculator\.$/.test((await bp.textContent('#bonuslist')).replace(/\s+/g, ' ').trim()) &&
           await bp.locator('#proglist .prog input').count() === 31 && (await bp.textContent('#summary')) === 'The Population: all 31 Statisticles.', (await bp.textContent('#bonuslist')).replace(/\s+/g, ' '));
     await bp.check('#b_Sudoku');
     check('bonus: ticked beside the Population, the summary names it after the 31', (await bp.textContent('#summary')) === 'The Population: all 31 Statisticles, and Sudoku, the bonus.', await bp.textContent('#summary'));

@@ -28,7 +28,7 @@ Hundreds of community PPL programs from several HP-related public forums were re
 
 **New here?** [START_HERE.md](START_HERE.md) is a one-page guide: what to read in five minutes, five programs to try first, and how to help.
 
-**No calculator? Try all 31 on HP's free Virtual Calculator.** Download the **[starter pack](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v26.zip)** (one 1.7 MB zip, for the Virtual Calculator on Windows; since v26 it also holds the bonus, Sudoku, in a folder of its own). Unzip it, copy one folder's files into the Virtual Calculator's own folder, and start it: the programs are in its Program Catalog, CentralLimit already made into its app. No Connectivity Kit, and no copying and pasting of code. [The steps](starter-pack/README.md) fit on one page.
+**No calculator? Try all 31 on HP's free Virtual Calculator.** Download the **[starter pack](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v27.zip)** (one 1.7 MB zip, for the Virtual Calculator on Windows; since v26 it also holds the bonus, Sudoku, in a folder of its own). Unzip it, copy one folder's files into the Virtual Calculator's own folder, and start it: the programs are in its Program Catalog, CentralLimit already made into its app. No Connectivity Kit, and no copying and pasting of code. [The steps](starter-pack/README.md) fit on one page.
 
 **Your own data, without typing it in.** The **[HP Prime Data Loader](data-loader/README.md)** is one web page that works offline: paste columns from Excel, SPSS or a CSV file, and it writes the calculator's own matrix file. On the calculator, **DataLoad** puts each column, or each group's scores, into the Statistics lists that the other programs read, and draws a box plot of each. The starter pack carries DataLoad and a sample data set (new, 31 October 2026).
 
@@ -99,7 +99,7 @@ Every program is a plain `.txt` file, on purpose.
 3. Open this repository's `.txt` file in any text editor, select all, copy.
 4. Paste into the Connectivity Kit's program editor, and sync.
 
-**Do not rename the file to `.hpprgm`.** That format is binary (UTF-16LE with a header), and a `.txt` renamed to it will not import. Pasting is the reliable route. (The starter pack's `.hpprgm` files are built properly, by `tools/make_starter_pack_v5.py`, and read back against their source.)
+**Do not rename the file to `.hpprgm`.** That format is binary (UTF-16LE with a header), and a `.txt` renamed to it will not import. Pasting is the reliable route. (The starter pack's `.hpprgm` files are built properly, by `tools/make_starter_pack_v6.py`, and read back against their source.)
 
 **Install only one version of each program.** Every program on a Prime shares one pool of routine names, so two versions of the same program on one calculator can run each other's code. Delete the old one first.
 
@@ -260,7 +260,7 @@ Data sources for every preset are listed, with the checks made on them, in [docs
 
 ### Extras (new, 12 November 2026)
 
-Three things that go with the book but are not among its thirty-one programs are in [extras/](extras/): **Sudoku** (beta 2a, 26 November 2026), the book's bonus, just for fun (its Appendix G), a Sudoku puzzle game that keeps a record of the games you finish for a class experiment, which the Prime Loader offers under "More choices" and the starter pack holds in `Bonus (optional)`; **FDAES**, the Forensic Dental Age Estimation Suite (v3.9d), an advanced program that runs seven published dental age methods and pools their answers, with its student guide, its last two change notes, and its Python check; and the **Maple worksheet** behind Figure 9.3, the *t* surface that TDist3D draws (moved from `maple/` to `extras/maple/`). Like everything here, FDAES is a teaching and demonstration aid, not validated casework software: read the disclaimer at the top of its guide first.
+Three things that go with the book but are not among its thirty-one programs are in [extras/](extras/): **Sudoku** (beta 2a, 26 November 2026), the book's bonus, just for fun, a Sudoku puzzle game that keeps a record of the games you finish for a class experiment, which the Prime Loader offers under "More choices" and the starter pack holds in `Bonus (optional)`; **FDAES**, the Forensic Dental Age Estimation Suite (v3.9d), an advanced program that runs seven published dental age methods and pools their answers, with its student guide, its last two change notes, and its Python check; and the **Maple worksheet** behind Figure 9.3, the *t* surface that TDist3D draws (moved from `maple/` to `extras/maple/`). Like everything here, FDAES is a teaching and demonstration aid, not validated casework software: read the disclaimer at the top of its guide first.
 
 ---
 
