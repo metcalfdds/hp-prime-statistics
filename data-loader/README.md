@@ -1,10 +1,10 @@
 # HP Prime Data Loader
 
-Typing a long data set into a calculator is not feasible. This page turns columns from a spreadsheet into the calculator's own matrix file, and the program **DataLoad** (`programs/DataLoad_beta1c.txt`, in the starter pack) puts them into the Statistics lists the other programs read.
+Typing a long data set into a calculator is not feasible. This page turns columns from a spreadsheet into the calculator's own matrix file, and the program **DataLoad** (`programs/DataLoad_beta1i.txt`, in the starter pack) puts them into the Statistics lists the other programs read.
 
 ## Using it
 
-1. **Open the page.** On the web it is <https://metcalfdds.github.io/hp-prime-statistics/data-loader/>. Or download `DataLoader_v6.html` (on GitHub: open the file, then "Download raw file") and open it in any current browser. It is one self-contained file: it works offline, and nothing you paste leaves your computer.
+1. **Open the page.** On the web it is <https://metcalfdds.github.io/hp-prime-statistics/data-loader/>. Or download `DataLoader_v7.html` (on GitHub: open the file, then "Download raw file") and open it in any current browser. It is one self-contained file: it works offline, and nothing you paste leaves your computer.
 2. **Paste** columns from Excel or SPSS (or open a CSV or text file). The box starts empty. One variable per column, one case per row; a first row of names is recognized. Empty cells, `NA` and `.` become blanks.
 3. **Check the columns.** Each shows whether it is numbers or text, how many values and blanks, and its range. Text columns (*male*/*female*) become codes 1, 2, 3 … in alphabetical order; the page shows which is which, so write the codes down. Anything the page did to the paste that you did not ask for is said in a line beginning "Check:". If the names or the columns came out wrong, the two controls under the table say whether the first row holds names and what separates the columns.
 4. **Download M1.hpmat** (or choose M0–M9).
@@ -38,6 +38,8 @@ The file written for a tidy table is v3's, byte for byte (the Rossi file is the 
 
 ## What has been tested
 
+**27 November 2026, v7: a blank cell above a value (round 20).** DataLoad beta 1i asks how the columns go together when it loads two or more columns and a blank cell stands above a value in any of them, because beta 1h left each blank out of its own column, and paired columns (a before and an after, an *x* and a *y*) then slid out of step after the blank. So the note under step 3 now says, when the paste has such a blank in any of the first 9 columns, which columns have it and what to answer: "Pairs: keep complete rows" when each row is one person or one case, so that each pair stays a pair, or "Separate groups: drop blanks" when the columns are separate groups; and the note that goes into the zip has a sixth step that says the same. A blank only at the foot of a column, one column alone, and a blank past the ninth column (which DataLoad does not take) keep v6's sentence, because DataLoad asks nothing then. Nothing the page computes or writes into the `.hpmat` file has changed (the core is still v2): `tests/test_core_v2.js` 34 PASS, 0 FAIL; `tests/page_check_v7.js` 44 PASS, 0 FAIL (v6's 37, and seven for the note, among them a student's slip, a cell left empty in the middle of a column); `tools/pages_a11y_v1.js` 32 PASS, 0 FAIL. What DataLoad beta 1i does with such a file was run in the PC harness (`verify/verify_DataLoad_beta1i.py`) and on the Virtual Calculator (`verify/round20/README.md`).
+
 **21 November 2026, v6: accessibility only.** The page was checked against WCAG 2.1 AA with `tools/pages_a11y_v1.js` ([the record](../docs/dev/pages-accessibility-2026-11-21.md)). Three things changed, and nothing the page computes or writes: the orange and the green used for text are a shade deeper (contrast 5.5 to 1 on white, where v5's were 4.3 and 4.4 and WCAG asks 4.5); in a window 320 px wide the page no longer scrolls sideways (v5 was 379 px wide there, because its one column could not shrink and the menu "Columns are separated by" could not wrap); and the list of warnings is announced as a live region without a role that a list may not carry. On a desktop screen the page looks as it did, but for those two colors (old against new, pixel by pixel: 585 pixels differ, all of them colored text). `node tests/test_core_v2.js`: 34 PASS. `node tests/page_check_v6.js`: 37 PASS, v5's 32 and five new ones (320 px in three states, every text color on every surface, the live region). **Not done:** no screen reader has been run on the page, and v6 has not been loaded with DataLoad on a calculator; it writes the same bytes as v5, which the test compares with `examples/M1.hpmat`.
 
 **17 November 2026, night, v5.** The Prime Loader's layout changed (its v2a: which calculator, which programs, one button), so step 4's two lines changed with it: the link now ends `?data=1`, which opens the Loader with no program chosen and a notice saying what to click, and the second line names the Loader's step 2. The same two lines changed in the note that goes into the zip. Nothing the page computes or writes changed: the core is still v2, and the file it makes is v4's byte for byte. `tests/test_core_v2.js`: 34 PASS, 0 FAIL; `tests/page_check_v5.js`: 32 PASS, 0 FAIL.
@@ -50,16 +52,16 @@ The file written for a tidy table is v3's, byte for byte (the Rossi file is the 
 
 | File | What it is |
 |---|---|
-| `DataLoader_v6.html` | The page, built; open this one. |
+| `DataLoader_v7.html` | The page, built; open this one. |
 | `index.html` | Written by the build: sends a browser on to the page, so the address `.../data-loader/` stays the same. |
-| `page_template_v6.html` | The page's source, with slots for the encoder, the example and the Prime Loader's address. |
+| `page_template_v7.html` | The page's source, with slots for the encoder, the example and the Prime Loader's address. |
 | `dl_core_v2.js` | The encoder: reads the table (v2: what a student's paste really looks like), describes each column, writes the `.hpmat` and the zip. Plain JavaScript, no libraries; also runs under Node for the tests. |
-| `build_page_v6.py` | Puts the template, the encoder and `examples/rossi.csv` together into `DataLoader_v6.html`, and writes `index.html`. |
+| `build_page_v7.py` | Puts the template, the encoder and `examples/rossi.csv` together into `DataLoader_v7.html`, and writes `index.html`. |
 | `examples/rossi.csv` | The example: Rossi, Berk & Lenihan (1980), *Money, Work, and Crime*, via the R package carData; 432 men released from Maryland state prisons, followed 52 weeks. As SurvLab carries it. |
 | `examples/M1.hpmat` | That example as matrix M1, the file that ran on the Virtual Calculator. |
 | `tests/gen_cases_v1.py`, `tests/cases_v1.json` | 20,014 numbers as text with hp-prime-kit's encoding of each. |
 | `tests/test_core_v2.js` | The page's encoder against the kit's: 20,011 compared, 0 differ (the other 3 are beyond a double: 1E499, 9.99999999999E499, 1E-499); the Rossi file byte for byte; rounding at the 13th digit; and 26 pastes a student makes. `node tests/test_core_v2.js` |
-| `tests/page_check_v6.js` | Opens the page in Chromium (Playwright): the empty box, a real paste, the example downloaded and compared with `examples/M1.hpmat`, every "Check:" line, the two controls, and files that are refused or read. `node tests/page_check_v5.js` |
+| `tests/page_check_v7.js` | Opens the page in Chromium (Playwright): the empty box, a real paste, the example downloaded and compared with `examples/M1.hpmat`, every "Check:" line, the two controls, files that are refused or read, and (v7) the note on a blank cell above a value. `node tests/page_check_v7.js` |
 | `tests/make_m2_v2.js` | Rebuilds the 10 × 3 test matrix used on the calculator on 31 October. |
 | `tests/vc_2026-11-17/` | The paste, the 5 × 3 file v4 made from it, and five captures of DataLoad reading it on the Virtual Calculator. |
 

@@ -678,6 +678,22 @@ function warnings(c) {
   return w;
 }
 
+// v7 (27 Nov 2026): the columns, of the first 9 that DataLoad takes, in which a blank cell stands ABOVE a value.  When DataLoad
+// beta 1i loads two or more columns and any of them has such a blank, it asks how the columns go together (pairs keep the
+// complete rows only; separate groups leave each blank out of its own column), so the page says so before the file is made.
+function holeNames(c) {
+  const out = [];
+  for (let k = 0; k < Math.min(9, c.cols.length); k++) {
+    let seen = false, hole = false;
+    for (const text of c.cols[k]) {
+      const blank = DLCore.cellWord(text === undefined ? '' : text, c.inf[k]) === DLCore.BLANK_WORD;
+      if (blank) seen = true; else if (seen) { hole = true; break; }
+    }
+    if (hole) out.push(c.names[k]);
+  }
+  return out;
+}
+
 function update() {
   const c = chosen();
   const readout = el('readout'), save = el('save');
@@ -709,7 +725,13 @@ function update() {
   const blanks = c.inf.reduce((s, i) => s + i.blanks, 0) + c.cols.reduce((s, col) => s + (rows - col.length), 0);
   const pad = el('padnote');
   const notes = [];
-  if (blanks > 0) notes.push(blanks + ' blank cell' + (blanks === 1 ? '' : 's') + ' will be marked 9.99999999999E499; DataLoad leaves them out, so each list gets only its own values.');
+  const holes = Math.min(9, c.cols.length) >= 2 ? holeNames(c) : [];
+  if (blanks > 0 && holes.length) notes.push(blanks + ' blank cell' + (blanks === 1 ? '' : 's') + ' will be marked 9.99999999999E499. ' +
+    list(holes) + (holes.length === 1 ? ' has' : ' have') + ' a blank cell above a value, so when DataLoad loads these as Columns, it will ask ' +
+    'how the columns go together: choose "Pairs: keep complete rows" when each row is one person or one case (a before and an after, ' +
+    'an x and a y), so that each pair stays a pair, or "Separate groups: drop blanks" when the columns are separate groups. ' +
+    '(Scores by group always keeps only the rows in which both cells hold a value.)');
+  else if (blanks > 0) notes.push(blanks + ' blank cell' + (blanks === 1 ? '' : 's') + ' will be marked 9.99999999999E499; DataLoad leaves them out, so each list gets only its own values.');
   if (rows > 10000) notes.push('More than 10,000 rows has not been tried on the calculator.');
   pad.textContent = notes.join(' '); pad.hidden = notes.length === 0;
   save.disabled = false;
@@ -723,7 +745,9 @@ function readme(name) {
     '2. In its step 2, click "Add a data file you were given" and choose ' + name + '.hpmat.',
     '3. Close the Virtual Calculator, then click Load.',
     '4. Start it, open the Statistics 1Var app once, then run DataLoad from the Program Catalog.',
-    '5. If DataLoad says lists after the new ones hold data from before, choose clear.', '',
+    '5. If DataLoad says lists after the new ones hold data from before, choose clear.',
+    '6. If DataLoad says a column has a blank inside, choose "Pairs: keep complete rows" when each row is one person or',
+    '   one case (a before and an after, an x and a y), or "Separate groups: drop blanks" when the columns are groups.', '',
     'Or by hand: close the Virtual Calculator and copy ' + name + '.hpmat into Documents\\HP Prime\\Calculators\\Prime',
     '(replace the file there; the name must be exactly ' + name + '.hpmat).', '',
     'G1 or G2: drag ' + name + '.hpmat onto the calculator in the Connectivity Kit (not yet tested), then run DataLoad.', '',

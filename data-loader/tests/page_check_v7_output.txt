@@ -1,0 +1,46 @@
+PASS the box is empty when the page opens
+PASS ... the readout says so, and nothing can be downloaded
+PASS ... the two controls are off until there is data
+PASS a paste into the opened page holds only what was pasted
+PASS ... text is coded, NA is a blank, and step 3 says so
+PASS ... a clean paste has no warnings
+PASS the example: 432 rows and 5 columns, with a row of names
+PASS the example downloads as M1.hpmat, identical to the file tested on the calculator
+PASS ... the status sends the student on to step 4
+PASS step 4 leads to the Prime Loader, and names the file
+PASS a typo: "1 cell is not a number and will be a blank: 1O"
+PASS $45,000: numbers, with the sentence about the currency sign
+PASS 45%: the sentence says it is read as 45, not 0.45
+PASS Male and male: "are counted as one label"
+PASS 3,14: "read as a decimal comma"
+PASS one column of 45,000s: one column, and the sentence says how to make it two
+PASS ... choosing commas makes it two columns, and the sentence goes
+PASS typing in the box keeps the student's choice of separator
+PASS Clear empties the box and puts both controls back
+PASS one column of labels with spaces: one column, two codes
+PASS a column of 12 ID codes: the sentence says DataLoad takes at most 9 groups
+PASS names that are numbers: read as data, the box unticked
+PASS ... ticking the box makes them names
+PASS a new paste lets the page decide again
+PASS an .xlsx workbook is refused, with the way round it
+PASS an SPSS .sav file is refused, with the way round it
+PASS any other binary file is refused
+PASS a CSV file is read, and the refusal goes away
+PASS a Windows-1252 file keeps its accents
+PASS a UTF-16 text file (Excel's "Unicode Text") is read
+PASS choosing M3 names M3.hpmat on the button and in step 4
+PASS v7 paired columns with a blank in the middle: the note names the column and both answers
+PASS v7 blanks only at the foot of a column: the note of v6, with no question
+PASS v7 one column with a blank in the middle: no question (one column has no partner)
+PASS v7 a blank in the middle of the 11th column only (DataLoad takes the first 9): no question
+PASS v7 a slip, a cell left empty (nothing typed) in the middle of a column: it is a blank above a value, and y is named
+PASS v7 a wholly empty row in the middle of a paste is left out by the page (as in v6), so nothing is asked
+PASS v7 the note in the zip has the sixth step, with both answers
+PASS in a window 320 px wide the opened page does not scroll sideways
+PASS ... nor with the example loaded (the table of columns scrolls inside its own frame)
+PASS ... nor with every fold opened
+PASS every text color has a contrast of 4.5 to 1 or more on every surface of the page (light)
+PASS the list of warnings is a live region and carries no role
+PASS no errors in the page
+
+44 PASS, 0 FAIL

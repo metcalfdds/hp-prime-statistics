@@ -1,7 +1,10 @@
-// test_loader_v2q.js -- drives PrimeLoader_v2q.html in Chromium against a mock Virtual Calculator folder, and its
+// test_loader_v2r.js -- drives PrimeLoader_v2r.html in Chromium against a mock Virtual Calculator folder, and its
 // cable route (shown only at ?usb=1) against a pretend calculator that does what two real ones did on 17 Nov 2026.
-// Roger Metcalf & Claude, 18 Nov 2026.   node tests/test_loader_v2q.js PrimeLoader_v2q.html PACK.zip
+// Roger Metcalf & Claude, 18 Nov 2026.   node tests/test_loader_v2r.js PrimeLoader_v2r.html PACK.zip
 //
+// v2r (27 Nov 2026, round 20): test_loader_v2q.js with the page's new name and starter pack v28.  Every check is v2q's;
+// the counted numbers of the cable are new, because DataLoad beta 1i is 6,561 characters longer than beta 1h: the 30
+// programs that travel by cable are 4,065,308 characters, 129,089 reports of a G1 and 7,962 of a G2 (README, v2r).
 // v2q (26 Nov 2026, evening): test_loader_v2p.js with the page's new name, starter pack v27, and the bonus's box in
 // its new words (the book's Draft 106 has no Appendix G).  Every check is v2p's.
 //
@@ -475,8 +478,8 @@ function check(name, ok, detail) {
   await ipg.goto('file://' + path.join(path.dirname(PAGE), 'index.html') + '?data=1');
   await ipg.waitForFunction(() => !!document.getElementById('fromdl'), null, { timeout: 15000 }).catch(() => {});
   check('index.html carries ?data=1 on to the page, so the Data Loader\'s link to the folder\'s address opens it ready for the file',
-        /PrimeLoader_v2q\.html\?data=1$/.test(ipg.url()) && await ipg.isVisible('#fromdl'), ipg.url());
-  check('... and a browser with scripts off is still sent on, by the line in noscript', /<noscript><meta http-equiv="refresh" content="0; url=PrimeLoader_v2q\.html"><\/noscript>/.test(idx));
+        /PrimeLoader_v2r\.html\?data=1$/.test(ipg.url()) && await ipg.isVisible('#fromdl'), ipg.url());
+  check('... and a browser with scripts off is still sent on, by the line in noscript', /<noscript><meta http-equiv="refresh" content="0; url=PrimeLoader_v2r\.html"><\/noscript>/.test(idx));
 
   // ---- 10. Firefox: no folder API, Firefox's user-agent ----
   const fctx = await browser.newContext({ acceptDownloads: true,
@@ -643,7 +646,7 @@ function check(name, ok, detail) {
         /went down the cable/.test(st.report[0]) && /Each download was then verified: the copy on the calculator is the same, character for character\./.test(st.report[0]) && /^To make room, the Statisticles programs that are not in your choice were taken off first \(those that were there\), and programs of your own were left where they are\. To load another Sample, choose that Sample in step 2 and click Send again\.$/.test(st.report[1]) && /^It took \d+(\.\d)? seconds\.$/.test(st.report[2]),
         JSON.stringify([st.next, st.report]));
   check('... the details name the page, the browser, the calculator and the choice; say who answered and what each program did; end in a RESULT line; and hold neither the serial number nor more than twelve bytes of any message',
-        /^HP Prime Loader, v2q, straight down the cable\. /.test(st.log) && /\nBrowser: Mozilla/.test(st.log) && /\nDevice: HP Prime G2 \(USB 03F0:2441\), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator\.\n/.test(st.log) &&
+        /^HP Prime Loader, v2r, straight down the cable\. /.test(st.log) && /\nBrowser: Mozilla/.test(st.log) && /\nDevice: HP Prime G2 \(USB 03F0:2441\), "HP Prime"; reports of 1024 bytes in and 1024 out, by the calculator\.\n/.test(st.log) &&
         new RegExp('\\nChosen: Chapters 1–3; ' + ch12.length + ' programs, [\\d,]+ characters: ' + ch12.join(', ') + '\\.\\n').test(st.log) && /It answered: firmware build 15751, "V2\.060\.650", version 01\./.test(st.log) &&
         ch12.every(n => new RegExp('\\n +\\d+\\.\\d\\d  ' + n + ': [\\d,]+ characters\\.\\n').test(st.log)) && (st.log.match(/Read back the same: /g) || []).length === ch12.length &&
         new RegExp('RESULT: all ' + ch12.length + ' programs on the calculator, each read back the same\\. [\\d,]+ reports carried the programs there and back; \\d+\\.\\d s in all\\.').test(st.log) && !/SECRET|SERIAL/.test(st.log) &&
@@ -739,8 +742,8 @@ function check(name, ok, detail) {
         got.outOfTurn === 0 && got.waits.every(w => w < 250) && !got.err, JSON.stringify([st.status, st.failh, sentBig, bigWant, got.outOfTurn, Math.max(0, ...got.waits), got.err]));
   const names30 = Object.keys(CATALOG.programs).filter(n => CATALOG.programs[n].src).sort((a, b) => a.localeCompare(b));
   const chars30 = names30.reduce((s, n) => s + packSource(n).length, 0);
-  check('... counted, because the page\'s notes say it: the 30 programs that travel by cable are 4,058,747 characters, which would be 128,881 reports of a G1 and 7,949 of a G2; none has a CR in it; and no group is over 1,300,000 characters (both calculators gave out near 2,000,000)',
-        chars30 === 4058747 && reportsOf(names30, 55, 63) === 128881 && reportsOf(names30, 1015, 1023) === 7949 && names30.length === 30 && names30.every(n => !/\r/.test(packSource(n))) &&
+  check('... counted, because the page\'s notes say it: the 30 programs that travel by cable are 4,065,308 characters, which would be 129,089 reports of a G1 and 7,962 of a G2; none has a CR in it; and no group is over 1,300,000 characters (both calculators gave out near 2,000,000)',
+        chars30 === 4065308 && reportsOf(names30, 55, 63) === 129089 && reportsOf(names30, 1015, 1023) === 7962 && names30.length === 30 && names30.every(n => !/\r/.test(packSource(n))) &&
         CATALOG.groups.every(g => g.chars === g.programs.reduce((s, n) => s + (CATALOG.programs[n].src ? packSource(n).length : 0), 0) && g.chars < 1300000), [chars30, CATALOG.groups.map(g => g.chars)].join(' '));
   check('... CentralLimit is said not to have been sent this way, and the Kit\'s steps are opened for it', st.report.some(l => /^Not sent this way: CentralLimit \(an app or data\)\. For it, use the official HP way \(2, just below\)\.$/.test(l)) && st.kitOpen && /Device: HP Prime G1 \(USB 03F0:1541\)/.test(st.log) &&
         /reports of 64 bytes in and 64 out/.test(st.log), JSON.stringify(st.report));
