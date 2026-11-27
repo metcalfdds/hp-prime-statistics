@@ -1,10 +1,10 @@
 # Starter pack for the Virtual Calculator
 
-*v26, 2026-11-26. Built by `tools/make_starter_pack_v5.py` from `programs/` and `extras/sudoku/`; do not edit this page by hand.*
+*v27, 2026-11-26. Built by `tools/make_starter_pack_v6.py` from `programs/` and `extras/sudoku/`; do not edit this page by hand.*
 
-All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** on a Windows PC: no Connectivity Kit, no copying and pasting. Download **[HP_Prime_Statistics_Starter_Pack_v26.zip](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v26.zip)** (one file).
+All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** on a Windows PC: no Connectivity Kit, no copying and pasting. Download **[HP_Prime_Statistics_Starter_Pack_v27.zip](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v27.zip)** (one file).
 
-*How this pack was tested on the Virtual Calculator: [docs/changes/StarterPack_v26_NOTES.md](../docs/changes/StarterPack_v26_NOTES.md).*
+*How this pack was tested on the Virtual Calculator: [docs/changes/StarterPack_v27_NOTES.md](../docs/changes/StarterPack_v27_NOTES.md).*
 
 ### What you need
 - A Windows PC with the HP Prime Virtual Calculator (64-bit). It is a free download from hpcalc.org, which lists Hewlett-Packard as its author. The pack was tested on the Virtual Calculator 2.4.2 (build 2026-09-09), 64-bit.
@@ -28,7 +28,7 @@ All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** o
 - `Sample data (optional)` holds `M1.hpmat`: the Rossi re-arrest data (432 rows x 5 columns: week of first re-arrest, arrest 1/0, financial aid 1/0, age, prior convictions). Copy it too if you want data to try: it becomes the calculator's matrix M1 and replaces what M1 held. Then DataLoad, Scores by group, scores in column 1, groups in column 3, puts the weeks without and with financial aid in D1 and D2, ready for TTestLab.
 
 ### Just for fun: the bonus
-- The folder `Bonus (optional)` holds `Sudoku.hpprgm`, a bonus that is not one of the 31 *Statisticles*: Sudoku beta 2a, a Sudoku puzzle game that keeps a record of the games you finish for a class experiment. Copy it into the Prime folder too if you want it, in the same way (calculator closed). The book tells about it in Appendix G, "Just for fun: Sudoku, and the statistics hiding in it".
+- The folder `Bonus (optional)` holds `Sudoku.hpprgm`, a bonus that is not one of the 31 *Statisticles*: Sudoku beta 2a, a Sudoku puzzle game that keeps a record of the games you finish for a class experiment. Copy it into the Prime folder too if you want it, in the same way (calculator closed).
 
 ### Good to know
 - Windows asks before it replaces a file of the same name. Replacing it replaces that program on the calculator.
@@ -76,6 +76,6 @@ All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** o
 
 ## Building it again
 
-`python3 tools/make_starter_pack_v5.py v27 --kit PATH_TO_hp-prime-kit --checked FOLDER` after a program changes. The tool names each file, checks the names, builds with hp-prime-kit (MIT, [JordiRigau/hp-prime-kit](https://github.com/JordiRigau/hp-prime-kit)), builds the sample matrix from `data-loader/examples/rossi.csv`, reads every file back, and writes the zip and this page. With `--checked` it carries each program as the Virtual Calculator wrote it back after one Check there (the same source plus its compiled block), so students never Check; it stops if a checked file's source differs from `programs/`. Build without `--checked` first, load that pack on the Virtual Calculator, Check each changed program, close it, and copy those files into FOLDER. Move the older zip out of this folder.
+`python3 tools/make_starter_pack_v6.py v28 --kit PATH_TO_hp-prime-kit --checked FOLDER` after a program changes. The tool names each file, checks the names, builds with hp-prime-kit (MIT, [JordiRigau/hp-prime-kit](https://github.com/JordiRigau/hp-prime-kit)), builds the sample matrix from `data-loader/examples/rossi.csv`, reads every file back, and writes the zip and this page. With `--checked` it carries each program as the Virtual Calculator wrote it back after one Check there (the same source plus its compiled block), so students never Check; it stops if a checked file's source differs from `programs/`. Build without `--checked` first, load that pack on the Virtual Calculator, Check each changed program, close it, and copy those files into FOLDER. Move the older zip out of this folder.
 
 *Free for educational and personal use. © 2026 Roger Metcalf.*

@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
-"""build_loader_v2p.py -- assembles PrimeLoader_v2p.html: the page template, the loader's core, the Data Loader's core
+"""build_loader_v2q.py -- assembles PrimeLoader_v2q.html: the page template, the loader's core, the Data Loader's core
 (for its zip writer), the USB core, the chapter list, and every program file from a starter pack, embedded so the
 page works offline.
 
-    python3 build_loader_v2p.py PACK.zip [OUT.html] [--kit PATH]
+    python3 build_loader_v2q.py PACK.zip [OUT.html] [--kit PATH]
+v2q (26 Nov 2026, evening): no Appendix G.  The book's Draft 106 (the refocus) has no Appendix G, so the bonus's box
+says what Sudoku is, "a Sudoku puzzle game that keeps a record of the games you finish" (v2p: "a Sudoku puzzle game,
+the book's Appendix G"), and the page is built from starter pack v27, whose read-me drops the same words.  Every
+other word and step is v2p's (verify/refocus_d106/make_v2q_v1.py).
 v2p (26 Nov 2026): the bonus.  Starter pack v26 (tools/make_starter_pack_v5.py) carries Sudoku beta 2a, the book's
 just-for-fun program (Appendix G), in a folder of its own, "Bonus (optional)", checked on the Virtual Calculator.
 The page offers it under "More choices" as a box of its own (BONUS below; Roger, 26 Nov 2026, chose the Loader's
@@ -185,7 +189,7 @@ KIT = os.environ.get('HPKIT', '/tmp/kit/hp-prime-kit-HEAD')
 if '--kit' in argv:
     i = argv.index('--kit'); KIT = argv[i + 1]; del argv[i:i + 2]
 PACK = argv[0]
-OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v2p.html')
+OUT = argv[1] if len(argv) > 1 else os.path.join(HERE, 'PrimeLoader_v2q.html')
 SITE = 'https://metcalfdds.github.io/hp-prime-statistics/'
 sys.path.insert(0, KIT)
 from hpkit import program as kitprog            # hp-prime-kit (MIT, JordiRigau/hp-prime-kit)
@@ -264,7 +268,7 @@ DATA = {
 # v2p: the bonus (not one of the 31): name: (file in the pack, name on the calculator, what it is, the name to type in Home,
 # its folder in the repository).  Its version is read from that folder's file name, as a program's is from programs/.
 BONUS = {
-  'Sudoku': ('Bonus (optional)/Sudoku.hpprgm', 'Sudoku.hpprgm', 'a Sudoku puzzle game, the book\'s Appendix G', 'Sudoku',
+  'Sudoku': ('Bonus (optional)/Sudoku.hpprgm', 'Sudoku.hpprgm', 'a Sudoku puzzle game that keeps a record of the games you finish', 'Sudoku',
              'extras/sudoku'),
 }
 BONUS_VER = {}
@@ -332,7 +336,7 @@ for k, v in PROGRAMS.items():
         continue
     text, _, start, end = kitprog.read(packed[v[0]])
     mine = glob.glob(os.path.join(os.path.dirname(HERE), 'programs', k + '_*.txt'))
-    # (blank space after a program's last line does not count: make_starter_pack_v5.py compares the same way, and
+    # (blank space after a program's last line does not count: make_starter_pack_v6.py compares the same way, and
     # programs/ResampLab_beta1j.txt ends in one blank line more than its checked file)
     want = kitprog.normalize_source(open(mine[0], encoding='utf-8').read()).rstrip()
     if kitprog.normalize_source(text).rstrip() != want:
@@ -408,11 +412,11 @@ catalog = {
                 'bytes': len(packed[v[1]]), 'src': bonus_src[k]} for k, v in BONUS.items()},
   'bonus_checked': bonus_checked,
   'pack': os.path.basename(PACK),
-  'loader': 'v2p',
+  'loader': 'v2q',
   'pack_sha256': hashlib.sha256(open(PACK, 'rb').read()).hexdigest()[:12],
 }
 
-t = open(os.path.join(HERE, 'loader_template_v2p.html'), encoding='utf-8').read()
+t = open(os.path.join(HERE, 'loader_template_v2q.html'), encoding='utf-8').read()
 import glob as _glob
 _dl = sorted(_glob.glob(os.path.join(HERE, '..', 'data-loader', 'DataLoader_v*.html')),
              key=lambda p: [int(x) if x.isdigit() else x for x in __import__('re').split(r'(\d+)', os.path.basename(p))])
@@ -446,7 +450,7 @@ redirect = ('<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n
             '<link rel="canonical" href="' + SITE + 'prime-loader/' + page + '">\n'
             '<style>body{font:16px/1.5 system-ui,sans-serif;margin:2rem;color:#172033;background:#f6f8fb}'
             '@media (prefers-color-scheme:dark){body{color:#e8edf6;background:#0f1420}a{color:#7d9cff}}</style>\n'
-            '</head>\n<body>\n<!-- Written by build_loader_v2p.py: sends the browser on to the current Prime Loader, so the '
+            '</head>\n<body>\n<!-- Written by build_loader_v2q.py: sends the browser on to the current Prime Loader, so the '
             'address .../prime-loader/ never changes. -->\n'
             '<p>Opening the HP Prime Loader&hellip; If nothing happens, <a href="' + page + '">click here</a>.</p>\n'
             '</body>\n</html>\n')

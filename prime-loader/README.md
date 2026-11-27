@@ -2,7 +2,7 @@
 
 **For students: say which calculator and which programs, and click one button.** Then start the calculator, tap a program, tap Run. Nothing needs checking or compiling first.
 
-**Open it here: <https://metcalfdds.github.io/hp-prime-statistics/prime-loader/>.** That address never changes: it always opens the newest version (this folder's `index.html` sends the browser on to it). The page is one file, `PrimeLoader_v2p.html`, and also works offline: download it (on GitHub: open the file, then "Download raw file") and open it in any browser.
+**Open it here: <https://metcalfdds.github.io/hp-prime-statistics/prime-loader/>.** That address never changes: it always opens the newest version (this folder's `index.html` sends the browser on to it). The page is one file, `PrimeLoader_v2q.html`, and also works offline: download it (on GitHub: open the file, then "Download raw file") and open it in any browser.
 
 ## What it does (v2l, 18 November 2026)
 
@@ -72,6 +72,10 @@ CentralLimit, which is an app of three files, and data files do not travel this 
 - **v2h, v2j with the rest after each program:** G2 18:02 three of four ran; G2 18:43 four of four; G1 18:48 four of five (the last one sent went to Check). 11 of 13.
 - **v2i jammed the G2** (the report `01`); it was never published.
 - **v2l has run on the G1** (19 Nov, 14:23, Edge: Chapters 10–12, eight programs, all verified; `usb/logs/PrimeLoader_v2l_G1_Edge_2026-11-19_1423.txt`; four of them were then run and started with no Check, and Shift-Program afterwards showed PowerViz in the editor: `usb/README.md`, "Loader v2l on the G1"). **v2l has run on the G2 too** (19 Nov, 14:52: the same eight, all verified; `usb/logs/PrimeLoader_v2l_G2_Chrome_2026-11-19_1452.txt`; what ran afterwards is not yet reported). **v2k has run on no calculator.** Both differ from v2j in words only (v2k in two sentences, v2l in the places listed above). EpiStats alone as Advanced 1 has not been sent by a group (it ran when sent alone by tick, 17:28). The G2 did take its deletes: Roger looked at its Program Catalog (18 Nov, 19:28: "On the G2 it did clear the other Statisticles"), as he had looked at the G1's.
+
+### What v2q changes (26 November 2026, evening): no Appendix G
+
+The book's Draft 106 (the refocus, 26 November 2026) has no Appendix G: Draft 105's "Just for fun: Sudoku, and the statistics hiding in it" went to the book's website archive. So the bonus's box says what Sudoku is, "Add **Sudoku**, just for fun: a Sudoku puzzle game that keeps a record of the games you finish", where v2p said "a Sudoku puzzle game, the book's Appendix G", and the page is built from starter pack v27, whose READ_ME_FIRST.txt drops the same words (`docs/changes/StarterPack_v27_NOTES.md`). Every other word and step is v2p's, and every program file is v26's, byte for byte. Made from v2p by `verify/refocus_d106/make_v2q_v1.py`; `tests/test_loader_v2q.js` gave **173 PASS, 0 FAIL** in Chromium (`tests/test_loader_v2q_output.txt`), and `tools/pages_a11y_v1.js` 32 PASS, 0 FAIL. Not sent to a calculator.
 
 ### What v2p adds (26 November 2026): the bonus
 
@@ -227,12 +231,12 @@ The page was also looked at in light and dark, at desktop and phone widths: noth
 
 | File | What it is |
 |---|---|
-| `PrimeLoader_v2p.html` | The page, built: open this one. About 2.5 MB, all 31 programs inside, checked, and the bonus, Sudoku. |
+| `PrimeLoader_v2q.html` | The page, built: open this one. About 2.5 MB, all 31 programs inside, checked, and the bonus, Sudoku. |
 | `index.html` | Written by the build: sends a browser at `.../prime-loader/` on to the current page, with whatever follows the address (`?data=1`, `?usb=1`), so the book's link never changes. |
-| `loader_template_v2p.html` | The page's source, with slots for the three cores, the catalog, the files and the Data Loader's web address. |
+| `loader_template_v2q.html` | The page's source, with slots for the three cores, the catalog, the files and the Data Loader's web address. |
 | `loader_core_v3.js` | The file work: find the folder, check the lock, plan what to move (`planAdd`: only what is replaced; `planBook`: the book's programs, for one chapter, which the page has not offered since v2g), back up, write, read back; the check of a data file; and the zip reader for the embedded files (every CRC checked). No DOM: the page and the tests share it. |
-| `build_loader_v2p.py` | `python3 build_loader_v2p.py ../starter-pack/HP_Prime_Statistics_Starter_Pack_v26.zip --kit PATH_TO_hp-prime-kit`. Holds the chapter list (from the companion guide's Chapter Plan), the groups for a real HP Prime (`CHAPTER_GROUPS`; the advanced programs are dealt into three by size), each program's one line, and the name to type in Home. Stops if the catalog and the pack disagree, or if the source inside a program's file is not the one in `programs/`, and says how many files are checked. Uses `../data-loader/dl_core_v2.js` for the zip it offers and `usb/prime_usb_v3d.js` for the cable. |
-| `tests/test_loader_v2p.js` | The Chromium test: `node tests/test_loader_v2p.js PrimeLoader_v2p.html ../starter-pack/HP_Prime_Statistics_Starter_Pack_v26.zip` (Playwright; about twelve minutes, most of it the cable's waits). |
+| `build_loader_v2q.py` | `python3 build_loader_v2q.py ../starter-pack/HP_Prime_Statistics_Starter_Pack_v27.zip --kit PATH_TO_hp-prime-kit`. Holds the chapter list (from the companion guide's Chapter Plan), the groups for a real HP Prime (`CHAPTER_GROUPS`; the advanced programs are dealt into three by size), each program's one line, and the name to type in Home. Stops if the catalog and the pack disagree, or if the source inside a program's file is not the one in `programs/`, and says how many files are checked. Uses `../data-loader/dl_core_v2.js` for the zip it offers and `usb/prime_usb_v3d.js` for the cable. |
+| `tests/test_loader_v2q.js` | The Chromium test: `node tests/test_loader_v2q.js PrimeLoader_v2q.html ../starter-pack/HP_Prime_Statistics_Starter_Pack_v27.zip` (Playwright; about twelve minutes, most of it the cable's waits). |
 | `usb/` | A real HP Prime on its USB cable, from a web page: the code, a pretend calculator to test it with, and the logs of two real ones. [usb/README.md](usb/README.md). |
 | `tests/idb_handle_probe_v1.js` | Shows the browser fault the test steps round: a folder handle read back from IndexedDB ends Chrome for Testing 153 (see above). |
 

@@ -2,6 +2,10 @@
 
 *Moved here from the top of the README on 27 October 2026. The newest entry is first.*
 
+**Test status, 26 November 2026 (evening).**
+
+- **26 November 2026, evening: no Appendix G; starter pack v27 and the Prime Loader v2q.** The book's Draft 106 (the refocus) has no Appendix G, so the pack's READ_ME_FIRST.txt and the Loader's bonus box no longer name one. Starter pack v27 is v26 byte for byte but for READ_ME_FIRST.txt (its first line and that sentence), so every program in it is the one v26 tested (`docs/changes/StarterPack_v27_NOTES.md`); the Prime Loader v2q, built from it, gave 173 PASS, 0 FAIL in Chromium (`prime-loader/tests/test_loader_v2q_output.txt`), and the accessibility check of the pages 32 PASS, 0 FAIL (`tools/pages_a11y_v1_output.txt`). Not sent to a calculator.
+
 **Test status, 26 November 2026.**
 
 - **26 November 2026: the bonus, Sudoku beta 2a (`extras/sudoku/`); starter pack v26 and the Prime Loader v2p.** Sudoku is the book's just-for-fun program (Appendix G), not one of the 31. In the PC harness: 161 checks passed, 1,000 random runs and 300 directed runs on its My games page OK. On the Virtual Calculator: Check, then an Easy puzzle finished with Hint, kept as game 1 of My games, plotted, and copied into *Statistics 2Var* (`extras/sudoku/vc_2026-11-26/README.md`). Starter pack v26 is v25 byte for byte, but for READ_ME_FIRST.txt, plus `Bonus (optional)/Sudoku.hpprgm`, checked (`docs/changes/StarterPack_v26_NOTES.md`); the Prime Loader v2p offers it under "More choices", and its test gave 173 PASS, 0 FAIL in Chromium, 12 of them for the bonus (`prime-loader/tests/test_loader_v2p_output.txt`). Not yet on a G1 or a G2.

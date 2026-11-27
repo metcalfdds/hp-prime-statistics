@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""make_starter_pack_v5.py -- builds the Virtual Calculator starter pack from programs/ (1 Nov 2026), and the bonus.
+"""make_starter_pack_v6.py -- builds the Virtual Calculator starter pack from programs/ (1 Nov 2026), and the bonus.
+
+v6 (26 Nov 2026, evening): NO APPENDIX G.  The book's Draft 106 (the refocus) has no Appendix G: Draft 105's "Just for
+fun: Sudoku, and the statistics hiding in it" went to the book's website archive.  So the instructions no longer send
+the reader there; nothing else is different.  Pack v27 was made from v26 by that one change
+(verify/refocus_d106/make_v2q_v1.py), not built again, because every program file in it is v26's, byte for byte.
 
 v5 (26 Nov 2026): THE BONUS.  The pack also carries the programs of BONUS (below), folders of extras/ that each hold
 one <Name>_beta*.txt or <Name>_v*.txt, in a folder of their own, "Bonus (optional)/<Name>.hpprgm", beside the
@@ -51,7 +56,7 @@ HOW EACH FILE IS BUILT
     of another program (all programs on a Prime share one pool of names), ignoring case as the Prime does.
 
 RUN
-  python3 tools/make_starter_pack_v5.py VER [--kit PATH] [--repo PATH] [--out PATH] [--sample CSV] [--checked DIR]
+  python3 tools/make_starter_pack_v6.py VER [--kit PATH] [--repo PATH] [--out PATH] [--sample CSV] [--checked DIR]
       VER   the pack's version, e.g. v2 (every new build of the pack gets the next number)
       --kit hp-prime-kit's folder (default: $HPKIT, then /tmp/kit/hp-prime-kit-HEAD)
       --checked  a folder of files copied back from the Virtual Calculator after each program was Checked
@@ -341,7 +346,7 @@ def instructions(ver, today, table, zname, plain, sample=None):
               'https://github.com/metcalfdds/hp-prime-statistics', '']
     else:
         L += ['# Starter pack for the Virtual Calculator', '',
-              '*%s, %s. Built by `tools/make_starter_pack_v5.py` from `programs/` and `extras/sudoku/`; do not edit this page by hand.*'
+              '*%s, %s. Built by `tools/make_starter_pack_v6.py` from `programs/` and `extras/sudoku/`; do not edit this page by hand.*'
               % (ver, today), '',
               'All %d programs in one zip, ready for the free **HP Prime Virtual Calculator** on a Windows PC: '
               'no Connectivity Kit, no copying and pasting. Download **[%s](%s/%s)** (one file).'
@@ -413,7 +418,7 @@ def instructions(ver, today, table, zname, plain, sample=None):
               'made LF, trailing blank lines dropped): the file in `programs/` (or, for the bonus, `extras/sudoku/`) it was built from. Every file in the '
               'zip was read back and matched its source before the zip was written.*', '',
               '## Building it again', '',
-              '`python3 tools/make_starter_pack_v5.py v27 --kit PATH_TO_hp-prime-kit --checked FOLDER` after a '
+              '`python3 tools/make_starter_pack_v6.py v28 --kit PATH_TO_hp-prime-kit --checked FOLDER` after a '
               'program changes. The tool names each file, checks the names, builds with hp-prime-kit (MIT, '
               '[JordiRigau/hp-prime-kit](https://github.com/JordiRigau/hp-prime-kit)), builds the sample matrix '
               'from `data-loader/examples/rossi.csv`, reads every file back, and writes the zip and this page. With '
@@ -432,8 +437,7 @@ def bonus_lines(hd, c, bon):
         return []
     return [hd('Just for fun: the bonus'),
             '- The folder %s holds %s, a bonus that is not one of the 31 %s: %s. Copy it into the Prime'
-            ' folder too if you want it, in the same way (calculator closed). The book tells about it in Appendix G,'
-            ' "Just for fun: Sudoku, and the statistics hiding in it".' % (
+            ' folder too if you want it, in the same way (calculator closed).' % (
                 c(BONUS_FOLDER), ', '.join(c(t['name'] + '.hpprgm') for t in bon),
                 'Statisticles' if c('x') == 'x' else '*Statisticles*',
                 '; '.join('%s %s, a Sudoku puzzle game that keeps a record of the games you finish for a class'
