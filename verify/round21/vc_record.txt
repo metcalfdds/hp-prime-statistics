@@ -1,0 +1,92 @@
+Round 21 on the HP Prime Virtual Calculator 2.4.2 (build 2026-09-09), in the cloud workspace (tools/vc_cloud_v1, Wine 11.21),
+28 November 2026, 03:19 to 03:55 (the calculator's clock).  Driven with tools/vc_cloud_v1/vcdrive.py; the steps of the run are in
+vc_r21.py; every capture named here is in vc/ (a name ending _x3 is the screen at three times, as the book prints it).
+
+THE ROUND PROBE (diagnostics/RoundProbe_beta1a.txt), why: in the PC harness, TTestLab beta 1n's one-sample step 4 with s = 162.45
+and N = 100 showed SE = 16.24, where a student works 162.45/10 = 16.245 and rounds it to 16.25.
+03:19  RoundProbe beta 1 (the first 13 lines of beta 1a) copied into the closed calculator's folder; started.  Run from the
+       Program Catalog did nothing until the program was checked (Edit > Check: "No errors in the program"); then Run gave the
+       terminal (01_RoundProbe_beta1_terminal.png):
+         162.45/10 = 16.245              ROUND(162.45/10,2) = 16.25       100^.5 = 10
+         ROUND(162.45/100^.5,2) = 16.25  ROUND(16.245,2) = 16.25          ROUND(-16.245,2) = -16.25
+         ROUND(0.125,2) = 0.13           ROUND(2.5,0) 3  ROUND(3.5,0) 4   ROUND(-2.5,0) = -3
+         ROUND(16.245,-4) = 16.25        (0.0078125+123101)^2 = 15153858124.5
+         ROUND of it, 0 = 15153858124    1/3 = 0.333333333333
+       So ROUND rounds the decimal the calculator holds, and a tie away from zero; and the square was held to more digits than
+       its 12 shown (its ROUND to 0 decimals is ...124, not ...125).
+03:22  Left by Calculator > Exit; RoundProbe beta 1a copied in; started; checked ("No errors in the program"); run
+       (02_RoundProbe_beta1a_terminal.png): its four new lines
+         123101.0078125-123101 = 0.0078125
+         (1+1E-12)-1 0.000000000001  (1+1E-13)-1 1E-13
+         (1+1E-14)-1 1E-14  (1+1E-15)-1 1E-15
+         (1/3)*3-1 = 0   2^40+1-2^40 = 1
+       The harness (its binary floats) gives 1.00008890058E-12, 9.99200722163E-14, 9.99200722163E-15 and 1.11022302463E-15 for
+       the four differences, and ROUND(162.45/10,2) = 16.24.  tools/prime_facts_v1.py fact 8 now makes the harness's ROUND round
+       the decimal of 15 significant digits nearest its float, half away from zero: with it, the harness gives every ROUND line
+       above as the calculator did.  The other arithmetic is not modelled.
+
+THE CHECK (for starter pack v29's second pass), before anything was run
+03:33  TTestLab.hpprgm (TTestLab beta 1n, 225,082 bytes) and TTestLabG.hpprgm (TTestLabG beta 1k, 222,414 bytes), byte for byte
+       the pack's first pass (`hpprime write` of programs/), copied into the closed calculator's folder; started; Program Catalog >
+       TTestLab > Edit > Check: "No errors in the program" (03_TTestLab_beta1n_check.png; the editor's first lines read
+       "TTESTLAB - beta 1n", 03_TTestLab_beta1n_editor.png); then TTestLabG the same way, "No errors in the program"
+       (04_TTestLabG_beta1k_check.png, 04_TTestLabG_beta1k_editor.png).  Left by Calculator > Exit; the calculator wrote the two
+       files back, 239,333 and 236,271 bytes, and they went into the checked folder beside v28's other checked files (the 28
+       other programs, the app and the bonus).  make_starter_pack_v6.py v29 --checked took every program and the bonus checked,
+       each one's source read back equal to programs/ (extras/ for the bonus); pack v29 against v28: TTestLab.hpprgm,
+       TTestLabG.hpprgm and READ_ME_FIRST.txt differ, nothing else.
+
+THE RUN (after the checked files were collected)
+03:52  Program Catalog > TTestLabG > Run.  The menu "TTestLabG: tests in 5 steps" (10_tlg_start_menu.png); 3 Example: draft
+       lottery -> step 1 (11_tlg_lottery_step1.png: x̄1 = 206.3, s1 = 106.1, N1 = 182; x̄2 = 160.9, s2 = 100.8, N2 = 184).
+       2 df (12_tlg_lottery_step2_x3.png, the left half of the book's Figure 11.2):
+         a = s1²/N1 = 106.1437²/182 = 61.9038
+         b = s2²/N2 = 100.7567²/184 = 55.1734
+         df = 13,707 / 37.806 = 362.56
+       4 t (13_tlg_lottery_step4_x3.png, its right half):
+         = √(106.1437²/182 + 100.7567²/184)
+         = √(61.9038 + 55.1734) = √117.0772
+         = 10.820
+         t obt = (x̄1 - x̄2)/SE
+               = (206.3242 - 160.9239)/10.820
+               = 45.4003/10.820 = 4.20
+       Each line works out from the one before it; every line is the harness's, character for character
+       (verify_TTestLabG_beta1k.py, E2).  Menu (14_tlg_menu.png), 6 Help: pages 1/3 to 3/3 (14_tlg_help1 to 14_tlg_help3.png);
+       page 2's new line "Steps 2 and 4 work each number from those shown, so all check." stands inside the screen; any key after
+       page 3: back at step 4 (14_tlg_after_help.png).  Menu (15_tlg_menu2.png), 7 Quit TTestLabG: the box reads
+       TTestLabG "TTestLabG: t(362.56) = 4.20, p < 0.001, two-tailed" (16_tlg_quit.png); OK.
+03:53  Program Catalog > TTestLab > Run.  The menu "TTestLab: tests in 5 steps" (20_tl_start_menu.png); 2 Example: age at arrest
+       -> step 1 (21_tl_age_step1.png).  4 t (22_tl_age_step4_x3.png, the book's Figure 11.4):
+         = √[(43 × 1.45² + 30 × 1.11²)/73]
+           × √[75/1,364]
+         = √1.74480 × √0.0549853
+         = 1.3209 × 0.23449
+         = 0.3097
+         t obt = (x̄1 - x̄2)/SE
+               = (15.89 - 16.57)/0.3097
+               = -0.68/0.3097 = -2.20
+         The lecture rounds √0.0549853 to √.05, SE to .29,
+         so its t obt is -.68/.29 = -2.34.  Exact: -2.20.
+       Menu, 6 Help: pages 1/3 to 3/3 (23_tl_help1 to 23_tl_help3.png); page 2's two new lines, "Steps 2 and 4 work each number
+       from those shown above it, so" and "each step checks; rounding sooner can change t obt (example 1)", inside the screen
+       (23_tl_help2.png); back at step 4 (23_tl_after_help.png).
+03:54  Menu (29_tl_menu.png), 4 Choose the test -> "Which test?" (30_tl_which_test.png), 4 Two proportions: z -> the form "Two
+       proportions" (31_tl_form.png); typed 1, 999999, 151 and 1000000, each with Enter (32_tl_form_filled.png: x 1 = 1,
+       n 1 = 999,999, x 2 = 151, n 2 = 1,000,000); OK -> "Tails" (33_tl_tails.png), 1 Two-tailed -> "α (two-tailed)"
+       (34_tl_alpha.png), 3 0.05 -> step 4 (35_tl_2p_after.png; 36_tl_2p_step4_x3.png):
+         p̂1 = x1/n1 = 1/999,999 = 0.000001
+         p̂2 = x2/n2 = 151/1,000,000 = 0.000151
+         p = (x1 + x2)/(n1 + n2)
+           = 152/1,999,999 = 0.000076000
+         SE = √(p(1 - p)(1/n1 + 1/n2))
+           = √(0.000076000 × 0.999924
+               × (1/999,999 + 1/1,000,000))
+           = 0.00001233
+         z obt = (p̂1 - p̂2)/SE
+               = (0.000001 - 0.000151)/0.00001233
+               = -0.00015/0.00001233 = -12.17
+       every line inside the screen, and the harness's, character for character.
+03:55  Menu, 7 Quit TTestLab: TTestLab "TTestLab: z = -12.17, p < 0.001, two-tailed" (37_tl_quit.png); OK.  Left by
+       Calculator > Exit.
+
+Not done here: a G1 or a G2 (the change notes' device checklists).

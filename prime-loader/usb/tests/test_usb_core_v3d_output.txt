@@ -16,8 +16,8 @@ PASS A14 not compressed, 19 of the 31 fit 255 reports of a G2 and 12 do not; non
 PASS A15 normalizeSource: CRLF and CR become LF, and one newline at the end is dropped (hp-prime-kit's rule)
 PASS A16 names: letters, digits and "_", a letter or "_" first
 PASS A17 the requests and the deletes for ZZUSBE begin with the bytes in the logs of 17 Nov: the two with a NUL were answered with the program, the deletes took it off
-     the 31 programs: 4,184,948 characters; not compressed in the newer framing 132,888 reports of a G1 and 8,196 of a G2; the largest is EpiStats (292,430 characters, 9,285 and 572 reports), the smallest DataLoad (48,231)
-PASS A18 the book's 31 programs are 4,184,948 characters: 132,888 reports of a G1 and 8,196 of a G2, not compressed in the newer framing; the largest, EpiStats, is 292,430 characters (9,285 and 572 reports)
+     the 31 programs: 4,210,652 characters; not compressed in the newer framing 133,704 reports of a G1 and 8,246 of a G2; the largest is EpiStats (292,430 characters, 9,285 and 572 reports), the smallest DataLoad (48,231)
+PASS A18 the book's 31 programs are 4,210,652 characters: 133,704 reports of a G1 and 8,246 of a G2, not compressed in the newer framing; the largest, EpiStats, is 292,430 characters (9,285 and 572 reports)
 PASS B1 old framing: 301 reports, numbered 00 to FE and then 00 again, never FF
 PASS B2 old framing: the pieces put together are the message
 PASS B3 old framing: a one-byte message is one report of two bytes
@@ -90,8 +90,8 @@ PASS E11 a calculator that hands a program back with CRLF and a last line end: s
 PASS E12 a name the calculator would not take is refused before anything of it is sent: "unsent", with the name
 PASS E13 the log of a load: a "send again" is always in it, however long the message; the ordinary lines beyond the first forty are counted and left out
 PASS E14 ... and when a load fails, the last reports that the log had left out are written after the failure, since those are the ones wanted
-PASS F1 all 31 programs onto a pretend G1: each read back the same; 132,888 reports of programs, none sent twice, no word of the clock needed (2.3 s against the mock, which takes a report at once)
-PASS F2 all 31 programs onto a pretend G2: each read back the same; 8,196 reports of programs, none sent twice, no word of the clock needed (1.8 s against the mock, which takes a report at once)
+PASS F1 all 31 programs onto a pretend G1: each read back the same; 133,704 reports of programs, none sent twice, no word of the clock needed (2.1 s against the mock, which takes a report at once)
+PASS F2 all 31 programs onto a pretend G2: each read back the same; 8,246 reports of programs, none sent twice, no word of the clock needed (1.4 s against the mock, which takes a report at once)
 PASS G1 the log of reports: a message's start with its number, size and first twelve bytes; the reports after it only counted, with their numbers; three of a run of one kind and then their count
 PASS G2 after its budget of ordinary lines the rest are counted, and said at the next line of the caller's; a "send again" is written all the same; and the last ones left out can be had
 PASS G3 in 147 lines of two loads' logs: no line shows more than twelve bytes of a message, and the serial number, which the mock sends in its answer to "who are you", is in none, as text or as bytes

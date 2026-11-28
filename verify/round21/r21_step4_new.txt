@@ -1,0 +1,64 @@
+LOCAL tt_Step4()
+BEGIN
+ LOCAL sw, sj, sn, sy, sq;
+ tt_Frame("Step 4. Standard error and t obtained");
+ // beta 1n: the numbers of the chain (tt_Work), so every step checks
+ sw := tt_Work();
+ IF ttTY == 1 THEN
+  TEXTOUT_P("SE = √[((N"+CHAR(8321)+"-1)s"+CHAR(8321)+"² + (N"+CHAR(8322)+"-1)s"+CHAR(8322)+"²)/(N"+CHAR(8321)+"+N"+CHAR(8322)+"-2)]",G1,8,30,1,ttBLUE);
+  TEXTOUT_P("       × √[(N"+CHAR(8321)+"+N"+CHAR(8322)+")/(N"+CHAR(8321)+"N"+CHAR(8322)+")]",G1,8,43,1,ttBLUE);
+  TEXTOUT_P("   = √[("+tt_Cm(tt_Num(ttN1-1))+" × "+tt_WV(sw,3)+"² + "+tt_Cm(tt_Num(ttN2-1))+" × "+tt_WV(sw,4)+"²)/"+tt_Cm(STRING(ttDF,1,0))+"]",G1,8,58,1,ttBLK);
+  TEXTOUT_P("       × √["+tt_Cm(tt_Num(ttN1+ttN2))+"/"+tt_Cm(tt_Num(ttN1*ttN2))+"]",G1,8,71,1,ttBLK);
+  // beta 1n: the roots and the product on lines of their own, so a
+  // number of more digits still fits
+  TEXTOUT_P("   = √"+tt_WV(sw,11)+" × √"+tt_WV(sw,12),G1,8,84,1,ttBLK);
+  TEXTOUT_P("   = "+tt_WV(sw,13)+" × "+tt_WV(sw,14),G1,8,97,1,ttBLK);
+  TEXTOUT_P("   = "+tt_WV(sw,9),G1,8,110,1,ttBLK);
+ END;
+ IF ttTY == 2 THEN
+  TEXTOUT_P("SE = √(s"+CHAR(8321)+"²/N"+CHAR(8321)+" + s"+CHAR(8322)+"²/N"+CHAR(8322)+")",G1,8,30,1,ttBLUE);
+  TEXTOUT_P("   = √("+tt_WV(sw,3)+"²/"+tt_Cm(tt_Num(ttN1))+" + "+tt_WV(sw,4)+"²/"+tt_Cm(tt_Num(ttN2))+")",G1,8,45,1,ttBLK);
+  TEXTOUT_P("   = √("+tt_WV(sw,11)+" + "+tt_WV(sw,12)+") = √"+tt_WV(sw,13),G1,8,60,1,ttBLK);
+  TEXTOUT_P("   = "+tt_WV(sw,9),G1,8,75,1,ttBLK);
+ END;
+ IF ttTY <> 3 THEN
+  // beta 1n: the formula, the numbers and the result on lines of their
+  // own, so means of -9,999.99999 and 9,999.99999, the largest the form
+  // takes, still fit (the verify script, part D)
+  sy := IFTE(ttTY == 1,127,116);
+  TEXTOUT_P("t obt = ("+CHAR(57344)+CHAR(8321)+" - "+CHAR(57344)+CHAR(8322)+")/SE",G1,8,sy,1,ttMAG);
+  TEXTOUT_P("      = ("+tt_WV(sw,6)+" - "+tt_WV(sw,7)+")/"+tt_WV(sw,9),G1,8,sy+13,1,ttMAG);
+  TEXTOUT_P("      = "+tt_WV(sw,8)+"/"+tt_WV(sw,9)+" = "+tt_WV(sw,10),G1,8,sy+26,1,ttMAG);
+ ELSE
+  IF ttSRC == 2 THEN
+   // the lecture's Table 11.4: each difference, its deviation, squared
+   TEXTOUT_P("x"+CHAR(8321)+"-x"+CHAR(8322)+" = xD",G1,8,28,1,ttGRAY);
+   TEXTOUT_P("xD - "+CHAR(57344)+"D",G1,110,28,1,ttGRAY);
+   TEXTOUT_P("(xD - "+CHAR(57344)+"D)²",G1,210,28,1,ttGRAY);
+   // beta 1n: each difference whole, its deviation from the mean shown,
+   // and that squared, as the sum takes them (tt_Dev)
+   sn := MIN(ttNP,5);
+   FOR sj FROM 1 TO sn DO
+    sy := 28 + 12*sj;
+    sq := tt_Dev(ttXD(sj),sw(3),sw(19),sw(7),sw(2));
+    TEXTOUT_P(tt_Cm(tt_FixD(ttXD(sj),sw(7))),G1,12,sy,1,ttBLK);
+    TEXTOUT_P(tt_Cm(tt_Txt(sq(1),sq(2))),G1,114,sy,1,ttBLK);
+    TEXTOUT_P(tt_Cm(tt_Txt(sq(3),sq(4))),G1,214,sy,1,ttBLK);
+   END;
+   IF ttNP > 5 THEN TEXTOUT_P("... "+tt_Cm(STRING(ttNP-5,1,0))+" more",G1,12,100,1,ttGRAY); END;
+   TEXTOUT_P(CHAR(57344)+"D = "+tt_WV(sw,3),G1,12,112,1,ttBLK);
+   // the column's sum (the lecture's sigma sign is not on the verified
+   // glyph list, Lessons Learned s5, so the word)
+   TEXTOUT_P("sum = "+tt_WV(sw,4),G1,214,112,1,ttBLK);
+   TEXTOUT_P("sD = √(sum/(N-1)) = √("+tt_WV(sw,4)+"/"+tt_Cm(STRING(ttNP-1,1,0))+") = "+tt_WV(sw,5),G1,8,128,1,ttBLUE);
+  ELSE
+   TEXTOUT_P(CHAR(57344)+"D = "+tt_Cm(tt_Num(ttMD))+",  sD = "+tt_Cm(tt_Num(ttSDv))+",  N pairs = "+tt_Cm(tt_Num(ttNP)),G1,8,40,1,ttBLK);
+  END;
+  // under the pairs' table, or right under the typed summary
+  sy := IFTE(ttSRC == 2,141,60);
+  TEXTOUT_P("SE = sD/√N = "+tt_WV(sw,5)+"/√"+tt_Cm(tt_Num(ttNP))+" = "+tt_WV(sw,9),G1,8,sy,1,ttBLUE);
+  TEXTOUT_P("t obt = "+CHAR(57344)+"D/SE = "+tt_WV(sw,3)+"/"+tt_WV(sw,9)+" = "+tt_WV(sw,10),G1,8,sy+13,1,ttMAG);
+ END;
+ tt_BookNote(176);
+ tt_ShowSteps();
+END;

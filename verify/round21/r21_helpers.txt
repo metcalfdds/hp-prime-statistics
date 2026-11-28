@@ -1,0 +1,260 @@
+
+// ---------------- beta 1n: every worked step checks ----------------
+// Round 21 (28 Nov 2026; the book's read-through of its Draft 127, item
+// A10, which Roger accepted: "You're right about all these things").
+// Steps 2 and 4 work the arithmetic out, and beta 1m showed every number
+// on them to 4 significant digits, rounded from the exact value, so a
+// step could miss on a calculator: the draft lottery's 13,707/37.81 is
+// 362.52, where the screen said 362.56.  Now each number on those steps
+// is worked out from the numbers shown before it, as a student with a
+// calculator would work it, and rounded to the digits it is shown with,
+// and each result carries fewer digits than what it is worked from.
+// tt_Work takes the smallest k, from 4 to 8 (the significant digits of
+// SE), at which that chain gives the program's own SE, df and t (or z)
+// at the digits shown, so every step checks and the answers on the
+// screen are still the exact ones.  A number that is exact (a typed
+// value, a mean that ends, the sum or difference of two numbers shown)
+// is shown whole, without zeros after its last digit.  A number that
+// needs more than 11 decimals, or is 1E12 or more, is shown in the
+// scientific form with its significant digits (1.142E-8), because fixed
+// output holds no more (Lessons Learned s3); beta 1m showed such a
+// number as 0.0000000000.
+
+// The decimals that keep dk significant digits of dv
+LOCAL tt_DcK(dv, dk)
+BEGIN
+ IF dv == 0 THEN RETURN 0; END;
+ RETURN MAX(0, dk - 1 - FLOOR(LOG(ABS(dv))));
+END;
+
+// The fewest decimals, at most td, that hold tv exactly: 0.182 needs 3
+// of 6.  (The margin is far below any digit shown; it only keeps the
+// PC harness's binary arithmetic from seeing 0.18200000000000002.)
+LOCAL tt_TrD(tv, td)
+BEGIN
+ LOCAL tq;
+ tq := td;
+ WHILE tq > 0 AND ABS(ROUND(tv,tq-1) - tv) <= 1E-11*MAX(1,ABS(tv)) DO tq := tq - 1; END;
+ RETURN tq;
+END;
+
+// How the chain shows x at xl significant digits, as a code: 0 to 11,
+// the decimals (all of them, zeros too, when x had to be rounded: 1.74480
+// for 1.744801; when x is exact with fewer, only those: 0.5 for 1/2, not
+// 0.500000); -xl, the scientific form with xl significant digits
+LOCAL tt_WkD(xv, xl)
+BEGIN
+ LOCAL xd;
+ IF xv == 0 THEN RETURN 0; END;
+ xd := tt_DcK(xv,xl);
+ IF xd > 11 OR ABS(xv) >= 1E12 THEN RETURN -xl; END;
+ RETURN tt_TrD(xv,xd);
+END;
+
+// x rounded as its code shows it
+LOCAL tt_RdC(cv, cc)
+BEGIN
+ LOCAL ce;
+ IF cc >= 0 OR cv == 0 THEN RETURN ROUND(cv,MAX(0,cc)); END;
+ ce := FLOOR(LOG(ABS(cv)));
+ RETURN ROUND(cv/10^ce,-cc-1)*10^ce;
+END;
+
+// rv to rk significant digits, as the chain rounds it
+LOCAL tt_RdK(rv, rk)
+BEGIN
+ RETURN tt_RdC(rv,tt_WkD(rv,rk));
+END;
+
+// The code of the sum or difference sv of two numbers shown with codes
+// sa and sb: exact when both are fixed and it fits, else rounded to sl
+// significant digits
+LOCAL tt_ExC(sv, sa, sb, sl)
+BEGIN
+ IF sa >= 0 AND sb >= 0 AND MAX(sa,sb) <= 11 AND ABS(sv) < 1E12 THEN RETURN tt_TrD(sv,MAX(sa,sb)); END;
+ RETURN tt_WkD(sv,sl);
+END;
+
+// The text of x by its code
+LOCAL tt_Txt(tv, tc)
+BEGIN
+ IF tc >= 0 THEN RETURN tt_FixD(tv,tc); END;
+ RETURN STRING(tv,3,-tc-1);
+END;
+
+// A typed number's code as tt_Num shows it (2.000001 shows as 2)
+LOCAL tt_TyD(yv)
+BEGIN
+ RETURN tt_TrD(ROUND(yv,tt_NDec(yv)),tt_NDec(yv));
+END;
+
+// The text of item wi of a chain: its value by its code (item wi + 16),
+// with commas
+LOCAL tt_WV(wl, wi)
+BEGIN
+ RETURN tt_Cm(tt_Txt(wl(wi),wl(wi+16)));
+END;
+
+// A row of the pairs' table, from the mean shown (mv, its code mc) and
+// the pairs' decimals (rx): {xD - the mean, its code, its square, its
+// code}; the square is worked out from the deviation as shown
+LOCAL tt_Dev(xv, mv, mc, rx, rk)
+BEGIN
+ LOCAL rd, rc, rs;
+ rc := tt_ExC(xv-mv,rx,mc,rk+2);
+ rd := tt_RdC(xv-mv,rc);
+ rs := tt_WkD(rd^2,rk+2);
+ RETURN {rd, rc, tt_RdC(rd^2,rs), rs};
+END;
+
+// The chain at k: a list whose first item is 1 when the chain's SE, df
+// and t (or z) are the program's own at the digits shown, 0 when not;
+// item 2 is k; items 3 to 16 are what steps 2 and 4 show, each with its
+// code 16 items further on.  Two samples (tests 1 and 2): 3 and 4 s1 and
+// s2, 6 and 7 the means, 8 their difference, 9 SE, 10 t; pooled, 11 to
+// 14 sp^2, (N1+N2)/(N1N2), sp and its root; separate, 11 to 16 a, b,
+// a + b, (a + b)^2, the denominator and df.  Dependent samples: 3 the
+// mean of the differences, 4 the sum of the squared deviations, 5 sD, 7
+// the pairs' decimals.  One sample: 3 s, 6 the mean, 8 the mean - mu0.
+// One proportion: 3 p-hat, 8 p-hat - p0.  Two proportions: 3 and 4 the
+// p-hats, 5 the pooled p, 6 1 - p, 8 their difference.  All: 9 SE and
+// 10 t or z.
+LOCAL tt_WkAt(wk)
+BEGIN
+ LOCAL wv, wd, wn, wj, wsm, wq;
+ LOCAL wx, wr;
+ wv := {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+ wv(2) := wk; wv(26) := 2;
+ IF ttTY <= 2 THEN
+  // s (pooled one digit more, as it is squared and pooled first) and the
+  // means: as typed, or from raw scores to the digits the steps need
+  IF ttSRC == 2 THEN
+   wq := wk + 4 - ttTY;
+   wv(19) := tt_WkD(ttS1,wq); wv(20) := tt_WkD(ttS2,wq);
+   wd := ttM1 - ttM2;
+   wq := tt_DcK(IFTE(wd == 0,ttM1,wd),wk+1);
+   IF wq > 11 OR MAX(ABS(ttM1),ABS(ttM2)) >= 1E12 THEN
+    wv(22) := -12;
+   ELSE
+    wv(22) := MAX(tt_TrD(ttM1,wq),tt_TrD(ttM2,wq));
+   END;
+  ELSE
+   wv(19) := tt_TyD(ttS1); wv(20) := tt_TyD(ttS2);
+   wv(22) := MAX(tt_TyD(ttM1),tt_TyD(ttM2));
+  END;
+  wv(3) := tt_RdC(ttS1,wv(19)); wv(4) := tt_RdC(ttS2,wv(20));
+  wv(23) := wv(22);
+  wv(6) := tt_RdC(ttM1,wv(22)); wv(7) := tt_RdC(ttM2,wv(22));
+  wv(24) := tt_ExC(wv(6)-wv(7),wv(22),wv(23),wk+1); wv(8) := tt_RdC(wv(6)-wv(7),wv(24));
+  IF ttTY == 1 THEN
+   wn := ttN1 + ttN2 - 2;
+   wx := ((ttN1-1)*wv(3)^2 + (ttN2-1)*wv(4)^2)/wn;
+   wv(27) := tt_WkD(wx,wk+2); wv(11) := tt_RdC(wx,wv(27));
+   wx := (ttN1+ttN2)/(ttN1*ttN2);
+   wv(28) := tt_WkD(wx,wk+2); wv(12) := tt_RdC(wx,wv(28));
+   wv(29) := tt_WkD(wv(11)^.5,wk+1); wv(13) := tt_RdC(wv(11)^.5,wv(29));
+   wv(30) := tt_WkD(wv(12)^.5,wk+1); wv(14) := tt_RdC(wv(12)^.5,wv(30));
+   wx := wv(13)*wv(14);
+  ELSE
+   wx := wv(3)^2/ttN1; wv(27) := tt_WkD(wx,wk+1); wv(11) := tt_RdC(wx,wv(27));
+   wx := wv(4)^2/ttN2; wv(28) := tt_WkD(wx,wk+1); wv(12) := tt_RdC(wx,wv(28));
+   wx := wv(11) + wv(12); wv(29) := tt_ExC(wx,wv(27),wv(28),wk+1); wv(13) := tt_RdC(wx,wv(29));
+   // (a + b)^2 from the a and b that step 2 shows, not from the sum that
+   // step 4 shows, which is rounded when it has too many digits
+   wx := (wv(11) + wv(12))^2; wv(30) := tt_WkD(wx,wk); wv(14) := tt_RdC(wx,wv(30));
+   wx := wv(11)^2/(ttN1-1) + wv(12)^2/(ttN2-1);
+   wv(31) := tt_WkD(wx,wk); wv(15) := tt_RdC(wx,wv(31));
+   IF wv(15) == 0 THEN RETURN wv; END;
+   wv(32) := 2; wv(16) := ROUND(wv(14)/wv(15),2);
+   wx := wv(13)^.5;
+  END;
+  wv(25) := tt_WkD(wx,wk); wv(9) := tt_RdC(wx,wv(25));
+  IF wv(9) == 0 THEN RETURN wv; END;
+  wv(10) := ROUND(wv(8)/wv(9),2);
+  wv(1) := IFTE(wv(9) == tt_RdK(ttSE,wk) AND wv(10) == ROUND(ttT,2),1,0);
+  IF ttTY == 2 AND wv(16) <> ROUND(ttDF,2) THEN wv(1) := 0; END;
+ END;
+ IF ttTY == 3 THEN
+  IF ttSRC == 2 THEN
+   wv(19) := tt_WkD(ttMD,wk+2); wv(3) := tt_RdC(ttMD,wv(19));
+   wv(7) := MAX(tt_ColDec(ttX1),tt_ColDec(ttX2));
+   IF ttNP <= 5 THEN
+    // every row is on the screen: the sum of the squares shown
+    wsm := 0;
+    FOR wj FROM 1 TO ttNP DO
+     wr := tt_Dev(ttXD(wj),wv(3),wv(19),wv(7),wk);
+     wsm := wsm + wr(3);
+    END;
+   ELSE
+    // rows off the screen: the sum of (xD - the mean shown)^2, which is
+    // the sum of (xD - the mean)^2 + N(the mean - the mean shown)^2
+    wsm := ttSSq + ttNP*(ttMD-wv(3))^2;
+   END;
+   wv(20) := tt_WkD(wsm,wk+2); wv(4) := tt_RdC(wsm,wv(20));
+   wx := (wv(4)/(ttNP-1))^.5;
+   wv(21) := tt_WkD(wx,wk+1); wv(5) := tt_RdC(wx,wv(21));
+  ELSE
+   wv(19) := tt_TyD(ttMD); wv(3) := tt_RdC(ttMD,wv(19));
+   wv(21) := tt_TyD(ttSDv); wv(5) := tt_RdC(ttSDv,wv(21));
+  END;
+  wx := wv(5)/ttNP^.5;
+  wv(25) := tt_WkD(wx,wk); wv(9) := tt_RdC(wx,wv(25));
+  IF wv(9) == 0 THEN RETURN wv; END;
+  wv(10) := ROUND(wv(3)/wv(9),2);
+  wv(1) := IFTE(wv(9) == tt_RdK(ttSE,wk) AND wv(10) == ROUND(ttT,2),1,0);
+ END;
+ IF ttTY == 4 THEN
+  IF ttSRC == 2 THEN
+   wv(19) := tt_WkD(ttSO,wk+1);
+   wd := ttMO - ttMU;
+   wq := tt_DcK(IFTE(wd == 0,ttMO,wd),wk+1);
+   wv(22) := IFTE(wq > 11 OR ABS(ttMO) >= 1E12,-12,tt_TrD(ttMO,wq));
+  ELSE
+   wv(19) := tt_TyD(ttSO); wv(22) := tt_TyD(ttMO);
+  END;
+  wv(3) := tt_RdC(ttSO,wv(19)); wv(6) := tt_RdC(ttMO,wv(22));
+  wx := wv(6) - ROUND(ttMU,tt_TyD(ttMU));
+  wv(24) := tt_ExC(wx,wv(22),tt_TyD(ttMU),wk+1); wv(8) := tt_RdC(wx,wv(24));
+  wx := wv(3)/ttNO^.5;
+  wv(25) := tt_WkD(wx,wk); wv(9) := tt_RdC(wx,wv(25));
+  IF wv(9) == 0 THEN RETURN wv; END;
+  wv(10) := ROUND(wv(8)/wv(9),2);
+  wv(1) := IFTE(wv(9) == tt_RdK(ttSE,wk) AND wv(10) == ROUND(ttT,2),1,0);
+ END;
+ IF ttTY >= 5 THEN
+  wv(19) := tt_WkD(ttKA/ttNA,wk+1); wv(3) := tt_RdC(ttKA/ttNA,wv(19));
+  IF ttTY == 5 THEN
+   wx := wv(3) - ROUND(ttP0,tt_TyD(ttP0));
+   wv(24) := tt_ExC(wx,wv(19),tt_TyD(ttP0),wk+1); wv(8) := tt_RdC(wx,wv(24));
+   wx := (ttP0*(1-ttP0)/ttNA)^.5;
+  ELSE
+   wv(20) := tt_WkD(ttKB/ttNB,wk+1); wv(4) := tt_RdC(ttKB/ttNB,wv(20));
+   wx := (ttKA+ttKB)/(ttNA+ttNB);
+   wv(21) := tt_WkD(wx,wk+1); wv(5) := tt_RdC(wx,wv(21));
+   // 1 - p as step 4 shows it: exact when p is shown in fixed form
+   wv(22) := tt_ExC(1-wv(5),0,wv(21),wk+1); wv(6) := tt_RdC(1-wv(5),wv(22));
+   wx := wv(3) - wv(4);
+   wv(24) := tt_ExC(wx,wv(19),wv(20),wk+1); wv(8) := tt_RdC(wx,wv(24));
+   wx := (wv(5)*wv(6)*(1/ttNA+1/ttNB))^.5;
+  END;
+  wv(25) := tt_WkD(wx,wk); wv(9) := tt_RdC(wx,wv(25));
+  IF wv(9) == 0 THEN RETURN wv; END;
+  wv(10) := ROUND(wv(8)/wv(9),2);
+  wv(1) := IFTE(wv(9) == tt_RdK(ttSE,wk) AND wv(10) == ROUND(ttT,2),1,0);
+ END;
+ RETURN wv;
+END;
+
+// The chain at the smallest k, from 4 to 8, whose answers are the
+// program's own (k = 8 if none is: a t or z of 100,000 or more can
+// need more digits than that, and then step 4's t or z can differ
+// from step 5's in its last decimals)
+LOCAL tt_Work()
+BEGIN
+ LOCAL wk, ww;
+ FOR wk FROM 4 TO 8 DO
+  ww := tt_WkAt(wk);
+  IF ww(1) == 1 THEN RETURN ww; END;
+ END;
+ RETURN ww;
+END;

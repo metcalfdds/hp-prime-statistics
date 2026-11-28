@@ -1,0 +1,36 @@
+=== A. static
+PASS A1 the header names beta 1k and carries its history note
+PASS A2 the routines that changed are the four the note names: tz_Help, tz_Step2, tz_Step4, tz_Step4N
+PASS A3 the new routines are the chain's twelve: tz_DcK, tz_Dev, tz_ExC, tz_RdC, tz_RdK, tz_TrD, tz_Txt, tz_TyD, tz_WV, tz_WkAt, tz_WkD, tz_Work
+PASS A4 no "!=" in the code, and the code (strings and comments aside) is ASCII
+=== C. every worked step checks from the numbers on the screen
+PASS C1 every example: every worked step checks from the numbers shown, the last numbers are the exact ones, and k is the smallest that does it (k: 1: 4, 2: 5, 3: 4, 4: 4, 5: 4, 6: 5, 7: 5)
+PASS C2 raw pairs, test 3: 188 cases, every worked step checks and the answers are exact (k: 4: 177, 5: 10, 6: 1)
+PASS C2 raw scores, test 1: 143 cases, every worked step checks and the answers are exact (k: 4: 130, 5: 12, 6: 1)
+PASS C2 raw scores, test 2: 147 cases, every worked step checks and the answers are exact (k: 4: 67, 5: 53, 6: 27)
+PASS C2 raw scores, test 4: 197 cases, every worked step checks and the answers are exact (k: 4: 192, 5: 5)
+PASS C2 test 5: 200 cases, every worked step checks and the answers are exact (k: 4: 130, 5: 48, 6: 19, 7: 2, 8: 1)
+PASS C2 test 6: 199 cases, every worked step checks and the answers are exact (k: 4: 177, 5: 21, 6: 1)
+PASS C2 typed, test 1: 150 cases, every worked step checks and the answers are exact (k: 4: 120, 5: 16, 6: 13, 8: 1)
+PASS C2 typed, test 2: 150 cases, every worked step checks and the answers are exact (k: 4: 66, 5: 32, 6: 32, 7: 18, 8: 2)
+PASS C2 typed, test 3: 188 cases, every worked step checks and the answers are exact (k: 4: 77, 5: 38, 6: 29, 7: 24, 8: 20) but in the 7 at the limit of k = 8 (C3)
+PASS C2 typed, test 4: 197 cases, every worked step checks and the answers are exact (k: 4: 190, 5: 6, 6: 1)
+PASS C3 where even k = 8 does not give the exact t or z (7 of 1759 cases: typed, test 3), every step still checks, and the t or z shown is within 1E-7 of it and the roundings; each is a t or z of 100,000 or more (from 167,735 to 10,878,370)
+     (2 samples with no spread, from raw scores, were given the mean and the SD of 0 that the calculator works out; the harness's binary arithmetic gives an SD of about 1E-16)
+=== E. the book's screens
+PASS E2 the draft lottery's steps 2 and 4 (the book's Figure 11.2), line by line
+=== H. help
+PASS H1 help page 2 says what steps 2 and 4 do now: Steps 2 and 4 work each number from those shown, so all check.
+PASS H2 every line of the help pages ends inside the screen at the calculator's glyph widths (3 pages)
+=== D. layout of steps 2 and 4 with the largest numbers the forms allow
+PASS D1 18 sessions with the largest numbers the forms allow ran (nothing refused)
+PASS D2 no firm overlap of two texts, and none off the screen (text_overlap_v1)
+PASS D3 every text of steps 2 and 4 ends inside the screen at the calculator's glyph widths (the widest ends at x = 303)
+=== B. the monkey on beta 1j and beta 1k, seed by seed (300 runs)
+PASS B1 every run takes beta 1j's path: the same ending, number of screens, boxes and summary ({'OK': 300})
+PASS B2 every screen whose texts differ (1454) differs on step 2 or step 4, or is help page 2 (98)
+PASS B3 every number of 1,000 or more has its commas, and no year has one
+PASS B4 no new firm overlap and no new number cut short (beta 1j had 8 and 0, beta 1k has 9 and 0, of which 1 are help page 2's new lines, inside the screen by the calculator's glyph widths: H2)
+
+26 checks, 0 failed  (C: 1759 random cases besides the 7 examples)
+EXIT 0
