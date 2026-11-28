@@ -1,0 +1,34 @@
+#pragma mode( separator(.,;) integer(h32) )
+// RoundProbe beta 1a (28 Nov 2026, round 21).  beta 1 (the first 13 lines) showed that ROUND
+// rounds a tie away from zero and that the calculator held (0.0078125+123101)^2 to more
+// than the 12 digits it showed; 1a adds four lines on how many digits it holds.
+// beta 1:  How does the Prime round a tie, and
+// does it hold a quotient as a decimal?  TTestLab beta 1n's one-sample step 4 shows
+// SE = s/root N = 162.45/root 100; a student works 16.245 and rounds it to 16.25.
+// The PC harness, in binary, holds 162.45/10 as 16.244999999999997 and its ROUND
+// gave 16.24.  This prints what the calculator gives.  Code is ASCII; names carry rp.
+EXPORT RoundProbe()
+BEGIN
+  HSeparator := 0; HFormat := 0; HAngle := 0; Entry := 0;
+  PRINT();
+  PRINT("RoundProbe beta 1a");
+  PRINT("162.45/10 = " + STRING(162.45/10));
+  PRINT("ROUND(162.45/10,2) = " + STRING(ROUND(162.45/10,2)));
+  PRINT("100^.5 = " + STRING(100^.5));
+  PRINT("ROUND(162.45/100^.5,2) = " + STRING(ROUND(162.45/100^.5,2)));
+  PRINT("ROUND(16.245,2) = " + STRING(ROUND(16.245,2)));
+  PRINT("ROUND(-16.245,2) = " + STRING(ROUND(-16.245,2)));
+  PRINT("ROUND(0.125,2) = " + STRING(ROUND(0.125,2)));
+  PRINT("ROUND(2.5,0) " + STRING(ROUND(2.5,0)) + "  ROUND(3.5,0) " + STRING(ROUND(3.5,0)));
+  PRINT("ROUND(-2.5,0) = " + STRING(ROUND(-2.5,0)));
+  PRINT("ROUND(16.245,-4) = " + STRING(ROUND(16.245,-4)));
+  PRINT("(0.0078125+123101)^2 = " + STRING((0.0078125+123101)^2));
+  PRINT("ROUND of it, 0 = " + STRING(ROUND((0.0078125+123101)^2,0)));
+  PRINT("1/3 = " + STRING(1/3));
+  PRINT("123101.0078125-123101 = " + STRING(123101.0078125-123101));
+  PRINT("(1+1E-12)-1 " + STRING((1+1E-12)-1) + "  (1+1E-13)-1 " + STRING((1+1E-13)-1));
+  PRINT("(1+1E-14)-1 " + STRING((1+1E-14)-1) + "  (1+1E-15)-1 " + STRING((1+1E-15)-1));
+  PRINT("(1/3)*3-1 = " + STRING((1/3)*3-1) + "   2^40+1-2^40 = " + STRING(2^40+1-2^40));
+  WAIT(-1);
+  RETURN "RoundProbe: done";
+END;

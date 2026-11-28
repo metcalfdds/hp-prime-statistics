@@ -1,11 +1,12 @@
-# tlg1_v4_blocks.txt -- the blocks tools/make_tlg1_v4.py applies to TTestLab beta 1l (already renamed tt -> tz) to make
-# TTestLabG beta 1i.  A block starts at "@@"; then each line is one line of code after a one-character mark:
+# tlg1_v6_blocks.txt -- the blocks tools/make_tlg1_v6.py applies to TTestLab beta 1n (already renamed tt -> tz) to make
+# TTestLabG beta 1k.  A block starts at "@@"; then each line is one line of code after a one-character mark:
 #   "-" a line of the advanced version that goes, "+" a line of the general version that comes, " " a line that
 #   stays (just enough of them for the block to be found exactly once).  A "#" line before the first block is a note.
-# Blocks 1 to 46 were made by a line diff of TTestLab beta 1j against TTestLabG beta 1g (they turn the one into the
-# other exactly); 4 of them carry beta 1k's wording; the last 7 are for beta 1k's new code.
-# v4 (Round 17, 17 Nov 2026) is v3 with two lines in this round's words: block 16's "By hand" line of the general
-# version ("the smaller of (N1-1), (N2-1)") and block 18's line of the advanced version ("t-table, row df").
+# v6 (Round 21, 28 Nov 2026) is v5's blocks with five changes, for beta 1n's worked steps: block 15 is the new
+# LOCAL line of step 2 (with the line after it, as "LOCAL sw;" stands in step 4N too); block 16 is the new y of
+# step 2's notes (121, 134, 147); blocks 27, 28 and 29, which showed a mean or SD from raw scores to 4 digits in
+# step 4 (tz_Val), are gone, because beta 1n's chain shows the same numbers in both versions; block 26 takes out
+# the book note as beta 1n words it (0.0549853); block 42 is help page 2's sentence on what steps 2 and 4 do.  (v5's notes, for the blocks before: git show 44652dd:tools/tlg1_v5_blocks.txt.)
 @@ 1
 -LOCAL tzTY:=1;           // the test: 1 pooled, 2 separate, 3 dependent
 +LOCAL tzTY:=2;           // the test: 1 pooled, 2 separate (the default), 3 dependent
@@ -105,18 +106,19 @@
 -   // the pairs, as the lecture's Table 11.3
 +   // the pairs, a row each (the first 7)
 @@ 15
-- LOCAL sa, sb, sden;
-+ LOCAL sa, sb, sden, sdh;
+- LOCAL sw;
++ LOCAL sw, sdh;
+  tz_Frame("Step 2. Distribution and df");
 @@ 16
--  TEXTOUT_P("A fraction is fine: SPSS prints this df in its",G1,8,118,1,tzGRAY);
--  TEXTOUT_P(CHAR(34)+"Equal variances not assumed"+CHAR(34)+" row.",G1,8,131,1,tzGRAY);
+-  TEXTOUT_P("A fraction is fine: SPSS prints this df in its",G1,8,121,1,tzGRAY);
+-  TEXTOUT_P(CHAR(34)+"Equal variances not assumed"+CHAR(34)+" row.",G1,8,134,1,tzGRAY);
 +  // the hand shortcut many books give for separate variances: the
 +  // smaller N - 1, which gives a larger t crit than Welch's df, so it
 +  // errs on the safe side (the companion guide's Conventions)
 +  sdh := MIN(tzN1,tzN2) - 1;
-+  TEXTOUT_P("A fraction is fine: SPSS and R print this df.",G1,8,116,1,tzGRAY);
-+  TEXTOUT_P("By hand: df = the smaller of (N"+CHAR(8321)+"-1), (N"+CHAR(8322)+"-1) = "+tz_Cm(STRING(sdh,1,0))+",",G1,8,131,1,tzGRAY);
-+  TEXTOUT_P("t crit = "+tz_CritS(tz_Crit(sdh))+": larger, so a safer test.",G1,8,144,1,tzGRAY);
++  TEXTOUT_P("A fraction is fine: SPSS and R print this df.",G1,8,121,1,tzGRAY);
++  TEXTOUT_P("By hand: df = the smaller of (N"+CHAR(8321)+"-1), (N"+CHAR(8322)+"-1) = "+tz_Cm(STRING(sdh,1,0))+",",G1,8,134,1,tzGRAY);
++  TEXTOUT_P("t crit = "+tz_CritS(tz_Crit(sdh))+": larger, so a safer test.",G1,8,147,1,tzGRAY);
 @@ 17
 - LOCAL sbk;
 + LOCAL sdf;
@@ -173,7 +175,7 @@
 -BEGIN
 - IF tzEX == 1 AND tzTY == 1 THEN
 -  // lecture: sqrt(1.74) x sqrt(.05) = .29; -.68/.29 = -2.34
--  TEXTOUT_P("The lecture rounds √0.05499 to √.05, SE to .29,",G1,8,bny,1,tzGRAY);
+-  TEXTOUT_P("The lecture rounds √0.0549853 to √.05, SE to .29,",G1,8,bny,1,tzGRAY);
 -  TEXTOUT_P("so its t obt is -.68/.29 = -2.34.  Exact: "+tz_Cm(tz_Fmt(tzT,2))+".",G1,8,bny+13,1,tzGRAY);
 - END;
 - IF tzEX == 2 AND tzTY == 3 THEN
@@ -192,15 +194,6 @@
 - END;
 -END;
 -
-@@ 27
--  TEXTOUT_P("   = √[("+tz_Cm(tz_Num(tzN1-1))+" × "+tz_Cm(tz_Num(tzS1))+"² + "+tz_Cm(tz_Num(tzN2-1))+" × "+tz_Cm(tz_Num(tzS2))+"²)/"+tz_Cm(STRING(tzDF,1,0))+"]",G1,8,58,1,tzBLK);
-+  TEXTOUT_P("   = √[("+tz_Cm(tz_Num(tzN1-1))+" × "+tz_Val(tzS1)+"² + "+tz_Cm(tz_Num(tzN2-1))+" × "+tz_Val(tzS2)+"²)/"+tz_Cm(STRING(tzDF,1,0))+"]",G1,8,58,1,tzBLK);
-@@ 28
--  TEXTOUT_P("   = √("+tz_Cm(tz_Num(tzS1))+"²/"+tz_Cm(tz_Num(tzN1))+" + "+tz_Cm(tz_Num(tzS2))+"²/"+tz_Cm(tz_Num(tzN2))+")",G1,8,45,1,tzBLK);
-+  TEXTOUT_P("   = √("+tz_Val(tzS1)+"²/"+tz_Cm(tz_Num(tzN1))+" + "+tz_Val(tzS2)+"²/"+tz_Cm(tz_Num(tzN2))+")",G1,8,45,1,tzBLK);
-@@ 29
--  TEXTOUT_P("t obt = ("+CHAR(57344)+CHAR(8321)+" - "+CHAR(57344)+CHAR(8322)+")/SE = ("+tz_Cm(tz_Num(tzM1))+" - "+tz_Cm(tz_Num(tzM2))+")/"+tz_Cm(tz_Sig(tzSE)),G1,8,116,1,tzMAG);
-+  TEXTOUT_P("t obt = ("+CHAR(57344)+CHAR(8321)+" - "+CHAR(57344)+CHAR(8322)+")/SE = ("+tz_Val(tzM1)+" - "+tz_Val(tzM2)+")/"+tz_Cm(tz_Sig(tzSE)),G1,8,116,1,tzMAG);
 @@ 30
 -   // the lecture's Table 11.4: each difference, its deviation, squared
 +   // each difference, its deviation from the mean, and that squared
@@ -341,15 +334,15 @@
 @@ 42
 - TEXTOUT_P("t crit: the exact value for your df, and the printed table's value (a",G1,8,30,1,tzBLK);
 - TEXTOUT_P("df the table lacks uses the next smaller row: df 73 uses row 60)",G1,8,43,1,tzBLK);
-- TEXTOUT_P("Step 4 keeps 4 significant digits at each step; rounding sooner",G1,8,59,1,tzBLK);
-- TEXTOUT_P("can change t obt (see example 1)",G1,8,72,1,tzBLK);
+- TEXTOUT_P("Steps 2 and 4 work each number from those shown above it, so",G1,8,59,1,tzBLK);
+- TEXTOUT_P("each step checks; rounding sooner can change t obt (example 1)",G1,8,72,1,tzBLK);
 - TEXTOUT_P("Separate variances: SE = √(s₁²/N₁ + s₂²/N₂), Welch-Satterthwaite",G1,8,88,1,tzBLUE);
 - TEXTOUT_P("df, as SPSS prints them",G1,8,101,1,tzBLUE);
 - TEXTOUT_P("The difference is group 1 minus group 2, as in SPSS",G1,8,117,1,tzBLK);
 + TEXTOUT_P("t crit: exact for your df; no table is needed.",G1,8,30,1,tzBLK);
 + TEXTOUT_P("With a printed table, a df it lacks uses the next smaller row, and",G1,8,43,1,tzBLK);
 + TEXTOUT_P("a fractional df is rounded down first.",G1,8,56,1,tzBLK);
-+ TEXTOUT_P("Step 4 keeps 4 significant digits at each step.",G1,8,72,1,tzBLK);
++ TEXTOUT_P("Steps 2 and 4 work each number from those shown, so all check.",G1,8,72,1,tzBLK);
 + TEXTOUT_P("Separate variances (the default): Welch's SE and df, as SPSS and",G1,8,88,1,tzBLUE);
 + TEXTOUT_P("R print them",G1,8,101,1,tzBLUE);
 + TEXTOUT_P("The difference is group 1 minus group 2, as in SPSS and R",G1,8,117,1,tzBLK);

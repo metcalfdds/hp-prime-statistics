@@ -1,0 +1,40 @@
+
+== prime-loader/PrimeLoader_v2s.html
+PASS light, as opened: no violation of axe's WCAG A and AA rules (26 rules passed)
+PASS ... as opened: no heading level is skipped (6 headings)
+PASS light, a real HP Prime chosen: no violation of axe's WCAG A and AA rules (27 rules passed)
+PASS ... a real HP Prime chosen: no heading level is skipped (7 headings)
+PASS light, ... and every fold opened: no violation of axe's WCAG A and AA rules (27 rules passed)
+PASS ... ... and every fold opened: no heading level is skipped (7 headings)
+PASS light, ... and "tick the programs yourself": no violation of axe's WCAG A and AA rules (27 rules passed)
+PASS ... ... and "tick the programs yourself": no heading level is skipped (7 headings)
+PASS light, the Virtual Calculator again, folds open: no violation of axe's WCAG A and AA rules (26 rules passed)
+PASS ... the Virtual Calculator again, folds open: no heading level is skipped (6 headings)
+PASS dark, as opened: no violation of axe's WCAG A and AA rules (26 rules passed)
+PASS dark, a real HP Prime chosen: no violation of axe's WCAG A and AA rules (27 rules passed)
+PASS dark, ... and every fold opened: no violation of axe's WCAG A and AA rules (27 rules passed)
+PASS dark, ... and "tick the programs yourself": no violation of axe's WCAG A and AA rules (27 rules passed)
+PASS dark, the Virtual Calculator again, folds open: no violation of axe's WCAG A and AA rules (26 rules passed)
+PASS 320 px wide, as opened: the page does not scroll sideways
+PASS 320 px wide, the Virtual Calculator again, folds open: the page does not scroll sideways
+PASS Tab key, as opened: 15 stops, each on the screen with a focus mark
+PASS Tab key, a real HP Prime chosen: 18 stops, each on the screen with a focus mark
+
+== data-loader/DataLoader_v7.html
+PASS light, as opened: no violation of axe's WCAG A and AA rules (27 rules passed)
+     for a person to read: th-has-data-cells x1 (#cols)
+PASS ... as opened: no heading level is skipped (7 headings)
+PASS light, the example loaded: no violation of axe's WCAG A and AA rules (28 rules passed)
+PASS ... the example loaded: no heading level is skipped (7 headings)
+PASS light, ... and every fold opened: no violation of axe's WCAG A and AA rules (28 rules passed)
+PASS ... ... and every fold opened: no heading level is skipped (7 headings)
+PASS dark, as opened: no violation of axe's WCAG A and AA rules (27 rules passed)
+     for a person to read: th-has-data-cells x1 (#cols)
+PASS dark, the example loaded: no violation of axe's WCAG A and AA rules (28 rules passed)
+PASS dark, ... and every fold opened: no violation of axe's WCAG A and AA rules (28 rules passed)
+PASS 320 px wide, as opened: the page does not scroll sideways
+PASS 320 px wide, ... and every fold opened: the page does not scroll sideways
+PASS Tab key, as opened: 8 stops, each on the screen with a focus mark
+PASS Tab key, the example loaded: 16 stops, each on the screen with a focus mark
+
+32 PASS, 0 FAIL

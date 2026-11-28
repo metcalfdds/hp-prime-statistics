@@ -1,7 +1,7 @@
 #pragma mode( separator(.,;) integer(h32) )
 
 // ============================================================
-// TTESTLABG - beta 1j   (the general version of TTestLab)
+// TTESTLABG - beta 1k   (the general version of TTestLab)
 // ============================================================
 // FREE FOR EDUCATIONAL AND PERSONAL USE.  Keep this header with
 //   the file and credit the author if you pass it on.  Not for
@@ -17,6 +17,20 @@
 //   1 Nov 2026 its checked file ran there with no Check).  beta 1a
 //   has run in the PC harness only so far.
 //
+// beta 1k (28 Nov 2026): Round 21: every step that works the arithmetic out checks on a calculator from the numbers it shows
+//   (the book's read-through of its Draft 127, item A10; Roger, 28 Nov 2026: "You're right about all
+//   these things--please go ahead and fix them").  beta 1j showed each number on steps 2 and 4 to 4
+//   significant digits, rounded from the exact value, so a step could miss: the draft lottery showed df
+//   = 13,707 / 37.81 = 362.56, and 13,707/37.81 is 362.52.  Now each number on those steps is worked out
+//   from the numbers shown before it, as a student with a calculator would work it, rounded to the
+//   digits it is shown with, and each result has fewer digits than what it is worked from; tz_Work takes
+//   the smallest k, 4 to 8 significant digits for SE, at which that chain gives the program's own SE, df
+//   and t or z, so the answers are still the exact ones.  Step 2 of the separate-variances test writes a
+//   and b from s on lines of their own; on step 4 the t and z lines take three lines, and the two-
+//   proportion test's root two, so the largest numbers the forms take still fit; a number that needs
+//   more than 11 decimals, or is 1E12 or more, is shown in the scientific form (beta 1j showed it as
+//   0.0000000000); help page 2 says what steps 2 and 4 do.  Built from TTestLab beta 1n by
+//   tools/make_tlg1_v6.py; no other routine, number or word changed.
 // beta 1j (22 Nov 2026): Round 18: the program sets the four Home settings that the book's examples assume when it starts,
 //   and leaves them set: HSeparator := 0 (Digit Grouping 123,456.789, the period as the decimal point),
 //   HFormat := 0 (Number Format Standard), HAngle := 0 (Radians) and Entry := 0 (Textbook).  Roger, 22
@@ -416,6 +430,266 @@ BEGIN
  IF sv == 0 THEN RETURN "0"; END;
  sd := MIN(10, MAX(0, 3 - FLOOR(LOG(ABS(sv)))));
  RETURN STRING(ROUND(sv,sd),2,sd);
+END;
+
+// ---------------- beta 1k: every worked step checks ----------------
+// Round 21 (28 Nov 2026; the book's read-through of its Draft 127, item
+// A10, which Roger accepted: "You're right about all these things").
+// Steps 2 and 4 work the arithmetic out, and beta 1j showed every number
+// on them to 4 significant digits, rounded from the exact value, so a
+// step could miss on a calculator: the draft lottery's 13,707/37.81 is
+// 362.52, where the screen said 362.56.  Now each number on those steps
+// is worked out from the numbers shown before it, as a student with a
+// calculator would work it, and rounded to the digits it is shown with,
+// and each result carries fewer digits than what it is worked from.
+// tz_Work takes the smallest k, from 4 to 8 (the significant digits of
+// SE), at which that chain gives the program's own SE, df and t (or z)
+// at the digits shown, so every step checks and the answers on the
+// screen are still the exact ones.  A number that is exact (a typed
+// value, a mean that ends, the sum or difference of two numbers shown)
+// is shown whole, without zeros after its last digit.  A number that
+// needs more than 11 decimals, or is 1E12 or more, is shown in the
+// scientific form with its significant digits (1.142E-8), because fixed
+// output holds no more (Lessons Learned s3); beta 1j showed such a
+// number as 0.0000000000.
+
+// The decimals that keep dk significant digits of dv
+LOCAL tz_DcK(dv, dk)
+BEGIN
+ IF dv == 0 THEN RETURN 0; END;
+ RETURN MAX(0, dk - 1 - FLOOR(LOG(ABS(dv))));
+END;
+
+// The fewest decimals, at most td, that hold tv exactly: 0.182 needs 3
+// of 6.  (The margin is far below any digit shown; it only keeps the
+// PC harness's binary arithmetic from seeing 0.18200000000000002.)
+LOCAL tz_TrD(tv, td)
+BEGIN
+ LOCAL tq;
+ tq := td;
+ WHILE tq > 0 AND ABS(ROUND(tv,tq-1) - tv) <= 1E-11*MAX(1,ABS(tv)) DO tq := tq - 1; END;
+ RETURN tq;
+END;
+
+// How the chain shows x at xl significant digits, as a code: 0 to 11,
+// the decimals (all of them, zeros too, when x had to be rounded: 1.74480
+// for 1.744801; when x is exact with fewer, only those: 0.5 for 1/2, not
+// 0.500000); -xl, the scientific form with xl significant digits
+LOCAL tz_WkD(xv, xl)
+BEGIN
+ LOCAL xd;
+ IF xv == 0 THEN RETURN 0; END;
+ xd := tz_DcK(xv,xl);
+ IF xd > 11 OR ABS(xv) >= 1E12 THEN RETURN -xl; END;
+ RETURN tz_TrD(xv,xd);
+END;
+
+// x rounded as its code shows it
+LOCAL tz_RdC(cv, cc)
+BEGIN
+ LOCAL ce;
+ IF cc >= 0 OR cv == 0 THEN RETURN ROUND(cv,MAX(0,cc)); END;
+ ce := FLOOR(LOG(ABS(cv)));
+ RETURN ROUND(cv/10^ce,-cc-1)*10^ce;
+END;
+
+// rv to rk significant digits, as the chain rounds it
+LOCAL tz_RdK(rv, rk)
+BEGIN
+ RETURN tz_RdC(rv,tz_WkD(rv,rk));
+END;
+
+// The code of the sum or difference sv of two numbers shown with codes
+// sa and sb: exact when both are fixed and it fits, else rounded to sl
+// significant digits
+LOCAL tz_ExC(sv, sa, sb, sl)
+BEGIN
+ IF sa >= 0 AND sb >= 0 AND MAX(sa,sb) <= 11 AND ABS(sv) < 1E12 THEN RETURN tz_TrD(sv,MAX(sa,sb)); END;
+ RETURN tz_WkD(sv,sl);
+END;
+
+// The text of x by its code
+LOCAL tz_Txt(tv, tc)
+BEGIN
+ IF tc >= 0 THEN RETURN tz_FixD(tv,tc); END;
+ RETURN STRING(tv,3,-tc-1);
+END;
+
+// A typed number's code as tz_Num shows it (2.000001 shows as 2)
+LOCAL tz_TyD(yv)
+BEGIN
+ RETURN tz_TrD(ROUND(yv,tz_NDec(yv)),tz_NDec(yv));
+END;
+
+// The text of item wi of a chain: its value by its code (item wi + 16),
+// with commas
+LOCAL tz_WV(wl, wi)
+BEGIN
+ RETURN tz_Cm(tz_Txt(wl(wi),wl(wi+16)));
+END;
+
+// A row of the pairs' table, from the mean shown (mv, its code mc) and
+// the pairs' decimals (rx): {xD - the mean, its code, its square, its
+// code}; the square is worked out from the deviation as shown
+LOCAL tz_Dev(xv, mv, mc, rx, rk)
+BEGIN
+ LOCAL rd, rc, rs;
+ rc := tz_ExC(xv-mv,rx,mc,rk+2);
+ rd := tz_RdC(xv-mv,rc);
+ rs := tz_WkD(rd^2,rk+2);
+ RETURN {rd, rc, tz_RdC(rd^2,rs), rs};
+END;
+
+// The chain at k: a list whose first item is 1 when the chain's SE, df
+// and t (or z) are the program's own at the digits shown, 0 when not;
+// item 2 is k; items 3 to 16 are what steps 2 and 4 show, each with its
+// code 16 items further on.  Two samples (tests 1 and 2): 3 and 4 s1 and
+// s2, 6 and 7 the means, 8 their difference, 9 SE, 10 t; pooled, 11 to
+// 14 sp^2, (N1+N2)/(N1N2), sp and its root; separate, 11 to 16 a, b,
+// a + b, (a + b)^2, the denominator and df.  Dependent samples: 3 the
+// mean of the differences, 4 the sum of the squared deviations, 5 sD, 7
+// the pairs' decimals.  One sample: 3 s, 6 the mean, 8 the mean - mu0.
+// One proportion: 3 p-hat, 8 p-hat - p0.  Two proportions: 3 and 4 the
+// p-hats, 5 the pooled p, 6 1 - p, 8 their difference.  All: 9 SE and
+// 10 t or z.
+LOCAL tz_WkAt(wk)
+BEGIN
+ LOCAL wv, wd, wn, wj, wsm, wq;
+ LOCAL wx, wr;
+ wv := {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+ wv(2) := wk; wv(26) := 2;
+ IF tzTY <= 2 THEN
+  // s (pooled one digit more, as it is squared and pooled first) and the
+  // means: as typed, or from raw scores to the digits the steps need
+  IF tzSRC == 2 THEN
+   wq := wk + 4 - tzTY;
+   wv(19) := tz_WkD(tzS1,wq); wv(20) := tz_WkD(tzS2,wq);
+   wd := tzM1 - tzM2;
+   wq := tz_DcK(IFTE(wd == 0,tzM1,wd),wk+1);
+   IF wq > 11 OR MAX(ABS(tzM1),ABS(tzM2)) >= 1E12 THEN
+    wv(22) := -12;
+   ELSE
+    wv(22) := MAX(tz_TrD(tzM1,wq),tz_TrD(tzM2,wq));
+   END;
+  ELSE
+   wv(19) := tz_TyD(tzS1); wv(20) := tz_TyD(tzS2);
+   wv(22) := MAX(tz_TyD(tzM1),tz_TyD(tzM2));
+  END;
+  wv(3) := tz_RdC(tzS1,wv(19)); wv(4) := tz_RdC(tzS2,wv(20));
+  wv(23) := wv(22);
+  wv(6) := tz_RdC(tzM1,wv(22)); wv(7) := tz_RdC(tzM2,wv(22));
+  wv(24) := tz_ExC(wv(6)-wv(7),wv(22),wv(23),wk+1); wv(8) := tz_RdC(wv(6)-wv(7),wv(24));
+  IF tzTY == 1 THEN
+   wn := tzN1 + tzN2 - 2;
+   wx := ((tzN1-1)*wv(3)^2 + (tzN2-1)*wv(4)^2)/wn;
+   wv(27) := tz_WkD(wx,wk+2); wv(11) := tz_RdC(wx,wv(27));
+   wx := (tzN1+tzN2)/(tzN1*tzN2);
+   wv(28) := tz_WkD(wx,wk+2); wv(12) := tz_RdC(wx,wv(28));
+   wv(29) := tz_WkD(wv(11)^.5,wk+1); wv(13) := tz_RdC(wv(11)^.5,wv(29));
+   wv(30) := tz_WkD(wv(12)^.5,wk+1); wv(14) := tz_RdC(wv(12)^.5,wv(30));
+   wx := wv(13)*wv(14);
+  ELSE
+   wx := wv(3)^2/tzN1; wv(27) := tz_WkD(wx,wk+1); wv(11) := tz_RdC(wx,wv(27));
+   wx := wv(4)^2/tzN2; wv(28) := tz_WkD(wx,wk+1); wv(12) := tz_RdC(wx,wv(28));
+   wx := wv(11) + wv(12); wv(29) := tz_ExC(wx,wv(27),wv(28),wk+1); wv(13) := tz_RdC(wx,wv(29));
+   // (a + b)^2 from the a and b that step 2 shows, not from the sum that
+   // step 4 shows, which is rounded when it has too many digits
+   wx := (wv(11) + wv(12))^2; wv(30) := tz_WkD(wx,wk); wv(14) := tz_RdC(wx,wv(30));
+   wx := wv(11)^2/(tzN1-1) + wv(12)^2/(tzN2-1);
+   wv(31) := tz_WkD(wx,wk); wv(15) := tz_RdC(wx,wv(31));
+   IF wv(15) == 0 THEN RETURN wv; END;
+   wv(32) := 2; wv(16) := ROUND(wv(14)/wv(15),2);
+   wx := wv(13)^.5;
+  END;
+  wv(25) := tz_WkD(wx,wk); wv(9) := tz_RdC(wx,wv(25));
+  IF wv(9) == 0 THEN RETURN wv; END;
+  wv(10) := ROUND(wv(8)/wv(9),2);
+  wv(1) := IFTE(wv(9) == tz_RdK(tzSE,wk) AND wv(10) == ROUND(tzT,2),1,0);
+  IF tzTY == 2 AND wv(16) <> ROUND(tzDF,2) THEN wv(1) := 0; END;
+ END;
+ IF tzTY == 3 THEN
+  IF tzSRC == 2 THEN
+   wv(19) := tz_WkD(tzMD,wk+2); wv(3) := tz_RdC(tzMD,wv(19));
+   wv(7) := MAX(tz_ColDec(tzX1),tz_ColDec(tzX2));
+   IF tzNP <= 5 THEN
+    // every row is on the screen: the sum of the squares shown
+    wsm := 0;
+    FOR wj FROM 1 TO tzNP DO
+     wr := tz_Dev(tzXD(wj),wv(3),wv(19),wv(7),wk);
+     wsm := wsm + wr(3);
+    END;
+   ELSE
+    // rows off the screen: the sum of (xD - the mean shown)^2, which is
+    // the sum of (xD - the mean)^2 + N(the mean - the mean shown)^2
+    wsm := tzSSq + tzNP*(tzMD-wv(3))^2;
+   END;
+   wv(20) := tz_WkD(wsm,wk+2); wv(4) := tz_RdC(wsm,wv(20));
+   wx := (wv(4)/(tzNP-1))^.5;
+   wv(21) := tz_WkD(wx,wk+1); wv(5) := tz_RdC(wx,wv(21));
+  ELSE
+   wv(19) := tz_TyD(tzMD); wv(3) := tz_RdC(tzMD,wv(19));
+   wv(21) := tz_TyD(tzSDv); wv(5) := tz_RdC(tzSDv,wv(21));
+  END;
+  wx := wv(5)/tzNP^.5;
+  wv(25) := tz_WkD(wx,wk); wv(9) := tz_RdC(wx,wv(25));
+  IF wv(9) == 0 THEN RETURN wv; END;
+  wv(10) := ROUND(wv(3)/wv(9),2);
+  wv(1) := IFTE(wv(9) == tz_RdK(tzSE,wk) AND wv(10) == ROUND(tzT,2),1,0);
+ END;
+ IF tzTY == 4 THEN
+  IF tzSRC == 2 THEN
+   wv(19) := tz_WkD(tzSO,wk+1);
+   wd := tzMO - tzMU;
+   wq := tz_DcK(IFTE(wd == 0,tzMO,wd),wk+1);
+   wv(22) := IFTE(wq > 11 OR ABS(tzMO) >= 1E12,-12,tz_TrD(tzMO,wq));
+  ELSE
+   wv(19) := tz_TyD(tzSO); wv(22) := tz_TyD(tzMO);
+  END;
+  wv(3) := tz_RdC(tzSO,wv(19)); wv(6) := tz_RdC(tzMO,wv(22));
+  wx := wv(6) - ROUND(tzMU,tz_TyD(tzMU));
+  wv(24) := tz_ExC(wx,wv(22),tz_TyD(tzMU),wk+1); wv(8) := tz_RdC(wx,wv(24));
+  wx := wv(3)/tzNO^.5;
+  wv(25) := tz_WkD(wx,wk); wv(9) := tz_RdC(wx,wv(25));
+  IF wv(9) == 0 THEN RETURN wv; END;
+  wv(10) := ROUND(wv(8)/wv(9),2);
+  wv(1) := IFTE(wv(9) == tz_RdK(tzSE,wk) AND wv(10) == ROUND(tzT,2),1,0);
+ END;
+ IF tzTY >= 5 THEN
+  wv(19) := tz_WkD(tzKA/tzNA,wk+1); wv(3) := tz_RdC(tzKA/tzNA,wv(19));
+  IF tzTY == 5 THEN
+   wx := wv(3) - ROUND(tzP0,tz_TyD(tzP0));
+   wv(24) := tz_ExC(wx,wv(19),tz_TyD(tzP0),wk+1); wv(8) := tz_RdC(wx,wv(24));
+   wx := (tzP0*(1-tzP0)/tzNA)^.5;
+  ELSE
+   wv(20) := tz_WkD(tzKB/tzNB,wk+1); wv(4) := tz_RdC(tzKB/tzNB,wv(20));
+   wx := (tzKA+tzKB)/(tzNA+tzNB);
+   wv(21) := tz_WkD(wx,wk+1); wv(5) := tz_RdC(wx,wv(21));
+   // 1 - p as step 4 shows it: exact when p is shown in fixed form
+   wv(22) := tz_ExC(1-wv(5),0,wv(21),wk+1); wv(6) := tz_RdC(1-wv(5),wv(22));
+   wx := wv(3) - wv(4);
+   wv(24) := tz_ExC(wx,wv(19),wv(20),wk+1); wv(8) := tz_RdC(wx,wv(24));
+   wx := (wv(5)*wv(6)*(1/tzNA+1/tzNB))^.5;
+  END;
+  wv(25) := tz_WkD(wx,wk); wv(9) := tz_RdC(wx,wv(25));
+  IF wv(9) == 0 THEN RETURN wv; END;
+  wv(10) := ROUND(wv(8)/wv(9),2);
+  wv(1) := IFTE(wv(9) == tz_RdK(tzSE,wk) AND wv(10) == ROUND(tzT,2),1,0);
+ END;
+ RETURN wv;
+END;
+
+// The chain at the smallest k, from 4 to 8, whose answers are the
+// program's own (k = 8 if none is: a t or z of 100,000 or more can
+// need more digits than that, and then step 4's t or z can differ
+// from step 5's in its last decimals)
+LOCAL tz_Work()
+BEGIN
+ LOCAL wk, ww;
+ FOR wk FROM 4 TO 8 DO
+  ww := tz_WkAt(wk);
+  IF ww(1) == 1 THEN RETURN ww; END;
+ END;
+ RETURN ww;
 END;
 
 // A mean or SD on the data screens: as it was typed (tz_Num) when it
@@ -988,7 +1262,7 @@ END;
 // ---------------- step 2: the distribution and df ----------------
 LOCAL tz_Step2()
 BEGIN
- LOCAL sa, sb, sden, sdh;
+ LOCAL sw, sdh;
  tz_Frame("Step 2. Distribution and df");
  TEXTOUT_P("The distribution is t: its shape depends on df.",G1,8,32,1,tzBLK);
  IF tzTY == 1 THEN
@@ -996,19 +1270,22 @@ BEGIN
   TEXTOUT_P("   = "+tz_Cm(tz_Num(tzN1))+" + "+tz_Cm(tz_Num(tzN2))+" - 2 = "+tz_Cm(STRING(tzDF,1,0)),G1,8,69,1,tzBLUE);
  END;
  IF tzTY == 2 THEN
-  sa := tzS1^2/tzN1; sb := tzS2^2/tzN2;
-  sden := sa^2/(tzN1-1) + sb^2/(tzN2-1);
+  // beta 1k: the numbers of the chain (tz_Work), so every step checks:
+  // a and b worked out from s as shown, the numerator and denominator
+  // from a and b as shown, and df from those two
+  sw := tz_Work();
   TEXTOUT_P("Separate variances (Welch-Satterthwaite):",G1,8,54,1,tzBLUE);
-  TEXTOUT_P("df = (a + b)² / [a²/(N"+CHAR(8321)+"-1) + b²/(N"+CHAR(8322)+"-1)]",G1,8,69,1,tzBLUE);
-  TEXTOUT_P("a = s"+CHAR(8321)+"²/N"+CHAR(8321)+" = "+tz_Cm(tz_Sig(sa))+",  b = s"+CHAR(8322)+"²/N"+CHAR(8322)+" = "+tz_Cm(tz_Sig(sb)),G1,8,84,1,tzBLUE);
-  TEXTOUT_P("df = "+tz_Cm(tz_Sig((sa+sb)^2))+" / "+tz_Cm(tz_Sig(sden))+" = "+tz_Cm(tz_Fmt(tzDF,2)),G1,8,99,1,tzBLUE);
+  TEXTOUT_P("df = (a + b)² / [a²/(N"+CHAR(8321)+"-1) + b²/(N"+CHAR(8322)+"-1)]",G1,8,67,1,tzBLUE);
+  TEXTOUT_P("a = s"+CHAR(8321)+"²/N"+CHAR(8321)+" = "+tz_WV(sw,3)+"²/"+tz_Cm(tz_Num(tzN1))+" = "+tz_WV(sw,11),G1,8,80,1,tzBLUE);
+  TEXTOUT_P("b = s"+CHAR(8322)+"²/N"+CHAR(8322)+" = "+tz_WV(sw,4)+"²/"+tz_Cm(tz_Num(tzN2))+" = "+tz_WV(sw,12),G1,8,93,1,tzBLUE);
+  TEXTOUT_P("df = "+tz_WV(sw,14)+" / "+tz_WV(sw,15)+" = "+tz_WV(sw,16),G1,8,106,1,tzBLUE);
   // the hand shortcut many books give for separate variances: the
   // smaller N - 1, which gives a larger t crit than Welch's df, so it
   // errs on the safe side (the companion guide's Conventions)
   sdh := MIN(tzN1,tzN2) - 1;
-  TEXTOUT_P("A fraction is fine: SPSS and R print this df.",G1,8,116,1,tzGRAY);
-  TEXTOUT_P("By hand: df = the smaller of (N"+CHAR(8321)+"-1), (N"+CHAR(8322)+"-1) = "+tz_Cm(STRING(sdh,1,0))+",",G1,8,131,1,tzGRAY);
-  TEXTOUT_P("t crit = "+tz_CritS(tz_Crit(sdh))+": larger, so a safer test.",G1,8,144,1,tzGRAY);
+  TEXTOUT_P("A fraction is fine: SPSS and R print this df.",G1,8,121,1,tzGRAY);
+  TEXTOUT_P("By hand: df = the smaller of (N"+CHAR(8321)+"-1), (N"+CHAR(8322)+"-1) = "+tz_Cm(STRING(sdh,1,0))+",",G1,8,134,1,tzGRAY);
+  TEXTOUT_P("t crit = "+tz_CritS(tz_Crit(sdh))+": larger, so a safer test.",G1,8,147,1,tzGRAY);
  END;
  IF tzTY == 3 THEN
   TEXTOUT_P("Dependent samples:  df = N pairs - 1",G1,8,54,1,tzBLUE);
@@ -1065,53 +1342,64 @@ END;
 // ---------------- step 4: SE and t obtained ----------------
 LOCAL tz_Step4()
 BEGIN
- LOCAL sa, sb, sr, sj, sn, sy;
+ LOCAL sw, sj, sn, sy, sq;
  tz_Frame("Step 4. Standard error and t obtained");
+ // beta 1k: the numbers of the chain (tz_Work), so every step checks
+ sw := tz_Work();
  IF tzTY == 1 THEN
-  sr := (tzN1+tzN2)/(tzN1*tzN2);
   TEXTOUT_P("SE = √[((N"+CHAR(8321)+"-1)s"+CHAR(8321)+"² + (N"+CHAR(8322)+"-1)s"+CHAR(8322)+"²)/(N"+CHAR(8321)+"+N"+CHAR(8322)+"-2)]",G1,8,30,1,tzBLUE);
   TEXTOUT_P("       × √[(N"+CHAR(8321)+"+N"+CHAR(8322)+")/(N"+CHAR(8321)+"N"+CHAR(8322)+")]",G1,8,43,1,tzBLUE);
-  TEXTOUT_P("   = √[("+tz_Cm(tz_Num(tzN1-1))+" × "+tz_Val(tzS1)+"² + "+tz_Cm(tz_Num(tzN2-1))+" × "+tz_Val(tzS2)+"²)/"+tz_Cm(STRING(tzDF,1,0))+"]",G1,8,58,1,tzBLK);
+  TEXTOUT_P("   = √[("+tz_Cm(tz_Num(tzN1-1))+" × "+tz_WV(sw,3)+"² + "+tz_Cm(tz_Num(tzN2-1))+" × "+tz_WV(sw,4)+"²)/"+tz_Cm(STRING(tzDF,1,0))+"]",G1,8,58,1,tzBLK);
   TEXTOUT_P("       × √["+tz_Cm(tz_Num(tzN1+tzN2))+"/"+tz_Cm(tz_Num(tzN1*tzN2))+"]",G1,8,71,1,tzBLK);
-  TEXTOUT_P("   = √"+tz_Cm(tz_Sig(tzSP^2))+" × √"+tz_Cm(tz_Sig(sr))+" = "+tz_Cm(tz_Sig(tzSP))+" × "+tz_Cm(tz_Sig(sr^.5)),G1,8,84,1,tzBLK);
-  TEXTOUT_P("   = "+tz_Cm(tz_Sig(tzSE)),G1,8,97,1,tzBLK);
+  // beta 1k: the roots and the product on lines of their own, so a
+  // number of more digits still fits
+  TEXTOUT_P("   = √"+tz_WV(sw,11)+" × √"+tz_WV(sw,12),G1,8,84,1,tzBLK);
+  TEXTOUT_P("   = "+tz_WV(sw,13)+" × "+tz_WV(sw,14),G1,8,97,1,tzBLK);
+  TEXTOUT_P("   = "+tz_WV(sw,9),G1,8,110,1,tzBLK);
  END;
  IF tzTY == 2 THEN
-  sa := tzS1^2/tzN1; sb := tzS2^2/tzN2;
   TEXTOUT_P("SE = √(s"+CHAR(8321)+"²/N"+CHAR(8321)+" + s"+CHAR(8322)+"²/N"+CHAR(8322)+")",G1,8,30,1,tzBLUE);
-  TEXTOUT_P("   = √("+tz_Val(tzS1)+"²/"+tz_Cm(tz_Num(tzN1))+" + "+tz_Val(tzS2)+"²/"+tz_Cm(tz_Num(tzN2))+")",G1,8,45,1,tzBLK);
-  TEXTOUT_P("   = √("+tz_Cm(tz_Sig(sa))+" + "+tz_Cm(tz_Sig(sb))+") = √"+tz_Cm(tz_Sig(sa+sb)),G1,8,60,1,tzBLK);
-  TEXTOUT_P("   = "+tz_Cm(tz_Sig(tzSE)),G1,8,75,1,tzBLK);
+  TEXTOUT_P("   = √("+tz_WV(sw,3)+"²/"+tz_Cm(tz_Num(tzN1))+" + "+tz_WV(sw,4)+"²/"+tz_Cm(tz_Num(tzN2))+")",G1,8,45,1,tzBLK);
+  TEXTOUT_P("   = √("+tz_WV(sw,11)+" + "+tz_WV(sw,12)+") = √"+tz_WV(sw,13),G1,8,60,1,tzBLK);
+  TEXTOUT_P("   = "+tz_WV(sw,9),G1,8,75,1,tzBLK);
  END;
  IF tzTY <> 3 THEN
-  TEXTOUT_P("t obt = ("+CHAR(57344)+CHAR(8321)+" - "+CHAR(57344)+CHAR(8322)+")/SE = ("+tz_Val(tzM1)+" - "+tz_Val(tzM2)+")/"+tz_Cm(tz_Sig(tzSE)),G1,8,116,1,tzMAG);
-  TEXTOUT_P("      = "+tz_Cm(tz_Sig(tzM1-tzM2))+"/"+tz_Cm(tz_Sig(tzSE))+" = "+tz_Cm(tz_Fmt(tzT,2)),G1,8,129,1,tzMAG);
+  // beta 1k: the formula, the numbers and the result on lines of their
+  // own, so means of -9,999.99999 and 9,999.99999, the largest the form
+  // takes, still fit (the verify script, part D)
+  sy := IFTE(tzTY == 1,127,116);
+  TEXTOUT_P("t obt = ("+CHAR(57344)+CHAR(8321)+" - "+CHAR(57344)+CHAR(8322)+")/SE",G1,8,sy,1,tzMAG);
+  TEXTOUT_P("      = ("+tz_WV(sw,6)+" - "+tz_WV(sw,7)+")/"+tz_WV(sw,9),G1,8,sy+13,1,tzMAG);
+  TEXTOUT_P("      = "+tz_WV(sw,8)+"/"+tz_WV(sw,9)+" = "+tz_WV(sw,10),G1,8,sy+26,1,tzMAG);
  ELSE
   IF tzSRC == 2 THEN
    // each difference, its deviation from the mean, and that squared
    TEXTOUT_P("x"+CHAR(8321)+"-x"+CHAR(8322)+" = xD",G1,8,28,1,tzGRAY);
    TEXTOUT_P("xD - "+CHAR(57344)+"D",G1,110,28,1,tzGRAY);
    TEXTOUT_P("(xD - "+CHAR(57344)+"D)²",G1,210,28,1,tzGRAY);
+   // beta 1k: each difference whole, its deviation from the mean shown,
+   // and that squared, as the sum takes them (tz_Dev)
    sn := MIN(tzNP,5);
    FOR sj FROM 1 TO sn DO
     sy := 28 + 12*sj;
-    TEXTOUT_P(tz_Cm(tz_Sig(tzXD(sj))),G1,12,sy,1,tzBLK);
-    TEXTOUT_P(tz_Cm(tz_Sig(tzXD(sj)-tzMD)),G1,114,sy,1,tzBLK);
-    TEXTOUT_P(tz_Cm(tz_Sig((tzXD(sj)-tzMD)^2)),G1,214,sy,1,tzBLK);
+    sq := tz_Dev(tzXD(sj),sw(3),sw(19),sw(7),sw(2));
+    TEXTOUT_P(tz_Cm(tz_FixD(tzXD(sj),sw(7))),G1,12,sy,1,tzBLK);
+    TEXTOUT_P(tz_Cm(tz_Txt(sq(1),sq(2))),G1,114,sy,1,tzBLK);
+    TEXTOUT_P(tz_Cm(tz_Txt(sq(3),sq(4))),G1,214,sy,1,tzBLK);
    END;
    IF tzNP > 5 THEN TEXTOUT_P("... "+tz_Cm(STRING(tzNP-5,1,0))+" more",G1,12,100,1,tzGRAY); END;
-   TEXTOUT_P(CHAR(57344)+"D = "+tz_Cm(tz_Sig(tzMD)),G1,12,112,1,tzBLK);
+   TEXTOUT_P(CHAR(57344)+"D = "+tz_WV(sw,3),G1,12,112,1,tzBLK);
    // the column's sum (the sigma sign is not on the verified glyph
    // list, Lessons Learned s5, so the word)
-   TEXTOUT_P("sum = "+tz_Cm(tz_Sig(tzSSq)),G1,214,112,1,tzBLK);
-   TEXTOUT_P("sD = √(sum/(N-1)) = √("+tz_Cm(tz_Sig(tzSSq))+"/"+tz_Cm(STRING(tzNP-1,1,0))+") = "+tz_Cm(tz_Sig(tzSDv)),G1,8,128,1,tzBLUE);
+   TEXTOUT_P("sum = "+tz_WV(sw,4),G1,214,112,1,tzBLK);
+   TEXTOUT_P("sD = √(sum/(N-1)) = √("+tz_WV(sw,4)+"/"+tz_Cm(STRING(tzNP-1,1,0))+") = "+tz_WV(sw,5),G1,8,128,1,tzBLUE);
   ELSE
    TEXTOUT_P(CHAR(57344)+"D = "+tz_Cm(tz_Num(tzMD))+",  sD = "+tz_Cm(tz_Num(tzSDv))+",  N pairs = "+tz_Cm(tz_Num(tzNP)),G1,8,40,1,tzBLK);
   END;
   // under the pairs' table, or right under the typed summary
   sy := IFTE(tzSRC == 2,141,60);
-  TEXTOUT_P("SE = sD/√N = "+tz_Cm(tz_Sig(tzSDv))+"/√"+tz_Cm(tz_Num(tzNP))+" = "+tz_Cm(tz_Sig(tzSE)),G1,8,sy,1,tzBLUE);
-  TEXTOUT_P("t obt = "+CHAR(57344)+"D/SE = "+tz_Cm(tz_Sig(tzMD))+"/"+tz_Cm(tz_Sig(tzSE))+" = "+tz_Cm(tz_Fmt(tzT,2)),G1,8,sy+13,1,tzMAG);
+  TEXTOUT_P("SE = sD/√N = "+tz_WV(sw,5)+"/√"+tz_Cm(tz_Num(tzNP))+" = "+tz_WV(sw,9),G1,8,sy,1,tzBLUE);
+  TEXTOUT_P("t obt = "+CHAR(57344)+"D/SE = "+tz_WV(sw,3)+"/"+tz_WV(sw,9)+" = "+tz_WV(sw,10),G1,8,sy+13,1,tzMAG);
  END;
  tz_ShowSteps();
 END;
@@ -1343,38 +1631,53 @@ END;
 // ---- step 4: the standard error and t or z obtained ----
 LOCAL tz_Step4N()
 BEGIN
+ LOCAL sw;
+ // beta 1k: the numbers of the chain (tz_Work), so every step checks
+ sw := tz_Work();
  IF tzTY == 4 THEN
   tz_Frame("Step 4. Standard error and t obtained");
-  // the mean and SD as typed, or to 4 digits when they came from D1
-  TEXTOUT_P(CHAR(57344)+" = "+tz_VN(tzMO)+",   s = "+tz_VN(tzSO)+",   N = "+tz_Cm(tz_Num(tzNO))+",   μ"+CHAR(8320)+" = "+tz_Cm(tz_Num(tzMU)),G1,8,34,1,tzBLK);
-  TEXTOUT_P("SE = s/√N = "+tz_VN(tzSO)+"/√"+tz_Cm(tz_Num(tzNO))+" = "+tz_Cm(tz_Sig(tzSE)),G1,8,58,1,tzBLUE);
-  TEXTOUT_P("t obt = ("+CHAR(57344)+" - μ"+CHAR(8320)+")/SE = ("+tz_VN(tzMO)+" - "+tz_Par(tz_Cm(tz_Num(tzMU)))+")/"+tz_Cm(tz_Sig(tzSE)),G1,8,82,1,tzMAG);
-  TEXTOUT_P("      = "+tz_Cm(tz_Sig(tzMO-tzMU))+"/"+tz_Cm(tz_Sig(tzSE))+" = "+tz_Cm(tz_Fmt(tzT,2)),G1,8,95,1,tzMAG);
-  TEXTOUT_P("t obt counts the standard errors between the",G1,8,120,1,tzGRAY);
-  TEXTOUT_P("sample mean and μ"+CHAR(8320)+".",G1,8,133,1,tzGRAY);
+  // the mean and SD as typed, or as the chain shows them when they came
+  // from D1 (beta 1k; beta 1j showed them to 4 digits)
+  // (beta 1k: on two lines, and the t line on three, so a mean and a mu0
+  // of 9,999.99999 in size, the largest the form takes, still fit:
+  // the verify script, part D)
+  TEXTOUT_P(CHAR(57344)+" = "+tz_WV(sw,6)+",   s = "+tz_WV(sw,3),G1,8,32,1,tzBLK);
+  TEXTOUT_P("N = "+tz_Cm(tz_Num(tzNO))+",   μ"+CHAR(8320)+" = "+tz_Cm(tz_Num(tzMU)),G1,8,45,1,tzBLK);
+  TEXTOUT_P("SE = s/√N = "+tz_WV(sw,3)+"/√"+tz_Cm(tz_Num(tzNO))+" = "+tz_WV(sw,9),G1,8,62,1,tzBLUE);
+  TEXTOUT_P("t obt = ("+CHAR(57344)+" - μ"+CHAR(8320)+")/SE",G1,8,80,1,tzMAG);
+  TEXTOUT_P("      = ("+tz_WV(sw,6)+" - "+tz_Par(tz_Cm(tz_Num(tzMU)))+")/"+tz_WV(sw,9),G1,8,93,1,tzMAG);
+  TEXTOUT_P("      = "+tz_WV(sw,8)+"/"+tz_WV(sw,9)+" = "+tz_WV(sw,10),G1,8,106,1,tzMAG);
+  TEXTOUT_P("t obt counts the standard errors between the",G1,8,124,1,tzGRAY);
+  TEXTOUT_P("sample mean and μ"+CHAR(8320)+".",G1,8,137,1,tzGRAY);
  END;
  IF tzTY == 5 THEN
   tz_Frame("Step 4. Standard error and z obtained");
-  TEXTOUT_P(CHAR(57345)+" = x/n = "+tz_Cm(tz_Num(tzKA))+"/"+tz_Cm(tz_Num(tzNA))+" = "+tz_Cm(tz_Sig(tzPA)),G1,8,32,1,tzBLK);
+  TEXTOUT_P(CHAR(57345)+" = x/n = "+tz_Cm(tz_Num(tzKA))+"/"+tz_Cm(tz_Num(tzNA))+" = "+tz_WV(sw,3),G1,8,32,1,tzBLK);
   TEXTOUT_P("SE = √(p"+CHAR(8320)+"(1 - p"+CHAR(8320)+")/n)",G1,8,50,1,tzBLUE);
-  TEXTOUT_P("   = √("+tz_Cm(tz_Num(tzP0))+" × "+tz_Cm(tz_Num(1-tzP0))+"/"+tz_Cm(tz_Num(tzNA))+") = "+tz_Cm(tz_Sig(tzSE)),G1,8,63,1,tzBLK);
-  TEXTOUT_P("z obt = ("+CHAR(57345)+" - p"+CHAR(8320)+")/SE = ("+tz_Cm(tz_Sig(tzPA))+" - "+tz_Cm(tz_Num(tzP0))+")/"+tz_Cm(tz_Sig(tzSE)),G1,8,84,1,tzMAG);
-  TEXTOUT_P("      = "+tz_Cm(tz_Sig(tzPA-tzP0))+"/"+tz_Cm(tz_Sig(tzSE))+" = "+tz_Cm(tz_Fmt(tzT,2)),G1,8,97,1,tzMAG);
-  TEXTOUT_P("SE is built from p"+CHAR(8320)+", not from "+CHAR(57345)+": the test works",G1,8,120,1,tzGRAY);
-  TEXTOUT_P("out what would happen if H"+CHAR(8320)+" were true.",G1,8,133,1,tzGRAY);
+  TEXTOUT_P("   = √("+tz_Cm(tz_Num(tzP0))+" × "+tz_Cm(tz_Num(1-tzP0))+"/"+tz_Cm(tz_Num(tzNA))+") = "+tz_WV(sw,9),G1,8,63,1,tzBLK);
+  TEXTOUT_P("z obt = ("+CHAR(57345)+" - p"+CHAR(8320)+")/SE",G1,8,80,1,tzMAG);
+  TEXTOUT_P("      = ("+tz_WV(sw,3)+" - "+tz_Cm(tz_Num(tzP0))+")/"+tz_WV(sw,9),G1,8,93,1,tzMAG);
+  TEXTOUT_P("      = "+tz_WV(sw,8)+"/"+tz_WV(sw,9)+" = "+tz_WV(sw,10),G1,8,106,1,tzMAG);
+  TEXTOUT_P("SE is built from p"+CHAR(8320)+", not from "+CHAR(57345)+": the test works",G1,8,124,1,tzGRAY);
+  TEXTOUT_P("out what would happen if H"+CHAR(8320)+" were true.",G1,8,137,1,tzGRAY);
  END;
  IF tzTY == 6 THEN
   tz_Frame("Step 4. Standard error and z obtained");
-  TEXTOUT_P(CHAR(57345)+CHAR(8321)+" = x"+CHAR(8321)+"/n"+CHAR(8321)+" = "+tz_Cm(tz_Num(tzKA))+"/"+tz_Cm(tz_Num(tzNA))+" = "+tz_Cm(tz_Sig(tzPA)),G1,8,30,1,tzBLK);
-  TEXTOUT_P(CHAR(57345)+CHAR(8322)+" = x"+CHAR(8322)+"/n"+CHAR(8322)+" = "+tz_Cm(tz_Num(tzKB))+"/"+tz_Cm(tz_Num(tzNB))+" = "+tz_Cm(tz_Sig(tzPB)),G1,8,43,1,tzBLK);
+  TEXTOUT_P(CHAR(57345)+CHAR(8321)+" = x"+CHAR(8321)+"/n"+CHAR(8321)+" = "+tz_Cm(tz_Num(tzKA))+"/"+tz_Cm(tz_Num(tzNA))+" = "+tz_WV(sw,3),G1,8,30,1,tzBLK);
+  TEXTOUT_P(CHAR(57345)+CHAR(8322)+" = x"+CHAR(8322)+"/n"+CHAR(8322)+" = "+tz_Cm(tz_Num(tzKB))+"/"+tz_Cm(tz_Num(tzNB))+" = "+tz_WV(sw,4),G1,8,43,1,tzBLK);
   // under H0 the two samples share one proportion: pool them
   TEXTOUT_P("Pooled, because H"+CHAR(8320)+" gives both samples one p:",G1,8,58,1,tzBLUE);
-  TEXTOUT_P("p = (x"+CHAR(8321)+" + x"+CHAR(8322)+")/(n"+CHAR(8321)+" + n"+CHAR(8322)+") = "+tz_Cm(tz_Num(tzKA+tzKB))+"/"+tz_Cm(tz_Num(tzNA+tzNB))+" = "+tz_Cm(tz_Sig(tzPP)),G1,8,71,1,tzBLUE);
-  TEXTOUT_P("SE = √(p(1 - p)(1/n"+CHAR(8321)+" + 1/n"+CHAR(8322)+"))",G1,8,86,1,tzBLUE);
-  TEXTOUT_P("   = √("+tz_Cm(tz_Sig(tzPP))+" × "+tz_Cm(tz_Sig(1-tzPP))+" × (1/"+tz_Cm(tz_Num(tzNA))+" + 1/"+tz_Cm(tz_Num(tzNB))+"))",G1,8,99,1,tzBLK);
-  TEXTOUT_P("   = "+tz_Cm(tz_Sig(tzSE)),G1,8,112,1,tzBLK);
-  TEXTOUT_P("z obt = ("+CHAR(57345)+CHAR(8321)+" - "+CHAR(57345)+CHAR(8322)+")/SE = ("+tz_Cm(tz_Sig(tzPA))+" - "+tz_Cm(tz_Sig(tzPB))+")/"+tz_Cm(tz_Sig(tzSE)),G1,8,129,1,tzMAG);
-  TEXTOUT_P("      = "+tz_Cm(tz_Sig(tzPA-tzPB))+"/"+tz_Cm(tz_Sig(tzSE))+" = "+tz_Cm(tz_Fmt(tzT,2)),G1,8,142,1,tzMAG);
+  // (beta 1k: the pooled p and the root each on two lines, so two n of
+  // 1,000,000 and a pooled p below 0.0001 still fit: the verify script, part D)
+  TEXTOUT_P("p = (x"+CHAR(8321)+" + x"+CHAR(8322)+")/(n"+CHAR(8321)+" + n"+CHAR(8322)+")",G1,8,71,1,tzBLUE);
+  TEXTOUT_P("   = "+tz_Cm(tz_Num(tzKA+tzKB))+"/"+tz_Cm(tz_Num(tzNA+tzNB))+" = "+tz_WV(sw,5),G1,8,84,1,tzBLUE);
+  TEXTOUT_P("SE = √(p(1 - p)(1/n"+CHAR(8321)+" + 1/n"+CHAR(8322)+"))",G1,8,99,1,tzBLUE);
+  TEXTOUT_P("   = √("+tz_WV(sw,5)+" × "+tz_WV(sw,6),G1,8,112,1,tzBLK);
+  TEXTOUT_P("       × (1/"+tz_Cm(tz_Num(tzNA))+" + 1/"+tz_Cm(tz_Num(tzNB))+"))",G1,8,125,1,tzBLK);
+  TEXTOUT_P("   = "+tz_WV(sw,9),G1,8,138,1,tzBLK);
+  TEXTOUT_P("z obt = ("+CHAR(57345)+CHAR(8321)+" - "+CHAR(57345)+CHAR(8322)+")/SE",G1,8,155,1,tzMAG);
+  TEXTOUT_P("      = ("+tz_WV(sw,3)+" - "+tz_WV(sw,4)+")/"+tz_WV(sw,9),G1,8,168,1,tzMAG);
+  TEXTOUT_P("      = "+tz_WV(sw,8)+"/"+tz_WV(sw,9)+" = "+tz_WV(sw,10),G1,8,181,1,tzMAG);
  END;
  tz_ShowSteps();
 END;
@@ -2026,7 +2329,7 @@ BEGIN
  TEXTOUT_P("t crit: exact for your df; no table is needed.",G1,8,30,1,tzBLK);
  TEXTOUT_P("With a printed table, a df it lacks uses the next smaller row, and",G1,8,43,1,tzBLK);
  TEXTOUT_P("a fractional df is rounded down first.",G1,8,56,1,tzBLK);
- TEXTOUT_P("Step 4 keeps 4 significant digits at each step.",G1,8,72,1,tzBLK);
+ TEXTOUT_P("Steps 2 and 4 work each number from those shown, so all check.",G1,8,72,1,tzBLK);
  TEXTOUT_P("Separate variances (the default): Welch's SE and df, as SPSS and",G1,8,88,1,tzBLUE);
  TEXTOUT_P("R print them",G1,8,101,1,tzBLUE);
  TEXTOUT_P("The difference is group 1 minus group 2, as in SPSS and R",G1,8,117,1,tzBLK);

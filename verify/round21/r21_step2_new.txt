@@ -1,0 +1,13 @@
+ IF ttTY == 2 THEN
+  // beta 1n: the numbers of the chain (tt_Work), so every step checks:
+  // a and b worked out from s as shown, the numerator and denominator
+  // from a and b as shown, and df from those two
+  sw := tt_Work();
+  TEXTOUT_P("Separate variances (Welch-Satterthwaite):",G1,8,54,1,ttBLUE);
+  TEXTOUT_P("df = (a + b)² / [a²/(N"+CHAR(8321)+"-1) + b²/(N"+CHAR(8322)+"-1)]",G1,8,67,1,ttBLUE);
+  TEXTOUT_P("a = s"+CHAR(8321)+"²/N"+CHAR(8321)+" = "+tt_WV(sw,3)+"²/"+tt_Cm(tt_Num(ttN1))+" = "+tt_WV(sw,11),G1,8,80,1,ttBLUE);
+  TEXTOUT_P("b = s"+CHAR(8322)+"²/N"+CHAR(8322)+" = "+tt_WV(sw,4)+"²/"+tt_Cm(tt_Num(ttN2))+" = "+tt_WV(sw,12),G1,8,93,1,ttBLUE);
+  TEXTOUT_P("df = "+tt_WV(sw,14)+" / "+tt_WV(sw,15)+" = "+tt_WV(sw,16),G1,8,106,1,ttBLUE);
+  TEXTOUT_P("A fraction is fine: SPSS prints this df in its",G1,8,121,1,ttGRAY);
+  TEXTOUT_P(CHAR(34)+"Equal variances not assumed"+CHAR(34)+" row.",G1,8,134,1,ttGRAY);
+ END;

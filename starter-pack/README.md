@@ -1,10 +1,10 @@
 # Starter pack for the Virtual Calculator
 
-*v28, 2026-11-27. Built by `tools/make_starter_pack_v6.py` from `programs/` and `extras/sudoku/`; do not edit this page by hand.*
+*v29, 2026-11-28. Built by `tools/make_starter_pack_v6.py` from `programs/` and `extras/sudoku/`; do not edit this page by hand.*
 
-All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** on a Windows PC: no Connectivity Kit, no copying and pasting. Download **[HP_Prime_Statistics_Starter_Pack_v28.zip](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v28.zip)** (one file).
+All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** on a Windows PC: no Connectivity Kit, no copying and pasting. Download **[HP_Prime_Statistics_Starter_Pack_v29.zip](https://github.com/metcalfdds/hp-prime-statistics/raw/main/starter-pack/HP_Prime_Statistics_Starter_Pack_v29.zip)** (one file).
 
-*How this pack was tested on the Virtual Calculator: [docs/changes/StarterPack_v28_NOTES.md](../docs/changes/StarterPack_v28_NOTES.md).*
+*How this pack was tested on the Virtual Calculator: [docs/changes/StarterPack_v29_NOTES.md](../docs/changes/StarterPack_v29_NOTES.md).*
 
 ### What you need
 - A Windows PC with the HP Prime Virtual Calculator (64-bit). It is a free download from hpcalc.org, which lists Hewlett-Packard as its author. The pack was tested on the Virtual Calculator 2.4.2 (build 2026-09-09), 64-bit.
@@ -66,8 +66,8 @@ All 31 programs in one zip, ready for the free **HP Prime Virtual Calculator** o
 | StudRange | beta 15o | 2,768 | `StudRange` | MicroPython | `be030e8fa547` |
 | SurvLab | beta 1h | 2,756 | `SurvLab` |  | `65170376689c` |
 | TDist3D | beta 1c | 1,180 | `TDist3D` |  | `29c46c2c9f7b` |
-| TTestLabG | beta 1j | 2,197 | `TTESTLABG` |  | `5ad8d9440a4c` |
-| TTestLab | beta 1m | 2,229 | `TTESTLAB` |  | `734cf93a6dbd` |
+| TTestLabG | beta 1k | 2,500 | `TTESTLABG` |  | `191cf7d886f4` |
+| TTestLab | beta 1n | 2,535 | `TTESTLAB` |  | `430ea7a71184` |
 | TestChooser | beta 2i | 1,929 | `TestChooser` |  | `6fc473d7b3c8` |
 | TrendTest | beta 3o | 2,304 | `TrendTest` |  | `afeff2d82379` |
 | Sudoku | beta 2a | 1,962 | `Sudoku` | bonus, in `Bonus (optional)` (not one of the *Statisticles*) | `33b00ac430c8` |

@@ -2,7 +2,7 @@
 
 | File | What it is |
 | --- | --- |
-| `lessons-learned_v7zz.md` | The main reference: PPL, CAS and MicroPython behaviour found on hardware, and the house rules that came out of it. Start here. |
+| `lessons-learned_v7zza.md` | The main reference: PPL, CAS and MicroPython behaviour found on hardware, and the house rules that came out of it. Start here. |
 | `book/` | **From the book.** Draft 105's Appendix F, "For HP programmers", as Draft 105 printed it, with its references: in Draft 106 (26 Nov 2026, the refocus) it left the book for this repository and the book's future website. |
 | `test-status.md` | The dated record of what has been tested, on what, and what each round found (moved from the top of the README, 27 Oct 2026). |
 | `two-shortcuts.md` | Loading the Virtual Calculator by copying files into its folder, and a big data set as one matrix file: how each works, what we found, and who found what (1 Nov 2026). HP's manuals describe neither. |

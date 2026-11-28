@@ -1,0 +1,53 @@
+LOCAL tt_Step4N()
+BEGIN
+ LOCAL sw;
+ // beta 1n: the numbers of the chain (tt_Work), so every step checks
+ sw := tt_Work();
+ IF ttTY == 4 THEN
+  tt_Frame("Step 4. Standard error and t obtained");
+  // the mean and SD as typed, or as the chain shows them when they came
+  // from D1 (beta 1n; beta 1m showed them to 4 digits)
+  // (beta 1n: on two lines, and the t line on three, so a mean and a mu0
+  // of 9,999.99999 in size, the largest the form takes, still fit:
+  // the verify script, part D)
+  TEXTOUT_P(CHAR(57344)+" = "+tt_WV(sw,6)+",   s = "+tt_WV(sw,3),G1,8,32,1,ttBLK);
+  TEXTOUT_P("N = "+tt_Cm(tt_Num(ttNO))+",   μ"+CHAR(8320)+" = "+tt_Cm(tt_Num(ttMU)),G1,8,45,1,ttBLK);
+  TEXTOUT_P("SE = s/√N = "+tt_WV(sw,3)+"/√"+tt_Cm(tt_Num(ttNO))+" = "+tt_WV(sw,9),G1,8,62,1,ttBLUE);
+  TEXTOUT_P("t obt = ("+CHAR(57344)+" - μ"+CHAR(8320)+")/SE",G1,8,80,1,ttMAG);
+  TEXTOUT_P("      = ("+tt_WV(sw,6)+" - "+tt_Par(tt_Cm(tt_Num(ttMU)))+")/"+tt_WV(sw,9),G1,8,93,1,ttMAG);
+  TEXTOUT_P("      = "+tt_WV(sw,8)+"/"+tt_WV(sw,9)+" = "+tt_WV(sw,10),G1,8,106,1,ttMAG);
+  TEXTOUT_P("t obt counts the standard errors between the",G1,8,124,1,ttGRAY);
+  TEXTOUT_P("sample mean and μ"+CHAR(8320)+".",G1,8,137,1,ttGRAY);
+ END;
+ IF ttTY == 5 THEN
+  tt_Frame("Step 4. Standard error and z obtained");
+  TEXTOUT_P(CHAR(57345)+" = x/n = "+tt_Cm(tt_Num(ttKA))+"/"+tt_Cm(tt_Num(ttNA))+" = "+tt_WV(sw,3),G1,8,32,1,ttBLK);
+  TEXTOUT_P("SE = √(p"+CHAR(8320)+"(1 - p"+CHAR(8320)+")/n)",G1,8,50,1,ttBLUE);
+  TEXTOUT_P("   = √("+tt_Cm(tt_Num(ttP0))+" × "+tt_Cm(tt_Num(1-ttP0))+"/"+tt_Cm(tt_Num(ttNA))+") = "+tt_WV(sw,9),G1,8,63,1,ttBLK);
+  TEXTOUT_P("z obt = ("+CHAR(57345)+" - p"+CHAR(8320)+")/SE",G1,8,80,1,ttMAG);
+  TEXTOUT_P("      = ("+tt_WV(sw,3)+" - "+tt_Cm(tt_Num(ttP0))+")/"+tt_WV(sw,9),G1,8,93,1,ttMAG);
+  TEXTOUT_P("      = "+tt_WV(sw,8)+"/"+tt_WV(sw,9)+" = "+tt_WV(sw,10),G1,8,106,1,ttMAG);
+  TEXTOUT_P("SE is built from p"+CHAR(8320)+", not from "+CHAR(57345)+": the test works",G1,8,124,1,ttGRAY);
+  TEXTOUT_P("out what would happen if H"+CHAR(8320)+" were true.",G1,8,137,1,ttGRAY);
+ END;
+ IF ttTY == 6 THEN
+  tt_Frame("Step 4. Standard error and z obtained");
+  TEXTOUT_P(CHAR(57345)+CHAR(8321)+" = x"+CHAR(8321)+"/n"+CHAR(8321)+" = "+tt_Cm(tt_Num(ttKA))+"/"+tt_Cm(tt_Num(ttNA))+" = "+tt_WV(sw,3),G1,8,30,1,ttBLK);
+  TEXTOUT_P(CHAR(57345)+CHAR(8322)+" = x"+CHAR(8322)+"/n"+CHAR(8322)+" = "+tt_Cm(tt_Num(ttKB))+"/"+tt_Cm(tt_Num(ttNB))+" = "+tt_WV(sw,4),G1,8,43,1,ttBLK);
+  // under H0 the two samples share one proportion: pool them
+  TEXTOUT_P("Pooled, because H"+CHAR(8320)+" gives both samples one p:",G1,8,58,1,ttBLUE);
+  // (beta 1n: the pooled p and the root each on two lines, so two n of
+  // 1,000,000 and a pooled p below 0.0001 still fit: the verify script, part D)
+  TEXTOUT_P("p = (x"+CHAR(8321)+" + x"+CHAR(8322)+")/(n"+CHAR(8321)+" + n"+CHAR(8322)+")",G1,8,71,1,ttBLUE);
+  TEXTOUT_P("   = "+tt_Cm(tt_Num(ttKA+ttKB))+"/"+tt_Cm(tt_Num(ttNA+ttNB))+" = "+tt_WV(sw,5),G1,8,84,1,ttBLUE);
+  TEXTOUT_P("SE = √(p(1 - p)(1/n"+CHAR(8321)+" + 1/n"+CHAR(8322)+"))",G1,8,99,1,ttBLUE);
+  TEXTOUT_P("   = √("+tt_WV(sw,5)+" × "+tt_WV(sw,6),G1,8,112,1,ttBLK);
+  TEXTOUT_P("       × (1/"+tt_Cm(tt_Num(ttNA))+" + 1/"+tt_Cm(tt_Num(ttNB))+"))",G1,8,125,1,ttBLK);
+  TEXTOUT_P("   = "+tt_WV(sw,9),G1,8,138,1,ttBLK);
+  TEXTOUT_P("z obt = ("+CHAR(57345)+CHAR(8321)+" - "+CHAR(57345)+CHAR(8322)+")/SE",G1,8,155,1,ttMAG);
+  TEXTOUT_P("      = ("+tt_WV(sw,3)+" - "+tt_WV(sw,4)+")/"+tt_WV(sw,9),G1,8,168,1,ttMAG);
+  TEXTOUT_P("      = "+tt_WV(sw,8)+"/"+tt_WV(sw,9)+" = "+tt_WV(sw,10),G1,8,181,1,ttMAG);
+ END;
+ tt_ShowSteps();
+END;
+

@@ -58,6 +58,18 @@ THE FACTS (Virtual Calculator 2.4.2, build 2026-09-09, Rogers-HP, typed in Home,
      Harness.app_angle: None (the default, an app at System: the harness as before) or 'rad', 'deg' or 'grad', which
      then decides the unit and HAngle does not.  Set it on a harness to test a program against an app set to Degrees.
 
+  8. ROUND rounds the decimal number the calculator holds, and a tie away from zero (the same calculator, 28 Nov 2026,
+     round 21; diagnostics/RoundProbe_beta1a.txt, run in the cloud workspace's Virtual Calculator 2.4.2): 162.45/10 is
+     16.245 and ROUND(162.45/10, 2) is 16.25; ROUND(16.245, 2) 16.25, ROUND(-16.245, 2) -16.25, ROUND(0.125, 2) 0.13,
+     ROUND(2.5, 0) 3, ROUND(3.5, 0) 4, ROUND(-2.5, 0) -3 and ROUND(16.245, -4) 16.25.  The harness's binary floats hold
+     162.45/10 as 16.244999999999997, and its ROUND gave 16.24: TTestLab beta 1n's one-sample step 4 showed SE =
+     162.45/root 100 = 16.24, where a student and the calculator give 16.25.  The calculator also held more digits than
+     it shows: (1 + 1E-15) - 1 gave 1E-15, and ROUND((0.0078125 + 123101)^2, 0) gave 15153858124 where STRING showed
+     15153858124.5.  MODELLED: ROUND takes its argument as the decimal of 15 significant digits nearest the harness's
+     float (the binary error lies below that) and rounds it half away from zero, to n decimals or, for n < 0, to -n
+     significant digits; a list or anything else not a real goes to the harness's own ROUND as before.  NOT
+     MODELLED: the rest of the harness's arithmetic stays binary, so (1 + 1E-12) - 1 is 1.00008890058E-12 there.
+
 USE.  import prime_facts_v1; prime_facts_v1.apply()      -- once, before the first Harness is made.
       It returns the harness module.  Applying it twice does nothing more.
 """
@@ -72,7 +84,9 @@ FACTS = ['STRING(x, 2, d): "Invalid input" for d >= 13 (Virtual Calculator, 1 No
          'a program reads and assigns HSeparator, HAngle, HFormat, HDigits and Entry: recorded, not patched '
          '(Virtual Calculator, 22 Nov 2026)',
          'the current app\'s own Angle Measure, when not System, is the unit of SIN and ASIN whatever HAngle says: '
-         'Harness.app_angle (Virtual Calculator, 23 Nov 2026)']
+         'Harness.app_angle (Virtual Calculator, 23 Nov 2026)',
+         'ROUND rounds the decimal the calculator holds, a tie away from zero: ROUND(162.45/10, 2) = 16.25 '
+         '(Virtual Calculator, 28 Nov 2026)']
 TITLE_MAX = 31
 
 
@@ -112,7 +126,29 @@ def apply():
     def _build_table(self):
         t = ob(self)
         t['RANDSEED'] = lambda a, site: (self.rng.seed(a[0] if a else 0), 0.0)[1]
+        t['ROUND'] = lambda a, site: _round_decimal(self, a)       # fact 8
         return t
+
+    # fact 8: ROUND rounds the decimal number the calculator holds, a tie away from zero
+    def _round_decimal(machine, a):
+        import decimal
+        x = a[0] if a else None
+        if not isinstance(x, float) or x != x or x in (float('inf'), float('-inf')) or len(a) > 2:
+            return R.interp.BUILTINS['ROUND'](machine, a)
+        n = int(a[1]) if len(a) > 1 else 0
+        if x == 0.0:
+            return 0.0
+        with decimal.localcontext() as c:
+            c.prec = 80
+            d = decimal.Decimal(repr(x))
+            last = d.adjusted() - 14                     # the exponent of its 15th significant digit
+            d = d.quantize(decimal.Decimal(1).scaleb(last), rounding=decimal.ROUND_HALF_UP)
+            if d == 0:
+                return 0.0
+            t = -n if n >= 0 else d.adjusted() + n + 1     # the exponent of the last digit kept
+            if t <= last:                                  # nothing to round off (1E300 to 2 decimals)
+                return float(d)
+            return float(d.quantize(decimal.Decimal(1).scaleb(t), rounding=decimal.ROUND_HALF_UP))
     R.Harness._build_table = _build_table
     # fact 4: a CHOOSE title of more than 31 characters is cut; keep a record of each one shown
     oc = R.Harness._choose
